@@ -1,9 +1,9 @@
 'use client';
 
-import AuthControlsCompact from '@/components/auth/auth-controls-compact.client';
+import AuthControlsCompact from '@/components/auth/auth-controls-compact';
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import type { NavigationDrawerContentProps } from '@/components/layout/navigation/types';
-import { ThemeSwitcher } from '@/components/theme-switcher.client';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Button } from '@/components/ui/button';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import * as SheetPrimitive from '@radix-ui/react-dialog';

@@ -1,10 +1,8 @@
 import { AuthControls } from '@/components/auth/auth-controls';
-import {
-  NavigationBar as NavigationBarClient
-} from '@/components/layout/navigation/nav-bar.client';
+import { NavDrawerTrigger } from '@/components/layout/navigation/nav-drawer-trigger';
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import type { NavItem } from '@/components/layout/navigation/types';
-import { ThemeSwitcher } from '@/components/theme-switcher.client';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { getCurrentUser } from '@/lib/auth';
 import { cacheLife } from 'next/cache';
 import Link from 'next/link';
@@ -30,7 +28,7 @@ export default async function NavigationBar({
       <div
         className="h-full w-full max-w-7xl mx-auto flex justify-between items-center p-3 text-sm ">
         <div className="flex items-center gap-3 font-semibold flex-1/3">
-          <NavigationBarClient user={user} items={items}/>
+          <NavDrawerTrigger user={user} items={items}/>
           <Link className="hidden md:block px-4" href="/">
             SprintMX
           </Link>

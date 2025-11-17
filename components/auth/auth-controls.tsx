@@ -1,7 +1,7 @@
-import { AuthControls as AuthControlsClient } from '@/components/auth/auth-controls.client';
+import { AuthControls as AuthControlsInteractive } from '@/components/auth/auth-controls-interactive';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function AuthControls() {
   const user = await getCurrentUser();
-  return <AuthControlsClient user={user}/>;
+  return <AuthControlsInteractive user={user}/>;
 }

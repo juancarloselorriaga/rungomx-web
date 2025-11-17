@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { ThemeProvider } from './theme-provider.client';
+import { ThemeProvider } from './theme-provider';
 
 interface ProvidersWrapperProps {
   children: ReactNode;

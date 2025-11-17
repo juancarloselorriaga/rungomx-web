@@ -8,15 +8,15 @@ import { Suspense, useState } from 'react';
 import type { NavigationDrawerContentProps } from './types';
 
 const NavigationDrawerContent = dynamic<NavigationDrawerContentProps>(
-  () => import('./nav-drawer.client').then(mod => mod.NavigationDrawerContent),
+  () => import('./nav-drawer').then(mod => mod.NavigationDrawerContent),
 );
 
-interface NavigationBarProps {
+interface NavDrawerTriggerProps {
   user: NavigationDrawerContentProps['user'];
   items: NavigationDrawerContentProps['items'];
 }
 
-export function NavigationBar({ user, items }: NavigationBarProps) {
+export function NavDrawerTrigger({ user, items }: NavDrawerTriggerProps) {
   const [open, setOpen] = useState(false);
 
   return (
