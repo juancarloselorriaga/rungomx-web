@@ -1,17 +1,26 @@
+import { AuthControls } from '@/components/auth/auth-controls';
 import {
   NavigationBar as NavigationBarClient
 } from '@/components/layout/navigation/nav-bar.client';
 import { NavItems } from '@/components/layout/navigation/nav-items';
-import { getCurrentUser } from '@/lib/auth';
-import Link from 'next/link';
-import { AuthControls } from '@/components/auth/auth-controls';
+import type { NavItem } from '@/components/layout/navigation/types';
 import { ThemeSwitcher } from '@/components/theme-switcher.client';
+import { getCurrentUser } from '@/lib/auth';
 import { cacheLife } from 'next/cache';
+import Link from 'next/link';
 import { Suspense } from 'react';
 
-export default async function NavigationBar() {
-  'use cache'
-  cacheLife('minutes')
+interface NavigationBarProps {
+  items: readonly NavItem[];
+  variant?: 'public' | 'protected';
+}
+
+export default async function NavigationBar({
+  items,
+  variant = 'public'
+}: NavigationBarProps) {
+  'use cache';
+  cacheLife('minutes');
 
   const user = await getCurrentUser();
 
@@ -21,14 +30,15 @@ export default async function NavigationBar() {
       <div
         className="h-full w-full max-w-7xl mx-auto flex justify-between items-center p-3 text-sm ">
         <div className="flex items-center gap-3 font-semibold flex-1/3">
-          <NavigationBarClient user={user}/>
-          <Link className="hidden md:block px-4" href={'/'}>
+          <NavigationBarClient user={user} items={items}/>
+          <Link className="hidden md:block px-4" href="/">
             SprintMX
           </Link>
         </div>
 
         <div className="hidden md:block mx-4 flex-1/3">
           <NavItems
+            items={items}
             containerClassName="flex-row items-center justify-center space-y-0 space-x-2 p-0"
             iconSize={22}
             showLabels={true}

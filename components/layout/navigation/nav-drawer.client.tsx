@@ -2,21 +2,20 @@
 
 import AuthControlsCompact from '@/components/auth/auth-controls-compact.client';
 import { NavItems } from '@/components/layout/navigation/nav-items';
+import type { NavigationDrawerContentProps } from '@/components/layout/navigation/types';
 import { ThemeSwitcher } from '@/components/theme-switcher.client';
 import { Button } from '@/components/ui/button';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { User } from '@/types/auth';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { PanelRightOpen } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 
-interface NavigationDrawerContentProps {
-  user: User | null;
-}
-
-export function NavigationDrawerContent({ user }: NavigationDrawerContentProps) {
+export function NavigationDrawerContent({
+  user,
+  items
+}: NavigationDrawerContentProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -46,7 +45,7 @@ export function NavigationDrawerContent({ user }: NavigationDrawerContentProps) 
         </SheetHeader>
 
         <nav className="flex-1 overflow-y-auto">
-          <NavItems/>
+          <NavItems items={items}/>
         </nav>
 
         <div className="mt-auto border-t p-4">

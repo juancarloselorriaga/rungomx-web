@@ -1,11 +1,32 @@
 'use client';
 
-import { navItems, iconMap } from '@/components/layout/navigation/constants';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import {
+  Home, Info, Mail, CircleHelp,
+  LayoutDashboard, Settings, User, Users,
+  Trophy, Calendar, Newspaper
+} from 'lucide-react';
+import type { NavItem } from '@/components/layout/navigation/types';
+
+// Icon map for all possible icons
+const iconMap = {
+  Home,
+  Info,
+  Mail,
+  CircleHelp,
+  LayoutDashboard,
+  Settings,
+  User,
+  Users,
+  Trophy,
+  Calendar,
+  Newspaper,
+} as const;
 
 interface NavItemsProps {
+  items: readonly NavItem[];
   containerClassName?: string;
   itemClassName?: string;
   iconClassName?: string;
@@ -15,6 +36,7 @@ interface NavItemsProps {
 }
 
 export function NavItems({
+  items,
   containerClassName,
   itemClassName,
   iconClassName,
@@ -24,8 +46,8 @@ export function NavItems({
 }: NavItemsProps) {
   return (
     <div className={cn('flex flex-col space-y-4 p-4', containerClassName)}>
-      {navItems.map(item => {
-        const Icon = iconMap[item.iconName];
+      {items.map(item => {
+        const Icon = iconMap[item.iconName as keyof typeof iconMap];
 
         const content = (
           <Link

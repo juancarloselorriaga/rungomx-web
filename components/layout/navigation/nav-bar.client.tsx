@@ -5,21 +5,18 @@ import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { PanelRightClose } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Suspense, useState } from 'react';
-import type { User } from '@/types/auth';
-
-type NavigationDrawerContentProps = {
-  user: User | null;
-};
+import type { NavigationDrawerContentProps } from './types';
 
 const NavigationDrawerContent = dynamic<NavigationDrawerContentProps>(
   () => import('./nav-drawer.client').then(mod => mod.NavigationDrawerContent),
 );
 
 interface NavigationBarProps {
-  user: User | null;
+  user: NavigationDrawerContentProps['user'];
+  items: NavigationDrawerContentProps['items'];
 }
 
-export function NavigationBar({ user }: NavigationBarProps) {
+export function NavigationBar({ user, items }: NavigationBarProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -32,7 +29,7 @@ export function NavigationBar({ user }: NavigationBarProps) {
         </SheetTrigger>
         {open && (
           <Suspense fallback={null}>
-            <NavigationDrawerContent user={user}/>
+            <NavigationDrawerContent user={user} items={items} />
           </Suspense>
         )}
       </Sheet>
