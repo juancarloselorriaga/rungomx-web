@@ -1,4 +1,4 @@
- 'use client';
+'use client';
 
 import UserAvatar from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';

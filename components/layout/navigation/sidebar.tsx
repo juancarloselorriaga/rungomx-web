@@ -2,7 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, LayoutDashboard, Settings, User, FileText, Users } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  LayoutDashboard,
+  Settings,
+  User,
+  Users
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
@@ -48,9 +56,9 @@ export function Sidebar({ items }: SidebarProps) {
             className="h-8 w-8"
           >
             {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4"/>
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4"/>
             )}
           </Button>
         </div>
@@ -74,7 +82,7 @@ export function Sidebar({ items }: SidebarProps) {
                 )}
                 title={collapsed ? item.label : undefined}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className="h-5 w-5 flex-shrink-0"/>
                 {!collapsed && <span>{item.label}</span>}
               </Link>
             );

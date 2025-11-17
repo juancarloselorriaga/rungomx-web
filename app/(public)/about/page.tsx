@@ -35,7 +35,8 @@ const AboutPage = () => {
   return (
     <div className=" bg-gradient-to-b from-background to-muted/30 w-full ">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[var(--brand-blue)] via-[var(--brand-blue-dark)] to-[var(--brand-indigo)] py-20 text-primary-foreground">
+      <section
+        className="relative overflow-hidden bg-gradient-to-br from-[var(--brand-blue)] via-[var(--brand-blue-dark)] to-[var(--brand-indigo)] py-20 text-primary-foreground">
         <div className="container relative mx-auto max-w-4xl px-4">
           <h1 className="mb-6 text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
             Quiénes somos
@@ -121,7 +122,8 @@ const AboutPage = () => {
 
           <div className="grid gap-8 lg:grid-cols-2">
             {/* For Runners */}
-            <div className="rounded-2xl bg-gradient-to-br from-[var(--brand-green)]/10 to-[var(--brand-green)]/5 p-8 shadow-lg ring-1 ring-[var(--brand-green)]/20">
+            <div
+              className="rounded-2xl bg-gradient-to-br from-[var(--brand-green)]/10 to-[var(--brand-green)]/5 p-8 shadow-lg ring-1 ring-[var(--brand-green)]/20">
               <h3 className="mb-6 text-2xl font-bold text-foreground">Para corredores</h3>
               <ul className="space-y-4">
                 {[
@@ -150,7 +152,8 @@ const AboutPage = () => {
             </div>
 
             {/* For Organizers */}
-            <div className="rounded-2xl bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-indigo)]/5 p-8 shadow-lg ring-1 ring-[var(--brand-blue)]/20">
+            <div
+              className="rounded-2xl bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-indigo)]/5 p-8 shadow-lg ring-1 ring-[var(--brand-blue)]/20">
               <h3 className="mb-6 text-2xl font-bold text-foreground">Para organizadores</h3>
               <ul className="space-y-4">
                 {[
@@ -236,7 +239,8 @@ const AboutPage = () => {
       {/* Mexican Technology Section */}
       <section className="py-16">
         <div className="container mx-auto max-w-4xl px-4">
-          <div className="rounded-2xl bg-gradient-to-br from-[var(--brand-green)] to-[var(--brand-green-dark)] p-8 text-primary-foreground shadow-xl md:p-12">
+          <div
+            className="rounded-2xl bg-gradient-to-br from-[var(--brand-green)] to-[var(--brand-green-dark)] p-8 text-primary-foreground shadow-xl md:p-12">
             <h2 className="mb-6 text-3xl font-bold">
               Somos tecnología mexicana para el running mexicano
             </h2>
@@ -282,7 +286,8 @@ const AboutPage = () => {
             <p>Y construir una comunidad más conectada, más grande y más fuerte.</p>
           </div>
 
-          <div className="mt-12 rounded-xl bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-indigo)] p-8 text-center shadow-xl">
+          <div
+            className="mt-12 rounded-xl bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-indigo)] p-8 text-center shadow-xl">
             <p className="mb-4 text-2xl font-bold text-primary-foreground">
               Estamos aquí para ser la plataforma que impulsa el crecimiento del running en México
               para los próximos 10 años.

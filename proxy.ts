@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 
 // Define protected and auth-only routes
 const protectedRoutes = ['/dashboard', '/settings', '/profile', '/team'];

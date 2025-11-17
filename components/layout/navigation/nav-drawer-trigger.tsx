@@ -16,7 +16,10 @@ interface NavDrawerTriggerProps {
   items: NavigationDrawerContentProps['items'];
 }
 
-export function NavDrawerTrigger({ user, items }: NavDrawerTriggerProps) {
+export function NavDrawerTrigger({
+  user,
+  items
+}: NavDrawerTriggerProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -29,7 +32,7 @@ export function NavDrawerTrigger({ user, items }: NavDrawerTriggerProps) {
         </SheetTrigger>
         {open && (
           <Suspense fallback={null}>
-            <NavigationDrawerContent user={user} items={items} />
+            <NavigationDrawerContent user={user} items={items}/>
           </Suspense>
         )}
       </Sheet>

@@ -1,14 +1,21 @@
 'use client';
 
+import type { NavItem } from '@/components/layout/navigation/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import {
-  Info, Mail, CircleHelp,
-  LayoutDashboard, Settings, User, Users,
-  Trophy, Calendar, Newspaper
+  Calendar,
+  CircleHelp,
+  Info,
+  LayoutDashboard,
+  Mail,
+  Newspaper,
+  Settings,
+  Trophy,
+  User,
+  Users
 } from 'lucide-react';
-import type { NavItem } from '@/components/layout/navigation/types';
+import Link from 'next/link';
 
 // Icon map for all possible icons
 const iconMap = {

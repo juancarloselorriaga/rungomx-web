@@ -1,4 +1,4 @@
-import { Trophy, Calendar, Newspaper, CircleHelp, Mail, Info } from 'lucide-react';
+import { Calendar, CircleHelp, Info, Mail, Newspaper, Trophy } from 'lucide-react';
 
 export const iconMap = {
   Trophy,
