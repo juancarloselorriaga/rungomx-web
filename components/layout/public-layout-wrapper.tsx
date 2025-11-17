@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import NavigationBar from './navigation/nav-bar';
 import Footer from './footer';
 import { publicNavItems } from './navigation/public-nav-items.constants';
@@ -9,7 +10,9 @@ export default function PublicLayoutWrapper({ children }: { children: React.Reac
       <main className="flex-1 w-full max-w-7xl mx-auto p-5 pt-20">
         {children}
       </main>
-      <Footer />
+      <Suspense>
+        <Footer />
+      </Suspense>
     </div>
   );
 }
