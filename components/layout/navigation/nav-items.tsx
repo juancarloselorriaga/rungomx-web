@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import {
-  Home, Info, Mail, CircleHelp,
+  Info, Mail, CircleHelp,
   LayoutDashboard, Settings, User, Users,
   Trophy, Calendar, Newspaper
 } from 'lucide-react';
@@ -12,7 +12,6 @@ import type { NavItem } from '@/components/layout/navigation/types';
 
 // Icon map for all possible icons
 const iconMap = {
-  Home,
   Info,
   Mail,
   CircleHelp,
