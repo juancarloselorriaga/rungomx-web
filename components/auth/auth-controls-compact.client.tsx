@@ -1,3 +1,5 @@
+ 'use client';
+
 import UserAvatar from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
 import { User } from '@/types/auth';
