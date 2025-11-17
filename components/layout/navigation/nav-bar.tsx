@@ -4,9 +4,14 @@ import {
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import { getCurrentUser } from '@/lib/auth';
 import Link from 'next/link';
-import NavigationControls from './nav-controls';
+import { AuthControls } from '@/components/auth/auth-controls';
+import { ThemeSwitcher } from '@/components/theme-switcher.client';
+import { cacheLife } from 'next/cache';
 
 export default async function NavigationBar() {
+  'use cache'
+  cacheLife('minutes')
+
   const user = await getCurrentUser();
 
   return (
@@ -21,7 +26,7 @@ export default async function NavigationBar() {
           </Link>
         </div>
 
-        <div className="hidden md:block flex-1 mx-4 flex-1/3">
+        <div className="hidden md:block mx-4 flex-1/3">
           <NavItems
             containerClassName="flex-row items-center justify-center space-y-0 space-x-2 p-0"
             iconSize={22}
@@ -29,8 +34,9 @@ export default async function NavigationBar() {
           />
         </div>
 
-        <div className="flex items-center justify-end flex-1/3">
-          <NavigationControls/>
+        <div className="hidden md:flex gap-2 items-center justify-end flex-1/3">
+          <AuthControls/>
+          <ThemeSwitcher/>
         </div>
       </div>
     </nav>
