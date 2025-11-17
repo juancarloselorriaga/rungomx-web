@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { PanelRightClose } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import type { User } from '@/types/auth';
 
 type NavigationDrawerContentProps = {
@@ -30,7 +30,11 @@ export function NavigationBar({ user }: NavigationBarProps) {
             <PanelRightClose size={22}/>
           </Button>
         </SheetTrigger>
-        {open && <NavigationDrawerContent user={user}/>}
+        {open && (
+          <Suspense fallback={null}>
+            <NavigationDrawerContent user={user}/>
+          </Suspense>
+        )}
       </Sheet>
     </div>
   );
