@@ -1,11 +1,11 @@
-import { Activity, Brain, Feather, Notebook, Settings } from 'lucide-react';
+import { Trophy, Calendar, Newspaper, CircleHelp, Mail } from 'lucide-react';
 
 export const iconMap = {
-  Notebook,
-  Feather,
-  Activity,
-  Brain,
-  Settings,
+  Trophy,
+  Calendar,
+  Newspaper,
+  CircleHelp,
+  Mail,
 } as const;
 
 export interface MenuItem {
@@ -16,28 +16,28 @@ export interface MenuItem {
 
 export const navItems: MenuItem[] = [
   {
-    href: '/journal',
-    label: 'Journal',
-    iconName: 'Notebook'
+    href: '/results',
+    label: 'Results',
+    iconName: 'Trophy'
   },
   {
-    href: '/daily-rating',
-    label: 'Daily Rating',
-    iconName: 'Feather'
+    href: '/events',
+    label: 'Events',
+    iconName: 'Calendar'
   },
   {
-    href: '/tracking',
-    label: 'Tracker',
-    iconName: 'Activity'
+    href: '/news',
+    label: 'News',
+    iconName: 'Newspaper'
   },
   {
-    href: '/insights',
-    label: 'Insights',
-    iconName: 'Brain'
+    href: '/help',
+    label: 'Help',
+    iconName: 'CircleHelp'
   },
   {
-    href: '/settings',
-    label: 'Settings',
-    iconName: 'Settings'
+    href: '/contact',
+    label: 'Contact',
+    iconName: 'Mail'
   },
 ];
