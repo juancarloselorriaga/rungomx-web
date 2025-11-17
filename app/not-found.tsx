@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <div
-      className="w-full relative flex min-h-screen items-center justify-center overflow-hidden">
+      className="w-full relative flex h-screen items-center justify-center overflow-hidden">
       {/* Background pattern overlay */}
       <div className="absolute inset-0 opacity-10">
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">

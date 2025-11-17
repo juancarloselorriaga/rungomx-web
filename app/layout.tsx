@@ -1,4 +1,4 @@
-import RootLayoutWrapper from '@/components/layout/root-layout-wrapper';
+import { Providers } from '@/components/providers/providers';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
@@ -31,7 +31,7 @@ export default function RootLayout({
     <Suspense fallback={null}>
       <Toaster/>
     </Suspense>
-    <RootLayoutWrapper>{children}</RootLayoutWrapper>
+    <Providers>{children}</Providers>
     </body>
     </html>
   );
