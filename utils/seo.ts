@@ -1,6 +1,21 @@
 import { siteUrl } from '@/config/url';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { getStaticTranslation } from './staticMessages';
+
+type SeoDefaultMessages = {
+  title: string;
+  description: string;
+  openGraph: {
+    title: string;
+    description: string;
+    imageAlt: string;
+  };
+  twitter: {
+    title: string;
+    description: string;
+  };
+  applicationName: string;
+};
 
 /**
  * Generates alternate language metadata for SEO
@@ -9,14 +24,21 @@ import { getTranslations } from 'next-intl/server';
 export async function generateAlternateMetadata(
   locale: string
 ): Promise<Metadata> {
-  const t = await getTranslations('SEO.default');
+  const seoMessages = getStaticTranslation<SeoDefaultMessages>(
+    locale,
+    'SEO.default'
+  );
   const isSpanish = locale === 'es';
   const localeForOG = isSpanish ? 'es_MX' : 'en_US';
   const localePrefix = isSpanish ? '' : '/en';
 
+  if (!seoMessages) {
+    return {};
+  }
+
   return {
-    title: t('title'),
-    description: t('description'),
+    title: seoMessages.title,
+    description: seoMessages.description,
     metadataBase: new URL(siteUrl),
     alternates: {
       canonical: `${siteUrl}${localePrefix}`,
@@ -30,22 +52,22 @@ export async function generateAlternateMetadata(
       type: 'website',
       locale: localeForOG,
       url: `${siteUrl}${localePrefix}`,
-      siteName: t('title'),
-      title: t('openGraph.title'),
-      description: t('openGraph.description'),
+      siteName: seoMessages.title,
+      title: seoMessages.openGraph.title,
+      description: seoMessages.openGraph.description,
       images: [
         {
           url: `${siteUrl}/og-image.jpg`,
           width: 1200,
           height: 630,
-          alt: t('openGraph.imageAlt'),
+          alt: seoMessages.openGraph.imageAlt,
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: t('twitter.title'),
-      description: t('twitter.description'),
+      title: seoMessages.twitter.title,
+      description: seoMessages.twitter.description,
       images: [`${siteUrl}/og-image.jpg`],
     },
     robots: {
@@ -60,8 +82,8 @@ export async function generateAlternateMetadata(
       },
     },
     other: {
-      'application-name': t('applicationName'),
-      'apple-mobile-web-app-title': t('applicationName'),
+      'application-name': seoMessages.applicationName,
+      'apple-mobile-web-app-title': seoMessages.applicationName,
     },
   };
 }

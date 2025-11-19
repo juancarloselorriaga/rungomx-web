@@ -1,15 +1,40 @@
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+import { AppLocale } from '@/i18n/routing';
+import { getStaticTranslation } from '@/utils/staticMessages';
 import { Home } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('Components.ErrorBoundary.notFound');
+type NotFoundMessages = {
+  code: string;
+  title: string;
+  description: string;
+};
+
+export function generateMetadata({
+  params,
+}: {
+  params: { locale: string };
+}): Metadata {
+  const { locale } = params;
+  const messages = getStaticTranslation<NotFoundMessages>(
+    locale as AppLocale,
+    'Components.ErrorBoundary.notFound'
+  );
+
+  if (!messages) {
+    return {
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
 
   return {
-    title: `${t('code')} - ${t('title')}`,
-    description: t('description'),
+    title: `${messages.code} - ${messages.title}`,
+    description: messages.description,
     robots: {
       index: false,
       follow: false,
