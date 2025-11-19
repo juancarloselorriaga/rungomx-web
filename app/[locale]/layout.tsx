@@ -42,6 +42,17 @@ export default async function LocaleLayout({
   children,
   params,
 }: Props) {
+  return (
+    <Suspense fallback={<Loading />}>
+      <LocaleLayoutContent params={params}>{children}</LocaleLayoutContent>
+    </Suspense>
+  );
+}
+
+async function LocaleLayoutContent({
+  children,
+  params,
+}: Props) {
   const { locale } = await params;
 
   // Ensure that the incoming `locale` is valid
@@ -62,9 +73,7 @@ export default async function LocaleLayout({
           <Suspense fallback={null}>
             <Toaster />
           </Suspense>
-          <Suspense fallback={<Loading />}>
-            <Providers>{children}</Providers>
-          </Suspense>
+          <Providers>{children}</Providers>
         </NextIntlClientProvider>
       </body>
     </html>
