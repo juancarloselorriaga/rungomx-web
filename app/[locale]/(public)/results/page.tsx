@@ -1,9 +1,13 @@
-export default function ResultsPage() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function ResultsPage() {
+  const t = await getTranslations('Pages.Results');
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Results</h1>
+      <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <p className="text-muted-foreground">
-        View competition results and standings here.
+        {t('description')}
       </p>
     </div>
   );

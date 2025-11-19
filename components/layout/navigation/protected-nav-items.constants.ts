@@ -1,22 +1,22 @@
 export const protectedNavItems = [
   {
     href: '/dashboard',
-    label: 'Dashboard',
+    labelKey: 'dashboard' as const,
     iconName: 'LayoutDashboard' as const,
   },
   {
     href: '/team',
-    label: 'Team',
+    labelKey: 'team' as const,
     iconName: 'Users' as const,
   },
   {
     href: '/settings',
-    label: 'Settings',
+    labelKey: 'settings' as const,
     iconName: 'Settings' as const,
   },
   {
     href: '/profile',
-    label: 'Profile',
+    labelKey: 'profile' as const,
     iconName: 'User' as const,
   },
 ] as const;

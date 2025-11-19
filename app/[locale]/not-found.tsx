@@ -1,14 +1,22 @@
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { Home } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 import type { Metadata } from 'next';
-import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: '404 - Page Not Found',
-  description: 'The page you are looking for does not exist.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('Components.ErrorBoundary.notFound');
 
-export default function NotFound() {
+  return {
+    title: `${t('code')} - ${t('title')}`,
+    description: t('description'),
+  };
+}
+
+export default async function NotFound() {
+  const t = await getTranslations('Components.ErrorBoundary.notFound');
+  const tCommon = await getTranslations('Common');
+
   return (
     <div
       className="w-full relative flex h-screen items-center justify-center overflow-hidden">
@@ -36,26 +44,25 @@ export default function NotFound() {
 
 
         <div className="mb-4">
-          <p className="text-6xl font-bold tracking-tight sm:text-7xl">404</p>
+          <p className="text-6xl font-bold tracking-tight sm:text-7xl">{t('code')}</p>
         </div>
 
         <h1 className="mb-4 text-3xl font-bold tracking-tight sm:text-4xl">
-          Page Not Found
+          {t('title')}
         </h1>
 
         <p className="mb-8 text-lg text-foreground/80">
-          Sorry, we couldn&#39;t find the page you&#39;re looking for. The page may
-          have been moved, deleted, or the URL might be incorrect.
+          {t('description')}
         </p>
 
         <div className="mb-8 rounded-lg bg-white/10 p-6 backdrop-blur-sm">
           <p className="text-sm text-foreground/90">
-            <strong>Here are some helpful links:</strong>
+            <strong>{t('helpfulLinks')}</strong>
           </p>
           <ul className="mt-3 space-y-2 text-sm text-foreground/80">
-            <li>• Check the URL for typos</li>
-            <li>• Use the navigation menu to find what you need</li>
-            <li>• Return to the home page and start fresh</li>
+            <li>• {t('tips.0')}</li>
+            <li>• {t('tips.1')}</li>
+            <li>• {t('tips.2')}</li>
           </ul>
         </div>
 
@@ -67,7 +74,7 @@ export default function NotFound() {
           >
             <Link href="/">
               <Home className="mr-2 h-5 w-5"/>
-              Go Home
+              {tCommon('goHome')}
             </Link>
           </Button>
 
@@ -77,7 +84,7 @@ export default function NotFound() {
             variant="outline"
           >
             <Link href="/about">
-              Learn About Us
+              {t('learnAboutUs')}
             </Link>
           </Button>
         </div>

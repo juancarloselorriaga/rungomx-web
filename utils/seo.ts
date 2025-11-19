@@ -1,20 +1,22 @@
 import { siteUrl } from '@/config/url';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * Generates alternate language metadata for SEO
  * @param locale - The current locale (es or en)
  */
-export function generateAlternateMetadata(locale: string): Metadata {
+export async function generateAlternateMetadata(
+  locale: string
+): Promise<Metadata> {
+  const t = await getTranslations('SEO.default');
   const isSpanish = locale === 'es';
   const localeForOG = isSpanish ? 'es_MX' : 'en_US';
   const localePrefix = isSpanish ? '' : '/en';
 
   return {
-    title: 'SprintMX',
-    description: isSpanish
-      ? 'SprintMX es la plataforma todo-en-uno para crear, administrar y promocionar carreras y eventos deportivos en México.'
-      : 'SprintMX is the all-in-one platform to create, manage, and promote races and sporting events in Mexico.',
+    title: t('title'),
+    description: t('description'),
     metadataBase: new URL(siteUrl),
     alternates: {
       canonical: `${siteUrl}${localePrefix}`,
@@ -28,28 +30,22 @@ export function generateAlternateMetadata(locale: string): Metadata {
       type: 'website',
       locale: localeForOG,
       url: `${siteUrl}${localePrefix}`,
-      siteName: 'SprintMX',
-      title: 'SprintMX',
-      description: isSpanish
-        ? 'Plataforma todo-en-uno para organizar y promocionar carreras en México: inscripciones, pagos, resultados, rankings y más.'
-        : 'All-in-one platform to organize and promote races in Mexico: registrations, payments, results, rankings and more.',
+      siteName: t('title'),
+      title: t('openGraph.title'),
+      description: t('openGraph.description'),
       images: [
         {
           url: `${siteUrl}/og-image.jpg`,
           width: 1200,
           height: 630,
-          alt: isSpanish
-            ? 'SprintMX - Plataforma para carreras en México'
-            : 'SprintMX - Platform for races in Mexico',
+          alt: t('openGraph.imageAlt'),
         },
       ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'SprintMX',
-      description: isSpanish
-        ? 'Plataforma todo-en-uno para organizar y promocionar carreras en México.'
-        : 'All-in-one platform to organize and promote races in Mexico.',
+      title: t('twitter.title'),
+      description: t('twitter.description'),
       images: [`${siteUrl}/og-image.jpg`],
     },
     robots: {
@@ -64,11 +60,8 @@ export function generateAlternateMetadata(locale: string): Metadata {
       },
     },
     other: {
-      'application-name': 'SprintMX',
-      'apple-mobile-web-app-title': 'SprintMX',
+      'application-name': t('applicationName'),
+      'apple-mobile-web-app-title': t('applicationName'),
     },
   };
 }
-
-// Legacy export for backward compatibility (defaults to Spanish)
-export const metadata: Metadata = generateAlternateMetadata('es');

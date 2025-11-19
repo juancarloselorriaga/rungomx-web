@@ -3,9 +3,10 @@ import { NavDrawerTrigger } from '@/components/layout/navigation/nav-drawer-trig
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import type { NavItem } from '@/components/layout/navigation/types';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { Link } from '@/i18n/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import { cacheLife } from 'next/cache';
-import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 
 interface NavigationBarProps {
@@ -21,6 +22,7 @@ export default async function NavigationBar({
   cacheLife('minutes');
 
   const user = await getCurrentUser();
+  const t = await getTranslations('Common');
 
   return (
     <nav
@@ -30,7 +32,7 @@ export default async function NavigationBar({
         <div className="flex items-center gap-3 font-semibold flex-1/3">
           <NavDrawerTrigger user={user} items={items}/>
           <Link className="hidden md:block px-4" href="/">
-            SprintMX
+            {t('brandName')}
           </Link>
         </div>
 

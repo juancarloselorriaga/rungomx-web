@@ -32,14 +32,8 @@ export async function generateMetadata({
   params,
 }: Omit<Props, 'children'>): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: 'Metadata' });
 
-  return {
-    ...generateAlternateMetadata(locale),
-    // You can add more translated metadata here as needed
-    // title: t('title'),
-    // description: t('description'),
-  };
+  return await generateAlternateMetadata(locale);
 }
 
 export default async function LocaleLayout({

@@ -13,7 +13,10 @@
     "sort": "Ordenar",
     "next": "Siguiente",
     "previous": "Anterior",
-    "submit": "Enviar"
+    "submit": "Enviar",
+    "brandName": "SprintMX",
+    "goHome": "Volver al inicio",
+    "tryAgain": "Intentar de nuevo"
   },
   "Navigation": {
     "home": "Inicio",
@@ -43,6 +46,22 @@
     "welcome": "Bienvenido",
     "welcomeBack": "Bienvenido de nuevo"
   },
+  "SEO": {
+    "default": {
+      "title": "SprintMX",
+      "description": "SprintMX es la plataforma todo-en-uno para crear, administrar y promocionar carreras y eventos deportivos en México.",
+      "openGraph": {
+        "title": "SprintMX",
+        "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México: inscripciones, pagos, resultados, rankings y más.",
+        "imageAlt": "SprintMX - Plataforma para carreras en México"
+      },
+      "twitter": {
+        "title": "SprintMX",
+        "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México."
+      },
+      "applicationName": "SprintMX"
+    }
+  },
   "Errors": {
     "notFound": "Página no encontrada",
     "serverError": "Error del servidor",
@@ -55,8 +74,245 @@
     "label": "Cambiar idioma",
     "locale": "{locale, select, es {Español} en {English} other {Desconocido}}"
   },
-  "Metadata": {
-    "title": "SprintMX",
-    "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México"
+  "Components": {
+    "Footer": {
+      "sections": {
+        "about": "Acerca de",
+        "resources": "Recursos",
+        "legal": "Legal",
+        "connect": "Conectar"
+      },
+      "links": {
+        "aboutUs": "Nosotros",
+        "contact": "Contacto",
+        "helpCenter": "Centro de ayuda",
+        "privacy": "Política de privacidad",
+        "terms": "Términos de servicio"
+      },
+      "connectText": "Mantente actualizado con nuestras últimas noticias y actualizaciones.",
+      "copyright": "© {year} SprintMX. Todos los derechos reservados."
+    },
+    "ThemeSwitcher": {
+      "toggleLabel": "Cambiar tema",
+      "light": "Claro",
+      "dark": "Oscuro",
+      "system": "Sistema"
+    },
+    "ErrorBoundary": {
+      "error": {
+        "title": "Algo salió mal",
+        "description": "Pedimos disculpas por las molestias. Ha ocurrido un error inesperado. Por favor, intenta de nuevo o regresa a la página de inicio.",
+        "errorLabel": "Error:",
+        "digestLabel": "Resumen:"
+      },
+      "notFound": {
+        "code": "404",
+        "title": "Página no encontrada",
+        "description": "Lo sentimos, no pudimos encontrar la página que buscas. La página puede haber sido movida, eliminada, o la URL podría ser incorrecta.",
+        "helpfulLinks": "Aquí hay algunos enlaces útiles:",
+        "tips": [
+          "Revisa la URL por errores tipográficos",
+          "Usa el menú de navegación para encontrar lo que necesitas",
+          "Regresa a la página de inicio y comienza de nuevo"
+        ],
+        "learnAboutUs": "Conócenos"
+      },
+      "globalError": {
+        "title": "Error de aplicación",
+        "description": "Ha ocurrido un error crítico. Lamentamos las molestias. Por favor, intenta actualizar la página o regresa a la página de inicio."
+      }
+    }
+  },
+  "Pages": {
+    "Home": {
+      "metadata": {
+        "title": "Carreras y eventos deportivos en México | SprintMX",
+        "description": "Descubre las mejores carreras en México. Inscripciones en línea, pagos seguros, resultados, rankings, eventos en CDMX y más con SprintMX.",
+        "keywords": [
+          "carreras en México",
+          "running México",
+          "eventos deportivos México",
+          "inscripciones carreras",
+          "resultados carreras México",
+          "SprintMX",
+          "carreras CDMX",
+          "maratón México"
+        ],
+        "ogTitle": "Carreras y eventos deportivos en México | SprintMX",
+        "ogDescription": "Descubre las mejores carreras en México. Inscripciones en línea, pagos seguros, resultados, rankings, eventos en CDMX y más con SprintMX.",
+        "ogAlt": "SprintMX - Plataforma para carreras en México"
+      },
+      "content": {
+        "placeholder": "Inicio"
+      }
+    },
+    "About": {
+      "metadata": {
+        "title": "Sobre SprintMX | Quiénes somos y qué hacemos",
+        "description": "Conoce SprintMX, la plataforma mexicana que transforma la manera de organizar y correr carreras. Tecnología local, running local.",
+        "keywords": [
+          "sobre SprintMX",
+          "quiénes somos",
+          "plataforma mexicana running",
+          "tecnología mexicana",
+          "organizadores de carreras",
+          "sistema de inscripciones",
+          "SprintMX México"
+        ],
+        "ogTitle": "Sobre SprintMX | Quiénes somos",
+        "ogDescription": "Conoce SprintMX, la plataforma mexicana que transforma la manera de organizar y correr carreras. Tecnología local, running local.",
+        "ogAlt": "Sobre SprintMX"
+      },
+      "hero": {
+        "title": "Quiénes somos",
+        "description": "SprintMX nace en México para transformar la manera en que organizadores y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar."
+      },
+      "vision": {
+        "title": "Nuestra visión",
+        "paragraphs": [
+          "Queremos que México sea referente en innovación deportiva en Latinoamérica. Que cada carrera, sin importar su tamaño, tenga acceso a herramientas de clase mundial sin pagar precios de clase mundial.",
+          "Creemos que la tecnología debe servir al deporte, no complicarlo. Por eso construimos soluciones pensadas para el contexto mexicano: simples, accesibles y poderosas."
+        ]
+      },
+      "whyWeExist": {
+        "title": "Por qué existimos",
+        "intro": "El running en México ha crecido enormemente, pero la infraestructura digital no ha crecido al mismo ritmo. Los organizadores y corredores enfrentan problemas recurrentes:",
+        "problems": [
+          "Sitios complicados para inscribirse",
+          "Pagos inseguros o confusos",
+          "Resultados dispersos o lentos",
+          "Zero data para organizadores",
+          "Herramientas de marketing mínimas",
+          "Sistemas que no hablan entre ellos"
+        ],
+        "solution": "SprintMX llega para resolver eso."
+      },
+      "whatWeDo": {
+        "title": "Qué hacemos",
+        "intro": "Creamos un ecosistema completo para el running en México:",
+        "forRunners": {
+          "title": "Para corredores",
+          "features": [
+            "Inscripciones súper simples en cualquier carrera",
+            "Pagos seguros con cualquier método (tarjeta, transferencia, efectivo)",
+            "Resultados en tiempo real el día del evento",
+            "Rankings personales y nacionales automáticos",
+            "Recomendaciones de carreras según tu nivel y ubicación"
+          ]
+        },
+        "forOrganizers": {
+          "title": "Para organizadores",
+          "features": [
+            "Gestión integral del evento (inscripciones, pagos, comunicación)",
+            "Pagos automatizados y conciliación bancaria",
+            "Cronometraje integrado con chips profesionales",
+            "Marketing y comunicación con tus corredores",
+            "Analytics en tiempo real de tu evento",
+            "Soporte técnico local en español"
+          ]
+        },
+        "tagline": "Una sola plataforma para todo el ciclo de vida de tu carrera."
+      },
+      "philosophy": {
+        "title": "Nuestra filosofía",
+        "intro": "Somos un equipo de tecnólogos mexicanos apasionados por el running y la innovación. No copiamos modelos extranjeros; construimos desde cero con mentalidad local.",
+        "believeIn": "Creemos en:",
+        "values": [
+          {
+            "title": "Simplicidad",
+            "description": "La tecnología debe ser invisible. Que el corredor se concentre en correr y el organizador en crear experiencias."
+          },
+          {
+            "title": "Transparencia",
+            "description": "Precios claros, sin sorpresas. Data abierta para todos. Código confiable y auditable."
+          },
+          {
+            "title": "Calidad",
+            "description": "No lanzamos features a medias. Cada funcionalidad pasa por pruebas rigurosas antes de llegar a producción."
+          },
+          {
+            "title": "Comunidad",
+            "description": "El running es comunidad. Escuchamos a organizadores y corredores para construir lo que realmente necesitan."
+          },
+          {
+            "title": "Innovación constante",
+            "description": "El mercado evoluciona rápido. Nosotros evolucionamos más rápido. Releases semanales, features nuevas cada mes."
+          }
+        ]
+      },
+      "mexicanTech": {
+        "title": "Somos tecnología mexicana para el running mexicano",
+        "paragraphs": [
+          "No somos una adaptación de algo que funciona en Estados Unidos o Europa. SprintMX nace y crece en México, con profundo conocimiento del mercado local.",
+          "Entendemos el mercado mexicano porque vivimos en él. Conocemos sus retos, sus regulaciones, sus métodos de pago, su cultura."
+        ],
+        "weKnow": "Conocemos:",
+        "knowledge": [
+          "Las zonas donde se corre (CDMX, Guadalajara, Monterrey, Puebla, Querétaro...)",
+          "Los métodos de pago que funcionan (OXXO, transferencias, tarjetas, meses sin intereses)",
+          "Las regulaciones locales (permisos, seguros, vialidad)",
+          "El idioma y la cultura (comunicación clara en español mexicano)",
+          "Los retos operativos reales (logística, clima, altitud, tráfico)"
+        ],
+        "closing": "Por eso nuestra plataforma no solo funciona técnicamente: funciona para el contexto real de México."
+      },
+      "commitment": {
+        "title": "Nuestro compromiso",
+        "paragraphs": [
+          "SprintMX no es solo software. Es un compromiso de largo plazo con la comunidad del running en México.",
+          "Trabajamos codo a codo con organizadores para entender sus necesidades reales. Escuchamos corredores para mejorar su experiencia. Invertimos en tecnología de punta para mantenernos siempre adelante.",
+          "Innovamos constantemente. Lo que hoy es la plataforma más completa del mercado, mañana será aún mejor.",
+          "Porque al final del día, nuestro éxito se mide en carreras exitosas, corredores felices y una comunidad de running cada vez más fuerte."
+        ],
+        "taglines": [
+          "Tecnología mexicana.",
+          "Running mexicano."
+        ]
+      }
+    },
+    "Contact": {
+      "title": "Contáctanos",
+      "description": "Ponte en contacto con nosotros. Página de contacto."
+    },
+    "Events": {
+      "title": "Eventos",
+      "description": "Explora eventos próximos y pasados de carreras."
+    },
+    "Help": {
+      "title": "Centro de ayuda",
+      "description": "Encuentra respuestas a tus preguntas. Centro de ayuda."
+    },
+    "News": {
+      "title": "Noticias",
+      "description": "Mantente actualizado con las últimas noticias y anuncios de carreras."
+    },
+    "Results": {
+      "title": "Resultados",
+      "description": "Ver resultados de competencias y clasificaciones aquí."
+    },
+    "Dashboard": {
+      "title": "Panel",
+      "description": "Bienvenido a tu panel. Esta es una página protegida que requiere autenticación."
+    },
+    "Profile": {
+      "title": "Perfil",
+      "description": "Ver y editar tu información de perfil aquí."
+    },
+    "Settings": {
+      "title": "Configuración",
+      "description": "Administra la configuración y preferencias de tu cuenta aquí."
+    },
+    "Team": {
+      "title": "Equipo",
+      "description": "Colabora con los miembros de tu equipo aquí."
+    },
+    "SignIn": {
+      "title": "Iniciar sesión",
+      "description": "Página de inicio de sesión. Implementa tu formulario de autenticación aquí."
+    },
+    "SignUp": {
+      "title": "Registrarse",
+      "description": "Página de registro. Implementa tu formulario de registro aquí."
+    }
   }
 }

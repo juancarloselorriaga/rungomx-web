@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import {
   ChevronLeft,
@@ -11,7 +12,7 @@ import {
   User,
   Users
 } from 'lucide-react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
@@ -26,7 +27,7 @@ const iconMap = {
 
 interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   iconName: string;
 }
 
@@ -37,6 +38,7 @@ interface SidebarProps {
 export function Sidebar({ items }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const t = useTranslations('Navigation');
 
   return (
     <>
@@ -68,6 +70,7 @@ export function Sidebar({ items }: SidebarProps) {
           {items.map((item) => {
             const Icon = iconMap[item.iconName as keyof typeof iconMap];
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const label = t(item.labelKey as any);
 
             return (
               <Link
@@ -80,10 +83,10 @@ export function Sidebar({ items }: SidebarProps) {
                     : 'hover:bg-accent hover:text-accent-foreground',
                   collapsed && 'justify-center'
                 )}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? label : undefined}
               >
                 <Icon className="h-5 w-5 flex-shrink-0"/>
-                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && <span>{label}</span>}
               </Link>
             );
           })}

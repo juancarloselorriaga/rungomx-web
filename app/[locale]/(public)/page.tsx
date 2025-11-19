@@ -1,42 +1,45 @@
 import { siteUrl } from '@/config/url';
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Carreras y eventos deportivos en México | SprintMX',
-  description:
-    'Descubre las mejores carreras en México. Inscripciones en línea, pagos seguros, resultados, rankings, eventos en CDMX y más con SprintMX.',
-  keywords: [
-    'carreras en México',
-    'carreras CDMX',
-    'eventos deportivos CDMX',
-    'carreras para correr México',
-    'inscripciones carreras México',
-    '5K CDMX',
-    '10K CDMX',
-    'maratones México',
-  ],
-  openGraph: {
-    title: 'Carreras y eventos deportivos en México | SprintMX',
-    description:
-      'Encuentra y organiza carreras en México. Inscripciones, pagos, resultados y rankings en una sola plataforma.',
-    url: siteUrl,
-    images: [
-      {
-        url: `${siteUrl}/og-home.jpg`,
-        width: 1200,
-        height: 630,
-        alt: 'SprintMX Home - Carreras en México',
-      },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('Pages.Home.metadata');
+
+  return {
+    title: t('title'),
+    description: t('description'),
+    keywords: [
+      t('keywords.0'),
+      t('keywords.1'),
+      t('keywords.2'),
+      t('keywords.3'),
+      t('keywords.4'),
+      t('keywords.5'),
+      t('keywords.6'),
+      t('keywords.7'),
     ],
-  },
-};
+    openGraph: {
+      title: t('openGraph.title'),
+      description: t('openGraph.description'),
+      url: siteUrl,
+      images: [
+        {
+          url: `${siteUrl}/og-home.jpg`,
+          width: 1200,
+          height: 630,
+          alt: t('openGraph.imageAlt'),
+        },
+      ],
+    },
+  };
+}
 
-export default function Home() {
+export default async function Home() {
+  const t = await getTranslations('Pages.Home.content');
+
   return (
-    <div className="w-full flex   items-center justify-center">
-      <p>
-        Home
-      </p>
+    <div className="w-full flex items-center justify-center">
+      <p>{t('placeholder')}</p>
     </div>
   );
 }

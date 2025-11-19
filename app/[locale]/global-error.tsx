@@ -1,6 +1,7 @@
 'use client';
 
 import { Home, RefreshCw } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import '../globals.css';
@@ -12,6 +13,10 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('Components.ErrorBoundary.globalError');
+  const tError = useTranslations('Components.ErrorBoundary.error');
+  const tCommon = useTranslations('Common');
+
   useEffect(() => {
     // Log the error to console
     console.error('Global error boundary caught:', error);
@@ -48,23 +53,22 @@ export default function GlobalError({
       {/* Content */}
       <div className="container relative z-10 mx-auto max-w-2xl px-4 py-16 text-center">
         <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          Application Error
+          {t('title')}
         </h1>
 
         <p className="mb-8 text-lg text-foreground/80">
-          A critical error has occurred. We&#39;re sorry for the inconvenience.
-          Please try refreshing the page or return to the home page.
+          {t('description')}
         </p>
 
         {/* Error details for development */}
         {process.env.NODE_ENV === 'development' && error.message && (
           <div className="mb-8 rounded-lg bg-background-surface p-4 text-left">
             <p className="font-mono text-sm text-foreground/90">
-              <strong>Error:</strong> {error.message}
+              <strong>{tError('errorLabel')}</strong> {error.message}
             </p>
             {error.digest && (
               <p className="mt-2 font-mono text-xs text-foreground/70">
-                <strong>Digest:</strong> {error.digest}
+                <strong>{tError('digestLabel')}</strong> {error.digest}
               </p>
             )}
           </div>
@@ -75,20 +79,19 @@ export default function GlobalError({
             onClick={reset}
           >
             <RefreshCw className="h-5 w-5"/>
-            Try Again
+            {tCommon('tryAgain')}
           </button>
 
           <Link
             href="/"
           >
             <Home className="h-5 w-5"/>
-            Go Home
+            {tCommon('goHome')}
           </Link>
         </div>
       </div>
     </div>
     </body>
     </html>
-  )
-    ;
+  );
 }

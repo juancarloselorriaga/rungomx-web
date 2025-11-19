@@ -1,32 +1,32 @@
 export const publicNavItems = [
   {
     href: '/results',
-    label: 'Results',
+    labelKey: 'results' as const,
     iconName: 'Trophy' as const,
   },
   {
     href: '/events',
-    label: 'Events',
+    labelKey: 'events' as const,
     iconName: 'Calendar' as const,
   },
   {
     href: '/news',
-    label: 'News',
+    labelKey: 'news' as const,
     iconName: 'Newspaper' as const,
   },
   {
     href: '/help',
-    label: 'Help',
+    labelKey: 'help' as const,
     iconName: 'CircleHelp' as const,
   },
   {
     href: '/contact',
-    label: 'Contact',
+    labelKey: 'contact' as const,
     iconName: 'Mail' as const,
   },
   {
     href: '/about',
-    label: 'About',
+    labelKey: 'about' as const,
     iconName: 'Info' as const,
   },
 ] as const;

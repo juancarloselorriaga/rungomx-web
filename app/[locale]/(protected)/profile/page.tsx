@@ -1,9 +1,13 @@
-export default function ProfilePage() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function ProfilePage() {
+  const t = await getTranslations('Pages.Profile');
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Profile</h1>
+      <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <p className="text-muted-foreground">
-        View and edit your profile information here.
+        {t('description')}
       </p>
     </div>
   );

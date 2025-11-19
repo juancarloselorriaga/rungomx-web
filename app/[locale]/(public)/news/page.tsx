@@ -1,9 +1,13 @@
-export default function NewsPage() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function NewsPage() {
+  const t = await getTranslations('Pages.News');
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">News</h1>
+      <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <p className="text-muted-foreground">
-        Stay updated with the latest sprint news and announcements.
+        {t('description')}
       </p>
     </div>
   );

@@ -1,9 +1,11 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const t = useTranslations('Components.Footer');
 
   return (
     <footer
@@ -12,14 +14,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
           {/* About Section */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">About</h3>
+            <h3 className="text-sm font-semibold mb-3">{t('sections.about')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/about"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  About Us
+                  {t('links.aboutUs')}
                 </Link>
               </li>
               <li>
@@ -27,7 +29,7 @@ export default function Footer() {
                   href="/contact"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Contact
+                  {t('links.contact')}
                 </Link>
               </li>
             </ul>
@@ -35,14 +37,14 @@ export default function Footer() {
 
           {/* Resources Section */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">Resources</h3>
+            <h3 className="text-sm font-semibold mb-3">{t('sections.resources')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/help"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Help Center
+                  {t('links.helpCenter')}
                 </Link>
               </li>
             </ul>
@@ -50,14 +52,14 @@ export default function Footer() {
 
           {/* Legal Section */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">Legal</h3>
+            <h3 className="text-sm font-semibold mb-3">{t('sections.legal')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   href="/privacy"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Privacy Policy
+                  {t('links.privacy')}
                 </Link>
               </li>
               <li>
@@ -65,7 +67,7 @@ export default function Footer() {
                   href="/terms"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Terms of Service
+                  {t('links.terms')}
                 </Link>
               </li>
             </ul>
@@ -73,9 +75,9 @@ export default function Footer() {
 
           {/* Connect Section */}
           <div>
-            <h3 className="text-sm font-semibold mb-3">Connect</h3>
+            <h3 className="text-sm font-semibold mb-3">{t('sections.connect')}</h3>
             <p className="text-sm text-muted-foreground">
-              Stay updated with our latest news and updates.
+              {t('connectText')}
             </p>
           </div>
         </div>
@@ -83,7 +85,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-border">
           <p className="text-center text-sm text-muted-foreground">
-            © {currentYear} SprintMX. All rights reserved.
+            {t('copyright', { year: currentYear })}
           </p>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { User } from '@/types/auth';
 
 export interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   iconName: string;
 }
 

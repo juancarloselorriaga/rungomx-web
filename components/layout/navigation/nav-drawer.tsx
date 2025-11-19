@@ -6,9 +6,10 @@ import type { NavigationDrawerContentProps } from '@/components/layout/navigatio
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Button } from '@/components/ui/button';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Link } from '@/i18n/navigation';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { PanelRightOpen } from 'lucide-react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 
@@ -18,6 +19,7 @@ export function NavigationDrawerContent({
 }: NavigationDrawerContentProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const t = useTranslations('Common');
 
   useEffect(() => {
     if (closeButtonRef.current) {
@@ -32,13 +34,13 @@ export function NavigationDrawerContent({
           <div className="flex items-center justify-between">
             <SheetTitle asChild>
               <Link className="px-4" href="/">
-                SprintMX
+                {t('brandName')}
               </Link>
             </SheetTitle>
             <SheetPrimitive.Close asChild ref={closeButtonRef}>
               <Button variant="ghost" size="icon" className="p-0 rounded-sm h-8 w-8">
                 <PanelRightOpen size={20}/>
-                <span className="sr-only">Close</span>
+                <span className="sr-only">{t('close')}</span>
               </Button>
             </SheetPrimitive.Close>
           </div>

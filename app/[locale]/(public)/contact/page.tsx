@@ -1,9 +1,13 @@
-export default function ContactPage() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function ContactPage() {
+  const t = await getTranslations('Pages.Contact');
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Contact Us</h1>
+      <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <p className="text-muted-foreground">
-        Get in touch with us. Contact page placeholder.
+        {t('description')}
       </p>
     </div>
   );

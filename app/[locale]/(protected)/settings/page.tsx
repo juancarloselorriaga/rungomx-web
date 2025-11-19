@@ -1,9 +1,13 @@
-export default function SettingsPage() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function SettingsPage() {
+  const t = await getTranslations('Pages.Settings');
+
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-4">Settings</h1>
+      <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
       <p className="text-muted-foreground">
-        Manage your account settings and preferences here.
+        {t('description')}
       </p>
     </div>
   );

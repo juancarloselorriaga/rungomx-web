@@ -1,9 +1,13 @@
-export default function SignUpPage() {
+import { getTranslations } from 'next-intl/server';
+
+export default async function SignUpPage() {
+  const t = await getTranslations('Pages.SignUp');
+
   return (
     <div className="rounded-lg border bg-card p-8 shadow-lg">
-      <h1 className="text-2xl font-bold mb-4">Sign Up</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('title')}</h1>
       <p className="text-muted-foreground">
-        Sign up page placeholder. Implement your registration form here.
+        {t('description')}
       </p>
     </div>
   );

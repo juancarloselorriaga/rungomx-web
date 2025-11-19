@@ -1,8 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { Home, RefreshCw } from 'lucide-react';
-import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
 export default function Error({
@@ -12,6 +13,9 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations('Components.ErrorBoundary.error');
+  const tCommon = useTranslations('Common');
+
   useEffect(() => {
     // Log the error to console
     console.error('Error boundary caught:', error);
@@ -48,23 +52,22 @@ export default function Error({
 
 
         <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          Something went wrong
+          {t('title')}
         </h1>
 
         <p className="mb-8 text-lg text-foreground/80">
-          We apologize for the inconvenience. An unexpected error has occurred.
-          Please try again or return to the home page.
+          {t('description')}
         </p>
 
         {/* Error details for development */}
         {process.env.NODE_ENV === 'development' && error.message && (
           <div className="mb-8 rounded-lg bg-background-surface p-4 text-left">
             <p className="font-mono text-sm text-foreground/90">
-              <strong>Error:</strong> {error.message}
+              <strong>{t('errorLabel')}</strong> {error.message}
             </p>
             {error.digest && (
               <p className="mt-2 font-mono text-xs text-foreground/70">
-                <strong>Digest:</strong> {error.digest}
+                <strong>{t('digestLabel')}</strong> {error.digest}
               </p>
             )}
           </div>
@@ -77,7 +80,7 @@ export default function Error({
             variant="default"
           >
             <RefreshCw className="mr-2 h-5 w-5"/>
-            Try Again
+            {tCommon('tryAgain')}
           </Button>
 
           <Button
@@ -88,7 +91,7 @@ export default function Error({
           >
             <Link href="/">
               <Home className="mr-2 h-5 w-5"/>
-              Go Home
+              {tCommon('goHome')}
             </Link>
           </Button>
         </div>

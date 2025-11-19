@@ -15,6 +15,7 @@ import {
   User,
   Users
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 // Icon map for all possible icons
@@ -50,10 +51,13 @@ export function NavItems({
   iconSize = 20,
   showLabels = true,
 }: NavItemsProps) {
+  const t = useTranslations('Navigation');
+
   return (
     <div className={cn('flex flex-col space-y-4 p-4', containerClassName)}>
       {items.map(item => {
         const Icon = iconMap[item.iconName as keyof typeof iconMap];
+        const label = t(item.labelKey as any);
 
         const content = (
           <Link
@@ -62,10 +66,10 @@ export function NavItems({
               'flex items-center space-x-3 px-2 py-2 text-md font-medium rounded-lg hover:bg-accent transition-colors',
               linkClassName
             )}
-            aria-label={item.label}
+            aria-label={label}
           >
             <Icon size={iconSize} className={cn('flex-shrink-0', iconClassName)}/>
-            {showLabels && <span>{item.label}</span>}
+            {showLabels && <span>{label}</span>}
           </Link>
         );
 
@@ -76,7 +80,7 @@ export function NavItems({
                 <Tooltip>
                   <TooltipTrigger asChild>{content}</TooltipTrigger>
                   <TooltipContent>
-                    <p>{item.label}</p>
+                    <p>{label}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
