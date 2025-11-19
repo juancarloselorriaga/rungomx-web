@@ -1,37 +1,35 @@
 import { AppLocale } from '@/i18n/routing';
-import enMessages from '@/messages/en.json';
-import esMessages from '@/messages/es.json';
+import enMetadata from '@/messages/metadata/en.json';
+import esMetadata from '@/messages/metadata/es.json';
 
-type Messages = typeof esMessages;
+export type MetadataMessages = typeof esMetadata;
+export type PartialDeep<T> = {
+  [K in keyof T]?: T[K] extends Record<string, any>
+    ? PartialDeep<T[K]>
+    : T[K];
+};
+export type PartialMetadataMessages = PartialDeep<MetadataMessages>;
+export type SeoDefaultMessages = PartialDeep<MetadataMessages['SEO']['default']>;
+export type PageMetaMessages =
+  PartialDeep<MetadataMessages['Pages'][keyof MetadataMessages['Pages']]['metadata']>;
+export type NotFoundMessages =
+  PartialDeep<MetadataMessages['Components']['ErrorBoundary']['notFound']>;
+export type OpenGraphMeta = PageMetaMessages['openGraph'];
 
-const messagesByLocale: Record<AppLocale, Messages> = {
-  es: esMessages,
-  en: enMessages,
+const metadataByLocale: Record<AppLocale, MetadataMessages> = {
+  es: esMetadata,
+  en: enMetadata,
 };
 
-/**
- * Return statically importable translations for a given locale.
- * Falls back to Spanish to keep metadata generation stable even if an unknown locale is passed.
- */
-export function getStaticMessages(locale: string): Messages {
-  if (locale in messagesByLocale) {
-    return messagesByLocale[locale as AppLocale];
-  }
-
-  return esMessages;
+function resolveLocale(locale: string): AppLocale {
+  return (locale in metadataByLocale ? locale : 'es') as AppLocale;
 }
 
 /**
- * Resolve a nested translation path (e.g. "SEO.default.title") from the static messages object.
+ * Return statically importable metadata messages for a given locale.
+ * Falls back to Spanish to keep metadata generation stable even if an unknown locale is passed.
  */
-export function getStaticTranslation<T>(locale: string, path: string): T | undefined {
-  const segments = path.split('.');
-  let current: any = getStaticMessages(locale);
-
-  for (const segment of segments) {
-    if (current == null) return undefined;
-    current = current[segment];
-  }
-
-  return current as T | undefined;
+export function getMetadataMessages(locale: string): MetadataMessages {
+  const resolvedLocale = resolveLocale(locale);
+  return metadataByLocale[resolvedLocale];
 }

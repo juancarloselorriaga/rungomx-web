@@ -1,6 +1,5 @@
 import { siteUrl } from '@/config/url';
-import { AppLocale } from '@/i18n/routing';
-import { getStaticTranslation } from '@/utils/staticMessages';
+import { createPageMetadata } from '@/utils/metadata';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
@@ -8,47 +7,13 @@ type Props = {
   params: Promise<{ locale: string }>;
 };
 
-type AboutMetadataMessages = {
-  title: string;
-  description: string;
-  keywords: string[];
-  openGraph: {
-    title: string;
-    description: string;
-    imageAlt: string;
-  };
-};
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const localeKey = locale as AppLocale;
-  const metadataMessages = getStaticTranslation<AboutMetadataMessages>(
-    localeKey,
-    'Pages.About.metadata'
+  return createPageMetadata(
+    locale,
+    (messages) => messages.Pages?.About?.metadata,
+    { url: `${siteUrl}/about`, imagePath: '/og-about.jpg' }
   );
-
-  if (!metadataMessages) {
-    return {};
-  }
-
-  return {
-    title: metadataMessages.title,
-    description: metadataMessages.description,
-    keywords: metadataMessages.keywords ?? [],
-    openGraph: {
-      title: metadataMessages.openGraph.title,
-      description: metadataMessages.openGraph.description,
-      url: `${siteUrl}/about`,
-      images: [
-        {
-          url: `${siteUrl}/og-about.jpg`,
-          width: 1200,
-          height: 630,
-          alt: metadataMessages.openGraph.imageAlt,
-        },
-      ],
-    },
-  };
 }
 
 const AboutPage = async ({ params }: Props) => {

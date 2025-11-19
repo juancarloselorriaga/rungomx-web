@@ -46,22 +46,6 @@
     "welcome": "Bienvenido",
     "welcomeBack": "Bienvenido de nuevo"
   },
-  "SEO": {
-    "default": {
-      "title": "SprintMX",
-      "description": "SprintMX es la plataforma todo-en-uno para crear, administrar y promocionar carreras y eventos deportivos en México.",
-      "openGraph": {
-        "title": "SprintMX",
-        "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México: inscripciones, pagos, resultados, rankings y más.",
-        "imageAlt": "SprintMX - Plataforma para carreras en México"
-      },
-      "twitter": {
-        "title": "SprintMX",
-        "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México."
-      },
-      "applicationName": "SprintMX"
-    }
-  },
   "Errors": {
     "notFound": "Página no encontrada",
     "serverError": "Error del servidor",

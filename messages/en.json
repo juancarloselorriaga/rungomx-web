@@ -46,22 +46,6 @@
     "welcome": "Welcome",
     "welcomeBack": "Welcome back"
   },
-  "SEO": {
-    "default": {
-      "title": "SprintMX",
-      "description": "SprintMX is the all-in-one platform to create, manage, and promote races and sporting events in Mexico.",
-      "openGraph": {
-        "title": "SprintMX",
-        "description": "All-in-one platform to organize and promote races in Mexico: registrations, payments, results, rankings and more.",
-        "imageAlt": "SprintMX - Platform for races in Mexico"
-      },
-      "twitter": {
-        "title": "SprintMX",
-        "description": "All-in-one platform to organize and promote races in Mexico."
-      },
-      "applicationName": "SprintMX"
-    }
-  },
   "Errors": {
     "notFound": "Page not found",
     "serverError": "Server error",

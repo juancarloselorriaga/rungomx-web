@@ -1,0 +1,78 @@
+{
+  "SEO": {
+    "default": {
+      "title": "SprintMX",
+      "description": "SprintMX is the all-in-one platform to create, manage, and promote races and sporting events in Mexico.",
+      "openGraph": {
+        "title": "SprintMX",
+        "description": "All-in-one platform to organize and promote races in Mexico: registrations, payments, results, rankings and more.",
+        "imageAlt": "SprintMX - Platform for races in Mexico"
+      },
+      "twitter": {
+        "title": "SprintMX",
+        "description": "All-in-one platform to organize and promote races in Mexico."
+      },
+      "applicationName": "SprintMX"
+    }
+  },
+  "Pages": {
+    "Home": {
+      "metadata": {
+        "title": "Races and sporting events in Mexico | SprintMX",
+        "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with SprintMX.",
+        "keywords": [
+          "races in Mexico",
+          "running Mexico",
+          "sporting events Mexico",
+          "race registrations",
+          "race results Mexico",
+          "SprintMX",
+          "CDMX races",
+          "marathon Mexico"
+        ],
+        "openGraph": {
+          "title": "Races and sporting events in Mexico | SprintMX",
+          "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with SprintMX.",
+          "imageAlt": "SprintMX - Platform for races in Mexico"
+        }
+      }
+    },
+    "About": {
+      "metadata": {
+        "title": "About SprintMX | Who we are and what we do",
+        "description": "Learn about SprintMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
+        "keywords": [
+          "about SprintMX",
+          "who we are",
+          "Mexican running platform",
+          "Mexican technology",
+          "race organizers",
+          "registration system",
+          "SprintMX Mexico",
+          "timing and results"
+        ],
+        "openGraph": {
+          "title": "About SprintMX | Who we are",
+          "description": "Learn about SprintMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
+          "imageAlt": "About SprintMX"
+        }
+      }
+    }
+  },
+  "Components": {
+    "ErrorBoundary": {
+      "notFound": {
+        "code": "404",
+        "title": "Page Not Found",
+        "description": "Sorry, we couldn't find the page you're looking for. The page may have been moved, deleted, or the URL might be incorrect.",
+        "helpfulLinks": "Here are some helpful links:",
+        "tips": [
+          "Check the URL for typos",
+          "Use the navigation menu to find what you need",
+          "Return to the home page and start fresh"
+        ],
+        "learnAboutUs": "Learn About Us"
+      }
+    }
+  }
+}
