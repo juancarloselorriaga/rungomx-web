@@ -19,46 +19,74 @@ type PageMetadataOptions = {
   robots?: Metadata['robots'];
 };
 
+const DEFAULT_OG_IMAGE_PATH = '/og-image.jpg';
+const OG_IMAGE_DIMENSIONS = { width: 1200, height: 630 };
+const NO_INDEX_ROBOTS: Metadata['robots'] = {
+  index: false,
+  follow: false,
+};
+
+function resolveMessages<T>(
+  locale: string,
+  select: (messages: PartialMetadataMessages) => T | undefined
+): T | undefined {
+  return select(getMetadataMessages(locale));
+}
+
+function buildAbsoluteUrl(path?: string): string {
+  const base = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl;
+  const normalizedPath = (path ?? DEFAULT_OG_IMAGE_PATH).startsWith('/')
+    ? path ?? DEFAULT_OG_IMAGE_PATH
+    : `/${path}`;
+
+  return `${base}${normalizedPath}`;
+}
+
+function buildOgImages(imageAlt?: string, imagePath?: string) {
+  if (!imageAlt) return undefined;
+
+  return [
+    {
+      url: buildAbsoluteUrl(imagePath),
+      alt: imageAlt,
+      ...OG_IMAGE_DIMENSIONS,
+    },
+  ];
+}
+
+function sanitizeKeywords(keywords?: (string | null | undefined)[]) {
+  if (!keywords) return undefined;
+  const filtered = keywords.filter((k): k is string => Boolean(k));
+  return filtered.length ? filtered : undefined;
+}
+
 export function createPageMetadata(
   locale: string,
   select: PageMetaSelector,
   { url, imagePath, alternates, robots }: PageMetadataOptions = {}
 ): Metadata {
-  const pageMeta = select(getMetadataMessages(locale));
+  const pageMeta = resolveMessages(locale, select);
   if (!pageMeta) return {};
-  const ogImageUrl = imagePath ? `${siteUrl}${imagePath}` : `${siteUrl}/og-image.jpg`;
 
-  const metadata: Metadata = {};
+  const baseUrl = url ?? siteUrl;
 
-  if (pageMeta.title) metadata.title = pageMeta.title;
-  if (pageMeta.description) metadata.description = pageMeta.description;
-  if (pageMeta.keywords) {
-    const filtered = pageMeta.keywords.filter((k): k is string => Boolean(k));
-    if (filtered.length) metadata.keywords = filtered;
-  }
-
-  if (pageMeta.openGraph) {
-    metadata.openGraph = {
-      title: pageMeta.openGraph.title,
-      description: pageMeta.openGraph.description,
-      url: url ?? siteUrl,
-      images: pageMeta.openGraph.imageAlt
-        ? [
-            {
-              url: ogImageUrl,
-              width: 1200,
-              height: 630,
-              alt: pageMeta.openGraph.imageAlt,
-            },
-          ]
-        : undefined,
-    };
-  }
-
-  if (alternates) metadata.alternates = alternates;
-  if (robots) metadata.robots = robots;
-
-  return metadata;
+  return {
+    ...(pageMeta.title && { title: pageMeta.title }),
+    ...(pageMeta.description && { description: pageMeta.description }),
+    ...(sanitizeKeywords(pageMeta.keywords) && {
+      keywords: sanitizeKeywords(pageMeta.keywords),
+    }),
+    ...(pageMeta.openGraph && {
+      openGraph: {
+        title: pageMeta.openGraph.title,
+        description: pageMeta.openGraph.description,
+        url: baseUrl,
+        images: buildOgImages(pageMeta.openGraph.imageAlt, imagePath),
+      },
+    }),
+    ...(alternates && { alternates }),
+    ...(robots && { robots }),
+  };
 }
 
 export function createDefaultSeoMetadata(
@@ -72,18 +100,17 @@ export function createDefaultSeoMetadata(
     robots,
   }: PageMetadataOptions & { localeOverride?: string } = {}
 ): Metadata {
-  const meta = select(getMetadataMessages(locale));
+  const meta = resolveMessages(locale, select);
   if (!meta) return {};
-  const ogImageUrl = imagePath ? `${siteUrl}${imagePath}` : `${siteUrl}/og-image.jpg`;
+  const ogImageUrl = buildAbsoluteUrl(imagePath);
+  const baseUrl = url ?? siteUrl;
 
-  const metadata: Metadata = {
+  return {
     metadataBase: new URL(siteUrl),
-    alternates: alternates ?? {
-      canonical: url ?? siteUrl,
-    },
+    alternates: alternates ?? { canonical: baseUrl },
     robots:
       robots ??
-      {
+      ({
         index: true,
         follow: true,
         googleBot: {
@@ -93,50 +120,35 @@ export function createDefaultSeoMetadata(
           'max-image-preview': 'large',
           'max-video-preview': -1,
         },
+      } satisfies NonNullable<Metadata['robots']>),
+    ...(meta.title && { title: meta.title }),
+    ...(meta.description && { description: meta.description }),
+    ...(meta.openGraph && {
+      openGraph: {
+        type: 'website',
+        locale: localeOverride ?? 'en_US',
+        url: baseUrl,
+        siteName: meta.title,
+        title: meta.openGraph.title,
+        description: meta.openGraph.description,
+        images: buildOgImages(meta.openGraph.imageAlt, imagePath),
       },
+    }),
+    ...(meta.twitter && {
+      twitter: {
+        card: 'summary_large_image',
+        title: meta.twitter.title,
+        description: meta.twitter.description,
+        images: [ogImageUrl],
+      },
+    }),
+    ...(meta.applicationName && {
+      other: {
+        'application-name': meta.applicationName,
+        'apple-mobile-web-app-title': meta.applicationName,
+      },
+    }),
   };
-
-  if (meta.title) metadata.title = meta.title;
-  if (meta.description) metadata.description = meta.description;
-
-  if (meta.openGraph) {
-    metadata.openGraph = {
-      type: 'website',
-      locale: localeOverride ?? 'en_US',
-      url: url ?? siteUrl,
-      siteName: meta.title,
-      title: meta.openGraph.title,
-      description: meta.openGraph.description,
-      images: meta.openGraph.imageAlt
-        ? [
-            {
-              url: ogImageUrl,
-              width: 1200,
-              height: 630,
-              alt: meta.openGraph.imageAlt,
-            },
-          ]
-        : undefined,
-    };
-  }
-
-  if (meta.twitter) {
-    metadata.twitter = {
-      card: 'summary_large_image',
-      title: meta.twitter.title,
-      description: meta.twitter.description,
-      images: [ogImageUrl],
-    };
-  }
-
-  if (meta.applicationName) {
-    metadata.other = {
-      'application-name': meta.applicationName,
-      'apple-mobile-web-app-title': meta.applicationName,
-    };
-  }
-
-  return metadata;
 }
 
 type BasicMetadataOptions = {
@@ -150,28 +162,19 @@ export function createBasicMetadata({
   description,
   robots,
 }: BasicMetadataOptions): Metadata {
-  const metadata: Metadata = {};
-
-  if (title) metadata.title = title;
-  if (description) metadata.description = description;
-  if (robots) metadata.robots = robots;
-
-  return metadata;
+  return {
+    ...(title && { title }),
+    ...(description && { description }),
+    ...(robots && { robots }),
+  };
 }
 
 export function createNotFoundMetadata(
   locale: string,
   select: NotFoundSelector
 ): Metadata {
-  const messages = select(getMetadataMessages(locale));
-  if (!messages) {
-    return createBasicMetadata({
-      robots: {
-        index: false,
-        follow: false,
-      },
-    });
-  }
+  const messages = resolveMessages(locale, select);
+  if (!messages) return createBasicMetadata({ robots: NO_INDEX_ROBOTS });
 
   const titleText =
     messages.code || messages.title
@@ -181,9 +184,6 @@ export function createNotFoundMetadata(
   return createBasicMetadata({
     title: titleText,
     description: messages.description,
-    robots: {
-      index: false,
-      follow: false,
-    },
+    robots: NO_INDEX_ROBOTS,
   });
 }
