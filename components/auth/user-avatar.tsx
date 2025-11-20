@@ -3,8 +3,8 @@ import { cn } from '@/lib/utils';
 import { User } from '@/types/auth';
 import { capitalize } from '@/utils/capitalize';
 import { cva, type VariantProps } from 'class-variance-authority';
-import Link, { LinkProps } from 'next/link';
-import type { FC, HTMLAttributes } from 'react';
+import { Link } from '@/i18n/navigation';
+import type { ComponentProps, FC } from 'react';
 
 const avatarVariants = cva('cursor-pointer bg-primary/10', {
   variants: {
@@ -20,8 +20,7 @@ const avatarVariants = cva('cursor-pointer bg-primary/10', {
 });
 
 interface UserAvatarProps
-  extends Omit<LinkProps, 'href'>,
-    Omit<HTMLAttributes<HTMLAnchorElement>, keyof LinkProps>,
+  extends Omit<ComponentProps<typeof Link>, 'href'>,
     VariantProps<typeof avatarVariants> {
   user: User | null;
   className?: string;
