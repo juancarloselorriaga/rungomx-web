@@ -8,7 +8,7 @@ import {
   getMetadataMessages,
 } from './staticMessages';
 
-type PageMetaSelector = (messages: PartialMetadataMessages) => PageMetaMessages | undefined;
+export type PageMetaSelector = (messages: PartialMetadataMessages) => PageMetaMessages | undefined;
 type DefaultMetaSelector = (messages: PartialMetadataMessages) => SeoDefaultMessages | undefined;
 type NotFoundSelector = (messages: PartialMetadataMessages) => NotFoundMessages | undefined;
 

@@ -1,6 +1,6 @@
 import { Providers } from '@/components/providers/providers';
 import { AppLocale, routing } from '@/i18n/routing';
-import { generateAlternateMetadata } from '@/utils/seo';
+import { generateRootMetadata } from '@/utils/seo';
 import { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, setRequestLocale } from 'next-intl/server';
@@ -34,8 +34,7 @@ export async function generateMetadata({
   params,
 }: Omit<Props, 'children'>): Promise<Metadata> {
   const { locale } = await params;
-
-  return await generateAlternateMetadata(locale);
+  return generateRootMetadata(locale);
 }
 
 export default async function LocaleLayout({

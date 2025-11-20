@@ -1,5 +1,4 @@
-import { siteUrl } from '@/config/url';
-import { createPageMetadata } from '@/utils/metadata';
+import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
@@ -9,10 +8,11 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  return createPageMetadata(
+  return createLocalizedPageMetadata(
     locale,
+    '/about',
     (messages) => messages.Pages?.About?.metadata,
-    { url: `${siteUrl}/about`, imagePath: '/og-about.jpg' }
+    { imagePath: '/og-about.jpg' }
   );
 }
 
