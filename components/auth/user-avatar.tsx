@@ -37,7 +37,7 @@ const UserAvatar: FC<UserAvatarProps> = ({
   return (
     <Avatar className={cn(avatarVariants({ size }), className)}>
       <AvatarFallback className={cn('cursor-pointer', avatarClassName)} asChild>
-        <Link href="/protected/settings" {...props}>
+        <Link href="/settings" {...props}>
           {capitalize(user?.email?.[0] || '?')}
         </Link>
       </AvatarFallback>
