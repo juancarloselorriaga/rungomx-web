@@ -1,7 +1,6 @@
 import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { Geist, Geist_Mono } from 'next/font/google';
-import Script from 'next/script';
 import './globals.css';
 import React from 'react';
 
@@ -15,22 +14,17 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 });
 
-const THEME_KEY = 'sprintmx-theme';
-
-const PREFLIGHT_THEME_SCRIPT = `
-(function() {
+const PREFLIGHT_SCRIPT = `
+ (function() {
   try {
-    var key = '${THEME_KEY}';
-    var stored = localStorage.getItem(key);
+    var stored = localStorage.getItem('sprintmx-theme');
     var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     var theme = stored || (prefersDark ? 'dark' : 'light');
     var root = document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
     root.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
-  } catch (e) {
-    // fail silently
-  }
-})();`;
+  } catch (e) {}
+ })();`;
 
 export default function RootLayout({
   children,
@@ -39,19 +33,19 @@ export default function RootLayout({
 }) {
   return (
     <html suppressHydrationWarning>
-      <head>
-        <Script
-          id="theme-preflight"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: PREFLIGHT_THEME_SCRIPT }}
-        />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>
-          <Toaster />
-          {children}
-        </Providers>
-      </body>
+    <head>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: PREFLIGHT_SCRIPT,
+        }}
+      />
+    </head>
+    <body className={` ${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <Providers>
+      <Toaster/>
+      {children}
+    </Providers>
+    </body>
     </html>
   );
 }
