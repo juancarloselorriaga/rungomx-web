@@ -1,5 +1,7 @@
+'use client';
+
 import React, { ReactNode } from 'react';
-import { ThemeProvider } from './theme-provider';
+import { AppThemeProvider } from './app-theme';
 
 interface ProvidersWrapperProps {
   children: ReactNode;
@@ -7,13 +9,8 @@ interface ProvidersWrapperProps {
 
 export function Providers({ children }: ProvidersWrapperProps) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
+    <AppThemeProvider>
       {children}
-    </ThemeProvider>
+    </AppThemeProvider>
   );
 }

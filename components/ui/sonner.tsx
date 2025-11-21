@@ -7,12 +7,12 @@ import {
   OctagonXIcon,
   TriangleAlertIcon,
 } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { useAppTheme } from '@/components/providers/app-theme';
 import React from 'react';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
-const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = 'system' } = useTheme();
+export const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme } = useAppTheme();
 
   return (
     <Sonner
@@ -37,5 +37,3 @@ const Toaster = ({ ...props }: ToasterProps) => {
     />
   );
 };
-
-export { Toaster };
