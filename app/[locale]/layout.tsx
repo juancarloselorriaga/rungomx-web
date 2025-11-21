@@ -1,3 +1,4 @@
+import { HtmlLangSetter } from '@/components/providers/html-lang-setter';
 import { IntlProvider } from '@/components/providers/intl-provider';
 import { AppLocale, routing } from '@/i18n/routing';
 import { generateRootMetadata } from '@/utils/seo';
@@ -26,10 +27,10 @@ export default async function LocaleLayout({
   children,
   params,
 }: Props) {
-  const { locale } = await params;
+  const { locale } = await params as { locale: AppLocale };
 
   // Ensure that the incoming `locale` is valid
-  if (!routing.locales.includes(locale as AppLocale)) {
+  if (!routing.locales.includes(locale)) {
     notFound();
   }
 
@@ -37,10 +38,10 @@ export default async function LocaleLayout({
   return (
     <Suspense fallback={<Loading/>}>
       <IntlProvider locale={locale}>
+        <HtmlLangSetter locale={locale} />
         {children}
       </IntlProvider>
     </Suspense>
   );
 }
-
 

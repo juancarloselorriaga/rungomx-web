@@ -1,8 +1,9 @@
 import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
+import { routing } from '@/i18n/routing';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import React from 'react';
+import React, { Suspense } from 'react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -32,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html suppressHydrationWarning>
+    <html suppressHydrationWarning lang={routing.defaultLocale}>
     <head>
       <script
         dangerouslySetInnerHTML={{
@@ -42,7 +43,9 @@ export default function RootLayout({
     </head>
     <body className={` ${geistSans.variable} ${geistMono.variable} antialiased`}>
     <Providers>
-      <Toaster/>
+      <Suspense fallback={null}>
+        <Toaster/>
+      </Suspense>
       {children}
     </Providers>
     </body>
