@@ -1,6 +1,9 @@
+import { LocalePageProps } from '@/types/next';
+import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ params }: LocalePageProps) {
+  await configPageLocale(params);
   const t = await getTranslations('Pages.Settings');
 
   return (

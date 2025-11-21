@@ -1,7 +1,14 @@
+import { LocalePageProps } from '@/types/next';
+import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 
-export default async function EventsPage() {
-  const t = await getTranslations('Pages.Events');
+export default async function EventsPage({ params }: LocalePageProps) {
+  const { locale } = await configPageLocale(params);
+
+  const t = await getTranslations({
+    locale,
+    namespace: 'Pages.Events'
+  });
 
   return (
     <div>

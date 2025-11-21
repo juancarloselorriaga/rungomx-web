@@ -274,3 +274,44 @@ export default async function Page() {
 - **Use 'private' cache** for personalized data
 - **Use 'remote' cache** for expensive operations in dynamic contexts
 - **Combine with React Suspense** for streaming and progressive rendering
+
+### Internationalization with 'use cache'
+
+- **Context requirement**: Cached functions need locale context when using next-intl
+- **Setup**: Call `setRequestLocale(locale)` before using cached functions
+- **Why**: Ensures cached content is keyed per locale, preventing cross-locale cache pollution
+- Example pattern:
+
+```tsx
+  import { setRequestLocale } from 'next-intl/server'
+import { cacheLife, cacheTag } from 'next/cache'
+
+// Utility to configure locale for caching
+async function configPageLocale(params: { locale: string }) {
+  const { locale } = await params
+  setRequestLocale(locale) // Required for 'use cache' with i18n
+  return { locale }
+}
+
+// Cached function with locale awareness
+async function getLocalizedContent(slug: string) {
+  'use cache'
+  cacheTag('content')
+  cacheLife('hours')
+
+  const t = await getTranslations()
+  return await db.content.findUnique({ where: { slug } })
+}
+
+// Page component
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  await configPageLocale(params) // Must call before cached functions
+  const content = await getLocalizedContent('about')
+  return <div>{content}</div>
+}
+```
+
+- **Without `setRequestLocale()`**: Cached content won't be locale-specific, causing wrong
+  translations and errors in the console
+- **Best practice**: Always call locale config function at the top of internationalized pages using
+  caching

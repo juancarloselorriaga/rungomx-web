@@ -1,6 +1,9 @@
+import { LocalePageProps } from '@/types/next';
+import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 
-export default async function NewsPage() {
+export default async function NewsPage({ params }: LocalePageProps) {
+  await configPageLocale(params);
   const t = await getTranslations('Pages.News');
 
   return (

@@ -1,12 +1,10 @@
+import { LocalePageProps } from '@/types/next';
+import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 
-type Props = {
-  params: Promise<{ locale: string }>;
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
   return createLocalizedPageMetadata(
     locale,
@@ -16,9 +14,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 }
 
-const AboutPage = async ({ params }: Props) => {
-  const { locale } = await params;
-  setRequestLocale(locale);
+const AboutPage = async ({ params }: LocalePageProps) => {
+  await configPageLocale(params);
 
   const t = await getTranslations('Pages.About');
   return (
@@ -88,7 +85,8 @@ const AboutPage = async ({ params }: Props) => {
       {/* What We Do Section */}
       <section className="py-16">
         <div className="container mx-auto max-w-6xl px-4">
-          <h2 className="mb-12 text-center text-3xl font-bold text-foreground">{t('whatWeDo.title')}</h2>
+          <h2 className="mb-12 text-center text-3xl font-bold text-foreground">{t(
+            'whatWeDo.title')}</h2>
           <p className="mb-12 text-center text-xl text-muted-foreground">
             {t('whatWeDo.subtitle')}
           </p>
@@ -97,7 +95,8 @@ const AboutPage = async ({ params }: Props) => {
             {/* For Runners */}
             <div
               className="rounded-2xl bg-gradient-to-br from-[var(--brand-green)]/10 to-[var(--brand-green)]/5 p-8 shadow-lg ring-1 ring-[var(--brand-green)]/20">
-              <h3 className="mb-6 text-2xl font-bold text-foreground">{t('whatWeDo.forRunners.title')}</h3>
+              <h3 className="mb-6 text-2xl font-bold text-foreground">{t(
+                'whatWeDo.forRunners.title')}</h3>
               <ul className="space-y-4">
                 {[
                   t('whatWeDo.forRunners.features.0'),
@@ -127,7 +126,8 @@ const AboutPage = async ({ params }: Props) => {
             {/* For Organizers */}
             <div
               className="rounded-2xl bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-indigo)]/5 p-8 shadow-lg ring-1 ring-[var(--brand-blue)]/20">
-              <h3 className="mb-6 text-2xl font-bold text-foreground">{t('whatWeDo.forOrganizers.title')}</h3>
+              <h3 className="mb-6 text-2xl font-bold text-foreground">{t(
+                'whatWeDo.forOrganizers.title')}</h3>
               <ul className="space-y-4">
                 {[
                   t('whatWeDo.forOrganizers.features.0'),

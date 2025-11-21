@@ -1,12 +1,10 @@
+import { LocalePageProps } from '@/types/next';
+import { configPageLocale } from '@/utils/config-page-locale';
 import { createPageMetadata } from '@/utils/metadata';
 import type { Metadata } from 'next';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 
-type Props = {
-  params: Promise<{ locale: string }>;
-};
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
   return createPageMetadata(
     locale,
@@ -15,11 +13,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   );
 }
 
-export default async function Home({ params }: Props) {
-  const { locale } = await params;
-
-  // Enable static rendering
-  setRequestLocale(locale);
+export default async function Home({ params }: LocalePageProps) {
+  await configPageLocale(params);
 
   const t = await getTranslations('Pages.Home.content');
 
