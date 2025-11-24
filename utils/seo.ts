@@ -95,12 +95,6 @@ function buildLanguages({
     });
   });
 
-  // Add x-default pointing to default locale
-  const defaultLocaleUrl = languages[routing.defaultLocale];
-  if (defaultLocaleUrl) {
-    languages['x-default'] = defaultLocaleUrl;
-  }
-
   return languages;
 }
 
