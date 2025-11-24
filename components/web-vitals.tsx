@@ -26,8 +26,8 @@ declare global {
  */
 export function WebVitals() {
   useReportWebVitals((metric) => {
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    // Log to console if enabled via environment variable
+    if (process.env.NEXT_PUBLIC_LOG_WEB_VITALS === 'true') {
       console.log(`[Web Vitals] ${metric.name}:`, metric.value, metric);
     }
 
