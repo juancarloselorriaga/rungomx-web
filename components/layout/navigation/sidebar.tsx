@@ -1,9 +1,9 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { NavItem, ProtectedNavIconName } from './types';
+import { NavLink } from './nav-link';
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,7 +14,6 @@ import {
   Users
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 // Icon map for protected nav items
@@ -32,7 +31,6 @@ interface SidebarProps {
 
 export function Sidebar({ items }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const pathname = usePathname();
   const t = useTranslations('Navigation');
 
   return (
@@ -64,26 +62,18 @@ export function Sidebar({ items }: SidebarProps) {
         <nav className="flex-1 p-2 space-y-1">
           {items.map((item) => {
             const Icon = iconMap[item.iconName];
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const itemHref = typeof item.href === 'string' ? item.href : item.href.pathname ?? '/';
             const label = t(item.labelKey);
-            const key = typeof item.href === 'string' ? item.href : item.href.pathname ?? 'sidebar-item';
 
             return (
-              <Link
-                key={key}
+              <NavLink
+                key={itemHref}
                 href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-accent hover:text-accent-foreground',
-                  collapsed && 'justify-center'
-                )}
-                title={collapsed ? label : undefined}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0"/>
-                {!collapsed && <span>{label}</span>}
-              </Link>
+                icon={Icon}
+                label={label}
+                iconSize={20}
+                collapsed={collapsed}
+              />
             );
           })}
         </nav>

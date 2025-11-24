@@ -1,6 +1,7 @@
 'use client';
 
 import type { NavItem } from '@/components/layout/navigation/types';
+import { NavLink } from '@/components/layout/navigation/nav-link';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
@@ -17,7 +18,6 @@ import {
   Users
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
 
 // Icon map for all possible icons
 const iconMap = {
@@ -60,24 +60,22 @@ export function NavItems({
       {items.map(item => {
         const Icon = iconMap[item.iconName];
         const label = t(item.labelKey);
-        const key = typeof item.href === 'string' ? item.href : item.href.pathname ?? 'nav-item';
+        const itemHref = typeof item.href === 'string' ? item.href : item.href.pathname ?? '/';
 
         const content = (
-          <Link
+          <NavLink
             href={item.href}
-            className={cn(
-              'flex items-center space-x-3 px-2 py-2 text-md font-medium rounded-lg hover:bg-accent transition-colors',
-              linkClassName
-            )}
-            aria-label={label}
-          >
-            <Icon size={iconSize} className={cn('flex-shrink-0', iconClassName)}/>
-            {showLabels && <span>{label}</span>}
-          </Link>
+            icon={Icon}
+            label={label}
+            iconSize={iconSize}
+            showLabel={showLabels}
+            iconClassName={iconClassName}
+            linkClassName={linkClassName}
+          />
         );
 
         return (
-          <div key={key} className={cn('flex flex-row items-center', itemClassName)}>
+          <div key={itemHref} className={cn('flex flex-row items-center', itemClassName)}>
             {!showLabels ? (
               <TooltipProvider>
                 <Tooltip>

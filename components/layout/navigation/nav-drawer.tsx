@@ -7,11 +7,10 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Button } from '@/components/ui/button';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Link } from '@/i18n/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { PanelRightOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { usePathname } from 'next/navigation';
 import { Suspense, useEffect, useRef } from 'react';
 
 export function NavigationDrawerContent({
