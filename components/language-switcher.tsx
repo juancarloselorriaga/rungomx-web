@@ -11,16 +11,24 @@ import { useRouter, usePathname } from '@/i18n/navigation';
 import { routing, type AppLocale } from '@/i18n/routing';
 import { Languages } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 
 export function LanguageSwitcher() {
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('LocaleSwitcher');
 
   const handleLocaleChange = (targetLocale: AppLocale) => {
     if (targetLocale === locale) return;
-    router.replace(pathname, { locale: targetLocale });
+
+    const query =
+      searchParams && searchParams.size > 0
+        ? Object.fromEntries(searchParams.entries())
+        : undefined;
+
+    router.replace({ pathname, query }, { locale: targetLocale });
   };
 
   return (
