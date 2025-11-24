@@ -2,6 +2,9 @@ import { MetadataRoute } from 'next';
 import { routing, type AppLocale } from '@/i18n/routing';
 import { siteUrl } from '@/config/url';
 
+// Capture timestamp once at module load for deterministic lastModified
+const buildTimestamp = new Date();
+
 // Define all your static routes (internal pathnames)
 // Protected routes like /dashboard, /settings, /profile are excluded from sitemap
 const staticRoutes = [
@@ -62,7 +65,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
       sitemapEntries.push({
         url,
-        lastModified: new Date(),
+        lastModified: buildTimestamp,
         changeFrequency: pathname === '/' ? 'daily' : 'weekly',
         priority: pathname === '/' ? 1.0 : 0.8,
       });
