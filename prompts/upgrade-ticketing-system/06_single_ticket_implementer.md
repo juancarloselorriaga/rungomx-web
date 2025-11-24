@@ -86,8 +86,9 @@ When you reply, structure your answer as:
 If the environment supports running tests or type checks, you can describe what
 should be run, for example:
 
-- "Run `pnpm test` in `apps/web`."
+- "Run `pnpm test` in the root."
 - "Run `pnpm lint` in the root."
+- "Run `pnpm type-check` in the root."
 
 ## Rules
 
