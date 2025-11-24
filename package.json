@@ -11,8 +11,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "pnpm type-check && pnpm test",
-    "shadcn": "pnpm dlx shadcn@latest"
+    "test:ci": "pnpm type-check && pnpm validate:locales && pnpm test",
+    "shadcn": "pnpm dlx shadcn@latest",
+    "validate:locales": "pnpm exec tsx scripts/validate-locales.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
@@ -46,6 +47,7 @@
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }
