@@ -12,7 +12,7 @@ export const routing = defineRouting({
   // English: /en/about
   localePrefix: 'as-needed',
 
-  // Localized pathnames ensure Spanish uses /acerca and English uses /about
+  // Only declare routes that differ across locales
   pathnames: {
     '/': '/',
     '/about': {
@@ -44,7 +44,7 @@ export const routing = defineRouting({
       en: '/sign-up'
     },
     '/dashboard': {
-      es: '/dashboard',
+      es: '/tablero',
       en: '/dashboard'
     },
     '/settings': {
