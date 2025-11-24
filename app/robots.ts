@@ -1,26 +1,22 @@
 import { MetadataRoute } from 'next';
 import { siteUrl } from '@/config/url';
 import { routing } from '@/i18n/routing';
+import { getPathname } from '@/i18n/navigation';
 
 export default function robots(): MetadataRoute.Robots {
-  // Define base paths that should be disallowed (using the pathname keys)
+  // Define base paths that should be disallowed (using internal pathnames)
   const disallowedPaths = ['/dashboard', '/settings', '/profile'] as const;
 
-  // Generate all locale-specific variations
+  // Generate all locale-specific variations using next-intl's getPathname utility
   const disallowedUrls: string[] = [];
 
   disallowedPaths.forEach((pathname) => {
     routing.locales.forEach((locale) => {
-      // Get the localized pathname
-      const localizedPath = routing.pathnames[pathname]?.[locale] || pathname;
+      // Use next-intl's getPathname to get the localized path with proper prefix handling
+      const localizedPath = getPathname({ locale, href: pathname });
 
-      if (locale === routing.defaultLocale) {
-        // Default locale without a prefix (due to 'as-needed')
-        disallowedUrls.push(localizedPath, `${localizedPath}/`);
-      } else {
-        // Non-default locales with prefix
-        disallowedUrls.push(`/${locale}${localizedPath}`, `/${locale}${localizedPath}/`);
-      }
+      // Add both with and without trailing slash
+      disallowedUrls.push(localizedPath, `${localizedPath}/`);
     });
   });
 
