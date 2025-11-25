@@ -3,20 +3,22 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --raw \"pnpm watch:i18n-types\" \"next dev\"",
+    "dev": "concurrently --raw \"pnpm watch:i18n\" \"next dev\"",
     "dev:no-watch": "next dev",
-    "build": "pnpm generate:i18n-types && next build",
+    "build": "pnpm generate:i18n && next build",
     "start": "next start",
     "lint": "eslint",
-    "type-check": "pnpm generate:i18n-types && tsc --noEmit",
+    "type-check": "pnpm generate:i18n && tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "pnpm type-check && pnpm validate:locales && pnpm test",
+    "test:ci": "pnpm generate:i18n && pnpm type-check && pnpm validate:locales && pnpm test",
     "shadcn": "pnpm dlx shadcn@latest",
     "validate:locales": "pnpm exec tsx scripts/validate-locales.ts",
+    "generate:i18n": "pnpm generate:i18n-types && pnpm generate:i18n-loaders",
     "generate:i18n-types": "tsx scripts/generate-i18n-types.ts",
-    "watch:i18n-types": "tsx scripts/watch-i18n-types.ts",
+    "generate:i18n-loaders": "tsx scripts/generate-i18n-loaders.ts",
+    "watch:i18n": "tsx scripts/watch-i18n.ts",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
@@ -24,7 +26,7 @@
   },
   "lint-staged": {
     "messages/**/*.json": [
-      "pnpm generate:i18n-types",
+      "pnpm generate:i18n",
       "pnpm validate:locales"
     ]
   },

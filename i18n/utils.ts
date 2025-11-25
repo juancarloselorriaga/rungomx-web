@@ -1,6 +1,4 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import fs from 'fs';
-import path from 'path';
 import { z } from 'zod';
 import { routing, type AppLocale } from './routing';
 import {
@@ -13,152 +11,37 @@ import {
   navigationSchema,
   pagesSchema,
 } from './types';
+import {
+  rootNamespaceLoaders,
+  componentNamespaceLoaders,
+  pageNamespaceLoaders,
+  generatedRouteNamespaceMap,
+  manualRouteOverrides,
+  type NamespaceLoader,
+  type NamespaceSelection,
+} from './loaders.generated';
 
 type ParsedIssue = { path: PropertyKey[]; message: string };
 
-type NamespaceLoader<T> = (locale: AppLocale) => Promise<T>;
-
-type NamespaceSelection = {
-  base: string[];
-  components: string[];
-  pages: string[];
+// Merge generated and manual route maps (manual takes precedence)
+const routeNamespaceMap: Record<string, NamespaceSelection> = {
+  ...generatedRouteNamespaceMap,
+  ...manualRouteOverrides,
 };
 
-// ============================================
-// Namespace Discovery
-// ============================================
-
-interface DiscoveredNamespaces {
-  pages: string[];
-  components: string[];
-}
-
-let _discoveredNamespaces: DiscoveredNamespaces | null = null;
-
-/**
- * Discover all available namespaces from the filesystem.
- * Results are cached after first call for performance.
- */
-function discoverNamespaces(): DiscoveredNamespaces {
-  if (_discoveredNamespaces) return _discoveredNamespaces;
-
-  const messagesDir = path.join(process.cwd(), 'messages');
-  const pagesDir = path.join(messagesDir, 'pages');
-  const componentsDir = path.join(messagesDir, 'components');
-
-  const pages = fs.existsSync(pagesDir)
-    ? fs.readdirSync(pagesDir).filter((entry) => {
-        const fullPath = path.join(pagesDir, entry);
-        return fs.statSync(fullPath).isDirectory();
-      })
-    : [];
-
-  const components = fs.existsSync(componentsDir)
-    ? fs.readdirSync(componentsDir).filter((entry) => {
-        const fullPath = path.join(componentsDir, entry);
-        return fs.statSync(fullPath).isDirectory();
-      })
-    : [];
-
-  _discoveredNamespaces = { pages, components };
-  return _discoveredNamespaces;
-}
-
-/**
- * Convert kebab-case to camelCase (e.g., "sign-in" -> "signIn")
- */
-function kebabToCamel(str: string): string {
-  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
-}
-
-/**
- * Create a dynamic loader for a namespace
- */
-function createDynamicLoader(
-  type: 'pages' | 'components',
-  name: string
-): NamespaceLoader<unknown> {
-  return (locale: AppLocale) =>
-    import(`@/messages/${type}/${name}/${locale}.json`).then((mod) => mod.default);
-}
-
-const rootNamespaceLoaders = {
-  common: (targetLocale: AppLocale) =>
-    import(`@/messages/common/${targetLocale}.json`).then((mod) => mod.default),
-  navigation: (targetLocale: AppLocale) =>
-    import(`@/messages/navigation/${targetLocale}.json`).then((mod) => mod.default),
-  auth: (targetLocale: AppLocale) =>
-    import(`@/messages/auth/${targetLocale}.json`).then((mod) => mod.default),
-  errors: (targetLocale: AppLocale) =>
-    import(`@/messages/errors/${targetLocale}.json`).then((mod) => mod.default),
-} satisfies Record<string, NamespaceLoader<unknown>>;
-
-// Dynamically generate component loaders from discovered namespaces
-function getComponentNamespaceLoaders(): Record<string, NamespaceLoader<unknown>> {
-  const { components } = discoverNamespaces();
-  return Object.fromEntries(
-    components.map((name) => [kebabToCamel(name), createDynamicLoader('components', name)])
-  );
-}
-
-// Dynamically generate page loaders from discovered namespaces
-function getPageNamespaceLoaders(): Record<string, NamespaceLoader<unknown>> {
-  const { pages } = discoverNamespaces();
-  return Object.fromEntries(
-    pages.map((name) => [kebabToCamel(name), createDynamicLoader('pages', name)])
-  );
-}
-
-const componentNamespaceLoaders = getComponentNamespaceLoaders();
-const pageNamespaceLoaders = getPageNamespaceLoaders();
-
-const DEFAULT_BASE_NAMESPACES = Object.keys(rootNamespaceLoaders);
-const DEFAULT_COMPONENT_NAMESPACES = Object.keys(componentNamespaceLoaders);
-const ALL_PAGES = Object.keys(pageNamespaceLoaders);
+// Derive constants from generated loaders
+const DEFAULT_BASE_NAMESPACES = Object.keys(
+  rootNamespaceLoaders
+) as (keyof typeof rootNamespaceLoaders)[];
+const DEFAULT_COMPONENT_NAMESPACES = Object.keys(
+  componentNamespaceLoaders
+) as (keyof typeof componentNamespaceLoaders)[];
+const ALL_PAGES = Object.keys(pageNamespaceLoaders) as (keyof typeof pageNamespaceLoaders)[];
 
 const FULL_SELECTION: NamespaceSelection = {
   base: DEFAULT_BASE_NAMESPACES,
   components: DEFAULT_COMPONENT_NAMESPACES,
   pages: ALL_PAGES,
-};
-
-const publicSelection = (pages: NamespaceSelection['pages'] = []): NamespaceSelection => ({
-  base: DEFAULT_BASE_NAMESPACES,
-  components: DEFAULT_COMPONENT_NAMESPACES,
-  pages,
-});
-
-const protectedSelection = (pages: NamespaceSelection['pages'] = []): NamespaceSelection => ({
-  base: DEFAULT_BASE_NAMESPACES,
-  components: ['themeSwitcher', 'localeSwitcher', 'errorBoundary'],
-  pages,
-});
-
-const authSelection = (pages: NamespaceSelection['pages'] = []): NamespaceSelection => ({
-  base: ['common', 'auth', 'errors'],
-  components: ['errorBoundary'],
-  pages,
-});
-
-const routeNamespaceMap: Record<string, NamespaceSelection> = {
-  // Public routes share navigation, footer, and themed controls
-  '/': publicSelection(['home']),
-  '/about': publicSelection(['about']),
-  '/contact': publicSelection(['contact']),
-  '/events': publicSelection(['events']),
-  '/news': publicSelection(['news']),
-  '/results': publicSelection(['results']),
-  '/help': publicSelection(['help']),
-  // Privacy/terms use base layout only (no page-specific content yet)
-  '/privacy': publicSelection(),
-  '/terms': publicSelection(),
-  // Auth routes avoid navigation/footer payloads
-  '/sign-in': authSelection(['signIn']),
-  '/sign-up': authSelection(['signUp']),
-  // Protected dashboard surfaces omit the footer but keep navigation controls
-  '/dashboard': protectedSelection(['dashboard']),
-  '/profile': protectedSelection(['profile']),
-  '/settings': protectedSelection(['settings']),
 };
 
 const localePathLookup = buildLocalePathLookup();
@@ -211,18 +94,13 @@ export function validateMessages(locale: string, raw: unknown): Messages {
   return result.data;
 }
 
-function pickLoaders<TLoaders extends Record<string, NamespaceLoader<unknown>>>(
+function pickLoaders<TLoaders, TKey extends keyof TLoaders>(
   loaders: TLoaders,
-  keys: readonly string[]
-): Record<string, NamespaceLoader<unknown>> {
+  keys: readonly TKey[]
+) {
   return keys.reduce(
-    (acc, key) => {
-      if (loaders[key]) {
-        acc[key] = loaders[key];
-      }
-      return acc;
-    },
-    {} as Record<string, NamespaceLoader<unknown>>
+    (acc, key) => ({ ...acc, [key]: loaders[key] }),
+    {} as Pick<TLoaders, TKey>
   );
 }
 
@@ -232,7 +110,12 @@ function normalizePathname(pathname: string | undefined): string {
   const ensuredLeadingSlash = withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
   const trimmed =
     ensuredLeadingSlash !== '/' ? ensuredLeadingSlash.replace(/\/+$/, '') || '/' : '/';
-  const segments = trimmed.split('/').filter(Boolean);
+  const segments = trimmed
+    .split('/')
+    .filter(Boolean)
+    // Drop route groups "(...)" and dynamic placeholders "[...]"
+    .filter((segment) => !(segment.startsWith('(') && segment.endsWith(')')))
+    .filter((segment) => !(segment.startsWith('[') && segment.endsWith(']')));
 
   if (segments.length > 0 && routing.locales.includes(segments[0] as AppLocale)) {
     segments.shift();
@@ -275,83 +158,15 @@ export async function getRequestPathname(): Promise<string> {
   return normalized;
 }
 
-/**
- * Auto-detect page namespace from route path.
- * Examples:
- *   /about -> 'about'
- *   /sign-in -> 'signIn' (kebab-to-camel)
- *   / -> 'home'
- */
-function routePathToPageNamespace(pathname: string): string | null {
-  const segments = pathname.split('/').filter(Boolean);
-
-  // Root path maps to home
-  if (segments.length === 0) return 'home';
-
-  const segment = segments[0];
-  const { pages } = discoverNamespaces();
-
-  // Direct match (folder name matches segment)
-  if (pages.includes(segment)) return kebabToCamel(segment);
-
-  // Kebab-to-camel conversion (sign-in -> signIn)
-  const camelCase = kebabToCamel(segment);
-  const kebabFolder = pages.find((p) => kebabToCamel(p) === camelCase);
-  if (kebabFolder) return camelCase;
-
-  return null;
-}
-
-/**
- * Detect layout type from route path to determine which components to load.
- */
-function detectLayoutType(pathname: string): 'public' | 'protected' | 'auth' {
-  // Auth routes (sign-in, sign-up, etc.)
-  if (/^\/(sign-in|sign-up|crear-cuenta|iniciar-sesion)/.test(pathname)) {
-    return 'auth';
-  }
-
-  // Protected routes (dashboard, profile, settings, etc.)
-  if (/^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(pathname)) {
-    return 'protected';
-  }
-
-  // Default to public
-  return 'public';
-}
-
-/**
- * Build namespace selection based on layout type and page namespace.
- */
-function buildNamespaceSelection(
-  layoutType: 'public' | 'protected' | 'auth',
-  pageNamespace: string | null
-): NamespaceSelection {
-  const pages = pageNamespace ? [pageNamespace] : [];
-
-  switch (layoutType) {
-    case 'public':
-      return publicSelection(pages);
-    case 'auth':
-      return authSelection(pages);
-    case 'protected':
-      return protectedSelection(pages);
-  }
-}
-
 function resolveRouteNamespaces(pathname: string): NamespaceSelection {
   const normalized = normalizePathname(pathname);
-
-  // 1. Check manual overrides first (backward compatibility)
-  if (routeNamespaceMap[normalized]) {
-    return routeNamespaceMap[normalized];
-  }
-
-  // 2. Auto-detect from filesystem and route pattern
-  const pageNamespace = routePathToPageNamespace(normalized);
-  const layoutType = detectLayoutType(normalized);
-
-  return buildNamespaceSelection(layoutType, pageNamespace);
+  return (
+    routeNamespaceMap[normalized] ?? {
+      base: DEFAULT_BASE_NAMESPACES,
+      components: DEFAULT_COMPONENT_NAMESPACES,
+      pages: [],
+    }
+  );
 }
 
 function makePickRecord<TKeys extends readonly string[]>(keys: TKeys) {
@@ -365,9 +180,7 @@ function buildSchema(selection: NamespaceSelection) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   selection.base.forEach((key) => {
-    if (key in rootSchemas) {
-      shape[key] = rootSchemas[key as keyof typeof rootSchemas];
-    }
+    shape[key] = rootSchemas[key];
   });
 
   if (selection.components.length) {

@@ -59,6 +59,29 @@ mkdir -p messages/components/user-menu
 # Available as components.userMenu (auto-converted to camelCase)
 ```
 
+## Automatic Code Generation
+
+- Generated files: `i18n/types.generated.ts` and `i18n/loaders.generated.ts` (loader objects + route map). They regenerate in dev watch mode, via `pnpm generate:i18n`, and in the pre-commit hook.
+- Route map defaults:
+  - Auth slugs (`/sign-in`, `/sign-up`, `/iniciar-sesion`, `/crear-cuenta`) → `authSelection`
+  - Protected slugs (`/dashboard`, `/profile`, `/settings`, `/team` plus localized variants) → `protectedSelection`
+  - Everything else → `publicSelection`
+- Page namespaces come from `messages/pages/*` and are converted from kebab-case to camelCase for keys.
+
+### Manual route overrides
+
+Edit the preserved block in `i18n/loaders.generated.ts` to override mappings:
+
+```ts
+// === MANUAL ROUTE OVERRIDES START ===
+export const manualRouteOverrides = {
+  '/pricing': publicSelection(['pricing']),
+};
+// === MANUAL ROUTE OVERRIDES END ===
+```
+
+Anything between the markers survives regeneration.
+
 ## File Structure
 
 ```
@@ -83,12 +106,12 @@ messages/
 ```bash
 pnpm dev  # Includes file watcher
 ```
-- Edit any JSON → types regenerate automatically
+- Edit any JSON → types and loaders regenerate automatically
 - Changes reflect immediately in TypeScript
 
-### Manual Type Generation
+### Manual Generation
 ```bash
-pnpm generate:i18n-types
+pnpm generate:i18n
 ```
 
 ## Validation
@@ -186,7 +209,7 @@ t.rich('htmlKey', { b: (chunks) => <strong>{chunks}</strong> })
 pnpm dev
 
 # Or manually regenerate
-pnpm generate:i18n-types
+pnpm generate:i18n
 ```
 
 ### Locale validation failing?
@@ -206,10 +229,12 @@ pnpm validate:locales
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start dev server with type watching |
-| `pnpm generate:i18n-types` | Manually regenerate types |
+| `pnpm dev` | Start dev server with unified i18n watcher |
+| `pnpm generate:i18n` | Regenerate loaders + types |
+| `pnpm generate:i18n-types` | Regenerate types only |
+| `pnpm generate:i18n-loaders` | Regenerate loaders only |
 | `pnpm validate:locales` | Check locale parity |
-| `pnpm watch:i18n-types` | Watch types only (no dev server) |
+| `pnpm watch:i18n` | Watch types + loaders (no dev server) |
 | `pnpm test:ci` | Run full CI pipeline (types + tests + validation) |
 
 ## Architecture
