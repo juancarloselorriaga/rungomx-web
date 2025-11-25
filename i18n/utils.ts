@@ -3,13 +3,13 @@ import { z } from 'zod';
 import { routing, type AppLocale } from './routing';
 import {
   type Messages,
-  authSchema,
-  commonSchema,
   componentsSchema,
-  errorsSchema,
   messagesSchema,
-  navigationSchema,
   pagesSchema,
+  rootAuthSchema,
+  rootCommonSchema,
+  rootErrorsSchema,
+  rootNavigationSchema,
 } from './types';
 import {
   rootNamespaceLoaders,
@@ -77,10 +77,10 @@ const loadNamespaceGroup = async <const TLoaders extends Record<string, Namespac
 };
 
 const rootSchemas = {
-  common: commonSchema,
-  navigation: navigationSchema,
-  auth: authSchema,
-  errors: errorsSchema,
+  common: rootCommonSchema,
+  navigation: rootNavigationSchema,
+  auth: rootAuthSchema,
+  errors: rootErrorsSchema,
 } as const;
 
 export function validateMessages(locale: string, raw: unknown): Messages {

@@ -104,11 +104,16 @@ function kebabToCamel(str: string): string {
 
 /**
  * Convert camelCase to PascalCase
- * Currently unused but kept for potential future use
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function toPascalCase(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function schemaIdentifier(namespace: NamespaceInfo): string {
+  const pascal = toPascalCase(namespace.camelName);
+  if (namespace.type === 'component') return `component${pascal}Schema`;
+  if (namespace.type === 'page') return `page${pascal}Schema`;
+  return `root${pascal}Schema`;
 }
 
 /**
@@ -168,7 +173,7 @@ function inferSchemaFromValue(value: unknown, indent = 0): string {
 function generateNamespaceSchema(namespace: NamespaceInfo): string {
   const data = JSON.parse(fs.readFileSync(namespace.path, 'utf-8'));
   const schema = inferSchemaFromValue(data);
-  const schemaName = `${namespace.camelName}Schema`;
+  const schemaName = schemaIdentifier(namespace);
 
   return `export const ${schemaName} = ${schema}.strict();\n`;
 }
@@ -228,7 +233,7 @@ export function generateTypes(): void {
     // Components combined schema
     lines.push('export const componentsSchema = z.object({');
     for (const namespace of components) {
-      lines.push(`  ${namespace.camelName}: ${namespace.camelName}Schema,`);
+      lines.push(`  ${namespace.camelName}: ${schemaIdentifier(namespace)},`);
     }
     lines.push('}).strict();');
     lines.push('');
@@ -249,7 +254,7 @@ export function generateTypes(): void {
     // Pages combined schema
     lines.push('export const pagesSchema = z.object({');
     for (const namespace of pages) {
-      lines.push(`  ${namespace.camelName}: ${namespace.camelName}Schema,`);
+      lines.push(`  ${namespace.camelName}: ${schemaIdentifier(namespace)},`);
     }
     lines.push('}).strict();');
     lines.push('');
@@ -264,7 +269,7 @@ export function generateTypes(): void {
   lines.push('export const messagesSchema = z.object({');
 
   for (const namespace of roots) {
-    lines.push(`  ${namespace.camelName}: ${namespace.camelName}Schema,`);
+    lines.push(`  ${namespace.camelName}: ${schemaIdentifier(namespace)},`);
   }
 
   if (components.length > 0) {
