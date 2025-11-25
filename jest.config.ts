@@ -19,6 +19,12 @@ const config: Config = {
     '**/__tests__/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '\\.client\\.[jt]s?(x)$',
+    '\\.server\\.[jt]s?(x)$',
+    '\\.db\\.[jt]s?(x)$',
+  ],
   collectCoverageFrom: [
     '**/*.{js,jsx,ts,tsx}',
     '!**/*.d.ts',
@@ -26,6 +32,12 @@ const config: Config = {
     '!**/.next/**',
     '!**/coverage/**',
     '!**/jest.config.ts',
+  ],
+  // Use different test environment for database tests
+  projects: [
+    '<rootDir>/jest.client.config.ts',
+    '<rootDir>/jest.server.config.ts',
+    '<rootDir>/jest.db.config.ts',
   ],
 }
 
