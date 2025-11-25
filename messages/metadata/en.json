@@ -1,239 +1,239 @@
 {
   "SEO": {
     "default": {
-      "title": "SprintMX",
-      "description": "SprintMX is the all-in-one platform to create, manage, and promote races and sporting events in Mexico.",
+      "title": "RunGoMX",
+      "description": "RunGoMX is the all-in-one platform to create, manage, and promote races and sporting events in Mexico.",
       "openGraph": {
-        "title": "SprintMX",
+        "title": "RunGoMX",
         "description": "All-in-one platform to organize and promote races in Mexico: registrations, payments, results, rankings and more.",
-        "imageAlt": "SprintMX - Platform for races in Mexico"
+        "imageAlt": "RunGoMX - Platform for races in Mexico"
       },
       "twitter": {
-        "title": "SprintMX",
+        "title": "RunGoMX",
         "description": "All-in-one platform to organize and promote races in Mexico."
       },
-      "applicationName": "SprintMX"
+      "applicationName": "RunGoMX"
     }
   },
   "Pages": {
     "Home": {
       "metadata": {
-        "title": "Races and sporting events in Mexico | SprintMX",
-        "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with SprintMX.",
+        "title": "Races and sporting events in Mexico | RunGoMX",
+        "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with RunGoMX.",
         "keywords": [
           "races in Mexico",
           "running Mexico",
           "sporting events Mexico",
           "race registrations",
           "race results Mexico",
-          "SprintMX",
+          "RunGoMX",
           "CDMX races",
           "marathon Mexico"
         ],
         "openGraph": {
-          "title": "Races and sporting events in Mexico | SprintMX",
-          "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with SprintMX.",
-          "imageAlt": "SprintMX - Platform for races in Mexico"
+          "title": "Races and sporting events in Mexico | RunGoMX",
+          "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with RunGoMX.",
+          "imageAlt": "RunGoMX - Platform for races in Mexico"
         }
       }
     },
     "About": {
       "metadata": {
-        "title": "About SprintMX | Who we are and what we do",
-        "description": "Learn about SprintMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
+        "title": "About RunGoMX | Who we are and what we do",
+        "description": "Learn about RunGoMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
         "keywords": [
-          "about SprintMX",
+          "about RunGoMX",
           "who we are",
           "Mexican running platform",
           "Mexican technology",
           "race organizers",
           "registration system",
-          "SprintMX Mexico",
+          "RunGoMX Mexico",
           "timing and results"
         ],
         "openGraph": {
-          "title": "About SprintMX | Who we are",
-          "description": "Learn about SprintMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
-          "imageAlt": "About SprintMX"
+          "title": "About RunGoMX | Who we are",
+          "description": "Learn about RunGoMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
+          "imageAlt": "About RunGoMX"
         }
       }
     },
     "Contact": {
       "metadata": {
-        "title": "Contact SprintMX",
-        "description": "Get in touch with the SprintMX team for support, partnerships, or general inquiries.",
+        "title": "Contact RunGoMX",
+        "description": "Get in touch with the RunGoMX team for support, partnerships, or general inquiries.",
         "keywords": [
           "contact sprintmx",
           "support"
         ],
         "openGraph": {
-          "title": "Contact SprintMX",
-          "description": "Reach the SprintMX team for questions or support.",
-          "imageAlt": "Contact SprintMX"
+          "title": "Contact RunGoMX",
+          "description": "Reach the RunGoMX team for questions or support.",
+          "imageAlt": "Contact RunGoMX"
         }
       }
     },
     "Help": {
       "metadata": {
-        "title": "Help Center | SprintMX",
-        "description": "Find answers to common questions about registrations, payments, and race management on SprintMX.",
+        "title": "Help Center | RunGoMX",
+        "description": "Find answers to common questions about registrations, payments, and race management on RunGoMX.",
         "keywords": [
           "help",
           "support"
         ],
         "openGraph": {
-          "title": "Help Center | SprintMX",
-          "description": "Get help with SprintMX registrations, payments, and race management.",
+          "title": "Help Center | RunGoMX",
+          "description": "Get help with RunGoMX registrations, payments, and race management.",
           "imageAlt": "Help resources"
         }
       }
     },
     "News": {
       "metadata": {
-        "title": "Running News | SprintMX",
+        "title": "Running News | RunGoMX",
         "description": "Stay updated with the latest running news, tips, and race announcements in Mexico.",
         "keywords": [
           "running news",
           "race updates"
         ],
         "openGraph": {
-          "title": "Running News | SprintMX",
-          "description": "Latest running news and race updates from SprintMX.",
+          "title": "Running News | RunGoMX",
+          "description": "Latest running news and race updates from RunGoMX.",
           "imageAlt": "Running news"
         }
       }
     },
     "Events": {
       "metadata": {
-        "title": "Events Calendar | SprintMX",
-        "description": "Explore upcoming races and sporting events across Mexico organized with SprintMX.",
+        "title": "Events Calendar | RunGoMX",
+        "description": "Explore upcoming races and sporting events across Mexico organized with RunGoMX.",
         "keywords": [
           "events",
           "races"
         ],
         "openGraph": {
-          "title": "Events Calendar | SprintMX",
-          "description": "See upcoming races and events powered by SprintMX.",
+          "title": "Events Calendar | RunGoMX",
+          "description": "See upcoming races and events powered by RunGoMX.",
           "imageAlt": "Events calendar"
         }
       }
     },
     "Results": {
       "metadata": {
-        "title": "Race Results | SprintMX",
-        "description": "View official race results, rankings, and performance insights powered by SprintMX.",
+        "title": "Race Results | RunGoMX",
+        "description": "View official race results, rankings, and performance insights powered by RunGoMX.",
         "keywords": [
           "race results",
           "rankings"
         ],
         "openGraph": {
-          "title": "Race Results | SprintMX",
-          "description": "Check official race results and rankings on SprintMX.",
+          "title": "Race Results | RunGoMX",
+          "description": "Check official race results and rankings on RunGoMX.",
           "imageAlt": "Race results"
         }
       }
     },
     "SignIn": {
       "metadata": {
-        "title": "Sign in to SprintMX",
-        "description": "Access your SprintMX account to manage registrations, events, and results.",
+        "title": "Sign in to RunGoMX",
+        "description": "Access your RunGoMX account to manage registrations, events, and results.",
         "keywords": [
           "sign in",
           "login"
         ],
         "openGraph": {
-          "title": "Sign in to SprintMX",
-          "description": "Log into your SprintMX account.",
-          "imageAlt": "Sign in to SprintMX"
+          "title": "Sign in to RunGoMX",
+          "description": "Log into your RunGoMX account.",
+          "imageAlt": "Sign in to RunGoMX"
         }
       }
     },
     "SignUp": {
       "metadata": {
-        "title": "Create a SprintMX account",
-        "description": "Join SprintMX to organize events, manage registrations, and track results.",
+        "title": "Create a RunGoMX account",
+        "description": "Join RunGoMX to organize events, manage registrations, and track results.",
         "keywords": [
           "sign up",
           "create account"
         ],
         "openGraph": {
-          "title": "Create a SprintMX account",
-          "description": "Sign up for SprintMX.",
+          "title": "Create a RunGoMX account",
+          "description": "Sign up for RunGoMX.",
           "imageAlt": "Create an account"
         }
       }
     },
     "Dashboard": {
       "metadata": {
-        "title": "Dashboard | SprintMX",
-        "description": "Overview of your events, registrations, and performance metrics in SprintMX.",
+        "title": "Dashboard | RunGoMX",
+        "description": "Overview of your events, registrations, and performance metrics in RunGoMX.",
         "keywords": [
           "dashboard",
           "overview"
         ],
         "openGraph": {
-          "title": "Dashboard | SprintMX",
-          "description": "View your SprintMX dashboard.",
-          "imageAlt": "SprintMX dashboard"
+          "title": "Dashboard | RunGoMX",
+          "description": "View your RunGoMX dashboard.",
+          "imageAlt": "RunGoMX dashboard"
         }
       }
     },
     "Settings": {
       "metadata": {
-        "title": "Settings | SprintMX",
-        "description": "Manage your SprintMX account preferences and profile settings.",
+        "title": "Settings | RunGoMX",
+        "description": "Manage your RunGoMX account preferences and profile settings.",
         "keywords": [
           "settings",
           "preferences"
         ],
         "openGraph": {
-          "title": "Settings | SprintMX",
-          "description": "Update your SprintMX settings.",
+          "title": "Settings | RunGoMX",
+          "description": "Update your RunGoMX settings.",
           "imageAlt": "Settings"
         }
       }
     },
     "Profile": {
       "metadata": {
-        "title": "Profile | SprintMX",
-        "description": "View and edit your SprintMX profile information.",
+        "title": "Profile | RunGoMX",
+        "description": "View and edit your RunGoMX profile information.",
         "keywords": [
           "profile",
           "account"
         ],
         "openGraph": {
-          "title": "Profile | SprintMX",
-          "description": "Manage your SprintMX profile.",
+          "title": "Profile | RunGoMX",
+          "description": "Manage your RunGoMX profile.",
           "imageAlt": "Profile"
         }
       }
     },
     "Privacy": {
       "metadata": {
-        "title": "Privacy Policy | SprintMX",
-        "description": "Learn how SprintMX handles your data and protects your privacy.",
+        "title": "Privacy Policy | RunGoMX",
+        "description": "Learn how RunGoMX handles your data and protects your privacy.",
         "keywords": [
           "privacy",
           "data"
         ],
         "openGraph": {
-          "title": "Privacy Policy | SprintMX",
-          "description": "How SprintMX protects your privacy.",
+          "title": "Privacy Policy | RunGoMX",
+          "description": "How RunGoMX protects your privacy.",
           "imageAlt": "Privacy policy"
         }
       }
     },
     "Terms": {
       "metadata": {
-        "title": "Terms of Service | SprintMX",
-        "description": "Review the terms and conditions for using SprintMX.",
+        "title": "Terms of Service | RunGoMX",
+        "description": "Review the terms and conditions for using RunGoMX.",
         "keywords": [
           "terms",
           "conditions"
         ],
         "openGraph": {
-          "title": "Terms of Service | SprintMX",
-          "description": "Terms and conditions for SprintMX.",
+          "title": "Terms of Service | RunGoMX",
+          "description": "Terms and conditions for RunGoMX.",
           "imageAlt": "Terms of service"
         }
       }

@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Quiénes somos",
-    "description": "SprintMX nace en México para transformar la manera en que organizadores y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar."
+    "description": "RunGoMX nace en México para transformar la manera en que organizadores y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar."
   },
   "vision": {
     "title": "Nuestra visión",
@@ -20,7 +20,7 @@
       "Herramientas de marketing mínimas",
       "Sistemas que no hablan entre ellos"
     ],
-    "solution": "SprintMX llega para resolver eso."
+    "solution": "RunGoMX llega para resolver eso."
   },
   "whatWeDo": {
     "title": "Qué hacemos",
@@ -77,7 +77,7 @@
   },
   "mexicanTechnology": {
     "title": "Somos tecnología mexicana para el running mexicano",
-    "subtitle": "No somos una adaptación de algo que funciona en Estados Unidos o Europa. SprintMX nace y crece en México, con profundo conocimiento del mercado local.",
+    "subtitle": "No somos una adaptación de algo que funciona en Estados Unidos o Europa. RunGoMX nace y crece en México, con profundo conocimiento del mercado local.",
     "weKnow": "Conocemos:",
     "knowledge": [
       "Las zonas donde se corre (CDMX, Guadalajara, Monterrey, Puebla, Querétaro...)",
@@ -91,7 +91,7 @@
   "commitment": {
     "title": "Nuestro compromiso",
     "goals": [
-      "SprintMX no es solo software. Es un compromiso de largo plazo con la comunidad del running en México.",
+      "RunGoMX no es solo software. Es un compromiso de largo plazo con la comunidad del running en México.",
       "Trabajamos codo a codo con organizadores para entender sus necesidades reales. Escuchamos corredores para mejorar su experiencia. Invertimos en tecnología de punta para mantenernos siempre adelante.",
       "Innovamos constantemente. Lo que hoy es la plataforma más completa del mercado, mañana será aún mejor.",
       "Porque al final del día, nuestro éxito se mide en carreras exitosas, corredores felices y una comunidad de running cada vez más fuerte."

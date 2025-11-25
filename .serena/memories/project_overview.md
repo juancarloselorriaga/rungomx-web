@@ -1,7 +1,7 @@
 # Project Overview
 
 ## Purpose
-SprintMX is a web application platform for creating, managing, and promoting races and sporting events in Mexico. It's an all-in-one platform for race organization including registrations, payments, results, rankings, and more.
+RunGoMX is a web application platform for creating, managing, and promoting races and sporting events in Mexico. It's an all-in-one platform for race organization including registrations, payments, results, rankings, and more.
 
 ## Tech Stack
 - **Framework**: Next.js 16.0.3 (React 19.2.0)

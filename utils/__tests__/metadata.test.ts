@@ -38,7 +38,7 @@ const mockMessages: PartialMetadataMessages = {
         title: 'Twitter Title',
         description: 'Twitter Description',
       },
-      applicationName: 'SprintMX',
+      applicationName: 'RunGoMX',
     },
   },
   Components: {
@@ -139,8 +139,8 @@ describe('metadata helpers', () => {
       images: ['https://example.com/default-og.png'],
     });
     expect(metadata.other).toEqual({
-      'application-name': 'SprintMX',
-      'apple-mobile-web-app-title': 'SprintMX',
+      'application-name': 'RunGoMX',
+      'apple-mobile-web-app-title': 'RunGoMX',
     });
   });
 

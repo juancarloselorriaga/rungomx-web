@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 const PREFLIGHT_SCRIPT = `
  (function() {
   try {
-    var stored = localStorage.getItem('sprintmx-theme');
+    var stored = localStorage.getItem('rungomx-theme');
     var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     var theme = stored || (prefersDark ? 'dark' : 'light');
     var root = document.documentElement;

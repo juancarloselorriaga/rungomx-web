@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Who we are",
-    "description": "SprintMX was born in Mexico to transform the way organizers and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place."
+    "description": "RunGoMX was born in Mexico to transform the way organizers and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place."
   },
   "vision": {
     "title": "Our vision",
@@ -20,7 +20,7 @@
       "Minimal marketing tools",
       "Systems that don't talk to each other"
     ],
-    "solution": "SprintMX comes to solve that."
+    "solution": "RunGoMX comes to solve that."
   },
   "whatWeDo": {
     "title": "What we do",
@@ -77,7 +77,7 @@
   },
   "mexicanTechnology": {
     "title": "We are Mexican technology for Mexican running",
-    "subtitle": "We are not an adaptation of something that works in the United States or Europe. SprintMX is born and grows in Mexico, with deep knowledge of the local market.",
+    "subtitle": "We are not an adaptation of something that works in the United States or Europe. RunGoMX is born and grows in Mexico, with deep knowledge of the local market.",
     "weKnow": "We know:",
     "knowledge": [
       "The areas where people run (CDMX, Guadalajara, Monterrey, Puebla, Querétaro...)",
@@ -91,7 +91,7 @@
   "commitment": {
     "title": "Our commitment",
     "goals": [
-      "SprintMX is not just software. It's a long-term commitment to the running community in Mexico.",
+      "RunGoMX is not just software. It's a long-term commitment to the running community in Mexico.",
       "We work side by side with organizers to understand their real needs. We listen to runners to improve their experience. We invest in cutting-edge technology to always stay ahead.",
       "We constantly innovate. What is today the most complete platform on the market, tomorrow will be even better.",
       "Because at the end of the day, our success is measured in successful races, happy runners and an increasingly strong running community."

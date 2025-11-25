@@ -25,7 +25,7 @@ type ThemeContextValue = {
   forcedTheme?: Theme;
 };
 
-const STORAGE_KEY = 'sprintmx-theme';
+const STORAGE_KEY = 'rungomx-theme';
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
