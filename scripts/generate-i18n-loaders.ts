@@ -237,6 +237,12 @@ function generateRouteNamespaceMap(
     const category = categorizeRoute(route);
     const pageNamespace = routePathToPageNamespace(route, discoveredPageNames);
 
+    if (!pageNamespace && route !== '/') {
+      console.warn(
+        `[i18n] No page namespace found for route "${route}" - generating selection without page messages.`
+      );
+    }
+
     let selectionCall: string;
     if (category === 'auth') {
       selectionCall = pageNamespace
