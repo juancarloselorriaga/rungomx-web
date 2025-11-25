@@ -9,12 +9,9 @@ jest.mock('next-intl', () => ({
   hasLocale: jest.fn((locales: string[], locale: string) => locales.includes(locale)),
 }));
 
-jest.mock('next/headers', () => ({
-  headers: jest.fn(),
-}));
-
 jest.mock('@/i18n/utils', () => ({
   getRequestPathname: jest.fn(),
+  getStoredRoutePathname: jest.fn(),
   loadRouteMessages: jest.fn(),
   loadMessages: jest.fn(),
 }));
@@ -29,38 +26,37 @@ jest.mock('@/i18n/routing', () => ({
 }));
 
 import requestConfig from '@/i18n/request';
-import { getRequestPathname, loadMessages, loadRouteMessages } from '@/i18n/utils';
-import { headers } from 'next/headers';
+import {
+  getRequestPathname,
+  getStoredRoutePathname,
+  loadMessages,
+  loadRouteMessages,
+} from '@/i18n/utils';
 
-const mockedHeaders = headers as jest.Mock;
 const mockedLoadRouteMessages = loadRouteMessages as jest.Mock;
 const mockedLoadMessages = loadMessages as jest.Mock;
 const mockedGetRequestPathname = getRequestPathname as jest.Mock;
+const mockedGetStoredRoutePathname = getStoredRoutePathname as jest.Mock;
 
 describe('i18n request config', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('prefers route-scoped loading when header path is provided', async () => {
-    mockedHeaders.mockImplementation(() => ({
-      get: (key: string) => (key === 'x-pathname' ? '/about' : undefined),
-    }));
-
+  it('prefers route-scoped loading when a pathname was already remembered', async () => {
+    mockedGetStoredRoutePathname.mockReturnValue('/about');
     mockedLoadRouteMessages.mockResolvedValue({ route: true });
 
     const result = await requestConfig({ requestLocale: Promise.resolve('es') });
 
     expect(mockedLoadRouteMessages).toHaveBeenCalledWith('es', '/about');
+    expect(mockedGetRequestPathname).not.toHaveBeenCalled();
     expect(mockedLoadMessages).not.toHaveBeenCalled();
     expect(result.messages).toEqual({ route: true });
   });
 
-  it('falls back to full bundle when request headers are missing', async () => {
-    mockedHeaders.mockImplementation(() => ({
-      get: () => undefined,
-    }));
-
+  it('falls back to full bundle when no pathname context is stored', async () => {
+    mockedGetStoredRoutePathname.mockReturnValue(undefined);
     mockedGetRequestPathname.mockResolvedValue('/fallback');
     mockedLoadMessages.mockResolvedValue({ full: true });
 

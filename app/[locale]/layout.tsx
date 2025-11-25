@@ -1,7 +1,12 @@
 import { IntlProvider } from '@/components/providers/intl-provider';
 import { WebVitals } from '@/components/web-vitals';
 import { AppLocale, routing } from '@/i18n/routing';
-import { getRequestPathname, loadRouteMessages } from '@/i18n/utils';
+import {
+  getRequestPathname,
+  getStoredRoutePathname,
+  loadMessages,
+  loadRouteMessages,
+} from '@/i18n/utils';
 import { generateRootMetadata } from '@/utils/seo';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -36,8 +41,11 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const pathname = await getRequestPathname();
-  const messages = await loadRouteMessages(locale, pathname);
+  const storedPathname = getStoredRoutePathname();
+  const pathname = storedPathname ?? (await getRequestPathname());
+  const messages = storedPathname
+    ? await loadRouteMessages(locale, pathname)
+    : await loadMessages(locale);
 
   // Enable static rendering
   return (

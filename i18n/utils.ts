@@ -158,6 +158,10 @@ export async function getRequestPathname(): Promise<string> {
   return normalized;
 }
 
+export function getStoredRoutePathname(): string | undefined {
+  return routeContext.getStore()?.pathname;
+}
+
 function resolveRouteNamespaces(pathname: string): NamespaceSelection {
   const normalized = normalizePathname(pathname);
   return (
