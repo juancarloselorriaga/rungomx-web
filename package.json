@@ -3,17 +3,30 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "concurrently --raw \"pnpm watch:i18n-types\" \"next dev\"",
+    "dev:no-watch": "next dev",
+    "build": "pnpm generate:i18n-types && next build",
     "start": "next start",
     "lint": "eslint",
-    "type-check": "tsc --noEmit",
+    "type-check": "pnpm generate:i18n-types && tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:ci": "pnpm type-check && pnpm validate:locales && pnpm test",
     "shadcn": "pnpm dlx shadcn@latest",
-    "validate:locales": "pnpm exec tsx scripts/validate-locales.ts"
+    "validate:locales": "pnpm exec tsx scripts/validate-locales.ts",
+    "generate:i18n-types": "tsx scripts/generate-i18n-types.ts",
+    "watch:i18n-types": "tsx scripts/watch-i18n-types.ts",
+    "prepare": "simple-git-hooks"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "messages/**/*.json": [
+      "pnpm generate:i18n-types",
+      "pnpm validate:locales"
+    ]
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
@@ -42,10 +55,14 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "chokidar": "^4.0.3",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "16.0.3",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "lint-staged": "^16.2.7",
+    "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"

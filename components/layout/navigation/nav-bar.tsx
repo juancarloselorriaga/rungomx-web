@@ -16,10 +16,13 @@ interface NavigationBarProps {
 
 export default async function NavigationBar({
   items,
-  variant = 'public'
+  variant = 'public' // Currently unused but reserved for future layout variants
 }: NavigationBarProps) {
   const user = await getCurrentUser();
   const t = await getTranslations('common');
+
+  // Suppress unused variable warning - variant is part of the public API
+  void variant;
 
   return (
     <nav

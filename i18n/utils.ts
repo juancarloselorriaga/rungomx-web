@@ -1,4 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import fs from 'fs';
+import path from 'path';
 import { z } from 'zod';
 import { routing, type AppLocale } from './routing';
 import {
@@ -17,10 +19,68 @@ type ParsedIssue = { path: PropertyKey[]; message: string };
 type NamespaceLoader<T> = (locale: AppLocale) => Promise<T>;
 
 type NamespaceSelection = {
-  base: (keyof typeof rootNamespaceLoaders)[];
-  components: (keyof typeof componentNamespaceLoaders)[];
-  pages: (keyof typeof pageNamespaceLoaders)[];
+  base: string[];
+  components: string[];
+  pages: string[];
 };
+
+// ============================================
+// Namespace Discovery
+// ============================================
+
+interface DiscoveredNamespaces {
+  pages: string[];
+  components: string[];
+}
+
+let _discoveredNamespaces: DiscoveredNamespaces | null = null;
+
+/**
+ * Discover all available namespaces from the filesystem.
+ * Results are cached after first call for performance.
+ */
+function discoverNamespaces(): DiscoveredNamespaces {
+  if (_discoveredNamespaces) return _discoveredNamespaces;
+
+  const messagesDir = path.join(process.cwd(), 'messages');
+  const pagesDir = path.join(messagesDir, 'pages');
+  const componentsDir = path.join(messagesDir, 'components');
+
+  const pages = fs.existsSync(pagesDir)
+    ? fs.readdirSync(pagesDir).filter((entry) => {
+        const fullPath = path.join(pagesDir, entry);
+        return fs.statSync(fullPath).isDirectory();
+      })
+    : [];
+
+  const components = fs.existsSync(componentsDir)
+    ? fs.readdirSync(componentsDir).filter((entry) => {
+        const fullPath = path.join(componentsDir, entry);
+        return fs.statSync(fullPath).isDirectory();
+      })
+    : [];
+
+  _discoveredNamespaces = { pages, components };
+  return _discoveredNamespaces;
+}
+
+/**
+ * Convert kebab-case to camelCase (e.g., "sign-in" -> "signIn")
+ */
+function kebabToCamel(str: string): string {
+  return str.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+/**
+ * Create a dynamic loader for a namespace
+ */
+function createDynamicLoader(
+  type: 'pages' | 'components',
+  name: string
+): NamespaceLoader<unknown> {
+  return (locale: AppLocale) =>
+    import(`@/messages/${type}/${name}/${locale}.json`).then((mod) => mod.default);
+}
 
 const rootNamespaceLoaders = {
   common: (targetLocale: AppLocale) =>
@@ -33,56 +93,28 @@ const rootNamespaceLoaders = {
     import(`@/messages/errors/${targetLocale}.json`).then((mod) => mod.default),
 } satisfies Record<string, NamespaceLoader<unknown>>;
 
-const componentNamespaceLoaders = {
-  footer: (targetLocale: AppLocale) =>
-    import(`@/messages/components/footer/${targetLocale}.json`).then((mod) => mod.default),
-  themeSwitcher: (targetLocale: AppLocale) =>
-    import(`@/messages/components/theme-switcher/${targetLocale}.json`).then((mod) => mod.default),
-  errorBoundary: (targetLocale: AppLocale) =>
-    import(`@/messages/components/error-boundary/${targetLocale}.json`).then((mod) => mod.default),
-  localeSwitcher: (targetLocale: AppLocale) =>
-    import(`@/messages/components/locale-switcher/${targetLocale}.json`).then((mod) => mod.default),
-} satisfies Record<string, NamespaceLoader<unknown>>;
+// Dynamically generate component loaders from discovered namespaces
+function getComponentNamespaceLoaders(): Record<string, NamespaceLoader<unknown>> {
+  const { components } = discoverNamespaces();
+  return Object.fromEntries(
+    components.map((name) => [kebabToCamel(name), createDynamicLoader('components', name)])
+  );
+}
 
-const pageNamespaceLoaders = {
-  home: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/home/${targetLocale}.json`).then((mod) => mod.default),
-  about: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/about/${targetLocale}.json`).then((mod) => mod.default),
-  contact: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/contact/${targetLocale}.json`).then((mod) => mod.default),
-  events: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/events/${targetLocale}.json`).then((mod) => mod.default),
-  news: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/news/${targetLocale}.json`).then((mod) => mod.default),
-  results: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/results/${targetLocale}.json`).then((mod) => mod.default),
-  help: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/help/${targetLocale}.json`).then((mod) => mod.default),
-  dashboard: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/dashboard/${targetLocale}.json`).then((mod) => mod.default),
-  profile: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/profile/${targetLocale}.json`).then((mod) => mod.default),
-  settings: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/settings/${targetLocale}.json`).then((mod) => mod.default),
-  team: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/team/${targetLocale}.json`).then((mod) => mod.default),
-  signIn: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/sign-in/${targetLocale}.json`).then((mod) => mod.default),
-  signUp: (targetLocale: AppLocale) =>
-    import(`@/messages/pages/sign-up/${targetLocale}.json`).then((mod) => mod.default),
-} satisfies Record<string, NamespaceLoader<unknown>>;
+// Dynamically generate page loaders from discovered namespaces
+function getPageNamespaceLoaders(): Record<string, NamespaceLoader<unknown>> {
+  const { pages } = discoverNamespaces();
+  return Object.fromEntries(
+    pages.map((name) => [kebabToCamel(name), createDynamicLoader('pages', name)])
+  );
+}
 
-const DEFAULT_BASE_NAMESPACES = Object.keys(rootNamespaceLoaders) as (
-  keyof typeof rootNamespaceLoaders
-)[];
-const DEFAULT_COMPONENT_NAMESPACES = [
-  'footer',
-  'themeSwitcher',
-  'errorBoundary',
-  'localeSwitcher',
-] as (keyof typeof componentNamespaceLoaders)[];
-const ALL_PAGES = Object.keys(pageNamespaceLoaders) as (keyof typeof pageNamespaceLoaders)[];
+const componentNamespaceLoaders = getComponentNamespaceLoaders();
+const pageNamespaceLoaders = getPageNamespaceLoaders();
+
+const DEFAULT_BASE_NAMESPACES = Object.keys(rootNamespaceLoaders);
+const DEFAULT_COMPONENT_NAMESPACES = Object.keys(componentNamespaceLoaders);
+const ALL_PAGES = Object.keys(pageNamespaceLoaders);
 
 const FULL_SELECTION: NamespaceSelection = {
   base: DEFAULT_BASE_NAMESPACES,
@@ -179,13 +211,18 @@ export function validateMessages(locale: string, raw: unknown): Messages {
   return result.data;
 }
 
-function pickLoaders<TLoaders, TKey extends keyof TLoaders>(
+function pickLoaders<TLoaders extends Record<string, NamespaceLoader<unknown>>>(
   loaders: TLoaders,
-  keys: readonly TKey[]
-) {
+  keys: readonly string[]
+): Record<string, NamespaceLoader<unknown>> {
   return keys.reduce(
-    (acc, key) => ({ ...acc, [key]: loaders[key] }),
-    {} as Pick<TLoaders, TKey>
+    (acc, key) => {
+      if (loaders[key]) {
+        acc[key] = loaders[key];
+      }
+      return acc;
+    },
+    {} as Record<string, NamespaceLoader<unknown>>
   );
 }
 
@@ -238,15 +275,83 @@ export async function getRequestPathname(): Promise<string> {
   return normalized;
 }
 
+/**
+ * Auto-detect page namespace from route path.
+ * Examples:
+ *   /about -> 'about'
+ *   /sign-in -> 'signIn' (kebab-to-camel)
+ *   / -> 'home'
+ */
+function routePathToPageNamespace(pathname: string): string | null {
+  const segments = pathname.split('/').filter(Boolean);
+
+  // Root path maps to home
+  if (segments.length === 0) return 'home';
+
+  const segment = segments[0];
+  const { pages } = discoverNamespaces();
+
+  // Direct match (folder name matches segment)
+  if (pages.includes(segment)) return kebabToCamel(segment);
+
+  // Kebab-to-camel conversion (sign-in -> signIn)
+  const camelCase = kebabToCamel(segment);
+  const kebabFolder = pages.find((p) => kebabToCamel(p) === camelCase);
+  if (kebabFolder) return camelCase;
+
+  return null;
+}
+
+/**
+ * Detect layout type from route path to determine which components to load.
+ */
+function detectLayoutType(pathname: string): 'public' | 'protected' | 'auth' {
+  // Auth routes (sign-in, sign-up, etc.)
+  if (/^\/(sign-in|sign-up|crear-cuenta|iniciar-sesion)/.test(pathname)) {
+    return 'auth';
+  }
+
+  // Protected routes (dashboard, profile, settings, etc.)
+  if (/^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(pathname)) {
+    return 'protected';
+  }
+
+  // Default to public
+  return 'public';
+}
+
+/**
+ * Build namespace selection based on layout type and page namespace.
+ */
+function buildNamespaceSelection(
+  layoutType: 'public' | 'protected' | 'auth',
+  pageNamespace: string | null
+): NamespaceSelection {
+  const pages = pageNamespace ? [pageNamespace] : [];
+
+  switch (layoutType) {
+    case 'public':
+      return publicSelection(pages);
+    case 'auth':
+      return authSelection(pages);
+    case 'protected':
+      return protectedSelection(pages);
+  }
+}
+
 function resolveRouteNamespaces(pathname: string): NamespaceSelection {
   const normalized = normalizePathname(pathname);
-  return (
-    routeNamespaceMap[normalized] ?? {
-      base: DEFAULT_BASE_NAMESPACES,
-      components: DEFAULT_COMPONENT_NAMESPACES,
-      pages: [],
-    }
-  );
+
+  // 1. Check manual overrides first (backward compatibility)
+  if (routeNamespaceMap[normalized]) {
+    return routeNamespaceMap[normalized];
+  }
+
+  // 2. Auto-detect from filesystem and route pattern
+  const pageNamespace = routePathToPageNamespace(normalized);
+  const layoutType = detectLayoutType(normalized);
+
+  return buildNamespaceSelection(layoutType, pageNamespace);
 }
 
 function makePickRecord<TKeys extends readonly string[]>(keys: TKeys) {
@@ -260,7 +365,9 @@ function buildSchema(selection: NamespaceSelection) {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   selection.base.forEach((key) => {
-    shape[key] = rootSchemas[key];
+    if (key in rootSchemas) {
+      shape[key] = rootSchemas[key as keyof typeof rootSchemas];
+    }
   });
 
   if (selection.components.length) {

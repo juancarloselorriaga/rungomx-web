@@ -58,35 +58,51 @@ const diffKeySets = (reference: Set<string>, candidate: Set<string>) => {
   return { missing, extra };
 };
 
-const namespacePaths = {
-  roots: {
+/**
+ * Auto-discover namespace paths from the filesystem.
+ * This eliminates the need to manually register new namespaces.
+ */
+function discoverNamespacePaths() {
+  const messagesDir = path.join(process.cwd(), 'messages');
+  const pagesDir = path.join(messagesDir, 'pages');
+  const componentsDir = path.join(messagesDir, 'components');
+
+  // Root namespaces (always present)
+  const roots: Record<string, string> = {
     common: 'messages/common',
     navigation: 'messages/navigation',
     auth: 'messages/auth',
     errors: 'messages/errors',
-  },
-  components: {
-    footer: 'messages/components/footer',
-    themeSwitcher: 'messages/components/theme-switcher',
-    errorBoundary: 'messages/components/error-boundary',
-    localeSwitcher: 'messages/components/locale-switcher',
-  },
-  pages: {
-    home: 'messages/pages/home',
-    about: 'messages/pages/about',
-    contact: 'messages/pages/contact',
-    events: 'messages/pages/events',
-    news: 'messages/pages/news',
-    results: 'messages/pages/results',
-    help: 'messages/pages/help',
-    dashboard: 'messages/pages/dashboard',
-    profile: 'messages/pages/profile',
-    settings: 'messages/pages/settings',
-    team: 'messages/pages/team',
-    signIn: 'messages/pages/sign-in',
-    signUp: 'messages/pages/sign-up',
-  },
-} as const;
+  };
+
+  // Auto-discover component namespaces
+  const components: Record<string, string> = {};
+  if (fs.existsSync(componentsDir)) {
+    const entries = fs.readdirSync(componentsDir);
+    for (const entry of entries) {
+      const fullPath = path.join(componentsDir, entry);
+      if (fs.statSync(fullPath).isDirectory()) {
+        components[entry] = `messages/components/${entry}`;
+      }
+    }
+  }
+
+  // Auto-discover page namespaces
+  const pages: Record<string, string> = {};
+  if (fs.existsSync(pagesDir)) {
+    const entries = fs.readdirSync(pagesDir);
+    for (const entry of entries) {
+      const fullPath = path.join(pagesDir, entry);
+      if (fs.statSync(fullPath).isDirectory()) {
+        pages[entry] = `messages/pages/${entry}`;
+      }
+    }
+  }
+
+  return { roots, components, pages };
+}
+
+const namespacePaths = discoverNamespacePaths();
 
 const readNamespace = (locale: string, basePath: string) =>
   readJson(`${basePath}/${locale}.json`).data;
@@ -166,23 +182,51 @@ const buildLocaleGroups = (): LocaleGroup[] => {
   ];
 };
 
-const formatIssue = (issue: ParityIssue) =>
-  `[${issue.category}] ${issue.locale} has ${issue.type} key "${issue.keyPath}" compared to ${issue.referenceLocale} (${issue.filePath})`;
+// Helper function for formatting issues (currently unused but kept for reference)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const formatIssue = (issue: ParityIssue) => {
+  const symbol = issue.type === 'missing' ? '❌' : '⚠️ ';
+  const action = issue.type === 'missing'
+    ? `Add key "${issue.keyPath}" to ${issue.locale}`
+    : `Remove key "${issue.keyPath}" from ${issue.locale}`;
+  return `${symbol} [${issue.category}] ${action} (${issue.filePath})`;
+};
 
 const run = () => {
   const groups = buildLocaleGroups();
   const issues = validateLocaleGroups(groups);
 
   if (!issues.length) {
-    console.log('Locale parity check passed: UI and metadata dictionaries are aligned across locales.');
+    console.log('✅ Locale parity check passed: All locales are in sync!\n');
     return;
   }
 
-  console.error('Locale parity check failed:');
-  issues
-    .slice()
-    .sort((a, b) => a.keyPath.localeCompare(b.keyPath))
-    .forEach((issue) => console.error(`- ${formatIssue(issue)}`));
+  console.error('\n❌ Locale parity check failed:\n');
+
+  // Group issues by file for better readability
+  const issuesByFile = new Map<string, ParityIssue[]>();
+  issues.forEach((issue) => {
+    const existing = issuesByFile.get(issue.filePath) || [];
+    existing.push(issue);
+    issuesByFile.set(issue.filePath, existing);
+  });
+
+  // Display grouped by file
+  issuesByFile.forEach((fileIssues, filePath) => {
+    console.error(`\n📁 ${filePath}:`);
+    fileIssues
+      .sort((a, b) => a.keyPath.localeCompare(b.keyPath))
+      .forEach((issue) => {
+        const action = issue.type === 'missing'
+          ? `Missing key: "${issue.keyPath}"`
+          : `Extra key: "${issue.keyPath}"`;
+        console.error(`   ${action}`);
+      });
+  });
+
+  console.error('\n💡 Fix these issues by updating the JSON files to match the reference locale (en).\n');
+  console.error(`   Total issues: ${issues.length}\n`);
+
   process.exitCode = 1;
 };
 
