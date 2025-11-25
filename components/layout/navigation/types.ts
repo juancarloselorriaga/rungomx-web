@@ -1,9 +1,10 @@
-import type esMessages from '@/messages/es.json';
 import { User } from '@/types/auth';
 import { Link } from '@/i18n/navigation';
 import type { ComponentProps } from 'react';
 
-type NavigationMessages = typeof esMessages.Navigation;
+import type navigationMessages from '@/messages/navigation/es.json';
+
+type NavigationMessages = typeof navigationMessages;
 export type NavigationMessageKey = keyof NavigationMessages;
 
 type LinkHref = ComponentProps<typeof Link>['href'];

@@ -1,0 +1,14 @@
+{
+  "signIn": "Sign In",
+  "signUp": "Sign Up",
+  "signOut": "Sign Out",
+  "email": "Email",
+  "password": "Password",
+  "rememberMe": "Remember me",
+  "forgotPassword": "Forgot your password?",
+  "noAccount": "Don't have an account?",
+  "hasAccount": "Already have an account?",
+  "createAccount": "Create account",
+  "welcome": "Welcome",
+  "welcomeBack": "Welcome back"
+}

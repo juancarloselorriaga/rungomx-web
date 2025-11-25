@@ -1,7 +1,7 @@
 import { compareLocaleGroup, validateLocaleGroups } from '@/scripts/validate-locales';
 
 const baseUiMessages = {
-  Common: {
+  common: {
     loading: 'Loading',
     nested: {
       value: 'exists',
@@ -12,8 +12,8 @@ const baseUiMessages = {
 const buildUiGroup = (spanishMessages: Record<string, unknown>) => ({
   category: 'UI messages',
   entries: [
-    { locale: 'en', filePath: 'messages/en.json', data: baseUiMessages },
-    { locale: 'es', filePath: 'messages/es.json', data: spanishMessages },
+    { locale: 'en', filePath: 'messages/en/*', data: baseUiMessages },
+    { locale: 'es', filePath: 'messages/es/*', data: spanishMessages },
   ],
 });
 
@@ -25,7 +25,7 @@ describe('compareLocaleGroup', () => {
 
   it('reports missing keys relative to the reference locale', () => {
     const spanish = {
-      Common: {
+      common: {
         loading: 'Cargando',
         nested: {},
       },
@@ -36,7 +36,7 @@ describe('compareLocaleGroup', () => {
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({
       type: 'missing',
-      keyPath: 'Common.nested.value',
+      keyPath: 'common.nested.value',
       locale: 'es',
       referenceLocale: 'en',
       category: 'UI messages',
@@ -45,7 +45,7 @@ describe('compareLocaleGroup', () => {
 
   it('reports extra keys relative to the reference locale', () => {
     const spanish = {
-      Common: {
+      common: {
         loading: 'Cargando',
         nested: {
           value: 'valor',
@@ -59,7 +59,7 @@ describe('compareLocaleGroup', () => {
     expect(issues).toHaveLength(1);
     expect(issues[0]).toMatchObject({
       type: 'extra',
-      keyPath: 'Common.nested.extra',
+      keyPath: 'common.nested.extra',
       locale: 'es',
       referenceLocale: 'en',
       category: 'UI messages',

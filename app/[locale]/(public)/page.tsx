@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 export default async function Home({ params }: LocalePageProps) {
   await configPageLocale(params);
 
-  const t = await getTranslations('Pages.Home.content');
+  const t = await getTranslations('pages.home.content');
 
   return (
     <div className="w-full flex items-center justify-center">

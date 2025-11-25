@@ -27,7 +27,7 @@ export async function generateMetadata({
 const AboutPage = async ({ params }: LocalePageProps) => {
   await configPageLocale(params);
 
-  const t = await getTranslations('Pages.About');
+  const t = await getTranslations('pages.about');
 
   return (
     <div className="bg-gradient-to-b from-background to-muted/30 w-full">

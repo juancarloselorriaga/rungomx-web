@@ -19,7 +19,7 @@ export function LanguageSwitcher() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const t = useTranslations('LocaleSwitcher');
+  const t = useTranslations('components.localeSwitcher');
 
   const handleLocaleChange = (targetLocale: AppLocale) => {
     if (targetLocale === locale) return;

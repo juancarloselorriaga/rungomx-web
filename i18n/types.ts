@@ -137,9 +137,10 @@ const errorBoundarySchema = z
 
 const componentsSchema = z
   .object({
-    Footer: footerSchema,
-    ThemeSwitcher: themeSwitcherSchema,
-    ErrorBoundary: errorBoundarySchema,
+    footer: footerSchema,
+    themeSwitcher: themeSwitcherSchema,
+    errorBoundary: errorBoundarySchema,
+    localeSwitcher: localeSwitcherSchema,
   })
   .strict();
 
@@ -230,7 +231,7 @@ const aboutPageSchema = z
 
 const pagesSchema = z
   .object({
-    Home: z
+    home: z
       .object({
         content: z
           .object({
@@ -239,30 +240,29 @@ const pagesSchema = z
           .strict(),
       })
       .strict(),
-    About: aboutPageSchema,
-    Contact: simplePageSchema,
-    Events: simplePageSchema,
-    Help: simplePageSchema,
-    News: simplePageSchema,
-    Results: simplePageSchema,
-    Dashboard: simplePageSchema,
-    Profile: simplePageSchema,
-    Settings: simplePageSchema,
-    Team: simplePageSchema,
-    SignIn: simplePageSchema,
-    SignUp: simplePageSchema,
+    about: aboutPageSchema,
+    contact: simplePageSchema,
+    events: simplePageSchema,
+    help: simplePageSchema,
+    news: simplePageSchema,
+    results: simplePageSchema,
+    dashboard: simplePageSchema,
+    profile: simplePageSchema,
+    settings: simplePageSchema,
+    team: simplePageSchema,
+    signIn: simplePageSchema,
+    signUp: simplePageSchema,
   })
   .strict();
 
 export const messagesSchema = z
   .object({
-    Common: commonSchema,
-    Navigation: navigationSchema,
-    Auth: authSchema,
-    Errors: errorsSchema,
-    LocaleSwitcher: localeSwitcherSchema,
-    Components: componentsSchema,
-    Pages: pagesSchema,
+    common: commonSchema,
+    navigation: navigationSchema,
+    auth: authSchema,
+    errors: errorsSchema,
+    components: componentsSchema,
+    pages: pagesSchema,
   })
   .strict();
 

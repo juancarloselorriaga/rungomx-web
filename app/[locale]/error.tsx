@@ -13,8 +13,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const t = useTranslations('Components.ErrorBoundary.error');
-  const tCommon = useTranslations('Common');
+  const t = useTranslations('components.errorBoundary.error');
+  const tCommon = useTranslations('common');
 
   useEffect(() => {
     // Log the error to console

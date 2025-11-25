@@ -1,0 +1,8 @@
+{
+  "notFound": "Página no encontrada",
+  "serverError": "Error del servidor",
+  "unauthorized": "No autorizado",
+  "forbidden": "Prohibido",
+  "badRequest": "Solicitud incorrecta",
+  "somethingWentWrong": "Algo salió mal"
+}

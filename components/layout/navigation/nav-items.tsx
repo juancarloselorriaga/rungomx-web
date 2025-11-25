@@ -53,7 +53,7 @@ export function NavItems({
   iconSize = 20,
   showLabels = true,
 }: NavItemsProps) {
-  const t = useTranslations('Navigation');
+  const t = useTranslations('navigation');
 
   return (
     <div className={cn('flex flex-col space-y-4 p-4', containerClassName)}>

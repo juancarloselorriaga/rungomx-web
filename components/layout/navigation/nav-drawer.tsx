@@ -19,7 +19,7 @@ export function NavigationDrawerContent({
 }: NavigationDrawerContentProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const t = useTranslations('Common');
+  const t = useTranslations('common');
 
   useEffect(() => {
     if (closeButtonRef.current) {

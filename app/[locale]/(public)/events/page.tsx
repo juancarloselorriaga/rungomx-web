@@ -18,7 +18,7 @@ export default async function EventsPage({ params }: LocalePageProps) {
 
   const t = await getTranslations({
     locale,
-    namespace: 'Pages.Events'
+    namespace: 'pages.events'
   });
 
   return (

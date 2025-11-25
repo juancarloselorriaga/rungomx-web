@@ -1,0 +1,4 @@
+{
+  "label": "Cambiar idioma",
+  "locale": "{locale, select, es {Español} en {English} other {Desconocido}}"
+}

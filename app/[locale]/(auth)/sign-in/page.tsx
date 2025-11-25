@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 
 export default async function SignInPage({ params }: LocalePageProps) {
   await configPageLocale(params);
-  const t = await getTranslations('Pages.SignIn');
+  const t = await getTranslations('pages.signIn');
 
   return (
     <div className="rounded-lg border bg-card p-8 shadow-lg">

@@ -19,7 +19,7 @@ export default async function NavigationBar({
   variant = 'public'
 }: NavigationBarProps) {
   const user = await getCurrentUser();
-  const t = await getTranslations('Common');
+  const t = await getTranslations('common');
 
   return (
     <nav

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 
 export default async function DashboardPage({ params }: LocalePageProps) {
   await configPageLocale(params);
-  const t = await getTranslations('Pages.Dashboard');
+  const t = await getTranslations('pages.dashboard');
 
   return (
     <div>

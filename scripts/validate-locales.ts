@@ -58,6 +58,53 @@ const diffKeySets = (reference: Set<string>, candidate: Set<string>) => {
   return { missing, extra };
 };
 
+const namespacePaths = {
+  roots: {
+    common: 'messages/common',
+    navigation: 'messages/navigation',
+    auth: 'messages/auth',
+    errors: 'messages/errors',
+  },
+  components: {
+    footer: 'messages/components/footer',
+    themeSwitcher: 'messages/components/theme-switcher',
+    errorBoundary: 'messages/components/error-boundary',
+    localeSwitcher: 'messages/components/locale-switcher',
+  },
+  pages: {
+    home: 'messages/pages/home',
+    about: 'messages/pages/about',
+    contact: 'messages/pages/contact',
+    events: 'messages/pages/events',
+    news: 'messages/pages/news',
+    results: 'messages/pages/results',
+    help: 'messages/pages/help',
+    dashboard: 'messages/pages/dashboard',
+    profile: 'messages/pages/profile',
+    settings: 'messages/pages/settings',
+    team: 'messages/pages/team',
+    signIn: 'messages/pages/sign-in',
+    signUp: 'messages/pages/sign-up',
+  },
+} as const;
+
+const readNamespace = (locale: string, basePath: string) =>
+  readJson(`${basePath}/${locale}.json`).data;
+
+const buildNamespaceGroup = <const TPaths extends Record<string, string>>(
+  locale: string,
+  paths: TPaths
+) =>
+  Object.fromEntries(
+    Object.entries(paths).map(([key, basePath]) => [key, readNamespace(locale, basePath)])
+  ) as { [K in keyof TPaths]: unknown };
+
+const buildUiMessages = (locale: string) => ({
+  ...buildNamespaceGroup(locale, namespacePaths.roots),
+  components: buildNamespaceGroup(locale, namespacePaths.components),
+  pages: buildNamespaceGroup(locale, namespacePaths.pages),
+});
+
 export const compareLocaleGroup = (
   group: LocaleGroup,
   ignored: Set<string> = defaultIgnore
@@ -102,10 +149,11 @@ export const validateLocaleGroups = (
   });
 
 const buildLocaleGroups = (): LocaleGroup[] => {
-  const uiLocales: LocaleEntry[] = ['en', 'es'].map((locale) => {
-    const { filePath, data } = readJson(`messages/${locale}.json`);
-    return { locale, filePath, data };
-  });
+  const uiLocales: LocaleEntry[] = ['en', 'es'].map((locale) => ({
+    locale,
+    filePath: `messages/${locale}/*`,
+    data: buildUiMessages(locale),
+  }));
 
   const metadataLocales: LocaleEntry[] = ['en', 'es'].map((locale) => {
     const { filePath, data } = readJson(`messages/metadata/${locale}.json`);

@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 
 export default async function TermsPage({ params }: LocalePageProps) {
   await configPageLocale(params);
-  const t = await getTranslations('Components.Footer.links');
+  const t = await getTranslations('components.footer.links');
 
   return (
     <div className="space-y-4">

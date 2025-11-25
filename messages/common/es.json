@@ -1,0 +1,19 @@
+{
+  "loading": "Cargando...",
+  "error": "Error",
+  "success": "Éxito",
+  "cancel": "Cancelar",
+  "save": "Guardar",
+  "delete": "Eliminar",
+  "edit": "Editar",
+  "close": "Cerrar",
+  "search": "Buscar",
+  "filter": "Filtrar",
+  "sort": "Ordenar",
+  "next": "Siguiente",
+  "previous": "Anterior",
+  "submit": "Enviar",
+  "brandName": "SprintMX",
+  "goHome": "Volver al inicio",
+  "tryAgain": "Intentar de nuevo"
+}

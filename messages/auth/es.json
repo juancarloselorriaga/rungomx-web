@@ -1,0 +1,14 @@
+{
+  "signIn": "Iniciar sesión",
+  "signUp": "Registrarse",
+  "signOut": "Cerrar sesión",
+  "email": "Correo electrónico",
+  "password": "Contraseña",
+  "rememberMe": "Recordarme",
+  "forgotPassword": "¿Olvidaste tu contraseña?",
+  "noAccount": "¿No tienes una cuenta?",
+  "hasAccount": "¿Ya tienes una cuenta?",
+  "createAccount": "Crear cuenta",
+  "welcome": "Bienvenido",
+  "welcomeBack": "Bienvenido de nuevo"
+}

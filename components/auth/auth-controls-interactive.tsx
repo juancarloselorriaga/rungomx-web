@@ -11,7 +11,7 @@ interface AuthControls {
 }
 
 export const AuthControls = ({ user }: AuthControls) => {
-  const t = useTranslations('Auth');
+  const t = useTranslations('auth');
 
   const handleSignout = async () => {
     console.log('signout');

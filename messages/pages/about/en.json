@@ -1,0 +1,102 @@
+{
+  "hero": {
+    "title": "Who we are",
+    "description": "SprintMX was born in Mexico to transform the way organizers and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place."
+  },
+  "vision": {
+    "title": "Our vision",
+    "paragraph1": "We want Mexico to be a reference in sports innovation in Latin America. That every race, regardless of its size, has access to world-class tools without paying world-class prices.",
+    "paragraph2": "We believe that technology should serve the sport, not complicate it. That's why we build solutions designed for the Mexican context: simple, accessible and powerful."
+  },
+  "whyWeExist": {
+    "title": "Why we exist",
+    "intro": "Running in Mexico has grown enormously, but the digital infrastructure has not grown at the same pace. Organizers and runners face recurring problems:",
+    "butText": "But that's changing.",
+    "problems": [
+      "Complicated registration websites",
+      "Insecure or confusing payments",
+      "Scattered or slow results",
+      "Zero data for organizers",
+      "Minimal marketing tools",
+      "Systems that don't talk to each other"
+    ],
+    "solution": "SprintMX comes to solve that."
+  },
+  "whatWeDo": {
+    "title": "What we do",
+    "subtitle": "We create a complete ecosystem for running in Mexico:",
+    "forRunners": {
+      "title": "For runners",
+      "features": [
+        "Super simple registrations for any race",
+        "Secure payments with any method (card, transfer, cash)",
+        "Real-time results on event day",
+        "Automatic personal and national rankings",
+        "Race recommendations based on your level and location"
+      ]
+    },
+    "forOrganizers": {
+      "title": "For organizers",
+      "features": [
+        "Comprehensive event management (registrations, payments, communication)",
+        "Automated payments and bank reconciliation",
+        "Integrated timing with professional chips",
+        "Marketing and communication with your runners",
+        "Real-time event analytics",
+        "Local technical support in Spanish"
+      ]
+    },
+    "tagline": "One platform for the entire lifecycle of your race."
+  },
+  "philosophy": {
+    "title": "Our philosophy",
+    "intro": "We are a team of Mexican technologists passionate about running and innovation. We don't copy foreign models; we build from scratch with a local mindset.",
+    "believeIn": "We believe in:",
+    "values": [
+      {
+        "title": "Simplicity",
+        "description": "Technology should be invisible. Let the runner focus on running and the organizer on creating experiences."
+      },
+      {
+        "title": "Transparency",
+        "description": "Clear prices, no surprises. Open data for everyone. Reliable and auditable code."
+      },
+      {
+        "title": "Quality",
+        "description": "We don't launch half-baked features. Each functionality goes through rigorous testing before reaching production."
+      },
+      {
+        "title": "Community",
+        "description": "Running is community. We listen to organizers and runners to build what they really need."
+      },
+      {
+        "title": "Constant innovation",
+        "description": "The market evolves fast. We evolve faster. Weekly releases, new features every month."
+      }
+    ]
+  },
+  "mexicanTechnology": {
+    "title": "We are Mexican technology for Mexican running",
+    "subtitle": "We are not an adaptation of something that works in the United States or Europe. SprintMX is born and grows in Mexico, with deep knowledge of the local market.",
+    "weKnow": "We know:",
+    "knowledge": [
+      "The areas where people run (CDMX, Guadalajara, Monterrey, Puebla, Querétaro...)",
+      "The payment methods that work (OXXO, transfers, cards, interest-free installments)",
+      "Local regulations (permits, insurance, road management)",
+      "The language and culture (clear communication in Mexican Spanish)",
+      "Real operational challenges (logistics, weather, altitude, traffic)"
+    ],
+    "tagline": "That's why our platform doesn't just work technically: it works for the real context of Mexico."
+  },
+  "commitment": {
+    "title": "Our commitment",
+    "goals": [
+      "SprintMX is not just software. It's a long-term commitment to the running community in Mexico.",
+      "We work side by side with organizers to understand their real needs. We listen to runners to improve their experience. We invest in cutting-edge technology to always stay ahead.",
+      "We constantly innovate. What is today the most complete platform on the market, tomorrow will be even better.",
+      "Because at the end of the day, our success is measured in successful races, happy runners and an increasingly strong running community."
+    ],
+    "mission": "Our mission is clear:",
+    "tagline": "Mexican technology. Mexican running."
+  }
+}

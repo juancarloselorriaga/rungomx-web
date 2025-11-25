@@ -1,0 +1,24 @@
+{
+  "error": {
+    "title": "Algo salió mal",
+    "description": "Pedimos disculpas por las molestias. Ha ocurrido un error inesperado. Por favor, intenta de nuevo o regresa a la página de inicio.",
+    "errorLabel": "Error:",
+    "digestLabel": "Resumen:"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Página no encontrada",
+    "description": "Lo sentimos, no pudimos encontrar la página que buscas. La página puede haber sido movida, eliminada, o la URL podría ser incorrecta.",
+    "helpfulLinks": "Aquí hay algunos enlaces útiles:",
+    "tips": [
+      "Revisa la URL por errores tipográficos",
+      "Usa el menú de navegación para encontrar lo que necesitas",
+      "Regresa a la página de inicio y comienza de nuevo"
+    ],
+    "learnAboutUs": "Conócenos"
+  },
+  "globalError": {
+    "title": "Error de aplicación",
+    "description": "Ha ocurrido un error crítico. Lamentamos las molestias. Por favor, intenta actualizar la página o regresa a la página de inicio."
+  }
+}

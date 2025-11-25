@@ -1,0 +1,17 @@
+{
+  "sections": {
+    "about": "About",
+    "resources": "Resources",
+    "legal": "Legal",
+    "connect": "Connect"
+  },
+  "links": {
+    "aboutUs": "About Us",
+    "contact": "Contact",
+    "helpCenter": "Help Center",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "connectText": "Stay updated with our latest news and updates.",
+  "copyright": "© {year} SprintMX. All rights reserved."
+}

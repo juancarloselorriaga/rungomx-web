@@ -31,7 +31,7 @@ interface SidebarProps {
 
 export function Sidebar({ items }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const t = useTranslations('Navigation');
+  const t = useTranslations('navigation');
 
   return (
     <>

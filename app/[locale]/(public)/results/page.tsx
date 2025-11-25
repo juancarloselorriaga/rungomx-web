@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 
 export default async function ResultsPage({ params }: LocalePageProps) {
   await configPageLocale(params);
-  const t = await getTranslations('Pages.Results');
+  const t = await getTranslations('pages.results');
 
   return (
     <div>
