@@ -14,6 +14,10 @@ describe("Users Database Tests", () => {
     await cleanDatabase(db);
   });
 
+  afterAll(async () => {
+    await cleanDatabase(db);
+  });
+
   describe("User Creation", () => {
     it("should create a user with valid data", async () => {
       const user = await createTestUser(db, {
