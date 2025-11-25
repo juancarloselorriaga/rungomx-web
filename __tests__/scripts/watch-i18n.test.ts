@@ -2,7 +2,11 @@
 
 const generateTypesMock = jest.fn();
 const generateLoadersMock = jest.fn();
-const watchInstances: { paths: unknown; options: unknown; watcher: { on: jest.Mock; close: jest.Mock } }[] = [];
+const watchInstances: {
+  paths: unknown;
+  options: unknown;
+  watcher: { on: jest.Mock; close: jest.Mock }
+}[] = [];
 
 jest.mock('chokidar', () => {
   const watch = jest.fn((paths: unknown, options: unknown) => {
@@ -10,11 +14,18 @@ jest.mock('chokidar', () => {
       on: jest.fn().mockReturnThis(),
       close: jest.fn().mockResolvedValue(undefined),
     };
-    watchInstances.push({ paths, options, watcher });
+    watchInstances.push({
+      paths,
+      options,
+      watcher
+    });
     return watcher;
   });
 
-  return { watch, __watchInstances: watchInstances };
+  return {
+    watch,
+    __watchInstances: watchInstances
+  };
 });
 
 jest.mock('../../scripts/generate-i18n-loaders', () => ({
@@ -36,11 +47,14 @@ describe('watch-i18n script', () => {
   it('watches JSON files and namespace directories', async () => {
     jest.isolateModules(() => {
       // Importing the script should register watchers and trigger initial generation
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('@/scripts/watch-i18n');
     });
 
     const chokidar = await import('chokidar');
-    const instances = (chokidar as any).__watchInstances as typeof watchInstances;
+    const instances = (chokidar as unknown as {
+      __watchInstances: typeof watchInstances
+    }).__watchInstances;
 
     const watchedPaths = instances.map((instance) => instance.paths);
     expect(watchedPaths).toEqual(

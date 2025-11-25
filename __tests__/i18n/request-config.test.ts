@@ -1,7 +1,7 @@
 /** @jest-environment node */
 
 jest.mock('next-intl/server', () => ({
-  getRequestConfig: (callback: (context: any) => Promise<any> | any) => (context: any) =>
+  getRequestConfig: (callback: (context: unknown) => Promise<unknown> | unknown) => (context: unknown) =>
     callback(context),
 }));
 
