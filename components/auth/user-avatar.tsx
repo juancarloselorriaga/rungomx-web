@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { User } from '@/types/auth';
+import { User } from '@/lib/auth/types';
 import { capitalize } from '@/utils/capitalize';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Link } from '@/i18n/navigation';

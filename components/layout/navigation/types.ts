@@ -1,4 +1,4 @@
-import { User } from '@/types/auth';
+import { User } from '@/lib/auth/types';
 import { Link } from '@/i18n/navigation';
 import type { ComponentProps } from 'react';
 
