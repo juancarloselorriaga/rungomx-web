@@ -8,16 +8,15 @@ export async function createTestUser(
   db: ReturnType<typeof getTestDb>,
   overrides: {
     email?: string;
-    firstName?: string;
-    lastName?: string;
+    name?: string;
   } = {},
 ) {
+  const now = Date.now()
   const [user] = await db
     .insert(schema.users)
     .values({
-      email: overrides.email ?? `test-${Date.now()}@example.com`,
-      firstName: overrides.firstName ?? "Test",
-      lastName: overrides.lastName ?? "User",
+      email: overrides.email ?? `test-${now}@example.com`,
+      name: overrides.name ?? `test-${now}`,
     })
     .returning();
 

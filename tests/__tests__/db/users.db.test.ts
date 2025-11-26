@@ -22,14 +22,12 @@ describe("Users Database Tests", () => {
     it("should create a user with valid data", async () => {
       const user = await createTestUser(db, {
         email: "test@example.com",
-        firstName: "John",
-        lastName: "Doe",
+        name: "John Doe",
       });
 
       expect(user.id).toBeDefined();
       expect(user.email).toBe("test@example.com");
-      expect(user.firstName).toBe("John");
-      expect(user.lastName).toBe("Doe");
+      expect(user.name).toBe("John Doe");
       expect(user.createdAt).toBeDefined();
     });
 

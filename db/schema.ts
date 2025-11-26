@@ -4,7 +4,6 @@ import {
   decimal,
   integer,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -14,13 +13,13 @@ import {
 
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   emailVerified: timestamp("email_verified", {
     withTimezone: true,
     mode: "date",
   }),
-  firstName: varchar("first_name", { length: 100 }).notNull(),
-  lastName: varchar("last_name", { length: 100 }).notNull(),
+  image: text("image"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .defaultNow()
     .notNull(),
@@ -34,17 +33,19 @@ export const users = pgTable("users", {
 export const accounts = pgTable(
   "accounts",
   {
+    id: uuid("id").defaultRandom().primaryKey(),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    type: varchar("type", { length: 50 }).notNull(),
-    provider: varchar("provider", { length: 50 }).notNull(),
-    providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
-    refreshToken: text("refresh_token"),
+    accountId: varchar("account_id", { length: 255 }).notNull(),
+    providerId: varchar("provider_id", { length: 50 }).notNull(),
     accessToken: text("access_token"),
-    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }),
-    tokenType: varchar("token_type", { length: 50 }),
+    refreshToken: text("refresh_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true, mode: "date" }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true, mode: "date" }),
     scope: text("scope"),
+    idToken: text("id_token"),
+    password: text("password"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
       .defaultNow()
       .notNull(),
@@ -55,31 +56,47 @@ export const accounts = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
   },
   (table) => ({
-    pk: primaryKey({ columns: [table.provider, table.providerAccountId] }),
-    userIdIdx: uniqueIndex("accounts_user_id_provider_idx").on(
-      table.userId,
-      table.provider,
-    ),
+    userIdIdx: uniqueIndex("accounts_user_id_idx").on(table.userId),
   }),
 );
 
 export const sessions = pgTable("sessions", {
-  sessionToken: varchar("session_token", { length: 255 }).primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  expires: timestamp("expires", { withTimezone: true, mode: "date" }).notNull(),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .defaultNow()
     .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => sql`now()`),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
+});
+
+export const verifications = pgTable("verifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  identifier: varchar("identifier", { length: 255 }).notNull(),
+  value: text("value").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => sql`now()`),
 });
 
 export const profiles = pgTable("profiles", {
   userId: uuid("user_id")
     .primaryKey()
     .references(() => users.id, { onDelete: "cascade" }),
-  avatar: text("avatar"),
   bio: varchar("bio", { length: 500 }),
   dateOfBirth: date("date_of_birth", { mode: "date" }),
   gender: varchar("gender", { length: 20 }),

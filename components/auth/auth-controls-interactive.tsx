@@ -3,6 +3,7 @@
 import UserAvatar from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+import { signOut } from '@/lib/auth/client';
 import { User } from '@/types/auth';
 import { useTranslations } from 'next-intl';
 
@@ -14,7 +15,7 @@ export const AuthControls = ({ user }: AuthControls) => {
   const t = useTranslations('auth');
 
   const handleSignout = async () => {
-    console.log('signout');
+    await signOut();
   };
 
   return user ? (

@@ -5,7 +5,7 @@ import type { NavItem } from '@/components/layout/navigation/types';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link } from '@/i18n/navigation';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 

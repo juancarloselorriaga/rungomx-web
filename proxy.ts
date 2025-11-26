@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import createMiddleware from 'next-intl/middleware';
 import { routing, type AppLocale } from './i18n/routing';
 import { isValidLocale } from './i18n/utils';
@@ -105,7 +106,7 @@ const detectPreferredLocale = (acceptLanguage: string | null): AppLocale => {
   return routing.defaultLocale;
 };
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // Remove trailing slashes (except root)
@@ -145,10 +146,10 @@ export function proxy(req: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => internalPath.startsWith(route));
   const isAuthRoute = authRoutes.some(route => internalPath.startsWith(route));
 
-  // Check session from request cookies (non-blocking way that doesn't force dynamic rendering)
-  // TODO: Implement proper session validation when authentication is set up
-  // For now, we check the session cookie directly from the request
-  const session = req.cookies.get('session')?.value;
+  // Validate session via Better Auth (requires Node.js runtime in Next.js 16)
+  const session = await auth.api.getSession({
+    headers: req.headers
+  });
   const isAuthenticated = !!session;
 
   // Redirect unauthenticated users trying to access protected routes
@@ -180,5 +181,6 @@ export const config = {
      * - Static files (containing a dot)
      */
     '/((?!api|trpc|_next|_vercel|.*\\..*).*)'
-  ]
+  ],
+  runtime: 'nodejs'
 };
