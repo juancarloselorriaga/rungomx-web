@@ -106,37 +106,29 @@
   server
 - **Cannot**: Directly import Server Components inside Client Component files
 
-## Next.js 16 Cache Components & Caching
+## Next.js 16 Caching
 
-### Cache Components with 'use cache' Directive
+**⚠️ IMPORTANT**: For comprehensive caching rules, patterns, and best practices, see **[nextjs-caching-rules.md](./nextjs-caching-rules.md)**.
 
-- **New in Next.js 15/16**: Cache component output and data fetching
-- Can be applied at file, component, or function level
-- Use with `cacheLife` and `cacheTag` for fine-grained control
+This section provides quick reference only. The dedicated caching document covers:
+- Four caching mechanisms (Request Memoization, Data Cache, Full Route Cache, Router Cache)
+- `use cache` directive family (`'use cache'`, `'use cache: remote'`, `'use cache: private'`)
+- Protected routes & authentication caching patterns
+- Proxy vs. layout authentication security
+- Cache invalidation & revalidation strategies
+- Decision trees and verification checklists
 
-#### File-level caching:
+### Quick Reference: Cache Directives
 
-```tsx
-'use cache'
+**Three variants based on context**:
 
-export default async function Page() {
-  const data = await fetchData()
-  return <div>{data}</div>
-}
-```
+| Directive | Context | Use Case | Can Access Dynamic APIs |
+|-----------|---------|----------|------------------------|
+| `'use cache'` | Static (build) | Public data, same for all users | ❌ No |
+| `'use cache: remote'` | Dynamic (runtime) | Shared data in dynamic routes | ❌ No (but works after `headers()`) |
+| `'use cache: private'` | Dynamic (runtime) | User-specific data | ✅ Yes |
 
-#### Component-level caching:
-
-```tsx
-export async function MyComponent() {
-  'use cache'
-  const data = await fetchData()
-  return <div>{data}</div>
-}
-```
-
-#### Function-level caching (most common):
-
+**Example - Function-level caching**:
 ```tsx
 import { cacheTag, cacheLife } from 'next/cache'
 
@@ -145,187 +137,89 @@ async function getProducts() {
   cacheTag('products')
   cacheLife('hours')
 
-  const products = await db.query('SELECT * FROM products')
-  return products
-}
-
-export default async function Page() {
-  const products = await getProducts()
-  return <ProductList products={products}/>
+  return db.products.findMany()
 }
 ```
 
-### cacheLife Profiles
+### Critical Rules
 
-- **Preset profiles**: 'seconds', 'minutes', 'hours', 'days', 'weeks', 'max'
-- **Custom configuration**:
-  ```tsx
-  cacheLife({
-    stale: 60,      // Consider stale after 60 seconds
-    revalidate: 300, // Background revalidate after 5 minutes
-    expire: 3600    // Hard expire after 1 hour
-  })
-  ```
-- Use appropriate profile based on data update frequency:
-    - Blog posts: `cacheLife('days')`
-    - User stats: `cacheLife('minutes')`
-    - Static content: `cacheLife('weeks')` or `cacheLife('max')`
+1. **Routes using `headers()` are dynamic** (Full Route Cache disabled)
+2. **But data CAN still be cached** (Data Cache works independently!)
+3. **Use `'use cache: remote'` in protected routes** for shared data
+4. **Use `'use cache: private'` for user-specific data** in dynamic contexts
+5. **Never use `headers()` inside cached functions** (pass as argument instead)
 
-### cacheTag for On-Demand Revalidation
+### Protected Routes Pattern
 
-- Tag cached data for targeted invalidation
-- Use with `revalidateTag()` in Server Actions or Route Handlers
-- Example:
-  ```tsx
-  import { cacheTag } from 'next/cache'
-  
-  async function getPosts() {
-    'use cache'
-    cacheTag('blog-posts')
-    return await db.posts.findMany()
-  }
-  
-  // In Server Action:
-  // await revalidateTag('blog-posts')
-  ```
+```tsx
+// Layout makes route dynamic (uses headers for auth)
+export default async function ProtectedLayout({ children }) {
+  const session = await getSession() // Uses headers()
+  if (!session) redirect('/sign-in')
+  return <>{children}</>
+}
 
-### Private Cache ('use cache: private')
+// But pages can still cache data!
+export default async function DashboardPage() {
+  const stats = await getStats() // Uses 'use cache: remote'
+  return <StatsDisplay stats={stats} />
+}
 
-- **For user-specific data** (personalized content)
-- Can access cookies and headers
-- Caches per-user instead of globally
-- Example:
-  ```tsx
-  import { cookies } from 'next/headers'
-  import { cacheLife, cacheTag } from 'next/cache'
-  
-  async function getRecommendations(productId: string) {
-    'use cache: private'
-    cacheTag(`recommendations-${productId}`)
-    cacheLife({ stale: 60 })
-    
-    const sessionId = (await cookies()).get('session-id')?.value || 'guest'
-    return getPersonalizedRecommendations(productId, sessionId)
-  }
-  ```
+async function getStats() {
+  'use cache: remote' // Works even though route is dynamic!
+  cacheTag('stats')
+  cacheLife('minutes')
+  return db.analytics.getStats()
+}
+```
 
-### Remote Cache ('use cache: remote')
-
-- **For expensive operations in dynamic contexts**
-- Shares cache across all users and requests
-- Use after dynamic checks (auth, feature flags)
-- Example:
-  ```tsx
-  import { connection } from 'next/server'
-  import { cacheLife, cacheTag } from 'next/cache'
-  
-  async function generateReport() {
-    'use cache: remote'
-    cacheTag('global-stats')
-    cacheLife({ expire: 3600 }) // 1 hour
-    
-    const data = await db.transactions.findMany()
-    return calculateExpensiveStats(data)
-  }
-  
-  export default async function Page() {
-    await connection() // Makes context dynamic
-    const stats = await generateReport()
-    return <StatsDisplay stats={stats} />
-  }
-  ```
-
-### React cache() for Request Memoization
-
-- Use `cache()` from React for deduplicating requests within a single render
-- Different from Next.js caching (request-scoped vs persistent)
-- Useful for database clients or third-party libraries:
-  ```tsx
-  import { cache } from 'react'
-  import db from '@/lib/db'
-  
-  export const getItem = cache(async (id: string) => {
-    const item = await db.item.findUnique({ id })
-    return item
-  })
-  ```
-
-### fetch() Caching
-
-- Individual fetch requests can be cached:
-  ```tsx
-  // Force cache
-  fetch('https://...', { cache: 'force-cache' })
-  
-  // No cache
-  fetch('https://...', { cache: 'no-store' })
-  ```
-- Configure default behavior via route segment config:
-  ```tsx
-  export const fetchCache = 'default-no-store' // Opt out by default
-  export const dynamic = 'force-dynamic'       // Force dynamic rendering
-  ```
+**Key insight**: The page HTML is dynamic, but the data is cached. This is optimal!
 
 ### Dynamic APIs and Partial Prerendering (PPR)
 
 - **Dynamic APIs** (`headers()`, `cookies()`, `searchParams`) opt routes into dynamic rendering
-- Routes using dynamic APIs render on every request, not at build time
-- **Partial Prerendering (PPR)** enables mixing static and dynamic content in the same route:
-  - Static shell (non-dynamic parts) is cached and served instantly
-  - Dynamic sections wrapped in `<Suspense>` stream in when ready
-  - Best of both worlds: fast initial load + fresh dynamic data
-- **Pattern for authentication**:
-  ```tsx
-  // lib/auth/server.ts - uses headers() (dynamic)
-  import { cache } from 'react'
-  import { headers } from 'next/headers'
+- **PPR** enables mixing static shell + dynamic sections via `<Suspense>`
+- **Auth pattern**: Wrap user-specific components in `<Suspense>` for progressive rendering
 
-  export const getCurrentUser = cache(async () => {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    })
-    return session?.user ?? null
-  })
+```tsx
+export default function Page() {
+  return (
+    <>
+      {/* Static shell - cached */}
+      <PublicHeader />
 
-  // app/page.tsx - PPR pattern
-  export default function Page() {
-    return (
-      <>
-        {/* Static shell - cached */}
-        <PublicHeader />
+      {/* Dynamic content - streams in */}
+      <Suspense fallback={<UserSkeleton />}>
+        <UserProfile />
+      </Suspense>
+    </>
+  )
+}
+```
 
-        {/* Dynamic content - streams in */}
-        <Suspense fallback={<UserSkeleton />}>
-          <UserProfile />
-        </Suspense>
-      </>
-    )
-  }
+### Request Memoization
 
-  // components/user-profile.tsx
-  async function UserProfile() {
-    const user = await getCurrentUser() // Uses headers()
-    return <div>{user?.name}</div>
-  }
-  ```
-- **React's `cache()`** deduplicates calls within a single render, not across requests
-- **Key insight**: Using `headers()` in cached functions is by design for auth—wrap consuming components in `<Suspense>` to enable PPR
+Use React's `cache()` for deduplicating calls within a single render:
 
-### Caching Best Practices
+```tsx
+import { cache } from 'react'
 
-- **Prefer 'use cache' over route segment config** for granular control
-- **Use cacheTag** for all data that might need on-demand revalidation
-- **Choose appropriate cacheLife** based on data freshness requirements
-- **Use 'private' cache** for personalized data
-- **Use 'remote' cache** for expensive operations in dynamic contexts
-- **Combine with React Suspense** for streaming and progressive rendering
-- **Wrap dynamic sections in Suspense** to enable PPR and optimize loading
+export const getUser = cache(async (id: string) => {
+  return db.user.findUnique({ where: { id } })
+})
+
+// Called multiple times = executes once per request
+const user1 = await getUser('123') // DB query
+const user2 = await getUser('123') // From memory
+```
+
+**For complete caching documentation, see [nextjs-caching-rules.md](./nextjs-caching-rules.md)**
 
 ### Internationalization with 'use cache'
 
-- **Context requirement**: Cached functions need locale context when using next-intl
-- **Setup**: Call `setRequestLocale(locale)` before using cached functions
-- **Why**: Ensures cached content is keyed per locale, preventing cross-locale cache pollution
+- **Context requirement**: `next-intl` APIs need the request locale available; call `setRequestLocale(locale)` before cached functions so translation hooks can run while keeping routes static
+- **Setup**: Call `setRequestLocale(locale)` early in the route (layout/page) using the locale from `params`
+- **Why**: Ensures the locale context is set for `next-intl` without forcing the route dynamic; avoids missing-locale errors
 - Example pattern:
 
 ```tsx
