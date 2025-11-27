@@ -1,13 +1,11 @@
-import { AuthControls } from '@/components/auth/auth-controls';
 import { NavDrawerTrigger } from '@/components/layout/navigation/nav-drawer-trigger';
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import type { NavItem } from '@/components/layout/navigation/types';
-import { LanguageSwitcher } from '@/components/language-switcher';
-import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Link } from '@/i18n/navigation';
 import { getCurrentUser } from '@/lib/auth/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { UserMenu } from './user-menu';
 
 interface NavigationBarProps {
   items: readonly NavItem[];
@@ -21,37 +19,36 @@ export default async function NavigationBar({
   const user = await getCurrentUser();
   const t = await getTranslations('common');
 
-  // Suppress unused variable warning - variant is part of the public API
-  void variant;
+  const showNavItems = variant === 'public' && items.length > 0;
 
   return (
     <nav
-      className="bg-gradient-to-t from-transparent via-background/80 to-background z-20 fixed top-0 right-0 left-0 w-full h-16">
-      <div
-        className="h-full w-full max-w-7xl mx-auto flex justify-between items-center p-3 text-sm ">
-        <div className="flex items-center gap-3 font-semibold flex-1/3">
-          <NavDrawerTrigger user={user} items={items}/>
-          <Link className="hidden md:block px-4" href="/">
+      className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur"
+    >
+      <div className="flex h-16 w-full items-center gap-3 px-4 text-sm md:px-6">
+        <div className="flex min-w-0 items-center gap-2">
+          {items.length > 0 ? <NavDrawerTrigger user={user} items={items}/> : null}
+          <Link className="font-semibold" href="/">
             {t('brandName')}
           </Link>
         </div>
 
-        <div className="hidden md:block mx-4 flex-1/3">
-          <NavItems
-            items={items}
-            containerClassName="flex-row items-center justify-center space-y-0 space-x-2 p-0"
-            iconSize={22}
-            showLabels={true}
-          />
-        </div>
+        {showNavItems ? (
+          <div className="hidden flex-1 items-center justify-center lg:flex">
+            <NavItems
+              items={items}
+              containerClassName="flex-row items-center justify-center space-y-0 space-x-2 p-0"
+              iconSize={20}
+              showLabels
+            />
+          </div>
+        ) : (
+          <div className="flex-1"/>
+        )}
 
-        <div className="hidden md:flex gap-2 items-center justify-end flex-1/3">
-          <AuthControls/>
+        <div className="flex items-center justify-end gap-2">
           <Suspense fallback={null}>
-            <LanguageSwitcher/>
-          </Suspense>
-          <Suspense fallback={null}>
-            <ThemeSwitcher/>
+            <UserMenu user={user}/>
           </Suspense>
         </div>
       </div>

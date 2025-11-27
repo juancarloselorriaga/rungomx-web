@@ -29,7 +29,7 @@ export function NavLink({
   collapsed = false,
   iconClassName,
   linkClassName,
-  activeClassName = 'bg-primary/15 text-primary',
+  activeClassName = 'bg-primary/15 text-primary hover:text-foreground',
   inactiveClassName = 'text-muted-foreground hover:bg-accent hover:text-foreground',
   indicatorClassName,
   showIndicator = true,

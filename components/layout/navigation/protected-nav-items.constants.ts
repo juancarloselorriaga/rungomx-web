@@ -1,6 +1,6 @@
-import type { NavItem, ProtectedNavIconName } from './types';
+import type { NavItem, NavSection, ProtectedNavIconName } from './types';
 
-export const protectedNavItems = [
+const mainSectionItems = [
   {
     href: '/dashboard',
     labelKey: 'dashboard' as const,
@@ -17,3 +17,11 @@ export const protectedNavItems = [
     iconName: 'User' as const,
   },
 ] as const satisfies readonly NavItem<ProtectedNavIconName>[];
+
+export const protectedNavSections = [
+  {
+    items: mainSectionItems,
+  },
+] as const satisfies readonly NavSection<ProtectedNavIconName>[];
+
+export const protectedNavItems = protectedNavSections.flatMap((section) => section.items);

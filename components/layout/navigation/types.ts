@@ -33,6 +33,11 @@ export interface NavItem<TIcon extends NavIconName = NavIconName> {
   iconName: TIcon;
 }
 
+export interface NavSection<TIcon extends NavIconName = NavIconName> {
+  titleKey?: NavigationMessageKey;
+  items: readonly NavItem<TIcon>[];
+}
+
 export interface NavigationDrawerContentProps {
   user: User | null;
   items: readonly NavItem[];
