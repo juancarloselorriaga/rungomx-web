@@ -9,10 +9,11 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
+import { LabeledTextarea } from '@/components/ui/labeled-textarea';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface FeedbackDialogProps {
   collapsed: boolean;
@@ -20,20 +21,43 @@ interface FeedbackDialogProps {
   icon: LucideIcon;
 }
 
-export function FeedbackDialog({ collapsed, label, icon: Icon }: FeedbackDialogProps) {
+export function FeedbackDialog({
+  collapsed,
+  label,
+  icon: Icon
+}: FeedbackDialogProps) {
   const t = useTranslations('components.feedback');
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = () => {
-    // TODO: Connect feedback submission to mailing service
-    setOpen(false);
+  const resetForm = () => {
     setMessage('');
   };
 
+  const handleSubmit = () => {
+    // TODO: Connect feedback submission to mailing service
+    handleOpenChange(false);
+  };
+
+  const handleOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (!value) {
+      resetForm();
+    }
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = window.requestAnimationFrame(() => {
+      textareaRef.current?.focus();
+    });
+
+    return () => window.cancelAnimationFrame(handle);
+  }, [open]);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -46,7 +70,7 @@ export function FeedbackDialog({ collapsed, label, icon: Icon }: FeedbackDialogP
           <span
             className={cn(
               'min-w-0 overflow-hidden whitespace-nowrap transition-[opacity,transform,max-width] duration-300 ease-in-out',
-              collapsed ? 'max-w-0 opacity-0 -translate-x-1' : 'max-w-[200px] opacity-100 translate-x-0'
+              collapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'
             )}
             style={{ transitionDelay: collapsed ? '0ms' : '120ms' }}
           >
@@ -56,41 +80,45 @@ export function FeedbackDialog({ collapsed, label, icon: Icon }: FeedbackDialogP
       </DialogTrigger>
 
       <DialogContent
-        className="sm:max-w-lg"
+        className="sm:max-w-md"
         onOpenAutoFocus={(e) => {
           e.preventDefault();
-          setTimeout(() => {
-            textareaRef.current?.focus();
-          }, 0);
         }}
       >
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('subtitle')}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-foreground" htmlFor="feedback-message">
-              {t('prompt')}
-            </label>
-            <textarea
-              ref={textareaRef}
-              id="feedback-message"
-              name="feedback"
-              autoComplete="off"
-              data-lpignore="true"
-              data-form-type="other"
-              className="min-h-[140px] w-full rounded-md border bg-background p-3 text-sm text-foreground shadow-sm outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-              placeholder={t('placeholder')}
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t('hint')}
-            </p>
-          </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+          autoComplete="off"
+          data-1p-ignore="true"
+          data-lpignore="true"
+          data-bwignore="true"
+          data-form-type="other"
+          data-protonpass-ignore="true"
+        >
+          <LabeledTextarea
+            ref={textareaRef}
+            id="feedback-message"
+            name="feedback"
+            label={t('prompt')}
+            hint={t('hint')}
+            placeholder={t('placeholder')}
+            value={message}
+            autoComplete="off"
+            data-1p-ignore="true"
+            data-lpignore="true"
+            data-bwignore="true"
+            data-form-type="other"
+            data-protonpass-ignore="true"
+            onChange={(event) => setMessage(event.target.value)}
+          />
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
               {t('cancel')}
             </Button>
             <Button type="submit" disabled={!message.trim()}>
