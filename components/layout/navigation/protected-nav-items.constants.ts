@@ -20,6 +20,7 @@ const mainSectionItems = [
 
 export const protectedNavSections = [
   {
+    titleKey: 'sectionGeneral',
     items: mainSectionItems,
   },
 ] as const satisfies readonly NavSection<ProtectedNavIconName>[];
