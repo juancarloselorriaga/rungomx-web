@@ -8,8 +8,27 @@ import { AppLocale, routing } from '@/i18n/routing';
  * @returns The extracted locale or the default locale
  */
 export function extractLocaleFromRequest(request?: Request | { url?: string; headers?: Headers }): AppLocale {
-  if (!request) {
+  console.log('Request', request)
+ if (!request) {
     return routing.defaultLocale;
+  }
+
+  const headers = request.headers;
+
+  // Check for explicit locale cookie set by next-intl
+  const cookieHeader = headers?.get?.('cookie');
+  if (cookieHeader) {
+    const localeCookie = cookieHeader
+      .split(';')
+      .map((part) => part.trim())
+      .find((part) => part.startsWith('NEXT_LOCALE='));
+
+    if (localeCookie) {
+      const locale = decodeURIComponent(localeCookie.split('=')[1] || '') as AppLocale;
+      if (routing.locales.includes(locale)) {
+        return locale;
+      }
+    }
   }
 
   // Try to extract locale from the URL path (e.g., /es/sign-up)
@@ -23,8 +42,8 @@ export function extractLocaleFromRequest(request?: Request | { url?: string; hea
   }
 
   // Fallback to Accept-Language header
-  if (request.headers) {
-    const acceptLanguage = request.headers.get?.('accept-language');
+  if (headers) {
+    const acceptLanguage = headers.get?.('accept-language');
     if (acceptLanguage) {
       const primaryLang = acceptLanguage.split(',')[0].split('-')[0] as AppLocale;
       // Validate it's a supported locale
