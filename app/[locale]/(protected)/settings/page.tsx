@@ -10,7 +10,12 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
     locale,
     '/settings',
     (messages) => messages.Pages?.Settings?.metadata,
-    { robots: { index: false, follow: false } }
+    {
+      robots: {
+        index: false,
+        follow: false
+      }
+    }
   );
 }
 

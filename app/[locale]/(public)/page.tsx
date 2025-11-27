@@ -20,7 +20,6 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 
 export default async function Home({ params }: LocalePageProps) {
   await configPageLocale(params, { pathname: '/' });
-
   const t = await getTranslations('pages.home');
   const session = await getSession();
 
