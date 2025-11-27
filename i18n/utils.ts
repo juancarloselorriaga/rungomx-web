@@ -10,6 +10,7 @@ import {
   rootCommonSchema,
   rootErrorsSchema,
   rootNavigationSchema,
+  rootEmailsSchema,
 } from './types';
 import {
   rootNamespaceLoaders,
@@ -81,6 +82,7 @@ const rootSchemas = {
   navigation: rootNavigationSchema,
   auth: rootAuthSchema,
   errors: rootErrorsSchema,
+  emails: rootEmailsSchema,
 } as const;
 
 export function validateMessages(locale: string, raw: unknown): Messages {

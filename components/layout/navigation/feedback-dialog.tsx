@@ -10,6 +10,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { LabeledTextarea } from '@/components/ui/labeled-textarea';
+import { NavActionContent, navActionContainer } from './nav-action';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -62,20 +63,20 @@ export function FeedbackDialog({
         <Button
           variant="ghost"
           className={cn(
-            'w-full flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-300',
-            collapsed ? 'justify-center px-2 gap-2' : 'justify-start px-3'
+            navActionContainer(collapsed),
+            'w-full text-muted-foreground hover:text-foreground'
           )}
+          title={collapsed ? label : undefined}
+          aria-label={label}
+          data-collapsed={collapsed}
         >
-          <Icon className="h-4 w-4"/>
-          <span
-            className={cn(
-              'min-w-0 overflow-hidden whitespace-nowrap transition-[opacity,transform,max-width] duration-300 ease-in-out',
-              collapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'
-            )}
-            style={{ transitionDelay: collapsed ? '0ms' : '120ms' }}
-          >
-            {label}
-          </span>
+          <NavActionContent
+            icon={Icon}
+            label={label}
+            collapsedLabel={label}
+            collapsed={collapsed}
+            iconSize={20}
+          />
         </Button>
       </DialogTrigger>
 

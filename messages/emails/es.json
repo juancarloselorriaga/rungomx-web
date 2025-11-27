@@ -1,0 +1,12 @@
+{
+  "verification": {
+    "subject": "Verifica tu correo electrónico - RungoMX",
+    "title": "Verifica tu correo electrónico",
+    "greeting": "¡Hola {userName}!",
+    "message": "Gracias por registrarte en RungoMX. Por favor verifica tu dirección de correo electrónico haciendo clic en el botón de abajo:",
+    "button": "Verificar Email",
+    "ignoreMessage": "Si no creaste una cuenta en RungoMX, puedes ignorar este correo de manera segura.",
+    "alternativeText": "Si el botón no funciona, copia y pega este enlace en tu navegador:",
+    "footer": "© {year} RungoMX. Todos los derechos reservados."
+  }
+}

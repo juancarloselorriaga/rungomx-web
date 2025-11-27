@@ -1,0 +1,12 @@
+{
+  "verification": {
+    "subject": "Verify your email - RungoMX",
+    "title": "Verify your email",
+    "greeting": "Hello {userName}!",
+    "message": "Thank you for signing up for RungoMX. Please verify your email address by clicking the button below:",
+    "button": "Verify Email",
+    "ignoreMessage": "If you didn't create an account on RungoMX, you can safely ignore this email.",
+    "alternativeText": "If the button doesn't work, copy and paste this link into your browser:",
+    "footer": "© {year} RungoMX. All rights reserved."
+  }
+}

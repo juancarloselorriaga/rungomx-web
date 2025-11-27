@@ -49,7 +49,7 @@ function discoverNamespaces(): {
   const pages: NamespaceInfo[] = [];
 
   // Root namespaces (hardcoded list)
-  const rootNames = ['common', 'navigation', 'auth', 'errors'];
+  const rootNames = ['common', 'navigation', 'auth', 'errors', 'emails'];
   for (const name of rootNames) {
     const dirPath = path.join(MESSAGES_DIR, name);
     if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
