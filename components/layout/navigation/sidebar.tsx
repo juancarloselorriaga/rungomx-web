@@ -5,11 +5,11 @@ import { cn } from '@/lib/utils';
 import type { NavItem, NavSection, ProtectedNavIconName } from './types';
 import { NavLink } from './nav-link';
 import {
-  ChevronLeft,
-  ChevronRight,
   FileText,
   LayoutDashboard,
-  MessageSquare,
+  Megaphone,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   User,
   Users
@@ -99,21 +99,21 @@ export function Sidebar({
             <FeedbackDialog
               collapsed={collapsed}
               label={t('feedback')}
-              icon={MessageSquare}
+              icon={Megaphone}
             />
             <Button
               variant="ghost"
               className={cn(
-                'w-full flex items-center justify-start gap-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-300 px-3',
-                collapsed ? 'gap-2' : ''
+                'w-full flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-300',
+                collapsed ? 'justify-center px-2 gap-2' : 'justify-start px-3'
               )}
               onClick={() => setCollapsed(!collapsed)}
               aria-label={collapsed ? t('expandMenu') : t('collapseMenu')}
             >
               {collapsed ? (
-                <ChevronRight className="h-4 w-4"/>
+                <PanelLeftOpen className="h-4 w-4"/>
               ) : (
-                <ChevronLeft className="h-4 w-4"/>
+                <PanelLeftClose className="h-4 w-4"/>
               )}
               <span
                 className={cn(

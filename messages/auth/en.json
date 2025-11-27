@@ -15,5 +15,6 @@
   "welcomeBack": "Welcome back",
   "continueWithGoogle": "Continue with Google",
   "genericError": "Something went wrong. Please try again.",
-  "missingFields": "Please fill in all required fields."
+  "missingFields": "Please fill in all required fields.",
+  "passwordRequirements": "Password must be 8-128 characters. Compromised passwords will be rejected."
 }

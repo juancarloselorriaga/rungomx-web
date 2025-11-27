@@ -117,11 +117,15 @@ export function SignUpForm() {
           type="password"
           autoComplete="new-password"
           minLength={8}
+          maxLength={128}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
           placeholder="••••••••"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
+        <p className="text-xs text-muted-foreground">
+          {t('passwordRequirements')}
+        </p>
       </div>
 
       {error ? (

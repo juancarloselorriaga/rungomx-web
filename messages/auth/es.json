@@ -15,5 +15,6 @@
   "welcomeBack": "Bienvenido de nuevo",
   "continueWithGoogle": "Continuar con Google",
   "genericError": "Algo salió mal. Inténtalo de nuevo.",
-  "missingFields": "Por favor completa todos los campos requeridos."
+  "missingFields": "Por favor completa todos los campos requeridos.",
+  "passwordRequirements": "La contraseña debe tener entre 8 y 128 caracteres. Las contraseñas comprometidas serán rechazadas."
 }
