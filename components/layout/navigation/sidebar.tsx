@@ -48,7 +48,7 @@ export function Sidebar({
       {/* Desktop Sidebar */}
         <aside
           className={cn(
-            'hidden md:sticky md:top-16 md:flex h-[calc(100vh-4rem)] flex-col border-r bg-background-surface transition-[width] duration-300 ease-in-out',
+            'hidden md:sticky md:top-16 md:flex h-[calc(100vh-4rem-1px)] flex-col border-r bg-background-surface transition-[width] duration-300 ease-in-out',
             collapsed ? 'w-16' : 'w-64'
           )}
           data-collapsed={collapsed}
