@@ -38,92 +38,88 @@ export async function checkRateLimit(
   const now = new Date();
   const expiresAt = new Date(now.getTime() + fullConfig.windowMs);
 
-  // Use transaction for atomic read-update
-  return await db.transaction(async (tx) => {
-    // Find existing rate limit record
-    const [existing] = await tx
-      .select()
-      .from(rateLimits)
-      .where(
-        and(
-          eq(rateLimits.identifier, identifier),
-          eq(rateLimits.identifierType, identifierType),
-          eq(rateLimits.action, fullConfig.action)
-        )
+  const [existing] = await db
+    .select()
+    .from(rateLimits)
+    .where(
+      and(
+        eq(rateLimits.identifier, identifier),
+        eq(rateLimits.identifierType, identifierType),
+        eq(rateLimits.action, fullConfig.action)
       )
-      .limit(1);
+    )
+    .limit(1);
 
-    // Check if window has expired
-    if (existing && existing.expiresAt < now) {
-      // Reset the window
-      const [updated] = await tx
-        .update(rateLimits)
-        .set({
-          count: 1,
-          windowStart: now,
-          expiresAt,
-          updatedAt: now,
-        })
-        .where(eq(rateLimits.id, existing.id))
-        .returning();
-
-      return {
-        allowed: true,
-        remaining: fullConfig.maxRequests - 1,
-        resetAt: updated.expiresAt,
-        current: 1,
-      };
-    }
-
-    if (existing) {
-      // Window still active - check if limit exceeded
-      if (existing.count >= fullConfig.maxRequests) {
-        return {
-          allowed: false,
-          remaining: 0,
-          resetAt: existing.expiresAt,
-          current: existing.count,
-        };
-      }
-
-      // Increment counter
-      const [updated] = await tx
-        .update(rateLimits)
-        .set({
-          count: existing.count + 1,
-          updatedAt: now,
-        })
-        .where(eq(rateLimits.id, existing.id))
-        .returning();
-
-      return {
-        allowed: true,
-        remaining: fullConfig.maxRequests - updated.count,
-        resetAt: updated.expiresAt,
-        current: updated.count,
-      };
-    }
-
-    // Create new rate limit record
-    const [created] = await tx
-      .insert(rateLimits)
-      .values({
-        identifier,
-        identifierType,
-        action: fullConfig.action,
+  // If an existing window has fully expired, reset it
+  if (existing && existing.expiresAt < now) {
+    const [updated] = await db
+      .update(rateLimits)
+      .set({
         count: 1,
         windowStart: now,
         expiresAt,
+        updatedAt: now,
       })
+      .where(eq(rateLimits.id, existing.id))
       .returning();
 
     return {
       allowed: true,
       remaining: fullConfig.maxRequests - 1,
-      resetAt: created.expiresAt,
+      resetAt: updated.expiresAt,
       current: 1,
     };
-  });
+  }
+
+  // Active window exists – enforce limit
+  if (existing) {
+    if (existing.count >= fullConfig.maxRequests) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: existing.expiresAt,
+        current: existing.count,
+      };
+    }
+
+    const [updated] = await db
+      .update(rateLimits)
+      .set({
+        count: existing.count + 1,
+        updatedAt: now,
+      })
+      .where(eq(rateLimits.id, existing.id))
+      .returning();
+
+    return {
+      allowed: true,
+      remaining: fullConfig.maxRequests - updated.count,
+      resetAt: updated.expiresAt,
+      current: updated.count,
+    };
+  }
+
+  // No existing record – create a new window
+  const [created] = await db
+    .insert(rateLimits)
+    .values({
+      identifier,
+      identifierType,
+      action: fullConfig.action,
+      count: 1,
+      windowStart: now,
+      expiresAt,
+      updatedAt: now,
+      createdAt: now,
+    })
+    .returning();
+
+  return {
+    allowed: true,
+    remaining: fullConfig.maxRequests - 1,
+    resetAt: created.expiresAt,
+    current: 1,
+  };
 }
 
 // Cleanup utility (call via cron job)

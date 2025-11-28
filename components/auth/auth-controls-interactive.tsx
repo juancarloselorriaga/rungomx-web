@@ -4,7 +4,7 @@ import UserAvatar from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/client';
-import { User } from '@/types/auth';
+import type { User } from '@/lib/auth/types';
 import { useRouter } from '@/i18n/navigation';
 import { useTranslations } from 'next-intl';
 import { FormEvent, useTransition } from 'react';

@@ -4,7 +4,7 @@ import UserAvatar from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/client';
-import { User } from '@/types/auth';
+import type { User } from '@/lib/auth/types';
 import { LucideLogOut } from 'lucide-react';
 import { FC, useTransition } from 'react';
 import { useTranslations } from 'next-intl';

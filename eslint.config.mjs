@@ -15,6 +15,13 @@ const eslintConfig = defineConfig([
     // Scripts directory (utility scripts, not production code)
     'scripts/**',
   ]),
+  // Relax specific rules for test files
+  {
+    files: ['**/__tests__/**/*.[jt]s?(x)'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
 ]);
 
 export default eslintConfig;
