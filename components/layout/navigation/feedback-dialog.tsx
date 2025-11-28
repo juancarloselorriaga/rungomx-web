@@ -35,11 +35,13 @@ export function FeedbackDialog({
   const t = useTranslations('components.feedback');
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [honeypot, setHoneypot] = useState('');
   const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const resetForm = () => {
     setMessage('');
+    setHoneypot('');
   };
 
   const handleOpenChange = useCallback((value: boolean) => {
@@ -67,10 +69,20 @@ export function FeedbackDialog({
           const result = await submitContactSubmission({
             message: trimmedMessage,
             origin: 'feedback-dialog',
+            honeypot,
             metadata,
           });
 
           if (!result.ok) {
+            // Handle specific error types
+            if (result.error === 'RATE_LIMIT_EXCEEDED') {
+              toast.error(t('rateLimitError'));
+              return;
+            }
+            if (result.error === 'EMAIL_FAILED') {
+              toast.error(t('emailError'));
+              return;
+            }
             throw new Error(result.error || 'Unknown error');
           }
 
@@ -82,7 +94,7 @@ export function FeedbackDialog({
         }
       })();
     });
-  }, [handleOpenChange, message, t]);
+  }, [handleOpenChange, message, honeypot, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -155,6 +167,29 @@ export function FeedbackDialog({
             data-protonpass-ignore="true"
             onChange={(event) => setMessage(event.target.value)}
           />
+          <div
+            style={{
+              position: 'absolute',
+              left: '-9999px',
+              width: '1px',
+              height: '1px',
+              overflow: 'hidden',
+            }}
+            aria-hidden="true"
+          >
+            <label htmlFor="feedback-website">Website</label>
+            <input
+              type="text"
+              id="feedback-website"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
+            />
+          </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
               {t('cancel')}

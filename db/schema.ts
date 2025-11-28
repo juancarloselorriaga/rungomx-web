@@ -3,6 +3,7 @@ import {
   boolean,
   date,
   decimal,
+  index,
   jsonb,
   integer,
   pgTable,
@@ -178,3 +179,33 @@ export const contactSubmissions = pgTable("contact_submissions", {
     .defaultNow()
     .notNull(),
 });
+
+export const rateLimits = pgTable(
+  "rate_limits",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    identifier: varchar("identifier", { length: 255 }).notNull(),
+    identifierType: varchar("identifier_type", { length: 20 }).notNull(),
+    action: varchar("action", { length: 100 }).notNull(),
+    count: integer("count").notNull().default(1),
+    windowStart: timestamp("window_start", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => sql`now()`),
+  },
+  (table) => ({
+    identifierActionIdx: uniqueIndex("rate_limits_identifier_type_action_idx").on(
+      table.identifier,
+      table.identifierType,
+      table.action
+    ),
+    expiresAtIdx: index("rate_limits_expires_at_idx").on(table.expiresAt),
+  })
+);

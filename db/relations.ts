@@ -4,6 +4,7 @@ import {
   accounts,
   contactSubmissions,
   profiles,
+  rateLimits,
   roles,
   sessions,
   userRoles,
@@ -60,6 +61,13 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 export const contactSubmissionsRelations = relations(contactSubmissions, ({ one }) => ({
   user: one(users, {
     fields: [contactSubmissions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const rateLimitsRelations = relations(rateLimits, ({ one }) => ({
+  user: one(users, {
+    fields: [rateLimits.identifier],
     references: [users.id],
   }),
 }));

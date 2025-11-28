@@ -7,5 +7,7 @@
   "cancel": "Cancelar",
   "send": "Enviar",
   "success": "¡Gracias por tus comentarios! Ya los recibimos.",
-  "error": "No pudimos enviar tus comentarios. Inténtalo de nuevo."
+  "error": "No pudimos enviar tus comentarios. Inténtalo de nuevo.",
+  "rateLimitError": "Has enviado demasiados mensajes. Por favor, inténtalo más tarde.",
+  "emailError": "No pudimos enviar tu mensaje. Inténtalo de nuevo o contáctanos directamente."
 }
