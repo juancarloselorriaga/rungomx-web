@@ -8,18 +8,25 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Button } from '@/components/ui/button';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Link, usePathname } from '@/i18n/navigation';
+import { useSession } from '@/lib/auth/client';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { PanelRightOpen } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Suspense, useEffect, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 
 export function NavigationDrawerContent({
-  user,
-  items
+  user: initialUser,
+  items,
 }: NavigationDrawerContentProps) {
   const pathname = usePathname();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations('common');
+  const { data } = useSession();
+
+  const resolvedUser = useMemo(
+    () => data?.user ?? initialUser ?? null,
+    [data?.user, initialUser],
+  );
 
   useEffect(() => {
     if (closeButtonRef.current) {
@@ -39,7 +46,7 @@ export function NavigationDrawerContent({
             </SheetTitle>
             <SheetPrimitive.Close asChild ref={closeButtonRef}>
               <Button variant="ghost" size="icon" className="p-0 rounded-sm h-8 w-8">
-                <PanelRightOpen size={20}/>
+                <PanelRightOpen size={20} />
                 <span className="sr-only">{t('close')}</span>
               </Button>
             </SheetPrimitive.Close>
@@ -47,18 +54,18 @@ export function NavigationDrawerContent({
         </SheetHeader>
 
         <nav className="flex-1 overflow-y-auto">
-          <NavItems items={items}/>
+          <NavItems items={items} />
         </nav>
 
         <div className="mt-auto border-t p-4">
           <div className="flex w-full items-center justify-between">
-            <AuthControlsCompact initialUser={user}/>
+            <AuthControlsCompact initialUser={resolvedUser} />
             <div className="flex items-center gap-2">
               <Suspense fallback={null}>
-                <LanguageSwitcher/>
+                <LanguageSwitcher />
               </Suspense>
               <Suspense fallback={null}>
-                <ThemeSwitcher/>
+                <ThemeSwitcher />
               </Suspense>
             </div>
           </div>

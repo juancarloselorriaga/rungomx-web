@@ -2,32 +2,25 @@ import { NavDrawerTrigger } from '@/components/layout/navigation/nav-drawer-trig
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import type { NavItem } from '@/components/layout/navigation/types';
 import { Link } from '@/i18n/navigation';
-import { getCurrentUser } from '@/lib/auth/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import { UserMenu } from './user-menu';
+import { UserMenuWithSession } from './user-menu-with-session';
 
-interface NavigationBarProps {
+interface PublicNavigationBarProps {
   items: readonly NavItem[];
-  variant?: 'public' | 'protected';
 }
 
-export default async function NavigationBar({
+export default async function PublicNavigationBar({
   items,
-  variant = 'public' // Currently unused but reserved for future layout variants
-}: NavigationBarProps) {
-  const user = await getCurrentUser();
+}: PublicNavigationBarProps) {
   const t = await getTranslations('common');
-
   const showNavItems = items.length > 0;
 
   return (
-    <nav
-      className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur"
-    >
+    <nav className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur">
       <div className="flex h-16 w-full items-center gap-3 px-4 text-sm md:px-6">
         <div className="flex min-w-0 items-center gap-2">
-          {items.length > 0 ? <NavDrawerTrigger user={user} items={items} /> : null}
+          {items.length > 0 ? <NavDrawerTrigger items={items} /> : null}
           <Link className="font-semibold" href="/">
             {t('brandName')}
           </Link>
@@ -43,15 +36,16 @@ export default async function NavigationBar({
             />
           </div>
         ) : (
-          <div className="flex-1"/>
+          <div className="flex-1" />
         )}
 
         <div className="flex items-center justify-end gap-2">
           <Suspense fallback={null}>
-            <UserMenu user={user}/>
+            <UserMenuWithSession />
           </Suspense>
         </div>
       </div>
     </nav>
   );
 }
+

@@ -12,7 +12,7 @@ const NavigationDrawerContent = dynamic<NavigationDrawerContentProps>(
 );
 
 interface NavDrawerTriggerProps {
-  user: NavigationDrawerContentProps['user'];
+  user?: NavigationDrawerContentProps['user'];
   items: NavigationDrawerContentProps['items'];
 }
 

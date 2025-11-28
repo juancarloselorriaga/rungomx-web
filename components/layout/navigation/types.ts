@@ -39,6 +39,6 @@ export interface NavSection<TIcon extends NavIconName = NavIconName> {
 }
 
 export interface NavigationDrawerContentProps {
-  user: User | null;
+  user?: User | null;
   items: readonly NavItem[];
 }
