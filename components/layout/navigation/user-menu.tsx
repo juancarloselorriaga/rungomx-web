@@ -163,20 +163,14 @@ export function UserMenu({ user }: { user: User | null }) {
             disabled={isPending}
             className="text-destructive"
           >
-            <LogOut className="h-4 w-4"/>
+            <LogOut className="h-4 w-4" />
             {tAuth('signOut')}
           </DropdownMenuItem>
         ) : (
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
-              <Link href="/sign-in">
-                <UserIcon className="h-4 w-4"/>
-                {tAuth('signIn')}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
               <Link href="/sign-up">
-                <UserIcon className="h-4 w-4"/>
+                <UserIcon className="h-4 w-4" />
                 {tAuth('signUp')}
               </Link>
             </DropdownMenuItem>

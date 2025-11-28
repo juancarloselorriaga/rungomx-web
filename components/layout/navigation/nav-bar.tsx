@@ -14,7 +14,7 @@ interface NavigationBarProps {
 
 export default async function NavigationBar({
   items,
-  variant = 'public' // Currently unused but reserved for future layout variants
+  variant = 'public'
 }: NavigationBarProps) {
   const user = await getCurrentUser();
   const t = await getTranslations('common');
@@ -33,7 +33,7 @@ export default async function NavigationBar({
           </Link>
         </div>
 
-        {showNavItems ? (
+        {showNavItems && variant === 'public' ? (
           <div className="hidden flex-1 items-center justify-center lg:flex">
             <NavItems
               items={items}

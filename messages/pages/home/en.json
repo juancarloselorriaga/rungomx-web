@@ -1,24 +1,5 @@
 {
-  "content": {
-    "eyebrow": "Authentication status",
-    "title": "Stay on top of your races with RunGoMX",
-    "description": "Sign in to see your personalized dashboard and keep your profile up to date."
-  },
   "actions": {
-    "getStarted": "Create account",
-    "signIn": "Sign in",
-    "goToDashboard": "Go to dashboard",
-    "manageAccount": "Manage account"
-  },
-  "session": {
-    "serverTitle": "Server session",
-    "serverDescription": "Validated with auth.api.getSession() using request headers.",
-    "serverSignedInAs": "Signed in as {email}",
-    "serverSignedOut": "You are not signed in yet.",
-    "clientTitle": "Live session",
-    "clientDescription": "Powered by authClient.useSession() in a client component.",
-    "clientSignedIn": "Client sees session for {email}.",
-    "clientSignedOut": "No active client session detected.",
-    "pending": "Checking session..."
+    "goToDashboard": "Go to dashboard"
   }
 }

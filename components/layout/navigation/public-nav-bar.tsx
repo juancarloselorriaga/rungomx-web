@@ -4,6 +4,7 @@ import type { NavItem } from '@/components/layout/navigation/types';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { AuthCtaWithSession } from './auth-cta-with-session';
 import { UserMenuWithSession } from './user-menu-with-session';
 
 interface PublicNavigationBarProps {
@@ -18,7 +19,7 @@ export default async function PublicNavigationBar({
 
   return (
     <nav className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur">
-      <div className="flex h-16 w-full items-center gap-3 px-4 text-sm md:px-6">
+      <div className="relative flex h-16 w-full items-center gap-3 px-4 text-sm md:px-6">
         <div className="flex min-w-0 items-center gap-2">
           {items.length > 0 ? <NavDrawerTrigger items={items} /> : null}
           <Link className="font-semibold" href="/">
@@ -27,19 +28,20 @@ export default async function PublicNavigationBar({
         </div>
 
         {showNavItems ? (
-          <div className="hidden flex-1 items-center justify-center lg:flex">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 lg:flex">
             <NavItems
               items={items}
-              containerClassName="flex-row items-center justify-center space-y-0 space-x-2 p-0"
+              containerClassName="pointer-events-auto flex-row items-center justify-center space-y-0 space-x-2 p-0"
               iconSize={20}
               showLabels
             />
           </div>
-        ) : (
-          <div className="flex-1" />
-        )}
+        ) : null}
+
+        <div className="flex-1" />
 
         <div className="flex items-center justify-end gap-2">
+          <AuthCtaWithSession />
           <Suspense fallback={null}>
             <UserMenuWithSession />
           </Suspense>
@@ -48,4 +50,3 @@ export default async function PublicNavigationBar({
     </nav>
   );
 }
-

@@ -1,24 +1,5 @@
 {
-  "content": {
-    "eyebrow": "Estado de autenticación",
-    "title": "Mantén tu cuenta al día con RunGoMX",
-    "description": "Inicia sesión para ver tu tablero personalizado y mantener tu perfil actualizado."
-  },
   "actions": {
-    "getStarted": "Crear cuenta",
-    "signIn": "Iniciar sesión",
-    "goToDashboard": "Ir al tablero",
-    "manageAccount": "Administrar cuenta"
-  },
-  "session": {
-    "serverTitle": "Sesión en el servidor",
-    "serverDescription": "Validada con auth.api.getSession() usando los headers de la solicitud.",
-    "serverSignedInAs": "Sesión iniciada como {email}",
-    "serverSignedOut": "Aún no has iniciado sesión.",
-    "clientTitle": "Sesión en el cliente",
-    "clientDescription": "Impulsada por authClient.useSession() en un componente cliente.",
-    "clientSignedIn": "El cliente detecta sesión para {email}.",
-    "clientSignedOut": "No se detectó una sesión activa en el cliente.",
-    "pending": "Verificando sesión..."
+    "goToDashboard": "Ir al tablero"
   }
 }
