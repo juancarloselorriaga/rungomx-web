@@ -1,0 +1,11 @@
+{
+  "title": "Restablece tu contraseña",
+  "description": "Ingresa tu nueva contraseña a continuación.",
+  "newPassword": "Nueva contraseña",
+  "confirmPassword": "Confirmar contraseña",
+  "resetPassword": "Restablecer contraseña",
+  "passwordMismatch": "Las contraseñas no coinciden",
+  "invalidToken": "Este enlace de restablecimiento de contraseña es inválido o ha expirado. Por favor solicita uno nuevo.",
+  "missingToken": "No se encontró el token de restablecimiento. Por favor solicita un nuevo enlace de restablecimiento de contraseña.",
+  "genericError": "Algo salió mal. Por favor intenta de nuevo."
+}

@@ -8,5 +8,16 @@
     "ignoreMessage": "Si no creaste una cuenta en RungoMX, puedes ignorar este correo de manera segura.",
     "alternativeText": "Si el botón no funciona, copia y pega este enlace en tu navegador:",
     "footer": "© {year} RungoMX. Todos los derechos reservados."
+  },
+  "passwordReset": {
+    "subject": "Restablece tu contraseña - RungoMX",
+    "title": "Restablece tu contraseña",
+    "greeting": "¡Hola {userName}!",
+    "message": "Recibimos una solicitud para restablecer tu contraseña. Haz clic en el botón de abajo para crear una nueva contraseña:",
+    "button": "Restablecer Contraseña",
+    "ignoreMessage": "Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de manera segura. Tu contraseña permanecerá sin cambios.",
+    "alternativeText": "Si el botón no funciona, copia y pega este enlace en tu navegador:",
+    "expirationNote": "Este enlace expirará en 1 hora por razones de seguridad.",
+    "footer": "© {year} RungoMX. Todos los derechos reservados."
   }
 }

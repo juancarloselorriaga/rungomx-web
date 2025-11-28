@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { useRouter } from '@/i18n/navigation';
 import { signIn } from '@/lib/auth/client';
 import { Loader2, Lock, LogIn, Mail } from 'lucide-react';
@@ -96,6 +97,15 @@ export function SignInForm() {
           value={password}
           onChange={(event) => setPassword(event.target.value)}
         />
+      </div>
+
+      <div className="text-right">
+        <Link
+          href="/forgot-password"
+          className="text-sm text-primary hover:underline"
+        >
+          {t('forgotPassword')}
+        </Link>
       </div>
 
       {error ? (

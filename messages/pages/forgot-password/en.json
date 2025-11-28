@@ -1,0 +1,10 @@
+{
+  "title": "Forgot your password?",
+  "description": "Enter your email address and we'll send you a link to reset your password.",
+  "email": "Email address",
+  "emailSent": "Check your email",
+  "emailSentDescription": "If an account exists with that email, you'll receive password reset instructions shortly.",
+  "backToSignIn": "Back to sign in",
+  "sendResetLink": "Send reset link",
+  "genericError": "Something went wrong. Please try again."
+}

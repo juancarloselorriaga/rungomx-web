@@ -8,5 +8,16 @@
     "ignoreMessage": "If you didn't create an account on RungoMX, you can safely ignore this email.",
     "alternativeText": "If the button doesn't work, copy and paste this link into your browser:",
     "footer": "© {year} RungoMX. All rights reserved."
+  },
+  "passwordReset": {
+    "subject": "Reset your password - RungoMX",
+    "title": "Reset your password",
+    "greeting": "Hello {userName}!",
+    "message": "We received a request to reset your password. Click the button below to create a new password:",
+    "button": "Reset Password",
+    "ignoreMessage": "If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.",
+    "alternativeText": "If the button doesn't work, copy and paste this link into your browser:",
+    "expirationNote": "This link will expire in 1 hour for security reasons.",
+    "footer": "© {year} RungoMX. All rights reserved."
   }
 }

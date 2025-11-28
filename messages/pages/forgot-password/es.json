@@ -1,0 +1,10 @@
+{
+  "title": "¿Olvidaste tu contraseña?",
+  "description": "Ingresa tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña.",
+  "email": "Correo electrónico",
+  "emailSent": "Revisa tu correo",
+  "emailSentDescription": "Si existe una cuenta con ese correo electrónico, recibirás instrucciones para restablecer tu contraseña en breve.",
+  "backToSignIn": "Volver a iniciar sesión",
+  "sendResetLink": "Enviar enlace de restablecimiento",
+  "genericError": "Algo salió mal. Por favor intenta de nuevo."
+}

@@ -5,6 +5,10 @@ import {
   generateVerificationEmailHTML,
   generateVerificationEmailText,
 } from './email/templates/verification-email';
+import {
+  generatePasswordResetEmailHTML,
+  generatePasswordResetEmailText,
+} from './email/templates/password-reset-email';
 
 const emailApi = new TransactionalEmailsApi();
 emailApi.setApiKey(
@@ -154,5 +158,57 @@ export async function sendVerificationEmail({
     subject: t('subject'),
     htmlContent: generateVerificationEmailHTML(templateProps),
     textContent: generateVerificationEmailText(templateProps),
+  });
+}
+
+interface PasswordResetEmailParams {
+  email: string;
+  url: string;
+  userName: string;
+  locale: AppLocale;
+}
+
+async function buildPasswordResetTemplateProps(
+  url: string,
+  userName: string,
+  locale: AppLocale
+) {
+  const t = await getTranslations({
+    locale,
+    namespace: 'emails.passwordReset'
+  });
+  const currentYear = new Date().getFullYear();
+
+  return {
+    greeting: t('greeting', { userName }),
+    message: t('message'),
+    button: t('button'),
+    ignoreMessage: t('ignoreMessage'),
+    alternativeText: t('alternativeText'),
+    expirationNote: t('expirationNote'),
+    footer: t('footer', { year: currentYear }),
+    title: t('title'),
+    url,
+    locale
+  };
+}
+
+export async function sendPasswordResetEmail({
+  email,
+  url,
+  userName,
+  locale,
+}: PasswordResetEmailParams) {
+  const templateProps = await buildPasswordResetTemplateProps(url, userName, locale);
+  const t = await getTranslations({
+    locale,
+    namespace: 'emails.passwordReset'
+  });
+
+  return sendEmail({
+    to: { email, name: userName },
+    subject: t('subject'),
+    htmlContent: generatePasswordResetEmailHTML(templateProps),
+    textContent: generatePasswordResetEmailText(templateProps),
   });
 }

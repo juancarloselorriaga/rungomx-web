@@ -70,6 +70,18 @@ export const routing = defineRouting({
     '/verify-email-success': {
       es: '/verificar-email-exitoso',
       en: '/verify-email-success'
+    },
+    '/forgot-password': {
+      es: '/olvide-contrasena',
+      en: '/forgot-password'
+    },
+    '/forgot-password/success': {
+      es: '/olvide-contrasena/exitoso',
+      en: '/forgot-password/success'
+    },
+    '/reset-password': {
+      es: '/restablecer-contrasena',
+      en: '/reset-password'
     }
   }
 });

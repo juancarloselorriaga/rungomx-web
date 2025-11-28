@@ -1,0 +1,11 @@
+{
+  "title": "Reset your password",
+  "description": "Enter your new password below.",
+  "newPassword": "New password",
+  "confirmPassword": "Confirm password",
+  "resetPassword": "Reset password",
+  "passwordMismatch": "Passwords do not match",
+  "invalidToken": "This password reset link is invalid or has expired. Please request a new one.",
+  "missingToken": "No reset token found. Please request a new password reset link.",
+  "genericError": "Something went wrong. Please try again."
+}

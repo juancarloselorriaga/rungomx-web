@@ -1,4 +1,6 @@
 {
   "title": "Iniciar sesión",
-  "description": "Página de inicio de sesión. Implementa tu formulario de autenticación aquí."
+  "description": "Página de inicio de sesión. Implementa tu formulario de autenticación aquí.",
+  "passwordResetSuccess": "Contraseña restablecida exitosamente",
+  "passwordResetSuccessDescription": "Ahora puedes iniciar sesión con tu nueva contraseña."
 }

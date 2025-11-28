@@ -2,7 +2,7 @@ import { db } from '@/db';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { haveIBeenPwned } from 'better-auth/plugins';
-import { sendVerificationEmail } from '@/lib/email';
+import { sendVerificationEmail, sendPasswordResetEmail } from '@/lib/email';
 import { extractLocaleFromRequest } from '@/lib/utils/locale';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
@@ -26,6 +26,38 @@ export const auth = betterAuth({
     maxPasswordLength: 128,
     requireEmailVerification: true,
     autoSignIn: false,
+    sendResetPassword: async ({ user, url }, request) => {
+      try {
+        // Extract locale from the url which contains the redirectTo parameter
+        // The url looks like: http://localhost:3000/api/auth/verify?token=...&callbackURL=/en/reset-password
+        const urlObj = new URL(url);
+        const callbackURL = urlObj.searchParams.get('callbackURL') || '';
+
+        // Extract locale from callbackURL (e.g., /en/reset-password or /restablecer-contrasena)
+        let locale = extractLocaleFromRequest(request);
+        const callbackLocaleMatch = callbackURL.match(/^\/([a-z]{2})\//);
+        if (callbackLocaleMatch?.[1] && (callbackLocaleMatch[1] === 'en' || callbackLocaleMatch[1] === 'es')) {
+          locale = callbackLocaleMatch[1] as 'en' | 'es';
+        }
+
+        // Use the callbackURL directly if provided, otherwise construct it
+        const resetPasswordURL = callbackURL || `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/${locale}/reset-password`;
+
+        // Modify the reset URL to include callbackURL parameter
+        urlObj.searchParams.set('callbackURL', resetPasswordURL);
+        const modifiedURL = urlObj.toString();
+
+        await sendPasswordResetEmail({
+          email: user.email,
+          url: modifiedURL,
+          userName: user.name,
+          locale,
+        });
+      } catch (error) {
+        console.error('❌ Failed to send password reset email:', error);
+        throw error;
+      }
+    },
   },
   plugins: [
     haveIBeenPwned({
