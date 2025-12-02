@@ -14,13 +14,9 @@ import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { signOut, useSession } from '@/lib/auth/client';
 import { EMPTY_PROFILE_STATUS } from '@/lib/auth/constants';
-import type {
-  ProfileMetadata,
-  ProfileRecord,
-  ProfileStatus,
-  ProfileUpsertInput,
-} from '@/lib/profiles';
-import { buildProfileMetadata, buildProfileRequirementSummary } from '@/lib/profiles';
+import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
+import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
+import { buildProfileMetadata, ProfileMetadata } from '@/lib/profiles/metadata';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CheckCircle2, LogOut, ShieldAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';

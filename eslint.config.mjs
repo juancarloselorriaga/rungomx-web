@@ -22,6 +22,19 @@ const eslintConfig = defineConfig([
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
+  {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          name: '@/lib/profiles',
+          message:
+            'Client components must not import the profiles barrel (pulls DB); import from ./types, ./requirements, or ./metadata instead.',
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
