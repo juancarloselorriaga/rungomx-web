@@ -1,0 +1,33 @@
+{
+  "title": "Completa tu perfil para continuar",
+  "description": "Necesitamos algunos datos básicos antes de que puedas usar tu cuenta.",
+  "intendedRoute": "Seguirás en <route>{routeName}</route> cuando termines.",
+  "status": {
+    "label": "Estado actual:",
+    "complete": "Perfil completo",
+    "incomplete": "Faltan datos obligatorios"
+  },
+  "fields": {
+    "phone": "Teléfono *",
+    "dateOfBirth": "Fecha de nacimiento *",
+    "city": "Ciudad *",
+    "state": "Estado *",
+    "emergencyContactName": "Contacto de emergencia *",
+    "emergencyContactPhone": "Teléfono de emergencia *",
+    "gender": "Género",
+    "shirtSize": "Talla de playera",
+    "bloodType": "Tipo de sangre",
+    "bio": "Biografía / notas"
+  },
+  "actions": {
+    "signOut": "Cerrar sesión",
+    "submit": "Guardar y continuar",
+    "clear": "Borrar"
+  },
+  "errors": {
+    "loadProfile": "No se pudo cargar tu perfil. Intenta de nuevo.",
+    "invalidInput": "Revisa los campos obligatorios y vuelve a intentarlo.",
+    "saveProfile": "No se pudo guardar el perfil. Intenta de nuevo."
+  },
+  "loading": "Cargando tu información..."
+}

@@ -1,0 +1,33 @@
+{
+  "title": "Complete your profile to continue",
+  "description": "We need some basic information before you can use your account.",
+  "intendedRoute": "You'll stay on <route>{routeName}</route> once you're done.",
+  "status": {
+    "label": "Current status:",
+    "complete": "Profile complete",
+    "incomplete": "Required information missing"
+  },
+  "fields": {
+    "phone": "Phone *",
+    "dateOfBirth": "Date of birth *",
+    "city": "City *",
+    "state": "State *",
+    "emergencyContactName": "Emergency contact *",
+    "emergencyContactPhone": "Emergency phone *",
+    "gender": "Gender",
+    "shirtSize": "Shirt size",
+    "bloodType": "Blood type",
+    "bio": "Bio / notes"
+  },
+  "actions": {
+    "signOut": "Sign out",
+    "submit": "Save and continue",
+    "clear": "Clear"
+  },
+  "errors": {
+    "loadProfile": "We couldn't load your profile. Please try again.",
+    "invalidInput": "Check the required fields and try again.",
+    "saveProfile": "We couldn't save the profile. Please try again."
+  },
+  "loading": "Loading your information..."
+}
