@@ -71,3 +71,43 @@ export function extractLocaleFromRequest(request?: Request | { url?: string; hea
   // 4. Default fallback
   return routing.defaultLocale;
 }
+
+/**
+ * Extracts the locale from a callback URL used in Better Auth email flows.
+ * This function handles both full URLs and path-only URLs.
+ *
+ * @param callbackURL - The callback URL that may contain a locale prefix (e.g., /en/reset-password or http://localhost:3000/en/reset-password)
+ * @param fallbackRequest - Optional request object to extract locale from if callback URL doesn't contain locale
+ * @returns The extracted locale or the default locale
+ *
+ * @example
+ * extractLocaleFromCallbackURL('/en/reset-password') // 'en'
+ * extractLocaleFromCallbackURL('http://localhost:3000/es/verificar-email') // 'es'
+ * extractLocaleFromCallbackURL('/some-page', request) // Falls back to extractLocaleFromRequest
+ */
+export function extractLocaleFromCallbackURL(
+  callbackURL: string,
+  fallbackRequest?: Request | { url?: string; headers?: Headers }
+): AppLocale {
+  if (!callbackURL) {
+    return fallbackRequest ? extractLocaleFromRequest(fallbackRequest) : routing.defaultLocale;
+  }
+
+  // Extract the pathname from callbackURL if it's a full URL
+  let callbackPath = callbackURL;
+  try {
+    const callbackUrlObj = new URL(callbackURL);
+    callbackPath = callbackUrlObj.pathname;
+  } catch {
+    // callbackURL is already a path, not a full URL
+  }
+
+  // Try to match locale from the path (e.g., /en/reset-password)
+  const callbackLocaleMatch = callbackPath.match(/^\/([a-z]{2})\//);
+  if (callbackLocaleMatch?.[1] && isValidLocale(callbackLocaleMatch[1])) {
+    return callbackLocaleMatch[1];
+  }
+
+  // If no locale found in callback URL, fall back to request-based extraction
+  return fallbackRequest ? extractLocaleFromRequest(fallbackRequest) : routing.defaultLocale;
+}
