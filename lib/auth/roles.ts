@@ -246,18 +246,28 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
     .innerJoin(roles, eq(userRoles.roleId, roles.id))
     .where(eq(userRoles.userId, userId));
 
-  const externalRoleIds = existingRoles
-    .filter(({ roleName }) => {
-      const canonical = ROLE_NAME_MAP[roleName.toLowerCase()];
-      return canonical ? ROLE_REGISTRY[canonical]?.category === 'external' : false;
-    })
-    .map(({ roleId }) => roleId);
+  const existingExternalRoleNames = unique(
+    existingRoles
+      .map(({ roleName }) => roleName)
+      .filter((roleName) => {
+        const canonical = ROLE_NAME_MAP[roleName.toLowerCase()];
+        return canonical ? ROLE_REGISTRY[canonical]?.category === 'external' : false;
+      })
+  );
 
-  if (desiredNames.length) {
+  const roleNamesToEnsure = unique([...desiredNames, ...existingExternalRoleNames]);
+  const existingRoleNameSet = new Set(
+    existingRoles.map(({ roleName }) => roleName.toLowerCase()).filter(Boolean)
+  );
+  const namesToInsert = roleNamesToEnsure.filter(
+    (name) => !existingRoleNameSet.has(name.toLowerCase())
+  );
+
+  if (namesToInsert.length) {
     await db
       .insert(roles)
       .values(
-        desiredNames.map((name) => ({
+        namesToInsert.map((name) => ({
           name,
           description: `auto-created role ${name}`,
         }))
@@ -265,11 +275,23 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
       .onConflictDoNothing();
   }
 
-  const desiredRoleRows = await db
+  const ensuredRoleRows = await db
     .select({ id: roles.id, name: roles.name })
     .from(roles)
-    .where(inArray(roles.name, desiredNames));
-  const desiredRoleIds = desiredRoleRows.map((row) => row.id);
+    .where(inArray(roles.name, roleNamesToEnsure));
+
+  const roleIdByName = new Map(ensuredRoleRows.map(({ id, name }) => [name.toLowerCase(), id]));
+  const desiredRoleIds = desiredNames
+    .map((name) => roleIdByName.get(name.toLowerCase()))
+    .filter((id): id is string => Boolean(id));
+  const existingRoleIds = new Set(
+    existingRoles
+      .map(({ roleId, roleName }) => roleId ?? roleIdByName.get(roleName.toLowerCase()))
+      .filter((id): id is string => Boolean(id))
+  );
+  const externalRoleIds = existingExternalRoleNames
+    .map((name) => roleIdByName.get(name.toLowerCase()))
+    .filter((id): id is string => Boolean(id));
 
   if (externalRoleIds.length > 0) {
     await db
@@ -278,7 +300,7 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
   }
 
   const roleIdsToInsert = desiredRoleIds.filter(
-    (roleId) => !existingRoles.some((row) => row.roleId === roleId)
+    (roleId) => !existingRoleIds.has(roleId)
   );
 
   if (roleIdsToInsert.length > 0) {

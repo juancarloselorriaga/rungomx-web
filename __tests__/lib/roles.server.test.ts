@@ -218,7 +218,7 @@ describe('lib/auth/roles', () => {
 
     __pushSelect(() =>
       __state.roles
-        .filter((role) => role.name === 'athlete')
+        .filter((role) => role.name === 'athlete' || role.name === 'volunteer')
         .map((role) => ({ id: role.id, name: role.name }))
     );
 
