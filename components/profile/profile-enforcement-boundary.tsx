@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { signOut, useSession } from '@/lib/auth/client';
-import { EMPTY_PROFILE_STATUS } from '@/lib/auth/user-context';
+import { EMPTY_PROFILE_STATUS } from '@/lib/auth/constants';
 import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles';
 import { CheckCircle2, LogOut, ShieldAlert } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';

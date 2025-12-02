@@ -1,17 +1,12 @@
 import { computeProfileStatus, getProfileByUserId } from '@/lib/profiles';
 import type { ProfileStatus } from '@/lib/profiles';
+import { EMPTY_PROFILE_STATUS } from './constants';
 import { getUserRolesWithInternalFlag } from './roles';
 
 export type BasicUser = {
   id: string;
   email?: string | null;
   name?: string | null;
-};
-
-const EMPTY_PROFILE_STATUS: ProfileStatus = {
-  hasProfile: false,
-  isComplete: false,
-  mustCompleteProfile: false,
 };
 
 export type ResolvedUserContext = {
