@@ -8,12 +8,12 @@
     "incomplete": "Faltan datos obligatorios"
   },
   "fields": {
-    "phone": "Teléfono *",
-    "dateOfBirth": "Fecha de nacimiento *",
-    "city": "Ciudad *",
-    "state": "Estado *",
-    "emergencyContactName": "Contacto de emergencia *",
-    "emergencyContactPhone": "Teléfono de emergencia *",
+    "phone": "Teléfono",
+    "dateOfBirth": "Fecha de nacimiento",
+    "city": "Ciudad",
+    "state": "Estado",
+    "emergencyContactName": "Contacto de emergencia",
+    "emergencyContactPhone": "Teléfono de emergencia",
     "gender": "Género",
     "shirtSize": "Talla de playera",
     "bloodType": "Tipo de sangre",
@@ -29,5 +29,40 @@
     "invalidInput": "Revisa los campos obligatorios y vuelve a intentarlo.",
     "saveProfile": "No se pudo guardar el perfil. Intenta de nuevo."
   },
-  "loading": "Cargando tu información..."
+  "loading": "Cargando tu información...",
+  "selectOption": "Selecciona una opción",
+  "shirtSizes": {
+    "xs": "XS",
+    "s": "S",
+    "m": "M",
+    "l": "L",
+    "xl": "XL",
+    "xxl": "XXL"
+  },
+  "roleAssignment": {
+    "title": "Elige tu rol para continuar",
+    "description": "Selecciona al menos un rol para adaptar tu experiencia.",
+    "actions": {
+      "save": "Guardar roles",
+      "signOut": "Cerrar sesión"
+    },
+    "errors": {
+      "selection": "Selecciona al menos un rol.",
+      "server": "No pudimos actualizar los roles. Inténtalo de nuevo."
+    },
+    "roles": {
+      "organizer": {
+        "title": "Organizador",
+        "description": "Gestiona carreras, equipos y eventos."
+      },
+      "athlete": {
+        "title": "Atleta",
+        "description": "Regístrate, consulta resultados y administra tu participación."
+      },
+      "volunteer": {
+        "title": "Voluntario",
+        "description": "Apoya la logística y operación de eventos."
+      }
+    }
+  }
 }

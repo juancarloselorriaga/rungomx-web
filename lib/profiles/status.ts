@@ -1,13 +1,6 @@
+import type { ProfileRequirementCategory, ProfileRequirementSummary } from './requirements';
+import { buildProfileRequirementSummary, FALLBACK_PROFILE_FIELDS } from './requirements';
 import type { ProfileRecord, ProfileStatus } from './types';
-
-const REQUIRED_FIELDS: (keyof ProfileRecord)[] = [
-  'phone',
-  'city',
-  'state',
-  'dateOfBirth',
-  'emergencyContactName',
-  'emergencyContactPhone',
-];
 
 const isPresent = (value: unknown) => {
   if (value === null || value === undefined) return false;
@@ -19,16 +12,27 @@ const isPresent = (value: unknown) => {
 export type ComputeProfileStatusParams = {
   profile: ProfileRecord | null | undefined;
   isInternal?: boolean;
+  requirementCategories?: ProfileRequirementCategory[];
+  requiredFieldKeys?: (keyof ProfileRecord)[];
 };
 
 export function computeProfileStatus({
   profile,
   isInternal = false,
+  requirementCategories,
+  requiredFieldKeys,
 }: ComputeProfileStatusParams): ProfileStatus {
   const hasProfile = Boolean(profile);
+  const requirementSummary: ProfileRequirementSummary | null = requirementCategories
+    ? buildProfileRequirementSummary(requirementCategories)
+    : null;
+  const requiredFields =
+    requiredFieldKeys && requiredFieldKeys.length > 0
+      ? requiredFieldKeys
+      : requirementSummary?.fieldKeys ?? FALLBACK_PROFILE_FIELDS;
   const isComplete =
     hasProfile &&
-    REQUIRED_FIELDS.every((field) => {
+    requiredFields.every((field) => {
       const value = profile?.[field];
       return isPresent(value);
     });

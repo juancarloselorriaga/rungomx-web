@@ -5,5 +5,34 @@
     "title": "Detalle de sesión",
     "signedInAs": "Sesión iniciada como {email}",
     "signedOut": "No hay una sesión activa."
+  },
+  "admin": {
+    "title": "Área administrativa",
+    "staffTitle": "Área de staff",
+    "description": "Gestiona eventos y usuarios con permisos elevados.",
+    "staffDescription": "Acceso de staff con capacidades administrativas limitadas.",
+    "permissionsTitle": "Permisos",
+    "rolesTitle": "Roles",
+    "rolesEmpty": "No se detectaron roles.",
+    "permissions": {
+      "accessAdminArea": "Acceso al área administrativa habilitado",
+      "noAdminArea": "Acceso al área administrativa deshabilitado",
+      "manageUsers": "Puede gestionar usuarios",
+      "noManageUsers": "No puede gestionar usuarios",
+      "manageEvents": "Puede gestionar eventos",
+      "noManageEvents": "No puede gestionar eventos",
+      "viewStaffTools": "Puede ver herramientas de staff",
+      "noStaffTools": "No puede ver herramientas de staff"
+    },
+    "users": {
+      "title": "Gestión de usuarios",
+      "description": "Administra administradores, staff, organizadores y atletas.",
+      "placeholder": "Las herramientas de gestión de usuarios aparecerán aquí."
+    },
+    "tools": {
+      "title": "Herramientas de staff",
+      "description": "Utilidades operativas y atajos para gestión de eventos.",
+      "placeholder": "Las herramientas de staff estarán disponibles pronto."
+    }
   }
 }

@@ -5,6 +5,8 @@ import { auth } from '@/lib/auth';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { extractLocaleFromRequest } from '@/lib/utils/locale';
 import { EMPTY_PROFILE_STATUS } from '@/lib/auth/user-context';
+import { buildProfileMetadata, buildProfileRequirementSummary } from '@/lib/profiles';
+import type { PermissionSet } from '@/lib/auth/roles';
 import { headers } from 'next/headers';
 
 jest.mock('@/lib/contact-submissions', () => {
@@ -110,6 +112,18 @@ describe('submitContactSubmission', () => {
     mockCreate.mockResolvedValue(sampleSubmission);
   });
 
+  const defaultRequirements = buildProfileRequirementSummary([]);
+  const defaultMetadata = buildProfileMetadata(defaultRequirements);
+  const defaultPermissions: PermissionSet = {
+    canAccessAdminArea: false,
+    canAccessUserArea: true,
+    canManageUsers: false,
+    canManageEvents: false,
+    canViewStaffTools: false,
+    canViewOrganizersDashboard: false,
+    canViewAthleteDashboard: false,
+  };
+
   it('returns validation error for invalid input', async () => {
     const result = await submitContactSubmission({
       message: '',
@@ -189,6 +203,13 @@ describe('submitContactSubmission', () => {
     const rateLimitedSession = {
       roles: [],
       isInternal: false,
+      canonicalRoles: [],
+      permissions: defaultPermissions,
+      needsRoleAssignment: false,
+      profileRequirements: defaultRequirements,
+      profileMetadata: defaultMetadata,
+      profile: null,
+      availableExternalRoles: [],
       session: {
         id: 'session-789',
         createdAt: new Date('2024-01-01T00:00:00.000Z'),
@@ -208,6 +229,13 @@ describe('submitContactSubmission', () => {
         emailVerified: true,
         image: null,
         isInternal: false,
+        canonicalRoles: [],
+        permissions: defaultPermissions,
+        needsRoleAssignment: false,
+        profileRequirements: defaultRequirements,
+        profileMetadata: defaultMetadata,
+        profile: null,
+        availableExternalRoles: [],
         profileStatus: EMPTY_PROFILE_STATUS,
       },
     } satisfies SessionResult;
@@ -271,6 +299,13 @@ describe('submitContactSubmission', () => {
     const authenticatedSession = {
       roles: [],
       isInternal: false,
+      canonicalRoles: [],
+      permissions: defaultPermissions,
+      needsRoleAssignment: false,
+      profileRequirements: defaultRequirements,
+      profileMetadata: defaultMetadata,
+      profile: null,
+      availableExternalRoles: [],
       session: {
         id: 'session-123',
         createdAt: new Date('2024-01-01T00:00:00.000Z'),
@@ -290,6 +325,13 @@ describe('submitContactSubmission', () => {
         emailVerified: true,
         image: null,
         isInternal: false,
+        canonicalRoles: [],
+        permissions: defaultPermissions,
+        needsRoleAssignment: false,
+        profileRequirements: defaultRequirements,
+        profileMetadata: defaultMetadata,
+        profile: null,
+        availableExternalRoles: [],
         profileStatus: EMPTY_PROFILE_STATUS,
       },
     } satisfies SessionResult;

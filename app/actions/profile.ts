@@ -2,8 +2,16 @@
 
 import { auth } from '@/lib/auth';
 import { requireAuthenticatedUser } from '@/lib/auth/guards';
-import { computeProfileStatus, getProfileByUserId, profileUpsertSchema, upsertProfile } from '@/lib/profiles';
-import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles';
+import {
+  computeProfileStatus,
+  getProfileByUserId,
+  profileUpsertSchema,
+  upsertProfile,
+  type ProfileMetadata,
+  type ProfileRecord,
+  type ProfileStatus,
+  type ProfileUpsertInput,
+} from '@/lib/profiles';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -16,18 +24,25 @@ type ProfileActionSuccess = {
   ok: true;
   profile: ProfileRecord | null;
   profileStatus: ProfileStatus;
+  profileMetadata: ProfileMetadata;
 };
 
 export async function readProfile(): Promise<ProfileActionSuccess | ProfileActionError> {
   try {
-    const { user, isInternal } = await requireAuthenticatedUser();
+    const { user, isInternal, profileRequirements, profileMetadata } = await requireAuthenticatedUser();
     const profile = await getProfileByUserId(user.id);
-    const profileStatus = computeProfileStatus({ profile, isInternal });
+    const profileStatus = computeProfileStatus({
+      profile,
+      isInternal,
+      requirementCategories: profileRequirements.categories,
+      requiredFieldKeys: profileRequirements.fieldKeys,
+    });
 
     return {
       ok: true,
       profile,
       profileStatus,
+      profileMetadata,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -58,6 +73,8 @@ export async function upsertProfileAction(
     const profileStatus = computeProfileStatus({
       profile,
       isInternal: authContext.isInternal,
+      requirementCategories: authContext.profileRequirements.categories,
+      requiredFieldKeys: authContext.profileRequirements.fieldKeys,
     });
 
     // Force the session cache to refresh so client hooks see the updated profile status
@@ -71,6 +88,7 @@ export async function upsertProfileAction(
       ok: true,
       profile,
       profileStatus,
+      profileMetadata: authContext.profileMetadata,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {

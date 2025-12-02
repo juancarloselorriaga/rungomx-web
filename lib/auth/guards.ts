@@ -15,6 +15,14 @@ export type AuthenticatedContext = AuthContext & {
   user: NonNullable<AuthContext['user']>;
 };
 
+export class ForbiddenError extends Error {
+  readonly code = 'FORBIDDEN';
+
+  constructor(message = 'Not authorized') {
+    super(message);
+  }
+}
+
 export class ProfileIncompleteError extends Error {
   readonly code = 'PROFILE_INCOMPLETE';
   readonly profileStatus: ProfileStatus;
@@ -43,12 +51,32 @@ export async function requireAuthenticatedUser(): Promise<AuthenticatedContext> 
 export async function requireProfileCompleteUser(): Promise<AuthenticatedContext> {
   const context = await requireAuthenticatedUser();
 
-  if (context.isInternal) {
+  if (context.isInternal || !context.permissions.canAccessUserArea) {
     return context;
   }
 
   if (context.profileStatus.mustCompleteProfile) {
     throw new ProfileIncompleteError(context.profileStatus);
+  }
+
+  return context;
+}
+
+export async function requireAdminUser(): Promise<AuthenticatedContext> {
+  const context = await requireAuthenticatedUser();
+
+  if (!context.permissions.canAccessAdminArea || !context.permissions.canManageUsers) {
+    throw new ForbiddenError('Admin access required');
+  }
+
+  return context;
+}
+
+export async function requireStaffUser(): Promise<AuthenticatedContext> {
+  const context = await requireAuthenticatedUser();
+
+  if (!context.permissions.canAccessAdminArea || !context.permissions.canViewStaffTools) {
+    throw new ForbiddenError('Staff access required');
   }
 
   return context;

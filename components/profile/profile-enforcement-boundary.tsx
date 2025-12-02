@@ -1,6 +1,6 @@
 'use client';
 
-import { readProfile, upsertProfileAction } from '@/app/actions/profile';
+import { upsertProfileAction } from '@/app/actions/profile';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,11 +14,17 @@ import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { signOut, useSession } from '@/lib/auth/client';
 import { EMPTY_PROFILE_STATUS } from '@/lib/auth/constants';
-import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles';
+import type {
+  ProfileMetadata,
+  ProfileRecord,
+  ProfileStatus,
+  ProfileUpsertInput,
+} from '@/lib/profiles';
+import { buildProfileMetadata, buildProfileRequirementSummary } from '@/lib/profiles';
 import { DatePicker } from '@/components/ui/date-picker';
 import { CheckCircle2, LogOut, ShieldAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
 type ProfileFormState = {
   phone: string;
@@ -47,6 +53,16 @@ const DEFAULT_FORM_STATE: ProfileFormState = {
 };
 
 const DEFAULT_STATUS: ProfileStatus = EMPTY_PROFILE_STATUS;
+const FALLBACK_METADATA = buildProfileMetadata(buildProfileRequirementSummary([]));
+
+function FieldLabel({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  return (
+    <span className="font-medium text-foreground">
+      {children}
+      {required ? <span className="text-destructive"> *</span> : null}
+    </span>
+  );
+}
 
 function toInternalPath(pathname: string) {
   const withoutQuery = pathname.split('?')[0]?.split('#')[0] ?? '';
@@ -91,6 +107,11 @@ function formatDateInput(value?: string | Date | null) {
   return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString().slice(0, 10);
 }
 
+function normalizeShirtSize(value?: string | null) {
+  if (!value) return '';
+  return value.trim().toLowerCase();
+}
+
 function toFormState(profile: ProfileRecord | null): ProfileFormState {
   if (!profile) return DEFAULT_FORM_STATE;
 
@@ -102,7 +123,7 @@ function toFormState(profile: ProfileRecord | null): ProfileFormState {
     emergencyContactName: profile.emergencyContactName ?? '',
     emergencyContactPhone: profile.emergencyContactPhone ?? '',
     gender: profile.gender ?? '',
-    shirtSize: profile.shirtSize ?? '',
+    shirtSize: normalizeShirtSize(profile.shirtSize),
     bloodType: profile.bloodType ?? '',
     bio: profile.bio ?? '',
   };
@@ -116,7 +137,7 @@ function buildPayload(form: ProfileFormState): ProfileUpsertInput {
     const trimmed = value?.trim?.() ?? '';
     if (!trimmed) return;
 
-    payload[key] = trimmed;
+    payload[key] = key === 'shirtSize' ? trimmed.toLowerCase() : trimmed;
   });
 
   return payload;
@@ -132,49 +153,50 @@ function toLocalizedPath(pathname: string, locale: string) {
 type ProfileCompletionModalProps = {
   open: boolean;
   profileStatus: ProfileStatus;
+  profile: ProfileRecord | null;
+  profileMetadata: ProfileMetadata;
   intendedRoute?: string | null;
   onStatusUpdate: (status: ProfileStatus) => void;
+  onProfileUpdate: (profile: ProfileRecord | null) => void;
 };
 
 function ProfileCompletionModal({
   open,
   profileStatus,
+  profile,
+  profileMetadata,
   intendedRoute,
   onStatusUpdate,
+  onProfileUpdate,
 }: ProfileCompletionModalProps) {
   const router = useRouter();
   const t = useTranslations('components.profile');
   const locale = useLocale();
-  const [formState, setFormState] = useState<ProfileFormState>(DEFAULT_FORM_STATE);
+  const [formState, setFormState] = useState<ProfileFormState>(toFormState(profile));
   const [remoteStatus, setRemoteStatus] = useState<ProfileStatus>(profileStatus);
-  const [isLoading, setIsLoading] = useState(false);
+  const [metadata, setMetadata] = useState<ProfileMetadata>(profileMetadata);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, startTransition] = useTransition();
+  const requiredFieldKeys = useMemo(
+    () => new Set(metadata.requiredFieldKeys ?? []),
+    [metadata]
+  );
+  const shirtSizeOptions = metadata.shirtSizes ?? [];
+  const isRequiredField = (field: keyof ProfileRecord) => requiredFieldKeys.has(field);
 
   useEffect(() => {
     setRemoteStatus(profileStatus);
   }, [profileStatus]);
 
   useEffect(() => {
+    setMetadata(profileMetadata);
+  }, [profileMetadata]);
+
+  useEffect(() => {
     if (!open) return;
-
-    setIsLoading(true);
-    readProfile()
-      .then((result) => {
-        if (!result.ok) {
-          setError(t('errors.loadProfile'));
-          return;
-        }
-
-        setFormState(toFormState(result.profile));
-        setRemoteStatus(result.profileStatus);
-      })
-      .catch((err) => {
-        console.error('[profile] Failed to fetch profile', err);
-        setError(t('errors.loadProfile'));
-      })
-      .finally(() => setIsLoading(false));
-  }, [open, t]);
+    setFormState(toFormState(profile));
+    setMetadata(profileMetadata);
+  }, [open, profile, profileMetadata]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -195,6 +217,9 @@ function ProfileCompletionModal({
 
       setRemoteStatus(result.profileStatus);
       onStatusUpdate(result.profileStatus);
+      setMetadata(result.profileMetadata);
+      onProfileUpdate(result.profile);
+      setFormState(toFormState(result.profile));
       router.refresh();
     });
   };
@@ -246,7 +271,9 @@ function ProfileCompletionModal({
           <form className="space-y-3" onSubmit={handleSubmit}>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.phone')}</span>
+                <FieldLabel required={isRequiredField('phone')}>
+                  {t('fields.phone')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="phone"
@@ -259,7 +286,9 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.dateOfBirth')}</span>
+                <FieldLabel required={isRequiredField('dateOfBirth')}>
+                  {t('fields.dateOfBirth')}
+                </FieldLabel>
                 <DatePicker
                   locale={locale}
                   value={formState.dateOfBirth}
@@ -273,7 +302,9 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.city')}</span>
+                <FieldLabel required={isRequiredField('city')}>
+                  {t('fields.city')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="city"
@@ -286,7 +317,9 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.state')}</span>
+                <FieldLabel required={isRequiredField('state')}>
+                  {t('fields.state')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="state"
@@ -299,8 +332,9 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t(
-                  'fields.emergencyContactName')}</span>
+                <FieldLabel required={isRequiredField('emergencyContactName')}>
+                  {t('fields.emergencyContactName')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="emergencyContactName"
@@ -315,8 +349,9 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t(
-                  'fields.emergencyContactPhone')}</span>
+                <FieldLabel required={isRequiredField('emergencyContactPhone')}>
+                  {t('fields.emergencyContactPhone')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="emergencyContactPhone"
@@ -331,7 +366,9 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.gender')}</span>
+                <FieldLabel required={isRequiredField('gender')}>
+                  {t('fields.gender')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="gender"
@@ -344,20 +381,35 @@ function ProfileCompletionModal({
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.shirtSize')}</span>
-                <input
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  name="shirtSize"
-                  value={formState.shirtSize}
-                  onChange={(event) => setFormState((prev) => ({
-                    ...prev,
-                    shirtSize: event.target.value
-                  }))}
-                />
+                <FieldLabel required={isRequiredField('shirtSize')}>
+                  {t('fields.shirtSize')}
+                </FieldLabel>
+                <div className="relative">
+                  <select
+                    className="w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                    name="shirtSize"
+                    value={formState.shirtSize}
+                    onChange={(event) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        shirtSize: event.target.value
+                      }))
+                    }
+                  >
+                    <option value="">{t('selectOption')}</option>
+                    {shirtSizeOptions.map((size) => (
+                      <option key={size} value={size}>
+                        {t(`shirtSizes.${size}` as const, { defaultValue: size.toUpperCase() })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </label>
 
               <label className="space-y-1 text-sm">
-                <span className="font-medium text-foreground">{t('fields.bloodType')}</span>
+                <FieldLabel required={isRequiredField('bloodType')}>
+                  {t('fields.bloodType')}
+                </FieldLabel>
                 <input
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   name="bloodType"
@@ -371,7 +423,9 @@ function ProfileCompletionModal({
             </div>
 
             <label className="space-y-1 text-sm">
-              <span className="font-medium text-foreground">{t('fields.bio')}</span>
+              <FieldLabel required={isRequiredField('bio')}>
+                {t('fields.bio')}
+              </FieldLabel>
               <textarea
                 className="min-h-[80px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                 name="bio"
@@ -396,20 +450,13 @@ function ProfileCompletionModal({
               </Button>
 
               <div className="flex items-center gap-2">
-                <Button type="submit" disabled={isSubmitting || isLoading}>
+                <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? <Spinner className="mr-2 h-4 w-4"/> : null}
                   {t('actions.submit')}
                 </Button>
               </div>
             </div>
           </form>
-
-          {isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Spinner className="h-4 w-4"/>
-              {t('loading')}
-            </div>
-          ) : null}
         </div>
       </DialogContent>
     </Dialog>
@@ -424,12 +471,24 @@ export default function ProfileEnforcementBoundary({ children }: ProfileEnforcem
   const { data } = useSession();
   const pathname = usePathname();
   const [overrideStatus, setOverrideStatus] = useState<ProfileStatus | null>(null);
+  const [profileOverride, setProfileOverride] = useState<ProfileRecord | null>(null);
   const [capturedRoute, setCapturedRoute] = useState<string | null>(null);
   const user = data?.user ?? null;
+  const profileMetadata = (data?.profileMetadata ??
+    (user as { profileMetadata?: ProfileMetadata } | null)?.profileMetadata ??
+    FALLBACK_METADATA) as ProfileMetadata;
+  const profileFromSession = (data?.profile ??
+    (user as { profile?: ProfileRecord | null } | null)?.profile ??
+    null) as ProfileRecord | null;
+  const needsRoleAssignment =
+    (data as { needsRoleAssignment?: boolean } | undefined)?.needsRoleAssignment ??
+    (user as { needsRoleAssignment?: boolean } | null)?.needsRoleAssignment ??
+    false;
   const isInternal = user?.isInternal ??
     (data as { isInternal?: boolean } | undefined)?.isInternal ?? false;
   const profileStatus = overrideStatus ?? user?.profileStatus ?? DEFAULT_STATUS;
-  const shouldEnforce = !isInternal && profileStatus.mustCompleteProfile;
+  const profile = profileOverride ?? profileFromSession;
+  const shouldEnforce = !isInternal && !needsRoleAssignment && profileStatus.mustCompleteProfile;
   const intendedRoute = capturedRoute ?? (shouldEnforce ? toInternalPath(pathname) : null);
 
   // Capture the first intended route when enforcement activates and keep it stable for the session.
@@ -446,8 +505,11 @@ export default function ProfileEnforcementBoundary({ children }: ProfileEnforcem
       <ProfileCompletionModal
         open={shouldEnforce}
         profileStatus={profileStatus}
+        profile={profile}
+        profileMetadata={profileMetadata}
         intendedRoute={intendedRoute}
         onStatusUpdate={setOverrideStatus}
+        onProfileUpdate={setProfileOverride}
       />
     </>
   );

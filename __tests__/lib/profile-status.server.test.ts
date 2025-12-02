@@ -65,4 +65,30 @@ describe('computeProfileStatus', () => {
 
     expect(status.mustCompleteProfile).toBe(false);
   });
+
+  it('uses role-based requirement categories when provided', () => {
+    const status = computeProfileStatus({
+      profile: { ...baseProfile, shirtSize: null },
+      requirementCategories: [
+        'basicContact',
+        'emergencyContact',
+        'demographics',
+        'physicalAttributes',
+      ],
+    });
+
+    expect(status.isComplete).toBe(false);
+
+    const resolved = computeProfileStatus({
+      profile: { ...baseProfile, shirtSize: 'm' },
+      requirementCategories: [
+        'basicContact',
+        'emergencyContact',
+        'demographics',
+        'physicalAttributes',
+      ],
+    });
+
+    expect(resolved.isComplete).toBe(true);
+  });
 });

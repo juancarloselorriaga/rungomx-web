@@ -7,10 +7,24 @@ import type { AuthContext } from '@/lib/auth/server';
 import { getAuthContext } from '@/lib/auth/server';
 import type { Session } from '@/lib/auth/types';
 import type { ProfileStatus } from '@/lib/profiles';
+import { buildProfileMetadata, buildProfileRequirementSummary } from '@/lib/profiles';
+import type { PermissionSet } from '@/lib/auth/roles';
 
 const mockGetAuthContext = getAuthContext as jest.MockedFunction<typeof getAuthContext>;
 
 describe('requireProfileCompleteUser', () => {
+  const baseRequirements = buildProfileRequirementSummary([]);
+  const baseMetadata = buildProfileMetadata(baseRequirements);
+  const basePermissions: PermissionSet = {
+    canAccessAdminArea: false,
+    canAccessUserArea: true,
+    canManageUsers: false,
+    canManageEvents: false,
+    canViewStaffTools: false,
+    canViewOrganizersDashboard: false,
+    canViewAthleteDashboard: false,
+  };
+
   beforeEach(() => {
     mockGetAuthContext.mockReset();
   });
@@ -20,7 +34,14 @@ describe('requireProfileCompleteUser', () => {
       session: null,
       user: null,
       roles: [],
+      canonicalRoles: [],
       isInternal: false,
+      permissions: basePermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       profileStatus: {
         hasProfile: false,
         isComplete: false,
@@ -50,7 +71,14 @@ describe('requireProfileCompleteUser', () => {
         userAgent: 'jest',
       },
       roles: [],
+      canonicalRoles: [],
       isInternal: false,
+      permissions: basePermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       user: {
         id: 'user-1',
         email: 'u@example.com',
@@ -59,6 +87,13 @@ describe('requireProfileCompleteUser', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         isInternal: false,
+        canonicalRoles: [],
+        permissions: basePermissions,
+        needsRoleAssignment: false,
+        profileRequirements: baseRequirements,
+        profileMetadata: baseMetadata,
+        profile: null,
+        availableExternalRoles: [],
         profileStatus: status,
       },
     } as unknown as Session;
@@ -67,7 +102,14 @@ describe('requireProfileCompleteUser', () => {
       session,
       user: session.user,
       roles: session.roles ?? [],
+      canonicalRoles: session.canonicalRoles ?? [],
       isInternal: session.isInternal ?? false,
+      permissions: basePermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       profileStatus: status,
     });
 
@@ -90,7 +132,18 @@ describe('requireProfileCompleteUser', () => {
         userAgent: 'jest',
       },
       roles: ['admin'],
+      canonicalRoles: ['internal.admin'],
       isInternal: true,
+      permissions: {
+        ...basePermissions,
+        canAccessAdminArea: true,
+        canAccessUserArea: false,
+      },
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       user: {
         id: 'user-2',
         email: 'i@example.com',
@@ -99,6 +152,17 @@ describe('requireProfileCompleteUser', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         isInternal: true,
+        canonicalRoles: ['internal.admin'],
+        permissions: {
+          ...basePermissions,
+          canAccessAdminArea: true,
+          canAccessUserArea: false,
+        },
+        needsRoleAssignment: false,
+        profileRequirements: baseRequirements,
+        profileMetadata: baseMetadata,
+        profile: null,
+        availableExternalRoles: [],
         profileStatus: {
           hasProfile: false,
           isComplete: false,
@@ -111,7 +175,18 @@ describe('requireProfileCompleteUser', () => {
       session,
       user: session.user,
       roles: session.roles ?? [],
+      canonicalRoles: session.canonicalRoles ?? [],
       isInternal: session.isInternal ?? false,
+      permissions: {
+        ...basePermissions,
+        canAccessAdminArea: true,
+        canAccessUserArea: false,
+      },
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       profileStatus: session.user.profileStatus,
     };
 
@@ -133,7 +208,14 @@ describe('requireProfileCompleteUser', () => {
         userAgent: 'jest',
       },
       roles: [],
+      canonicalRoles: [],
       isInternal: false,
+      permissions: basePermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       user: {
         id: 'user-3',
         email: 'c@example.com',
@@ -142,6 +224,13 @@ describe('requireProfileCompleteUser', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         isInternal: false,
+        canonicalRoles: [],
+        permissions: basePermissions,
+        needsRoleAssignment: false,
+        profileRequirements: baseRequirements,
+        profileMetadata: baseMetadata,
+        profile: null,
+        availableExternalRoles: [],
         profileStatus: {
           hasProfile: true,
           isComplete: true,
@@ -154,7 +243,14 @@ describe('requireProfileCompleteUser', () => {
       session,
       user: session.user,
       roles: session.roles ?? [],
+      canonicalRoles: session.canonicalRoles ?? [],
       isInternal: session.isInternal ?? false,
+      permissions: basePermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       profileStatus: session.user.profileStatus,
     };
 

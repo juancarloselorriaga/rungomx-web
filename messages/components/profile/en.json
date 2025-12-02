@@ -8,12 +8,12 @@
     "incomplete": "Required information missing"
   },
   "fields": {
-    "phone": "Phone *",
-    "dateOfBirth": "Date of birth *",
-    "city": "City *",
-    "state": "State *",
-    "emergencyContactName": "Emergency contact *",
-    "emergencyContactPhone": "Emergency phone *",
+    "phone": "Phone",
+    "dateOfBirth": "Date of birth",
+    "city": "City",
+    "state": "State",
+    "emergencyContactName": "Emergency contact",
+    "emergencyContactPhone": "Emergency phone",
     "gender": "Gender",
     "shirtSize": "Shirt size",
     "bloodType": "Blood type",
@@ -29,5 +29,40 @@
     "invalidInput": "Check the required fields and try again.",
     "saveProfile": "We couldn't save the profile. Please try again."
   },
-  "loading": "Loading your information..."
+  "loading": "Loading your information...",
+  "selectOption": "Select an option",
+  "shirtSizes": {
+    "xs": "XS",
+    "s": "S",
+    "m": "M",
+    "l": "L",
+    "xl": "XL",
+    "xxl": "XXL"
+  },
+  "roleAssignment": {
+    "title": "Choose your role to continue",
+    "description": "Select at least one role so we can tailor your experience.",
+    "actions": {
+      "save": "Save roles",
+      "signOut": "Sign out"
+    },
+    "errors": {
+      "selection": "Select at least one role.",
+      "server": "We couldn't update roles. Please try again."
+    },
+    "roles": {
+      "organizer": {
+        "title": "Organizer",
+        "description": "Manage races, teams, and events."
+      },
+      "athlete": {
+        "title": "Athlete",
+        "description": "Register, track results, and manage participation."
+      },
+      "volunteer": {
+        "title": "Volunteer",
+        "description": "Support events and logistics."
+      }
+    }
+  }
 }

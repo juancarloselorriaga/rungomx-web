@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { SHIRT_SIZES } from './metadata';
 
 const optionalTrimmedString = (maxLength: number) =>
   z.preprocess((val) => {
@@ -35,6 +36,13 @@ const optionalDate = z.preprocess((val) => {
   return val;
 }, z.coerce.date().optional());
 
+const optionalEnum = <TValues extends readonly [string, ...string[]]>(values: TValues) =>
+  z.preprocess((val) => {
+    if (val === null || val === undefined || val === '') return undefined;
+    if (typeof val !== 'string') return val;
+    return val.trim().toLowerCase();
+  }, z.enum(values).optional());
+
 export const profileSchema = z.object({
   userId: z.uuid(),
   bio: optionalTrimmedString(500),
@@ -52,7 +60,7 @@ export const profileSchema = z.object({
   emergencyContactPhone: optionalTrimmedString(20),
   medicalConditions: optionalText(),
   bloodType: optionalTrimmedString(5),
-  shirtSize: optionalTrimmedString(10),
+  shirtSize: optionalEnum(SHIRT_SIZES),
   weightKg: optionalNumber(),
   heightCm: optionalNumber(),
   createdAt: z.date().optional(),

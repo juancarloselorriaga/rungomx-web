@@ -5,5 +5,34 @@
     "title": "Session details",
     "signedInAs": "Signed in as {email}",
     "signedOut": "Session not available."
+  },
+  "admin": {
+    "title": "Admin workspace",
+    "staffTitle": "Staff workspace",
+    "description": "Manage events and users with elevated permissions.",
+    "staffDescription": "Staff access with limited admin capabilities.",
+    "permissionsTitle": "Permissions",
+    "rolesTitle": "Roles",
+    "rolesEmpty": "No roles detected.",
+    "permissions": {
+      "accessAdminArea": "Admin area access enabled",
+      "noAdminArea": "Admin area access disabled",
+      "manageUsers": "Can manage users",
+      "noManageUsers": "Cannot manage users",
+      "manageEvents": "Can manage events",
+      "noManageEvents": "Cannot manage events",
+      "viewStaffTools": "Can view staff tools",
+      "noStaffTools": "Cannot view staff tools"
+    },
+    "users": {
+      "title": "User management",
+      "description": "Manage administrators, staff, organizers, and athletes.",
+      "placeholder": "User management tools will appear here."
+    },
+    "tools": {
+      "title": "Staff tools",
+      "description": "Operational utilities and event management shortcuts.",
+      "placeholder": "Staff tools will be available soon."
+    }
   }
 }

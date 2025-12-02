@@ -1,19 +1,16 @@
-import ProtectedLayoutWrapper from '@/components/layout/protected-layout-wrapper';
+import AdminLayoutWrapper from '@/components/layout/admin-layout-wrapper';
 import { getPathname } from '@/i18n/navigation';
 import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
-type ProtectedLayoutProps = {
+type AdminLayoutProps = {
   children: ReactNode;
   params: Promise<{ locale: AppLocale }>;
 };
 
-export default async function ProtectedLayout({
-  children,
-  params,
-}: ProtectedLayoutProps) {
+export default async function AdminLayout({ children, params }: AdminLayoutProps) {
   const { locale } = await params;
   const authContext = await getAuthContext();
 
@@ -21,9 +18,13 @@ export default async function ProtectedLayout({
     redirect(getPathname({ href: '/sign-in', locale }));
   }
 
-  if (!authContext.permissions.canAccessUserArea || authContext.isInternal) {
-    redirect(getPathname({ href: '/admin', locale }));
+  if (!authContext.permissions.canAccessAdminArea) {
+    redirect(getPathname({ href: '/dashboard', locale }));
   }
 
-  return <ProtectedLayoutWrapper>{children}</ProtectedLayoutWrapper>;
+  return (
+    <AdminLayoutWrapper permissions={authContext.permissions}>
+      {children}
+    </AdminLayoutWrapper>
+  );
 }

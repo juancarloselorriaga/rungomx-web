@@ -1,5 +1,7 @@
 import type { Session } from '@/lib/auth/types';
 import type { ProfileStatus } from '@/lib/profiles';
+import { buildProfileMetadata, buildProfileRequirementSummary } from '@/lib/profiles';
+import type { PermissionSet } from '@/lib/auth/roles';
 
 const mockGetSession = jest.fn();
 const mockResolveUserContext = jest.fn();
@@ -26,6 +28,27 @@ jest.mock('@/lib/auth/user-context', () => ({
 }));
 
 describe('getAuthContext', () => {
+  const baseRequirements = buildProfileRequirementSummary([]);
+  const baseMetadata = buildProfileMetadata(baseRequirements);
+  const adminPermissions: PermissionSet = {
+    canAccessAdminArea: true,
+    canAccessUserArea: false,
+    canManageUsers: true,
+    canManageEvents: true,
+    canViewStaffTools: true,
+    canViewOrganizersDashboard: false,
+    canViewAthleteDashboard: false,
+  };
+  const userPermissions: PermissionSet = {
+    canAccessAdminArea: false,
+    canAccessUserArea: true,
+    canManageUsers: false,
+    canManageEvents: false,
+    canViewStaffTools: false,
+    canViewOrganizersDashboard: false,
+    canViewAthleteDashboard: false,
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -48,6 +71,13 @@ describe('getAuthContext', () => {
         userAgent: 'jest',
       },
       roles: ['admin'],
+      canonicalRoles: ['internal.admin'],
+      permissions: adminPermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       isInternal: true,
       user: {
         id: 'user-1',
@@ -58,6 +88,13 @@ describe('getAuthContext', () => {
         emailVerified: true,
         image: null,
         isInternal: true,
+        canonicalRoles: ['internal.admin'],
+        permissions: adminPermissions,
+        needsRoleAssignment: false,
+        profileRequirements: baseRequirements,
+        profileMetadata: baseMetadata,
+        profile: null,
+        availableExternalRoles: [],
         profileStatus: projectedStatus,
       },
     } as unknown as Session;
@@ -65,7 +102,14 @@ describe('getAuthContext', () => {
     mockGetSession.mockResolvedValue(session);
     mockResolveUserContext.mockResolvedValue({
       roles: session.roles ?? [],
+      canonicalRoles: session.canonicalRoles ?? [],
       isInternal: session.isInternal ?? false,
+      permissions: adminPermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       profileStatus: projectedStatus,
     });
 
@@ -111,7 +155,14 @@ describe('getAuthContext', () => {
 
     mockResolveUserContext.mockResolvedValue({
       roles: [],
+      canonicalRoles: [],
       isInternal: false,
+      permissions: userPermissions,
+      needsRoleAssignment: false,
+      profileRequirements: baseRequirements,
+      profileMetadata: baseMetadata,
+      profile: null,
+      availableExternalRoles: [],
       profileStatus: computedStatus,
     });
 

@@ -43,6 +43,18 @@ export const routing = defineRouting({
       es: '/crear-cuenta',
       en: '/sign-up'
     },
+    '/admin': {
+      es: '/admin',
+      en: '/admin'
+    },
+    '/admin/users': {
+      es: '/admin/usuarios',
+      en: '/admin/users'
+    },
+    '/admin/tools': {
+      es: '/admin/herramientas',
+      en: '/admin/tools'
+    },
     '/dashboard': {
       es: '/tablero',
       en: '/dashboard'

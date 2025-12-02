@@ -58,15 +58,29 @@ export const auth = betterAuth({
   },
   plugins: [
     customSession(async ({ user, session }) => {
-      const { roles, isInternal, profileStatus } = await resolveUserContext(user ?? null);
+      const resolved = await resolveUserContext(user ?? null);
 
       return {
-        roles,
-        isInternal,
+        roles: resolved.roles,
+        canonicalRoles: resolved.canonicalRoles,
+        isInternal: resolved.isInternal,
+        permissions: resolved.permissions,
+        needsRoleAssignment: resolved.needsRoleAssignment,
+        profileRequirements: resolved.profileRequirements,
+        profileMetadata: resolved.profileMetadata,
+        availableExternalRoles: resolved.availableExternalRoles,
+        profile: resolved.profile,
         user: {
           ...user,
-          isInternal,
-          profileStatus,
+          isInternal: resolved.isInternal,
+          profileStatus: resolved.profileStatus,
+          canonicalRoles: resolved.canonicalRoles,
+          permissions: resolved.permissions,
+          needsRoleAssignment: resolved.needsRoleAssignment,
+          profileRequirements: resolved.profileRequirements,
+          profileMetadata: resolved.profileMetadata,
+          availableExternalRoles: resolved.availableExternalRoles,
+          profile: resolved.profile,
         },
         session,
       };
