@@ -1,19 +1,14 @@
 'use server';
 
 import { auth } from '@/lib/auth';
-import { requireAuthenticatedUser } from '@/lib/auth/guards';
-import {
-  computeProfileStatus,
-  getProfileByUserId,
-  profileUpsertSchema,
-  upsertProfile,
-  type ProfileMetadata,
-  type ProfileRecord,
-  type ProfileStatus,
-  type ProfileUpsertInput,
-} from '@/lib/profiles';
+import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
+import { ProfileMetadata } from '@/lib/profiles/metadata';
+import { computeProfileStatus } from '@/lib/profiles/status';
+import { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
 import { headers } from 'next/headers';
 import { z } from 'zod';
+import { profileUpsertSchema } from '@/lib/profiles/schema';
+import { getProfileByUserId, upsertProfile } from '@/lib/profiles/repository';
 
 type ProfileActionError =
   | { ok: false; error: 'UNAUTHENTICATED' }
@@ -27,9 +22,17 @@ type ProfileActionSuccess = {
   profileMetadata: ProfileMetadata;
 };
 
-export async function readProfile(): Promise<ProfileActionSuccess | ProfileActionError> {
+type ProfileActionResult = ProfileActionSuccess | ProfileActionError;
+
+export const readProfile = withAuthenticatedUser<ProfileActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED' }),
+})(async ({
+  user,
+  isInternal,
+  profileRequirements,
+  profileMetadata,
+}) => {
   try {
-    const { user, isInternal, profileRequirements, profileMetadata } = await requireAuthenticatedUser();
     const profile = await getProfileByUserId(user.id);
     const profileStatus = computeProfileStatus({
       profile,
@@ -49,20 +52,15 @@ export async function readProfile(): Promise<ProfileActionSuccess | ProfileActio
       return { ok: false, error: 'INVALID_INPUT', details: z.treeifyError(error) };
     }
 
-    if ((error as { code?: string })?.code === 'UNAUTHENTICATED') {
-      return { ok: false, error: 'UNAUTHENTICATED' };
-    }
-
     console.error('[profile] Failed to read profile', error);
     return { ok: false, error: 'SERVER_ERROR' };
   }
-}
+});
 
-export async function upsertProfileAction(
-  input: ProfileUpsertInput
-): Promise<ProfileActionSuccess | ProfileActionError> {
+export const upsertProfileAction = withAuthenticatedUser<ProfileActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED' }),
+})(async (authContext, input: ProfileUpsertInput) => {
   try {
-    const authContext = await requireAuthenticatedUser();
     const parsed = profileUpsertSchema.safeParse(input);
 
     if (!parsed.success) {
@@ -95,11 +93,7 @@ export async function upsertProfileAction(
       return { ok: false, error: 'INVALID_INPUT', details: z.treeifyError(error) };
     }
 
-    if ((error as { code?: string })?.code === 'UNAUTHENTICATED') {
-      return { ok: false, error: 'UNAUTHENTICATED' };
-    }
-
     console.error('[profile] Failed to upsert profile', error);
     return { ok: false, error: 'SERVER_ERROR' };
   }
-}
+});

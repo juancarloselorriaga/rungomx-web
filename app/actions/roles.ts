@@ -1,16 +1,18 @@
 'use server';
 
 import { auth } from '@/lib/auth';
-import { requireAuthenticatedUser } from '@/lib/auth/guards';
 import { resolveUserContext } from '@/lib/auth/user-context';
 import {
   getSelectableExternalRoles,
   updateUserExternalRoles,
   type CanonicalRole,
 } from '@/lib/auth/roles';
-import type { ProfileMetadata, ProfileRequirementSummary, ProfileStatus } from '@/lib/profiles';
+import type { ProfileStatus } from '@/lib/profiles/types';
+import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { headers } from 'next/headers';
 import { z } from 'zod';
+import { ProfileRequirementSummary } from '@/lib/profiles/requirements';
+import { ProfileMetadata } from '@/lib/profiles/metadata';
 
 const selectableRoles = getSelectableExternalRoles();
 const roleSelectionSchema = z.object({
@@ -35,12 +37,12 @@ type RoleAssignmentSuccess = {
   profileMetadata: ProfileMetadata;
 };
 
-export async function assignExternalRoles(
-  input: unknown
-): Promise<RoleAssignmentSuccess | RoleAssignmentError> {
-  try {
-    const authContext = await requireAuthenticatedUser();
+type RoleAssignmentResult = RoleAssignmentSuccess | RoleAssignmentError;
 
+export const assignExternalRoles = withAuthenticatedUser<RoleAssignmentResult>({
+  unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED' }),
+})(async (authContext, input: unknown) => {
+  try {
     if (authContext.isInternal) {
       return { ok: false, error: 'FORBIDDEN' };
     }
@@ -70,11 +72,7 @@ export async function assignExternalRoles(
       profileMetadata: refreshedContext.profileMetadata,
     };
   } catch (error) {
-    if ((error as { code?: string })?.code === 'UNAUTHENTICATED') {
-      return { ok: false, error: 'UNAUTHENTICATED' };
-    }
-
     console.error('[roles] Failed to assign external roles', error);
     return { ok: false, error: 'SERVER_ERROR' };
   }
-}
+});
