@@ -81,7 +81,7 @@ All of these are already wired into the auth pipeline; prefer them over manual q
   - `getRoleDefinition(role: CanonicalRole)`:
     - Returns full `RoleDefinition` from the registry (useful for introspection in backend-only utilities).
   - `getDefaultExternalRole()`:
-    - Returns the canonical default external role (currently `external.volunteer`).
+    - Returns the canonical default external role (currently `external.athlete`).
 
 - **Profile requirements & metadata – `lib/profiles`**
   - `PROFILE_REQUIREMENT_CATEGORIES`, `buildProfileRequirementSummary(categories)`:

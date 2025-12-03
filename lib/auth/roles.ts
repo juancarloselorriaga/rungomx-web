@@ -90,6 +90,7 @@ const ROLE_REGISTRY: Record<CanonicalRole, RoleDefinition> = {
     category: 'external',
     kind: 'athlete',
     sourceNames: ['athlete'],
+    default: true,
     profileRequirementCategories: [
       'basicContact',
       'emergencyContact',
@@ -106,7 +107,6 @@ const ROLE_REGISTRY: Record<CanonicalRole, RoleDefinition> = {
     id: 'external.volunteer',
     category: 'external',
     kind: 'volunteer',
-    default: true,
     sourceNames: ['volunteer', 'user'],
     profileRequirementCategories: ['basicContact', 'demographics'],
     permissions: {

@@ -127,18 +127,20 @@ describe('lib/auth/roles', () => {
     (console.warn as jest.Mock).mockRestore();
   });
 
-  it('defaults to volunteer with needsRoleAssignment when no roles exist', async () => {
+  it('defaults to athlete with needsRoleAssignment when no roles exist', async () => {
     __pushSelect([]); // getUserRolesWithInternalFlag
 
     const result = await getUserRolesWithInternalFlag('user-1');
 
-    expect(result.canonicalRoles).toEqual(['external.volunteer']);
+    expect(result.canonicalRoles).toEqual(['external.athlete']);
     expect(result.isInternal).toBe(false);
     expect(result.needsRoleAssignment).toBe(true);
     expect(result.permissions.canAccessUserArea).toBe(true);
     expect(result.profileRequirementCategories).toEqual([
       'basicContact',
+      'emergencyContact',
       'demographics',
+      'physicalAttributes',
     ]);
   });
 
@@ -171,13 +173,13 @@ describe('lib/auth/roles', () => {
     ]);
   });
 
-  it('falls back to volunteer for unknown roles and logs once', async () => {
+  it('falls back to athlete for unknown roles and logs once', async () => {
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     __pushSelect([{ roleName: 'ghost' }, { roleName: 'mystery' }]);
 
     const result = await getUserRolesWithInternalFlag('user-4');
 
-    expect(result.canonicalRoles).toEqual(['external.volunteer']);
+    expect(result.canonicalRoles).toEqual(['external.athlete']);
     expect(result.unmappedRoles.sort()).toEqual(['ghost', 'mystery'].sort());
     expect(result.needsRoleAssignment).toBe(true);
     expect(result.isInternal).toBe(false);
