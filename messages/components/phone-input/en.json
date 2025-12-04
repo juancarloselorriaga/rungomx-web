@@ -1,0 +1,11 @@
+{
+  "label": "Phone number",
+  "placeholder": "Enter phone number",
+  "countryPlaceholder": "Search country",
+  "errors": {
+    "required": "Phone number is required",
+    "invalid": "Invalid phone number",
+    "tooShort": "Phone number is too short",
+    "tooLong": "Phone number is too long"
+  }
+}

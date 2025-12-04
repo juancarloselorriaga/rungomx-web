@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SHIRT_SIZES } from './metadata';
+import { optionalPhoneNumber } from '@/lib/phone/schema';
 
 const optionalTrimmedString = (maxLength: number) =>
   z.preprocess((val) => {
@@ -48,7 +49,7 @@ export const profileSchema = z.object({
   bio: optionalTrimmedString(500),
   dateOfBirth: optionalDate,
   gender: optionalTrimmedString(20),
-  phone: optionalTrimmedString(20),
+  phone: optionalPhoneNumber,
   city: optionalTrimmedString(100),
   state: optionalTrimmedString(100),
   postalCode: optionalTrimmedString(10),
@@ -57,7 +58,7 @@ export const profileSchema = z.object({
   longitude: optionalNumber(),
   locationDisplay: optionalTrimmedString(255),
   emergencyContactName: optionalTrimmedString(100),
-  emergencyContactPhone: optionalTrimmedString(20),
+  emergencyContactPhone: optionalPhoneNumber,
   medicalConditions: optionalText(),
   bloodType: optionalTrimmedString(5),
   shirtSize: optionalEnum(SHIRT_SIZES),

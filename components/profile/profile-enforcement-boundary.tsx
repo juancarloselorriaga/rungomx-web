@@ -18,6 +18,7 @@ import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/pro
 import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
 import { buildProfileMetadata, ProfileMetadata } from '@/lib/profiles/metadata';
 import { DatePicker } from '@/components/ui/date-picker';
+import { PhoneInput } from '@/components/ui/phone-input-lazy';
 import { CheckCircle2, LogOut, ShieldAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState, useTransition } from 'react';
@@ -267,20 +268,13 @@ function ProfileCompletionModal({
 
           <form className="space-y-3" onSubmit={handleSubmit}>
             <div className="grid gap-3 md:grid-cols-2">
-              <label className="space-y-1 text-sm">
-                <FieldLabel required={isRequiredField('phone')}>
-                  {t('fields.phone')}
-                </FieldLabel>
-                <input
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  name="phone"
-                  value={formState.phone}
-                  onChange={(event) => setFormState((prev) => ({
-                    ...prev,
-                    phone: event.target.value
-                  }))}
-                />
-              </label>
+              <PhoneInput
+                label={<FieldLabel required={isRequiredField('phone')}>{t('fields.phone')}</FieldLabel>}
+                name="phone"
+                value={formState.phone}
+                onChangeAction={(value) => setFormState((prev) => ({ ...prev, phone: value }))}
+                defaultCountry="MX"
+              />
 
               <label className="space-y-1 text-sm">
                 <FieldLabel required={isRequiredField('dateOfBirth')}>
@@ -345,22 +339,13 @@ function ProfileCompletionModal({
                 />
               </label>
 
-              <label className="space-y-1 text-sm">
-                <FieldLabel required={isRequiredField('emergencyContactPhone')}>
-                  {t('fields.emergencyContactPhone')}
-                </FieldLabel>
-                <input
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  name="emergencyContactPhone"
-                  value={formState.emergencyContactPhone}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      emergencyContactPhone: event.target.value
-                    }))
-                  }
-                />
-              </label>
+              <PhoneInput
+                label={<FieldLabel required={isRequiredField('emergencyContactPhone')}>{t('fields.emergencyContactPhone')}</FieldLabel>}
+                name="emergencyContactPhone"
+                value={formState.emergencyContactPhone}
+                onChangeAction={(value) => setFormState((prev) => ({ ...prev, emergencyContactPhone: value }))}
+                defaultCountry="MX"
+              />
 
               <label className="space-y-1 text-sm">
                 <FieldLabel required={isRequiredField('gender')}>

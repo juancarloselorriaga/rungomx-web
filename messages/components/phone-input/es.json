@@ -1,0 +1,11 @@
+{
+  "label": "Número de teléfono",
+  "placeholder": "Ingresa tu número",
+  "countryPlaceholder": "Buscar país",
+  "errors": {
+    "required": "El número de teléfono es obligatorio",
+    "invalid": "Número de teléfono inválido",
+    "tooShort": "El número es demasiado corto",
+    "tooLong": "El número es demasiado largo"
+  }
+}
