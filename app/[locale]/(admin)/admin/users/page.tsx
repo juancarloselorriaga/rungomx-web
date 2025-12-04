@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 
 export default async function AdminUsersPage({ params, searchParams }: AdminUsersPageProps) {
   await configPageLocale(params, { pathname: '/admin/users' });
-  await getAuthContext();
+  const authContext = await getAuthContext();
 
   const resolvedSearchParams = await searchParams;
   const query = parseAdminUsersSearchParams(resolvedSearchParams);
@@ -68,6 +68,8 @@ export default async function AdminUsersPage({ params, searchParams }: AdminUser
         pageSize: result.ok ? result.pageSize : normalizedQuery.pageSize,
       }}
       paginationMeta={paginationMeta}
+      currentUserId={authContext.user?.id}
+      currentUserEmail={authContext.user?.email ?? undefined}
     />
   );
 }

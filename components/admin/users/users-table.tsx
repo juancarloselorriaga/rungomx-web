@@ -32,7 +32,7 @@ type UsersTableProps = {
   };
   currentUserId?: string;
   isLoading?: boolean;
-  onLoadingChange?: (loading: boolean) => void;
+  onLoadingChangeAction?: (loading: boolean) => void;
 };
 
 const DENSITY_STORAGE_KEY = 'adminUsers.tableDensity';
@@ -50,7 +50,7 @@ export function UsersTable({
   paginationMeta,
   currentUserId,
   isLoading = false,
-  onLoadingChange,
+  onLoadingChangeAction,
 }: UsersTableProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -66,8 +66,8 @@ export function UsersTable({
   });
 
   useEffect(() => {
-    onLoadingChange?.(false);
-  }, [users, query, onLoadingChange]);
+    onLoadingChangeAction?.(false);
+  }, [users, query, onLoadingChangeAction]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -80,7 +80,7 @@ export function UsersTable({
   ) => {
     const queryObject = buildAdminUsersQueryObject(searchParams.toString(), updates);
     const href = { pathname, query: queryObject } as unknown as Parameters<typeof router.push>[0];
-    onLoadingChange?.(true);
+    onLoadingChangeAction?.(true);
     if (options?.replace) {
       router.replace(href, { scroll: false });
     } else {
@@ -110,7 +110,7 @@ export function UsersTable({
   };
 
   const handleDeletedUser = () => {
-    onLoadingChange?.(true);
+    onLoadingChangeAction?.(true);
     router.refresh();
   };
 
@@ -179,7 +179,7 @@ export function UsersTable({
         density={density}
         onDensityChangeAction={setDensity}
         columnVisibility={columnVisibility}
-        onLoadingChangeAction={onLoadingChange}
+        onLoadingChangeAction={onLoadingChangeAction}
         onToggleColumnAction={(key) =>
           setColumnVisibility((prev) => ({
             ...prev,
@@ -302,7 +302,7 @@ export function UsersTable({
                         userEmail={user.email}
                         currentUserId={currentUserId}
                         onDeletedAction={handleDeletedUser}
-                        onLoadingChangeAction={onLoadingChange}
+                        onLoadingChangeAction={onLoadingChangeAction}
                       />
                     </td>
                   ) : null}
@@ -320,7 +320,7 @@ export function UsersTable({
         total={paginationMeta.total}
         basePath={pathname}
         filters={Object.fromEntries(searchParams.entries())}
-        onNavigate={() => onLoadingChange?.(true)}
+        onNavigate={() => onLoadingChangeAction?.(true)}
       />
     </div>
   );

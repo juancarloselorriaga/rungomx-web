@@ -7,7 +7,6 @@ import { UserCreateDialog } from '@/components/admin/users/user-create-dialog';
 import { Button } from '@/components/ui/button';
 import type { NormalizedAdminUsersQuery } from '@/lib/admin-users/query';
 import type { ListInternalUsersError, SerializedAdminUserRow } from '@/lib/admin-users/types';
-import { useSession } from '@/lib/auth/client';
 import { cn } from '@/lib/utils';
 import { UserPlus2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -22,6 +21,8 @@ type AdminUsersClientProps = {
     total: number;
     pageCount: number;
   };
+  currentUserId?: string;
+  currentUserEmail?: string;
 };
 
 function deserializeUsers(users: SerializedAdminUserRow[]): AdminUserRow[] {
@@ -43,8 +44,14 @@ function listErrorToMessage(error: ListInternalUsersError) {
   }
 }
 
-export function AdminUsersClient({ initialUsers, initialError, initialQuery, paginationMeta }: AdminUsersClientProps) {
-  const { data } = useSession();
+export function AdminUsersClient({
+  initialUsers,
+  initialError,
+  initialQuery,
+  paginationMeta,
+  currentUserId,
+  currentUserEmail,
+}: AdminUsersClientProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [isTableLoading, setIsTableLoading] = useState(false);
 
@@ -52,8 +59,6 @@ export function AdminUsersClient({ initialUsers, initialError, initialQuery, pag
   const bannerMessage = listErrorToMessage(initialError);
 
   const hasFiltersApplied = initialQuery.role !== 'all' || initialQuery.search.trim() !== '';
-
-  const adminEmail = data?.user?.email;
 
   return (
     <div className="space-y-6">
@@ -66,8 +71,8 @@ export function AdminUsersClient({ initialUsers, initialError, initialQuery, pag
               Create administrators or staff accounts and review their permissions.
             </p>
           </div>
-          {adminEmail ? (
-            <p className="text-xs text-muted-foreground">Signed in as {adminEmail}</p>
+          {currentUserEmail ? (
+            <p className="text-xs text-muted-foreground">Signed in as {currentUserEmail}</p>
           ) : null}
         </div>
 
@@ -101,9 +106,9 @@ export function AdminUsersClient({ initialUsers, initialError, initialQuery, pag
           users={users}
           query={initialQuery}
           paginationMeta={paginationMeta}
-          currentUserId={data?.user?.id}
+          currentUserId={currentUserId}
           isLoading={isTableLoading}
-          onLoadingChange={setIsTableLoading}
+          onLoadingChangeAction={setIsTableLoading}
         />
       )}
 

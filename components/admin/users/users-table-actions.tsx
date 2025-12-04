@@ -38,7 +38,7 @@ export function UsersTableActions({
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" disabled={isPending}>
             {isPending ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
-            {isPending ? 'Working...' : 'Actions'}
+            {isPending ? 'Working...' : ''}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">

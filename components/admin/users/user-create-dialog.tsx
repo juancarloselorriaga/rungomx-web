@@ -314,8 +314,14 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
               Cancel
             </Button>
             <Button className="justify-center gap-2" disabled={isPending} type="submit">
-              {isPending ? <span className="animate-pulse">Creating...</span> : <UserPlus2 className="size-4" />}
-              <span>{role === 'internal.admin' ? 'Create admin' : 'Create staff'}</span>
+              {isPending ? (
+                <span className="animate-pulse">Creating...</span>
+              ) : (
+                <>
+                  <UserPlus2 className="size-4" />
+                  <span>{role === 'internal.admin' ? 'Create admin' : 'Create staff'}</span>
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>
