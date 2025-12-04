@@ -1,6 +1,6 @@
+import { ProfileRecord, ProfileStatus } from '@/lib/profiles/types';
 import type { ProfileRequirementCategory, ProfileRequirementSummary } from './requirements';
 import { buildProfileRequirementSummary, FALLBACK_PROFILE_FIELDS } from './requirements';
-import type { ProfileRecord, ProfileStatus } from './types';
 
 const isPresent = (value: unknown) => {
   if (value === null || value === undefined) return false;

@@ -11,10 +11,18 @@ const mockGetUserRolesWithInternalFlag = jest.fn<
   unknown[]
 >();
 
+type QuerySnapshot = {
+  whereCalls: unknown[][];
+  orderByCalls: unknown[][];
+  limitValue?: number;
+  offsetValue?: number;
+};
+
 type MockDbModule = {
   db: { select: jest.Mock };
-  __pushSelect: (rows: Array<{ userId: string; email: string; name: string; createdAt: Date }>) => void;
+  __pushSelect: (rows: Array<Record<string, unknown>>) => void;
   __reset: () => void;
+  __getQueryHistory: () => QuerySnapshot[];
 };
 
 jest.mock('@/lib/auth/guards', () => ({
@@ -28,23 +36,62 @@ jest.mock('@/lib/auth/roles', () => ({
 jest.mock('drizzle-orm', () => ({
   eq: (...args: unknown[]) => ({ type: 'eq', args }),
   inArray: (...args: unknown[]) => ({ type: 'inArray', args }),
+  and: (...args: unknown[]) => ({ type: 'and', args }),
+  or: (...args: unknown[]) => ({ type: 'or', args }),
+  ilike: (...args: unknown[]) => ({ type: 'ilike', args }),
+  isNull: (...args: unknown[]) => ({ type: 'isNull', args }),
+  asc: (value: unknown) => ({ direction: 'asc', value }),
+  desc: (value: unknown) => ({ direction: 'desc', value }),
+  sql: (...args: unknown[]) => ({ sql: args }),
+  SQL: class SQL {},
 }));
 
 jest.mock('@/db', () => {
   const state = {
-    selectQueue: [] as ReturnType<typeof buildSelect>[],
+    selectQueue: [] as ReturnType<typeof buildQuery>[],
+    queryHistory: [] as ReturnType<typeof buildQuery>[],
   };
 
-  function buildSelect(rows: unknown[]) {
-    const where = jest.fn(async () => rows);
-    const innerJoinSecond = jest.fn(() => ({ where }));
-    const innerJoinFirst = jest.fn(() => ({ innerJoin: innerJoinSecond, where }));
-    const from = jest.fn(() => ({ innerJoin: innerJoinFirst, where }));
-    return { from, innerJoin: innerJoinFirst, where };
+  function buildQuery(rows: unknown[]) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing purposes
+    const query: any = {};
+    const chain = () => query;
+
+    query.whereCalls = [] as unknown[][];
+    query.orderByCalls = [] as unknown[][];
+    query.limitValue = undefined as number | undefined;
+    query.offsetValue = undefined as number | undefined;
+
+    query.from = jest.fn(chain);
+    query.innerJoin = jest.fn(chain);
+    query.where = jest.fn((...args: unknown[]) => {
+      query.whereCalls.push(args);
+      return query;
+    });
+    query.groupBy = jest.fn(chain);
+    query.orderBy = jest.fn((...args: unknown[]) => {
+      query.orderByCalls.push(args);
+      return query;
+    });
+    query.limit = jest.fn((value: number) => {
+      query.limitValue = value;
+      return query;
+    });
+    query.offset = jest.fn((value: number) => {
+      query.offsetValue = value;
+      return query;
+    });
+    query.then = (resolve: (value: unknown) => void, reject?: (reason: unknown) => void) =>
+      Promise.resolve(rows).then(resolve, reject);
+    query.catch = (reject: (reason: unknown) => void) => Promise.resolve(rows).catch(reject);
+
+    return query;
   }
 
   const __pushSelect = (rows: unknown[]) => {
-    state.selectQueue.push(buildSelect(rows));
+    const query = buildQuery(rows);
+    state.selectQueue.push(query);
+    state.queryHistory.push(query);
   };
 
   const select = jest.fn(() => {
@@ -55,6 +102,7 @@ jest.mock('@/db', () => {
 
   const __reset = () => {
     state.selectQueue = [];
+    state.queryHistory = [];
     select.mockClear();
   };
 
@@ -64,10 +112,17 @@ jest.mock('@/db', () => {
     },
     __pushSelect,
     __reset,
+    __getQueryHistory: () =>
+      state.queryHistory.map((query) => ({
+        whereCalls: query.whereCalls,
+        orderByCalls: query.orderByCalls,
+        limitValue: query.limitValue,
+        offsetValue: query.offsetValue,
+      })),
   };
 });
 
-const { __pushSelect, __reset, db } = require('@/db') as MockDbModule;
+const { __pushSelect, __reset, __getQueryHistory, db } = require('@/db') as MockDbModule;
 
 describe('listInternalUsers', () => {
   beforeEach(() => {
@@ -115,6 +170,8 @@ describe('listInternalUsers', () => {
       },
     ]);
 
+    __pushSelect([{ value: 2 }]);
+
     const adminPermissions: PermissionSet = {
       canAccessAdminArea: true,
       canAccessUserArea: false,
@@ -146,6 +203,10 @@ describe('listInternalUsers', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.users).toHaveLength(2);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(20);
+      expect(result.total).toBe(2);
+      expect(result.pageCount).toBe(1);
       expect(result.users[0]).toEqual(
         expect.objectContaining({
           userId: 'user-1',
@@ -189,6 +250,8 @@ describe('listInternalUsers', () => {
       },
     ]);
 
+    __pushSelect([{ value: 2 }]);
+
     const internalPermissions: PermissionSet = {
       canAccessAdminArea: true,
       canAccessUserArea: false,
@@ -225,6 +288,77 @@ describe('listInternalUsers', () => {
       expect(result.users).toHaveLength(1);
       expect(result.users[0].userId).toBe('user-1');
     }
+  });
+
+  it('applies role and search filters to the query', async () => {
+    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1' } });
+    const createdAt = new Date('2024-05-01T10:00:00Z');
+
+    __pushSelect([
+      {
+        userId: 'user-1',
+        email: 'john@example.com',
+        name: 'John Admin',
+        createdAt,
+      },
+    ]);
+
+    __pushSelect([{ value: 1 }]);
+
+    mockGetUserRolesWithInternalFlag.mockResolvedValueOnce({
+      canonicalRoles: ['internal.admin'],
+      permissions: {
+        canAccessAdminArea: true,
+        canAccessUserArea: false,
+        canManageUsers: true,
+        canManageEvents: true,
+        canViewStaffTools: true,
+        canViewOrganizersDashboard: false,
+        canViewAthleteDashboard: false,
+      },
+      isInternal: true,
+    });
+
+    await listInternalUsers({ role: 'admin', search: 'john' });
+
+    const history = __getQueryHistory();
+    const whereArg = history[0]?.whereCalls?.[0]?.[0] as { type?: string; args?: unknown[] } | undefined;
+    expect(whereArg?.type).toBe('and');
+    const filters = whereArg?.args ?? [];
+    expect(filters).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'eq', args: expect.arrayContaining(['admin']) }),
+      expect.objectContaining({ type: 'or' }),
+    ]));
+  });
+
+  it('applies sort and pagination parameters', async () => {
+    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1' } });
+    __pushSelect([
+      { userId: 'user-1', email: 'a@example.com', name: 'Alpha', createdAt: new Date('2024-01-01T00:00:00Z') },
+    ]);
+    __pushSelect([{ value: 1 }]);
+
+    mockGetUserRolesWithInternalFlag.mockResolvedValueOnce({
+      canonicalRoles: ['internal.admin'],
+      permissions: {
+        canAccessAdminArea: true,
+        canAccessUserArea: false,
+        canManageUsers: true,
+        canManageEvents: true,
+        canViewStaffTools: true,
+        canViewOrganizersDashboard: false,
+        canViewAthleteDashboard: false,
+      },
+      isInternal: true,
+    });
+
+    await listInternalUsers({ sortBy: 'name', sortDir: 'asc', page: 2, pageSize: 5 });
+
+    const history = __getQueryHistory();
+    const orderByArg = history[0]?.orderByCalls?.[0]?.[0] as { direction?: string } | undefined;
+    expect(orderByArg?.direction).toBe('asc');
+    expect(history[0]?.limitValue).toBe(5);
+    expect(history[0]?.offsetValue).toBe(5);
   });
 
   it('returns SERVER_ERROR when the query fails', async () => {

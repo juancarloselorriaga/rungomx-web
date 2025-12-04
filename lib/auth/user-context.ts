@@ -1,13 +1,8 @@
-import {
-  buildProfileMetadata,
-  buildProfileRequirementSummary,
-  computeProfileStatus,
-  getProfileByUserId,
-  type ProfileMetadata,
-  type ProfileRequirementSummary,
-  type ProfileStatus,
-  type ProfileRecord,
-} from '@/lib/profiles';
+import { buildProfileMetadata, type ProfileMetadata } from '@/lib/profiles/metadata';
+import { buildProfileRequirementSummary, type ProfileRequirementSummary } from '@/lib/profiles/requirements';
+import { computeProfileStatus } from '@/lib/profiles/status';
+import { type ProfileRecord, ProfileStatus } from '@/lib/profiles/types';
+import { getProfileByUserId } from '@/lib/profiles/repository';
 import { EMPTY_PROFILE_STATUS } from './constants';
 import {
   getSelectableExternalRoles,
