@@ -7,7 +7,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { LabeledTextarea } from '@/components/ui/labeled-textarea';
 import { NavActionContent, navActionContainer } from './nav-action';
@@ -17,7 +17,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { submitContactSubmission } from '@/app/actions/contact-submission';
-import { useTransition } from 'react';
+import { Form, FormError, useForm } from '@/lib/forms';
 
 interface FeedbackDialogProps {
   collapsed: boolean;
@@ -25,6 +25,11 @@ interface FeedbackDialogProps {
   icon: LucideIcon;
   iconSize?: number;
 }
+
+type FeedbackFormValues = {
+  message: string;
+  honeypot: string;
+};
 
 export function FeedbackDialog({
   collapsed,
@@ -34,67 +39,67 @@ export function FeedbackDialog({
 }: FeedbackDialogProps) {
   const t = useTranslations('components.feedback');
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState('');
-  const [honeypot, setHoneypot] = useState('');
-  const [isPending, startTransition] = useTransition();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const resetForm = () => {
-    setMessage('');
-    setHoneypot('');
-  };
+  const form = useForm<FeedbackFormValues>({
+    defaultValues: { message: '', honeypot: '' },
+    onSubmit: async (values) => {
+      const trimmedMessage = values.message.trim();
+      if (!trimmedMessage) {
+        return { ok: false, error: 'INVALID_INPUT', message: t('error') };
+      }
 
-  const handleOpenChange = useCallback((value: boolean) => {
-    setOpen(value);
-    if (!value) {
-      resetForm();
-    }
-  }, []);
-
-  const handleSubmit = useCallback(async () => {
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage) return;
-
-    const metadata =
-      typeof window !== 'undefined'
-        ? {
-          location: window.location.href,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }
-        : undefined;
-
-    startTransition(() => {
-      void (async () => {
-        try {
-          const result = await submitContactSubmission({
-            message: trimmedMessage,
-            origin: 'feedback-dialog',
-            honeypot,
-            metadata,
-          });
-
-          if (!result.ok) {
-            // Handle specific error types
-            if (result.error === 'RATE_LIMIT_EXCEEDED') {
-              toast.error(t('rateLimitError'));
-              return;
+      const metadata =
+        typeof window !== 'undefined'
+          ? {
+              location: window.location.href,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
             }
-            if (result.error === 'EMAIL_FAILED') {
-              toast.error(t('emailError'));
-              return;
-            }
-            throw new Error(result.error || 'Unknown error');
-          }
+          : undefined;
 
-          toast.success(t('success'));
-          handleOpenChange(false);
-        } catch (error) {
-          console.error('[FeedbackDialog] Failed to submit feedback', error);
-          toast.error(t('error'));
+      const result = await submitContactSubmission({
+        message: trimmedMessage,
+        origin: 'feedback-dialog',
+        honeypot: values.honeypot,
+        metadata,
+      });
+
+      if (!result.ok) {
+        if (result.error === 'RATE_LIMIT_EXCEEDED') {
+          toast.error(t('rateLimitError'));
+          return { ok: false, error: 'RATE_LIMIT_EXCEEDED', message: t('rateLimitError') };
         }
-      })();
-    });
-  }, [handleOpenChange, message, honeypot, t]);
+        if (result.error === 'EMAIL_FAILED') {
+          toast.error(t('emailError'));
+          return { ok: false, error: 'EMAIL_FAILED', message: t('emailError') };
+        }
+        if (result.error === 'INVALID_INPUT') {
+          return { ok: false, error: 'INVALID_INPUT', message: t('error') };
+        }
+        return { ok: false, error: 'SERVER_ERROR', message: t('error') };
+      }
+
+      toast.success(t('success'));
+      return { ok: true, data: null };
+    },
+    onSuccess: () => {
+      form.reset();
+      setOpen(false);
+    },
+    onError: () => {
+      // toasts already shown; FormError will also render fallback message
+    },
+  });
+
+  const handleOpenChange = useCallback(
+    (value: boolean) => {
+      setOpen(value);
+      if (!value) {
+        form.reset();
+      }
+    },
+    [form]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -138,11 +143,8 @@ export function FeedbackDialog({
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('subtitle')}</DialogDescription>
         </DialogHeader>
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await handleSubmit();
-          }}
+        <Form
+          form={form}
           autoComplete="off"
           data-1p-ignore="true"
           data-lpignore="true"
@@ -150,6 +152,7 @@ export function FeedbackDialog({
           data-form-type="other"
           data-protonpass-ignore="true"
         >
+          <FormError />
           <LabeledTextarea
             ref={textareaRef}
             id="feedback-message"
@@ -157,15 +160,15 @@ export function FeedbackDialog({
             label={t('prompt')}
             hint={t('hint')}
             placeholder={t('placeholder')}
-            value={message}
-            disabled={isPending}
+            value={form.values.message}
+            disabled={form.isSubmitting}
             autoComplete="off"
             data-1p-ignore="true"
             data-lpignore="true"
             data-bwignore="true"
             data-form-type="other"
             data-protonpass-ignore="true"
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={(event) => form.register('message').onChange(event)}
           />
           <div
             style={{
@@ -182,8 +185,8 @@ export function FeedbackDialog({
               type="text"
               id="feedback-website"
               name="website"
-              value={honeypot}
-              onChange={(e) => setHoneypot(e.target.value)}
+              value={form.values.honeypot}
+              onChange={(e) => form.register('honeypot').onChange(e)}
               tabIndex={-1}
               autoComplete="off"
               data-1p-ignore="true"
@@ -194,11 +197,11 @@ export function FeedbackDialog({
             <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={!message.trim() || isPending}>
-              {isPending ? `${t('send')}...` : t('send')}
+            <Button type="submit" disabled={!form.values.message.trim() || form.isSubmitting}>
+              {form.isSubmitting ? `${t('send')}...` : t('send')}
             </Button>
           </div>
-        </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
