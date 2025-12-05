@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "title": "Usuarios auto-registrados",
+    "description": "Revisa y gestiona usuarios que se registraron por su cuenta."
+  },
+  "page": {
+    "sectionLabel": "Admin",
+    "title": "Usuarios auto-registrados",
+    "description": "Consulta los usuarios que se registraron mediante el registro público y sus roles.",
+    "signedInAs": "Sesión iniciada como {email}"
+  },
+  "errors": {
+    "unauthenticated": "Tu sesión expiró. Inicia sesión de nuevo.",
+    "forbidden": "No tienes permiso para ver usuarios auto-registrados.",
+    "loadFailed": "No se pudieron cargar los usuarios auto-registrados. Intenta de nuevo."
+  },
+  "table": {
+    "columns": {
+      "name": "Nombre",
+      "role": "Rol de usuario",
+      "created": "Creado",
+      "actions": "Acciones"
+    },
+    "emptyState": {
+      "noFilters": {
+        "title": "Todavía no hay usuarios auto-registrados",
+        "description": "Los usuarios que se registren mediante los formularios públicos aparecerán aquí."
+      },
+      "noMatches": {
+        "title": "No hay usuarios que coincidan con tus filtros",
+        "description": "Intenta ajustar tu búsqueda o borrar los filtros.",
+        "clearButton": "Borrar filtros"
+      }
+    },
+    "density": {
+      "comfortable": "Cómoda",
+      "compact": "Compacta"
+    }
+  },
+  "toolbar": {
+    "filtersLabel": "Filtros",
+    "searchPlaceholder": "Buscar por nombre o correo",
+    "applyButton": "Aplicar",
+    "roleAll": "Todos",
+    "roleOrganizer": "Organizador",
+    "roleAthlete": "Atleta",
+    "roleVolunteer": "Voluntario",
+    "clearFilters": "Borrar filtros",
+    "displayLabel": "Visualización",
+    "columnsButton": "Columnas",
+    "columnsLabel": "Mostrar columnas"
+  },
+  "pagination": {
+    "showing": "Mostrando {start}-{end} de {total} usuarios",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  }
+}

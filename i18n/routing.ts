@@ -51,6 +51,10 @@ export const routing = defineRouting({
       es: '/admin/usuarios',
       en: '/admin/users'
     },
+    '/admin/users/self-signup': {
+      es: '/admin/usuarios/auto-registro',
+      en: '/admin/users/self-signup'
+    },
     '/admin/tools': {
       es: '/admin/herramientas',
       en: '/admin/tools'

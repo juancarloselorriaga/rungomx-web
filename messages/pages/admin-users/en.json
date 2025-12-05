@@ -3,6 +3,16 @@
     "title": "Admin users",
     "description": "Manage internal administrators and staff accounts."
   },
+  "subnav": {
+    "internal": {
+      "label": "Internal users",
+      "description": "Admins and staff created by your team."
+    },
+    "selfSignup": {
+      "label": "Self-signup users",
+      "description": "Users who created their own accounts."
+    }
+  },
   "page": {
     "sectionLabel": "Admin",
     "title": "Internal users",

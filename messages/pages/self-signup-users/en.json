@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "title": "Self-signup users",
+    "description": "Review and manage users who signed up themselves."
+  },
+  "page": {
+    "sectionLabel": "Admin",
+    "title": "Self-signup users",
+    "description": "See users who registered through public sign-up and their roles.",
+    "signedInAs": "Signed in as {email}"
+  },
+  "errors": {
+    "unauthenticated": "Your session expired. Please sign in again.",
+    "forbidden": "You are not allowed to view self-signup users.",
+    "loadFailed": "Could not load self-signup users right now. Please try again."
+  },
+  "table": {
+    "columns": {
+      "name": "Name",
+      "role": "User role",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "emptyState": {
+      "noFilters": {
+        "title": "No self-signup users yet",
+        "description": "Users who sign up through the public forms will appear here."
+      },
+      "noMatches": {
+        "title": "No users match your filters",
+        "description": "Try adjusting your search or clearing filters.",
+        "clearButton": "Clear filters"
+      }
+    },
+    "density": {
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    }
+  },
+  "toolbar": {
+    "filtersLabel": "Filters",
+    "searchPlaceholder": "Search by name or email",
+    "applyButton": "Apply",
+    "roleAll": "All",
+    "roleOrganizer": "Organizer",
+    "roleAthlete": "Athlete",
+    "roleVolunteer": "Volunteer",
+    "clearFilters": "Clear filters",
+    "displayLabel": "Display",
+    "columnsButton": "Columns",
+    "columnsLabel": "Show columns"
+  },
+  "pagination": {
+    "showing": "Showing {start}-{end} of {total} users",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

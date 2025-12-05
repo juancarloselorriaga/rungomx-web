@@ -1,22 +1,22 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { AdminUserRow } from '@/app/actions/admin-users-list';
-import { UsersEmptyState } from '@/components/admin/users/users-empty-state';
-import { UsersTable } from '@/components/admin/users/users-table';
-import { UserCreateDialog } from '@/components/admin/users/user-create-dialog';
 import { UsersSectionHeader } from '@/components/admin/users/users-section-header';
-import { Button } from '@/components/ui/button';
-import type { NormalizedAdminUsersQuery } from '@/lib/admin-users/query';
-import type { ListInternalUsersError, SerializedAdminUserRow } from '@/lib/admin-users/types';
+import { SelfSignupUsersEmptyState } from '@/components/admin/users/self-signup-users-empty-state';
+import { SelfSignupUsersTable } from '@/components/admin/users/self-signup-users-table';
+import type { NormalizedSelfSignupUsersQuery } from '@/lib/self-signup-users/query';
+import type {
+  ListSelfSignupUsersError,
+  SelfSignupUserRow,
+  SerializedSelfSignupUserRow,
+} from '@/lib/self-signup-users/types';
 import { cn } from '@/lib/utils';
-import { UserPlus2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-type AdminUsersClientProps = {
-  initialUsers: SerializedAdminUserRow[];
-  initialError: ListInternalUsersError;
-  initialQuery: NormalizedAdminUsersQuery;
+type SelfSignupUsersClientProps = {
+  initialUsers: SerializedSelfSignupUserRow[];
+  initialError: ListSelfSignupUsersError;
+  initialQuery: NormalizedSelfSignupUsersQuery;
   paginationMeta: {
     page: number;
     pageSize: number;
@@ -27,23 +27,22 @@ type AdminUsersClientProps = {
   currentUserEmail?: string;
 };
 
-function deserializeUsers(users: SerializedAdminUserRow[]): AdminUserRow[] {
+function deserializeUsers(users: SerializedSelfSignupUserRow[]): SelfSignupUserRow[] {
   return users.map((user) => ({
     ...user,
     createdAt: new Date(user.createdAt),
   }));
 }
 
-export function AdminUsersClient({
+export function SelfSignupUsersClient({
   initialUsers,
   initialError,
   initialQuery,
   paginationMeta,
   currentUserId,
   currentUserEmail,
-}: AdminUsersClientProps) {
-  const t = useTranslations('pages.adminUsers');
-  const [createOpen, setCreateOpen] = useState(false);
+}: SelfSignupUsersClientProps) {
+  const t = useTranslations('pages.selfSignupUsers');
   const [isTableLoading, setIsTableLoading] = useState(false);
 
   const users = useMemo(() => deserializeUsers(initialUsers), [initialUsers]);
@@ -64,16 +63,7 @@ export function AdminUsersClient({
 
   return (
     <div className="space-y-6">
-      <UsersSectionHeader
-        view="internal"
-        currentUserEmail={currentUserEmail}
-        primaryAction={(
-          <Button className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
-            <UserPlus2 className="size-4" />
-            {t('page.createButton')}
-          </Button>
-        )}
-      />
+      <UsersSectionHeader view="selfSignup" currentUserEmail={currentUserEmail} />
 
       {bannerMessage ? (
         <div
@@ -87,15 +77,9 @@ export function AdminUsersClient({
       ) : null}
 
       {paginationMeta.total === 0 && !hasFiltersApplied ? (
-        <UsersEmptyState
-          cta={(
-            <Button onClick={() => setCreateOpen(true)}>
-              {t('page.createFirstButton')}
-            </Button>
-          )}
-        />
+        <SelfSignupUsersEmptyState />
       ) : (
-        <UsersTable
+        <SelfSignupUsersTable
           users={users}
           query={initialQuery}
           paginationMeta={paginationMeta}
@@ -104,12 +88,6 @@ export function AdminUsersClient({
           onLoadingChangeAction={setIsTableLoading}
         />
       )}
-
-      <UserCreateDialog
-        open={createOpen}
-        onOpenChangeAction={setCreateOpen}
-        onSuccessAction={() => setIsTableLoading(true)}
-      />
     </div>
   );
 }

@@ -14,10 +14,20 @@ type UsersTablePaginationProps = {
   basePath: string;
   filters: Record<string, string>;
   onNavigateAction?: () => void;
+  translationNamespace?: 'pages.adminUsers.pagination' | 'pages.selfSignupUsers.pagination';
 };
 
-export function UsersTablePagination({ page, pageCount, total, pageSize, basePath, filters, onNavigateAction }: UsersTablePaginationProps) {
-  const t = useTranslations('pages.adminUsers.pagination');
+export function UsersTablePagination({
+  page,
+  pageCount,
+  total,
+  pageSize,
+  basePath,
+  filters,
+  onNavigateAction,
+  translationNamespace = 'pages.adminUsers.pagination',
+}: UsersTablePaginationProps) {
+  const t = useTranslations(translationNamespace);
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = total === 0 ? 0 : Math.min(total, page * pageSize);
 

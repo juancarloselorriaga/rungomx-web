@@ -3,6 +3,16 @@
     "title": "Usuarios administradores",
     "description": "Gestiona cuentas de administradores y personal interno."
   },
+  "subnav": {
+    "internal": {
+      "label": "Usuarios internos",
+      "description": "Admins y personal creados por tu equipo."
+    },
+    "selfSignup": {
+      "label": "Usuarios auto-registrados",
+      "description": "Usuarios que crearon su propia cuenta."
+    }
+  },
   "page": {
     "sectionLabel": "Admin",
     "title": "Usuarios internos",
