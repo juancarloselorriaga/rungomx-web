@@ -11,27 +11,29 @@ type UsersSectionSubnavProps = {
 
 export function UsersSectionSubnav({ className }: UsersSectionSubnavProps) {
   const t = useTranslations('pages.adminUsers.subnav');
-  const pathname = usePathname();
+  const pathname = usePathname()?.replace(/\/+$/, '') || '/';
 
   const items = [
     {
       key: 'internal',
       href: '/admin/users',
+      localizedHref: '/admin/usuarios',
       label: t('internal.label'),
       description: t('internal.description'),
     },
     {
       key: 'selfSignup',
       href: '/admin/users/self-signup',
+      localizedHref: '/admin/usuarios/auto-registro',
       label: t('selfSignup.label'),
       description: t('selfSignup.description'),
     },
   ] as const;
 
   return (
-    <div className={cn('flex flex-wrap gap-2 rounded-lg border bg-muted/40 p-1', className)}>
+    <div className={cn('flex flex-wrap items-stretch gap-1 rounded-lg border bg-background/60 p-1', className)}>
       {items.map((item) => {
-        const isActive = pathname?.endsWith(item.href) ?? false;
+        const isActive = pathname === item.href || pathname === item.localizedHref;
 
         return (
           <Button
@@ -40,13 +42,15 @@ export function UsersSectionSubnav({ className }: UsersSectionSubnavProps) {
             variant={isActive ? 'secondary' : 'ghost'}
             size="sm"
             className={cn(
-              'h-auto items-start gap-2 px-3 py-2 text-left',
+              'h-auto flex-1 items-start justify-start gap-2 px-3 py-2 text-left sm:flex-none sm:min-w-[240px]',
               isActive ? 'shadow-sm' : 'text-muted-foreground'
             )}
           >
             <Link href={item.href} scroll={false} replace={isActive}>
-              <span className="block text-sm font-semibold">{item.label}</span>
-              <span className="block text-xs text-muted-foreground">{item.description}</span>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold leading-tight">{item.label}</span>
+                <span className="text-xs leading-tight text-muted-foreground">{item.description}</span>
+              </div>
             </Link>
           </Button>
         );
