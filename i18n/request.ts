@@ -21,7 +21,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
     : routing.defaultLocale) as (typeof routing.locales)[number];
 
   const storedPathname = getStoredRoutePathname();
-  const pathname = storedPathname ?? (await getRequestPathname());
+  const pathname = storedPathname ?? getRequestPathname();
 
   const messages = storedPathname
     ? await loadRouteMessages(resolvedLocale, pathname)

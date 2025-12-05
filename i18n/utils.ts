@@ -1,4 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { cacheLife, cacheTag } from 'next/cache';
 import { z } from 'zod';
 import { routing, type AppLocale } from './routing';
 import {
@@ -149,7 +150,7 @@ export function rememberRoutePath(pathname: string) {
   return normalized;
 }
 
-export async function getRequestPathname(): Promise<string> {
+export function getRequestPathname(): string {
   const existing = routeContext.getStore();
   if (existing?.pathname) {
     return existing.pathname;
@@ -262,6 +263,10 @@ async function loadMessagesForSelection(
   locale: AppLocale,
   selection: NamespaceSelection
 ): Promise<Messages> {
+  'use cache';
+  cacheTag('i18n-messages', `i18n-${locale}`);
+  cacheLife('weeks');
+
   const [baseNamespaces, componentNamespaces, pageNamespaces] = await Promise.all([
     loadNamespaceGroup(locale, pickLoaders(rootNamespaceLoaders, selection.base)),
     selection.components.length

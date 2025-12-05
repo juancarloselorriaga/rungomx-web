@@ -1,3 +1,4 @@
+import Loading from '@/app/[locale]/loading';
 import { IntlProvider } from '@/components/providers/intl-provider';
 import { WebVitals } from '@/components/web-vitals';
 import { AppLocale, routing } from '@/i18n/routing';
@@ -9,11 +10,10 @@ import {
 } from '@/i18n/utils';
 import { generateRootMetadata } from '@/utils/seo';
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
-import Loading from './loading';
 
 type Props = {
   children: ReactNode;
@@ -45,7 +45,7 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   const storedPathname = getStoredRoutePathname();
-  const pathname = storedPathname ?? (await getRequestPathname());
+  const pathname = storedPathname ?? getRequestPathname();
   const messages = storedPathname
     ? await loadRouteMessages(locale, pathname)
     : await loadMessages(locale);
