@@ -270,7 +270,7 @@ function ProfileForm({
     <Form form={form} className="space-y-4">
       <FormError />
       {successMessage ? (
-        <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+        <div className="rounded-md border border-green-400/40 bg-green-500/5 px-3 py-2 text-sm text-green-900 shadow-sm dark:border-green-400/50 dark:bg-green-500/10 dark:text-green-50">
           {successMessage}
         </div>
       ) : null}
