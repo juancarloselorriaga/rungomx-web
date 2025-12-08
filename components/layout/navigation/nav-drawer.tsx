@@ -40,7 +40,7 @@ export function NavigationDrawerContent({
       className="p-0"
     >
       <div
-        className="flex h-full flex-col origin-top px-0 py-0 opacity-0 scale-[0.97] translate-x-[-4px] translate-y-2 transform-gpu transition-[opacity,transform] duration-[230ms] ease-[cubic-bezier(0.2,0.7,0.25,1)] delay-50 group-data-[state=closed]/sheet:delay-0 group-data-[state=open]/sheet:opacity-100 group-data-[state=open]/sheet:scale-100 group-data-[state=open]/sheet:translate-x-0 group-data-[state=open]/sheet:translate-y-0"
+        className="flex h-full flex-col origin-top px-0 py-0 opacity-0 scale-[0.97] translate-x-[-4px] translate-y-2 transform-gpu transition-[opacity,transform] duration-[275ms] ease-[cubic-bezier(0.2,0.7,0.25,1)] delay-[75ms] group-data-[state=closed]/sheet:delay-0 group-data-[state=open]/sheet:opacity-100 group-data-[state=open]/sheet:scale-100 group-data-[state=open]/sheet:translate-x-0 group-data-[state=open]/sheet:translate-y-0"
         data-open={open ? 'true' : 'false'}
       >
         <SheetHeader className="p-1 py-2 border-b">
@@ -54,18 +54,18 @@ export function NavigationDrawerContent({
         </SheetHeader>
 
         <nav className="flex-1 overflow-y-auto">
-          <NavItems items={items} />
+          <NavItems linkClassName="w-full" items={items}/>
         </nav>
 
         <div className="mt-auto border-t p-4">
           <div className="flex w-full items-center justify-between">
-            <AuthControlsCompact initialUser={resolvedUser} />
+            <AuthControlsCompact initialUser={resolvedUser}/>
             <div className="flex items-center gap-2">
               <Suspense fallback={null}>
-                <LanguageSwitcher />
+                <LanguageSwitcher/>
               </Suspense>
               <Suspense fallback={null}>
-                <ThemeSwitcher />
+                <ThemeSwitcher/>
               </Suspense>
             </div>
           </div>

@@ -164,7 +164,7 @@
 @layer components {
     .mobile-nav-push-layout {
         transition-property: transform, box-shadow, border-radius;
-        transition-duration: 260ms;
+        transition-duration: 400ms;
         transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
         transform-origin: left top;
         will-change: transform;
