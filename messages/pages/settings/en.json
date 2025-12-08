@@ -1,4 +1,12 @@
 {
   "title": "Settings",
-  "description": "Manage your account settings and preferences here."
+  "description": "Manage your account settings and preferences here.",
+  "profile": {
+    "title": "Profile",
+    "description": "Update your personal, contact, and emergency information."
+  },
+  "account": {
+    "title": "Account",
+    "description": "Manage your name and password."
+  }
 }

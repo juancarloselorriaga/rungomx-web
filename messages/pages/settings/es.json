@@ -1,4 +1,12 @@
 {
   "title": "Configuración",
-  "description": "Administra la configuración y preferencias de tu cuenta aquí."
+  "description": "Administra la configuración y preferencias de tu cuenta aquí.",
+  "profile": {
+    "title": "Perfil",
+    "description": "Actualiza tu información personal, de contacto y emergencia."
+  },
+  "account": {
+    "title": "Cuenta",
+    "description": "Administra tu nombre y contraseña."
+  }
 }

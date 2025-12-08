@@ -19,6 +19,10 @@ function buildProfileValues(userId: string, input: ProfileUpsertInput): {
     (update as Record<string, unknown>)[key] = value;
   });
 
+  if (parsed.gender !== 'self_described') {
+    update.genderDescription = null;
+  }
+
   return { insert, update };
 }
 

@@ -193,6 +193,53 @@
         }
       }
     },
+    "SettingsProfile": {
+      "metadata": {
+        "title": "Configuración de perfil | RunGoMX",
+        "description": "Actualiza tu información personal, datos de contacto y emergencia.",
+        "keywords": [
+          "configuración de perfil",
+          "contacto",
+          "emergencia"
+        ],
+        "openGraph": {
+          "title": "Configuración de perfil | RunGoMX",
+          "description": "Edita los detalles de tu perfil en RunGoMX.",
+          "imageAlt": "Configuración de perfil"
+        }
+      }
+    },
+    "SettingsAccount": {
+      "metadata": {
+        "title": "Configuración de cuenta | RunGoMX",
+        "description": "Administra tu nombre y contraseña de forma segura.",
+        "keywords": [
+          "configuración de cuenta",
+          "contraseña",
+          "seguridad"
+        ],
+        "openGraph": {
+          "title": "Configuración de cuenta | RunGoMX",
+          "description": "Actualiza las credenciales de tu cuenta RunGoMX.",
+          "imageAlt": "Configuración de cuenta"
+        }
+      }
+    },
+    "AdminAccount": {
+      "metadata": {
+        "title": "Cuenta de administrador | RunGoMX",
+        "description": "Actualiza el nombre y la contraseña de tu cuenta de administrador.",
+        "keywords": [
+          "cuenta de administrador",
+          "contraseña admin"
+        ],
+        "openGraph": {
+          "title": "Cuenta de administrador | RunGoMX",
+          "description": "Administra los datos de tu cuenta de administrador.",
+          "imageAlt": "Cuenta de administrador"
+        }
+      }
+    },
     "Profile": {
       "metadata": {
         "title": "Perfil | RunGoMX",

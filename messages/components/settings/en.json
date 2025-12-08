@@ -1,0 +1,163 @@
+{
+  "shell": {
+    "title": "Settings",
+    "description": "Manage your profile and account.",
+    "sections": {
+      "profile": {
+        "title": "Profile",
+        "description": "Contact info, demographics, and preferences."
+      },
+      "account": {
+        "title": "Account",
+        "description": "Identity details and password."
+      }
+    }
+  },
+  "profileForm": {
+    "selectOption": "Select an option",
+    "actions": {
+      "clear": "Clear",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "submit": "Submit",
+      "signOut": "Sign out"
+    },
+    "errors": {
+      "invalidInput": "Check the required fields and try again.",
+      "saveProfile": "We couldn't save the profile. Please try again."
+    },
+    "success": {
+      "updated": "Profile updated successfully."
+    },
+    "status": {
+      "label": "Current status:",
+      "complete": "Profile complete",
+      "incomplete": "Required information missing"
+    },
+    "sections": {
+      "basicContact": {
+        "title": "Basic contact",
+        "description": "How we reach you and where you are based."
+      },
+      "emergencyContact": {
+        "title": "Emergency contact",
+        "description": "Who we should contact in case of an emergency."
+      },
+      "demographics": {
+        "title": "Demographics",
+        "description": "Optional identity details to personalize your experience."
+      },
+      "physical": {
+        "title": "Physical attributes",
+        "description": "Sizing and measurements for events and gear."
+      },
+      "medical": {
+        "title": "Medical information",
+        "description": "Optional health details to keep you safe."
+      }
+    },
+    "fields": {
+      "phone": "Phone",
+      "dateOfBirth": "Date of birth",
+      "city": "City",
+      "state": "State / region",
+      "postalCode": "Postal code",
+      "country": "Country",
+      "locationDisplay": "Location display",
+      "emergencyContactName": "Emergency contact",
+      "emergencyContactPhone": "Emergency phone",
+      "gender": "Gender",
+      "genderDescription": "Gender (self-described)",
+      "shirtSize": "Shirt size",
+      "bloodType": "Blood type",
+      "medicalConditions": "Medical conditions",
+      "bio": "Bio / notes",
+      "weightKg": "Weight",
+      "heightCm": "Height"
+    },
+    "hints": {
+      "locationDisplay": "Shown on your profile. Example: Mexico City, MX.",
+      "weightKg": "Optional; helps personalize training plans.",
+      "heightCm": "Optional; helps with sizing and categories.",
+      "medicalConditions": "Optional. Only share what organizers should know for your safety."
+    },
+    "units": {
+      "kg": "kg",
+      "cm": "cm"
+    },
+    "gender": {
+      "helper": "Choose the option that fits best. You can skip or self-describe.",
+      "selfDescribeLabel": "How do you describe your gender?",
+      "selfDescribeHint": "Optional. Share this only if you want to self-describe.",
+      "options": {
+        "female": "Female",
+        "male": "Male",
+        "non_binary": "Non-binary",
+        "prefer_not_to_say": "Prefer not to say",
+        "self_described": "Self describe"
+      }
+    },
+    "countries": {
+      "MX": "Mexico",
+      "US": "United States",
+      "CA": "Canada",
+      "ES": "Spain",
+      "BR": "Brazil"
+    }
+  },
+  "accountNameForm": {
+    "title": {
+      "default": "Name",
+      "admin": "Admin name"
+    },
+    "description": {
+      "default": "Update the name shown on your account.",
+      "admin": "Update the name associated with your admin account."
+    },
+    "fields": {
+      "name": "Full name",
+      "emailLabel": "Email (read-only)"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save changes"
+    },
+    "success": "Name updated successfully.",
+    "errors": {
+      "invalidInput": "Enter a valid name.",
+      "save": "We couldn't update your name. Please try again.",
+      "name": "Enter a valid name."
+    }
+  },
+  "accountPasswordForm": {
+    "title": {
+      "default": "Password",
+      "admin": "Admin password"
+    },
+    "description": {
+      "default": "Update your password to keep your account secure.",
+      "admin": "Change the password for your admin account."
+    },
+    "fields": {
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save password"
+    },
+    "hints": {
+      "password": "Use 8–128 characters. Avoid common or compromised passwords."
+    },
+    "success": "Password updated successfully.",
+    "errors": {
+      "passwordsDontMatch": "Passwords must match.",
+      "invalidCurrentPassword": "The current password is incorrect.",
+      "requirements": "Use a password between 8 and 128 characters.",
+      "pwned": "This password appears in a breach. Choose another.",
+      "invalidInput": "Check the required fields and try again.",
+      "changePassword": "We couldn't change your password. Please try again."
+    }
+  }
+}

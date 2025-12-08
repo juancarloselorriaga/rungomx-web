@@ -100,6 +100,7 @@ export const profiles = pgTable("profiles", {
   bio: varchar("bio", { length: 500 }),
   dateOfBirth: date("date_of_birth", { mode: "date" }),
   gender: varchar("gender", { length: 20 }),
+  genderDescription: varchar("gender_description", { length: 100 }),
   phone: varchar("phone", { length: 20 }),
   city: varchar("city", { length: 100 }),
   state: varchar("state", { length: 100 }),

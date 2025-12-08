@@ -5,8 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { upsertProfileAction } from '@/app/actions/profile';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
-import { FieldLabel, FormField } from '@/components/ui/form-field';
-import { PhoneInput } from '@/components/ui/phone-input-lazy';
+import { FormField } from '@/components/ui/form-field';
 import { Spinner } from '@/components/ui/spinner';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -15,6 +14,8 @@ import { useRouter } from '@/i18n/navigation';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
 import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
 import { CheckCircle2, LogOut } from 'lucide-react';
+import { PhoneField } from '@/components/settings/fields/phone-field';
+import { GenderField } from '@/components/settings/fields/gender-field';
 
 type ProfileFormValues = {
   phone: string;
@@ -24,6 +25,7 @@ type ProfileFormValues = {
   emergencyContactName: string;
   emergencyContactPhone: string;
   gender: string;
+  genderDescription: string;
   shirtSize: string;
   bloodType: string;
   bio: string;
@@ -37,6 +39,7 @@ const DEFAULT_FORM_VALUES: ProfileFormValues = {
   emergencyContactName: '',
   emergencyContactPhone: '',
   gender: '',
+  genderDescription: '',
   shirtSize: '',
   bloodType: '',
   bio: '',
@@ -72,6 +75,7 @@ function toFormValues(profile: ProfileRecord | null): ProfileFormValues {
     emergencyContactName: profile.emergencyContactName ?? '',
     emergencyContactPhone: profile.emergencyContactPhone ?? '',
     gender: profile.gender ?? '',
+    genderDescription: profile.genderDescription ?? '',
     shirtSize: normalizeShirtSize(profile.shirtSize),
     bloodType: normalizeBloodType(profile.bloodType),
     bio: profile.bio ?? '',
@@ -79,15 +83,28 @@ function toFormValues(profile: ProfileRecord | null): ProfileFormValues {
 }
 
 function buildPayload(form: ProfileFormValues): ProfileUpsertInput {
-  const entries = Object.entries(form) as [keyof ProfileFormValues, string][];
   const payload: Record<string, string> = {};
 
-  entries.forEach(([key, value]) => {
+  const assign = (key: keyof ProfileUpsertInput, value: string) => {
     const trimmed = value?.trim?.() ?? '';
     if (!trimmed) return;
+    payload[key] = trimmed;
+  };
 
-    payload[key] = key === 'shirtSize' || key === 'bloodType' ? trimmed.toLowerCase() : trimmed;
-  });
+  assign('phone', form.phone);
+  assign('city', form.city);
+  assign('state', form.state);
+  assign('dateOfBirth', form.dateOfBirth);
+  assign('emergencyContactName', form.emergencyContactName);
+  assign('emergencyContactPhone', form.emergencyContactPhone);
+  assign('gender', form.gender);
+  assign('shirtSize', form.shirtSize);
+  assign('bloodType', form.bloodType);
+  assign('bio', form.bio);
+
+  if (form.gender === 'self_described' && form.genderDescription.trim()) {
+    assign('genderDescription', form.genderDescription);
+  }
 
   return payload;
 }
@@ -159,10 +176,13 @@ export function ProfileCompletionForm({
   );
   const shirtSizeOptions = profileMetadata.shirtSizes ?? [];
   const bloodTypeOptions = profileMetadata.bloodTypes ?? [];
+  const genderOptions = profileMetadata.genderOptions ?? [];
 
   const phoneField = form.register('phone');
   const emergencyPhoneField = form.register('emergencyContactPhone');
   const dateOfBirthField = form.register('dateOfBirth');
+  const genderField = form.register('gender');
+  const genderDescriptionField = form.register('genderDescription');
   const { setFieldValue, clearError } = form;
 
   const lastProfileValuesRef = useRef<string>('');
@@ -201,17 +221,13 @@ export function ProfileCompletionForm({
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <PhoneInput
-          label={
-            <FieldLabel required={isRequiredField('phone')} error={!!form.errors.phone}>
-              {t('fields.phone')}
-            </FieldLabel>
-          }
+        <PhoneField
+          label={t('fields.phone')}
           name={phoneField.name as string}
           value={phoneField.value}
-          onChangeAction={(value) => phoneField.onChange(value)}
-          defaultCountry="MX"
-          error={form.errors.phone || undefined}
+          onChangeAction={phoneField.onChange}
+          required={isRequiredField('phone')}
+          error={form.errors.phone}
           disabled={isBusy}
         />
 
@@ -277,38 +293,28 @@ export function ProfileCompletionForm({
           />
         </FormField>
 
-        <PhoneInput
-          label={
-            <FieldLabel
-              required={isRequiredField('emergencyContactPhone')}
-              error={!!form.errors.emergencyContactPhone}
-            >
-              {t('fields.emergencyContactPhone')}
-            </FieldLabel>
-          }
+        <PhoneField
+          label={t('fields.emergencyContactPhone')}
           name={emergencyPhoneField.name as string}
           value={emergencyPhoneField.value}
-          onChangeAction={(value) => emergencyPhoneField.onChange(value)}
-          defaultCountry="MX"
-          error={form.errors.emergencyContactPhone || undefined}
+          onChangeAction={emergencyPhoneField.onChange}
+          required={isRequiredField('emergencyContactPhone')}
+          error={form.errors.emergencyContactPhone}
           disabled={isBusy}
         />
 
-        <FormField
+        <GenderField
           label={t('fields.gender')}
+          value={genderField.value}
+          description={genderDescriptionField.value}
+          onChangeAction={(value) => genderField.onChange(value)}
+          onDescriptionChangeAction={(value) => genderDescriptionField.onChange(value)}
+          options={genderOptions}
           required={isRequiredField('gender')}
           error={form.errors.gender}
-        >
-          <input
-            className={cn(
-              'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-              'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.gender && 'border-destructive focus-visible:border-destructive'
-            )}
-            {...form.register('gender')}
-            disabled={isBusy}
-          />
-        </FormField>
+          descriptionError={form.errors.genderDescription}
+          disabled={isBusy}
+        />
 
         <FormField
           label={t('fields.shirtSize')}

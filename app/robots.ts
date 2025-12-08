@@ -5,7 +5,18 @@ import { getPathname } from '@/i18n/navigation';
 
 export default function robots(): MetadataRoute.Robots {
   // Define base paths that should be disallowed (using internal pathnames)
-  const disallowedPaths = ['/dashboard', '/settings', '/profile'] as const;
+  const disallowedPaths = [
+    '/dashboard',
+    '/settings',
+    '/settings/profile',
+    '/settings/account',
+    '/profile',
+    '/admin',
+    '/admin/users',
+    '/admin/users/self-signup',
+    '/admin/tools',
+    '/admin/account',
+  ] as const;
 
   // Generate all locale-specific variations using next-intl's getPathname utility
   const disallowedUrls: string[] = [];

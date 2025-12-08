@@ -10,6 +10,11 @@ export function buildAdminNavSections(
       labelKey: 'adminDashboard',
       iconName: 'LayoutDashboard',
     },
+    {
+      href: '/admin/account',
+      labelKey: 'account',
+      iconName: 'User',
+    },
   ];
 
   if (permissions.canManageUsers) {

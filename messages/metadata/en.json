@@ -193,6 +193,53 @@
         }
       }
     },
+    "SettingsProfile": {
+      "metadata": {
+        "title": "Profile settings | RunGoMX",
+        "description": "Update your personal information, contact details, and emergency data.",
+        "keywords": [
+          "profile settings",
+          "contact information",
+          "emergency contact"
+        ],
+        "openGraph": {
+          "title": "Profile settings | RunGoMX",
+          "description": "Edit your RunGoMX profile details.",
+          "imageAlt": "Profile settings"
+        }
+      }
+    },
+    "SettingsAccount": {
+      "metadata": {
+        "title": "Account settings | RunGoMX",
+        "description": "Manage your account name and password securely.",
+        "keywords": [
+          "account settings",
+          "password",
+          "security"
+        ],
+        "openGraph": {
+          "title": "Account settings | RunGoMX",
+          "description": "Update your RunGoMX account credentials.",
+          "imageAlt": "Account settings"
+        }
+      }
+    },
+    "AdminAccount": {
+      "metadata": {
+        "title": "Admin account | RunGoMX",
+        "description": "Update the name and password for your admin account.",
+        "keywords": [
+          "admin account",
+          "admin password"
+        ],
+        "openGraph": {
+          "title": "Admin account | RunGoMX",
+          "description": "Manage your administrator account details.",
+          "imageAlt": "Admin account"
+        }
+      }
+    },
     "Profile": {
       "metadata": {
         "title": "Profile | RunGoMX",

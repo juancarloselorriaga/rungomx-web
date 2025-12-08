@@ -1,0 +1,163 @@
+{
+  "shell": {
+    "title": "Configuración",
+    "description": "Administra tu perfil y cuenta.",
+    "sections": {
+      "profile": {
+        "title": "Perfil",
+        "description": "Información de contacto, demografía y preferencias."
+      },
+      "account": {
+        "title": "Cuenta",
+        "description": "Datos de la cuenta y contraseña."
+      }
+    }
+  },
+  "profileForm": {
+    "selectOption": "Selecciona una opción",
+    "actions": {
+      "clear": "Limpiar",
+      "cancel": "Cancelar",
+      "save": "Guardar cambios",
+      "submit": "Enviar",
+      "signOut": "Cerrar sesión"
+    },
+    "errors": {
+      "invalidInput": "Revisa los campos obligatorios e inténtalo de nuevo.",
+      "saveProfile": "No pudimos guardar el perfil. Intenta de nuevo."
+    },
+    "success": {
+      "updated": "Perfil actualizado correctamente."
+    },
+    "status": {
+      "label": "Estado actual:",
+      "complete": "Perfil completo",
+      "incomplete": "Falta información requerida"
+    },
+    "sections": {
+      "basicContact": {
+        "title": "Contacto básico",
+        "description": "Cómo podemos contactarte y dónde te encuentras."
+      },
+      "emergencyContact": {
+        "title": "Contacto de emergencia",
+        "description": "A quién debemos contactar en caso de emergencia."
+      },
+      "demographics": {
+        "title": "Datos demográficos",
+        "description": "Detalles opcionales de identidad para personalizar tu experiencia."
+      },
+      "physical": {
+        "title": "Atributos físicos",
+        "description": "Tallas y medidas para eventos y equipo."
+      },
+      "medical": {
+        "title": "Información médica",
+        "description": "Datos de salud opcionales para tu seguridad."
+      }
+    },
+    "fields": {
+      "phone": "Teléfono",
+      "dateOfBirth": "Fecha de nacimiento",
+      "city": "Ciudad",
+      "state": "Estado / región",
+      "postalCode": "Código postal",
+      "country": "País",
+      "locationDisplay": "Ubicación mostrada",
+      "emergencyContactName": "Contacto de emergencia",
+      "emergencyContactPhone": "Teléfono de emergencia",
+      "gender": "Género",
+      "genderDescription": "Género (autodescripción)",
+      "shirtSize": "Talla de playera",
+      "bloodType": "Tipo de sangre",
+      "medicalConditions": "Condiciones médicas",
+      "bio": "Bio / notas",
+      "weightKg": "Peso",
+      "heightCm": "Estatura"
+    },
+    "hints": {
+      "locationDisplay": "Se muestra en tu perfil. Ejemplo: Ciudad de México, MX.",
+      "weightKg": "Opcional; ayuda a personalizar planes de entrenamiento.",
+      "heightCm": "Opcional; ayuda con tallas y categorías.",
+      "medicalConditions": "Opcional. Comparte solo lo necesario para tu seguridad."
+    },
+    "units": {
+      "kg": "kg",
+      "cm": "cm"
+    },
+    "gender": {
+      "helper": "Elige la opción que mejor aplique. Puedes omitir o autodescribirte.",
+      "selfDescribeLabel": "¿Cómo describes tu género?",
+      "selfDescribeHint": "Opcional. Compártelo solo si deseas autodescribirte.",
+      "options": {
+        "female": "Femenino",
+        "male": "Masculino",
+        "non_binary": "No binario",
+        "prefer_not_to_say": "Prefiero no decirlo",
+        "self_described": "Autodescribir"
+      }
+    },
+    "countries": {
+      "MX": "México",
+      "US": "Estados Unidos",
+      "CA": "Canadá",
+      "ES": "España",
+      "BR": "Brasil"
+    }
+  },
+  "accountNameForm": {
+    "title": {
+      "default": "Nombre",
+      "admin": "Nombre de administrador"
+    },
+    "description": {
+      "default": "Actualiza el nombre que se muestra en tu cuenta.",
+      "admin": "Actualiza el nombre asociado a tu cuenta de administrador."
+    },
+    "fields": {
+      "name": "Nombre completo",
+      "emailLabel": "Correo (solo lectura)"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "save": "Guardar cambios"
+    },
+    "success": "Nombre actualizado correctamente.",
+    "errors": {
+      "invalidInput": "Ingresa un nombre válido.",
+      "save": "No pudimos actualizar tu nombre. Intenta de nuevo.",
+      "name": "Ingresa un nombre válido."
+    }
+  },
+  "accountPasswordForm": {
+    "title": {
+      "default": "Contraseña",
+      "admin": "Contraseña de administrador"
+    },
+    "description": {
+      "default": "Actualiza tu contraseña para mantener tu cuenta segura.",
+      "admin": "Cambia la contraseña de tu cuenta de administrador."
+    },
+    "fields": {
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "confirmPassword": "Confirmar nueva contraseña"
+    },
+    "actions": {
+      "cancel": "Cancelar",
+      "save": "Guardar contraseña"
+    },
+    "hints": {
+      "password": "Usa entre 8 y 128 caracteres. Evita contraseñas comunes o comprometidas."
+    },
+    "success": "Contraseña actualizada correctamente.",
+    "errors": {
+      "passwordsDontMatch": "Las contraseñas deben coincidir.",
+      "invalidCurrentPassword": "La contraseña actual es incorrecta.",
+      "requirements": "Usa una contraseña entre 8 y 128 caracteres.",
+      "pwned": "Esta contraseña aparece en una filtración. Elige otra.",
+      "invalidInput": "Revisa los campos obligatorios e inténtalo de nuevo.",
+      "changePassword": "No pudimos cambiar tu contraseña. Intenta de nuevo."
+    }
+  }
+}

@@ -12,7 +12,7 @@ const mainSectionItems = [
     iconName: 'Settings' as const,
   },
   {
-    href: '/profile',
+    href: '/settings/profile',
     labelKey: 'profile' as const,
     iconName: 'User' as const,
   },
