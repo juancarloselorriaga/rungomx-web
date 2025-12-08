@@ -476,7 +476,7 @@ function ProfileForm({
               <option value="">{t('selectOption')}</option>
               {shirtSizeOptions.map((size) => (
                 <option key={size} value={size}>
-                  {t(`shirtSizes.${size}` as Parameters<typeof t>[0], { defaultValue: size.toUpperCase() })}
+                  {t(`shirtSizes.${size}`)}
                 </option>
               ))}
             </select>

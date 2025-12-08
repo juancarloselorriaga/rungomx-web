@@ -103,9 +103,18 @@
       "CA": "Canadá",
       "ES": "España",
       "BR": "Brasil"
+    },
+    "shirtSizes": {
+      "xs": "XS",
+      "s": "S",
+      "m": "M",
+      "l": "L",
+      "xl": "XL",
+      "xxl": "XXL"
     }
   },
   "accountNameForm": {
+    "sectionLabel": "Información general",
     "title": {
       "default": "Nombre",
       "admin": "Nombre de administrador"
@@ -130,6 +139,7 @@
     }
   },
   "accountPasswordForm": {
+    "sectionLabel": "Seguridad",
     "title": {
       "default": "Contraseña",
       "admin": "Contraseña de administrador"
@@ -145,7 +155,9 @@
     },
     "actions": {
       "cancel": "Cancelar",
-      "save": "Guardar contraseña"
+      "save": "Guardar contraseña",
+      "showPassword": "Mostrar contraseña",
+      "hidePassword": "Ocultar contraseña"
     },
     "hints": {
       "password": "Usa entre 8 y 128 caracteres. Evita contraseñas comunes o comprometidas."
