@@ -22,6 +22,29 @@ type DatePickerProps = {
   className?: string;
 };
 
+function formatDateForInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseLocalDate(value: string | null | undefined): Date | undefined {
+  if (!value) return undefined;
+
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch;
+    const date = new Date(Number(year), Number(month) - 1, Number(day));
+    if (!Number.isNaN(date.getTime())) return date;
+    return undefined;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return undefined;
+  return parsed;
+}
+
 function formatDatePlaceholder(locale: string) {
   const formatter = new Intl.DateTimeFormat(locale, {
     day: "2-digit",
@@ -41,9 +64,8 @@ function formatDatePlaceholder(locale: string) {
 }
 
 function formatDisplayDate(value: string | null | undefined, locale: string) {
-  if (!value) return "";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "";
+  const parsed = parseLocalDate(value);
+  if (!parsed) return "";
   return new Intl.DateTimeFormat(locale, {
     day: "2-digit",
     month: "long",
@@ -60,14 +82,17 @@ export function DatePicker({
   name,
   className,
 }: DatePickerProps) {
-  const selectedDate = value ? new Date(value) : undefined;
+  const selectedDate = parseLocalDate(value);
   const [open, setOpen] = React.useState(false);
   const [month, setMonth] = React.useState<Date | undefined>(selectedDate ?? new Date());
   const weekStartsOn = locale.startsWith("es") ? 1 : 0;
 
   React.useEffect(() => {
     if (!value) return;
-    setMonth(new Date(value));
+    const parsed = parseLocalDate(value);
+    if (parsed) {
+      setMonth(parsed);
+    }
   }, [value]);
 
   const formatted = formatDisplayDate(value, locale);
@@ -95,7 +120,7 @@ export function DatePicker({
             type="button"
             variant="outline"
             data-empty={!selectedDate}
-            className="flex w-full items-center justify-between font-normal data-[empty=true]:text-muted-foreground"
+            className="flex w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm shadow-sm font-normal data-[empty=true]:text-muted-foreground dark:bg-background"
           >
             <span className="truncate">
               {formatted || resolvedPlaceholder}
@@ -107,6 +132,7 @@ export function DatePicker({
           <Calendar
             mode="single"
             captionLayout="dropdown"
+            hideNavigation
             selected={selectedDate}
             month={month}
             onMonthChange={setMonth}
@@ -120,11 +146,7 @@ export function DatePicker({
                 return;
               }
               // Format date in local timezone to avoid off-by-one errors
-              const year = date.getFullYear();
-              const month = String(date.getMonth() + 1).padStart(2, '0');
-              const day = String(date.getDate()).padStart(2, '0');
-              const iso = `${year}-${month}-${day}`;
-              onChangeAction?.(iso);
+              onChangeAction?.(formatDateForInput(date));
               setOpen(false);
             }}
           />
