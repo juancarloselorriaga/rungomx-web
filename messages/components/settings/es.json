@@ -24,7 +24,8 @@
     },
     "errors": {
       "invalidInput": "Revisa los campos obligatorios e inténtalo de nuevo.",
-      "saveProfile": "No pudimos guardar el perfil. Intenta de nuevo."
+      "saveProfile": "No pudimos guardar el perfil. Intenta de nuevo.",
+      "minAge": "Debes tener al menos {age} años."
     },
     "success": {
       "updated": "Perfil actualizado correctamente."

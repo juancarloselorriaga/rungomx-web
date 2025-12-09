@@ -8,7 +8,6 @@ import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
-import { Spinner } from '@/components/ui/spinner';
 import { useRouter } from '@/i18n/navigation';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
@@ -190,11 +189,12 @@ function ProfileForm({
       const result = await upsertProfileAction(payload);
 
       if (!result.ok) {
+        const fieldErrors = 'fieldErrors' in result ? translateFieldErrors(result.fieldErrors) : undefined;
         if (result.error === 'INVALID_INPUT') {
           return {
             ok: false,
             error: 'INVALID_INPUT',
-            fieldErrors: result.fieldErrors,
+            fieldErrors,
             message: t('errors.invalidInput'),
           };
         }
@@ -202,6 +202,7 @@ function ProfileForm({
         return {
           ok: false,
           error: result.error,
+          fieldErrors,
           message: t('errors.saveProfile'),
         };
       }
@@ -238,6 +239,28 @@ function ProfileForm({
   const dateOfBirthField = form.register('dateOfBirth');
   const genderField = form.register('gender');
   const genderDescriptionField = form.register('genderDescription');
+  const submitLabel = mode === 'completion' ? t('actions.submit') : t('actions.save');
+
+  const translateFieldErrors = (fieldErrors?: Record<string, string[]>) => {
+    if (!fieldErrors) return fieldErrors;
+
+    const translated: Record<string, string[]> = {};
+
+    Object.entries(fieldErrors).forEach(([field, messages]) => {
+      translated[field] = messages.map((message) => {
+        const normalized = message.toLowerCase();
+        const numbers = message.match(/\d+/g) ?? [];
+
+        if (normalized.includes('must be at least') && numbers[0]) {
+          return t('errors.minAge', { age: numbers[0] });
+        }
+
+        return message;
+      });
+    });
+
+    return translated;
+  };
 
   useEffect(() => {
     const nextValues = toFormValues(profile);
@@ -521,7 +544,7 @@ function ProfileForm({
           <p className="text-sm text-muted-foreground">{t('sections.medical.description')}</p>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-3">
           <FormField
             label={t('fields.bloodType')}
             required={isRequiredField('bloodType')}
@@ -562,20 +585,21 @@ function ProfileForm({
             />
             <p className="text-xs text-muted-foreground">{t('hints.medicalConditions')}</p>
           </FormField>
+
+          <FormField label={t('fields.bio')} error={form.errors.bio}>
+            <textarea
+              className={cn(
+                'min-h-[80px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
+                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                form.errors.bio && 'border-destructive focus-visible:border-destructive'
+              )}
+              {...form.register('bio')}
+              disabled={isBusy}
+              maxLength={500}
+            />
+          </FormField>
         </div>
 
-        <FormField label={t('fields.bio')} error={form.errors.bio}>
-          <textarea
-            className={cn(
-              'min-h-[80px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-              'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.bio && 'border-destructive focus-visible:border-destructive'
-            )}
-            {...form.register('bio')}
-            disabled={isBusy}
-            maxLength={500}
-          />
-        </FormField>
       </section>
 
       <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
@@ -600,9 +624,15 @@ function ProfileForm({
               {t('actions.cancel')}
             </Button>
           ) : null}
-          <Button type="submit" disabled={isBusy}>
-            {form.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
-            {mode === 'completion' ? t('actions.submit') : t('actions.save')}
+          <Button
+            type="submit"
+            disabled={isBusy}
+            isLoading={form.isSubmitting}
+            loadingPlacement="replace"
+            loadingLabel={submitLabel}
+            className="justify-center"
+          >
+            {submitLabel}
           </Button>
         </div>
       </div>

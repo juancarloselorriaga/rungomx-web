@@ -24,7 +24,8 @@
     },
     "errors": {
       "invalidInput": "Check the required fields and try again.",
-      "saveProfile": "We couldn't save the profile. Please try again."
+      "saveProfile": "We couldn't save the profile. Please try again.",
+      "minAge": "You must be at least {age} years old."
     },
     "success": {
       "updated": "Profile updated successfully."

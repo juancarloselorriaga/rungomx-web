@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
+import { Spinner } from './spinner';
 
 const buttonVariants = cva(
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=\'size-\'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive',
@@ -20,9 +21,9 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline'
       },
       size: {
-        default: 'h-9 px-4 py-2 has-[>svg]:px-3',
-        sm: 'h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5',
-        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4',
+        default: 'h-9 px-4 py-2 has-[>svg]:px-3 min-w-[120px]',
+        sm: 'h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 min-w-[120px]',
+        lg: 'h-10 rounded-md px-6 has-[>svg]:px-4 min-w-[120px]',
         icon: 'size-9',
         'icon-sm': 'size-8',
         'icon-lg': 'size-10'
@@ -40,23 +41,56 @@ function Button({
   variant,
   size,
   asChild = false,
+  isLoading = false,
+  loadingPlacement = 'start',
+  loadingLabel,
+  spinnerClassName,
+  children,
   ...props
 }: React.ComponentProps<'button'> &
   VariantProps<typeof buttonVariants> & {
-  asChild?: boolean
+  asChild?: boolean;
+  isLoading?: boolean;
+  loadingPlacement?: 'start' | 'end' | 'replace';
+  loadingLabel?: string;
+  spinnerClassName?: string;
 }) {
   const Comp = asChild ? Slot : 'button';
+
+  const shouldReplace = isLoading && loadingPlacement === 'replace';
+  const normalizedClassName = cn(
+    buttonVariants({ variant, size }),
+    shouldReplace && 'relative',
+    className
+  );
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({
-        variant,
-        size,
-        className
-      }))}
+      className={normalizedClassName}
+      aria-busy={isLoading || undefined}
       {...props}
-    />
+    >
+      {shouldReplace ? (
+        <>
+          <Spinner
+            className={cn('size-4', spinnerClassName)}
+            aria-hidden={!loadingLabel}
+          />
+          {loadingLabel ? <span className="sr-only">{loadingLabel}</span> : null}
+        </>
+      ) : (
+        <>
+          {isLoading && loadingPlacement === 'start' ? (
+            <Spinner className={cn('size-4', spinnerClassName)} aria-hidden />
+          ) : null}
+          {children}
+          {isLoading && loadingPlacement === 'end' ? (
+            <Spinner className={cn('size-4', spinnerClassName)} aria-hidden />
+          ) : null}
+        </>
+      )}
+    </Comp>
   );
 }
 
