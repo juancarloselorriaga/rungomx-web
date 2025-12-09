@@ -64,8 +64,22 @@ function Button({
     className
   );
 
+  if (asChild) {
+    // When composed via `asChild`, leave responsibility for inner layout/spinner
+    // to the child element and only inject shared button classes and aria props.
+    return (
+      <Comp
+        className={normalizedClassName}
+        aria-busy={isLoading || undefined}
+        {...props}
+      >
+        {children}
+      </Comp>
+    );
+  }
+
   return (
-    <Comp
+    <button
       data-slot="button"
       className={normalizedClassName}
       aria-busy={isLoading || undefined}
@@ -90,7 +104,7 @@ function Button({
           ) : null}
         </>
       )}
-    </Comp>
+    </button>
   );
 }
 

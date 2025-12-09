@@ -1,5 +1,6 @@
 import { AccountNameForm } from '@/components/settings/account/account-name-form';
 import { AccountPasswordForm } from '@/components/settings/account/account-password-form';
+import { SettingsSectionSubnav } from '@/components/settings/settings-section-subnav';
 import { getAuthContext } from '@/lib/auth/server';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -34,6 +35,8 @@ export default async function AccountSettingsPage({ params }: LocalePageProps) {
         <h1 className="text-3xl font-semibold">{tPage('title')}</h1>
         <p className="text-muted-foreground">{tPage('description')}</p>
       </div>
+
+      <SettingsSectionSubnav />
 
       <div className="space-y-6">
         <AccountNameForm
