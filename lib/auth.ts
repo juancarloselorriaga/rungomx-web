@@ -10,6 +10,31 @@ import { siteUrl } from '@/config/url';
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
+const vercelPreviewWildcard = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PREFIX
+  ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PREFIX}-*.vercel.app`
+  : null;
+
+const trustedOrigins = Array.from(
+  new Set(
+    [
+      siteUrl,
+      process.env.NEXT_PUBLIC_SITE_URL,
+      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+      process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : null,
+      process.env.NEXT_PUBLIC_AUTH_TRUSTED_ORIGINS,
+      vercelPreviewWildcard,
+      'http://localhost:3000',
+    ]
+      .filter((origin): origin is string => Boolean(origin))
+      .flatMap((origin) =>
+        origin
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean),
+      ),
+  ),
+);
+
 export const auth = betterAuth({
   baseURL: siteUrl,
   secret: process.env.BETTER_AUTH_SECRET,
@@ -132,4 +157,5 @@ export const auth = betterAuth({
       }
     },
   },
+  trustedOrigins,
 });
