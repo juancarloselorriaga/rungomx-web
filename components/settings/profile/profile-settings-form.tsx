@@ -1,7 +1,7 @@
 'use client';
 
 import { upsertProfileAction } from '@/app/actions/profile';
-import { CountrySelectField } from '@/components/settings/fields/country-select-field';
+import { CountrySelectField } from '@/components/settings/fields/country-select-field-lazy';
 import { GenderField } from '@/components/settings/fields/gender-field';
 import { MeasurementField } from '@/components/settings/fields/measurement-field';
 import { PhoneField } from '@/components/settings/fields/phone-field';
