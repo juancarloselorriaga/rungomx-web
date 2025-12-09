@@ -5,12 +5,13 @@ import { customSession, haveIBeenPwned } from 'better-auth/plugins';
 import { sendVerificationEmail, sendPasswordResetEmail } from '@/lib/email';
 import { resolveUserContext } from '@/lib/auth/user-context';
 import { extractLocaleFromRequest, extractLocaleFromCallbackURL } from '@/lib/utils/locale';
+import { siteUrl } from '@/config/url';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
+  baseURL: siteUrl,
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: 'pg',
@@ -38,7 +39,7 @@ export const auth = betterAuth({
         const locale = extractLocaleFromCallbackURL(callbackURL, request);
 
         // Use the callbackURL directly if provided, otherwise construct it
-        const resetPasswordURL = callbackURL || `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/${locale}/reset-password`;
+        const resetPasswordURL = callbackURL || `${siteUrl}/${locale}/reset-password`;
 
         // Modify the reset URL to include callbackURL parameter
         urlObj.searchParams.set('callbackURL', resetPasswordURL);
@@ -112,8 +113,7 @@ export const auth = betterAuth({
         const locale = extractLocaleFromRequest(request);
 
         // Construct the success page URL with proper locale
-        const baseURL = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
-        const successURL = `${baseURL}/${locale}/verify-email-success`;
+        const successURL = `${siteUrl}/${locale}/verify-email-success`;
 
         // Modify the verification URL to include callbackURL parameter
         const urlObj = new URL(url);

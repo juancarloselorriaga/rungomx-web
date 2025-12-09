@@ -1,13 +1,14 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { siteUrl } from '@/config/url';
 
 /**
  * Server Actions for password reset flow
  * These run on the server and provide better security and error handling
  */
 
-const baseURL = process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+const baseURL = siteUrl;
 
 interface PasswordResetResponse {
   data: Record<string, unknown> | null;
