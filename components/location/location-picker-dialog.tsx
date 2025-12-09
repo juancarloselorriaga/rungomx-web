@@ -225,6 +225,7 @@ export function LocationPickerDialog({
         <div className="space-y-4">
           <div className="relative space-y-2">
             <input
+              type="search"
               className={cn(
                 'w-full rounded-full border bg-background/80 px-3 py-2 pl-9 text-sm shadow-sm outline-none ring-0 transition',
                 'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
