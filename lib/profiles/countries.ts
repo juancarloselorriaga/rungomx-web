@@ -18,11 +18,17 @@ export function getAllowedCountries(): readonly CountryCode[] {
  * @param code - Country code to validate (case-insensitive)
  * @returns true if valid country code
  */
-export function isValidCountryCode(code: string): code is CountryCode {
-  if (!code) {
+export function isValidCountryCode(code: unknown): code is CountryCode {
+  if (typeof code !== 'string') {
     return false;
   }
-  return isSupportedCountry(code.toUpperCase());
+
+  const normalized = code.trim().toUpperCase();
+  if (!normalized) {
+    return false;
+  }
+
+  return isSupportedCountry(normalized);
 }
 
 /**
