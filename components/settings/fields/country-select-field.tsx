@@ -2,7 +2,8 @@
 
 import { FormField } from '@/components/ui/form-field';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { getCountryName, type CountryCode } from '@/lib/profiles/countries';
 
 type CountrySelectFieldProps = {
   label: string;
@@ -24,6 +25,7 @@ export function CountrySelectField({
   disabled,
 }: CountrySelectFieldProps) {
   const t = useTranslations('components.settings.profileForm');
+  const locale = useLocale() as 'en' | 'es';
   const placeholder = t('selectOption');
 
   return (
@@ -41,7 +43,7 @@ export function CountrySelectField({
         <option value="">{placeholder}</option>
         {options.map((code) => (
           <option key={code} value={code}>
-            {t(`countries.${code}` as Parameters<typeof t>[0], { defaultValue: code })}
+            {getCountryName(code as CountryCode, locale)}
           </option>
         ))}
       </select>

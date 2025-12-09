@@ -8,7 +8,16 @@ export {
   type ProfileRequirementSummary,
   FALLBACK_PROFILE_FIELDS,
 } from './requirements';
-export { buildProfileMetadata, SHIRT_SIZES, BLOOD_TYPES, type ShirtSize, type BloodType, type ProfileMetadata } from './metadata';
+export {
+  buildProfileMetadata,
+  getAllowedCountries,
+  SHIRT_SIZES,
+  BLOOD_TYPES,
+  type ShirtSize,
+  type BloodType,
+  type CountryCode,
+  type ProfileMetadata
+} from './metadata';
 export type {
   ProfileInput,
   ProfileRecord,

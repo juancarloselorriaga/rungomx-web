@@ -188,4 +188,75 @@ describe('Profile Update Flow', () => {
     expect(result.ok).toBe(true);
     expect((result as { profile?: ProfileRecord }).profile?.genderDescription).toBeNull();
   });
+
+  describe('Country Code Validation', () => {
+    it('accepts valid country codes (MX, US, CA, ES, BR)', async () => {
+      const validCountries = ['MX', 'US', 'CA', 'ES', 'BR'] as const;
+
+      for (const country of validCountries) {
+        const result = await upsertProfileAction({
+          ...baseInput,
+          country,
+        });
+
+        expect(result.ok).toBe(true);
+        expect((result as { profile?: ProfileRecord }).profile?.country).toBe(country);
+      }
+    });
+
+    it('accepts additional valid country codes from expanded list', async () => {
+      const additionalCountries = ['JP', 'FR', 'DE', 'CN', 'IN', 'AU', 'GB', 'IT'] as const;
+
+      for (const country of additionalCountries) {
+        const result = await upsertProfileAction({
+          ...baseInput,
+          country,
+        });
+
+        expect(result.ok).toBe(true);
+        expect((result as { profile?: ProfileRecord }).profile?.country).toBe(country);
+      }
+    });
+
+    it('normalizes lowercase country codes to uppercase', async () => {
+      const result = await upsertProfileAction({
+        ...baseInput,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing purposes
+        country: 'mx' as any,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(mockUpsertProfile).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ country: 'MX' })
+      );
+    });
+
+    it('rejects invalid country codes', async () => {
+      const invalidCountries = ['ZZ', 'XX', 'INVALID', '123'];
+
+      for (const country of invalidCountries) {
+        const result = await upsertProfileAction({
+          ...baseInput,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Testing purposes
+          country: country as any,
+        });
+
+        expect(result.ok).toBe(false);
+        expect((result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.country).toBeDefined();
+        expect(mockUpsertProfile).not.toHaveBeenCalled();
+        jest.clearAllMocks();
+      }
+    });
+
+    it('accepts empty/undefined country and defaults to MX', async () => {
+      const result = await upsertProfileAction({
+        ...baseInput,
+        country: undefined,
+      });
+
+      expect(result.ok).toBe(true);
+      expect((result as { profile?: ProfileRecord }).profile?.country).toBe('MX');
+    });
+  });
 });

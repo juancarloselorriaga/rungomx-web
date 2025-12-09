@@ -1,4 +1,5 @@
 import type { ProfileRequirementSummary } from './requirements';
+import { getAllowedCountries, type CountryCode } from './countries';
 
 export const SHIRT_SIZES = ['xs', 's', 'm', 'l', 'xl', 'xxl'] as const;
 
@@ -18,15 +19,15 @@ export const GENDER_CODES = [
 
 export type GenderCode = (typeof GENDER_CODES)[number];
 
-export const ALLOWED_COUNTRIES = ['MX', 'US', 'CA', 'ES', 'BR'] as const;
-
-export type AllowedCountry = (typeof ALLOWED_COUNTRIES)[number];
+// Re-export country utilities
+export { getAllowedCountries };
+export type { CountryCode };
 
 export type ProfileMetadata = {
   shirtSizes: readonly ShirtSize[];
   bloodTypes: readonly BloodType[];
   genderOptions: readonly GenderCode[];
-  countries: readonly AllowedCountry[];
+  countries: readonly CountryCode[];
   requiredCategories: ProfileRequirementSummary['categories'];
   requiredFieldKeys: ProfileRequirementSummary['fieldKeys'];
 };
@@ -38,7 +39,7 @@ export function buildProfileMetadata(
     shirtSizes: SHIRT_SIZES,
     bloodTypes: BLOOD_TYPES,
     genderOptions: GENDER_CODES,
-    countries: ALLOWED_COUNTRIES,
+    countries: getAllowedCountries(),
     requiredCategories: summary.categories,
     requiredFieldKeys: summary.fieldKeys,
   };

@@ -98,13 +98,6 @@
         "self_described": "Self describe"
       }
     },
-    "countries": {
-      "MX": "Mexico",
-      "US": "United States",
-      "CA": "Canada",
-      "ES": "Spain",
-      "BR": "Brazil"
-    },
     "shirtSizes": {
       "xs": "XS",
       "s": "S",
