@@ -7,11 +7,6 @@ const mainSectionItems = [
     iconName: 'LayoutDashboard' as const,
   },
   {
-    href: '/settings',
-    labelKey: 'settings' as const,
-    iconName: 'Settings' as const,
-  },
-  {
     href: '/settings/profile',
     labelKey: 'profile' as const,
     iconName: 'User' as const,
