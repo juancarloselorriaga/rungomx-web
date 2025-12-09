@@ -16,6 +16,7 @@ import Map, { Marker } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAppTheme } from '@/components/providers/app-theme';
 import { MapPin, Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type LocationPickerDialogProps = {
   initialLocation: PublicLocationValue | null;
@@ -45,6 +46,7 @@ export function LocationPickerDialog({
   language,
 }: LocationPickerDialogProps) {
   const { theme } = useAppTheme();
+  const t = useTranslations('components.location');
 
   const [markerCoords, setMarkerCoords] = useState<{
     lat: number;
@@ -213,10 +215,10 @@ export function LocationPickerDialog({
             <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
               <MapPin className="size-4" />
             </span>
-            <span>Choose location on map</span>
+            <span>{t('picker.title')}</span>
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Search for a place or click anywhere on the map to fine-tune the exact point.
+            {t('picker.description')}
           </p>
         </DialogHeader>
 
@@ -228,7 +230,7 @@ export function LocationPickerDialog({
                 'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
                 'backdrop-blur-sm'
               )}
-              placeholder="Search for a place or address"
+              placeholder={t('picker.searchPlaceholder')}
               value={searchQuery}
               onChange={(event) => handleSearchChange(event.target.value)}
             />
@@ -296,7 +298,7 @@ export function LocationPickerDialog({
                 </div>
               </>
             ) : (
-              <div>Select a point on the map to set your location.</div>
+              <div>{t('picker.emptySelectionHelper')}</div>
             )}
           </div>
         </div>
@@ -308,14 +310,14 @@ export function LocationPickerDialog({
             onClick={onCloseAction}
             disabled={isBusy}
           >
-            Cancel
+            {t('picker.actions.cancel')}
           </Button>
           <Button
             type="button"
             onClick={handleConfirm}
             disabled={!selectedLocation || isBusy}
           >
-            Use this location
+            {t('picker.actions.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

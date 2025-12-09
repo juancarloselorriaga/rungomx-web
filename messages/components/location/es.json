@@ -1,0 +1,17 @@
+{
+  "field": {
+    "mapButton": "Mapa",
+    "currentLabel": "Ubicación actual",
+    "emptyValue": "Sin ubicación seleccionada aún"
+  },
+  "picker": {
+    "title": "Elige la ubicación en el mapa",
+    "description": "Busca un lugar o haz clic en el mapa para ajustar el punto exacto.",
+    "searchPlaceholder": "Busca un lugar o dirección",
+    "emptySelectionHelper": "Selecciona un punto en el mapa para definir tu ubicación.",
+    "actions": {
+      "cancel": "Cancelar",
+      "confirm": "Usar esta ubicación"
+    }
+  }
+}

@@ -93,7 +93,6 @@ export function ProfileDemographicsSection({
           location={currentLocation}
           country={form.values.country}
           language={locale}
-          onDisplayChangeAction={(value) => locationDisplayField.onChange(value)}
           onLocationChangeAction={(location) => {
             locationDisplayField.onChange(location.formattedAddress);
             form.setFieldValue('latitude', String(location.lat));
