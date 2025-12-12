@@ -12,8 +12,8 @@ import { reverseGeocodeClient, searchLocationsClient } from '@/lib/location/clie
 import { cn } from '@/lib/utils';
 import type { PublicLocationValue } from '@/types/location';
 import { useEffect, useRef, useState } from 'react';
-import Map, { Marker } from 'react-map-gl/maplibre';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import Map, { Marker, type MapRef } from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAppTheme } from '@/components/providers/app-theme';
 import { MapPin, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -68,6 +68,7 @@ export function LocationPickerDialog({
   );
   const [isReverseLoading, setIsReverseLoading] = useState(false);
   const searchTimeoutRef = useRef<number | null>(null);
+  const mapRef = useRef<MapRef>(null);
 
   useEffect(() => {
     return () => {
@@ -111,6 +112,14 @@ export function LocationPickerDialog({
     setSearchQuery(location.formattedAddress);
     setMarkerCoords({ lat: location.lat, lng: location.lng });
     setSelectedLocation(location);
+    setSearchResults([]);
+
+    // Fly to the selected location
+    mapRef.current?.flyTo({
+      center: [location.lng, location.lat],
+      zoom: 16,
+      duration: 1500,
+    });
   };
 
   const handleMapClick = (event: { lngLat: { lng: number; lat: number } }) => {
@@ -212,7 +221,7 @@ export function LocationPickerDialog({
       <DialogContent className="sm:max-w-3xl border-none bg-gradient-to-b from-background/95 via-background to-background/98 shadow-2xl shadow-black/20 ring-1 ring-border/60 backdrop-blur-xl">
         <DialogHeader className="space-y-1">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
-            <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <span className="inline-flex size-7 items-center justify-center rounded-md bg-primary/10 text-primary">
               <MapPin className="size-4" />
             </span>
             <span>{t('picker.title')}</span>
@@ -227,7 +236,7 @@ export function LocationPickerDialog({
             <input
               type="search"
               className={cn(
-                'w-full rounded-full border bg-background/80 px-3 py-2 pl-9 text-sm shadow-sm outline-none ring-0 transition',
+                'w-full rounded-md border bg-background/80 px-3 py-2 pl-9 text-sm shadow-sm outline-none ring-0 transition',
                 'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
                 'backdrop-blur-sm'
               )}
@@ -269,6 +278,8 @@ export function LocationPickerDialog({
 
           <div className="relative h-80 w-full overflow-hidden rounded-2xl border border-border/70 bg-muted/40 shadow-inner">
             <Map
+              ref={mapRef}
+              mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
               initialViewState={effectiveCenter}
               onClick={handleMapClick}
               style={{ width: '100%', height: '100%' }}

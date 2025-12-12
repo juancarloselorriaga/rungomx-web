@@ -8,16 +8,25 @@ type MapboxFeature = {
     coordinates?: [number, number];
   };
   properties?: {
+    // v6 API properties
     name?: string;
-    address?: string;
-    place_formatted?: string;
+    name_preferred?: string;
     full_address?: string;
+    place_formatted?: string;
+    // Address components
+    address?: string;
+    street?: string;
     mapbox_id?: string;
+    feature_type?: string;
+    // Context/hierarchy
     country_code?: string;
     region?: string;
     place?: string;
     city?: string;
     postcode?: string;
+    locality?: string;
+    neighborhood?: string;
+    context?: Record<string, unknown>;
   } & Record<string, unknown>;
 };
 
@@ -58,6 +67,9 @@ function buildForwardUrl(query: string, options?: LocationSearchOptions) {
   }
 
   url.searchParams.set('autocomplete', 'true');
+  // Prioritize address-level results for better street address matching
+  // Valid v6 types: country, region, postcode, district, place, locality, neighborhood, street, block, address, secondary_address
+  url.searchParams.set('types', 'address,street,place,locality,neighborhood');
 
   return url;
 }
@@ -88,12 +100,25 @@ function normalizeFeature(feature: MapboxFeature): LocationValue | null {
   const [lng, lat] = coordinates;
   const properties = feature.properties ?? {};
 
-  const formattedAddress =
-    (properties.place_formatted as string | undefined) ??
-    (properties.full_address as string | undefined) ??
-    (properties.address as string | undefined) ??
-    (properties.name as string | undefined) ??
-    '';
+  // Debug: log the actual response structure
+  console.log('[Mapbox v6] Feature properties:', JSON.stringify(properties, null, 2));
+
+  // v6 API: For address types, 'name' contains street+number, 'place_formatted' has the rest
+  // We need to combine them for a complete address
+  const name = properties.name as string | undefined;
+  const placeFormatted = properties.place_formatted as string | undefined;
+  const fullAddress = properties.full_address as string | undefined;
+
+  let formattedAddress = '';
+  if (fullAddress) {
+    // full_address is the most complete
+    formattedAddress = fullAddress;
+  } else if (name && placeFormatted) {
+    // Combine name (street + number) with place_formatted (city, region, country)
+    formattedAddress = `${name}, ${placeFormatted}`;
+  } else {
+    formattedAddress = placeFormatted ?? name ?? '';
+  }
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || !formattedAddress) {
     return null;
