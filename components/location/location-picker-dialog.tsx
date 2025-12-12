@@ -15,12 +15,12 @@ import { useEffect, useRef, useState } from 'react';
 import Map, { Marker, type MapRef } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAppTheme } from '@/components/providers/app-theme';
-import { MapPin, Search } from 'lucide-react';
+import { MapPin, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 type LocationPickerDialogProps = {
   initialLocation: PublicLocationValue | null;
-  onLocationSelectAction: (location: PublicLocationValue) => void;
+  onLocationSelectAction: (location: PublicLocationValue | null) => void;
   onCloseAction: () => void;
   country?: string;
   language?: string;
@@ -108,6 +108,11 @@ export function LocationPickerDialog({
     }
   };
 
+  const handleClear = () => {
+    onLocationSelectAction(null);
+    onCloseAction();
+  };
+
   const handleSearchSelect = (location: PublicLocationValue) => {
     setSearchQuery(location.formattedAddress);
     setMarkerCoords({ lat: location.lat, lng: location.lng });
@@ -122,46 +127,59 @@ export function LocationPickerDialog({
     });
   };
 
-  const handleMapClick = (event: { lngLat: { lng: number; lat: number } }) => {
-    const next = {
-      lat: event.lngLat.lat,
-      lng: event.lngLat.lng,
-    };
-    setMarkerCoords(next);
-
+  const updateLocationFromCoords = (coords: { lat: number; lng: number }) => {
     setIsReverseLoading(true);
     reverseGeocodeClient({
-      lat: next.lat,
-      lng: next.lng,
+      lat: coords.lat,
+      lng: coords.lng,
       country,
       language,
     })
       .then((location) => {
         if (location) {
           setSelectedLocation(location);
-          setSearchQuery((current) => current || location.formattedAddress);
+          setSearchQuery(location.formattedAddress);
         } else {
           const fallback: PublicLocationValue = {
-            lat: next.lat,
-            lng: next.lng,
-            formattedAddress: `${next.lat.toFixed(5)}, ${next.lng.toFixed(5)}`,
+            lat: coords.lat,
+            lng: coords.lng,
+            formattedAddress: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`,
           };
           setSelectedLocation(fallback);
-          setSearchQuery((current) => current || fallback.formattedAddress);
+          setSearchQuery(fallback.formattedAddress);
         }
       })
       .catch((error) => {
         console.error('[LocationPickerDialog] Reverse geocoding failed', error);
         const fallback: PublicLocationValue = {
-          lat: next.lat,
-          lng: next.lng,
-          formattedAddress: `${next.lat.toFixed(5)}, ${next.lng.toFixed(5)}`,
+          lat: coords.lat,
+          lng: coords.lng,
+          formattedAddress: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`,
         };
         setSelectedLocation(fallback);
+        setSearchQuery(fallback.formattedAddress);
       })
       .finally(() => {
         setIsReverseLoading(false);
       });
+  };
+
+  const handleMapClick = (event: { lngLat: { lng: number; lat: number } }) => {
+    const next = {
+      lat: event.lngLat.lat,
+      lng: event.lngLat.lng,
+    };
+    setMarkerCoords(next);
+    updateLocationFromCoords(next);
+  };
+
+  const handleMarkerDragEnd = (event: { lngLat: { lng: number; lat: number } }) => {
+    const next = {
+      lat: event.lngLat.lat,
+      lng: event.lngLat.lng,
+    };
+    setMarkerCoords(next);
+    updateLocationFromCoords(next);
   };
 
   const handleSearchChange = (value: string) => {
@@ -290,8 +308,10 @@ export function LocationPickerDialog({
                   longitude={markerCoords.lng}
                   latitude={markerCoords.lat}
                   anchor="bottom"
+                  draggable
+                  onDragEnd={handleMarkerDragEnd}
                 >
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+                  <div className="flex h-6 w-6 cursor-grab items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:cursor-grabbing">
                     <span className="text-xs">●</span>
                   </div>
                 </Marker>
@@ -315,22 +335,38 @@ export function LocationPickerDialog({
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCloseAction}
-            disabled={isBusy}
-          >
-            {t('picker.actions.cancel')}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleConfirm}
-            disabled={!selectedLocation || isBusy}
-          >
-            {t('picker.actions.confirm')}
-          </Button>
+        <DialogFooter className="mt-4 gap-2 sm:justify-between">
+          {initialLocation ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={handleClear}
+              disabled={isBusy}
+            >
+              <X className="mr-1.5 size-4" />
+              {t('picker.actions.clear')}
+            </Button>
+          ) : (
+            <div />
+          )}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCloseAction}
+              disabled={isBusy}
+            >
+              {t('picker.actions.cancel')}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirm}
+              disabled={!selectedLocation || isBusy}
+            >
+              {t('picker.actions.confirm')}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

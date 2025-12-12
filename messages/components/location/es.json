@@ -10,7 +10,8 @@
     "emptySelectionHelper": "Selecciona un punto en el mapa para definir tu ubicación.",
     "actions": {
       "cancel": "Cancelar",
-      "confirm": "Usar esta ubicación"
+      "confirm": "Usar esta ubicación",
+      "clear": "Borrar ubicación"
     }
   }
 }

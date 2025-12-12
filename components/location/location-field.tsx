@@ -29,7 +29,7 @@ type LocationFieldProps = {
   location: PublicLocationValue | null;
   country?: string;
   language?: string;
-  onLocationChangeAction: (location: PublicLocationValue) => void;
+  onLocationChangeAction: (location: PublicLocationValue | null) => void;
 };
 
 export function LocationField({

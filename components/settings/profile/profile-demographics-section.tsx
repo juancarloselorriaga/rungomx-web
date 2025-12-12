@@ -97,12 +97,18 @@ export function ProfileDemographicsSection({
             country={form.values.country}
             language={locale}
             onLocationChangeAction={(location) => {
-              locationDisplayField.onChange(location.formattedAddress);
-              form.setFieldValue('latitude', String(location.lat));
-              form.setFieldValue('longitude', String(location.lng));
+              if (location) {
+                locationDisplayField.onChange(location.formattedAddress);
+                form.setFieldValue('latitude', String(location.lat));
+                form.setFieldValue('longitude', String(location.lng));
 
-              if (!form.values.country && location.countryCode) {
-                form.setFieldValue('country', location.countryCode.toUpperCase());
+                if (!form.values.country && location.countryCode) {
+                  form.setFieldValue('country', location.countryCode.toUpperCase());
+                }
+              } else {
+                locationDisplayField.onChange('');
+                form.setFieldValue('latitude', '');
+                form.setFieldValue('longitude', '');
               }
             }}
           />

@@ -125,6 +125,11 @@ export function buildProfileUpsertPayloadFromForm(
     payload[key] = trimmed;
   };
 
+  const assignNullable = (key: keyof ProfileUpsertInput, raw: string | undefined) => {
+    const trimmed = raw?.trim?.() ?? '';
+    payload[key] = trimmed || null;
+  };
+
   assign('phone', values.phone);
   assign('city', values.city);
   assign('state', values.state);
@@ -133,10 +138,10 @@ export function buildProfileUpsertPayloadFromForm(
   const country = normalizeCountryCode(values.country ?? '', countryFallback);
   assign('country', country);
 
-  assign('latitude', values.latitude);
-  assign('longitude', values.longitude);
+  assignNullable('latitude', values.latitude);
+  assignNullable('longitude', values.longitude);
 
-  assign('locationDisplay', values.locationDisplay);
+  assignNullable('locationDisplay', values.locationDisplay);
   assign('dateOfBirth', values.dateOfBirth);
 
   applyGenderToPayload(payload, values.gender ?? '', values.genderDescription);
