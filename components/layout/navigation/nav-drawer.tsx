@@ -10,7 +10,7 @@ import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Link, usePathname } from '@/i18n/navigation';
 import { useSession } from '@/lib/auth/client';
 import { useTranslations } from 'next-intl';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { Megaphone } from 'lucide-react';
 import { useNavDrawer } from './nav-drawer-context';
 
@@ -19,11 +19,10 @@ export function NavigationDrawerContent({
   items,
 }: NavigationDrawerContentProps) {
   const pathname = usePathname();
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations('common');
   const navigationTranslations = useTranslations('navigation');
   const { data } = useSession();
-  const { open } = useNavDrawer();
+  const { open, setOpen } = useNavDrawer();
 
   const resolvedUser = useMemo(
     () => data?.user ?? initialUser ?? null,
@@ -31,10 +30,8 @@ export function NavigationDrawerContent({
   );
 
   useEffect(() => {
-    if (closeButtonRef.current) {
-      closeButtonRef.current.click();
-    }
-  }, [pathname]);
+    setOpen(false);
+  }, [pathname, setOpen]);
 
   return (
     <SheetContent
