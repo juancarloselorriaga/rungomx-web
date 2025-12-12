@@ -49,14 +49,22 @@ export function SettingsSectionSubnav({ className }: SettingsSectionSubnavProps)
             variant={isActive ? 'secondary' : 'ghost'}
             size="sm"
             className={cn(
-              'h-auto flex-1 items-start justify-start gap-2 px-3 py-2 text-left sm:flex-none sm:min-w-[240px]',
+              'h-auto min-w-0 max-w-full w-full flex-1 items-start justify-start gap-2 px-3 py-2 text-left sm:flex-none sm:min-w-[240px] sm:text-left',
+              '!shrink overflow-hidden',
               isActive ? 'shadow-sm' : 'text-muted-foreground'
             )}
           >
-            <Link href={item.href} scroll={false} replace={isActive}>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold leading-tight">{item.label}</span>
-                <span className="text-xs leading-tight text-muted-foreground">
+            <Link
+              href={item.href}
+              scroll={false}
+              replace={isActive}
+              className="flex min-w-0 w-full flex-col overflow-hidden"
+            >
+              <div className="flex min-w-0 w-full flex-col">
+                <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold leading-tight">
+                  {item.label}
+                </span>
+                <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-xs leading-tight text-muted-foreground">
                   {item.description}
                 </span>
               </div>
@@ -67,4 +75,3 @@ export function SettingsSectionSubnav({ className }: SettingsSectionSubnavProps)
     </div>
   );
 }
-

@@ -12,7 +12,7 @@
     --card-foreground: oklch(0.141 0.005 285.823);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.798 0.107 357.04);
+    --primary: oklch(0.64 0.213 9.247);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.967 0.001 286.375);
     --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -181,8 +181,8 @@
 @layer components {
     .mobile-nav-push-layout {
         transition-property: transform, box-shadow, border-radius;
-        transition-duration: 400ms;
-        transition-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+        transition-duration: 350ms;
+        transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
         transform-origin: left top;
         will-change: transform;
     }

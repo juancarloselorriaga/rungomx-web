@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Quiénes somos",
-    "description": "RunGoMX nace en México para transformar la manera en que organizadores y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar."
+    "description": "RunGoMX nace en México para transformar la manera en que directores de carrera y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar."
   },
   "vision": {
     "title": "Nuestra visión",
@@ -10,13 +10,13 @@
   },
   "whyWeExist": {
     "title": "Por qué existimos",
-    "intro": "El running en México ha crecido enormemente, pero la infraestructura digital no ha crecido al mismo ritmo. Los organizadores y corredores enfrentan problemas recurrentes:",
+    "intro": "El running en México ha crecido enormemente, pero la infraestructura digital no ha crecido al mismo ritmo. Los directores de carrera y corredores enfrentan problemas recurrentes:",
     "butText": "Pero eso está cambiando.",
     "problems": [
       "Sitios complicados para inscribirse",
       "Pagos inseguros o confusos",
       "Resultados dispersos o lentos",
-      "Zero data para organizadores",
+      "Cero data para directores de carrera",
       "Herramientas de marketing mínimas",
       "Sistemas que no hablan entre ellos"
     ],
@@ -36,7 +36,7 @@
       ]
     },
     "forOrganizers": {
-      "title": "Para organizadores",
+      "title": "Para directores de carrera",
       "features": [
         "Gestión integral del evento (inscripciones, pagos, comunicación)",
         "Pagos automatizados y conciliación bancaria",
@@ -55,7 +55,7 @@
     "values": [
       {
         "title": "Simplicidad",
-        "description": "La tecnología debe ser invisible. Que el corredor se concentre en correr y el organizador en crear experiencias."
+        "description": "La tecnología debe ser invisible. Que el corredor se concentre en correr y el director de carrera en crear experiencias."
       },
       {
         "title": "Transparencia",
@@ -67,7 +67,7 @@
       },
       {
         "title": "Comunidad",
-        "description": "El running es comunidad. Escuchamos a organizadores y corredores para construir lo que realmente necesitan."
+        "description": "El running es comunidad. Escuchamos a directores de carrera y corredores para construir lo que realmente necesitan."
       },
       {
         "title": "Innovación constante",
@@ -92,7 +92,7 @@
     "title": "Nuestro compromiso",
     "goals": [
       "RunGoMX no es solo software. Es un compromiso de largo plazo con la comunidad del running en México.",
-      "Trabajamos codo a codo con organizadores para entender sus necesidades reales. Escuchamos corredores para mejorar su experiencia. Invertimos en tecnología de punta para mantenernos siempre adelante.",
+      "Trabajamos codo a codo con directores de carrera para entender sus necesidades reales. Escuchamos corredores para mejorar su experiencia. Invertimos en tecnología de punta para mantenernos siempre adelante.",
       "Innovamos constantemente. Lo que hoy es la plataforma más completa del mercado, mañana será aún mejor.",
       "Porque al final del día, nuestro éxito se mide en carreras exitosas, corredores felices y una comunidad de running cada vez más fuerte."
     ],

@@ -48,20 +48,22 @@ function SheetContent({
   children,
   side = 'right',
   hideCloseButton,
+  hideOverlay,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left'
   hideCloseButton?: boolean
+  hideOverlay?: boolean
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay/>
+      <SheetOverlay className={hideOverlay ? 'bg-transparent pointer-events-none' : undefined}/>
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
           'bg-background fixed z-50 flex flex-col gap-4 shadow-lg group/sheet',
           side === 'left' &&
-          'inset-y-0 left-0 h-full w-[80vw] max-w-sm border-r data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left transition ease-[cubic-bezier(0.22,0.61,0.36,1)] data-[state=closed]:duration-[400ms] data-[state=open]:duration-[400ms]',
+          'inset-y-0 left-0 h-full w-[80vw] max-w-sm border-r data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left transition ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:duration-[350ms] data-[state=open]:duration-[350ms]',
           side === 'right' &&
           'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm data-[state=open]:animate-in data-[state=closed]:animate-out transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
           side === 'top' &&

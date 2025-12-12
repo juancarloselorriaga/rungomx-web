@@ -26,7 +26,7 @@
     },
     "users": {
       "title": "User management",
-      "description": "Manage administrators, staff, organizers, and athletes.",
+      "description": "Manage administrators, staff, race directors, and athletes.",
       "placeholder": "User management tools will appear here."
     },
     "tools": {
@@ -50,7 +50,7 @@
       },
       "profiles": {
         "title": "Profiles created",
-        "description": "Athlete and organizer profiles with details filled in.",
+        "description": "Athlete and race director profiles with details filled in.",
         "completionLabel": "{rate, number} % of users with a profile"
       },
       "contactSubmissions": {
@@ -64,7 +64,7 @@
         "description": "Breakdown of new signups by external role in the selected period.",
         "totalLabel": "{count, number} role assignments",
         "roles": {
-          "organizer": "Organizers",
+          "organizer": "Race Directors",
           "athlete": "Athletes",
           "volunteer": "Volunteers"
         }

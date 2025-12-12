@@ -41,7 +41,7 @@ export function GenderField({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-w-0">
       <FormField label={label} required={required} error={error}>
         <select
           className={cn(

@@ -101,6 +101,10 @@ export const routing = defineRouting({
       es: '/verificar-email-exitoso',
       en: '/verify-email-success'
     },
+    '/verify-email': {
+      es: '/verificar-email',
+      en: '/verify-email'
+    },
     '/forgot-password': {
       es: '/olvide-contrasena',
       en: '/forgot-password'

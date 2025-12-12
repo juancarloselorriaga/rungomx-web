@@ -1,0 +1,13 @@
+{
+  "title": "Revisa tu correo",
+  "description": "Te enviamos un enlace de verificación. Ábrelo para verificar tu correo electrónico.",
+  "sentTo": "Enviado a",
+  "resendButton": "Reenviar correo de verificación",
+  "resendSuccess": "Si ese correo puede recibir mensajes, se envió un nuevo enlace.",
+  "missingEmail": "Por favor ingresa tu correo electrónico.",
+  "noEmailHint": "¿No te llegó? Revisa spam/no deseados, o reenvíalo.",
+  "backToSignIn": "Volver a iniciar sesión",
+  "wrongEmail": "¿Correo incorrecto? Volver a registrarse",
+  "genericError": "Algo salió mal. Por favor intenta de nuevo."
+}
+

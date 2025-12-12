@@ -42,6 +42,7 @@ interface NavItemsProps {
   linkClassName?: string;
   iconSize?: number;
   showLabels?: boolean;
+  onItemClick?: () => void;
 }
 
 export function NavItems({
@@ -52,6 +53,7 @@ export function NavItems({
   linkClassName,
   iconSize = 20,
   showLabels = true,
+  onItemClick,
 }: NavItemsProps) {
   const t = useTranslations('navigation');
 
@@ -71,6 +73,7 @@ export function NavItems({
             showLabel={showLabels}
             iconClassName={iconClassName}
             linkClassName={linkClassName}
+            onClick={onItemClick}
           />
         );
 

@@ -6,6 +6,8 @@ export type ProfileFormValuesBase = {
   state?: string;
   postalCode?: string;
   country?: string;
+  latitude?: string;
+  longitude?: string;
   locationDisplay?: string;
   dateOfBirth?: string;
   gender?: string;
@@ -92,6 +94,8 @@ export function toProfileFormValuesFromRecord(
       profile.country ?? defaults.country,
       defaults.country
     ),
+    latitude: formatNumericProfileInput(profile.latitude ?? defaults.latitude),
+    longitude: formatNumericProfileInput(profile.longitude ?? defaults.longitude),
     locationDisplay: profile.locationDisplay ?? defaults.locationDisplay,
     dateOfBirth: formatProfileDateInput(profile.dateOfBirth),
     gender: profile.gender ?? defaults.gender,
@@ -121,6 +125,11 @@ export function buildProfileUpsertPayloadFromForm(
     payload[key] = trimmed;
   };
 
+  const assignNullable = (key: keyof ProfileUpsertInput, raw: string | undefined) => {
+    const trimmed = raw?.trim?.() ?? '';
+    payload[key] = trimmed || null;
+  };
+
   assign('phone', values.phone);
   assign('city', values.city);
   assign('state', values.state);
@@ -129,7 +138,10 @@ export function buildProfileUpsertPayloadFromForm(
   const country = normalizeCountryCode(values.country ?? '', countryFallback);
   assign('country', country);
 
-  assign('locationDisplay', values.locationDisplay);
+  assignNullable('latitude', values.latitude);
+  assignNullable('longitude', values.longitude);
+
+  assignNullable('locationDisplay', values.locationDisplay);
   assign('dateOfBirth', values.dateOfBirth);
 
   applyGenderToPayload(payload, values.gender ?? '', values.genderDescription);

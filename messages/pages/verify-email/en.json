@@ -1,0 +1,13 @@
+{
+  "title": "Check your email",
+  "description": "We sent you a verification link. Open it to verify your email address.",
+  "sentTo": "Sent to",
+  "resendButton": "Resend verification email",
+  "resendSuccess": "If that email can receive messages, a new link has been sent.",
+  "missingEmail": "Please enter your email address.",
+  "noEmailHint": "Didn't get it? Check spam/junk, or resend.",
+  "backToSignIn": "Back to sign in",
+  "wrongEmail": "Wrong email? Go back to sign up",
+  "genericError": "Something went wrong. Please try again."
+}
+

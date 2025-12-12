@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Who we are",
-    "description": "RunGoMX was born in Mexico to transform the way organizers and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place."
+    "description": "RunGoMX was born in Mexico to transform the way race directors and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place."
   },
   "vision": {
     "title": "Our vision",
@@ -16,7 +16,7 @@
       "Complicated registration websites",
       "Insecure or confusing payments",
       "Scattered or slow results",
-      "Zero data for organizers",
+      "Zero data for race directors",
       "Minimal marketing tools",
       "Systems that don't talk to each other"
     ],
@@ -36,7 +36,7 @@
       ]
     },
     "forOrganizers": {
-      "title": "For organizers",
+      "title": "For race directors",
       "features": [
         "Comprehensive event management (registrations, payments, communication)",
         "Automated payments and bank reconciliation",
@@ -55,7 +55,7 @@
     "values": [
       {
         "title": "Simplicity",
-        "description": "Technology should be invisible. Let the runner focus on running and the organizer on creating experiences."
+        "description": "Technology should be invisible. Let the runner focus on running and the race director on creating experiences."
       },
       {
         "title": "Transparency",
@@ -67,7 +67,7 @@
       },
       {
         "title": "Community",
-        "description": "Running is community. We listen to organizers and runners to build what they really need."
+        "description": "Running is community. We listen to race directors and runners to build what they really need."
       },
       {
         "title": "Constant innovation",
@@ -92,7 +92,7 @@
     "title": "Our commitment",
     "goals": [
       "RunGoMX is not just software. It's a long-term commitment to the running community in Mexico.",
-      "We work side by side with organizers to understand their real needs. We listen to runners to improve their experience. We invest in cutting-edge technology to always stay ahead.",
+      "We work side by side with race directors to understand their real needs. We listen to runners to improve their experience. We invest in cutting-edge technology to always stay ahead.",
       "We constantly innovate. What is today the most complete platform on the market, tomorrow will be even better.",
       "Because at the end of the day, our success is measured in successful races, happy runners and an increasingly strong running community."
     ],

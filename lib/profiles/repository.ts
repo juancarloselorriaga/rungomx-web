@@ -4,6 +4,12 @@ import { eq } from 'drizzle-orm';
 import { profileUpsertSchema } from './schema';
 import type { ProfileInsert, ProfileRecord, ProfileUpsertInput } from './types';
 
+const NULLABLE_FIELDS = new Set([
+  'latitude',
+  'longitude',
+  'locationDisplay',
+]);
+
 function buildProfileValues(userId: string, input: ProfileUpsertInput): {
   insert: ProfileInsert;
   update: Partial<ProfileInsert>;
@@ -14,7 +20,12 @@ function buildProfileValues(userId: string, input: ProfileUpsertInput): {
   const update: Partial<ProfileInsert> = { updatedAt: new Date() };
 
   Object.entries(parsed).forEach(([key, value]) => {
-    if (value === undefined) return;
+    if (value === undefined) {
+      if (NULLABLE_FIELDS.has(key)) {
+        (update as Record<string, unknown>)[key] = null;
+      }
+      return;
+    }
     (insert as Record<string, unknown>)[key] = value;
     (update as Record<string, unknown>)[key] = value;
   });

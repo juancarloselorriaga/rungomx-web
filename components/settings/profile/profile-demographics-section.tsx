@@ -1,9 +1,8 @@
 import { GenderField } from '@/components/settings/fields/gender-field';
-import { FormField } from '@/components/ui/form-field';
+import { LocationField } from '@/components/location/location-field';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
 import type { ProfileRecord } from '@/lib/profiles/types';
-import { cn } from '@/lib/utils';
 import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 
 type ProfileDemographicsSectionProps = {
@@ -11,6 +10,7 @@ type ProfileDemographicsSectionProps = {
   t: (key: string, values?: Record<string, unknown>) => string;
   isRequiredField: (field: keyof ProfileRecord) => boolean;
   metadata: ProfileMetadata;
+  locale: string;
   isBusy: boolean;
 };
 
@@ -19,11 +19,46 @@ export function ProfileDemographicsSection({
   t,
   isRequiredField,
   metadata,
+  locale,
   isBusy,
 }: ProfileDemographicsSectionProps) {
   const genderField = form.register('gender');
   const genderDescriptionField = form.register('genderDescription');
+  const locationDisplayField = form.register('locationDisplay');
   const genderOptions = metadata.genderOptions ?? [];
+
+  const latitude = form.values.latitude;
+  const longitude = form.values.longitude;
+
+  let currentLocation = null as
+    | {
+        lat: number;
+        lng: number;
+        formattedAddress: string;
+        placeId?: string;
+        countryCode?: string;
+        region?: string;
+        city?: string;
+        postalCode?: string;
+        provider?: string;
+      }
+    | null;
+
+  const latNumber = Number.parseFloat(latitude);
+  const lngNumber = Number.parseFloat(longitude);
+  if (Number.isFinite(latNumber) && Number.isFinite(lngNumber)) {
+    currentLocation = {
+      lat: latNumber,
+      lng: lngNumber,
+      formattedAddress: locationDisplayField.value ?? '',
+      placeId: undefined,
+      countryCode: form.values.country,
+      region: undefined,
+      city: undefined,
+      postalCode: undefined,
+      provider: 'mapbox',
+    };
+  }
 
   return (
     <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
@@ -35,38 +70,50 @@ export function ProfileDemographicsSection({
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">
-        <GenderField
-          label={t('fields.gender')}
-          value={genderField.value}
-          description={genderDescriptionField.value}
-          onChangeAction={(value) => genderField.onChange(value)}
-          onDescriptionChangeAction={(value) => genderDescriptionField.onChange(value)}
-          options={genderOptions}
-          required={isRequiredField('gender')}
-          error={form.errors.gender}
-          descriptionError={form.errors.genderDescription}
-          disabled={isBusy}
-        />
-
-        <FormField
-          label={t('fields.locationDisplay')}
-          required={isRequiredField('locationDisplay')}
-          error={form.errors.locationDisplay}
-        >
-          <input
-            className={cn(
-              'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-              'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.locationDisplay && 'border-destructive focus-visible:border-destructive'
-            )}
-            {...form.register('locationDisplay')}
-            maxLength={255}
+        <div className="min-w-0">
+          <GenderField
+            label={t('fields.gender')}
+            value={genderField.value}
+            description={genderDescriptionField.value}
+            onChangeAction={(value) => genderField.onChange(value)}
+            onDescriptionChangeAction={(value) => genderDescriptionField.onChange(value)}
+            options={genderOptions}
+            required={isRequiredField('gender')}
+            error={form.errors.gender}
+            descriptionError={form.errors.genderDescription}
             disabled={isBusy}
           />
-          <p className="text-xs text-muted-foreground">{t('hints.locationDisplay')}</p>
-        </FormField>
+        </div>
+
+        <div className="min-w-0">
+          <LocationField
+            label={t('fields.locationDisplay')}
+            displayValue={locationDisplayField.value ?? ''}
+            required={isRequiredField('locationDisplay')}
+            error={form.errors.locationDisplay}
+            disabled={isBusy}
+            hint={t('hints.locationDisplay')}
+            location={currentLocation}
+            country={form.values.country}
+            language={locale}
+            onLocationChangeAction={(location) => {
+              if (location) {
+                locationDisplayField.onChange(location.formattedAddress);
+                form.setFieldValue('latitude', String(location.lat));
+                form.setFieldValue('longitude', String(location.lng));
+
+                if (!form.values.country && location.countryCode) {
+                  form.setFieldValue('country', location.countryCode.toUpperCase());
+                }
+              } else {
+                locationDisplayField.onChange('');
+                form.setFieldValue('latitude', '');
+                form.setFieldValue('longitude', '');
+              }
+            }}
+          />
+        </div>
       </div>
     </section>
   );
 }
-

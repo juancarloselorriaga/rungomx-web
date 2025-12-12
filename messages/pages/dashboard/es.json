@@ -26,7 +26,7 @@
     },
     "users": {
       "title": "Gestión de usuarios",
-      "description": "Administra administradores, staff, organizadores y atletas.",
+      "description": "Administra administradores, staff, directores de carrera y atletas.",
       "placeholder": "Las herramientas de gestión de usuarios aparecerán aquí."
     },
     "tools": {
@@ -50,7 +50,7 @@
       },
       "profiles": {
         "title": "Perfiles creados",
-        "description": "Perfiles de atletas y organizadores con información registrada.",
+        "description": "Perfiles de atletas y directores de carrera con información registrada.",
         "completionLabel": "{rate, number} % de usuarios con perfil"
       },
       "contactSubmissions": {
@@ -64,7 +64,7 @@
         "description": "Distribución de altas nuevas por rol externo en el periodo seleccionado.",
         "totalLabel": "{count, number} asignaciones de rol",
         "roles": {
-          "organizer": "Organizadores",
+          "organizer": "Directores de carrera",
           "athlete": "Atletas",
           "volunteer": "Voluntarios"
         }

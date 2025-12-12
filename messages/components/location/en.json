@@ -1,0 +1,17 @@
+{
+  "field": {
+    "mapButton": "Map",
+    "emptyValue": "No location selected yet"
+  },
+  "picker": {
+    "title": "Choose location on map",
+    "description": "Search for a place or click on the map to fine-tune the exact point.",
+    "searchPlaceholder": "Search for a place or address",
+    "emptySelectionHelper": "Select a point on the map to set your location.",
+    "actions": {
+      "cancel": "Cancel",
+      "confirm": "Use this location",
+      "clear": "Clear location"
+    }
+  }
+}

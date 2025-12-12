@@ -136,7 +136,14 @@ export const auth = betterAuth({
 
         // Modify the verification URL to include callbackURL parameter
         const urlObj = new URL(url);
-        urlObj.searchParams.set('callbackURL', successURL);
+        const originalCallbackURL = urlObj.searchParams.get('callbackURL');
+        const successUrlObj = new URL(successURL);
+
+        if (originalCallbackURL) {
+          successUrlObj.searchParams.set('callbackURL', originalCallbackURL);
+        }
+
+        urlObj.searchParams.set('callbackURL', successUrlObj.toString());
         const modifiedURL = urlObj.toString();
 
         await sendVerificationEmail({
@@ -150,6 +157,7 @@ export const auth = betterAuth({
         throw error;
       }
     },
+    sendOnSignUp: true,
   },
   trustedOrigins: async (request) => {
     const origins = new Set(trustedOrigins);

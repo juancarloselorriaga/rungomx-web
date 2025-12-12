@@ -35,6 +35,8 @@ const DEFAULT_VALUES: ProfileFormValues = {
   state: '',
   postalCode: '',
   country: 'MX',
+  latitude: '',
+  longitude: '',
   locationDisplay: '',
   dateOfBirth: '',
   gender: '',
@@ -240,6 +242,7 @@ function ProfileForm({
         t={tProfileForm}
         isRequiredField={isRequiredField}
         metadata={profileMetadata}
+        locale={locale}
         isBusy={isBusy}
       />
 

@@ -64,7 +64,7 @@
       "state": "State / region",
       "postalCode": "Postal code",
       "country": "Country",
-      "locationDisplay": "Location display",
+      "locationDisplay": "Profile location",
       "emergencyContactName": "Emergency contact",
       "emergencyContactPhone": "Emergency phone",
       "gender": "Gender",
@@ -80,7 +80,7 @@
       "locationDisplay": "Shown on your profile. Example: Mexico City, MX.",
       "weightKg": "Optional; helps personalize training plans.",
       "heightCm": "Optional; helps with sizing and categories.",
-      "medicalConditions": "Optional. Only share what organizers should know for your safety."
+      "medicalConditions": "Optional. Only share what race directors should know for your safety."
     },
     "units": {
       "kg": "kg",

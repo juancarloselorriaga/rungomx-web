@@ -23,7 +23,7 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
   const targetPath: keyof typeof routing.pathnames =
     callbackPath && isAppPathname(callbackPath) ? callbackPath : '/dashboard';
 
-  const form = useForm<{ name: string; email: string; password: string }>({
+  const form = useForm<{ name: string; email: string; password: string }, { email: string; callbackPath: string }>({
     defaultValues: { name: '', email: '', password: '' },
     onSubmit: async (values) => {
       if (!values.name || !values.email || !values.password) {
@@ -50,11 +50,17 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
         return { ok: false, error: 'SERVER_ERROR', message: signUpError.message ?? t('genericError') };
       }
 
-      return { ok: true, data: null };
+      return { ok: true, data: { email: values.email, callbackPath: targetPath } };
     },
-    onSuccess: () => {
+    onSuccess: ({ email, callbackPath }) => {
       router.refresh();
-      router.push(targetPath);
+      router.push({
+        pathname: '/verify-email',
+        query: {
+          email,
+          callbackURL: callbackPath,
+        },
+      });
     },
   });
 
