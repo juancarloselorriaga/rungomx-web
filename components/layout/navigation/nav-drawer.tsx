@@ -37,10 +37,11 @@ export function NavigationDrawerContent({
     <SheetContent
       side="left"
       hideCloseButton
+      hideOverlay
       className="p-0"
     >
       <div
-        className="flex h-full flex-col origin-top px-0 py-0 opacity-0 scale-[0.97] translate-x-[-4px] translate-y-2 transform-gpu transition-[opacity,transform] duration-[275ms] ease-[cubic-bezier(0.2,0.7,0.25,1)] delay-[75ms] group-data-[state=closed]/sheet:delay-0 group-data-[state=open]/sheet:opacity-100 group-data-[state=open]/sheet:scale-100 group-data-[state=open]/sheet:translate-x-0 group-data-[state=open]/sheet:translate-y-0"
+        className="flex h-full flex-col px-0 py-0 opacity-0 transition-opacity duration-150 ease-out group-data-[state=open]/sheet:opacity-100"
         data-open={open ? 'true' : 'false'}
       >
         <SheetHeader className="p-1 py-2 border-b">
