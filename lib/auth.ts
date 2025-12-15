@@ -1,11 +1,11 @@
+import { siteUrl } from '@/config/url';
 import { db } from '@/db';
+import { resolveUserContext } from '@/lib/auth/user-context';
+import { sendPasswordResetEmail, sendVerificationEmail } from '@/lib/email';
+import { extractLocaleFromCallbackURL, extractLocaleFromRequest } from '@/lib/utils/locale';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { customSession, haveIBeenPwned } from 'better-auth/plugins';
-import { sendVerificationEmail, sendPasswordResetEmail } from '@/lib/email';
-import { resolveUserContext } from '@/lib/auth/user-context';
-import { extractLocaleFromRequest, extractLocaleFromCallbackURL } from '@/lib/utils/locale';
-import { siteUrl } from '@/config/url';
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -158,18 +158,6 @@ export const auth = betterAuth({
       }
     },
     sendOnSignUp: true,
-  },
-  trustedOrigins: async (request) => {
-    const origins = new Set(trustedOrigins);
-
-    // Always trust the current host serving the request (covers aliases and previews)
-    const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
-    const protocol = request.headers.get('x-forwarded-proto') ?? 'https';
-    if (host) {
-      origins.add(`${protocol}://${host}`);
-    }
-
-    return Array.from(origins);
   },
   trustedOrigins: async (request) => {
     const origins = new Set(trustedOrigins);
