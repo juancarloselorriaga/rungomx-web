@@ -1,7 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Form, FormError, useFormContext } from '../form';
-import { useForm } from '../use-form';
 import type { UseFormReturn } from '../types';
+import { useForm } from '../use-form';
 
 describe('Form component', () => {
   describe('Form', () => {
@@ -22,7 +22,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <div data-testid="child">Child content</div>
-        </Form>
+        </Form>,
       );
 
       expect(screen.getByTestId('child')).toBeInTheDocument();
@@ -51,7 +51,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <ChildComponent />
-        </Form>
+        </Form>,
       );
 
       expect(screen.getByTestId('email-value')).toHaveTextContent('test@example.com');
@@ -75,7 +75,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <button type="submit">Submit</button>
-        </Form>
+        </Form>,
       );
 
       const submitButton = screen.getByRole('button', { name: /submit/i });
@@ -101,7 +101,7 @@ describe('Form component', () => {
       const { container } = render(
         <Form form={mockForm} className="custom-form-class">
           <div>Content</div>
-        </Form>
+        </Form>,
       );
 
       const formElement = container.querySelector('form');
@@ -126,7 +126,7 @@ describe('Form component', () => {
       const { container } = render(
         <Form form={mockForm} data-testid="test-form" id="my-form" aria-label="Test form">
           <div>Content</div>
-        </Form>
+        </Form>,
       );
 
       const formElement = container.querySelector('form');
@@ -152,7 +152,7 @@ describe('Form component', () => {
       const { container } = render(
         <Form form={mockForm}>
           <div>Content</div>
-        </Form>
+        </Form>,
       );
 
       const formElement = container.querySelector('form');
@@ -179,7 +179,7 @@ describe('Form component', () => {
       const { container } = render(
         <Form form={mockForm}>
           <button type="submit">Submit</button>
-        </Form>
+        </Form>,
       );
 
       const formElement = container.querySelector('form')!;
@@ -209,7 +209,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <FormError />
-        </Form>
+        </Form>,
       );
 
       expect(screen.getByText('Something went wrong')).toBeInTheDocument();
@@ -232,7 +232,7 @@ describe('Form component', () => {
       const { container } = render(
         <Form form={mockForm}>
           <FormError />
-        </Form>
+        </Form>,
       );
 
       // FormError should not render anything when no error
@@ -257,7 +257,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <FormError />
-        </Form>
+        </Form>,
       );
 
       const errorElement = screen.getByRole('alert');
@@ -282,7 +282,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <FormError className="custom-error-class" />
-        </Form>
+        </Form>,
       );
 
       const errorElement = screen.getByRole('alert');
@@ -306,7 +306,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <FormError />
-        </Form>
+        </Form>,
       );
 
       const errorElement = screen.getByRole('alert');
@@ -398,7 +398,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <ChildComponent />
-        </Form>
+        </Form>,
       );
 
       expect(screen.getByTestId('email')).toHaveTextContent('test@example.com');
@@ -440,7 +440,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <TypedChildComponent />
-        </Form>
+        </Form>,
       );
 
       expect(screen.getByTestId('email')).toHaveTextContent('test@example.com');
@@ -486,7 +486,7 @@ describe('Form component', () => {
       render(
         <Form form={mockForm}>
           <ChildComponent />
-        </Form>
+        </Form>,
       );
 
       fireEvent.click(screen.getByText('Reset'));

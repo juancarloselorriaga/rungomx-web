@@ -28,7 +28,7 @@ import { setRequestLocale } from 'next-intl/server';
  */
 export const configPageLocale = async (
   params: LocalePageProps['params'],
-  options?: { pathname?: string }
+  options?: { pathname?: string },
 ) => {
   const { locale } = await params;
 

@@ -191,14 +191,14 @@ describe('lib/auth/roles', () => {
     __pushSelect(() =>
       __state.roles
         .filter((role) => role.name === 'organizer')
-        .map((role) => ({ id: role.id, name: role.name }))
+        .map((role) => ({ id: role.id, name: role.name })),
     ); // desiredRoleRows
 
     await updateUserExternalRoles('user-5', ['external.organizer']);
 
     expect(__state.roles.map((r) => r.name)).toContain('organizer');
     const userRoleNames = __state.userRoles.map(
-      (ur) => __state.roles.find((r) => r.id === ur.roleId)?.name
+      (ur) => __state.roles.find((r) => r.id === ur.roleId)?.name,
     );
     expect(userRoleNames).toEqual(['organizer']);
   });
@@ -208,11 +208,11 @@ describe('lib/auth/roles', () => {
     __state.roles.push(
       { id: 'r-admin', name: 'admin' },
       { id: 'r-vol', name: 'volunteer' },
-      { id: 'r-ath', name: 'athlete' }
+      { id: 'r-ath', name: 'athlete' },
     );
     __state.userRoles.push(
       { id: 'ur-1', userId: 'user-6', roleId: 'r-admin' },
-      { id: 'ur-2', userId: 'user-6', roleId: 'r-vol' }
+      { id: 'ur-2', userId: 'user-6', roleId: 'r-vol' },
     );
 
     __pushSelect([{ roleName: 'admin' }, { roleName: 'volunteer' }]);
@@ -220,14 +220,14 @@ describe('lib/auth/roles', () => {
     __pushSelect(() =>
       __state.roles
         .filter((role) => role.name === 'athlete' || role.name === 'volunteer')
-        .map((role) => ({ id: role.id, name: role.name }))
+        .map((role) => ({ id: role.id, name: role.name })),
     );
 
     await updateUserExternalRoles('user-6', ['external.athlete']);
 
     const remaining = __state.userRoles.filter((ur) => ur.userId === 'user-6');
     const roleNames = Array.from(
-      new Set(remaining.map((ur) => __state.roles.find((r) => r.id === ur.roleId)?.name))
+      new Set(remaining.map((ur) => __state.roles.find((r) => r.id === ur.roleId)?.name)),
     );
 
     expect(roleNames.sort()).toEqual(['admin', 'athlete'].sort());

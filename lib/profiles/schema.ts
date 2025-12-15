@@ -1,7 +1,7 @@
-import { z } from 'zod';
-import { SHIRT_SIZES, BLOOD_TYPES, GENDER_CODES } from './metadata';
-import { isValidCountryCode, type CountryCode } from './countries';
 import { optionalPhoneNumber } from '@/lib/phone/schema';
+import { z } from 'zod';
+import { type CountryCode, isValidCountryCode } from './countries';
+import { BLOOD_TYPES, GENDER_CODES, SHIRT_SIZES } from './metadata';
 
 const optionalTrimmedString = (maxLength: number) =>
   z.preprocess((val) => {
@@ -13,19 +13,25 @@ const optionalTrimmedString = (maxLength: number) =>
   }, z.string().min(1).max(maxLength).optional());
 
 const optionalCountryCode = () =>
-  z.preprocess((val) => {
-    if (val === null || val === undefined) return undefined;
-    if (typeof val !== 'string') return val;
-
-    const trimmed = val.trim().toUpperCase();
-    return trimmed.length === 0 ? undefined : trimmed;
-  }, z.string().refine(
+  z.preprocess(
     (val) => {
-      if (!val) return true; // optional allows empty
-      return isValidCountryCode(val);
+      if (val === null || val === undefined) return undefined;
+      if (typeof val !== 'string') return val;
+
+      const trimmed = val.trim().toUpperCase();
+      return trimmed.length === 0 ? undefined : trimmed;
     },
-    { message: 'Invalid country code' }
-  ).optional()) as unknown as z.ZodOptional<z.ZodType<CountryCode | undefined>>;
+    z
+      .string()
+      .refine(
+        (val) => {
+          if (!val) return true; // optional allows empty
+          return isValidCountryCode(val);
+        },
+        { message: 'Invalid country code' },
+      )
+      .optional(),
+  ) as unknown as z.ZodOptional<z.ZodType<CountryCode | undefined>>;
 
 const optionalText = () =>
   z.preprocess((val) => {
@@ -113,9 +119,7 @@ export function createProfileValidationSchema(requiredFields: (keyof ProfileReco
     requiredFields.forEach((field) => {
       const value = data[field as keyof typeof data];
       const isEmpty =
-        value === undefined ||
-        value === null ||
-        (typeof value === 'string' && value.trim() === '');
+        value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
 
       if (isEmpty) {
         ctx.addIssue({

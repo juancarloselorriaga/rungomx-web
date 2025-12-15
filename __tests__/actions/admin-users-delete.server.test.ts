@@ -71,9 +71,11 @@ jest.mock('@/db', () => {
     return { set, where };
   });
 
-  const transaction = jest.fn(async (callback: (tx: { update: typeof update }) => Promise<void>) => {
-    await callback({ update });
-  });
+  const transaction = jest.fn(
+    async (callback: (tx: { update: typeof update }) => Promise<void>) => {
+      await callback({ update });
+    },
+  );
 
   const __reset = () => {
     state.selectQueue = [];

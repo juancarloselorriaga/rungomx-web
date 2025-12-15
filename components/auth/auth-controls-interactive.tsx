@@ -2,13 +2,12 @@
 
 import UserAvatar from '@/components/auth/user-avatar';
 import { Button } from '@/components/ui/button';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
-import { useRouter } from '@/i18n/navigation';
+import { Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { FormEvent, useTransition } from 'react';
-import { Loader2 } from 'lucide-react';
 
 interface AuthControls {
   user: User | null;
@@ -32,10 +31,10 @@ export const AuthControls = ({ user }: AuthControls) => {
 
   return user ? (
     <div className="flex items-center gap-4">
-      <UserAvatar user={user}/>
+      <UserAvatar user={user} />
       <form className="flex" onSubmit={handleSignout}>
         <Button disabled={isPending} type="submit" variant={'outline'}>
-          {isPending ? <Loader2 className="size-4 animate-spin"/> : null}
+          {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
           {t('signOut')}
         </Button>
       </form>

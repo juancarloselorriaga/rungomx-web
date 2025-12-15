@@ -6,9 +6,5 @@ interface ProvidersWrapperProps {
 }
 
 export function Providers({ children }: ProvidersWrapperProps) {
-  return (
-    <AppThemeProvider>
-      {children}
-    </AppThemeProvider>
-  );
+  return <AppThemeProvider>{children}</AppThemeProvider>;
 }

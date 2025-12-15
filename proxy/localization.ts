@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { routing, type AppLocale } from '@/i18n/routing';
+import { type AppLocale, routing } from '@/i18n/routing';
 import { isValidLocale } from '@/i18n/utils';
+import { NextRequest, NextResponse } from 'next/server';
 
 const localesPattern = routing.locales.join('|');
 const localePrefixRegex = new RegExp(`^/(${localesPattern})(?=/|$)`);
@@ -63,7 +63,11 @@ const toInternalPath = (pathname: string, locale: AppLocale) => {
   return pathname;
 };
 
-export const buildRedirectUrl = (req: NextRequest, targetInternalPath: string, locale: AppLocale) => {
+export const buildRedirectUrl = (
+  req: NextRequest,
+  targetInternalPath: string,
+  locale: AppLocale,
+) => {
   const localizedPath = getLocalizedPathname(targetInternalPath, locale);
   const prefix = resolvePrefix(locale, routing.localePrefix || 'as-needed');
   const normalizedPath = localizedPath === '/' ? '' : localizedPath;

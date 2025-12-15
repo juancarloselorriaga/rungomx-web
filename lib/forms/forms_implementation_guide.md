@@ -3,13 +3,16 @@
 Use this to wire new forms with the shared server-side validation stack. Everything lives in `lib/forms/` and `components/ui/`.
 
 ## Pieces
+
 - Hook: `useForm` manages values, errors, submit state; API mirrors React Hook Form (`register`, `handleSubmit`, etc.).
 - Components: `Form`, `FormError`, `FormField`, `FieldLabel`, `FieldError`.
 - Server helpers: `createFormAction`, `validateInput`, `extractFieldErrors`.
 - Types: `FormActionResult`, `UseFormReturn`, `UseFormOptions`, `FieldErrors`.
 
 ## Standard Flow
-1) **Define server action** (server-only Zod validation)
+
+1. **Define server action** (server-only Zod validation)
+
 ```typescript
 'use server';
 import { z } from 'zod';
@@ -21,15 +24,14 @@ const contactSchema = z.object({
   message: z.string().min(10, 'Message must be at least 10 characters').max(1000),
 });
 
-export const submitContactAction = createFormAction(
-  contactSchema,
-  async (data) => {
-    // business logic
-    return { id: '123', timestamp: new Date() };
-  }
-);
+export const submitContactAction = createFormAction(contactSchema, async (data) => {
+  // business logic
+  return { id: '123', timestamp: new Date() };
+});
 ```
-2) **Build client form** (server-side validation only; errors come from action)
+
+2. **Build client form** (server-side validation only; errors come from action)
+
 ```typescript
 'use client';
 import { useForm, Form, FormError } from '@/lib/forms';
@@ -67,6 +69,7 @@ export function ContactForm() {
 ```
 
 ## Key Rules
+
 - **Server-side validation only**: Zod runs on the server action; client just shows errors.
 - **Error mapping**: Use `createFormAction` or return `FormActionResult` with `error: 'INVALID_INPUT'` and `fieldErrors` to show field errors.
 - **Do not wrap components with built-in errors** (e.g., `PhoneInput`). Use `FieldLabel` + pass `error` prop directly.
@@ -74,12 +77,14 @@ export function ContactForm() {
 - **FormError** renders form-level error banner; `form.error` is set from action `message`.
 
 ## Common Patterns
+
 - **Custom component without error prop**: Wrap with `FormField` and pass `error={form.errors.field}`.
 - **Custom component with error prop**: Do NOT use `FormField`; use `FieldLabel` + `error` prop.
 - **Manual error**: `form.setError('field', 'Message')` and `form.clearError('field')`.
 - **Reset**: `form.reset()` resets to `defaultValues`.
 
 ## Files
+
 - Hook/components: `lib/forms/use-form.ts`, `lib/forms/form.tsx`, `components/ui/form-field.tsx`, `components/ui/field-label.tsx`, `components/ui/field-error.tsx`.
 - Server utils: `lib/forms/server-helpers.ts`.
 - Types/barrel: `lib/forms/types.ts`, `lib/forms/index.ts`.

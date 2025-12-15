@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { updateAccountNameAction } from '@/app/actions/account';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -8,6 +7,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 type AccountNameFormProps = {
@@ -20,11 +20,7 @@ type NameFormValues = {
   name: string;
 };
 
-export function AccountNameForm({
-  defaultName,
-  email,
-  variant = 'default',
-}: AccountNameFormProps) {
+export function AccountNameForm({ defaultName, email, variant = 'default' }: AccountNameFormProps) {
   const t = useTranslations('components.settings.accountNameForm');
   const lastSavedNameRef = useRef(defaultName);
   const previousDefaultNameRef = useRef(defaultName);
@@ -37,12 +33,10 @@ export function AccountNameForm({
       if (!result.ok) {
         const fieldErrors =
           result.error === 'INVALID_INPUT' && 'fieldErrors' in result
-            ? result.fieldErrors ?? {}
+            ? (result.fieldErrors ?? {})
             : {};
         const message =
-          result.error === 'INVALID_INPUT'
-            ? t('errors.invalidInput')
-            : t('errors.save');
+          result.error === 'INVALID_INPUT' ? t('errors.invalidInput') : t('errors.save');
 
         const mappedFieldErrors: Record<string, string[]> = {};
 
@@ -53,9 +47,7 @@ export function AccountNameForm({
         return {
           ok: false,
           error: result.error,
-          fieldErrors: Object.keys(mappedFieldErrors).length
-            ? mappedFieldErrors
-            : fieldErrors,
+          fieldErrors: Object.keys(mappedFieldErrors).length ? mappedFieldErrors : fieldErrors,
           message,
         };
       }
@@ -98,9 +90,7 @@ export function AccountNameForm({
           {t('sectionLabel')}
         </p>
         <h2 className="text-lg font-semibold">{t(`title.${variant}`)}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t(`description.${variant}`)}
-        </p>
+        <p className="text-sm text-muted-foreground">{t(`description.${variant}`)}</p>
       </div>
 
       <Form form={form} className="space-y-4 border-t border-border/70 pt-4">
@@ -113,7 +103,7 @@ export function AccountNameForm({
               className={cn(
                 'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
                 'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                form.errors.name && 'border-destructive focus-visible:border-destructive'
+                form.errors.name && 'border-destructive focus-visible:border-destructive',
               )}
               {...form.register('name')}
               autoComplete="name"

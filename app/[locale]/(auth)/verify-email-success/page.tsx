@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   return {
     title: t('title'),
     description: t('description'),
-    robots: { index: false, follow: false }
+    robots: { index: false, follow: false },
   };
 }
 

@@ -1,9 +1,8 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { UsersSectionHeader } from '@/components/admin/users/users-section-header';
 import { SelfSignupUsersEmptyState } from '@/components/admin/users/self-signup-users-empty-state';
 import { SelfSignupUsersTable } from '@/components/admin/users/self-signup-users-table';
+import { UsersSectionHeader } from '@/components/admin/users/users-section-header';
 import type { NormalizedSelfSignupUsersQuery } from '@/lib/self-signup-users/query';
 import type {
   ListSelfSignupUsersError,
@@ -11,6 +10,7 @@ import type {
   SerializedSelfSignupUserRow,
 } from '@/lib/self-signup-users/types';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type SelfSignupUsersClientProps = {
@@ -69,7 +69,7 @@ export function SelfSignupUsersClient({
         <div
           className={cn(
             'rounded-md border p-3 text-sm',
-            'border-destructive/50 bg-destructive/10 text-destructive'
+            'border-destructive/50 bg-destructive/10 text-destructive',
           )}
         >
           {bannerMessage}

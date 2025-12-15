@@ -9,14 +9,11 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 
 const LocationPickerDialog = dynamic(
-  () =>
-    import('./location-picker-dialog').then(
-      (mod) => mod.LocationPickerDialog
-    ),
+  () => import('./location-picker-dialog').then((mod) => mod.LocationPickerDialog),
   {
     ssr: false,
     loading: () => null,
-  }
+  },
 );
 
 type LocationFieldProps = {
@@ -59,7 +56,7 @@ export function LocationField({
               'flex w-full min-w-0 flex-1 items-center gap-2 rounded-md border bg-background px-3 py-2 text-left text-sm shadow-sm transition',
               'hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30',
               error && 'border-destructive focus-visible:ring-destructive/30',
-              disabled && 'cursor-not-allowed opacity-60 hover:border-border'
+              disabled && 'cursor-not-allowed opacity-60 hover:border-border',
             )}
             disabled={disabled}
             onClick={() => {
@@ -71,17 +68,16 @@ export function LocationField({
             <span
               className={cn(
                 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border',
-                'border-transparent bg-primary/10 text-primary'
+                'border-transparent bg-primary/10 text-primary',
               )}
             >
               <MapPinIcon className="h-3 w-3" />
             </span>
             <span className="flex min-w-0 flex-col gap-0.5">
-
               <span
                 className={cn(
                   'truncate text-sm font-medium',
-                  hasLocation ? 'text-foreground' : 'text-muted-foreground'
+                  hasLocation ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >
                 {hasLocation ? locationDisplay : t('field.emptyValue')}
@@ -89,9 +85,7 @@ export function LocationField({
             </span>
           </button>
         </div>
-        {hint ? (
-          <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-        ) : null}
+        {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
       </FormField>
 
       {isDialogOpen ? (

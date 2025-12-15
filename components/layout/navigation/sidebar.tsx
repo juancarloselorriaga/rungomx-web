@@ -2,9 +2,6 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { NavItem, NavSection, ProtectedNavIconName } from './types';
-import { NavLink } from './nav-link';
-import { NavActionContent, navActionContainer } from './nav-action';
 import {
   FileText,
   LayoutDashboard,
@@ -13,11 +10,14 @@ import {
   PanelLeftOpen,
   Settings,
   User,
-  Users
+  Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { FeedbackDialog } from './feedback-dialog';
+import { navActionContainer, NavActionContent } from './nav-action';
+import { NavLink } from './nav-link';
+import type { NavItem, NavSection, ProtectedNavIconName } from './types';
 
 const ICON_SIZE = 20;
 
@@ -28,17 +28,14 @@ const iconMap = {
   User,
   FileText,
   Users,
-} as const satisfies Record<ProtectedNavIconName, (typeof LayoutDashboard)>;
+} as const satisfies Record<ProtectedNavIconName, typeof LayoutDashboard>;
 
 interface SidebarProps {
   items?: readonly NavItem<ProtectedNavIconName>[];
   sections?: readonly NavSection<ProtectedNavIconName>[];
 }
 
-export function Sidebar({
-  items,
-  sections
-}: SidebarProps) {
+export function Sidebar({ items, sections }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const t = useTranslations('navigation');
   const resolvedSections: readonly NavSection<ProtectedNavIconName>[] =
@@ -52,7 +49,7 @@ export function Sidebar({
       <aside
         className={cn(
           'hidden md:sticky md:top-16 md:flex h-[calc(100vh-4rem-1px)] flex-col border-r bg-background-surface transition-[width] duration-300 ease-in-out',
-          collapsed ? 'w-16' : 'w-64'
+          collapsed ? 'w-16' : 'w-64',
         )}
         data-collapsed={collapsed}
       >
@@ -61,8 +58,12 @@ export function Sidebar({
           {resolvedSections.map((section, sectionIndex) => (
             <div key={sectionIndex} className="space-y-1">
               {section.titleKey ? (
-                <div className={cn('flex items-center justify-start h-6',
-                  collapsed ? 'max-w-0 opacity-0 hidden' : 'max-full opacity-100')}>
+                <div
+                  className={cn(
+                    'flex items-center justify-start h-6',
+                    collapsed ? 'max-w-0 opacity-0 hidden' : 'max-full opacity-100',
+                  )}
+                >
                   <p
                     className={cn(
                       'px-3 text-[0.75rem] font-semibold uppercase text-muted-foreground tracking-wide transition-[opacity,max-width] duration-300',
@@ -72,15 +73,19 @@ export function Sidebar({
                   </p>
                 </div>
               ) : null}
-              <div className={cn('flex items-center justify-start h-6',
-                !collapsed ? 'opacity-0 hidden' : 'opacity-100 max-w-[50px]')}>
-                <div className={cn('h-[3px] w-[80%] mx-auto bg-muted rounded-full')}/>
+              <div
+                className={cn(
+                  'flex items-center justify-start h-6',
+                  !collapsed ? 'opacity-0 hidden' : 'opacity-100 max-w-[50px]',
+                )}
+              >
+                <div className={cn('h-[3px] w-[80%] mx-auto bg-muted rounded-full')} />
               </div>
 
               {section.items.map((item) => {
                 const Icon = iconMap[item.iconName];
-                const itemHref = typeof item.href === 'string' ? item.href :
-                  item.href.pathname ?? '/';
+                const itemHref =
+                  typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/');
                 const label = t(item.labelKey);
 
                 return (
@@ -107,8 +112,10 @@ export function Sidebar({
           />
           <Button
             variant="ghost"
-            className={cn(navActionContainer(),
-              'w-full flex justify-start text-muted-foreground hover:text-foreground')}
+            className={cn(
+              navActionContainer(),
+              'w-full flex justify-start text-muted-foreground hover:text-foreground',
+            )}
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? t('expandMenu') : t('collapseMenu')}
             data-collapsed={collapsed}

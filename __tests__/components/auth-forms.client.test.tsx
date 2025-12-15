@@ -1,5 +1,7 @@
+import { SignInForm } from '@/components/auth/sign-in-form';
+import { SignUpForm } from '@/components/auth/sign-up-form';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -19,7 +21,10 @@ const routerPushMock = jest.fn();
 const routerRefreshMock = jest.fn();
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children, ...props }: React.PropsWithChildren<React.AnchorHTMLAttributes<HTMLAnchorElement>>) => (
+  Link: ({
+    children,
+    ...props
+  }: React.PropsWithChildren<React.AnchorHTMLAttributes<HTMLAnchorElement>>) => (
     // eslint-disable-next-line jsx-a11y/anchor-has-content
     <a {...props}>{children}</a>
   ),
@@ -43,9 +48,6 @@ jest.mock('@/lib/auth/client', () => ({
   },
   useSession: jest.fn(),
 }));
-
-import { SignInForm } from '@/components/auth/sign-in-form';
-import { SignUpForm } from '@/components/auth/sign-up-form';
 
 describe('Auth forms verify-email flows', () => {
   beforeEach(() => {

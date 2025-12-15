@@ -1,9 +1,9 @@
+import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import { FormField } from '@/components/ui/form-field';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
 import type { ProfileRecord } from '@/lib/profiles/types';
 import { cn } from '@/lib/utils';
-import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 
 type ProfileMedicalSectionProps = {
   form: UseFormReturn<ProfileFormValues>;
@@ -26,9 +26,7 @@ export function ProfileMedicalSection({
     <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">{t('sections.medical.title')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('sections.medical.description')}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('sections.medical.description')}</p>
       </div>
 
       <div className="space-y-3">
@@ -41,7 +39,7 @@ export function ProfileMedicalSection({
             className={cn(
               'w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.bloodType && 'border-destructive focus-visible:border-destructive'
+              form.errors.bloodType && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('bloodType')}
             disabled={isBusy}
@@ -65,7 +63,7 @@ export function ProfileMedicalSection({
               'min-h-[80px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
               form.errors.medicalConditions &&
-                'border-destructive focus-visible:border-destructive'
+                'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('medicalConditions')}
             disabled={isBusy}
@@ -79,7 +77,7 @@ export function ProfileMedicalSection({
             className={cn(
               'min-h-[80px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.bio && 'border-destructive focus-visible:border-destructive'
+              form.errors.bio && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('bio')}
             disabled={isBusy}
@@ -90,4 +88,3 @@ export function ProfileMedicalSection({
     </section>
   );
 }
-

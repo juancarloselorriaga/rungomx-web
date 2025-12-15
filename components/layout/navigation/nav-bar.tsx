@@ -12,19 +12,14 @@ interface NavigationBarProps {
   variant?: 'public' | 'protected';
 }
 
-export default async function NavigationBar({
-  items,
-  variant = 'public'
-}: NavigationBarProps) {
+export default async function NavigationBar({ items, variant = 'public' }: NavigationBarProps) {
   const user = await getCurrentUser();
   const t = await getTranslations('common');
 
   const showNavItems = items.length > 0;
 
   return (
-    <nav
-      className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur"
-    >
+    <nav className="sticky top-0 z-30 w-full border-b bg-background/80 backdrop-blur">
       <div className="flex h-16 w-full items-center gap-3 px-4 text-sm md:px-6">
         <div className="flex min-w-0 items-center gap-2">
           {items.length > 0 ? <NavDrawerTrigger user={user} items={items} /> : null}
@@ -43,12 +38,12 @@ export default async function NavigationBar({
             />
           </div>
         ) : (
-          <div className="flex-1"/>
+          <div className="flex-1" />
         )}
 
         <div className="flex items-center justify-end gap-2">
           <Suspense fallback={null}>
-            <UserMenu user={user}/>
+            <UserMenu user={user} />
           </Suspense>
         </div>
       </div>

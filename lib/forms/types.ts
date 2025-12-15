@@ -52,13 +52,15 @@ export interface UseFormReturn<TFieldValues extends Record<string, unknown>> {
   errors: FieldErrors<TFieldValues>;
   isSubmitting: boolean;
   error: string | null;
-  register: <K extends keyof TFieldValues>(name: K) => {
+  register: <K extends keyof TFieldValues>(
+    name: K,
+  ) => {
     name: K;
     value: TFieldValues[K];
     onChange: (
       value:
         | TFieldValues[K]
-        | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+        | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
     ) => void;
   };
   handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;

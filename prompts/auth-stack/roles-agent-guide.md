@@ -145,6 +145,7 @@ Use guards from `lib/auth/guards.ts` in server actions and backend-only code. Do
   - `ProfileIncompleteError` (`code: 'PROFILE_INCOMPLETE'`): external user must complete profile before proceeding.
 
 **Rule of thumb**
+
 - External feature requiring a complete profile → `requireProfileCompleteUser()`.
 - Admin-only feature → `requireAdminUser()`.
 - Staff-only (non-admin) feature → `requireStaffUser()`.
@@ -254,4 +255,4 @@ Use guards from `lib/auth/guards.ts` in server actions and backend-only code. Do
     - Internal staff → `requireStaffUser`.
     - External, profile-complete users only → `requireProfileCompleteUser`.
     - Any signed-in user → `requireAuthenticatedUser`.
-  - Handle `UnauthenticatedError`, `ForbiddenError`, and `ProfileIncompleteError` explicitly in server actions to produce structured error responses consumable by the frontend. ***!
+  - Handle `UnauthenticatedError`, `ForbiddenError`, and `ProfileIncompleteError` explicitly in server actions to produce structured error responses consumable by the frontend. \*\*\*!

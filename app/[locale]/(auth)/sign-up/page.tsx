@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
     locale,
     '/sign-up',
     (messages) => messages.Pages?.SignUp?.metadata,
-    { robots: { index: false, follow: false } }
+    { robots: { index: false, follow: false } },
   );
 }
 
@@ -37,12 +37,10 @@ export default async function SignUpPage({
     <div className="space-y-6 rounded-lg border bg-card p-8 shadow-lg">
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">
-          {t('description')}
-        </p>
+        <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <SignUpForm callbackPath={callbackPath}/>
+      <SignUpForm callbackPath={callbackPath} />
 
       <p className="text-center text-sm text-muted-foreground">
         {authT('hasAccount')}{' '}

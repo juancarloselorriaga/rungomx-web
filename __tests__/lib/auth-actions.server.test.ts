@@ -4,8 +4,8 @@ jest.mock('next/headers', () => ({
   })),
 }));
 
-import { cookies } from 'next/headers';
 import { requestPasswordReset, resetPasswordWithToken } from '@/lib/auth/actions';
+import { cookies } from 'next/headers';
 
 describe('auth actions - password reset', () => {
   const originalFetch = global.fetch;
@@ -32,7 +32,10 @@ describe('auth actions - password reset', () => {
         json: jest.fn().mockResolvedValue(apiResponse),
       });
 
-      const result = await requestPasswordReset('user@example.com', 'https://app.example.com/reset-password');
+      const result = await requestPasswordReset(
+        'user@example.com',
+        'https://app.example.com/reset-password',
+      );
 
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/auth/request-password-reset'),
@@ -47,7 +50,7 @@ describe('auth actions - password reset', () => {
             email: 'user@example.com',
             redirectTo: 'https://app.example.com/reset-password',
           }),
-        })
+        }),
       );
 
       expect(result).toEqual({
@@ -62,7 +65,10 @@ describe('auth actions - password reset', () => {
         json: jest.fn().mockResolvedValue({ message: 'Token expired' }),
       });
 
-      const result = await requestPasswordReset('user@example.com', 'https://app.example.com/reset-password');
+      const result = await requestPasswordReset(
+        'user@example.com',
+        'https://app.example.com/reset-password',
+      );
 
       expect(result).toEqual({
         data: null,
@@ -76,7 +82,10 @@ describe('auth actions - password reset', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      const result = await requestPasswordReset('user@example.com', 'https://app.example.com/reset-password');
+      const result = await requestPasswordReset(
+        'user@example.com',
+        'https://app.example.com/reset-password',
+      );
 
       expect(result).toEqual({
         data: null,
@@ -87,7 +96,10 @@ describe('auth actions - password reset', () => {
     it('returns a network error message when fetch throws', async () => {
       (global.fetch as jest.Mock).mockRejectedValue(new Error('Network down'));
 
-      const result = await requestPasswordReset('user@example.com', 'https://app.example.com/reset-password');
+      const result = await requestPasswordReset(
+        'user@example.com',
+        'https://app.example.com/reset-password',
+      );
 
       expect(result).toEqual({
         data: null,
@@ -120,7 +132,7 @@ describe('auth actions - password reset', () => {
             newPassword: 'new-password-123',
             token: 'reset-token',
           }),
-        })
+        }),
       );
 
       expect(result).toEqual({
@@ -168,10 +180,7 @@ describe('auth actions - password reset', () => {
       });
     });
 
-    it.each([
-      ['en'],
-      ['es'],
-    ])('includes NEXT_LOCALE cookie when present (%s)', async (locale) => {
+    it.each([['en'], ['es']])('includes NEXT_LOCALE cookie when present (%s)', async (locale) => {
       const getMock = jest.fn(() => ({ value: locale as string }));
       mockCookies.mockReturnValue({
         get: getMock,
@@ -192,7 +201,7 @@ describe('auth actions - password reset', () => {
           headers: expect.objectContaining({
             Cookie: `NEXT_LOCALE=${locale}`,
           }),
-        })
+        }),
       );
     });
   });

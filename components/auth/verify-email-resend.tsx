@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
-import { Form, FormError, useForm } from '@/lib/forms';
 import { requestEmailVerification } from '@/lib/auth/actions';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -27,7 +27,11 @@ export function VerifyEmailResend({ email, callbackPath }: VerifyEmailResendProp
 
       const { error: resendError } = await requestEmailVerification(targetEmail, callbackPath);
       if (resendError) {
-        return { ok: false, error: 'SERVER_ERROR', message: resendError.message ?? t('genericError') };
+        return {
+          ok: false,
+          error: 'SERVER_ERROR',
+          message: resendError.message ?? t('genericError'),
+        };
       }
 
       return { ok: true, data: null };
@@ -57,7 +61,11 @@ export function VerifyEmailResend({ email, callbackPath }: VerifyEmailResendProp
       )}
 
       <Button className="w-full" disabled={form.isSubmitting} type="submit">
-        {form.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+        {form.isSubmitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <RefreshCw className="size-4" />
+        )}
         <span>{t('resendButton')}</span>
       </Button>
     </Form>

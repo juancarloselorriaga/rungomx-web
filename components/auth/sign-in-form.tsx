@@ -1,15 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormError, useForm } from '@/lib/forms';
 import { FormField } from '@/components/ui/form-field';
-import { Link } from '@/i18n/navigation';
-import { useRouter } from '@/i18n/navigation';
-import { signIn } from '@/lib/auth/client';
+import { Link, useRouter } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
+import { signIn } from '@/lib/auth/client';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, Lock, LogIn, Mail } from 'lucide-react';
-import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { useTransition } from 'react';
 
 type SignInFormProps = {
   callbackPath?: string;
@@ -40,10 +39,17 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
       if (signInError) {
         const status = (signInError as { status?: number } | null)?.status;
         if (status === 403) {
-          return { ok: true, data: { kind: 'verify-email', email: values.email, callbackPath: targetPath } };
+          return {
+            ok: true,
+            data: { kind: 'verify-email', email: values.email, callbackPath: targetPath },
+          };
         }
 
-        return { ok: false, error: 'SERVER_ERROR', message: signInError.message ?? t('genericError') };
+        return {
+          ok: false,
+          error: 'SERVER_ERROR',
+          message: signInError.message ?? t('genericError'),
+        };
       }
 
       return { ok: true, data: { kind: 'signed-in' } };
@@ -136,16 +142,17 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
       </FormField>
 
       <div className="text-right">
-        <Link
-          href="/forgot-password"
-          className="text-sm text-primary hover:underline"
-        >
+        <Link href="/forgot-password" className="text-sm text-primary hover:underline">
           {t('forgotPassword')}
         </Link>
       </div>
 
       <Button className="w-full" disabled={form.isSubmitting || isPending} type="submit">
-        {form.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <LogIn className="size-4" />}
+        {form.isSubmitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <LogIn className="size-4" />
+        )}
         <span>{t('signIn')}</span>
       </Button>
 

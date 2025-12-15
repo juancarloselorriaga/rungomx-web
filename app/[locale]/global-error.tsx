@@ -1,8 +1,8 @@
 'use client';
 
+import { Link } from '@/i18n/navigation';
 import { Home, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/navigation';
 import { useEffect } from 'react';
 import '../globals.css';
 
@@ -28,70 +28,61 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-    <body>
-    <div
-      className="w-full relative flex h-screen items-center justify-center overflow-hidden">
-      {/* Background pattern overlay */}
-      <div className="absolute inset-0 opacity-10">
-        <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern
-              id="global-error-pattern"
-              x="0"
-              y="0"
-              width="40"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle cx="20" cy="20" r="1" fill="currentColor"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#global-error-pattern)"/>
-        </svg>
-      </div>
-
-      {/* Content */}
-      <div className="container relative z-10 mx-auto max-w-2xl px-4 py-16 text-center">
-        <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          {t('title')}
-        </h1>
-
-        <p className="mb-8 text-lg text-foreground/80">
-          {t('description')}
-        </p>
-
-        {/* Error details for development */}
-        {process.env.NODE_ENV === 'development' && error.message && (
-          <div className="mb-8 rounded-lg bg-background-surface p-4 text-left">
-            <p className="font-mono text-sm text-foreground/90">
-              <strong>{tError('errorLabel')}</strong> {error.message}
-            </p>
-            {error.digest && (
-              <p className="mt-2 font-mono text-xs text-foreground/70">
-                <strong>{tError('digestLabel')}</strong> {error.digest}
-              </p>
-            )}
+      <body>
+        <div className="w-full relative flex h-screen items-center justify-center overflow-hidden">
+          {/* Background pattern overlay */}
+          <div className="absolute inset-0 opacity-10">
+            <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern
+                  id="global-error-pattern"
+                  x="0"
+                  y="0"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <circle cx="20" cy="20" r="1" fill="currentColor" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#global-error-pattern)" />
+            </svg>
           </div>
-        )}
 
-        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <button
-            onClick={reset}
-          >
-            <RefreshCw className="h-5 w-5"/>
-            {tCommon('tryAgain')}
-          </button>
+          {/* Content */}
+          <div className="container relative z-10 mx-auto max-w-2xl px-4 py-16 text-center">
+            <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{t('title')}</h1>
 
-          <Link
-            href="/"
-          >
-            <Home className="h-5 w-5"/>
-            {tCommon('goHome')}
-          </Link>
+            <p className="mb-8 text-lg text-foreground/80">{t('description')}</p>
+
+            {/* Error details for development */}
+            {process.env.NODE_ENV === 'development' && error.message && (
+              <div className="mb-8 rounded-lg bg-background-surface p-4 text-left">
+                <p className="font-mono text-sm text-foreground/90">
+                  <strong>{tError('errorLabel')}</strong> {error.message}
+                </p>
+                {error.digest && (
+                  <p className="mt-2 font-mono text-xs text-foreground/70">
+                    <strong>{tError('digestLabel')}</strong> {error.digest}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <button onClick={reset}>
+                <RefreshCw className="h-5 w-5" />
+                {tCommon('tryAgain')}
+              </button>
+
+              <Link href="/">
+                <Home className="h-5 w-5" />
+                {tCommon('goHome')}
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    </body>
+      </body>
     </html>
   );
 }

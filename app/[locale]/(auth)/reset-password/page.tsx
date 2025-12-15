@@ -12,7 +12,9 @@ export default function ResetPasswordPage() {
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <Suspense fallback={<div className="text-center text-sm text-muted-foreground">Loading...</div>}>
+      <Suspense
+        fallback={<div className="text-center text-sm text-muted-foreground">Loading...</div>}
+      >
         <ResetPasswordForm />
       </Suspense>
     </div>

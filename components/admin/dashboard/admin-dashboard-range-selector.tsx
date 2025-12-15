@@ -56,23 +56,14 @@ export function AdminDashboardRangeSelector({
             className,
           )}
         >
-          <span className="truncate">
-            {selectedOption?.label ?? selected}
-          </span>
+          <span className="truncate">{selectedOption?.label ?? selected}</span>
           <ChevronDownIcon className="size-3" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[12rem]">
-        <DropdownMenuRadioGroup
-          value={selected}
-          onValueChange={handleChange}
-        >
+        <DropdownMenuRadioGroup value={selected} onValueChange={handleChange}>
           {options.map((option) => (
-            <DropdownMenuRadioItem
-              key={option.value}
-              value={option.value}
-              className="text-xs"
-            >
+            <DropdownMenuRadioItem key={option.value} value={option.value} className="text-xs">
               {option.label}
             </DropdownMenuRadioItem>
           ))}
@@ -81,4 +72,3 @@ export function AdminDashboardRangeSelector({
     </DropdownMenu>
   );
 }
-

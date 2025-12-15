@@ -77,7 +77,7 @@ describe('generate-i18n-loaders', () => {
         manualBlock,
         '// === MANUAL ROUTE OVERRIDES END ===',
       ].join('\n'),
-      'utf-8'
+      'utf-8',
     );
 
     await jest.isolateModulesAsync(async () => {

@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { roles, userRoles } from '@/db/schema';
 import type { ProfileRequirementCategory } from '@/lib/profiles/requirements';
-import { eq, inArray, and } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 
 export type CanonicalRole =
   | 'internal.admin'
@@ -124,7 +124,7 @@ const ROLE_NAME_MAP: Record<string, CanonicalRole> = Object.values(ROLE_REGISTRY
     });
     return acc;
   },
-  {} as Record<string, CanonicalRole>
+  {} as Record<string, CanonicalRole>,
 );
 
 const DEFAULT_EXTERNAL_ROLE =
@@ -134,27 +134,32 @@ const DEFAULT_EXTERNAL_ROLE =
 const unique = <T>(values: Iterable<T>) => Array.from(new Set(values));
 
 function mergePermissions(canonicalRoles: CanonicalRole[]): PermissionSet {
-  return canonicalRoles.reduce<PermissionSet>((merged, role) => {
-    const definition = ROLE_REGISTRY[role];
-    if (!definition) return merged;
+  return canonicalRoles.reduce<PermissionSet>(
+    (merged, role) => {
+      const definition = ROLE_REGISTRY[role];
+      if (!definition) return merged;
 
-    return {
-      canAccessAdminArea: merged.canAccessAdminArea || definition.permissions.canAccessAdminArea,
-      canAccessUserArea: merged.canAccessUserArea || definition.permissions.canAccessUserArea,
-      canManageUsers: merged.canManageUsers || definition.permissions.canManageUsers,
-      canManageEvents: merged.canManageEvents || definition.permissions.canManageEvents,
-      canViewStaffTools: merged.canViewStaffTools || definition.permissions.canViewStaffTools,
-      canViewOrganizersDashboard:
-        merged.canViewOrganizersDashboard || definition.permissions.canViewOrganizersDashboard,
-      canViewAthleteDashboard:
-        merged.canViewAthleteDashboard || definition.permissions.canViewAthleteDashboard,
-    };
-  }, { ...DEFAULT_PERMISSIONS });
+      return {
+        canAccessAdminArea: merged.canAccessAdminArea || definition.permissions.canAccessAdminArea,
+        canAccessUserArea: merged.canAccessUserArea || definition.permissions.canAccessUserArea,
+        canManageUsers: merged.canManageUsers || definition.permissions.canManageUsers,
+        canManageEvents: merged.canManageEvents || definition.permissions.canManageEvents,
+        canViewStaffTools: merged.canViewStaffTools || definition.permissions.canViewStaffTools,
+        canViewOrganizersDashboard:
+          merged.canViewOrganizersDashboard || definition.permissions.canViewOrganizersDashboard,
+        canViewAthleteDashboard:
+          merged.canViewAthleteDashboard || definition.permissions.canViewAthleteDashboard,
+      };
+    },
+    { ...DEFAULT_PERMISSIONS },
+  );
 }
 
-function collectRequirementCategories(canonicalRoles: CanonicalRole[]): ProfileRequirementCategory[] {
+function collectRequirementCategories(
+  canonicalRoles: CanonicalRole[],
+): ProfileRequirementCategory[] {
   return unique(
-    canonicalRoles.flatMap((role) => ROLE_REGISTRY[role]?.profileRequirementCategories ?? [])
+    canonicalRoles.flatMap((role) => ROLE_REGISTRY[role]?.profileRequirementCategories ?? []),
   );
 }
 
@@ -177,7 +182,9 @@ function deriveCanonicalRoles(rawRoleNames: string[]) {
   const canonicalRoles = hasCanonicalRoles ? distinctMapped : [DEFAULT_EXTERNAL_ROLE.id];
   const isInternal = canonicalRoles.some((role) => ROLE_REGISTRY[role]?.category === 'internal');
   const permissions = mergePermissions(canonicalRoles);
-  const profileRequirementCategories = isInternal ? [] : collectRequirementCategories(canonicalRoles);
+  const profileRequirementCategories = isInternal
+    ? []
+    : collectRequirementCategories(canonicalRoles);
 
   if (isInternal) {
     permissions.canAccessUserArea = false;
@@ -227,7 +234,7 @@ export function getSelectableExternalRoles(): CanonicalRole[] {
 }
 
 const isExternalRoleKind = (
-  kind: RoleKind
+  kind: RoleKind,
 ): kind is Extract<RoleKind, 'organizer' | 'athlete' | 'volunteer'> =>
   kind === 'organizer' || kind === 'athlete' || kind === 'volunteer';
 
@@ -258,17 +265,17 @@ export function getInternalRoleSourceNames(kind?: InternalRoleKind): string[] {
   return unique(
     Object.values(ROLE_REGISTRY)
       .filter((role) => role.category === 'internal' && (!kind || role.kind === kind))
-      .flatMap((role) => role.sourceNames)
+      .flatMap((role) => role.sourceNames),
   );
 }
 
 export async function updateUserExternalRoles(userId: string, canonicalRoles: CanonicalRole[]) {
   const externalRoles = canonicalRoles.filter(
-    (role) => ROLE_REGISTRY[role]?.category === 'external'
+    (role) => ROLE_REGISTRY[role]?.category === 'external',
   );
   const desiredRoles = externalRoles.length > 0 ? externalRoles : [DEFAULT_EXTERNAL_ROLE.id];
   const desiredNames = unique(
-    desiredRoles.map((role) => ROLE_REGISTRY[role]?.sourceNames[0]).filter(Boolean) as string[]
+    desiredRoles.map((role) => ROLE_REGISTRY[role]?.sourceNames[0]).filter(Boolean) as string[],
   );
 
   if (desiredNames.length === 0) return;
@@ -289,15 +296,15 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
       .filter((roleName) => {
         const canonical = ROLE_NAME_MAP[roleName.toLowerCase()];
         return canonical ? ROLE_REGISTRY[canonical]?.category === 'external' : false;
-      })
+      }),
   );
 
   const roleNamesToEnsure = unique([...desiredNames, ...existingExternalRoleNames]);
   const existingRoleNameSet = new Set(
-    existingRoles.map(({ roleName }) => roleName.toLowerCase()).filter(Boolean)
+    existingRoles.map(({ roleName }) => roleName.toLowerCase()).filter(Boolean),
   );
   const namesToInsert = roleNamesToEnsure.filter(
-    (name) => !existingRoleNameSet.has(name.toLowerCase())
+    (name) => !existingRoleNameSet.has(name.toLowerCase()),
   );
 
   if (namesToInsert.length) {
@@ -307,7 +314,7 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
         namesToInsert.map((name) => ({
           name,
           description: `auto-created role ${name}`,
-        }))
+        })),
       )
       .onConflictDoNothing();
   }
@@ -324,7 +331,7 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
   const existingRoleIds = new Set(
     existingRoles
       .map(({ roleId, roleName }) => roleId ?? roleIdByName.get(roleName.toLowerCase()))
-      .filter((id): id is string => Boolean(id))
+      .filter((id): id is string => Boolean(id)),
   );
   const externalRoleIds = existingExternalRoleNames
     .map((name) => roleIdByName.get(name.toLowerCase()))
@@ -336,9 +343,7 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
       .where(and(eq(userRoles.userId, userId), inArray(userRoles.roleId, externalRoleIds)));
   }
 
-  const roleIdsToInsert = desiredRoleIds.filter(
-    (roleId) => !existingRoleIds.has(roleId)
-  );
+  const roleIdsToInsert = desiredRoleIds.filter((roleId) => !existingRoleIds.has(roleId));
 
   if (roleIdsToInsert.length > 0) {
     await db
@@ -350,12 +355,12 @@ export async function updateUserExternalRoles(userId: string, canonicalRoles: Ca
 
 export async function updateUserInternalRoles(userId: string, canonicalRoles: CanonicalRole[]) {
   const internalRoles = canonicalRoles.filter(
-    (role) => ROLE_REGISTRY[role]?.category === 'internal'
+    (role) => ROLE_REGISTRY[role]?.category === 'internal',
   );
   const desiredNames = unique(
     internalRoles
       .map((role) => ROLE_REGISTRY[role]?.sourceNames[0])
-      .filter((name): name is string => Boolean(name))
+      .filter((name): name is string => Boolean(name)),
   );
 
   if (desiredNames.length === 0) {
@@ -370,10 +375,10 @@ export async function updateUserInternalRoles(userId: string, canonicalRoles: Ca
     .from(roles)
     .where(inArray(roles.name, desiredNames));
 
-  const existingNameSet = new Set(existingRoles.map(({ name }) => name.toLowerCase()).filter(Boolean));
-  const namesToInsert = desiredNames.filter(
-    (name) => !existingNameSet.has(name.toLowerCase())
+  const existingNameSet = new Set(
+    existingRoles.map(({ name }) => name.toLowerCase()).filter(Boolean),
   );
+  const namesToInsert = desiredNames.filter((name) => !existingNameSet.has(name.toLowerCase()));
 
   if (namesToInsert.length) {
     await db
@@ -382,7 +387,7 @@ export async function updateUserInternalRoles(userId: string, canonicalRoles: Ca
         namesToInsert.map((name) => ({
           name,
           description: `internal role ${name}`,
-        }))
+        })),
       )
       .onConflictDoNothing();
   }
@@ -392,9 +397,7 @@ export async function updateUserInternalRoles(userId: string, canonicalRoles: Ca
     .from(roles)
     .where(inArray(roles.name, desiredNames));
 
-  const roleIdByName = new Map(
-    ensuredRoleRows.map(({ id, name }) => [name.toLowerCase(), id])
-  );
+  const roleIdByName = new Map(ensuredRoleRows.map(({ id, name }) => [name.toLowerCase(), id]));
   const roleIds = desiredNames
     .map((name) => roleIdByName.get(name.toLowerCase()))
     .filter((id): id is string => Boolean(id));

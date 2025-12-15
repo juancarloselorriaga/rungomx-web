@@ -7,6 +7,7 @@ This project uses **Neon database branching** for isolated, real-database testin
 ## Architecture
 
 ### Branch Isolation
+
 - **Main branch**: Production data
 - **Dev branch**: Development work
 - **Test branch**: Automated testing (isolated from main/dev)
@@ -44,10 +45,10 @@ Located in `tests/helpers/`:
 Create tests with the `.db.test.ts` suffix:
 
 ```typescript
-import { cleanDatabase, getTestDb } from "../../helpers/db";
-import { createTestUser } from "../../helpers/fixtures";
+import { cleanDatabase, getTestDb } from '../../helpers/db';
+import { createTestUser } from '../../helpers/fixtures';
 
-describe("My Database Tests", () => {
+describe('My Database Tests', () => {
   const db = getTestDb();
 
   beforeEach(async () => {
@@ -55,7 +56,7 @@ describe("My Database Tests", () => {
     await cleanDatabase(db);
   });
 
-  it("should create a user", async () => {
+  it('should create a user', async () => {
     const user = await createTestUser(db);
     expect(user.id).toBeDefined();
   });
@@ -72,12 +73,12 @@ const user = await createTestUser(db);
 
 // Create user with custom data
 const user = await createTestUser(db, {
-  email: "custom@example.com",
-  firstName: "Jane",
+  email: 'custom@example.com',
+  firstName: 'Jane',
 });
 
 // Create and assign role
-const role = await createTestRole(db, { name: "admin" });
+const role = await createTestRole(db, { name: 'admin' });
 await assignUserRole(db, user.id, role.id);
 ```
 
@@ -103,6 +104,7 @@ pnpm test:watch
 ## Best Practices
 
 ### 1. Clean State
+
 Always clean the database before each test to ensure isolation:
 
 ```typescript
@@ -112,6 +114,7 @@ beforeEach(async () => {
 ```
 
 ### 2. Use Fixtures
+
 Avoid duplicating test data creation logic. Use fixtures for consistency:
 
 ```typescript
@@ -123,32 +126,29 @@ const [user] = await db.insert(users).values({ ... }).returning();
 ```
 
 ### 3. Test Real Constraints
+
 Test actual database constraints (unique indexes, foreign keys, cascades):
 
 ```typescript
-it("should enforce unique email", async () => {
-  await createTestUser(db, { email: "duplicate@example.com" });
-  await expect(
-    createTestUser(db, { email: "duplicate@example.com" })
-  ).rejects.toThrow();
+it('should enforce unique email', async () => {
+  await createTestUser(db, { email: 'duplicate@example.com' });
+  await expect(createTestUser(db, { email: 'duplicate@example.com' })).rejects.toThrow();
 });
 ```
 
 ### 4. Test Relationships
+
 Verify cascade deletes and relationship integrity:
 
 ```typescript
-it("should cascade delete related records", async () => {
+it('should cascade delete related records', async () => {
   const user = await createTestUser(db);
   const role = await createTestRole(db);
   await assignUserRole(db, user.id, role.id);
 
   await db.delete(users).where(eq(users.id, user.id));
 
-  const userRoles = await db
-    .select()
-    .from(userRoles)
-    .where(eq(userRoles.userId, user.id));
+  const userRoles = await db.select().from(userRoles).where(eq(userRoles.userId, user.id));
 
   expect(userRoles).toHaveLength(0);
 });

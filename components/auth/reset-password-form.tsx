@@ -1,13 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { resetPasswordWithToken } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { FormField } from '@/components/ui/form-field';
-import { Loader2, Lock, KeyRound } from 'lucide-react';
-import { useState } from 'react';
+import { KeyRound, Loader2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 
 export function ResetPasswordForm() {
   const t = useTranslations('pages.resetPassword');
@@ -20,7 +20,7 @@ export function ResetPasswordForm() {
 
   // Initialize error state from URL parameter
   const [error, setError] = useState<string | null>(
-    errorParam === 'INVALID_TOKEN' ? t('invalidToken') : null
+    errorParam === 'INVALID_TOKEN' ? t('invalidToken') : null,
   );
 
   const form = useForm<{ password: string; confirmPassword: string }>({
@@ -41,7 +41,11 @@ export function ResetPasswordForm() {
         const { error: resetError } = await resetPasswordWithToken(values.password, token);
 
         if (resetError) {
-          return { ok: false, error: 'SERVER_ERROR', message: resetError.message ?? t('genericError') };
+          return {
+            ok: false,
+            error: 'SERVER_ERROR',
+            message: resetError.message ?? t('genericError'),
+          };
         }
 
         return { ok: true, data: null };
@@ -113,14 +117,16 @@ export function ResetPasswordForm() {
         />
       </FormField>
 
-      <p className="text-xs text-muted-foreground">
-        {tAuth('passwordRequirements')}
-      </p>
+      <p className="text-xs text-muted-foreground">{tAuth('passwordRequirements')}</p>
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       <Button className="w-full" disabled={isPending || form.isSubmitting} type="submit">
-        {isPending || form.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />}
+        {isPending || form.isSubmitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <KeyRound className="size-4" />
+        )}
         <span>{t('resetPassword')}</span>
       </Button>
     </Form>

@@ -6,11 +6,7 @@ import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return createLocalizedPageMetadata(
-    locale,
-    '/news',
-    (messages) => messages.Pages?.News?.metadata
-  );
+  return createLocalizedPageMetadata(locale, '/news', (messages) => messages.Pages?.News?.metadata);
 }
 
 export default async function NewsPage({ params }: LocalePageProps) {
@@ -20,9 +16,7 @@ export default async function NewsPage({ params }: LocalePageProps) {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
-      <p className="text-muted-foreground">
-        {t('description')}
-      </p>
+      <p className="text-muted-foreground">{t('description')}</p>
     </div>
   );
 }

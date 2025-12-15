@@ -3,11 +3,13 @@
 The former monolithic guide is now split into topic cards to keep prompts lean.
 
 Usage for AI agents:
-1) Start with `prompts/standards/nextjs-caching-index.md`.
-2) Select the 1–2 relevant topic files (max 2 unless explicitly needed).
-3) Load only those files; each begins with a mini-summary and deep links via headings.
+
+1. Start with `prompts/standards/nextjs-caching-index.md`.
+2. Select the 1–2 relevant topic files (max 2 unless explicitly needed).
+3. Load only those files; each begins with a mini-summary and deep links via headings.
 
 Topic cards:
+
 - `prompts/standards/nextjs-caching/overview.md`
 - `prompts/standards/nextjs-caching/caching-mechanisms.md`
 - `prompts/standards/nextjs-caching/critical-rules.md`

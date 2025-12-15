@@ -6,12 +6,9 @@ import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return createLocalizedPageMetadata(
-    locale,
-    '/',
-    (messages) => messages.Pages?.Home?.metadata,
-    { imagePath: '/og-home.jpg' }
-  );
+  return createLocalizedPageMetadata(locale, '/', (messages) => messages.Pages?.Home?.metadata, {
+    imagePath: '/og-home.jpg',
+  });
 }
 
 export default async function Home({ params }: LocalePageProps) {
@@ -20,9 +17,7 @@ export default async function Home({ params }: LocalePageProps) {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-bold">
-        {t('home')}
-      </h1>
+      <h1 className="text-3xl font-bold">{t('home')}</h1>
     </div>
   );
 }

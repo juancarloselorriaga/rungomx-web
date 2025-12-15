@@ -1,9 +1,9 @@
 import { PhoneField } from '@/components/settings/fields/phone-field';
+import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import { FormField } from '@/components/ui/form-field';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileRecord } from '@/lib/profiles/types';
 import { cn } from '@/lib/utils';
-import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 
 type ProfileEmergencyContactSectionProps = {
   form: UseFormReturn<ProfileFormValues>;
@@ -41,7 +41,7 @@ export function ProfileEmergencyContactSection({
               'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
               form.errors.emergencyContactName &&
-                'border-destructive focus-visible:border-destructive'
+                'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('emergencyContactName')}
             disabled={isBusy}

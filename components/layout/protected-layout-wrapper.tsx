@@ -8,9 +8,7 @@ export default function ProtectedLayoutWrapper({ children }: { children: React.R
   return (
     <OnboardingOverridesProvider>
       <RoleEnforcementBoundary>
-        <ProfileEnforcementBoundary>
-          {children}
-        </ProfileEnforcementBoundary>
+        <ProfileEnforcementBoundary>{children}</ProfileEnforcementBoundary>
       </RoleEnforcementBoundary>
     </OnboardingOverridesProvider>
   );

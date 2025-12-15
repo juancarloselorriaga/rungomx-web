@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { getLocationProvider } from '@/lib/location/location-provider';
 import type { PublicLocationValue } from '@/types/location';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const querySchema = z.object({
   q: z.string().min(1),
@@ -70,7 +70,7 @@ function setCachedResults(key: string, results: PublicLocationValue[]) {
 }
 
 function toPublicLocations(
-  locations: (PublicLocationValue & { raw?: unknown })[]
+  locations: (PublicLocationValue & { raw?: unknown })[],
 ): PublicLocationValue[] {
   return locations.map((location) => {
     const { raw: _raw, ...rest } = location;
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'INVALID_QUERY', details: z.treeifyError(parsed.error) },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -119,16 +119,13 @@ export async function GET(request: NextRequest) {
     });
 
     const publicLocations: PublicLocationValue[] = toPublicLocations(
-      locations as (PublicLocationValue & { raw?: unknown })[]
+      locations as (PublicLocationValue & { raw?: unknown })[],
     );
     setCachedResults(cacheKey, publicLocations);
 
     return NextResponse.json({ locations: publicLocations });
   } catch (error) {
     console.error('[location-search] Error handling request', error);
-    return NextResponse.json(
-      { error: 'SERVER_ERROR' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }
 }

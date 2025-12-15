@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { UserDeleteDialog } from '@/components/admin/users/user-delete-dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 type UsersTableActionsProps = {
@@ -38,8 +38,17 @@ export function UsersTableActions({
     <div className="flex justify-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground" disabled={isPending}>
-            {isPending ? <Loader2 className="size-4 animate-spin" /> : <MoreHorizontal className="size-4" />}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-muted-foreground"
+            disabled={isPending}
+          >
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <MoreHorizontal className="size-4" />
+            )}
             {isPending ? t('working') : ''}
           </Button>
         </DropdownMenuTrigger>

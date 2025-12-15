@@ -28,11 +28,7 @@ export function NavDrawerProvider({ children }: { children: ReactNode }) {
     [open],
   );
 
-  return (
-    <NavDrawerContext.Provider value={value}>
-      {children}
-    </NavDrawerContext.Provider>
-  );
+  return <NavDrawerContext.Provider value={value}>{children}</NavDrawerContext.Provider>;
 }
 
 export function useNavDrawer(): NavDrawerContextValue {
@@ -47,22 +43,14 @@ export function useNavDrawer(): NavDrawerContextValue {
 
 type MobileNavPushLayoutProps = HTMLAttributes<HTMLDivElement>;
 
-export function MobileNavPushLayout({
-  className,
-  ...props
-}: MobileNavPushLayoutProps) {
+export function MobileNavPushLayout({ className, ...props }: MobileNavPushLayoutProps) {
   const { open } = useNavDrawer();
 
   return (
     <div
       data-nav-drawer-open={open ? 'true' : 'false'}
-      className={cn(
-        'mobile-nav-push-layout',
-        open && 'mobile-nav-push-layout-open',
-        className,
-      )}
+      className={cn('mobile-nav-push-layout', open && 'mobile-nav-push-layout-open', className)}
       {...props}
     />
   );
 }
-

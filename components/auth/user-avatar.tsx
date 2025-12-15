@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
+import { Link } from '@/i18n/navigation';
 import { User } from '@/lib/auth/types';
+import { cn } from '@/lib/utils';
 import { capitalize } from '@/utils/capitalize';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Link } from '@/i18n/navigation';
 import type { ComponentProps, FC } from 'react';
 
 const avatarVariants = cva('cursor-pointer bg-primary/10', {
@@ -20,20 +20,13 @@ const avatarVariants = cva('cursor-pointer bg-primary/10', {
 });
 
 interface UserAvatarProps
-  extends Omit<ComponentProps<typeof Link>, 'href'>,
-    VariantProps<typeof avatarVariants> {
+  extends Omit<ComponentProps<typeof Link>, 'href'>, VariantProps<typeof avatarVariants> {
   user: User | null;
   className?: string;
   avatarClassName?: string;
 }
 
-const UserAvatar: FC<UserAvatarProps> = ({
-  user,
-  size,
-  className,
-  avatarClassName,
-  ...props
-}) => {
+const UserAvatar: FC<UserAvatarProps> = ({ user, size, className, avatarClassName, ...props }) => {
   return (
     <Avatar className={cn(avatarVariants({ size }), className)}>
       <AvatarFallback className={cn('cursor-pointer', avatarClassName)} asChild>

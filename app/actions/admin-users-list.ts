@@ -1,16 +1,20 @@
 'use server';
 
 import { db } from '@/db';
-import { roles, users, userRoles } from '@/db/schema';
+import { roles, userRoles, users } from '@/db/schema';
+import {
+  type AdminUsersQuery,
+  normalizeAdminUsersQuery,
+  type NormalizedAdminUsersQuery,
+} from '@/lib/admin-users/query';
 import { withAdminUser } from '@/lib/auth/action-wrapper';
 import {
+  type CanonicalRole,
   getInternalRoleSourceNames,
   getUserRolesWithInternalFlag,
-  type CanonicalRole,
   type PermissionSet,
 } from '@/lib/auth/roles';
-import { type AdminUsersQuery, type NormalizedAdminUsersQuery, normalizeAdminUsersQuery } from '@/lib/admin-users/query';
-import { SQL, asc, and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNull, or, SQL, sql } from 'drizzle-orm';
 
 const INTERNAL_ROLE_NAMES = getInternalRoleSourceNames();
 const INTERNAL_ROLE_NAMES_BY_KIND = {
@@ -29,7 +33,14 @@ export type AdminUserRow = {
 };
 
 export type ListInternalUsersResult =
-  | { ok: true; users: AdminUserRow[]; page: number; pageSize: number; total: number; pageCount: number }
+  | {
+      ok: true;
+      users: AdminUserRow[];
+      page: number;
+      pageSize: number;
+      total: number;
+      pageCount: number;
+    }
   | { ok: false; error: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'SERVER_ERROR' };
 
 export const listInternalUsers = withAdminUser<ListInternalUsersResult>({
@@ -115,12 +126,19 @@ export const listInternalUsers = withAdminUser<ListInternalUsersResult>({
           permissions: lookup.permissions,
           isInternal: lookup.isInternal,
         } satisfies AdminUserRow;
-      })
+      }),
     );
 
     const internalUsers = resolved.filter(Boolean) as AdminUserRow[];
 
-    return { ok: true, users: internalUsers, page: normalized.page, pageSize: normalized.pageSize, total, pageCount };
+    return {
+      ok: true,
+      users: internalUsers,
+      page: normalized.page,
+      pageSize: normalized.pageSize,
+      total,
+      pageCount,
+    };
   } catch (error) {
     console.error('[admin-users-list] Failed to list internal users', error);
     return { ok: false, error: 'SERVER_ERROR' };

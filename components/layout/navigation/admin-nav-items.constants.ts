@@ -2,7 +2,7 @@ import type { PermissionSet } from '@/lib/auth/roles';
 import type { NavItem, NavSection, ProtectedNavIconName } from './types';
 
 export function buildAdminNavSections(
-  permissions: PermissionSet
+  permissions: PermissionSet,
 ): readonly NavSection<ProtectedNavIconName>[] {
   const items: NavItem<ProtectedNavIconName>[] = [
     {

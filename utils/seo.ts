@@ -1,7 +1,7 @@
 import { siteUrl } from '@/config/url';
-import type { Metadata } from 'next';
-import { routing, AppLocale } from '@/i18n/routing';
+import { AppLocale, routing } from '@/i18n/routing';
 import { isValidLocale } from '@/i18n/utils';
+import type { Metadata } from 'next';
 import { createDefaultSeoMetadata, createPageMetadata, type PageMetaSelector } from './metadata';
 
 type LocaleConfig = {
@@ -20,19 +20,17 @@ type BuildAlternatesOptions = {
   params?: Record<string, string | number>;
 };
 
-const normalizePath = (path: string) =>
-  path.startsWith('/') ? path : `/${path}`;
+const normalizePath = (path: string) => (path.startsWith('/') ? path : `/${path}`);
 
 const resolvePrefix = (locale: AppLocale) => {
-  const prefixSetting =
-    routing.localePrefix as
-      | 'always'
-      | 'as-needed'
-      | 'never'
-      | {
-          mode?: 'always' | 'as-needed' | 'never';
-          prefixes?: Partial<Record<AppLocale, string>>;
-        };
+  const prefixSetting = routing.localePrefix as
+    | 'always'
+    | 'as-needed'
+    | 'never'
+    | {
+        mode?: 'always' | 'as-needed' | 'never';
+        prefixes?: Partial<Record<AppLocale, string>>;
+      };
 
   if (typeof prefixSetting === 'object') {
     const mode = prefixSetting.mode ?? 'always';
@@ -59,22 +57,13 @@ const applyParams = (path: string, params?: Record<string, string | number>) =>
     return value !== undefined ? String(value) : `[${key}]`;
   });
 
-function resolveExternalPathname(
-  locale: AppLocale,
-  pathname: string
-): string {
-  const entry = routing.pathnames?.[
-    pathname as keyof typeof routing.pathnames
-  ];
+function resolveExternalPathname(locale: AppLocale, pathname: string): string {
+  const entry = routing.pathnames?.[pathname as keyof typeof routing.pathnames];
 
   if (!entry) return pathname;
   if (typeof entry === 'string') return entry;
 
-  return (
-    entry[
-      locale as keyof typeof entry
-    ] ?? pathname
-  );
+  return entry[locale as keyof typeof entry] ?? pathname;
 }
 
 function buildLanguages({
@@ -114,7 +103,7 @@ type AlternateMetadataResult = {
 export async function generateAlternateMetadata(
   locale: string,
   pathname: string = '/',
-  params?: Record<string, string | number>
+  params?: Record<string, string | number>,
 ): Promise<AlternateMetadataResult> {
   const resolvedLocale = isValidLocale(locale) ? locale : routing.defaultLocale;
   const cfg = localeConfig[resolvedLocale];
@@ -146,12 +135,12 @@ export async function createLocalizedPageMetadata(
     params?: Record<string, string | number>;
     imagePath?: string;
     robots?: Metadata['robots'];
-  }
+  },
 ): Promise<Metadata> {
   const { canonical, languages, openGraphLocale } = await generateAlternateMetadata(
     locale,
     pathname,
-    options?.params
+    options?.params,
   );
   const metadata = createPageMetadata(locale, select, {
     url: canonical,
@@ -178,7 +167,7 @@ export async function createLocalizedPageMetadata(
 export async function generateRootMetadata(
   locale: string,
   pathname: string = '/',
-  params?: Record<string, string | number>
+  params?: Record<string, string | number>,
 ): Promise<Metadata> {
   const resolvedLocale = isValidLocale(locale) ? locale : routing.defaultLocale;
   const cfg = localeConfig[resolvedLocale];
@@ -187,14 +176,10 @@ export async function generateRootMetadata(
     languages[resolvedLocale] ??
     `${siteUrl}${resolvePrefix(resolvedLocale)}${normalizePath(pathname)}`;
 
-  return createDefaultSeoMetadata(
-    resolvedLocale,
-    (messages) => messages.SEO?.default,
-    {
-      url: canonical,
-      imagePath: '/og-image.jpg',
-      localeOverride: cfg?.openGraphLocale,
-      alternates: { canonical, languages },
-    }
-  );
+  return createDefaultSeoMetadata(resolvedLocale, (messages) => messages.SEO?.default, {
+    url: canonical,
+    imagePath: '/og-image.jpg',
+    localeOverride: cfg?.openGraphLocale,
+    alternates: { canonical, languages },
+  });
 }

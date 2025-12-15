@@ -5,10 +5,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useRouter, usePathname } from '@/i18n/navigation';
-import { routing, type AppLocale } from '@/i18n/routing';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import { type AppLocale, routing } from '@/i18n/routing';
 import { Languages } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useParams, useSearchParams } from 'next/navigation';
@@ -32,18 +32,15 @@ export function LanguageSwitcher() {
     router.replace(
       // @ts-expect-error -- Params from the active route already match the pathname; next-intl requires them when pathnames are configured.
       { pathname, params, query },
-      { locale: targetLocale }
+      { locale: targetLocale },
     );
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-        >
-          <Languages className="h-[1.2rem] w-[1.2rem]"/>
+        <Button variant="ghost" size="icon">
+          <Languages className="h-[1.2rem] w-[1.2rem]" />
           <span className="sr-only">{t('label')}</span>
         </Button>
       </DropdownMenuTrigger>

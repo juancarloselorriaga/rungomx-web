@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { createAdminUser, createStaffUser } from '@/app/actions/admin-users';
+import { adminUsersTextInputClassName } from '@/components/admin/users/styles';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -11,12 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { adminUsersTextInputClassName } from '@/components/admin/users/styles';
-import { cn } from '@/lib/utils';
-import { Form, FormError, useForm } from '@/lib/forms';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
+import { Form, FormError, useForm } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 import { Shield, ShieldCheck, UserPlus2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -91,7 +91,12 @@ type CreateUserFormValues = {
   password: string;
 };
 
-export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, initialRole = 'internal.admin' }: UserCreateDialogProps) {
+export function UserCreateDialog({
+  open,
+  onOpenChangeAction,
+  onSuccessAction,
+  initialRole = 'internal.admin',
+}: UserCreateDialogProps) {
   const t = useTranslations('pages.adminUsers.createDialog');
   const router = useRouter();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -153,24 +158,16 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
   };
 
   const roleSummary = useMemo(
-    () =>
-      role === 'internal.admin'
-        ? t('roles.admin.summary')
-        : t('roles.staff.summary'),
-    [role, t]
+    () => (role === 'internal.admin' ? t('roles.admin.summary') : t('roles.staff.summary')),
+    [role, t],
   );
 
   return (
     <Dialog open={resolvedOpen} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="sm:max-w-lg"
-        onOpenAutoFocus={(event) => event.preventDefault()}
-      >
+      <DialogContent className="sm:max-w-lg" onOpenAutoFocus={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
-          <DialogDescription>
-            {t('description')}
-          </DialogDescription>
+          <DialogDescription>{t('description')}</DialogDescription>
         </DialogHeader>
 
         <Form form={form} className="space-y-4">
@@ -208,7 +205,9 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
             <div
               className={cn(
                 'rounded-md border px-3 py-2 text-xs',
-                role === 'internal.admin' ? 'border-primary/40 bg-primary/5' : 'border-border/60 bg-muted/20'
+                role === 'internal.admin'
+                  ? 'border-primary/40 bg-primary/5'
+                  : 'border-border/60 bg-muted/20',
               )}
             >
               <p className="font-semibold text-foreground">{t('roles.admin.title')}</p>
@@ -217,7 +216,9 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
             <div
               className={cn(
                 'rounded-md border px-3 py-2 text-xs',
-                role === 'internal.staff' ? 'border-primary/40 bg-primary/5' : 'border-border/60 bg-muted/20'
+                role === 'internal.staff'
+                  ? 'border-primary/40 bg-primary/5'
+                  : 'border-border/60 bg-muted/20',
               )}
             >
               <p className="font-semibold text-foreground">{t('roles.staff.title')}</p>
@@ -228,7 +229,11 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
           <p className="text-xs text-muted-foreground">{roleSummary}</p>
 
           <FormField
-            label={<span className="text-sm font-medium text-foreground/80">{t('fields.name.label')}</span>}
+            label={
+              <span className="text-sm font-medium text-foreground/80">
+                {t('fields.name.label')}
+              </span>
+            }
             required
             error={form.errors.name}
           >
@@ -245,7 +250,11 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
           </FormField>
 
           <FormField
-            label={<span className="text-sm font-medium text-foreground/80">{t('fields.email.label')}</span>}
+            label={
+              <span className="text-sm font-medium text-foreground/80">
+                {t('fields.email.label')}
+              </span>
+            }
             required
             error={form.errors.email}
           >
@@ -262,7 +271,11 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
           </FormField>
 
           <FormField
-            label={<span className="text-sm font-medium text-foreground/80">{t('fields.password.label')}</span>}
+            label={
+              <span className="text-sm font-medium text-foreground/80">
+                {t('fields.password.label')}
+              </span>
+            }
             required
             error={form.errors.password}
           >
@@ -278,9 +291,7 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
               {...form.register('password')}
               disabled={isPending || form.isSubmitting}
             />
-            <p className="text-xs text-muted-foreground">
-              {t('fields.password.hint')}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('fields.password.hint')}</p>
           </FormField>
 
           {'errors' in form && form.error ? (
@@ -302,7 +313,9 @@ export function UserCreateDialog({ open, onOpenChangeAction, onSuccessAction, in
               className="justify-center min-w-[120px]"
             >
               <UserPlus2 className="size-4" />
-              <span>{role === 'internal.admin' ? t('buttons.createAdmin') : t('buttons.createStaff')}</span>
+              <span>
+                {role === 'internal.admin' ? t('buttons.createAdmin') : t('buttons.createStaff')}
+              </span>
             </Button>
           </DialogFooter>
         </Form>

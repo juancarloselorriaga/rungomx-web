@@ -62,10 +62,7 @@
       "metadata": {
         "title": "Contact RunGoMX",
         "description": "Get in touch with the RunGoMX team for support, partnerships, or general inquiries.",
-        "keywords": [
-          "contact sprintmx",
-          "support"
-        ],
+        "keywords": ["contact sprintmx", "support"],
         "openGraph": {
           "title": "Contact RunGoMX",
           "description": "Reach the RunGoMX team for questions or support.",
@@ -77,10 +74,7 @@
       "metadata": {
         "title": "Help Center | RunGoMX",
         "description": "Find answers to common questions about registrations, payments, and race management on RunGoMX.",
-        "keywords": [
-          "help",
-          "support"
-        ],
+        "keywords": ["help", "support"],
         "openGraph": {
           "title": "Help Center | RunGoMX",
           "description": "Get help with RunGoMX registrations, payments, and race management.",
@@ -92,10 +86,7 @@
       "metadata": {
         "title": "Running News | RunGoMX",
         "description": "Stay updated with the latest running news, tips, and race announcements in Mexico.",
-        "keywords": [
-          "running news",
-          "race updates"
-        ],
+        "keywords": ["running news", "race updates"],
         "openGraph": {
           "title": "Running News | RunGoMX",
           "description": "Latest running news and race updates from RunGoMX.",
@@ -107,10 +98,7 @@
       "metadata": {
         "title": "Events Calendar | RunGoMX",
         "description": "Explore upcoming races and sporting events across Mexico organized with RunGoMX.",
-        "keywords": [
-          "events",
-          "races"
-        ],
+        "keywords": ["events", "races"],
         "openGraph": {
           "title": "Events Calendar | RunGoMX",
           "description": "See upcoming races and events powered by RunGoMX.",
@@ -122,10 +110,7 @@
       "metadata": {
         "title": "Race Results | RunGoMX",
         "description": "View official race results, rankings, and performance insights powered by RunGoMX.",
-        "keywords": [
-          "race results",
-          "rankings"
-        ],
+        "keywords": ["race results", "rankings"],
         "openGraph": {
           "title": "Race Results | RunGoMX",
           "description": "Check official race results and rankings on RunGoMX.",
@@ -137,10 +122,7 @@
       "metadata": {
         "title": "Sign in to RunGoMX",
         "description": "Access your RunGoMX account to manage registrations, events, and results.",
-        "keywords": [
-          "sign in",
-          "login"
-        ],
+        "keywords": ["sign in", "login"],
         "openGraph": {
           "title": "Sign in to RunGoMX",
           "description": "Log into your RunGoMX account.",
@@ -152,10 +134,7 @@
       "metadata": {
         "title": "Create a RunGoMX account",
         "description": "Join RunGoMX to organize events, manage registrations, and track results.",
-        "keywords": [
-          "sign up",
-          "create account"
-        ],
+        "keywords": ["sign up", "create account"],
         "openGraph": {
           "title": "Create a RunGoMX account",
           "description": "Sign up for RunGoMX.",
@@ -167,10 +146,7 @@
       "metadata": {
         "title": "Dashboard | RunGoMX",
         "description": "Overview of your events, registrations, and performance metrics in RunGoMX.",
-        "keywords": [
-          "dashboard",
-          "overview"
-        ],
+        "keywords": ["dashboard", "overview"],
         "openGraph": {
           "title": "Dashboard | RunGoMX",
           "description": "View your RunGoMX dashboard.",
@@ -182,10 +158,7 @@
       "metadata": {
         "title": "Settings | RunGoMX",
         "description": "Manage your RunGoMX account preferences and profile settings.",
-        "keywords": [
-          "settings",
-          "preferences"
-        ],
+        "keywords": ["settings", "preferences"],
         "openGraph": {
           "title": "Settings | RunGoMX",
           "description": "Update your RunGoMX settings.",
@@ -197,11 +170,7 @@
       "metadata": {
         "title": "Profile settings | RunGoMX",
         "description": "Update your personal information, contact details, and emergency data.",
-        "keywords": [
-          "profile settings",
-          "contact information",
-          "emergency contact"
-        ],
+        "keywords": ["profile settings", "contact information", "emergency contact"],
         "openGraph": {
           "title": "Profile settings | RunGoMX",
           "description": "Edit your RunGoMX profile details.",
@@ -213,11 +182,7 @@
       "metadata": {
         "title": "Account settings | RunGoMX",
         "description": "Manage your account name and password securely.",
-        "keywords": [
-          "account settings",
-          "password",
-          "security"
-        ],
+        "keywords": ["account settings", "password", "security"],
         "openGraph": {
           "title": "Account settings | RunGoMX",
           "description": "Update your RunGoMX account credentials.",
@@ -229,10 +194,7 @@
       "metadata": {
         "title": "Admin account | RunGoMX",
         "description": "Update the name and password for your admin account.",
-        "keywords": [
-          "admin account",
-          "admin password"
-        ],
+        "keywords": ["admin account", "admin password"],
         "openGraph": {
           "title": "Admin account | RunGoMX",
           "description": "Manage your administrator account details.",
@@ -244,10 +206,7 @@
       "metadata": {
         "title": "Profile | RunGoMX",
         "description": "View and edit your RunGoMX profile information.",
-        "keywords": [
-          "profile",
-          "account"
-        ],
+        "keywords": ["profile", "account"],
         "openGraph": {
           "title": "Profile | RunGoMX",
           "description": "Manage your RunGoMX profile.",
@@ -259,10 +218,7 @@
       "metadata": {
         "title": "Privacy Policy | RunGoMX",
         "description": "Learn how RunGoMX handles your data and protects your privacy.",
-        "keywords": [
-          "privacy",
-          "data"
-        ],
+        "keywords": ["privacy", "data"],
         "openGraph": {
           "title": "Privacy Policy | RunGoMX",
           "description": "How RunGoMX protects your privacy.",
@@ -274,10 +230,7 @@
       "metadata": {
         "title": "Terms of Service | RunGoMX",
         "description": "Review the terms and conditions for using RunGoMX.",
-        "keywords": [
-          "terms",
-          "conditions"
-        ],
+        "keywords": ["terms", "conditions"],
         "openGraph": {
           "title": "Terms of Service | RunGoMX",
           "description": "Terms and conditions for RunGoMX.",

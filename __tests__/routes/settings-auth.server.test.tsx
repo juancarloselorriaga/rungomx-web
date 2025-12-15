@@ -1,19 +1,27 @@
-import ProtectedLayout from '@/app/[locale]/(protected)/layout';
 import AdminLayout from '@/app/[locale]/(admin)/admin/layout';
-import { getAuthContext, type AuthContext } from '@/lib/auth/server';
+import ProtectedLayout from '@/app/[locale]/(protected)/layout';
+import { type AuthContext, getAuthContext } from '@/lib/auth/server';
 import type { Session } from '@/lib/auth/types';
-import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
 import { buildProfileMetadata } from '@/lib/profiles/metadata';
+import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
 import type { ProfileStatus } from '@/lib/profiles/types';
 import { redirect } from 'next/navigation';
 import React from 'react';
 
-jest.mock('@/components/layout/navigation/nav-bar', () => function MockNavBar() {
-  return <div>NavBar</div>;
-});
-jest.mock('@/components/layout/navigation/sidebar', () => function MockSidebar() {
-  return <div>Sidebar</div>;
-});
+jest.mock(
+  '@/components/layout/navigation/nav-bar',
+  () =>
+    function MockNavBar() {
+      return <div>NavBar</div>;
+    },
+);
+jest.mock(
+  '@/components/layout/navigation/sidebar',
+  () =>
+    function MockSidebar() {
+      return <div>Sidebar</div>;
+    },
+);
 jest.mock('@/components/layout/navigation/nav-drawer-context', () => ({
   NavDrawerProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   MobileNavPushLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -97,13 +105,13 @@ describe('Settings Route Protection', () => {
       availableExternalRoles: [],
     });
 
-    await expect(
-      ProtectedLayout({ children: <div />, params: buildParams('en') })
-    ).rejects.toThrow('REDIRECT:/en/sign-in');
+    await expect(ProtectedLayout({ children: <div />, params: buildParams('en') })).rejects.toThrow(
+      'REDIRECT:/en/sign-in',
+    );
 
-    await expect(
-      ProtectedLayout({ children: <div />, params: buildParams('en') })
-    ).rejects.toThrow('REDIRECT:/en/sign-in');
+    await expect(ProtectedLayout({ children: <div />, params: buildParams('en') })).rejects.toThrow(
+      'REDIRECT:/en/sign-in',
+    );
   });
 
   it('redirects internal users accessing settings to the admin area', async () => {
@@ -181,9 +189,9 @@ describe('Settings Route Protection', () => {
 
     mockGetAuthContext.mockResolvedValue(context);
 
-    await expect(
-      ProtectedLayout({ children: <div />, params: buildParams('es') })
-    ).rejects.toThrow('REDIRECT:/es/admin');
+    await expect(ProtectedLayout({ children: <div />, params: buildParams('es') })).rejects.toThrow(
+      'REDIRECT:/es/admin',
+    );
   });
 
   it('redirects external users away from admin routes', async () => {
@@ -261,9 +269,9 @@ describe('Settings Route Protection', () => {
 
     mockGetAuthContext.mockResolvedValue(context);
 
-    await expect(
-      AdminLayout({ children: <div />, params: buildParams('en') })
-    ).rejects.toThrow('REDIRECT:/en/dashboard');
+    await expect(AdminLayout({ children: <div />, params: buildParams('en') })).rejects.toThrow(
+      'REDIRECT:/en/dashboard',
+    );
   });
 
   it('allows authenticated external users to access settings', async () => {
@@ -342,7 +350,7 @@ describe('Settings Route Protection', () => {
     mockGetAuthContext.mockResolvedValue(context);
 
     await expect(
-      ProtectedLayout({ children: <div>settings</div>, params: buildParams('en') })
+      ProtectedLayout({ children: <div>settings</div>, params: buildParams('en') }),
     ).resolves.toEqual(expect.anything());
     expect(mockRedirect).not.toHaveBeenCalled();
   });
@@ -423,7 +431,7 @@ describe('Settings Route Protection', () => {
     mockGetAuthContext.mockResolvedValue(context);
 
     await expect(
-      AdminLayout({ children: <div>admin</div>, params: buildParams('en') })
+      AdminLayout({ children: <div>admin</div>, params: buildParams('en') }),
     ).resolves.toEqual(expect.anything());
     expect(mockRedirect).not.toHaveBeenCalled();
   });

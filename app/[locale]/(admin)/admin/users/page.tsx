@@ -21,10 +21,15 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   const { getTranslations } = await import('next-intl/server');
   const t = await getTranslations({ locale, namespace: 'pages.adminUsers.metadata' });
 
-  return createLocalizedPageMetadata(locale, '/admin/users', () => ({
-    title: t('title'),
-    description: t('description'),
-  }), { robots: { index: false, follow: false } });
+  return createLocalizedPageMetadata(
+    locale,
+    '/admin/users',
+    () => ({
+      title: t('title'),
+      description: t('description'),
+    }),
+    { robots: { index: false, follow: false } },
+  );
 }
 
 export default async function AdminUsersPage({ params, searchParams }: AdminUsersPageProps) {

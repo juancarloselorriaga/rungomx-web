@@ -31,8 +31,7 @@ const containerVariants = cva('container mx-auto px-4', {
 });
 
 export interface ContentSectionProps
-  extends VariantProps<typeof sectionVariants>,
-    VariantProps<typeof containerVariants> {
+  extends VariantProps<typeof sectionVariants>, VariantProps<typeof containerVariants> {
   children: React.ReactNode;
   className?: string;
   as?: 'section' | 'div';

@@ -17,7 +17,7 @@ import type { CanonicalRole, PermissionSet } from '@/lib/auth/roles';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, LogOut, Shield } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useMemo, useState, useTransition } from 'react';
 import { useOnboardingOverrides } from './onboarding-context';
 
 const DEFAULT_PERMISSIONS: PermissionSet = {
@@ -31,7 +31,9 @@ const DEFAULT_PERMISSIONS: PermissionSet = {
 };
 
 function toLocalizedPath(pathname: string, locale: string) {
-  const mapping = (routing.pathnames as Record<string, string | Record<string, string> | undefined>)[pathname];
+  const mapping = (
+    routing.pathnames as Record<string, string | Record<string, string> | undefined>
+  )[pathname];
   if (!mapping) return pathname;
   if (typeof mapping === 'string') return mapping;
   return mapping[locale as keyof typeof mapping] ?? mapping[routing.defaultLocale] ?? pathname;
@@ -45,43 +47,45 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
   const t = useTranslations('components.profile');
   const [isSubmitting, startTransition] = useTransition();
   const user = data?.user ?? null;
-  const permissions: PermissionSet =
-    (data?.permissions ??
-      (user as { permissions?: PermissionSet } | null)?.permissions ??
-      DEFAULT_PERMISSIONS) as PermissionSet;
+  const permissions: PermissionSet = (data?.permissions ??
+    (user as { permissions?: PermissionSet } | null)?.permissions ??
+    DEFAULT_PERMISSIONS) as PermissionSet;
 
   const canonicalRoles: CanonicalRole[] = useMemo(() => {
-    return (data?.canonicalRoles ??
+    return (
+      data?.canonicalRoles ??
       (user as { canonicalRoles?: CanonicalRole[] } | null)?.canonicalRoles ??
-      []);
+      []
+    );
   }, [data?.canonicalRoles, user]);
 
   const availableExternalRoles: CanonicalRole[] = useMemo(() => {
-    return (data?.availableExternalRoles ??
+    return (
+      data?.availableExternalRoles ??
       (user as { availableExternalRoles?: CanonicalRole[] } | null)?.availableExternalRoles ??
-      []);
+      []
+    );
   }, [data?.availableExternalRoles, user]);
 
   const [error, setError] = useState<string | null>(null);
   const [needsRoleAssignment, setNeedsRoleAssignment] = useState(
     (data as { needsRoleAssignment?: boolean } | undefined)?.needsRoleAssignment ??
-    (user as { needsRoleAssignment?: boolean } | null)?.needsRoleAssignment ??
-    false
+      (user as { needsRoleAssignment?: boolean } | null)?.needsRoleAssignment ??
+      false,
   );
   const isInternal =
     user?.isInternal ?? (data as { isInternal?: boolean } | undefined)?.isInternal ?? false;
 
   const externalRolesFromSession = useMemo(
     () => canonicalRoles.filter((role) => role.startsWith('external.')),
-    [canonicalRoles]
+    [canonicalRoles],
   );
 
-  const [selectedRoles, setSelectedRoles] =
-    useState<CanonicalRole[]>(externalRolesFromSession);
+  const [selectedRoles, setSelectedRoles] = useState<CanonicalRole[]>(externalRolesFromSession);
 
   const roleOptions = useMemo(
     () => availableExternalRoles.filter((role) => role.startsWith('external.')),
-    [availableExternalRoles]
+    [availableExternalRoles],
   );
   const hasOptions = roleOptions.length > 0;
   const { setProfileStatusOverride, setNeedsRoleAssignmentOverride } = useOnboardingOverrides();
@@ -112,7 +116,7 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
 
   const toggleRole = (role: CanonicalRole) => {
     setSelectedRoles((prev) =>
-      prev.includes(role) ? prev.filter((value) => value !== role) : [...prev, role]
+      prev.includes(role) ? prev.filter((value) => value !== role) : [...prev, role],
     );
   };
 
@@ -168,18 +172,15 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
         <DialogContent className="md:min-w-2xl sm:min-w-auto" showCloseButton={false}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary"/>
+              <Shield className="h-5 w-5 text-primary" />
               {t('roleAssignment.title')}
             </DialogTitle>
-            <DialogDescription>
-              {t('roleAssignment.description')}
-            </DialogDescription>
+            <DialogDescription>{t('roleAssignment.description')}</DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4">
             {error ? (
-              <div
-                className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             ) : null}
@@ -196,14 +197,14 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
                       onClick={() => toggleRole(role)}
                       className={cn(
                         'flex h-full flex-col rounded-lg border p-3 text-left transition hover:border-primary/60 hover:shadow-sm',
-                        selected ? 'border-primary bg-primary/5' : 'border-border bg-background'
+                        selected ? 'border-primary bg-primary/5' : 'border-border bg-background',
                       )}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold">
                           {t(`roleAssignment.roles.${roleKind}.title`)}
                         </span>
-                        {selected ? <CheckCircle2 className="h-4 w-4 text-primary"/> : null}
+                        {selected ? <CheckCircle2 className="h-4 w-4 text-primary" /> : null}
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">
                         {t(`roleAssignment.roles.${roleKind}.description`)}
@@ -225,7 +226,7 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
                 className="w-full justify-center gap-2 text-sm text-muted-foreground sm:w-auto"
                 onClick={handleSignOut}
               >
-                <LogOut className="h-4 w-4"/>
+                <LogOut className="h-4 w-4" />
                 {t('roleAssignment.actions.signOut')}
               </Button>
 
@@ -235,7 +236,7 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
                 onClick={handleSubmit}
                 disabled={isSubmitting || !hasOptions}
               >
-                {isSubmitting ? <Spinner className="mr-2 h-4 w-4"/> : null}
+                {isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
                 {t('roleAssignment.actions.save')}
               </Button>
             </div>

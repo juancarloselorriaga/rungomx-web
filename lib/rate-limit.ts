@@ -31,7 +31,7 @@ export interface RateLimitResult {
 export async function checkRateLimit(
   identifier: string,
   identifierType: 'ip' | 'user',
-  config?: Partial<RateLimitConfig>
+  config?: Partial<RateLimitConfig>,
 ): Promise<RateLimitResult> {
   const configKey = `contact_submission_${identifierType}`;
   const fullConfig = { ...DEFAULT_CONFIGS[configKey], ...config };
@@ -45,8 +45,8 @@ export async function checkRateLimit(
       and(
         eq(rateLimits.identifier, identifier),
         eq(rateLimits.identifierType, identifierType),
-        eq(rateLimits.action, fullConfig.action)
-      )
+        eq(rateLimits.action, fullConfig.action),
+      ),
     )
     .limit(1);
 
@@ -125,9 +125,7 @@ export async function checkRateLimit(
 // Cleanup utility (call via cron job)
 export async function cleanupExpiredRateLimits(): Promise<number> {
   const now = new Date();
-  const result = await db
-    .delete(rateLimits)
-    .where(lt(rateLimits.expiresAt, now));
+  const result = await db.delete(rateLimits).where(lt(rateLimits.expiresAt, now));
 
   return result.rowCount ?? 0;
 }

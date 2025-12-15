@@ -1,8 +1,8 @@
 import {
   getAllowedCountries,
-  isValidCountryCode,
-  getCountryName,
   getCountriesWithNames,
+  getCountryName,
+  isValidCountryCode,
 } from '@/lib/profiles/countries';
 
 describe('Country Utilities', () => {

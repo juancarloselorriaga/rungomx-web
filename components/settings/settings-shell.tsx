@@ -16,9 +16,7 @@ export function SettingsShell({ title, description, sections, children }: Settin
         <SettingsNav title={title} description={description} sections={sections} />
       </aside>
 
-      <div className="space-y-6">
-        {children}
-      </div>
+      <div className="space-y-6">{children}</div>
     </div>
   );
 }

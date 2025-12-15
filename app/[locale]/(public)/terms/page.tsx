@@ -6,9 +6,14 @@ import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return createLocalizedPageMetadata(locale, '/terms', (messages) => messages.Pages?.Terms?.metadata, {
-    robots: { index: false, follow: false },
-  });
+  return createLocalizedPageMetadata(
+    locale,
+    '/terms',
+    (messages) => messages.Pages?.Terms?.metadata,
+    {
+      robots: { index: false, follow: false },
+    },
+  );
 }
 
 export default async function TermsPage({ params }: LocalePageProps) {
@@ -18,9 +23,7 @@ export default async function TermsPage({ params }: LocalePageProps) {
   return (
     <div className="space-y-4">
       <h1 className="text-3xl font-bold">{t('terms')}</h1>
-      <p className="text-muted-foreground">
-        Content coming soon.
-      </p>
+      <p className="text-muted-foreground">Content coming soon.</p>
     </div>
   );
 }

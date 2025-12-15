@@ -48,20 +48,11 @@ export const deleteInternalUser = withAdminUser<DeleteInternalUserResult>({
     const deletedAt = new Date();
 
     await db.transaction(async (tx) => {
-      await tx
-        .update(users)
-        .set({ deletedAt })
-        .where(eq(users.id, userId));
+      await tx.update(users).set({ deletedAt }).where(eq(users.id, userId));
 
-      await tx
-        .update(accounts)
-        .set({ deletedAt })
-        .where(eq(accounts.userId, userId));
+      await tx.update(accounts).set({ deletedAt }).where(eq(accounts.userId, userId));
 
-      await tx
-        .update(sessions)
-        .set({ deletedAt })
-        .where(eq(sessions.userId, userId));
+      await tx.update(sessions).set({ deletedAt }).where(eq(sessions.userId, userId));
     });
 
     return { ok: true };

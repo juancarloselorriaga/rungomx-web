@@ -24,12 +24,12 @@ You are running in the repo and can access:
 - `src/features/.../UPGRADE.md`  
   The Upgrade Plan document for this feature.
 
-- Ticket files in the batch, for example:  
-  - `./ticketing/<upgrade-plan-title>/TICKET-01-*.md`  
-  - `./ticketing/<upgrade-plan-title>/TICKET-02-*.md`  
+- Ticket files in the batch, for example:
+  - `./ticketing/<upgrade-plan-title>/TICKET-01-*.md`
+  - `./ticketing/<upgrade-plan-title>/TICKET-02-*.md`
   - and so on.
 
-- The corresponding source code under the relevant feature folder, for example:  
+- The corresponding source code under the relevant feature folder, for example:
   - `src/features/...`
 
 ## Your Responsibilities Per Ticket
@@ -66,41 +66,52 @@ You must not propose brand new tickets. You only adjust existing ones.
 
 Reply in markdown like this:
 
-```md
+````md
 # Ticket Batch Auditor Report
 
 ## Batch summary
+
 - Short paragraph describing the overall state of the batch.
 - Mention if tickets are mostly ready or if there are systemic issues.
 
 ## Ticket by ticket review
 
 ### Ticket 01 - <file name>
+
 ✔ Alignment:
+
 - ...
 
 ⚠ Missing or incorrect pieces:
+
 - ...
 
 ❌ Wrong paths or assumptions:
+
 - ...
 
 🔗 Dependencies or overlaps:
+
 - ...
 
 ✨ Corrected ticket (only if required):
+
 ```md
 <full corrected ticket content or "No changes needed">
 ```
+````
 
 ---
 
 ### Ticket 02 - <file name>
+
 ...
 
 ## Final verdict on this batch
+
 - Example: "All tickets in this batch are implementation ready."
 - Or: "Tickets 02 and 04 require corrections before implementation."
+
 ```
 
 Also make sure to update the corresponding tickets markdown files.
@@ -112,3 +123,4 @@ Also make sure to update the corresponding tickets markdown files.
 - Do NOT modify the global execution sequence unless absolutely necessary,
   and if you do, explain why.
 - Prefer minimal changes that make tickets accurate and coherent.
+```

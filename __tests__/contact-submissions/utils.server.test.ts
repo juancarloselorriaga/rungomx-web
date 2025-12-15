@@ -33,7 +33,7 @@ describe('contact submissions utils', () => {
 
     it('stringifies objects when possible', () => {
       expect(stringifyMetadata({ foo: 'bar', nested: { a: 1 } })).toBe(
-        JSON.stringify({ foo: 'bar', nested: { a: 1 } }, null, 2)
+        JSON.stringify({ foo: 'bar', nested: { a: 1 } }, null, 2),
       );
     });
   });

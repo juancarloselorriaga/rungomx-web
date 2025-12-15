@@ -1,24 +1,22 @@
 'use server';
 
 import { auth } from '@/lib/auth';
-import { resolveUserContext } from '@/lib/auth/user-context';
+import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import {
+  type CanonicalRole,
   getSelectableExternalRoles,
   updateUserExternalRoles,
-  type CanonicalRole,
 } from '@/lib/auth/roles';
+import { resolveUserContext } from '@/lib/auth/user-context';
+import { ProfileMetadata } from '@/lib/profiles/metadata';
+import { ProfileRequirementSummary } from '@/lib/profiles/requirements';
 import type { ProfileStatus } from '@/lib/profiles/types';
-import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { headers } from 'next/headers';
 import { z } from 'zod';
-import { ProfileRequirementSummary } from '@/lib/profiles/requirements';
-import { ProfileMetadata } from '@/lib/profiles/metadata';
 
 const selectableRoles = getSelectableExternalRoles();
 const roleSelectionSchema = z.object({
-  roles: z
-    .array(z.enum(selectableRoles as [CanonicalRole, ...CanonicalRole[]]))
-    .nonempty(),
+  roles: z.array(z.enum(selectableRoles as [CanonicalRole, ...CanonicalRole[]])).nonempty(),
 });
 
 type RoleAssignmentError =

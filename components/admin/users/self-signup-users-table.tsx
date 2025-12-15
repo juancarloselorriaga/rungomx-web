@@ -1,16 +1,16 @@
 'use client';
 
-import { useFormatter, useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import { buildAdminUsersQueryObject } from '@/components/admin/users/search-params';
 import { SelfSignupUsersTableToolbar } from '@/components/admin/users/self-signup-users-table-toolbar';
 import { UsersTablePagination } from '@/components/admin/users/users-table-pagination';
 import { UsersTableSkeleton } from '@/components/admin/users/users-table-skeleton';
+import { Button } from '@/components/ui/button';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import type { SelfSignupUserRow, SelfSignupUsersColumnKey } from '@/lib/self-signup-users/types';
 import { cn } from '@/lib/utils';
-import { usePathname, useRouter } from '@/i18n/navigation';
-import { useSearchParams } from 'next/navigation';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 type SelfSignupUsersTableProps = {
@@ -59,7 +59,9 @@ export function SelfSignupUsersTable({
 
   const [density, setDensity] = useState<'comfortable' | 'compact'>('comfortable');
 
-  const [columnVisibility, setColumnVisibility] = useState<Record<SelfSignupUsersColumnKey, boolean>>({
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<SelfSignupUsersColumnKey, boolean>
+  >({
     role: true,
     created: true,
     actions: true,
@@ -76,7 +78,7 @@ export function SelfSignupUsersTable({
 
   const handleNavigate = (
     updates: Record<string, string | null | undefined>,
-    options?: { replace?: boolean }
+    options?: { replace?: boolean },
   ) => {
     const queryObject = buildAdminUsersQueryObject(searchParams.toString(), updates);
     const href = { pathname, query: queryObject } as unknown as Parameters<typeof router.push>[0];
@@ -125,8 +127,8 @@ export function SelfSignupUsersTable({
         'external.organizer': tToolbar('roleOrganizer'),
         'external.athlete': tToolbar('roleAthlete'),
         'external.volunteer': tToolbar('roleVolunteer'),
-      } as const),
-    [tToolbar]
+      }) as const,
+    [tToolbar],
   );
 
   return (
@@ -156,7 +158,13 @@ export function SelfSignupUsersTable({
                   onClick={() => handleSort('name')}
                 >
                   {t('columns.name')}
-                  {titleSort ? titleSort === 'asc' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" /> : null}
+                  {titleSort ? (
+                    titleSort === 'asc' ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )
+                  ) : null}
                 </button>
               </th>
               {visibleColumns.role ? (
@@ -167,7 +175,13 @@ export function SelfSignupUsersTable({
                     onClick={() => handleSort('role')}
                   >
                     {t('columns.role')}
-                    {roleSort ? roleSort === 'asc' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" /> : null}
+                    {roleSort ? (
+                      roleSort === 'asc' ? (
+                        <ChevronUp className="size-4" />
+                      ) : (
+                        <ChevronDown className="size-4" />
+                      )
+                    ) : null}
                   </button>
                 </th>
               ) : null}
@@ -179,7 +193,13 @@ export function SelfSignupUsersTable({
                     onClick={() => handleSort('createdAt')}
                   >
                     {t('columns.created')}
-                    {createdSort ? createdSort === 'asc' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" /> : null}
+                    {createdSort ? (
+                      createdSort === 'asc' ? (
+                        <ChevronUp className="size-4" />
+                      ) : (
+                        <ChevronDown className="size-4" />
+                      )
+                    ) : null}
                   </button>
                 </th>
               ) : null}
@@ -207,12 +227,21 @@ export function SelfSignupUsersTable({
               <tr>
                 <td
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
-                  colSpan={1 + Number(visibleColumns.role) + Number(visibleColumns.created) + Number(visibleColumns.actions)}
+                  colSpan={
+                    1 +
+                    Number(visibleColumns.role) +
+                    Number(visibleColumns.created) +
+                    Number(visibleColumns.actions)
+                  }
                 >
                   <div className="flex flex-col items-center gap-3">
                     <div>
-                      <p className="font-semibold text-foreground">{t('emptyState.noMatches.title')}</p>
-                      <p className="text-xs text-muted-foreground">{t('emptyState.noMatches.description')}</p>
+                      <p className="font-semibold text-foreground">
+                        {t('emptyState.noMatches.title')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('emptyState.noMatches.description')}
+                      </p>
                     </div>
                     <Button size="sm" variant="outline" onClick={handleClearFilters}>
                       {t('emptyState.noMatches.clearButton')}
@@ -237,7 +266,8 @@ export function SelfSignupUsersTable({
                             key={role}
                             className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold capitalize text-primary"
                           >
-                            {roleLabels[role as keyof typeof roleLabels] ?? role.replace('external.', '')}
+                            {roleLabels[role as keyof typeof roleLabels] ??
+                              role.replace('external.', '')}
                           </span>
                         ))}
                       </div>
@@ -252,7 +282,9 @@ export function SelfSignupUsersTable({
                     </td>
                   ) : null}
                   {visibleColumns.actions ? (
-                    <td className={cn('px-4 align-top text-right text-muted-foreground', rowPadding)}>
+                    <td
+                      className={cn('px-4 align-top text-right text-muted-foreground', rowPadding)}
+                    >
                       &mdash;
                     </td>
                   ) : null}

@@ -1,19 +1,16 @@
 'use server';
 
 import { db } from '@/db';
-import { roles, users, userRoles } from '@/db/schema';
+import { roles, userRoles, users } from '@/db/schema';
 import { withAdminUser } from '@/lib/auth/action-wrapper';
-import {
-  getExternalRoleSourceNamesByKind,
-  getUserRolesWithInternalFlag,
-} from '@/lib/auth/roles';
+import { getExternalRoleSourceNamesByKind, getUserRolesWithInternalFlag } from '@/lib/auth/roles';
 import {
   type NormalizedSelfSignupUsersQuery,
-  type SelfSignupUsersQuery,
   normalizeSelfSignupUsersQuery,
+  type SelfSignupUsersQuery,
 } from '@/lib/self-signup-users/query';
 import type { ListSelfSignupUsersResult, SelfSignupUserRow } from '@/lib/self-signup-users/types';
-import { SQL, asc, and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNull, or, SQL, sql } from 'drizzle-orm';
 
 const EXTERNAL_ROLE_NAMES_BY_KIND = getExternalRoleSourceNamesByKind();
 const EXTERNAL_ROLE_NAMES = Array.from(new Set(Object.values(EXTERNAL_ROLE_NAMES_BY_KIND).flat()));
@@ -101,12 +98,19 @@ export const listSelfSignupUsers = withAdminUser<ListSelfSignupUsersResult>({
           canonicalRoles: externalRoles,
           isInternal: false as const,
         } satisfies SelfSignupUserRow;
-      })
+      }),
     );
 
     const usersList = resolved.filter(Boolean) as SelfSignupUserRow[];
 
-    return { ok: true, users: usersList, page: normalized.page, pageSize: normalized.pageSize, total, pageCount };
+    return {
+      ok: true,
+      users: usersList,
+      page: normalized.page,
+      pageSize: normalized.pageSize,
+      total,
+      pageCount,
+    };
   } catch (error) {
     console.error('[self-signup-users-list] Failed to list self-signup users', error);
     return { ok: false, error: 'SERVER_ERROR' };

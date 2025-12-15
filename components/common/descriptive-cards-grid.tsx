@@ -19,8 +19,7 @@ export interface CardItem {
   description: string;
 }
 
-export interface DescriptiveCardsGridProps
-  extends VariantProps<typeof cardsGridVariants> {
+export interface DescriptiveCardsGridProps extends VariantProps<typeof cardsGridVariants> {
   title: string;
   intro: string;
   label?: string;
@@ -56,12 +55,10 @@ export function DescriptiveCardsGrid({
                 'rounded-lg p-6 backdrop-blur-sm',
                 isDark
                   ? 'bg-background/10 ring-1 ring-background/20'
-                  : 'bg-muted/50 ring-1 ring-border'
+                  : 'bg-muted/50 ring-1 ring-border',
               )}
             >
-              <h3 className={cn('mb-2 text-lg font-bold', titleColor)}>
-                {item.title}
-              </h3>
+              <h3 className={cn('mb-2 text-lg font-bold', titleColor)}>{item.title}</h3>
               <p className="opacity-90">{item.description}</p>
             </div>
           ))}

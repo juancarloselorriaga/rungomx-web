@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import { FormFieldSkeleton } from "@/components/ui/form-field-skeleton";
+import { FormFieldSkeleton } from '@/components/ui/form-field-skeleton';
+import dynamic from 'next/dynamic';
 
 /**
  * Lazy-loaded PhoneInput component with code-splitting
@@ -24,9 +24,9 @@ import { FormFieldSkeleton } from "@/components/ui/form-field-skeleton";
  * ```
  */
 export const PhoneInput = dynamic(
-  () => import("./phone-input").then((mod) => ({ default: mod.PhoneInput })),
+  () => import('./phone-input').then((mod) => ({ default: mod.PhoneInput })),
   {
     loading: () => <FormFieldSkeleton />,
     ssr: false, // Phone input is client-only
-  }
+  },
 );

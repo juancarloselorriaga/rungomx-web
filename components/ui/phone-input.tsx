@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
 import { FormField } from '@/components/ui/form-field';
-import * as React from "react";
-import PhoneInputPrimitive from "react-phone-number-input";
-import en from "react-phone-number-input/locale/en";
-import es from "react-phone-number-input/locale/es";
-import type { PhoneInputProps as PhoneInputPropsType } from "@/lib/phone/types";
-import { cn } from "@/lib/utils";
-import { useLocale } from "next-intl";
+import type { PhoneInputProps as PhoneInputPropsType } from '@/lib/phone/types';
+import { cn } from '@/lib/utils';
+import { useLocale } from 'next-intl';
+import * as React from 'react';
+import PhoneInputPrimitive from 'react-phone-number-input';
+import en from 'react-phone-number-input/locale/en';
+import es from 'react-phone-number-input/locale/es';
 
-import "react-phone-number-input/style.css";
+import 'react-phone-number-input/style.css';
 
 const LOCALE_LABELS = {
   en,
@@ -43,7 +43,7 @@ export function PhoneInput({
   label,
   required,
   disabled,
-  defaultCountry = "MX",
+  defaultCountry = 'MX',
   international = true,
   name,
   className,
@@ -54,34 +54,31 @@ export function PhoneInput({
 
   return (
     <FormField label={label} required={required} error={error} className={className}>
-      {name ? <input type="hidden" name={name} value={value || ""} readOnly /> : null}
+      {name ? <input type="hidden" name={name} value={value || ''} readOnly /> : null}
       <PhoneInputPrimitive
         labels={labels}
         international={international}
         defaultCountry={defaultCountry}
         value={value || undefined}
-        onChange={(val) => onChangeAction(val || "")}
+        onChange={(val) => onChangeAction(val || '')}
         disabled={disabled}
         className={cn(
-          "flex w-full items-center gap-2 rounded-md border bg-background px-3 py-2 shadow-sm transition",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30",
-          error && "border-destructive focus-within:ring-destructive/30",
-          disabled && "opacity-50 cursor-not-allowed",
+          'flex w-full items-center gap-2 rounded-md border bg-background px-3 py-2 shadow-sm transition',
+          'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30',
+          error && 'border-destructive focus-within:ring-destructive/30',
+          disabled && 'opacity-50 cursor-not-allowed',
         )}
         numberInputProps={{
           className: cn(
-            "flex-1 bg-transparent text-sm outline-none ring-0",
-            "placeholder:text-muted-foreground",
-            "disabled:cursor-not-allowed",
+            'flex-1 bg-transparent text-sm outline-none ring-0',
+            'placeholder:text-muted-foreground',
+            'disabled:cursor-not-allowed',
             inputClassName,
           ),
           maxLength: 25, // E.164 max is 15 digits, plus formatting characters (spaces, dashes, parentheses)
         }}
         countrySelectProps={{
-          className: cn(
-            "border-0 bg-transparent text-sm outline-none",
-            "focus:ring-0",
-          ),
+          className: cn('border-0 bg-transparent text-sm outline-none', 'focus:ring-0'),
         }}
       />
     </FormField>

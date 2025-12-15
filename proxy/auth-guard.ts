@@ -1,7 +1,7 @@
+import { getSessionCookie } from 'better-auth/cookies';
 import { NextRequest, NextResponse } from 'next/server';
 import { buildRedirectUrl, type RequestContext } from './localization';
 import { isAuthRoute, isProtectedRoute } from './routes';
-import { getSessionCookie } from 'better-auth/cookies';
 
 export const handleAuthRedirects = async (req: NextRequest, context: RequestContext) => {
   const sessionCookie = getSessionCookie(req);

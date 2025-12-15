@@ -12,15 +12,13 @@ import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
-export async function generateMetadata({
-  params,
-}: LocalePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
   return createLocalizedPageMetadata(
     locale,
     '/about',
     (messages) => messages.Pages?.About?.metadata,
-    { imagePath: '/og-about.jpg' }
+    { imagePath: '/og-about.jpg' },
   );
 }
 
@@ -32,11 +30,7 @@ const AboutPage = async ({ params }: LocalePageProps) => {
   return (
     <div className="bg-gradient-to-b from-background to-muted/30 w-full">
       {/* Hero Section */}
-      <PageHero
-        title={t('hero.title')}
-        description={t('hero.description')}
-        variant="blue"
-      />
+      <PageHero title={t('hero.title')} description={t('hero.description')} variant="blue" />
 
       {/* Vision Section */}
       <ContentSection containerSize="md">
@@ -52,9 +46,7 @@ const AboutPage = async ({ params }: LocalePageProps) => {
           title={t('whyWeExist.title')}
           intro={t('whyWeExist.intro')}
           calloutText={t('whyWeExist.butText')}
-          items={[0, 1, 2, 3, 4, 5].map((i) =>
-            t(`whyWeExist.problems.${i}`)
-          )}
+          items={[0, 1, 2, 3, 4, 5].map((i) => t(`whyWeExist.problems.${i}`))}
           highlightedText={t('whyWeExist.solution')}
         />
       </ContentSection>
@@ -67,16 +59,12 @@ const AboutPage = async ({ params }: LocalePageProps) => {
           columns={[
             {
               title: t('whatWeDo.forRunners.title'),
-              items: [0, 1, 2, 3, 4].map((i) =>
-                t(`whatWeDo.forRunners.features.${i}`)
-              ),
+              items: [0, 1, 2, 3, 4].map((i) => t(`whatWeDo.forRunners.features.${i}`)),
               variant: 'green',
             },
             {
               title: t('whatWeDo.forOrganizers.title'),
-              items: [0, 1, 2, 3, 4, 5].map((i) =>
-                t(`whatWeDo.forOrganizers.features.${i}`)
-              ),
+              items: [0, 1, 2, 3, 4, 5].map((i) => t(`whatWeDo.forOrganizers.features.${i}`)),
               variant: 'blue',
             },
           ]}
@@ -98,15 +86,10 @@ const AboutPage = async ({ params }: LocalePageProps) => {
 
       {/* Mexican Technology Section */}
       <ContentSection containerSize="md">
-        <ContentCard
-          variant="branded-green"
-          title={t('mexicanTechnology.title')}
-        >
+        <ContentCard variant="branded-green" title={t('mexicanTechnology.title')}>
           <p className="mb-6">{t('mexicanTechnology.subtitle')}</p>
 
-          <div className="mb-4 font-semibold">
-            {t('mexicanTechnology.weKnow')}
-          </div>
+          <div className="mb-4 font-semibold">{t('mexicanTechnology.weKnow')}</div>
           <ul className="mb-6 space-y-2">
             {[0, 1, 2, 3, 4].map((i) => (
               <li key={i} className="flex items-start space-x-2">
@@ -116,17 +99,13 @@ const AboutPage = async ({ params }: LocalePageProps) => {
             ))}
           </ul>
 
-          <p className="text-lg font-medium">
-            {t('mexicanTechnology.tagline')}
-          </p>
+          <p className="text-lg font-medium">{t('mexicanTechnology.tagline')}</p>
         </ContentCard>
       </ContentSection>
 
       {/* Commitment Section */}
       <ContentSection variant="muted" containerSize="md">
-        <h2 className="mb-8 text-3xl font-bold text-foreground">
-          {t('commitment.title')}
-        </h2>
+        <h2 className="mb-8 text-3xl font-bold text-foreground">{t('commitment.title')}</h2>
         <div className="space-y-4 text-lg leading-relaxed text-muted-foreground mb-12">
           <p>{t('commitment.goals.0')}</p>
           <p>{t('commitment.goals.1')}</p>

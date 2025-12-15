@@ -1,6 +1,7 @@
 # Code Style and Conventions
 
 ## TypeScript Configuration
+
 - **Target**: ES2017
 - **Strict mode**: Enabled
 - **JSX**: react-jsx (React 19)
@@ -8,6 +9,7 @@
 - **Path alias**: `@/*` maps to project root
 
 ## Prettier Configuration
+
 - **Print width**: 100 characters
 - **Single quotes**: Yes
 - **Trailing commas**: All
@@ -18,7 +20,9 @@
 - **Bracket same line**: No
 
 ## Naming Conventions
+
 Based on code analysis:
+
 - **Files**: kebab-case (e.g., `auth-controls.tsx`, `nav-drawer.tsx`)
 - **Components**: PascalCase for function components (e.g., `ThemeSwitcher`, `NavItems`)
 - **Constants**: camelCase for exported constants (e.g., `publicNavItems`, `protectedNavItems`)
@@ -26,6 +30,7 @@ Based on code analysis:
 - **Type files**: `.ts` extension, constants files use `.constants.ts` suffix
 
 ## File Organization Patterns
+
 - Component files export main component as named export
 - Constants are separated into `.constants.ts` files
 - Types are separated into `types.ts` files when needed
@@ -33,10 +38,12 @@ Based on code analysis:
 - Client components have `'use client'` directive at top
 
 ## Import Style
+
 - Absolute imports using `@/` path alias
 - Group imports logically (external packages, then internal modules)
 
 ## Component Patterns
+
 - Use `export function ComponentName()` for components
 - Use `export const constantName` for constants
 - Server components are async by default in Next.js App Router

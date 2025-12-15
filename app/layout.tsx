@@ -1,11 +1,11 @@
-import { routing, AppLocale } from '@/i18n/routing';
 import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
+import { AppLocale, routing } from '@/i18n/routing';
+import type { Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
-import type { Viewport } from 'next';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -49,29 +49,26 @@ async function resolveLocale(params: RootLayoutProps['params']): Promise<AppLoca
     : routing.defaultLocale;
 }
 
-export default async function RootLayout({
-  children,
-  params,
-}: RootLayoutProps) {
+export default async function RootLayout({ children, params }: RootLayoutProps) {
   const locale = await resolveLocale(params);
 
   return (
     <html lang={locale} suppressHydrationWarning>
-    <head>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: PREFLIGHT_SCRIPT,
-        }}
-      />
-    </head>
-    <body className={` ${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <Providers>
-        <Suspense fallback={null}>
-          <Toaster/>
-        </Suspense>
-        {children}
-      </Providers>
-    </body>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: PREFLIGHT_SCRIPT,
+          }}
+        />
+      </head>
+      <body className={` ${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Providers>
+          <Suspense fallback={null}>
+            <Toaster />
+          </Suspense>
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }

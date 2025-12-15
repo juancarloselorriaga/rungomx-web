@@ -26,7 +26,7 @@ You may also read:
 - `src/features/.../UPGRADE.md`  
   The upgrade plan, only to clarify intent and constraints.
 
-- Any source files referenced by the ticket under  example: `src/...`.
+- Any source files referenced by the ticket under example: `src/...`.
 
 ## Your Responsibilities
 
@@ -67,16 +67,20 @@ When you reply, structure your answer as:
 # Implementation for Ticket <NN> - <ticket title>
 
 ## Summary of changes
+
 - Short description of what you did.
 
 ## New files
+
 - List of any new files that were created.
 
 ## Tests
+
 - Tests added or updated.
 - How they verify the Definition of Done.
 
 ## Post implementation checks
+
 - How you ensured that:
   - Only scoped files were changed.
   - The ticket is consistent with the Upgrade Plan.

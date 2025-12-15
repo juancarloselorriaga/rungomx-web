@@ -11,17 +11,9 @@ type IntlProviderProps = {
   children: React.ReactNode;
 };
 
-export function IntlProvider({
-  locale,
-  messages,
-  children,
-}: IntlProviderProps) {
+export function IntlProvider({ locale, messages, children }: IntlProviderProps) {
   return (
-    <NextIntlClientProvider
-      locale={locale}
-      messages={messages}
-      timeZone={DEFAULT_TIMEZONE}
-    >
+    <NextIntlClientProvider locale={locale} messages={messages} timeZone={DEFAULT_TIMEZONE}>
       {children}
     </NextIntlClientProvider>
   );

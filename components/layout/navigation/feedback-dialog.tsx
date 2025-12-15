@@ -1,5 +1,6 @@
 'use client';
 
+import { submitContactSubmission } from '@/app/actions/contact-submission';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,14 +11,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { LabeledTextarea } from '@/components/ui/labeled-textarea';
-import { NavActionContent, navActionContainer } from './nav-action';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { LucideIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { submitContactSubmission } from '@/app/actions/contact-submission';
-import { Form, FormError, useForm } from '@/lib/forms';
+import { navActionContainer, NavActionContent } from './nav-action';
 
 interface FeedbackDialogProps {
   collapsed: boolean;
@@ -98,7 +98,7 @@ export function FeedbackDialog({
         form.reset();
       }
     },
-    [form]
+    [form],
   );
 
   useEffect(() => {
@@ -118,18 +118,13 @@ export function FeedbackDialog({
           variant="ghost"
           className={cn(
             navActionContainer(),
-            'w-full flex justify-start text-muted-foreground hover:bg-accent hover:text-foreground'
+            'w-full flex justify-start text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
           title={collapsed ? label : undefined}
           aria-label={label}
           data-collapsed={collapsed}
         >
-          <NavActionContent
-            icon={Icon}
-            label={label}
-            collapsed={collapsed}
-            iconSize={iconSize}
-          />
+          <NavActionContent icon={Icon} label={label} collapsed={collapsed} iconSize={iconSize} />
         </Button>
       </DialogTrigger>
 

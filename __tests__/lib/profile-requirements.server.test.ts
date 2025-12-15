@@ -1,5 +1,5 @@
-import { createProfileValidationSchema } from '@/lib/profiles/schema';
 import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
+import { createProfileValidationSchema } from '@/lib/profiles/schema';
 import type { ProfileUpsertInput } from '@/lib/profiles/types';
 
 const yearsAgo = (years: number) => {
@@ -31,12 +31,8 @@ describe('Profile Requirements by Role', () => {
     ]);
     const athleteSchema = createProfileValidationSchema(athleteRequirements.fieldKeys);
 
-    expect(
-      athleteSchema.safeParse(baseProfile({ shirtSize: undefined })).success
-    ).toBe(false);
-    expect(
-      athleteSchema.safeParse(baseProfile({ emergencyContactPhone: '' })).success
-    ).toBe(false);
+    expect(athleteSchema.safeParse(baseProfile({ shirtSize: undefined })).success).toBe(false);
+    expect(athleteSchema.safeParse(baseProfile({ emergencyContactPhone: '' })).success).toBe(false);
     expect(athleteSchema.safeParse(baseProfile()).success).toBe(true);
   });
 
@@ -48,15 +44,9 @@ describe('Profile Requirements by Role', () => {
     ]);
     const organizerSchema = createProfileValidationSchema(organizerRequirements.fieldKeys);
 
-    expect(
-      organizerSchema.safeParse(baseProfile({ shirtSize: undefined })).success
-    ).toBe(true);
-    expect(
-      organizerSchema.safeParse(baseProfile({ phone: '' })).success
-    ).toBe(false);
-    expect(
-      organizerSchema.safeParse(baseProfile({ city: '' })).success
-    ).toBe(false);
+    expect(organizerSchema.safeParse(baseProfile({ shirtSize: undefined })).success).toBe(true);
+    expect(organizerSchema.safeParse(baseProfile({ phone: '' })).success).toBe(false);
+    expect(organizerSchema.safeParse(baseProfile({ city: '' })).success).toBe(false);
   });
 
   it('treats all fields as optional for internal users', () => {
@@ -71,7 +61,7 @@ describe('Profile Requirements by Role', () => {
         emergencyContactName: '',
         emergencyContactPhone: '',
         shirtSize: undefined,
-      })
+      }),
     );
 
     expect(result.success).toBe(true);

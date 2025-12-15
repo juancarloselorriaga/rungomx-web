@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export function SelfSignupUsersEmptyState() {
   const t = useTranslations('pages.selfSignupUsers.table.emptyState.noFilters');

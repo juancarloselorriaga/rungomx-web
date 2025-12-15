@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { cleanupExpiredSessions } from '@/lib/auth/cleanup-expired-sessions';
+import { NextResponse } from 'next/server';
 
 function isAuthorized(request: Request) {
   const authHeader = request.headers.get('authorization') ?? '';

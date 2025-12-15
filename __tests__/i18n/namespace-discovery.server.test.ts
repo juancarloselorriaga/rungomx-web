@@ -33,9 +33,7 @@ describe('Namespace Discovery', () => {
 
       testCases.forEach(({ input, expected }) => {
         // Convert kebab-case to camelCase
-        const result = input.replace(/-([a-z])/g, (_, letter) =>
-          letter.toUpperCase()
-        );
+        const result = input.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
         expect(result).toBe(expected);
       });
     });
@@ -61,9 +59,7 @@ describe('Namespace Discovery', () => {
       const pathname = '/sign-in';
       const segments = pathname.split('/').filter(Boolean);
       const segment = segments[0];
-      const namespace = segment.replace(/-([a-z])/g, (_, letter) =>
-        letter.toUpperCase()
-      );
+      const namespace = segment.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       expect(namespace).toBe('signIn');
     });
 
@@ -78,17 +74,10 @@ describe('Namespace Discovery', () => {
 
   describe('Layout type detection', () => {
     it('detects auth layout for sign-in routes', () => {
-      const authPaths = [
-        '/sign-in',
-        '/sign-up',
-        '/crear-cuenta',
-        '/iniciar-sesion',
-      ];
+      const authPaths = ['/sign-in', '/sign-up', '/crear-cuenta', '/iniciar-sesion'];
 
       authPaths.forEach((path) => {
-        const isAuth = /^\/(sign-in|sign-up|crear-cuenta|iniciar-sesion)/.test(
-          path
-        );
+        const isAuth = /^\/(sign-in|sign-up|crear-cuenta|iniciar-sesion)/.test(path);
         expect(isAuth).toBe(true);
       });
     });
@@ -106,9 +95,8 @@ describe('Namespace Discovery', () => {
       ];
 
       protectedPaths.forEach((path) => {
-        const isProtected = /^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(
-          path
-        );
+        const isProtected =
+          /^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(path);
         expect(isProtected).toBe(true);
       });
     });
@@ -117,12 +105,9 @@ describe('Namespace Discovery', () => {
       const publicPaths = ['/about', '/contact', '/events', '/news', '/help'];
 
       publicPaths.forEach((path) => {
-        const isAuth = /^\/(sign-in|sign-up|crear-cuenta|iniciar-sesion)/.test(
-          path
-        );
-        const isProtected = /^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(
-          path
-        );
+        const isAuth = /^\/(sign-in|sign-up|crear-cuenta|iniciar-sesion)/.test(path);
+        const isProtected =
+          /^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(path);
         expect(isAuth).toBe(false);
         expect(isProtected).toBe(false);
       });
@@ -131,12 +116,7 @@ describe('Namespace Discovery', () => {
 
   describe('Namespace selection by layout type', () => {
     it('public layout includes all UI components', () => {
-      const publicComponents = [
-        'footer',
-        'themeSwitcher',
-        'errorBoundary',
-        'localeSwitcher',
-      ];
+      const publicComponents = ['footer', 'themeSwitcher', 'errorBoundary', 'localeSwitcher'];
 
       // Public pages should have access to all navigation and footer components
       expect(publicComponents).toContain('footer');
@@ -155,11 +135,7 @@ describe('Namespace Discovery', () => {
     });
 
     it('protected layout excludes footer', () => {
-      const protectedComponents = [
-        'themeSwitcher',
-        'localeSwitcher',
-        'errorBoundary',
-      ];
+      const protectedComponents = ['themeSwitcher', 'localeSwitcher', 'errorBoundary'];
 
       // Protected pages have controls but no footer
       expect(protectedComponents).not.toContain('footer');
@@ -173,13 +149,7 @@ describe('Namespace Discovery', () => {
       // Mock filesystem check
       const mockIsDirectory = (name: string) => {
         // Simulate that these are directories
-        const directories = [
-          'home',
-          'about',
-          'contact',
-          'footer',
-          'theme-switcher',
-        ];
+        const directories = ['home', 'about', 'contact', 'footer', 'theme-switcher'];
         return directories.includes(name);
       };
 
@@ -236,9 +206,7 @@ describe('Namespace Discovery', () => {
       expect(expectedPath).toBe('@/messages/components/theme-switcher/en.json');
 
       // But the namespace key is camelCase
-      const namespaceKey = name.replace(/-([a-z])/g, (_, letter) =>
-        letter.toUpperCase()
-      );
+      const namespaceKey = name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       expect(namespaceKey).toBe('themeSwitcher');
     });
   });

@@ -1,11 +1,11 @@
+import { type AppLocale, routing } from '@/i18n/routing';
 import { getSupportRecipients, sendEmail } from '@/lib/email';
 import {
   renderContactSubmissionEmailHTML,
   renderContactSubmissionEmailText,
 } from '@/lib/email/templates/contact-submission-email';
-import { routing, type AppLocale } from '@/i18n/routing';
-import { normalizeMetadata, stringifyMetadata, formatDate } from './utils';
 import type { ContactSubmissionRecord } from './types';
+import { formatDate, normalizeMetadata, stringifyMetadata } from './utils';
 
 /**
  * Email notification service for contact submissions
@@ -22,7 +22,7 @@ import type { ContactSubmissionRecord } from './types';
  */
 export async function notifySupportOfSubmission(
   submission: ContactSubmissionRecord,
-  userLocale: AppLocale = routing.defaultLocale
+  userLocale: AppLocale = routing.defaultLocale,
 ): Promise<void> {
   const recipients = getSupportRecipients();
 
@@ -38,8 +38,7 @@ export async function notifySupportOfSubmission(
     preferredLocale?: unknown;
   } & Record<string, unknown>;
 
-  const preferredLocaleValue =
-    typeof preferredLocale === 'string' ? preferredLocale : userLocale;
+  const preferredLocaleValue = typeof preferredLocale === 'string' ? preferredLocale : userLocale;
   const metadataText = stringifyMetadata(restMetadata);
   const createdAt = formatDate(submission.createdAt);
 

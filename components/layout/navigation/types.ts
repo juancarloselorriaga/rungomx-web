@@ -1,8 +1,8 @@
-import { User } from '@/lib/auth/types';
 import { Link } from '@/i18n/navigation';
-import type { ComponentProps } from 'react';
+import { User } from '@/lib/auth/types';
 
 import type navigationMessages from '@/messages/navigation/es.json';
+import type { ComponentProps } from 'react';
 
 type NavigationMessages = typeof navigationMessages;
 export type NavigationMessageKey = keyof NavigationMessages;
@@ -18,12 +18,7 @@ export type PublicNavIconName =
   | 'Calendar'
   | 'Newspaper';
 
-export type ProtectedNavIconName =
-  | 'LayoutDashboard'
-  | 'Settings'
-  | 'User'
-  | 'Users'
-  | 'FileText';
+export type ProtectedNavIconName = 'LayoutDashboard' | 'Settings' | 'User' | 'Users' | 'FileText';
 
 export type NavIconName = PublicNavIconName | ProtectedNavIconName;
 

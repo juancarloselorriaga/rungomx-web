@@ -4,9 +4,9 @@ import { routing } from '@/i18n/routing';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { CheckCircle } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { CheckCircle } from 'lucide-react';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
     locale,
     '/sign-in',
     (messages) => messages.Pages?.SignIn?.metadata,
-    { robots: { index: false, follow: false } }
+    { robots: { index: false, follow: false } },
   );
 }
 
@@ -43,8 +43,12 @@ export default async function SignInPage({
           <div className="flex items-start gap-3">
             <CheckCircle className="size-5 text-green-600 shrink-0 mt-0.5 dark:text-green-400" />
             <div className="space-y-1">
-              <h3 className="font-semibold text-green-900 dark:text-green-100">{t('passwordResetSuccess')}</h3>
-              <p className="text-sm text-green-800 dark:text-green-200">{t('passwordResetSuccessDescription')}</p>
+              <h3 className="font-semibold text-green-900 dark:text-green-100">
+                {t('passwordResetSuccess')}
+              </h3>
+              <p className="text-sm text-green-800 dark:text-green-200">
+                {t('passwordResetSuccessDescription')}
+              </p>
             </div>
           </div>
         </div>
@@ -52,12 +56,10 @@ export default async function SignInPage({
 
       <div className="space-y-2 text-center">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">
-          {t('description')}
-        </p>
+        <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <SignInForm callbackPath={callbackPath}/>
+      <SignInForm callbackPath={callbackPath} />
 
       <p className="text-center text-sm text-muted-foreground">
         {authT('noAccount')}{' '}

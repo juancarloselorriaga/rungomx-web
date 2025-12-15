@@ -28,17 +28,23 @@ export function normalizeAdminUsersQuery(query?: AdminUsersQuery): NormalizedAdm
     : DEFAULT_ADMIN_USERS_PAGE_SIZE;
   const pageSize = Math.min(Math.max(1, rawPageSize), MAX_ADMIN_USERS_PAGE_SIZE);
 
-  const sortBy: NormalizedAdminUsersQuery['sortBy'] = ['createdAt', 'name', 'email', 'role'].includes(
-    query?.sortBy as string,
-  )
+  const sortBy: NormalizedAdminUsersQuery['sortBy'] = [
+    'createdAt',
+    'name',
+    'email',
+    'role',
+  ].includes(query?.sortBy as string)
     ? (query?.sortBy as NormalizedAdminUsersQuery['sortBy'])
     : 'createdAt';
 
-  const defaultSortDir: NormalizedAdminUsersQuery['sortDir'] = sortBy === 'createdAt' ? 'desc' : 'asc';
+  const defaultSortDir: NormalizedAdminUsersQuery['sortDir'] =
+    sortBy === 'createdAt' ? 'desc' : 'asc';
   const sortDir: NormalizedAdminUsersQuery['sortDir'] =
     query?.sortDir === 'asc' || query?.sortDir === 'desc' ? query.sortDir : defaultSortDir;
 
-  const role: NormalizedAdminUsersQuery['role'] = ['admin', 'staff', 'all'].includes(query?.role as string)
+  const role: NormalizedAdminUsersQuery['role'] = ['admin', 'staff', 'all'].includes(
+    query?.role as string,
+  )
     ? (query?.role as NormalizedAdminUsersQuery['role'])
     : 'all';
 
@@ -59,7 +65,8 @@ export function parseAdminUsersSearchParams(rawSearchParams?: RawSearchParams): 
 
   const roleValue = rawSearchParams?.role;
   const rawRole = Array.isArray(roleValue) ? roleValue[0] : roleValue;
-  const role: AdminUsersQuery['role'] = rawRole === 'admin' || rawRole === 'staff' ? rawRole : 'all';
+  const role: AdminUsersQuery['role'] =
+    rawRole === 'admin' || rawRole === 'staff' ? rawRole : 'all';
 
   const sortValue = rawSearchParams?.sort;
   const rawSort = Array.isArray(sortValue) ? sortValue[0] : sortValue;
@@ -71,14 +78,10 @@ export function parseAdminUsersSearchParams(rawSearchParams?: RawSearchParams): 
   const dirValue = rawSearchParams?.dir;
   const rawDir = Array.isArray(dirValue) ? dirValue[0] : dirValue;
   const sortDir: AdminUsersQuery['sortDir'] =
-    rawDir === 'asc' || rawDir === 'desc'
-      ? rawDir
-      : sortBy === 'createdAt'
-        ? 'desc'
-        : 'asc';
+    rawDir === 'asc' || rawDir === 'desc' ? rawDir : sortBy === 'createdAt' ? 'desc' : 'asc';
 
   const searchValue = rawSearchParams?.search;
-  const search = Array.isArray(searchValue) ? searchValue[0] : searchValue ?? '';
+  const search = Array.isArray(searchValue) ? searchValue[0] : (searchValue ?? '');
 
   return {
     page: Math.max(1, normalizeNumber(rawSearchParams?.page) ?? 1),
@@ -89,4 +92,3 @@ export function parseAdminUsersSearchParams(rawSearchParams?: RawSearchParams): 
     sortDir,
   };
 }
-

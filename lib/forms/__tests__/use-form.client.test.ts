@@ -1,6 +1,6 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
-import { useForm } from '../use-form';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { FormActionResult } from '../types';
+import { useForm } from '../use-form';
 
 describe('useForm', () => {
   describe('Initialization', () => {
@@ -10,7 +10,7 @@ describe('useForm', () => {
         useForm({
           defaultValues,
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       expect(result.current.values).toEqual(defaultValues);
@@ -21,7 +21,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       expect(result.current.errors).toEqual({});
@@ -32,7 +32,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       expect(result.current.isSubmitting).toBe(false);
@@ -43,7 +43,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       expect(result.current.error).toBeNull();
@@ -56,7 +56,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'test@example.com' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       const fieldProps = result.current.register('email');
@@ -71,7 +71,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       const fieldProps = result.current.register('email');
@@ -88,7 +88,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       const fieldProps = result.current.register('email');
@@ -107,7 +107,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { message: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       const fieldProps = result.current.register('message');
@@ -126,7 +126,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { country: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       const fieldProps = result.current.register('country');
@@ -145,7 +145,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       // Set an error first
@@ -169,7 +169,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'test@example.com', password: 'secret' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       const emailProps = result.current.register('email');
@@ -189,7 +189,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn().mockResolvedValue({ ok: true, data: {} }),
-        })
+        }),
       );
 
       const mockEvent = {
@@ -209,7 +209,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit,
-        })
+        }),
       );
 
       // Set some errors first
@@ -239,7 +239,7 @@ describe('useForm', () => {
         useForm({
           defaultValues,
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -265,7 +265,7 @@ describe('useForm', () => {
           defaultValues: { email: '' },
           onSubmit,
           onSuccess,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -294,7 +294,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'invalid' },
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -327,7 +327,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'invalid', password: '123' },
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -361,7 +361,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'invalid' },
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -389,7 +389,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -415,7 +415,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -444,7 +444,7 @@ describe('useForm', () => {
           defaultValues: { email: '' },
           onSubmit,
           onError,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -470,7 +470,7 @@ describe('useForm', () => {
           defaultValues: { email: '' },
           onSubmit,
           onError,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -501,7 +501,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit,
-        })
+        }),
       );
 
       const mockEvent = {
@@ -524,7 +524,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '', password: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -539,7 +539,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -560,7 +560,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '', password: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -581,7 +581,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -604,7 +604,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'old@example.com', password: 'secret' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -620,7 +620,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: 'test@example.com', password: 'secret', name: 'John' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -637,7 +637,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { count: 0, enabled: false, tags: [] as string[] },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       act(() => {
@@ -659,7 +659,7 @@ describe('useForm', () => {
         useForm({
           defaultValues,
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       // Change values
@@ -683,7 +683,7 @@ describe('useForm', () => {
         useForm({
           defaultValues: { email: '', password: '' },
           onSubmit: jest.fn(),
-        })
+        }),
       );
 
       // Set errors
@@ -711,7 +711,7 @@ describe('useForm', () => {
             error: 'SERVER_ERROR',
             message: 'Something went wrong',
           }),
-        })
+        }),
       );
 
       const mockEvent = {

@@ -27,7 +27,9 @@ export function UsersSectionHeader({
     <div className={cn('space-y-4', className)}>
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">{tPage('page.sectionLabel')}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+            {tPage('page.sectionLabel')}
+          </p>
           <div className="space-y-1">
             <h1 className="text-3xl font-bold leading-tight">{tPage('page.title')}</h1>
             <p className="text-muted-foreground">{tPage('page.description')}</p>

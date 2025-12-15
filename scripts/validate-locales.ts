@@ -109,10 +109,10 @@ const readNamespace = (locale: string, basePath: string) =>
 
 const buildNamespaceGroup = <const TPaths extends Record<string, string>>(
   locale: string,
-  paths: TPaths
+  paths: TPaths,
 ) =>
   Object.fromEntries(
-    Object.entries(paths).map(([key, basePath]) => [key, readNamespace(locale, basePath)])
+    Object.entries(paths).map(([key, basePath]) => [key, readNamespace(locale, basePath)]),
   ) as { [K in keyof TPaths]: unknown };
 
 const buildUiMessages = (locale: string) => ({
@@ -123,7 +123,7 @@ const buildUiMessages = (locale: string) => ({
 
 export const compareLocaleGroup = (
   group: LocaleGroup,
-  ignored: Set<string> = defaultIgnore
+  ignored: Set<string> = defaultIgnore,
 ): ParityIssue[] => {
   if (!group.entries.length) return [];
 
@@ -158,7 +158,7 @@ export const compareLocaleGroup = (
 
 export const validateLocaleGroups = (
   groups: LocaleGroup[],
-  ignored: Set<string> = defaultIgnore
+  ignored: Set<string> = defaultIgnore,
 ): ParityIssue[] =>
   groups.flatMap((group) => {
     return compareLocaleGroup(group, ignored);
@@ -186,9 +186,10 @@ const buildLocaleGroups = (): LocaleGroup[] => {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const formatIssue = (issue: ParityIssue) => {
   const symbol = issue.type === 'missing' ? '❌' : '⚠️ ';
-  const action = issue.type === 'missing'
-    ? `Add key "${issue.keyPath}" to ${issue.locale}`
-    : `Remove key "${issue.keyPath}" from ${issue.locale}`;
+  const action =
+    issue.type === 'missing'
+      ? `Add key "${issue.keyPath}" to ${issue.locale}`
+      : `Remove key "${issue.keyPath}" from ${issue.locale}`;
   return `${symbol} [${issue.category}] ${action} (${issue.filePath})`;
 };
 
@@ -217,14 +218,17 @@ const run = () => {
     fileIssues
       .sort((a, b) => a.keyPath.localeCompare(b.keyPath))
       .forEach((issue) => {
-        const action = issue.type === 'missing'
-          ? `Missing key: "${issue.keyPath}"`
-          : `Extra key: "${issue.keyPath}"`;
+        const action =
+          issue.type === 'missing'
+            ? `Missing key: "${issue.keyPath}"`
+            : `Extra key: "${issue.keyPath}"`;
         console.error(`   ${action}`);
       });
   });
 
-  console.error('\n💡 Fix these issues by updating the JSON files to match the reference locale (en).\n');
+  console.error(
+    '\n💡 Fix these issues by updating the JSON files to match the reference locale (en).\n',
+  );
   console.error(`   Total issues: ${issues.length}\n`);
 
   process.exitCode = 1;

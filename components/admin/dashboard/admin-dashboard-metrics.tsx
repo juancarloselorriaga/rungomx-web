@@ -13,8 +13,8 @@ import {
   YAxis,
 } from 'recharts';
 import {
-  AdminDashboardRangeSelector,
   type AdminDashboardRangeOption,
+  AdminDashboardRangeSelector,
   type AdminDashboardRangeValue,
 } from './admin-dashboard-range-selector';
 
@@ -77,15 +77,8 @@ function TrendLineChart({ data, colorVariable }: ChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={160}>
-      <LineChart
-        data={data}
-        margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
-      >
-        <CartesianGrid
-          stroke="rgba(148, 163, 184, 0.15)"
-          strokeDasharray="3 3"
-          vertical={false}
-        />
+      <LineChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+        <CartesianGrid stroke="rgba(148, 163, 184, 0.15)" strokeDasharray="3 3" vertical={false} />
         <XAxis
           dataKey="date"
           tickLine={false}
@@ -188,17 +181,10 @@ export function AdminDashboardMetricsGrid({
     <section className="space-y-4">
       <div className="flex items-baseline justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold leading-tight">
-            {labels.sectionTitle}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {labels.sectionDescription}
-          </p>
+          <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
         </div>
-        <AdminDashboardRangeSelector
-          options={rangeOptions}
-          selected={selectedRange}
-        />
+        <AdminDashboardRangeSelector options={rangeOptions} selected={selectedRange} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -210,10 +196,7 @@ export function AdminDashboardMetricsGrid({
           accentColorVariable="--color-chart-1"
           bodyMinHeight={160}
         >
-          <TrendLineChart
-            data={metrics.users.daily}
-            colorVariable="--color-chart-1"
-          />
+          <TrendLineChart data={metrics.users.daily} colorVariable="--color-chart-1" />
         </MetricCard>
 
         <MetricCard
@@ -224,10 +207,7 @@ export function AdminDashboardMetricsGrid({
           accentColorVariable="--color-chart-2"
           bodyMinHeight={160}
         >
-          <TrendLineChart
-            data={metrics.profiles.daily}
-            colorVariable="--color-chart-2"
-          />
+          <TrendLineChart data={metrics.profiles.daily} colorVariable="--color-chart-2" />
         </MetricCard>
 
         <MetricCard
@@ -237,17 +217,14 @@ export function AdminDashboardMetricsGrid({
           secondaryValue={
             metrics.contactSubmissions.total > 0 && topOrigins.length > 0
               ? `${labels.contactSubmissions.originsPrefix} ${topOrigins
-                .map((o) => o.origin)
-                .join(', ')}`
+                  .map((o) => o.origin)
+                  .join(', ')}`
               : labels.contactSubmissions.fallbackSecondaryLabel
           }
           accentColorVariable="--color-chart-3"
           bodyMinHeight={160}
         >
-          <TrendLineChart
-            data={metrics.contactSubmissions.daily}
-            colorVariable="--color-chart-3"
-          />
+          <TrendLineChart data={metrics.contactSubmissions.daily} colorVariable="--color-chart-3" />
         </MetricCard>
       </div>
 
@@ -266,9 +243,7 @@ export function AdminDashboardMetricsGrid({
               const entry = roleMetrics.byKind.find((item) => item.kind === kind);
               const count = entry?.count ?? 0;
               const percent =
-                totalRoleAssignments > 0
-                  ? Math.round((count / totalRoleAssignments) * 100)
-                  : 0;
+                totalRoleAssignments > 0 ? Math.round((count / totalRoleAssignments) * 100) : 0;
 
               return (
                 <div key={kind} className="space-y-1">
@@ -309,9 +284,7 @@ export function AdminDashboardMetricsGrid({
           <div className="flex h-full flex-col justify-center gap-3 text-xs text-muted-foreground">
             <div className="flex items-center justify-between">
               <span>{labels.operations.feedbackEntriesLabel}</span>
-              <span className="tabular-nums">
-                {labels.operations.usersLabel}
-              </span>
+              <span className="tabular-nums">{labels.operations.usersLabel}</span>
             </div>
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
               <div

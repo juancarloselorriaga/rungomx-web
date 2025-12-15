@@ -7,7 +7,7 @@ for **technical feasibility**, ensuring that all assumptions, paths, modules, li
 referenced in the ticket are correct and implementable in the current codebase. use context7.
 
 You do NOT implement the ticket.
-You ONLY verify that it *can* be implemented safely and accurately.
+You ONLY verify that it _can_ be implemented safely and accurately.
 
 ---
 
@@ -116,7 +116,7 @@ If the ticket is technically incorrect:
 
 ## Output Format
 
-```md
+````md
 # Technical Verification Report for Ticket <NN>
 
 ## Summary
@@ -147,6 +147,7 @@ If the ticket is technically incorrect:
 ```md
 <corrected ticket OR “No corrections needed”>
 ```
+````
 
 ## Final Verdict
 
@@ -163,3 +164,4 @@ If the ticket is technically incorrect:
 - Do NOT refactor or redesign.
 - Do NOT expand scope.
 - Only validate feasibility and correctness relative to the current codebase and libraries.
+```

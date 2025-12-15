@@ -1,8 +1,8 @@
 import { db } from '@/db';
 import { contactSubmissions } from '@/db/schema';
 import { contactSubmissionSchema } from './schema';
-import { normalizeMetadata } from './utils';
 import type { ContactSubmissionInput, ContactSubmissionRecord } from './types';
+import { normalizeMetadata } from './utils';
 
 /**
  * Database repository for contact submissions
@@ -17,7 +17,7 @@ import type { ContactSubmissionInput, ContactSubmissionRecord } from './types';
  * @throws {ZodError} If input validation fails
  */
 export async function createContactSubmission(
-  input: ContactSubmissionInput
+  input: ContactSubmissionInput,
 ): Promise<ContactSubmissionRecord> {
   const parsed = contactSubmissionSchema.parse(input);
 

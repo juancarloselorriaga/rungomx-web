@@ -25,7 +25,7 @@ export function extractFieldErrors(error: z.ZodError): Record<string, string[]> 
  */
 export function validateInput<T>(
   schema: z.ZodSchema<T>,
-  input: unknown
+  input: unknown,
 ): { success: true; data: T } | { success: false; error: FormActionResult<never> } {
   const result = schema.safeParse(input);
 
@@ -60,7 +60,7 @@ export function validateInput<T>(
  */
 export function createFormAction<TInput, TOutput>(
   schema: z.ZodSchema<TInput>,
-  handler: (data: TInput) => Promise<TOutput>
+  handler: (data: TInput) => Promise<TOutput>,
 ) {
   return async (input: unknown): Promise<FormActionResult<TOutput>> => {
     try {

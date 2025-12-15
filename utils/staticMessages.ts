@@ -4,16 +4,16 @@ import esMetadata from '@/messages/metadata/es.json';
 
 export type MetadataMessages = typeof esMetadata;
 export type PartialDeep<T> = {
-  [K in keyof T]?: T[K] extends Record<string, unknown>
-    ? PartialDeep<T[K]>
-    : T[K];
+  [K in keyof T]?: T[K] extends Record<string, unknown> ? PartialDeep<T[K]> : T[K];
 };
 export type PartialMetadataMessages = PartialDeep<MetadataMessages>;
 export type SeoDefaultMessages = PartialDeep<MetadataMessages['SEO']['default']>;
-export type PageMetaMessages =
-  PartialDeep<MetadataMessages['Pages'][keyof MetadataMessages['Pages']]['metadata']>;
-export type NotFoundMessages =
-  PartialDeep<MetadataMessages['Components']['ErrorBoundary']['notFound']>;
+export type PageMetaMessages = PartialDeep<
+  MetadataMessages['Pages'][keyof MetadataMessages['Pages']]['metadata']
+>;
+export type NotFoundMessages = PartialDeep<
+  MetadataMessages['Components']['ErrorBoundary']['notFound']
+>;
 
 const metadataByLocale: Record<AppLocale, MetadataMessages> = {
   es: esMetadata,

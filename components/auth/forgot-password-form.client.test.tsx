@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { requestPasswordReset } from '@/lib/auth/actions';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ForgotPasswordForm } from './forgot-password-form';
 
@@ -16,8 +17,6 @@ jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
   useLocale: () => 'en',
 }));
-
-import { requestPasswordReset } from '@/lib/auth/actions';
 
 describe('ForgotPasswordForm', () => {
   beforeEach(() => {

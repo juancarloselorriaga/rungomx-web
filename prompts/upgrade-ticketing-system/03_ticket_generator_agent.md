@@ -59,28 +59,34 @@ Each ticket file must contain:
 ## Ticket <NN>: <Readable Title> [Priority P0 or P1]
 
 ### Description
+
 Short explanation of what this ticket changes and why, tied directly to the Upgrade Plan.
 
 ### Files and modules
+
 - List only the main files and folders expected to change, for example:
   - `src/features/.../file.ts`
   - `src/features/.../utils/...`
 
 ### Definition of Done
+
 - Bullet list of clear, verifiable outcomes.
 - Focus on observable behavior, validation, logging, and tests.
 
 ### Technical approach
+
 - Short, high level approach.
 - Mention patterns if relevant (strategy, adapter, pipeline stage).
 - No detailed pseudo code, just enough to guide a senior engineer.
 
 ### Tests
+
 - Unit tests to add or extend.
 - Integration or end to end tests if needed.
 - How tests relate to risks noted in the plan.
 
 ### Risks and rollout
+
 - Known risks or potential regressions.
 - Suggested rollout flags or environment variables.
 - Any migration or temporary compatibility notes.
@@ -120,10 +126,10 @@ You do two things:
 ```md
 # Ticket Summary
 
-1. TICKET-01-range-normalization.md  
+1. TICKET-01-range-normalization.md
    - LLM range validation and normalization
 
-2. TICKET-02-error-isolation-and-retries.md  
+2. TICKET-02-error-isolation-and-retries.md
    - Error isolation and retry logic for external calls
 
 ...

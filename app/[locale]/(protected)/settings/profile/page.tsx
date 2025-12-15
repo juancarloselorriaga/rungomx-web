@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
         index: false,
         follow: false,
       },
-    }
+    },
   );
 }
 

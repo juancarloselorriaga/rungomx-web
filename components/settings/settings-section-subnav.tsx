@@ -28,7 +28,7 @@ export function SettingsSectionSubnav({ className }: SettingsSectionSubnavProps)
         description: t('sections.account.description'),
       },
     ],
-    [t]
+    [t],
   );
 
   return <SectionSubnav items={items} className={className} />;

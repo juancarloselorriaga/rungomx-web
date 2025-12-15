@@ -1,10 +1,10 @@
 import { MeasurementField } from '@/components/settings/fields/measurement-field';
+import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import { FormField } from '@/components/ui/form-field';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
 import type { ProfileRecord } from '@/lib/profiles/types';
 import { cn } from '@/lib/utils';
-import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 
 type ProfilePhysicalSectionProps = {
   form: UseFormReturn<ProfileFormValues>;
@@ -27,9 +27,7 @@ export function ProfilePhysicalSection({
     <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">{t('sections.physical.title')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('sections.physical.description')}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('sections.physical.description')}</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -42,7 +40,7 @@ export function ProfilePhysicalSection({
             className={cn(
               'w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.shirtSize && 'border-destructive focus-visible:border-destructive'
+              form.errors.shirtSize && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('shirtSize')}
             disabled={isBusy}
@@ -87,4 +85,3 @@ export function ProfilePhysicalSection({
     </section>
   );
 }
-

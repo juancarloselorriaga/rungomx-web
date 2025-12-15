@@ -3,12 +3,12 @@
 import { auth } from '@/lib/auth';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { ProfileMetadata } from '@/lib/profiles/metadata';
+import { getProfileByUserId, upsertProfile } from '@/lib/profiles/repository';
+import { createProfileValidationSchema, profileUpsertSchema } from '@/lib/profiles/schema';
 import { computeProfileStatus } from '@/lib/profiles/status';
 import { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
 import { headers } from 'next/headers';
 import { z } from 'zod';
-import { profileUpsertSchema, createProfileValidationSchema } from '@/lib/profiles/schema';
-import { getProfileByUserId, upsertProfile } from '@/lib/profiles/repository';
 
 type ProfileActionError =
   | { ok: false; error: 'UNAUTHENTICATED' }
@@ -31,12 +31,7 @@ type ProfileActionResult = ProfileActionSuccess | ProfileActionError;
 
 export const readProfile = withAuthenticatedUser<ProfileActionResult>({
   unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED' }),
-})(async ({
-  user,
-  isInternal,
-  profileRequirements,
-  profileMetadata,
-}) => {
+})(async ({ user, isInternal, profileRequirements, profileMetadata }) => {
   try {
     const profile = await getProfileByUserId(user.id);
     const profileStatus = computeProfileStatus({
@@ -67,7 +62,7 @@ export const upsertProfileAction = withAuthenticatedUser<ProfileActionResult>({
 })(async (authContext, input: ProfileUpsertInput) => {
   try {
     const validationSchema = createProfileValidationSchema(
-      authContext.profileRequirements.fieldKeys
+      authContext.profileRequirements.fieldKeys,
     );
     const parsed = validationSchema.safeParse(input);
 

@@ -26,7 +26,7 @@ export const optionalPhoneNumber = z
       // Validate phone number format
       return isValidPhone(val);
     },
-    { message: 'Invalid phone number format' }
+    { message: 'Invalid phone number format' },
   );
 
 /**

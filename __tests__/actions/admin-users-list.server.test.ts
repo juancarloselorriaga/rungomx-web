@@ -220,7 +220,7 @@ describe('listInternalUsers', () => {
           permissions: adminPermissions,
           createdAt: adminCreatedAt,
           isInternal: true,
-        })
+        }),
       );
       expect(result.users[1]).toEqual(
         expect.objectContaining({
@@ -229,7 +229,7 @@ describe('listInternalUsers', () => {
           permissions: staffPermissions,
           createdAt: staffCreatedAt,
           isInternal: true,
-        })
+        }),
       );
     }
 
@@ -327,12 +327,14 @@ describe('listInternalUsers', () => {
     await listInternalUsers({ role: 'admin', search: 'john' });
 
     const history = __getQueryHistory();
-    const whereArg = history[0]?.whereCalls?.[0]?.[0] as { type?: string; args?: unknown[] } | undefined;
+    const whereArg = history[0]?.whereCalls?.[0]?.[0] as
+      | { type?: string; args?: unknown[] }
+      | undefined;
     expect(whereArg?.type).toBe('and');
     const filters = whereArg?.args ?? [];
-    const roleFilter = filters.find((filter) => (filter as { type?: string })?.type === 'inArray') as
-      | { args?: unknown[] }
-      | undefined;
+    const roleFilter = filters.find(
+      (filter) => (filter as { type?: string })?.type === 'inArray',
+    ) as { args?: unknown[] } | undefined;
     expect(roleFilter?.args?.[1]).toEqual(expect.arrayContaining(['admin']));
     expect(filters).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'or' })]));
   });
@@ -340,7 +342,12 @@ describe('listInternalUsers', () => {
   it('applies sort and pagination parameters', async () => {
     mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1' } });
     __pushSelect([
-      { userId: 'user-1', email: 'a@example.com', name: 'Alpha', createdAt: new Date('2024-01-01T00:00:00Z') },
+      {
+        userId: 'user-1',
+        email: 'a@example.com',
+        name: 'Alpha',
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+      },
     ]);
     __pushSelect([{ value: 1 }]);
 

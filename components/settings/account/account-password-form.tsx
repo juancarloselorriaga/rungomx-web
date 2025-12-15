@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { changePasswordAction } from '@/app/actions/account';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -9,6 +8,7 @@ import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { Eye, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 type AccountPasswordFormProps = {
@@ -58,19 +58,31 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
       if (!result.ok) {
         const fieldErrors =
           result.error === 'INVALID_INPUT' && 'fieldErrors' in result
-            ? result.fieldErrors ?? {}
+            ? (result.fieldErrors ?? {})
             : {};
         const mapped: Record<string, string[]> = {};
 
-        if (fieldErrors.currentPassword?.some((msg: string) => msg.toUpperCase().includes('INVALID_PASSWORD'))) {
+        if (
+          fieldErrors.currentPassword?.some((msg: string) =>
+            msg.toUpperCase().includes('INVALID_PASSWORD'),
+          )
+        ) {
           mapped.currentPassword = [t('errors.invalidCurrentPassword')];
         }
 
-        if (fieldErrors.newPassword?.some((msg: string) => msg.toUpperCase().includes('PASSWORD_TOO_SHORT'))) {
+        if (
+          fieldErrors.newPassword?.some((msg: string) =>
+            msg.toUpperCase().includes('PASSWORD_TOO_SHORT'),
+          )
+        ) {
           mapped.newPassword = [t('errors.requirements')];
         }
 
-        if (fieldErrors.newPassword?.some((msg: string) => msg.toUpperCase().includes('PASSWORD_TOO_LONG'))) {
+        if (
+          fieldErrors.newPassword?.some((msg: string) =>
+            msg.toUpperCase().includes('PASSWORD_TOO_LONG'),
+          )
+        ) {
           mapped.newPassword = [t('errors.requirements')];
         }
 
@@ -87,9 +99,7 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
         }
 
         const message =
-          result.error === 'INVALID_INPUT'
-            ? t('errors.invalidInput')
-            : t('errors.changePassword');
+          result.error === 'INVALID_INPUT' ? t('errors.invalidInput') : t('errors.changePassword');
 
         return {
           ok: false,
@@ -121,9 +131,7 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
           {t('sectionLabel')}
         </p>
         <h2 className="text-lg font-semibold">{t(`title.${variant}`)}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t(`description.${variant}`)}
-        </p>
+        <p className="text-sm text-muted-foreground">{t(`description.${variant}`)}</p>
       </div>
 
       <Form form={form} className="space-y-5 border-t border-border/70 pt-5">
@@ -140,7 +148,8 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
                 className={cn(
                   'h-11 w-full rounded-lg border bg-background px-3 pr-11 text-sm shadow-sm outline-none ring-0 transition',
                   'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  form.errors.currentPassword && 'border-destructive focus-visible:border-destructive'
+                  form.errors.currentPassword &&
+                    'border-destructive focus-visible:border-destructive',
                 )}
                 {...form.register('currentPassword')}
                 type={showPassword.current ? 'text' : 'password'}
@@ -153,25 +162,27 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => toggleVisibility('current')}
-                aria-label={showPassword.current ? t('actions.hidePassword') : t('actions.showPassword')}
+                aria-label={
+                  showPassword.current ? t('actions.hidePassword') : t('actions.showPassword')
+                }
                 disabled={isSubmitting}
               >
-                {showPassword.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword.current ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </FormField>
 
-          <FormField
-            label={t('fields.newPassword')}
-            required
-            error={form.errors.newPassword}
-          >
+          <FormField label={t('fields.newPassword')} required error={form.errors.newPassword}>
             <div className="relative">
               <input
                 className={cn(
                   'h-11 w-full rounded-lg border bg-background px-3 pr-11 text-sm shadow-sm outline-none ring-0 transition',
                   'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  form.errors.newPassword && 'border-destructive focus-visible:border-destructive'
+                  form.errors.newPassword && 'border-destructive focus-visible:border-destructive',
                 )}
                 {...form.register('newPassword')}
                 type={showPassword.new ? 'text' : 'password'}
@@ -184,15 +195,15 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => toggleVisibility('new')}
-                aria-label={showPassword.new ? t('actions.hidePassword') : t('actions.showPassword')}
+                aria-label={
+                  showPassword.new ? t('actions.hidePassword') : t('actions.showPassword')
+                }
                 disabled={isSubmitting}
               >
                 {showPassword.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {t('hints.password')}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('hints.password')}</p>
           </FormField>
 
           <FormField
@@ -205,7 +216,8 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
                 className={cn(
                   'h-11 w-full rounded-lg border bg-background px-3 pr-11 text-sm shadow-sm outline-none ring-0 transition',
                   'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  form.errors.confirmPassword && 'border-destructive focus-visible:border-destructive'
+                  form.errors.confirmPassword &&
+                    'border-destructive focus-visible:border-destructive',
                 )}
                 {...form.register('confirmPassword')}
                 type={showPassword.confirm ? 'text' : 'password'}
@@ -218,10 +230,16 @@ export function AccountPasswordForm({ variant = 'default' }: AccountPasswordForm
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => toggleVisibility('confirm')}
-                aria-label={showPassword.confirm ? t('actions.hidePassword') : t('actions.showPassword')}
+                aria-label={
+                  showPassword.confirm ? t('actions.hidePassword') : t('actions.showPassword')
+                }
                 disabled={isSubmitting}
               >
-                {showPassword.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword.confirm ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </FormField>

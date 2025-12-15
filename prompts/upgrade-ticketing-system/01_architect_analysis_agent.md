@@ -98,42 +98,54 @@ Reply with a markdown document in this shape:
 # Architect Analysis Report
 
 ## High level summary
+
 ...
 
 ## Strengths
+
 - ...
 
 ## Critical issues (must fix)
+
 1. ...
 2. ...
 
 ## Medium issues (should fix)
+
 1. ...
 2. ...
 
 ## Low issues (nice to fix)
+
 1. ...
 2. ...
 
 ## Architecture review
+
 ...
 
 ## Pipeline or flow analysis
+
 ...
 
 ## Concurrency and async review
+
 ...
 
 ## Performance review
+
 ...
 
 ## Design pattern opportunities
+
 ...
 
 ## Testing gaps
+
 ...
 
 ## Future proofing recommendations
+
 ...
 ```
 

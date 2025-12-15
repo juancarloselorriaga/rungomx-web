@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { contactSubmissions } from '@/db/schema';
+import { z } from 'zod';
 import { contactSubmissionSchema } from './schema';
 
 /**

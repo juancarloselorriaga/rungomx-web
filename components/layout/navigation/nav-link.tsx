@@ -3,8 +3,8 @@
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
-import type { NavItem } from './types';
 import type { MouseEventHandler } from 'react';
+import type { NavItem } from './types';
 
 interface NavLinkProps {
   href: NavItem['href'];
@@ -35,12 +35,13 @@ export function NavLink({
   inactiveClassName = 'text-muted-foreground hover:bg-accent hover:text-foreground',
   indicatorClassName,
   showIndicator = true,
-  onClick
+  onClick,
 }: NavLinkProps) {
   const pathname = usePathname();
-  const itemHref = typeof href === 'string' ? href : href.pathname ?? '/';
+  const itemHref = typeof href === 'string' ? href : (href.pathname ?? '/');
   const allowPrefixMatch = itemHref !== '/admin';
-  const isActive = pathname === itemHref || (allowPrefixMatch && pathname.startsWith(`${itemHref}/`));
+  const isActive =
+    pathname === itemHref || (allowPrefixMatch && pathname.startsWith(`${itemHref}/`));
 
   return (
     <Link
@@ -52,7 +53,7 @@ export function NavLink({
       className={cn(
         'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-300',
         isActive ? activeClassName : inactiveClassName,
-        linkClassName
+        linkClassName,
       )}
     >
       <Icon
@@ -60,7 +61,7 @@ export function NavLink({
         className={cn(
           'flex-shrink-0 transition-colors group-hover:text-foreground',
           isActive && 'text-primary',
-          iconClassName
+          iconClassName,
         )}
       />
 
@@ -68,7 +69,7 @@ export function NavLink({
         <span
           className={cn(
             'min-w-0 overflow-hidden whitespace-nowrap transition-[opacity,transform,max-width] duration-300 ease-in-out text-left',
-            collapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100'
+            collapsed ? 'max-w-0 opacity-0' : 'max-w-[200px] opacity-100',
           )}
           style={{ transitionDelay: collapsed ? '0ms' : '120ms' }}
         >
@@ -82,7 +83,7 @@ export function NavLink({
           className={cn(
             'absolute left-0 top-1/2 h-4 w-1 -translate-y-1/2 rounded-full bg-primary transition-all',
             isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-40',
-            indicatorClassName
+            indicatorClassName,
           )}
         />
       )}

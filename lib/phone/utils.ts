@@ -1,8 +1,8 @@
 import {
-  parsePhoneNumberWithError,
-  isValidPhoneNumber,
   type CountryCode,
+  isValidPhoneNumber,
   type NumberFormat,
+  parsePhoneNumberWithError,
 } from 'libphonenumber-js';
 
 /**

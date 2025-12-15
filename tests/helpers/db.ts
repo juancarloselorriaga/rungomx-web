@@ -11,7 +11,7 @@ export function getTestDb() {
   const connectionString = process.env.DATABASE_URL;
 
   if (!connectionString) {
-    throw new Error("DATABASE_URL is not set");
+    throw new Error('DATABASE_URL is not set');
   }
 
   const client = neon(connectionString);
@@ -23,14 +23,7 @@ export function getTestDb() {
  * Useful for ensuring clean state between tests
  */
 export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
-  const tables = [
-    "user_roles",
-    "sessions",
-    "accounts",
-    "profiles",
-    "roles",
-    "users",
-  ];
+  const tables = ['user_roles', 'sessions', 'accounts', 'profiles', 'roles', 'users'];
 
   for (const table of tables) {
     await db.execute(sql.raw(`TRUNCATE TABLE ${table} CASCADE`));

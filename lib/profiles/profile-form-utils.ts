@@ -52,10 +52,7 @@ export function formatNumericProfileInput(value?: number | string | null) {
   return value.trim();
 }
 
-export function normalizeCountryCode(
-  value: string | null | undefined,
-  fallback: string
-) {
+export function normalizeCountryCode(value: string | null | undefined, fallback: string) {
   const country = value?.trim() || fallback;
   return country.toUpperCase();
 }
@@ -63,7 +60,7 @@ export function normalizeCountryCode(
 export function applyGenderToPayload(
   payload: Record<string, unknown>,
   gender: string,
-  genderDescription: string | undefined
+  genderDescription: string | undefined,
 ) {
   const trimmedGender = gender?.trim?.() ?? '';
   if (trimmedGender) {
@@ -81,7 +78,7 @@ export function applyGenderToPayload(
 
 export function toProfileFormValuesFromRecord(
   profile: ProfileRecord | null,
-  defaults: Required<ProfileFormValuesBase>
+  defaults: Required<ProfileFormValuesBase>,
 ): Required<ProfileFormValuesBase> {
   if (!profile) return { ...defaults };
 
@@ -90,20 +87,15 @@ export function toProfileFormValuesFromRecord(
     city: profile.city ?? defaults.city,
     state: profile.state ?? defaults.state,
     postalCode: profile.postalCode ?? defaults.postalCode,
-    country: normalizeCountryCode(
-      profile.country ?? defaults.country,
-      defaults.country
-    ),
+    country: normalizeCountryCode(profile.country ?? defaults.country, defaults.country),
     latitude: formatNumericProfileInput(profile.latitude ?? defaults.latitude),
     longitude: formatNumericProfileInput(profile.longitude ?? defaults.longitude),
     locationDisplay: profile.locationDisplay ?? defaults.locationDisplay,
     dateOfBirth: formatProfileDateInput(profile.dateOfBirth),
     gender: profile.gender ?? defaults.gender,
     genderDescription: profile.genderDescription ?? defaults.genderDescription,
-    emergencyContactName:
-      profile.emergencyContactName ?? defaults.emergencyContactName,
-    emergencyContactPhone:
-      profile.emergencyContactPhone ?? defaults.emergencyContactPhone,
+    emergencyContactName: profile.emergencyContactName ?? defaults.emergencyContactName,
+    emergencyContactPhone: profile.emergencyContactPhone ?? defaults.emergencyContactPhone,
     shirtSize: profile.shirtSize ?? defaults.shirtSize,
     bloodType: profile.bloodType ?? defaults.bloodType,
     bio: profile.bio ?? defaults.bio,
@@ -115,7 +107,7 @@ export function toProfileFormValuesFromRecord(
 
 export function buildProfileUpsertPayloadFromForm(
   values: ProfileFormValuesBase,
-  countryFallback: string
+  countryFallback: string,
 ): ProfileUpsertInput {
   const payload: Record<string, unknown> = {};
 

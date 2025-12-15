@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
 
     // Validate metric data
     if (!body.name || typeof body.value !== 'number') {
-      return NextResponse.json(
-        { error: 'Invalid metric data' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid metric data' }, { status: 400 });
     }
 
     // Log metrics in development
@@ -45,9 +42,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('[Web Vitals API] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

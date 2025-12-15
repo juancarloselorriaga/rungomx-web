@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { Link, usePathname } from '@/i18n/navigation';
+import { cn } from '@/lib/utils';
 import type { ComponentProps } from 'react';
 
 export type SectionSubnavItem = {
@@ -23,15 +23,11 @@ export function SectionSubnav({ items, className }: SectionSubnavProps) {
 
   return (
     <div
-      className={cn(
-        'flex items-stretch gap-1 rounded-lg border bg-background/60 p-1',
-        className
-      )}
+      className={cn('flex items-stretch gap-1 rounded-lg border bg-background/60 p-1', className)}
     >
       {items.map((item) => {
         const isActive =
-          pathname === item.href ||
-          Boolean(item.localizedHref && pathname === item.localizedHref);
+          pathname === item.href || Boolean(item.localizedHref && pathname === item.localizedHref);
 
         return (
           <Button
@@ -42,7 +38,7 @@ export function SectionSubnav({ items, className }: SectionSubnavProps) {
             className={cn(
               'h-auto min-w-0 flex-1 items-start justify-start gap-2 px-3 py-2 text-left',
               '!shrink overflow-hidden',
-              isActive ? 'shadow-sm' : 'text-muted-foreground'
+              isActive ? 'shadow-sm' : 'text-muted-foreground',
             )}
           >
             <Link

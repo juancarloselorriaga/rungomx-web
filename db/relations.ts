@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations } from 'drizzle-orm';
 
 import {
   accounts,
@@ -9,7 +9,7 @@ import {
   sessions,
   userRoles,
   users,
-} from "./schema";
+} from './schema';
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   accounts: many(accounts),

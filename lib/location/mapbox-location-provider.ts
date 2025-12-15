@@ -1,5 +1,9 @@
-import type { LocationProvider, LocationSearchOptions, ReverseGeocodeOptions } from './location-provider';
 import type { LocationValue } from '@/types/location';
+import type {
+  LocationProvider,
+  LocationSearchOptions,
+  ReverseGeocodeOptions,
+} from './location-provider';
 
 type MapboxFeature = {
   id?: string;
@@ -60,10 +64,7 @@ function buildForwardUrl(query: string, options?: LocationSearchOptions) {
   }
 
   if (options?.proximity) {
-    url.searchParams.set(
-      'proximity',
-      `${options.proximity.lng},${options.proximity.lat}`
-    );
+    url.searchParams.set('proximity', `${options.proximity.lng},${options.proximity.lat}`);
   }
 
   url.searchParams.set('autocomplete', 'true');
@@ -125,22 +126,16 @@ function normalizeFeature(feature: MapboxFeature): LocationValue | null {
   }
 
   const countryCode =
-    (properties.country_code as string | undefined) ??
-    (properties.country as string | undefined);
+    (properties.country_code as string | undefined) ?? (properties.country as string | undefined);
 
-  const city =
-    (properties.city as string | undefined) ??
-    (properties.place as string | undefined);
+  const city = (properties.city as string | undefined) ?? (properties.place as string | undefined);
 
   const region =
-    (properties.region as string | undefined) ??
-    (properties.state as string | undefined);
+    (properties.region as string | undefined) ?? (properties.state as string | undefined);
 
   const postalCode = properties.postcode as string | undefined;
 
-  const placeId =
-    (properties.mapbox_id as string | undefined) ??
-    feature.id;
+  const placeId = (properties.mapbox_id as string | undefined) ?? feature.id;
 
   return {
     lat,
@@ -193,4 +188,3 @@ export const mapboxLocationProvider: LocationProvider = {
     return normalizeFeature(feature);
   },
 };
-

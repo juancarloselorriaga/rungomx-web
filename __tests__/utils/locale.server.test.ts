@@ -7,7 +7,7 @@ jest.mock('next-intl/routing', () => ({
   })),
 }));
 
-import { extractLocaleFromRequest, extractLocaleFromCallbackURL } from '@/lib/utils/locale';
+import { extractLocaleFromCallbackURL, extractLocaleFromRequest } from '@/lib/utils/locale';
 
 describe('extractLocaleFromRequest', () => {
   it('prefers NEXT_LOCALE cookie over Accept-Language', () => {

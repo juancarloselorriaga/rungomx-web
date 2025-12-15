@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
     locale,
     '/admin/tools',
     (messages) => messages.Pages?.Dashboard?.metadata,
-    { robots: { index: false, follow: false } }
+    { robots: { index: false, follow: false } },
   );
 }
 
@@ -21,9 +21,7 @@ export default async function AdminToolsPage({ params }: LocalePageProps) {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">{t('admin.tools.title')}</h1>
-      <p className="text-muted-foreground text-sm">
-        {t('admin.tools.description')}
-      </p>
+      <p className="text-muted-foreground text-sm">{t('admin.tools.description')}</p>
       <div className="rounded-lg border bg-card p-4 shadow-sm text-sm text-muted-foreground">
         {t('admin.tools.placeholder')}
       </div>

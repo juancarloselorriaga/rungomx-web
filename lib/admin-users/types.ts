@@ -2,7 +2,8 @@ import type { AdminUserRow, ListInternalUsersResult } from '@/app/actions/admin-
 
 export type SerializedAdminUserRow = Omit<AdminUserRow, 'createdAt'> & { createdAt: string };
 
-export type ListInternalUsersError = Extract<ListInternalUsersResult, { ok: false }>['error'] | null;
+export type ListInternalUsersError =
+  | Extract<ListInternalUsersResult, { ok: false }>['error']
+  | null;
 
 export type ColumnKey = 'role' | 'permissions' | 'created' | 'actions';
-

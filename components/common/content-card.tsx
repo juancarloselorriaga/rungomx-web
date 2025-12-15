@@ -26,12 +26,7 @@ export interface ContentCardProps extends VariantProps<typeof cardVariants> {
   className?: string;
 }
 
-export function ContentCard({
-  title,
-  children,
-  variant,
-  className,
-}: ContentCardProps) {
+export function ContentCard({ title, children, variant, className }: ContentCardProps) {
   const isBranded = variant?.includes('branded');
   const isDark = variant === 'dark';
 
@@ -41,7 +36,7 @@ export function ContentCard({
         <h2
           className={cn(
             'mb-6 text-3xl font-bold',
-            isBranded || isDark ? 'text-inherit' : 'text-foreground'
+            isBranded || isDark ? 'text-inherit' : 'text-foreground',
           )}
         >
           {title}
@@ -50,7 +45,7 @@ export function ContentCard({
       <div
         className={cn(
           'space-y-4 text-lg leading-relaxed',
-          isBranded || isDark ? 'opacity-90' : 'text-muted-foreground'
+          isBranded || isDark ? 'opacity-90' : 'text-muted-foreground',
         )}
       >
         {children}

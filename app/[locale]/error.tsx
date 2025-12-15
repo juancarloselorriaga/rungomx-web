@@ -26,8 +26,7 @@ export default function Error({
   }, [error]);
 
   return (
-    <div
-      className="w-full relative flex h-screen items-center justify-center overflow-hidden">
+    <div className="w-full relative flex h-screen items-center justify-center overflow-hidden">
       {/* Background pattern overlay */}
       <div className="absolute inset-0 opacity-10">
         <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
@@ -40,24 +39,18 @@ export default function Error({
               height="40"
               patternUnits="userSpaceOnUse"
             >
-              <circle cx="20" cy="20" r="1" fill="currentColor"/>
+              <circle cx="20" cy="20" r="1" fill="currentColor" />
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#error-pattern)"/>
+          <rect width="100%" height="100%" fill="url(#error-pattern)" />
         </svg>
       </div>
 
       {/* Content */}
       <div className="container relative z-10 mx-auto max-w-2xl px-4 py-16 text-center">
+        <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">{t('title')}</h1>
 
-
-        <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
-          {t('title')}
-        </h1>
-
-        <p className="mb-8 text-lg text-foreground/80">
-          {t('description')}
-        </p>
+        <p className="mb-8 text-lg text-foreground/80">{t('description')}</p>
 
         {/* Error details for development */}
         {process.env.NODE_ENV === 'development' && error.message && (
@@ -74,12 +67,8 @@ export default function Error({
         )}
 
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Button
-            onClick={reset}
-            size="lg"
-            variant="default"
-          >
-            <RefreshCw className="mr-2 h-5 w-5"/>
+          <Button onClick={reset} size="lg" variant="default">
+            <RefreshCw className="mr-2 h-5 w-5" />
             {tCommon('tryAgain')}
           </Button>
 
@@ -90,7 +79,7 @@ export default function Error({
             className="border-primary-foreground/20 bg-white/10 text-foreground hover:bg-white/20"
           >
             <Link href="/">
-              <Home className="mr-2 h-5 w-5"/>
+              <Home className="mr-2 h-5 w-5" />
               {tCommon('goHome')}
             </Link>
           </Button>

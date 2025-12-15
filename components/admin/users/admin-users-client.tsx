@@ -1,16 +1,16 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import type { AdminUserRow } from '@/app/actions/admin-users-list';
-import { UsersEmptyState } from '@/components/admin/users/users-empty-state';
-import { UsersTable } from '@/components/admin/users/users-table';
 import { UserCreateDialog } from '@/components/admin/users/user-create-dialog';
+import { UsersEmptyState } from '@/components/admin/users/users-empty-state';
 import { UsersSectionHeader } from '@/components/admin/users/users-section-header';
+import { UsersTable } from '@/components/admin/users/users-table';
 import { Button } from '@/components/ui/button';
 import type { NormalizedAdminUsersQuery } from '@/lib/admin-users/query';
 import type { ListInternalUsersError, SerializedAdminUserRow } from '@/lib/admin-users/types';
 import { cn } from '@/lib/utils';
 import { UserPlus2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type AdminUsersClientProps = {
@@ -67,19 +67,19 @@ export function AdminUsersClient({
       <UsersSectionHeader
         view="internal"
         currentUserEmail={currentUserEmail}
-        primaryAction={(
+        primaryAction={
           <Button className="w-full sm:w-auto" onClick={() => setCreateOpen(true)}>
             <UserPlus2 className="size-4" />
             {t('page.createButton')}
           </Button>
-        )}
+        }
       />
 
       {bannerMessage ? (
         <div
           className={cn(
             'rounded-md border p-3 text-sm',
-            'border-destructive/50 bg-destructive/10 text-destructive'
+            'border-destructive/50 bg-destructive/10 text-destructive',
           )}
         >
           {bannerMessage}
@@ -88,11 +88,7 @@ export function AdminUsersClient({
 
       {paginationMeta.total === 0 && !hasFiltersApplied ? (
         <UsersEmptyState
-          cta={(
-            <Button onClick={() => setCreateOpen(true)}>
-              {t('page.createFirstButton')}
-            </Button>
-          )}
+          cta={<Button onClick={() => setCreateOpen(true)}>{t('page.createFirstButton')}</Button>}
         />
       ) : (
         <UsersTable

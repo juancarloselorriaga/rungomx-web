@@ -5,7 +5,10 @@ type MockAdminContext = {
 };
 
 const mockRequireAdmin = jest.fn<Promise<MockAdminContext>, unknown[]>();
-const mockSignUpEmail = jest.fn<Promise<{ user?: { id: string; email: string; name?: string } }>, unknown[]>();
+const mockSignUpEmail = jest.fn<
+  Promise<{ user?: { id: string; email: string; name?: string } }>,
+  unknown[]
+>();
 const mockUpdateInternalRoles = jest.fn<Promise<void>, unknown[]>();
 const mockResolveUserContext = jest.fn<
   Promise<{
@@ -89,7 +92,7 @@ describe('admin internal user actions', () => {
         ok: false,
         error: 'INVALID_INPUT',
         details: expect.anything(),
-      })
+      }),
     );
     expect(mockSignUpEmail).not.toHaveBeenCalled();
     expect(mockUpdateInternalRoles).not.toHaveBeenCalled();
@@ -135,7 +138,7 @@ describe('admin internal user actions', () => {
       expect.objectContaining({
         userId: 'user-123',
         canonicalRoles: ['internal.admin'],
-      })
+      }),
     );
   });
 
@@ -179,7 +182,7 @@ describe('admin internal user actions', () => {
       expect.objectContaining({
         userId: 'user-456',
         canonicalRoles: ['internal.staff'],
-      })
+      }),
     );
   });
 
@@ -211,4 +214,3 @@ describe('admin internal user actions', () => {
     expect(mockUpdateInternalRoles).not.toHaveBeenCalled();
   });
 });
-

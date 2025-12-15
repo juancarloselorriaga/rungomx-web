@@ -1,13 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
 import { requestPasswordReset } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { FormField } from '@/components/ui/form-field';
 import { Loader2, Mail, Send } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
 
 export function ForgotPasswordForm() {
   const t = useTranslations('pages.forgotPassword');
@@ -18,16 +18,21 @@ export function ForgotPasswordForm() {
   const form = useForm<{ email: string }>({
     defaultValues: { email: '' },
     onSubmit: async (values) => {
-      const resetPasswordURL = locale === 'es'
-        ? `${window.location.origin}/restablecer-contrasena`
-        : `${window.location.origin}/en/reset-password`;
+      const resetPasswordURL =
+        locale === 'es'
+          ? `${window.location.origin}/restablecer-contrasena`
+          : `${window.location.origin}/en/reset-password`;
 
       setIsPending(true);
       try {
         const { error: resetError } = await requestPasswordReset(values.email, resetPasswordURL);
 
         if (resetError) {
-          return { ok: false, error: 'SERVER_ERROR', message: resetError.message ?? t('genericError') };
+          return {
+            ok: false,
+            error: 'SERVER_ERROR',
+            message: resetError.message ?? t('genericError'),
+          };
         }
 
         return { ok: true, data: null };
@@ -44,7 +49,6 @@ export function ForgotPasswordForm() {
 
   return (
     <Form form={form} className="space-y-4">
-
       <FormError />
 
       <FormField
@@ -70,7 +74,11 @@ export function ForgotPasswordForm() {
       </FormField>
 
       <Button className="w-full" disabled={isPending || form.isSubmitting} type="submit">
-        {isPending || form.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+        {isPending || form.isSubmitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Send className="size-4" />
+        )}
         <span>{t('sendResetLink')}</span>
       </Button>
     </Form>

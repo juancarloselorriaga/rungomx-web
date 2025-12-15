@@ -23,7 +23,7 @@ export function generatePasswordResetEmailHTML({
   expirationNote,
   footer,
   title,
-  locale
+  locale,
 }: PasswordResetEmailTemplateProps): string {
   return `
     <!DOCTYPE html>
@@ -91,7 +91,10 @@ export function generatePasswordResetEmailText({
   expirationNote,
   ignoreMessage,
   footer,
-}: Pick<PasswordResetEmailTemplateProps, 'greeting' | 'message' | 'url' | 'expirationNote' | 'ignoreMessage' | 'footer'>): string {
+}: Pick<
+  PasswordResetEmailTemplateProps,
+  'greeting' | 'message' | 'url' | 'expirationNote' | 'ignoreMessage' | 'footer'
+>): string {
   return `
 ${greeting}
 

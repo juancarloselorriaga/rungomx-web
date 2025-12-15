@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { getLocationProvider } from '@/lib/location/location-provider';
 import type { PublicLocationValue } from '@/types/location';
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const querySchema = z.object({
   lat: z
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'INVALID_QUERY', details: z.treeifyError(parsed.error) },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -91,9 +91,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ location: publicLocation });
   } catch (error) {
     console.error('[location-reverse] Error handling request', error);
-    return NextResponse.json(
-      { error: 'SERVER_ERROR' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }
 }

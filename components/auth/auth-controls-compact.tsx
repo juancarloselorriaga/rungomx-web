@@ -6,18 +6,15 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
 import { LucideLogOut } from 'lucide-react';
-import { FC, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { FC, useTransition } from 'react';
 
 interface AuthenticationControlsCompactProps {
   initialUser: User | null;
   cb?: () => void;
 }
 
-const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({
-  cb,
-  initialUser,
-}) => {
+const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({ cb, initialUser }) => {
   const t = useTranslations('auth');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -48,7 +45,7 @@ const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({
 
   return (
     <div className="flex gap-3 items-center">
-      <UserAvatar size="sm" onClick={cb} user={initialUser}/>
+      <UserAvatar size="sm" onClick={cb} user={initialUser} />
       <Button
         aria-label={t('signOut')}
         disabled={isPending}
@@ -56,7 +53,7 @@ const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({
         variant="ghost"
         size="icon"
       >
-        <LucideLogOut size={16}/>
+        <LucideLogOut size={16} />
       </Button>
     </div>
   );

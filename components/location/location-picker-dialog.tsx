@@ -1,22 +1,22 @@
 'use client';
 
+import { useAppTheme } from '@/components/providers/app-theme';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { reverseGeocodeClient, searchLocationsClient } from '@/lib/location/client';
 import { cn } from '@/lib/utils';
 import type { PublicLocationValue } from '@/types/location';
-import { useEffect, useRef, useState } from 'react';
-import Map, { Marker, type MapRef } from 'react-map-gl/mapbox';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { useAppTheme } from '@/components/providers/app-theme';
 import { MapPin, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
+import Map, { type MapRef, Marker } from 'react-map-gl/mapbox';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 type LocationPickerDialogProps = {
   initialLocation: PublicLocationValue | null;
@@ -58,13 +58,11 @@ export function LocationPickerDialog({
     return null;
   });
 
-  const [searchQuery, setSearchQuery] = useState(
-    initialLocation?.formattedAddress ?? ''
-  );
+  const [searchQuery, setSearchQuery] = useState(initialLocation?.formattedAddress ?? '');
   const [searchResults, setSearchResults] = useState<PublicLocationValue[]>([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<PublicLocationValue | null>(
-    initialLocation ?? null
+    initialLocation ?? null,
   );
   const [isReverseLoading, setIsReverseLoading] = useState(false);
   const searchTimeoutRef = useRef<number | null>(null);
@@ -96,10 +94,11 @@ export function LocationPickerDialog({
     return DEFAULT_VIEW_STATE;
   })();
 
-  const proximity = markerCoords ?? selectedLocation ?? {
-    lat: DEFAULT_VIEW_STATE.latitude,
-    lng: DEFAULT_VIEW_STATE.longitude,
-  };
+  const proximity = markerCoords ??
+    selectedLocation ?? {
+      lat: DEFAULT_VIEW_STATE.latitude,
+      lng: DEFAULT_VIEW_STATE.longitude,
+    };
 
   const handleConfirm = () => {
     if (selectedLocation) {
@@ -224,18 +223,20 @@ export function LocationPickerDialog({
 
   const mapStyleUrl =
     theme === 'dark'
-      ? process.env.NEXT_PUBLIC_MAP_STYLE_DARK ??
+      ? (process.env.NEXT_PUBLIC_MAP_STYLE_DARK ??
         process.env.NEXT_PUBLIC_MAP_STYLE_LIGHT ??
-        'https://demotiles.maplibre.org/style.json'
-      : process.env.NEXT_PUBLIC_MAP_STYLE_LIGHT ??
-        'https://demotiles.maplibre.org/style.json';
+        'https://demotiles.maplibre.org/style.json')
+      : (process.env.NEXT_PUBLIC_MAP_STYLE_LIGHT ?? 'https://demotiles.maplibre.org/style.json');
 
   return (
-    <Dialog open onOpenChange={(nextOpen) => {
-      if (!nextOpen) {
-        onCloseAction();
-      }
-    }}>
+    <Dialog
+      open
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onCloseAction();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-3xl border-none bg-gradient-to-b from-background/95 via-background to-background/98 shadow-2xl shadow-black/20 ring-1 ring-border/60 backdrop-blur-xl">
         <DialogHeader className="space-y-1">
           <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
@@ -244,9 +245,7 @@ export function LocationPickerDialog({
             </span>
             <span>{t('picker.title')}</span>
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {t('picker.description')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('picker.description')}</p>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -256,7 +255,7 @@ export function LocationPickerDialog({
               className={cn(
                 'w-full rounded-md border bg-background/80 px-3 py-2 pl-9 text-sm shadow-sm outline-none ring-0 transition',
                 'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                'backdrop-blur-sm'
+                'backdrop-blur-sm',
               )}
               placeholder={t('picker.searchPlaceholder')}
               value={searchQuery}
@@ -267,20 +266,21 @@ export function LocationPickerDialog({
               <div className="max-h-44 overflow-y-auto rounded-xl border bg-card/90 text-sm shadow-sm backdrop-blur-sm">
                 {searchResults.map((location) => (
                   <button
-                    key={location.placeId ?? `${location.lat}-${location.lng}-${location.formattedAddress}`}
+                    key={
+                      location.placeId ??
+                      `${location.lat}-${location.lng}-${location.formattedAddress}`
+                    }
                     type="button"
                     className={cn(
                       'flex w-full flex-col items-start px-3 py-2 text-left transition-colors hover:bg-accent/60',
                       selectedLocation &&
                         selectedLocation.lat === location.lat &&
                         selectedLocation.lng === location.lng &&
-                        'bg-accent'
+                        'bg-accent',
                     )}
                     onClick={() => handleSearchSelect(location)}
                   >
-                    <span className="font-medium">
-                      {location.formattedAddress}
-                    </span>
+                    <span className="font-medium">{location.formattedAddress}</span>
                     {location.city || location.region ? (
                       <span className="text-xs text-muted-foreground">
                         {[location.city, location.region, location.countryCode]
@@ -351,19 +351,10 @@ export function LocationPickerDialog({
             <div />
           )}
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCloseAction}
-              disabled={isBusy}
-            >
+            <Button type="button" variant="outline" onClick={onCloseAction} disabled={isBusy}>
               {t('picker.actions.cancel')}
             </Button>
-            <Button
-              type="button"
-              onClick={handleConfirm}
-              disabled={!selectedLocation || isBusy}
-            >
+            <Button type="button" onClick={handleConfirm} disabled={!selectedLocation || isBusy}>
               {t('picker.actions.confirm')}
             </Button>
           </div>

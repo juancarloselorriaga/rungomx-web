@@ -1,8 +1,8 @@
 'use client';
 
+import { cn } from '@/lib/utils';
 import type React from 'react';
 import { createContext, useContext } from 'react';
-import { cn } from '@/lib/utils';
 import type { UseFormReturn } from './types';
 
 /**
@@ -26,8 +26,10 @@ export function useFormContext<TFieldValues extends Record<string, unknown>>() {
 /**
  * Form component props
  */
-interface FormProps<TFieldValues extends Record<string, unknown>>
-  extends Omit<React.FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> {
+interface FormProps<TFieldValues extends Record<string, unknown>> extends Omit<
+  React.FormHTMLAttributes<HTMLFormElement>,
+  'onSubmit'
+> {
   form: UseFormReturn<TFieldValues>;
   children: React.ReactNode;
 }
@@ -67,7 +69,7 @@ export function FormError({ className }: { className?: string }) {
     <div
       className={cn(
         'rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive',
-        className
+        className,
       )}
       role="alert"
     >

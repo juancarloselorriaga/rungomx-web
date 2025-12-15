@@ -1,7 +1,7 @@
-import { MetadataRoute } from 'next';
 import { siteUrl } from '@/config/url';
-import { routing } from '@/i18n/routing';
 import { getPathname } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
+import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
   // Define base paths that should be disallowed (using internal pathnames)

@@ -1,7 +1,7 @@
 'use client';
 
-import type { NavItem } from '@/components/layout/navigation/types';
 import { NavLink } from '@/components/layout/navigation/nav-link';
+import type { NavItem } from '@/components/layout/navigation/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
@@ -15,7 +15,7 @@ import {
   Settings,
   Trophy,
   User,
-  Users
+  Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -59,10 +59,10 @@ export function NavItems({
 
   return (
     <div className={cn('flex flex-col space-y-4 p-4', containerClassName)}>
-      {items.map(item => {
+      {items.map((item) => {
         const Icon = iconMap[item.iconName];
         const label = t(item.labelKey);
-        const itemHref = typeof item.href === 'string' ? item.href : item.href.pathname ?? '/';
+        const itemHref = typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/');
 
         const content = (
           <NavLink

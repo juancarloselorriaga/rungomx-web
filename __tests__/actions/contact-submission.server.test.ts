@@ -1,14 +1,14 @@
 import { submitContactSubmission } from '@/app/actions/contact-submission';
-import type { ContactSubmissionRecord } from '@/lib/contact-submissions/types';
-import { createContactSubmission, notifySupportOfSubmission } from '@/lib/contact-submissions';
 import { auth } from '@/lib/auth';
+import type { PermissionSet } from '@/lib/auth/roles';
+import { EMPTY_PROFILE_STATUS } from '@/lib/auth/user-context';
+import { createContactSubmission, notifySupportOfSubmission } from '@/lib/contact-submissions';
+import type { ContactSubmissionRecord } from '@/lib/contact-submissions/types';
+import { buildProfileMetadata } from '@/lib/profiles/metadata';
+import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { extractLocaleFromRequest } from '@/lib/utils/locale';
-import { EMPTY_PROFILE_STATUS } from '@/lib/auth/user-context';
-import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
-import type { PermissionSet } from '@/lib/auth/roles';
 import { headers } from 'next/headers';
-import { buildProfileMetadata } from '@/lib/profiles/metadata';
 
 jest.mock('@/lib/contact-submissions', () => {
   const { z } = require('zod') as typeof import('zod');
@@ -17,7 +17,7 @@ jest.mock('@/lib/contact-submissions', () => {
     name: z.string().trim().min(1).max(255).optional(),
     email: z.preprocess(
       (val) => (typeof val === 'string' ? val.trim() : val),
-      z.email().max(255).optional()
+      z.email().max(255).optional(),
     ),
     message: z.string().trim().min(1).max(5000),
     origin: z.string().trim().min(1).max(100).default('unknown'),
@@ -59,16 +59,10 @@ type HeaderValues = Record<string, string | undefined>;
 type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockLocale = extractLocaleFromRequest as jest.MockedFunction<
-  typeof extractLocaleFromRequest
->;
-const mockGetSession = auth.api.getSession as jest.MockedFunction<
-  typeof auth.api.getSession
->;
+const mockLocale = extractLocaleFromRequest as jest.MockedFunction<typeof extractLocaleFromRequest>;
+const mockGetSession = auth.api.getSession as jest.MockedFunction<typeof auth.api.getSession>;
 const mockRateLimit = checkRateLimit as jest.MockedFunction<typeof checkRateLimit>;
-const mockCreate = createContactSubmission as jest.MockedFunction<
-  typeof createContactSubmission
->;
+const mockCreate = createContactSubmission as jest.MockedFunction<typeof createContactSubmission>;
 const mockNotify = notifySupportOfSubmission as jest.MockedFunction<
   typeof notifySupportOfSubmission
 >;
@@ -136,7 +130,7 @@ describe('submitContactSubmission', () => {
         ok: false,
         error: 'INVALID_INPUT',
         details: expect.anything(),
-      })
+      }),
     );
     expect(mockRateLimit).not.toHaveBeenCalled();
     expect(mockNotify).not.toHaveBeenCalled();
@@ -167,7 +161,7 @@ describe('submitContactSubmission', () => {
         'x-forwarded-for': '203.0.113.5, 10.0.0.1',
         host: 'example.com',
         'user-agent': 'Jest',
-      })
+      }),
     );
     mockRateLimit.mockResolvedValueOnce({
       allowed: false,
@@ -199,7 +193,7 @@ describe('submitContactSubmission', () => {
         'cf-connecting-ip': '198.51.100.10',
         host: 'example.com',
         'user-agent': 'Jest',
-      })
+      }),
     );
     const rateLimitedSession = {
       roles: [],
@@ -270,7 +264,7 @@ describe('submitContactSubmission', () => {
         'x-forwarded-for': '203.0.113.5',
         host: 'example.com',
         'user-agent': 'Jest',
-      })
+      }),
     );
     mockNotify.mockRejectedValueOnce(new Error('smtp down'));
 
@@ -294,7 +288,7 @@ describe('submitContactSubmission', () => {
         'x-forwarded-for': '203.0.113.5, 10.0.0.1',
         host: 'example.com',
         'user-agent': 'Jest',
-      })
+      }),
     );
     mockLocale.mockReturnValue('en');
     const authenticatedSession = {

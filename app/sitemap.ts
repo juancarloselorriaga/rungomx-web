@@ -1,6 +1,6 @@
-import { MetadataRoute } from 'next';
-import { routing, type AppLocale } from '@/i18n/routing';
 import { siteUrl } from '@/config/url';
+import { type AppLocale, routing } from '@/i18n/routing';
+import { MetadataRoute } from 'next';
 
 // Capture timestamp once at module load for deterministic lastModified
 const buildTimestamp = new Date();

@@ -29,7 +29,7 @@ export function computeProfileStatus({
   const requiredFields =
     requiredFieldKeys && requiredFieldKeys.length > 0
       ? requiredFieldKeys
-      : requirementSummary?.fieldKeys ?? FALLBACK_PROFILE_FIELDS;
+      : (requirementSummary?.fieldKeys ?? FALLBACK_PROFILE_FIELDS);
   const isComplete =
     hasProfile &&
     requiredFields.every((field) => {

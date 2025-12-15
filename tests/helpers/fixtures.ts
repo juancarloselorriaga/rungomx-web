@@ -1,5 +1,5 @@
-import * as schema from "@/db/schema";
-import type { getTestDb } from "./db";
+import * as schema from '@/db/schema';
+import type { getTestDb } from './db';
 
 /**
  * Create a test user with default values
@@ -11,7 +11,7 @@ export async function createTestUser(
     name?: string;
   } = {},
 ) {
-  const now = Date.now()
+  const now = Date.now();
   const [user] = await db
     .insert(schema.users)
     .values({
@@ -37,7 +37,7 @@ export async function createTestRole(
     .insert(schema.roles)
     .values({
       name: overrides.name ?? `role-${Date.now()}`,
-      description: overrides.description ?? "Test role",
+      description: overrides.description ?? 'Test role',
     })
     .returning();
 

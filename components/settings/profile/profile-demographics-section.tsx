@@ -1,9 +1,9 @@
-import { GenderField } from '@/components/settings/fields/gender-field';
 import { LocationField } from '@/components/location/location-field';
+import { GenderField } from '@/components/settings/fields/gender-field';
+import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
 import type { ProfileRecord } from '@/lib/profiles/types';
-import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 
 type ProfileDemographicsSectionProps = {
   form: UseFormReturn<ProfileFormValues>;
@@ -30,19 +30,17 @@ export function ProfileDemographicsSection({
   const latitude = form.values.latitude;
   const longitude = form.values.longitude;
 
-  let currentLocation = null as
-    | {
-        lat: number;
-        lng: number;
-        formattedAddress: string;
-        placeId?: string;
-        countryCode?: string;
-        region?: string;
-        city?: string;
-        postalCode?: string;
-        provider?: string;
-      }
-    | null;
+  let currentLocation = null as {
+    lat: number;
+    lng: number;
+    formattedAddress: string;
+    placeId?: string;
+    countryCode?: string;
+    region?: string;
+    city?: string;
+    postalCode?: string;
+    provider?: string;
+  } | null;
 
   const latNumber = Number.parseFloat(latitude);
   const lngNumber = Number.parseFloat(longitude);
@@ -64,9 +62,7 @@ export function ProfileDemographicsSection({
     <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">{t('sections.demographics.title')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('sections.demographics.description')}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('sections.demographics.description')}</p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2">

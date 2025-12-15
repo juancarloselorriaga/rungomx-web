@@ -1,5 +1,5 @@
+import { type CountryCode, getAllowedCountries } from './countries';
 import type { ProfileRequirementSummary } from './requirements';
-import { getAllowedCountries, type CountryCode } from './countries';
 
 export const SHIRT_SIZES = ['xs', 's', 'm', 'l', 'xl', 'xxl'] as const;
 
@@ -32,9 +32,7 @@ export type ProfileMetadata = {
   requiredFieldKeys: ProfileRequirementSummary['fieldKeys'];
 };
 
-export function buildProfileMetadata(
-  summary: ProfileRequirementSummary
-): ProfileMetadata {
+export function buildProfileMetadata(summary: ProfileRequirementSummary): ProfileMetadata {
   return {
     shirtSizes: SHIRT_SIZES,
     bloodTypes: BLOOD_TYPES,

@@ -19,106 +19,105 @@ export const routing = defineRouting({
     '/': '/',
     '/about': {
       es: '/acerca',
-      en: '/about'
+      en: '/about',
     },
     '/contact': {
       es: '/contacto',
-      en: '/contact'
+      en: '/contact',
     },
     '/help': {
       es: '/ayuda',
-      en: '/help'
+      en: '/help',
     },
     '/privacy': {
       es: '/privacidad',
-      en: '/privacy'
+      en: '/privacy',
     },
     '/terms': {
       es: '/terminos',
-      en: '/terms'
+      en: '/terms',
     },
     '/sign-in': {
       es: '/iniciar-sesion',
-      en: '/sign-in'
+      en: '/sign-in',
     },
     '/sign-up': {
       es: '/crear-cuenta',
-      en: '/sign-up'
+      en: '/sign-up',
     },
     '/admin': {
       es: '/admin',
-      en: '/admin'
+      en: '/admin',
     },
     '/admin/users': {
       es: '/admin/usuarios',
-      en: '/admin/users'
+      en: '/admin/users',
     },
     '/admin/users/self-signup': {
       es: '/admin/usuarios/auto-registro',
-      en: '/admin/users/self-signup'
+      en: '/admin/users/self-signup',
     },
     '/admin/tools': {
       es: '/admin/herramientas',
-      en: '/admin/tools'
+      en: '/admin/tools',
     },
     '/dashboard': {
       es: '/tablero',
-      en: '/dashboard'
+      en: '/dashboard',
     },
     '/settings': {
       es: '/configuracion',
-      en: '/settings'
+      en: '/settings',
     },
     '/settings/profile': {
       es: '/configuracion/perfil',
-      en: '/settings/profile'
+      en: '/settings/profile',
     },
     '/settings/account': {
       es: '/configuracion/cuenta',
-      en: '/settings/account'
+      en: '/settings/account',
     },
     '/admin/account': {
       es: '/admin/cuenta',
-      en: '/admin/account'
+      en: '/admin/account',
     },
     '/profile': {
       es: '/perfil',
-      en: '/profile'
+      en: '/profile',
     },
     '/results': {
       es: '/resultados',
-      en: '/results'
+      en: '/results',
     },
     '/news': {
       es: '/noticias',
-      en: '/news'
+      en: '/news',
     },
     '/events': {
       es: '/eventos',
-      en: '/events'
+      en: '/events',
     },
     '/verify-email-success': {
       es: '/verificar-email-exitoso',
-      en: '/verify-email-success'
+      en: '/verify-email-success',
     },
     '/verify-email': {
       es: '/verificar-email',
-      en: '/verify-email'
+      en: '/verify-email',
     },
     '/forgot-password': {
       es: '/olvide-contrasena',
-      en: '/forgot-password'
+      en: '/forgot-password',
     },
     '/forgot-password/success': {
       es: '/olvide-contrasena/exitoso',
-      en: '/forgot-password/success'
+      en: '/forgot-password/success',
     },
     '/reset-password': {
       es: '/restablecer-contrasena',
-      en: '/reset-password'
-    }
-  }
+      en: '/reset-password',
+    },
+  },
 });
 
-
-export type AppLocale = typeof routing.locales[number];
+export type AppLocale = (typeof routing.locales)[number];

@@ -3,8 +3,8 @@
 import { db } from '@/db';
 import { contactSubmissions, profiles, roles, userRoles, users } from '@/db/schema';
 import { getExternalRoleSourceNamesByKind, getInternalRoleSourceNames } from '@/lib/auth/roles';
-import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 import { eachDayOfInterval, format, subDays } from 'date-fns';
+import { and, eq, gte, inArray, isNull, sql } from 'drizzle-orm';
 
 export type DailyPoint = {
   date: string;
@@ -83,9 +83,7 @@ async function getExternalUsers(options: { since?: Date } = {}): Promise<UserWit
     })
     .from(users)
     .where(
-      since
-        ? and(isNull(users.deletedAt), gte(users.createdAt, since))
-        : isNull(users.deletedAt),
+      since ? and(isNull(users.deletedAt), gte(users.createdAt, since)) : isNull(users.deletedAt),
     );
 
   if (userRows.length === 0 || INTERNAL_ROLE_NAMES.length === 0) {
@@ -155,10 +153,7 @@ export async function getAdminDashboardMetrics(days = 30): Promise<AdminDashboar
     })
     .from(contactSubmissions)
     .where(
-      and(
-        gte(contactSubmissions.createdAt, since),
-        eq(contactSubmissions.origin, FEEDBACK_ORIGIN),
-      ),
+      and(gte(contactSubmissions.createdAt, since), eq(contactSubmissions.origin, FEEDBACK_ORIGIN)),
     )
     .groupBy(sql`date_trunc('day', ${contactSubmissions.createdAt})::date`)
     .orderBy(sql`date_trunc('day', ${contactSubmissions.createdAt})::date`);

@@ -19,7 +19,7 @@ type ReverseGeocodeParams = {
 };
 
 export async function searchLocationsClient(
-  params: LocationSearchParams
+  params: LocationSearchParams,
 ): Promise<PublicLocationValue[]> {
   const trimmed = params.query.trim();
   if (trimmed.length < 3) {
@@ -42,10 +42,7 @@ export async function searchLocationsClient(
   }
 
   if (params.proximity) {
-    searchParams.set(
-      'proximity',
-      `${params.proximity.lng},${params.proximity.lat}`
-    );
+    searchParams.set('proximity', `${params.proximity.lng},${params.proximity.lat}`);
   }
 
   const response = await fetch(`/api/location/search?${searchParams.toString()}`);
@@ -58,7 +55,7 @@ export async function searchLocationsClient(
 }
 
 export async function reverseGeocodeClient(
-  params: ReverseGeocodeParams
+  params: ReverseGeocodeParams,
 ): Promise<PublicLocationValue | null> {
   const searchParams = new URLSearchParams();
   searchParams.set('lat', String(params.lat));
@@ -80,4 +77,3 @@ export async function reverseGeocodeClient(
   const data = (await response.json()) as { location?: PublicLocationValue | null };
   return data.location ?? null;
 }
-

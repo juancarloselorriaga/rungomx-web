@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useTransition } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
 import { upsertProfileAction } from '@/app/actions/profile';
+import { GenderField } from '@/components/settings/fields/gender-field';
+import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Spinner } from '@/components/ui/spinner';
-import { Form, FormError, useForm } from '@/lib/forms';
-import { cn } from '@/lib/utils';
-import { signOut } from '@/lib/auth/client';
 import { useRouter } from '@/i18n/navigation';
+import { signOut } from '@/lib/auth/client';
+import { Form, FormError, useForm } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
-import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
-import { CheckCircle2, LogOut } from 'lucide-react';
-import { PhoneField } from '@/components/settings/fields/phone-field';
-import { GenderField } from '@/components/settings/fields/gender-field';
 import { formatProfileDateInput } from '@/lib/profiles/profile-form-utils';
+import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
+import { cn } from '@/lib/utils';
+import { CheckCircle2, LogOut } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, useTransition } from 'react';
 
 type ProfileFormValues = {
   phone: string;
@@ -164,7 +164,7 @@ export function ProfileCompletionForm({
 
   const requiredFieldKeys = useMemo(
     () => new Set(profileMetadata.requiredFieldKeys ?? []),
-    [profileMetadata]
+    [profileMetadata],
   );
   const shirtSizeOptions = profileMetadata.shirtSizes ?? [];
   const bloodTypeOptions = profileMetadata.bloodTypes ?? [];
@@ -247,7 +247,7 @@ export function ProfileCompletionForm({
             className={cn(
               'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.city && 'border-destructive focus-visible:border-destructive'
+              form.errors.city && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('city')}
             disabled={isBusy}
@@ -264,7 +264,7 @@ export function ProfileCompletionForm({
             className={cn(
               'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.state && 'border-destructive focus-visible:border-destructive'
+              form.errors.state && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('state')}
             disabled={isBusy}
@@ -281,7 +281,8 @@ export function ProfileCompletionForm({
             className={cn(
               'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.emergencyContactName && 'border-destructive focus-visible:border-destructive'
+              form.errors.emergencyContactName &&
+                'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('emergencyContactName')}
             disabled={isBusy}
@@ -320,7 +321,7 @@ export function ProfileCompletionForm({
             className={cn(
               'w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.shirtSize && 'border-destructive focus-visible:border-destructive'
+              form.errors.shirtSize && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('shirtSize')}
             disabled={isBusy}
@@ -343,7 +344,7 @@ export function ProfileCompletionForm({
             className={cn(
               'w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              form.errors.bloodType && 'border-destructive focus-visible:border-destructive'
+              form.errors.bloodType && 'border-destructive focus-visible:border-destructive',
             )}
             {...form.register('bloodType')}
             disabled={isBusy}
@@ -358,16 +359,12 @@ export function ProfileCompletionForm({
         </FormField>
       </div>
 
-      <FormField
-        label={t('fields.bio')}
-        required={isRequiredField('bio')}
-        error={form.errors.bio}
-      >
+      <FormField label={t('fields.bio')} required={isRequiredField('bio')} error={form.errors.bio}>
         <textarea
           className={cn(
             'min-h-[80px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
             'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.bio && 'border-destructive focus-visible:border-destructive'
+            form.errors.bio && 'border-destructive focus-visible:border-destructive',
           )}
           {...form.register('bio')}
           disabled={isBusy}

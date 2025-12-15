@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Shield } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { ReactNode } from 'react';
 
 type UsersEmptyStateProps = {
@@ -18,9 +18,7 @@ export function UsersEmptyState({ cta }: UsersEmptyStateProps) {
       </div>
       <div className="space-y-1">
         <h2 className="text-xl font-semibold">{t('title')}</h2>
-        <p className="max-w-xl text-sm text-muted-foreground">
-          {t('description')}
-        </p>
+        <p className="max-w-xl text-sm text-muted-foreground">{t('description')}</p>
       </div>
       {cta}
     </div>

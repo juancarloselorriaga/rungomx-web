@@ -159,9 +159,7 @@ function categorizeRoute(pathname: string): 'public' | 'protected' | 'auth' {
   }
 
   // Protected routes (dashboard, profile, settings, team, with localized variants)
-  if (
-    /^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(pathname)
-  ) {
+  if (/^\/(dashboard|profile|settings|team|tablero|perfil|configuracion|equipo)/.test(pathname)) {
     return 'protected';
   }
 
@@ -199,7 +197,7 @@ function routePathToPageNamespace(pathname: string, discoveredPages: string[]): 
 function generateLoaderObject(
   namespaces: NamespaceInfo[],
   objectName: string,
-  pathPrefix: string
+  pathPrefix: string,
 ): string {
   const entries = namespaces.map((ns) => {
     return `  ${ns.camelName}: (targetLocale: AppLocale) =>\n    import(\`@/messages/${pathPrefix}${ns.name}/\${targetLocale}.json\`).then((mod) => mod.default),`;
@@ -229,33 +227,26 @@ function extractManualOverrides(): string | null {
 /**
  * Generate route namespace map
  */
-function generateRouteNamespaceMap(
-  routes: string[],
-  discoveredPageNames: string[]
-): string {
+function generateRouteNamespaceMap(routes: string[], discoveredPageNames: string[]): string {
   const entries = routes.map((route) => {
     const category = categorizeRoute(route);
     const pageNamespace = routePathToPageNamespace(route, discoveredPageNames);
 
     if (!pageNamespace && route !== '/') {
       console.warn(
-        `[i18n] No page namespace found for route "${route}" - generating selection without page messages.`
+        `[i18n] No page namespace found for route "${route}" - generating selection without page messages.`,
       );
     }
 
     let selectionCall: string;
     if (category === 'auth') {
-      selectionCall = pageNamespace
-        ? `authSelection(['${pageNamespace}'])`
-        : 'authSelection()';
+      selectionCall = pageNamespace ? `authSelection(['${pageNamespace}'])` : 'authSelection()';
     } else if (category === 'protected') {
       selectionCall = pageNamespace
         ? `protectedSelection(['${pageNamespace}'])`
         : 'protectedSelection()';
     } else {
-      selectionCall = pageNamespace
-        ? `publicSelection(['${pageNamespace}'])`
-        : 'publicSelection()';
+      selectionCall = pageNamespace ? `publicSelection(['${pageNamespace}'])` : 'publicSelection()';
     }
 
     return `  '${route}': ${selectionCall},`;
@@ -270,7 +261,7 @@ function generateRouteNamespaceMap(
 function generateSelectionHelpers(
   rootNamespaces: string[],
   componentNamespaces: string[],
-  pageNamespaces: string[]
+  pageNamespaces: string[],
 ): string {
   const defaultBaseStr = rootNamespaces.map((n) => `'${n}'`).join(', ');
   const defaultComponentsStr = componentNamespaces.map((n) => `'${n}'`).join(', ');
@@ -383,8 +374,8 @@ export function generateLoaders(): void {
     generateSelectionHelpers(
       roots.map((r) => r.camelName),
       components.map((c) => c.camelName),
-      pages.map((p) => p.camelName)
-    )
+      pages.map((p) => p.camelName),
+    ),
   );
   lines.push('');
 
@@ -394,10 +385,12 @@ export function generateLoaders(): void {
   lines.push('// Auto-Generated Route Namespace Map');
   lines.push('// ============================================');
   lines.push('');
-  lines.push(generateRouteNamespaceMap(
-    routes,
-    pages.map((p) => p.name)
-  ));
+  lines.push(
+    generateRouteNamespaceMap(
+      routes,
+      pages.map((p) => p.name),
+    ),
+  );
   lines.push('');
 
   // Manual overrides section
@@ -406,13 +399,15 @@ export function generateLoaders(): void {
   lines.push('// ============================================');
   lines.push(MANUAL_OVERRIDES_START);
   lines.push('// Add custom route mappings here - they take precedence over auto-generated ones');
-  lines.push('// Example: export const manualRouteOverrides: Record<string, NamespaceSelection> = {');
+  lines.push(
+    '// Example: export const manualRouteOverrides: Record<string, NamespaceSelection> = {',
+  );
   lines.push("//   '/pricing': publicSelection(['pricing']),");
   lines.push('// };');
   lines.push('');
   lines.push(
     manualOverrides ??
-      'export const manualRouteOverrides: Record<string, NamespaceSelection> = {};'
+      'export const manualRouteOverrides: Record<string, NamespaceSelection> = {};',
   );
   lines.push(MANUAL_OVERRIDES_END);
   lines.push('');

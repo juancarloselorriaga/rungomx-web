@@ -16,8 +16,8 @@ describe('checkRateLimit (database)', () => {
         and(
           eq(rateLimits.identifier, identifier),
           eq(rateLimits.identifierType, identifierType),
-          eq(rateLimits.action, action)
-        )
+          eq(rateLimits.action, action),
+        ),
       );
 
     return record;
@@ -30,8 +30,8 @@ describe('checkRateLimit (database)', () => {
         and(
           eq(rateLimits.identifier, identifier),
           eq(rateLimits.identifierType, identifierType),
-          eq(rateLimits.action, action)
-        )
+          eq(rateLimits.action, action),
+        ),
       );
   });
 

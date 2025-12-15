@@ -49,7 +49,7 @@ function expandCategories(categories: ProfileRequirementCategory[]): (keyof Prof
 }
 
 export function buildProfileRequirementSummary(
-  categories: ProfileRequirementCategory[] | null | undefined
+  categories: ProfileRequirementCategory[] | null | undefined,
 ): ProfileRequirementSummary {
   const normalizedCategories = dedupe(categories ?? []);
   const fieldKeys = expandCategories(normalizedCategories);

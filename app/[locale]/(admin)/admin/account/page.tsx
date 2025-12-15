@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
         index: false,
         follow: false,
       },
-    }
+    },
   );
 }
 
@@ -36,11 +36,7 @@ export default async function AdminAccountPage({ params }: LocalePageProps) {
       </div>
 
       <div className="space-y-8">
-        <AccountNameForm
-          defaultName={user?.name ?? ''}
-          email={user?.email ?? ''}
-          variant="admin"
-        />
+        <AccountNameForm defaultName={user?.name ?? ''} email={user?.email ?? ''} variant="admin" />
         <AccountPasswordForm variant="admin" />
       </div>
     </div>

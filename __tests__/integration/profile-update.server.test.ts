@@ -21,7 +21,8 @@ jest.mock('@/lib/auth/guards', () => ({
 }));
 
 jest.mock('@/lib/profiles/repository', () => ({
-  upsertProfile: (...args: unknown[]) => upsertProfileProxy(...args as [string, ProfileUpsertInput]),
+  upsertProfile: (...args: unknown[]) =>
+    upsertProfileProxy(...(args as [string, ProfileUpsertInput])),
   getProfileByUserId: jest.fn(),
 }));
 
@@ -74,7 +75,7 @@ const profileFromInput = (userId: string, input: ProfileUpsertInput): ProfileRec
   bio: input.bio ?? null,
   dateOfBirth: input.dateOfBirth ?? null,
   gender: input.gender ?? null,
-  genderDescription: input.gender === 'self_described' ? input.genderDescription ?? null : null,
+  genderDescription: input.gender === 'self_described' ? (input.genderDescription ?? null) : null,
   phone: input.phone ?? null,
   city: input.city ?? null,
   state: input.state ?? null,
@@ -107,7 +108,7 @@ describe('Profile Update Flow', () => {
       profileMetadata: metadata,
     });
     mockUpsertProfile.mockImplementation(async (_userId, input) =>
-      profileFromInput('user-1', input)
+      profileFromInput('user-1', input),
     );
   });
 
@@ -124,7 +125,7 @@ describe('Profile Update Flow', () => {
         ok: true,
         profileStatus: expect.objectContaining({ isComplete: true }),
         profile: expect.objectContaining({ phone: baseInput.phone }),
-      })
+      }),
     );
   });
 
@@ -138,9 +139,11 @@ describe('Profile Update Flow', () => {
       expect.objectContaining({
         ok: false,
         error: 'INVALID_INPUT',
-      })
+      }),
     );
-    expect((result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.dateOfBirth).toBeDefined();
+    expect(
+      (result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.dateOfBirth,
+    ).toBeDefined();
     expect(mockUpsertProfile).not.toHaveBeenCalled();
   });
 
@@ -151,7 +154,9 @@ describe('Profile Update Flow', () => {
     });
 
     expect(result.ok).toBe(false);
-    expect((result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.postalCode).toBeDefined();
+    expect(
+      (result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.postalCode,
+    ).toBeDefined();
     expect(mockUpsertProfile).not.toHaveBeenCalled();
   });
 
@@ -166,7 +171,7 @@ describe('Profile Update Flow', () => {
 
     expect(mockUpsertProfile).toHaveBeenCalledWith(
       'user-1',
-      expect.objectContaining({ genderDescription: 'Trail runner' })
+      expect.objectContaining({ genderDescription: 'Trail runner' }),
     );
     expect(result.ok).toBe(true);
     expect((result as { profile?: ProfileRecord }).profile?.genderDescription).toBe('Trail runner');
@@ -183,7 +188,7 @@ describe('Profile Update Flow', () => {
 
     expect(mockUpsertProfile).toHaveBeenCalledWith(
       'user-1',
-      expect.objectContaining({ genderDescription: undefined })
+      expect.objectContaining({ genderDescription: undefined }),
     );
     expect(result.ok).toBe(true);
     expect((result as { profile?: ProfileRecord }).profile?.genderDescription).toBeNull();
@@ -228,7 +233,7 @@ describe('Profile Update Flow', () => {
       expect(result.ok).toBe(true);
       expect(mockUpsertProfile).toHaveBeenCalledWith(
         'user-1',
-        expect.objectContaining({ country: 'MX' })
+        expect.objectContaining({ country: 'MX' }),
       );
     });
 
@@ -243,7 +248,9 @@ describe('Profile Update Flow', () => {
         });
 
         expect(result.ok).toBe(false);
-        expect((result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.country).toBeDefined();
+        expect(
+          (result as { fieldErrors?: Record<string, string[]> }).fieldErrors?.country,
+        ).toBeDefined();
         expect(mockUpsertProfile).not.toHaveBeenCalled();
         jest.clearAllMocks();
       }

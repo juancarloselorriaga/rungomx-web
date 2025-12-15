@@ -29,9 +29,6 @@ describe('buildProfileUpsertPayloadFromForm', () => {
 
     expect((payload as ProfileUpsertInput).latitude).toBe('19.4326');
     expect((payload as ProfileUpsertInput).longitude).toBe('-99.1332');
-    expect((payload as ProfileUpsertInput).locationDisplay).toBe(
-      'Mexico City, MX'
-    );
+    expect((payload as ProfileUpsertInput).locationDisplay).toBe('Mexico City, MX');
   });
 });
-

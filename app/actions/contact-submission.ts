@@ -1,6 +1,8 @@
 'use server';
 
 import { auth } from '@/lib/auth';
+import { ProfileIncompleteError, requireProfileCompleteUser } from '@/lib/auth/guards';
+import { getAuthContext } from '@/lib/auth/server';
 import {
   ContactSubmissionRecord,
   contactSubmissionSchema,
@@ -8,11 +10,9 @@ import {
   notifySupportOfSubmission,
 } from '@/lib/contact-submissions';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { headers } from 'next/headers';
 import { extractLocaleFromRequest } from '@/lib/utils/locale';
+import { headers } from 'next/headers';
 import { z } from 'zod';
-import { requireProfileCompleteUser, ProfileIncompleteError } from '@/lib/auth/guards';
-import { getAuthContext } from '@/lib/auth/server';
 
 const submitSchema = contactSubmissionSchema.omit({ userId: true });
 export type SubmitContactSubmissionInput = z.infer<typeof submitSchema>;

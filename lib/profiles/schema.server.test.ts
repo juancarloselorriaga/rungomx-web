@@ -6,7 +6,9 @@ const FIXED_NOW = new Date('2025-01-01T00:00:00Z');
 
 const yearsAgo = (years: number) => {
   // Anchor to a fixed "today" to avoid flakiness around birthdays.
-  return new Date(Date.UTC(FIXED_NOW.getUTCFullYear() - years, FIXED_NOW.getUTCMonth(), FIXED_NOW.getUTCDate()));
+  return new Date(
+    Date.UTC(FIXED_NOW.getUTCFullYear() - years, FIXED_NOW.getUTCMonth(), FIXED_NOW.getUTCDate()),
+  );
 };
 
 let nowSpy: jest.SpyInstance<number, []>;
@@ -52,7 +54,7 @@ describe('profileValidationSchema', () => {
 
     expect(result.success).toBe(false);
     expect(result.success ? [] : result.error.issues.map((issue) => issue.path[0])).toContain(
-      'dateOfBirth'
+      'dateOfBirth',
     );
   });
 
@@ -72,7 +74,7 @@ describe('profileValidationSchema', () => {
 
     expect(result.success).toBe(false);
     expect(result.success ? [] : result.error.issues.map((issue) => issue.path[0])).toContain(
-      'dateOfBirth'
+      'dateOfBirth',
     );
   });
 
@@ -82,15 +84,15 @@ describe('profileValidationSchema', () => {
     expect(schema.safeParse(baseProfile({ postalCode: '12345' })).success).toBe(true);
     expect(schema.safeParse(baseProfile({ postalCode: '1234' })).success).toBe(false);
     expect(schema.safeParse(baseProfile({ postalCode: 'ABCDE' })).success).toBe(false);
-    expect(
-      schema.safeParse(baseProfile({ country: 'US', postalCode: 'ABCDE' })).success
-    ).toBe(true);
+    expect(schema.safeParse(baseProfile({ country: 'US', postalCode: 'ABCDE' })).success).toBe(
+      true,
+    );
   });
 
   it('clears genderDescription when gender is not self_described', () => {
     const schema = createProfileValidationSchema(requiredFields);
     const result = schema.parse(
-      baseProfile({ gender: 'female', genderDescription: 'Should be dropped' })
+      baseProfile({ gender: 'female', genderDescription: 'Should be dropped' }),
     );
 
     expect(result.gender).toBe('female');
@@ -100,10 +102,10 @@ describe('profileValidationSchema', () => {
   it('retains genderDescription only for self_described gender', () => {
     const schema = createProfileValidationSchema(requiredFields);
     const described = schema.parse(
-      baseProfile({ gender: 'self_described', genderDescription: 'Runner' })
+      baseProfile({ gender: 'self_described', genderDescription: 'Runner' }),
     );
     const noDescription = schema.parse(
-      baseProfile({ gender: 'self_described', genderDescription: undefined })
+      baseProfile({ gender: 'self_described', genderDescription: undefined }),
     );
 
     expect(described.genderDescription).toBe('Runner');
@@ -129,19 +131,11 @@ describe('profileValidationSchema', () => {
     const organizerSchema = createProfileValidationSchema(requiredFields);
     const internalSchema = createProfileValidationSchema([]);
 
-    expect(
-      athleteSchema.safeParse(baseProfile({ shirtSize: undefined })).success
-    ).toBe(false);
-    expect(
-      organizerSchema.safeParse(baseProfile({ shirtSize: undefined })).success
-    ).toBe(true);
+    expect(athleteSchema.safeParse(baseProfile({ shirtSize: undefined })).success).toBe(false);
+    expect(organizerSchema.safeParse(baseProfile({ shirtSize: undefined })).success).toBe(true);
 
-    expect(
-      athleteSchema.safeParse(baseProfile({ emergencyContactPhone: '' })).success
-    ).toBe(false);
-    expect(
-      organizerSchema.safeParse(baseProfile({ phone: '' })).success
-    ).toBe(false);
+    expect(athleteSchema.safeParse(baseProfile({ emergencyContactPhone: '' })).success).toBe(false);
+    expect(organizerSchema.safeParse(baseProfile({ phone: '' })).success).toBe(false);
 
     expect(
       internalSchema.safeParse(
@@ -152,8 +146,8 @@ describe('profileValidationSchema', () => {
           emergencyContactPhone: '',
           emergencyContactName: '',
           dateOfBirth: undefined,
-        })
-      ).success
+        }),
+      ).success,
     ).toBe(true);
   });
 });
@@ -176,24 +170,32 @@ describe('accountNameUpdateSchema', () => {
 
 describe('passwordChangeSchema', () => {
   it('enforces minimum and maximum password lengths', () => {
-    expect(passwordChangeSchema.safeParse({
-      currentPassword: 'current-pass',
-      newPassword: 'short7',
-    }).success).toBe(false);
+    expect(
+      passwordChangeSchema.safeParse({
+        currentPassword: 'current-pass',
+        newPassword: 'short7',
+      }).success,
+    ).toBe(false);
 
-    expect(passwordChangeSchema.safeParse({
-      currentPassword: 'current-pass',
-      newPassword: 'longpass',
-    }).success).toBe(true);
+    expect(
+      passwordChangeSchema.safeParse({
+        currentPassword: 'current-pass',
+        newPassword: 'longpass',
+      }).success,
+    ).toBe(true);
 
-    expect(passwordChangeSchema.safeParse({
-      currentPassword: 'current-pass',
-      newPassword: 'a'.repeat(128),
-    }).success).toBe(true);
+    expect(
+      passwordChangeSchema.safeParse({
+        currentPassword: 'current-pass',
+        newPassword: 'a'.repeat(128),
+      }).success,
+    ).toBe(true);
 
-    expect(passwordChangeSchema.safeParse({
-      currentPassword: 'current-pass',
-      newPassword: 'a'.repeat(129),
-    }).success).toBe(false);
+    expect(
+      passwordChangeSchema.safeParse({
+        currentPassword: 'current-pass',
+        newPassword: 'a'.repeat(129),
+      }).success,
+    ).toBe(false);
   });
 });

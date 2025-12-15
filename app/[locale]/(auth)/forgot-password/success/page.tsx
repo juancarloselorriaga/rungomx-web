@@ -1,6 +1,6 @@
-import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
-import { Mail, ArrowLeft } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
+import { ArrowLeft, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export default function ForgotPasswordSuccessPage() {

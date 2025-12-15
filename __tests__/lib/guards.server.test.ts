@@ -2,14 +2,14 @@ jest.mock('@/lib/auth/server', () => ({
   getAuthContext: jest.fn(),
 }));
 
-import { requireProfileCompleteUser, UnauthenticatedError, } from '@/lib/auth/guards';
+import { requireProfileCompleteUser, UnauthenticatedError } from '@/lib/auth/guards';
+import type { PermissionSet } from '@/lib/auth/roles';
 import type { AuthContext } from '@/lib/auth/server';
 import { getAuthContext } from '@/lib/auth/server';
 import type { Session } from '@/lib/auth/types';
-import type { ProfileStatus } from '@/lib/profiles/types';
-import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
-import type { PermissionSet } from '@/lib/auth/roles';
 import { buildProfileMetadata } from '@/lib/profiles/metadata';
+import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
+import type { ProfileStatus } from '@/lib/profiles/types';
 
 const mockGetAuthContext = getAuthContext as jest.MockedFunction<typeof getAuthContext>;
 
@@ -46,7 +46,7 @@ describe('requireProfileCompleteUser', () => {
       profileStatus: {
         hasProfile: false,
         isComplete: false,
-        mustCompleteProfile: true
+        mustCompleteProfile: true,
       },
     });
 

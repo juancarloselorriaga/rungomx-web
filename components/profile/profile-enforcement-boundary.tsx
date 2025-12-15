@@ -1,5 +1,7 @@
 'use client';
 
+import { useOnboardingOverrides } from '@/components/auth/onboarding-context';
+import { ProfileCompletionForm } from '@/components/profile/profile-completion-form';
 import {
   Dialog,
   DialogContent,
@@ -11,23 +13,19 @@ import { usePathname } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { useSession } from '@/lib/auth/client';
 import { EMPTY_PROFILE_STATUS } from '@/lib/auth/constants';
-import type { ProfileRecord, ProfileStatus } from '@/lib/profiles/types';
-import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
 import { buildProfileMetadata, ProfileMetadata } from '@/lib/profiles/metadata';
+import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
+import type { ProfileRecord, ProfileStatus } from '@/lib/profiles/types';
 import { ShieldAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { useOnboardingOverrides } from '@/components/auth/onboarding-context';
-import { ProfileCompletionForm } from '@/components/profile/profile-completion-form';
 
 const DEFAULT_STATUS: ProfileStatus = EMPTY_PROFILE_STATUS;
 const FALLBACK_METADATA = buildProfileMetadata(buildProfileRequirementSummary([]));
 
 function toInternalPath(pathname: string) {
   const withoutQuery = pathname.split('?')[0]?.split('#')[0] ?? '';
-  const segments = withoutQuery
-    .split('/')
-    .filter(Boolean);
+  const segments = withoutQuery.split('/').filter(Boolean);
 
   if (segments.length) {
     const first = segments[0];
@@ -49,7 +47,7 @@ function toInternalPath(pathname: string) {
     }
 
     const match = Object.values(localizedPath).find(
-      (value) => localized === value || localized.startsWith(`${value}/`)
+      (value) => localized === value || localized.startsWith(`${value}/`),
     );
     if (match) return internal;
   }
@@ -58,7 +56,9 @@ function toInternalPath(pathname: string) {
 }
 
 function toLocalizedPath(pathname: string, locale: string) {
-  const mapping = (routing.pathnames as Record<string, string | Record<string, string> | undefined>)[pathname];
+  const mapping = (
+    routing.pathnames as Record<string, string | Record<string, string> | undefined>
+  )[pathname];
   if (!mapping) return pathname;
   if (typeof mapping === 'string') return mapping;
   return mapping[locale as keyof typeof mapping] ?? mapping[routing.defaultLocale] ?? pathname;
@@ -117,12 +117,10 @@ function ProfileCompletionModal({
       <DialogContent className="max-w-3xl" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-amber-500"/>
+            <ShieldAlert className="h-5 w-5 text-amber-500" />
             {t('title')}
           </DialogTitle>
-          <DialogDescription>
-            {t('description')}
-          </DialogDescription>
+          <DialogDescription>{t('description')}</DialogDescription>
           {intendedRoute ? (
             <p className="text-xs text-muted-foreground">
               {t.rich('intendedRoute', {
@@ -168,12 +166,14 @@ export default function ProfileEnforcementBoundary({ children }: ProfileEnforcem
     (data as { needsRoleAssignment?: boolean } | undefined)?.needsRoleAssignment ??
     (user as { needsRoleAssignment?: boolean } | null)?.needsRoleAssignment ??
     false;
-  const isInternal = user?.isInternal ??
-    (data as { isInternal?: boolean } | undefined)?.isInternal ?? false;
-  const profileStatus = overrideStatus ?? profileStatusOverride ?? user?.profileStatus ?? DEFAULT_STATUS;
+  const isInternal =
+    user?.isInternal ?? (data as { isInternal?: boolean } | undefined)?.isInternal ?? false;
+  const profileStatus =
+    overrideStatus ?? profileStatusOverride ?? user?.profileStatus ?? DEFAULT_STATUS;
   const profile = profileOverride ?? profileFromSession;
   const effectiveNeedsRoleAssignment = needsRoleAssignmentOverride ?? needsRoleAssignment;
-  const shouldEnforce = !isInternal && !effectiveNeedsRoleAssignment && profileStatus.mustCompleteProfile;
+  const shouldEnforce =
+    !isInternal && !effectiveNeedsRoleAssignment && profileStatus.mustCompleteProfile;
   const intendedRoute = capturedRoute ?? (shouldEnforce ? toInternalPath(pathname) : null);
 
   // Capture the first intended route when enforcement activates and keep it stable for the session.

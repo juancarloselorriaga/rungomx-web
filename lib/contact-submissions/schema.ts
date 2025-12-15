@@ -16,7 +16,7 @@ export const contactSubmissionSchema = z.object({
   name: z.string().trim().min(1).max(255).optional(),
   email: z.preprocess(
     (val) => (typeof val === 'string' ? val.trim() : val),
-    z.email().max(255).optional()
+    z.email().max(255).optional(),
   ),
   message: z.string().trim().min(1).max(5000),
   origin: z.string().trim().min(1).max(100).default('unknown'),

@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { cleanupExpiredUnverifiedUsers } from '@/lib/auth/cleanup-unverified-users';
+import { NextResponse } from 'next/server';
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -37,4 +37,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Cleanup failed' }, { status: 500 });
   }
 }
-

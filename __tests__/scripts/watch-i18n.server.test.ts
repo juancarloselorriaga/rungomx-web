@@ -5,7 +5,7 @@ const generateLoadersMock = jest.fn();
 const watchInstances: {
   paths: unknown;
   options: unknown;
-  watcher: { on: jest.Mock; close: jest.Mock }
+  watcher: { on: jest.Mock; close: jest.Mock };
 }[] = [];
 
 jest.mock('chokidar', () => {
@@ -17,14 +17,14 @@ jest.mock('chokidar', () => {
     watchInstances.push({
       paths,
       options,
-      watcher
+      watcher,
     });
     return watcher;
   });
 
   return {
     watch,
-    __watchInstances: watchInstances
+    __watchInstances: watchInstances,
   };
 });
 
@@ -51,16 +51,15 @@ describe('watch-i18n script', () => {
     });
 
     const chokidar = await import('chokidar');
-    const instances = (chokidar as unknown as {
-      __watchInstances: typeof watchInstances
-    }).__watchInstances;
+    const instances = (
+      chokidar as unknown as {
+        __watchInstances: typeof watchInstances;
+      }
+    ).__watchInstances;
 
     const watchedPaths = instances.map((instance) => instance.paths);
     expect(watchedPaths).toEqual(
-      expect.arrayContaining([
-        'messages/**/*.json',
-        ['messages/pages', 'messages/components'],
-      ])
+      expect.arrayContaining(['messages/**/*.json', ['messages/pages', 'messages/components']]),
     );
 
     instances.forEach(({ watcher }) => {

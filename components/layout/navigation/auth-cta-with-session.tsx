@@ -11,20 +11,12 @@ export function AuthCtaWithSession() {
   const { data } = useSession();
 
   const isLoggedIn = !!data?.user;
-  const label = isLoggedIn
-    ? tHome('actions.goToDashboard')
-    : tAuth('signIn');
+  const label = isLoggedIn ? tHome('actions.goToDashboard') : tAuth('signIn');
   const href = isLoggedIn ? '/dashboard' : '/sign-in';
 
   return (
-    <Button
-      asChild
-      size="sm"
-      className="min-w-[128px] justify-center whitespace-nowrap"
-    >
-      <Link href={href}>
-        {label}
-      </Link>
+    <Button asChild size="sm" className="min-w-[128px] justify-center whitespace-nowrap">
+      <Link href={href}>{label}</Link>
     </Button>
   );
 }

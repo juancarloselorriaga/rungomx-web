@@ -2,19 +2,16 @@ import { AppLocale } from '@/i18n/routing';
 import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys } from '@getbrevo/brevo';
 import { getTranslations } from 'next-intl/server';
 import {
-  generateVerificationEmailHTML,
-  generateVerificationEmailText,
-} from './email/templates/verification-email';
-import {
   generatePasswordResetEmailHTML,
   generatePasswordResetEmailText,
 } from './email/templates/password-reset-email';
+import {
+  generateVerificationEmailHTML,
+  generateVerificationEmailText,
+} from './email/templates/verification-email';
 
 const emailApi = new TransactionalEmailsApi();
-emailApi.setApiKey(
-  TransactionalEmailsApiApiKeys.apiKey,
-  process.env.BREVO_API_KEY || ''
-);
+emailApi.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
 export interface EmailRecipient {
   email: string;
@@ -31,7 +28,7 @@ interface SendEmailOptions {
 
 function normalizeRecipients(
   recipients: SendEmailOptions['to'],
-  fallbackName?: string
+  fallbackName?: string,
 ): EmailRecipient[] {
   const normalized = Array.isArray(recipients) ? recipients : [recipients];
   const cleaned: EmailRecipient[] = [];
@@ -98,7 +95,7 @@ export async function sendEmail({
       textContent,
       sender: {
         email: senderEmail,
-        name: senderName
+        name: senderName,
       },
     });
 
@@ -117,14 +114,10 @@ interface VerificationEmailParams {
   locale: AppLocale;
 }
 
-async function buildVerificationTemplateProps(
-  url: string,
-  userName: string,
-  locale: AppLocale
-) {
+async function buildVerificationTemplateProps(url: string, userName: string, locale: AppLocale) {
   const t = await getTranslations({
     locale,
-    namespace: 'emails.verification'
+    namespace: 'emails.verification',
   });
   const currentYear = new Date().getFullYear();
 
@@ -137,7 +130,7 @@ async function buildVerificationTemplateProps(
     footer: t('footer', { year: currentYear }),
     title: t('title'),
     url,
-    locale
+    locale,
   };
 }
 
@@ -150,7 +143,7 @@ export async function sendVerificationEmail({
   const templateProps = await buildVerificationTemplateProps(url, userName, locale);
   const t = await getTranslations({
     locale,
-    namespace: 'emails.verification'
+    namespace: 'emails.verification',
   });
 
   return sendEmail({
@@ -168,14 +161,10 @@ interface PasswordResetEmailParams {
   locale: AppLocale;
 }
 
-async function buildPasswordResetTemplateProps(
-  url: string,
-  userName: string,
-  locale: AppLocale
-) {
+async function buildPasswordResetTemplateProps(url: string, userName: string, locale: AppLocale) {
   const t = await getTranslations({
     locale,
-    namespace: 'emails.passwordReset'
+    namespace: 'emails.passwordReset',
   });
   const currentYear = new Date().getFullYear();
 
@@ -189,7 +178,7 @@ async function buildPasswordResetTemplateProps(
     footer: t('footer', { year: currentYear }),
     title: t('title'),
     url,
-    locale
+    locale,
   };
 }
 
@@ -202,7 +191,7 @@ export async function sendPasswordResetEmail({
   const templateProps = await buildPasswordResetTemplateProps(url, userName, locale);
   const t = await getTranslations({
     locale,
-    namespace: 'emails.passwordReset'
+    namespace: 'emails.passwordReset',
   });
 
   return sendEmail({

@@ -11,9 +11,7 @@ interface PublicNavigationBarProps {
   items: readonly NavItem[];
 }
 
-export default async function PublicNavigationBar({
-  items,
-}: PublicNavigationBarProps) {
+export default async function PublicNavigationBar({ items }: PublicNavigationBarProps) {
   const t = await getTranslations('common');
   const showNavItems = items.length > 0;
 

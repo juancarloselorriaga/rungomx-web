@@ -15,9 +15,7 @@ export function normalizeMetadata(metadata?: unknown): Record<string, unknown> {
   }
 
   return Object.fromEntries(
-    Object.entries(metadata as Record<string, unknown>).filter(
-      ([, value]) => value !== undefined
-    )
+    Object.entries(metadata as Record<string, unknown>).filter(([, value]) => value !== undefined),
   );
 }
 

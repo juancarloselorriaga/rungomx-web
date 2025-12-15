@@ -5,6 +5,7 @@
 ### 90% Use Case: Add strings to existing namespace
 
 1. **Edit JSON files** (that's it!)
+
    ```bash
    # Add a new key to both locales
    messages/common/en.json  # Add: "newKey": "Hello"
@@ -24,6 +25,7 @@
 ### Adding a New Page
 
 1. **Create folder and JSON files**
+
    ```bash
    mkdir -p messages/pages/pricing
    touch messages/pages/pricing/en.json
@@ -32,6 +34,7 @@
 
 2. **Add translations**
    [//]: # (messages/pages/pricing/en.json)
+
    ```json
    {
      "title": "Pricing",
@@ -103,13 +106,16 @@ messages/
 ## Development Workflow
 
 ### Dev Mode (Automatic)
+
 ```bash
 pnpm dev  # Includes file watcher
 ```
+
 - Edit any JSON → types and loaders regenerate automatically
 - Changes reflect immediately in TypeScript
 
 ### Manual Generation
+
 ```bash
 pnpm generate:i18n
 ```
@@ -117,18 +123,23 @@ pnpm generate:i18n
 ## Validation
 
 ### Pre-commit Hook (Automatic)
+
 ```bash
 git commit  # Automatically runs validation
 ```
+
 - Checks locale parity (en ↔ es)
 - Regenerates types
 - Prevents commits with missing translations
 
 ### Manual Validation
+
 ```bash
 pnpm validate:locales
 ```
+
 Example output:
+
 ```
 ❌ Locale parity check failed:
 
@@ -168,6 +179,7 @@ Example output:
 ## Best Practices
 
 ### ✅ DO
+
 - Keep keys descriptive: `submitButtonLabel` not `btn1`
 - Match structure between locales exactly
 - Add translations to BOTH locales before committing
@@ -182,6 +194,7 @@ Example output:
   ```
 
 ### ❌ DON'T
+
 - Don't manually edit `i18n/types.generated.ts` (auto-generated)
 - Don't commit with missing translations (pre-commit hook prevents this)
 - Don't create files outside the established structure
@@ -190,20 +203,23 @@ Example output:
 ## Type Safety
 
 ### Autocomplete
+
 ```tsx
 const t = useTranslations('common');
-t('sub')  // ← Shows: submitButton, subtitle, etc.
+t('sub'); // ← Shows: submitButton, subtitle, etc.
 ```
 
 ### Compile-time Errors
+
 ```tsx
-t('typoKey')  // ← TypeScript error: Key doesn't exist
-t.rich('htmlKey', { b: (chunks) => <strong>{chunks}</strong> })
+t('typoKey'); // ← TypeScript error: Key doesn't exist
+t.rich('htmlKey', { b: (chunks) => <strong>{chunks}</strong> });
 ```
 
 ## Troubleshooting
 
 ### Types not updating?
+
 ```bash
 # Restart dev server
 pnpm dev
@@ -213,6 +229,7 @@ pnpm generate:i18n
 ```
 
 ### Locale validation failing?
+
 ```bash
 # See what's missing
 pnpm validate:locales
@@ -221,30 +238,33 @@ pnpm validate:locales
 ```
 
 ### IDE errors in scripts folder?
+
 - Normal! Scripts are excluded from main tsconfig
 - They have their own `scripts/tsconfig.json`
 - Runtime works fine via `tsx`
 
 ## Commands Reference
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start dev server with unified i18n watcher |
-| `pnpm generate:i18n` | Regenerate loaders + types |
-| `pnpm generate:i18n-types` | Regenerate types only |
-| `pnpm generate:i18n-loaders` | Regenerate loaders only |
-| `pnpm validate:locales` | Check locale parity |
-| `pnpm watch:i18n` | Watch types + loaders (no dev server) |
-| `pnpm test:ci` | Run full CI pipeline (types + tests + validation) |
+| Command                      | Description                                       |
+| ---------------------------- | ------------------------------------------------- |
+| `pnpm dev`                   | Start dev server with unified i18n watcher        |
+| `pnpm generate:i18n`         | Regenerate loaders + types                        |
+| `pnpm generate:i18n-types`   | Regenerate types only                             |
+| `pnpm generate:i18n-loaders` | Regenerate loaders only                           |
+| `pnpm validate:locales`      | Check locale parity                               |
+| `pnpm watch:i18n`            | Watch types + loaders (no dev server)             |
+| `pnpm test:ci`               | Run full CI pipeline (types + tests + validation) |
 
 ## Architecture
 
 ### Flow
+
 ```
 1. Edit JSON → 2. Watcher detects → 3. Generate types → 4. TypeScript updates
 ```
 
 ### Key Files
+
 - `scripts/generate-i18n-types.ts` - Type generator
 - `scripts/validate-locales.ts` - Parity checker
 - `scripts/watch-i18n-types.ts` - File watcher

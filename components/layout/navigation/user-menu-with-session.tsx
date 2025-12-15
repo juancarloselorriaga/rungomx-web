@@ -8,4 +8,3 @@ export function UserMenuWithSession() {
 
   return <UserMenu user={data?.user ?? null} />;
 }
-

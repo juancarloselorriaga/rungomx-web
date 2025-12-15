@@ -1,11 +1,11 @@
-import type { ProfileStatus } from '@/lib/profiles/types';
 import {
+  type AuthenticatedContext,
   requireAdminUser,
   requireAuthenticatedUser,
   requireProfileCompleteUser,
   requireStaffUser,
-  type AuthenticatedContext,
 } from '@/lib/auth/guards';
+import type { ProfileStatus } from '@/lib/profiles/types';
 
 type GuardFunction<Ctx> = () => Promise<Ctx>;
 
@@ -68,38 +68,18 @@ export function createAuthorizedAction<Ctx, Result>(
  * decide how auth errors should be represented in its return type.
  */
 
-export function withAuthenticatedUser<Result>(
-  handlers: GuardErrorHandlers<Result>,
-) {
-  return createAuthorizedAction<AuthenticatedContext, Result>(
-    requireAuthenticatedUser,
-    handlers,
-  );
+export function withAuthenticatedUser<Result>(handlers: GuardErrorHandlers<Result>) {
+  return createAuthorizedAction<AuthenticatedContext, Result>(requireAuthenticatedUser, handlers);
 }
 
-export function withProfileCompleteUser<Result>(
-  handlers: GuardErrorHandlers<Result>,
-) {
-  return createAuthorizedAction<AuthenticatedContext, Result>(
-    requireProfileCompleteUser,
-    handlers,
-  );
+export function withProfileCompleteUser<Result>(handlers: GuardErrorHandlers<Result>) {
+  return createAuthorizedAction<AuthenticatedContext, Result>(requireProfileCompleteUser, handlers);
 }
 
-export function withAdminUser<Result>(
-  handlers: GuardErrorHandlers<Result>,
-) {
-  return createAuthorizedAction<AuthenticatedContext, Result>(
-    requireAdminUser,
-    handlers,
-  );
+export function withAdminUser<Result>(handlers: GuardErrorHandlers<Result>) {
+  return createAuthorizedAction<AuthenticatedContext, Result>(requireAdminUser, handlers);
 }
 
-export function withStaffUser<Result>(
-  handlers: GuardErrorHandlers<Result>,
-) {
-  return createAuthorizedAction<AuthenticatedContext, Result>(
-    requireStaffUser,
-    handlers,
-  );
+export function withStaffUser<Result>(handlers: GuardErrorHandlers<Result>) {
+  return createAuthorizedAction<AuthenticatedContext, Result>(requireStaffUser, handlers);
 }

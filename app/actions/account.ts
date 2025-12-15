@@ -3,13 +3,13 @@
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { auth } from '@/lib/auth';
-import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import {
-  accountNameUpdateSchema,
-  passwordChangeSchema,
   type AccountNameUpdateInput,
+  accountNameUpdateSchema,
   type PasswordChangeInput,
+  passwordChangeSchema,
 } from '@/lib/auth/account-schemas';
+import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { extractFieldErrors, type FormActionResult, validateInput } from '@/lib/forms';
 import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
@@ -31,10 +31,7 @@ export const updateAccountNameAction = withAuthenticatedUser<UpdateAccountNameRe
   const { name } = validation.data;
 
   try {
-    await db
-      .update(users)
-      .set({ name, updatedAt: new Date() })
-      .where(eq(users.id, user.id));
+    await db.update(users).set({ name, updatedAt: new Date() }).where(eq(users.id, user.id));
 
     try {
       const h = await headers();
@@ -151,7 +148,10 @@ export const changePasswordAction = withAuthenticatedUser<ChangePasswordResult>(
         query: { disableCookieCache: true },
       });
     } catch (error) {
-      console.warn('[account] Session refresh failed after password change; will refresh later', error);
+      console.warn(
+        '[account] Session refresh failed after password change; will refresh later',
+        error,
+      );
     }
 
     return { ok: true, data: null };

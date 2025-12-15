@@ -1,14 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Form, FormError, useForm } from '@/lib/forms';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
-import { signIn, signUp } from '@/lib/auth/client';
 import { routing } from '@/i18n/routing';
+import { signIn, signUp } from '@/lib/auth/client';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, Lock, Mail, UserRoundPlus } from 'lucide-react';
-import { useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { useTransition } from 'react';
 
 type SignUpFormProps = {
   callbackPath?: string;
@@ -23,7 +23,10 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
   const targetPath: keyof typeof routing.pathnames =
     callbackPath && isAppPathname(callbackPath) ? callbackPath : '/dashboard';
 
-  const form = useForm<{ name: string; email: string; password: string }, { email: string; callbackPath: string }>({
+  const form = useForm<
+    { name: string; email: string; password: string },
+    { email: string; callbackPath: string }
+  >({
     defaultValues: { name: '', email: '', password: '' },
     onSubmit: async (values) => {
       if (!values.name || !values.email || !values.password) {
@@ -49,12 +52,19 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
       if (signUpError) {
         const status = (signUpError as { status?: number } | null)?.status;
         const message = (signUpError as { message?: string } | null)?.message?.toLowerCase() ?? '';
-        const isExistingAccount = status === 409 || message.includes('already exists') || message.includes('already registered');
+        const isExistingAccount =
+          status === 409 ||
+          message.includes('already exists') ||
+          message.includes('already registered');
         if (isExistingAccount) {
           return { ok: true, data: { email: values.email, callbackPath: targetPath } };
         }
 
-        return { ok: false, error: 'SERVER_ERROR', message: signUpError.message ?? t('genericError') };
+        return {
+          ok: false,
+          error: 'SERVER_ERROR',
+          message: signUpError.message ?? t('genericError'),
+        };
       }
 
       return { ok: true, data: { email: values.email, callbackPath: targetPath } };
@@ -163,13 +173,15 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
           {...form.register('password')}
           disabled={form.isSubmitting}
         />
-        <p className="text-xs text-muted-foreground">
-          {t('passwordRequirements')}
-        </p>
+        <p className="text-xs text-muted-foreground">{t('passwordRequirements')}</p>
       </FormField>
 
       <Button className="w-full" disabled={form.isSubmitting || isPending} type="submit">
-        {form.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <UserRoundPlus className="size-4" />}
+        {form.isSubmitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <UserRoundPlus className="size-4" />
+        )}
         <span>{t('createAccount')}</span>
       </Button>
 

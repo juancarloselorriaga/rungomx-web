@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
         index: false,
         follow: false,
       },
-    }
+    },
   );
 }
 
@@ -39,10 +39,7 @@ export default async function AccountSettingsPage({ params }: LocalePageProps) {
       <SettingsSectionSubnav />
 
       <div className="space-y-6">
-        <AccountNameForm
-          defaultName={user?.name ?? ''}
-          email={user?.email ?? ''}
-        />
+        <AccountNameForm defaultName={user?.name ?? ''} email={user?.email ?? ''} />
         <AccountPasswordForm />
       </div>
     </div>

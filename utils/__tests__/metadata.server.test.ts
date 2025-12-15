@@ -118,7 +118,7 @@ describe('metadata helpers', () => {
       expect.objectContaining({
         index: true,
         follow: true,
-      })
+      }),
     );
     expect(metadata.openGraph).toMatchObject({
       type: 'website',

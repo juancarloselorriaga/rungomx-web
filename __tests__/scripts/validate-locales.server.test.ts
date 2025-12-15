@@ -10,14 +10,14 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import fs from 'fs';
-import path from 'path';
 import {
   collectKeyPaths,
   compareLocaleGroup,
-  validateLocaleGroups,
   type ParityIssue,
+  validateLocaleGroups,
 } from '@/scripts/validate-locales';
+import fs from 'fs';
+import path from 'path';
 
 // Mock filesystem operations
 jest.mock('fs');
@@ -47,9 +47,7 @@ describe('validate-locales', () => {
 
       const result = collectKeyPaths(data);
 
-      expect(result).toEqual(
-        new Set(['title', 'description', 'buttonText'])
-      );
+      expect(result).toEqual(new Set(['title', 'description', 'buttonText']));
     });
 
     it('collects nested key paths with dot notation', () => {
@@ -66,13 +64,7 @@ describe('validate-locales', () => {
       const result = collectKeyPaths(data);
 
       expect(result).toEqual(
-        new Set([
-          'header',
-          'header.title',
-          'header.subtitle',
-          'footer',
-          'footer.copyright',
-        ])
+        new Set(['header', 'header.title', 'header.subtitle', 'footer', 'footer.copyright']),
       );
     });
 
@@ -90,12 +82,7 @@ describe('validate-locales', () => {
       const result = collectKeyPaths(data);
 
       expect(result).toEqual(
-        new Set([
-          'level1',
-          'level1.level2',
-          'level1.level2.level3',
-          'level1.level2.level3.value',
-        ])
+        new Set(['level1', 'level1.level2', 'level1.level2.level3', 'level1.level2.level3.value']),
       );
     });
 
@@ -125,9 +112,7 @@ describe('validate-locales', () => {
 
       const result = collectKeyPaths(data);
 
-      expect(result).toEqual(
-        new Set(['nullValue', 'undefinedValue', 'normalValue'])
-      );
+      expect(result).toEqual(new Set(['nullValue', 'undefinedValue', 'normalValue']));
     });
   });
 
@@ -533,9 +518,7 @@ describe('validate-locales', () => {
 
       mockFs.statSync.mockImplementation((path) => {
         const pathStr = String(path);
-        const isDir =
-          pathStr.includes('/footer') ||
-          pathStr.includes('/theme-switcher');
+        const isDir = pathStr.includes('/footer') || pathStr.includes('/theme-switcher');
         return {
           isDirectory: () => isDir,
         } as any;

@@ -1,9 +1,9 @@
 'use client';
 
 import { FormField } from '@/components/ui/form-field';
+import { type CountryCode, getCountryName } from '@/lib/profiles/countries';
 import { cn } from '@/lib/utils';
-import { useTranslations, useLocale } from 'next-intl';
-import { getCountryName, type CountryCode } from '@/lib/profiles/countries';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 
 type CountrySelectFieldProps = {
@@ -36,7 +36,7 @@ export function CountrySelectField({
           name: getCountryName(code as CountryCode, locale),
         }))
         .sort((a, b) => a.name.localeCompare(b.name, locale, { sensitivity: 'base' })),
-    [options, locale]
+    [options, locale],
   );
 
   return (
@@ -45,7 +45,7 @@ export function CountrySelectField({
         className={cn(
           'w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
           'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-          error && 'border-destructive focus-visible:border-destructive'
+          error && 'border-destructive focus-visible:border-destructive',
         )}
         value={value}
         onChange={(event) => onChangeAction(event.target.value)}

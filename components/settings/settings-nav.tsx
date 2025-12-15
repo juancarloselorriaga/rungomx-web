@@ -17,15 +17,12 @@ export function SettingsNav({ title, description, sections }: SettingsNavProps) 
     <div className="space-y-4 rounded-lg border bg-card p-4 shadow-sm">
       <div className="space-y-1">
         <p className="text-sm font-semibold text-foreground">{title}</p>
-        {description ? (
-          <p className="text-xs text-muted-foreground">{description}</p>
-        ) : null}
+        {description ? <p className="text-xs text-muted-foreground">{description}</p> : null}
       </div>
 
       <div className="space-y-2">
         {sections.map((section) => {
-          const isActive =
-            pathname === section.href || pathname?.startsWith(`${section.href}/`);
+          const isActive = pathname === section.href || pathname?.startsWith(`${section.href}/`);
 
           return (
             <Link
@@ -36,7 +33,7 @@ export function SettingsNav({ title, description, sections }: SettingsNavProps) 
                 'hover:border-primary/60 hover:bg-muted/60',
                 isActive
                   ? 'border-primary/70 bg-primary/5 text-foreground'
-                  : 'border-border text-foreground'
+                  : 'border-border text-foreground',
               )}
               aria-current={isActive ? 'page' : undefined}
             >

@@ -1,6 +1,6 @@
 'use client';
 
-import { FormField, FieldError, FieldLabel } from '@/components/ui/form-field';
+import { FieldError, FieldLabel, FormField } from '@/components/ui/form-field';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
@@ -47,7 +47,7 @@ export function GenderField({
           className={cn(
             'w-full appearance-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
             'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            error && 'border-destructive focus-visible:border-destructive'
+            error && 'border-destructive focus-visible:border-destructive',
           )}
           value={value}
           onChange={(event) => handleGenderChange(event.target.value)}
@@ -65,9 +65,7 @@ export function GenderField({
 
       {isSelfDescribed ? (
         <div className="space-y-1 rounded-md border bg-muted/30 p-3">
-          <FieldLabel error={!!descriptionError}>
-            {t('gender.selfDescribeLabel')}
-          </FieldLabel>
+          <FieldLabel error={!!descriptionError}>{t('gender.selfDescribeLabel')}</FieldLabel>
           <input
             type="text"
             name="genderDescription"
@@ -76,7 +74,7 @@ export function GenderField({
             className={cn(
               'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
               'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              descriptionError && 'border-destructive focus-visible:border-destructive'
+              descriptionError && 'border-destructive focus-visible:border-destructive',
             )}
             maxLength={100}
             disabled={disabled}

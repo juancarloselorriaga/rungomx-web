@@ -46,27 +46,25 @@ describe('Password Change Flow', () => {
     currentPasswordState.value = 'old-password';
     sessionState.tokens = ['session-1', 'session-2'];
     mockRequireAuth.mockResolvedValue({ user: { id: 'user-1' } });
-    mockChangePassword = jest.fn(
-      async ({ body }: { body: ChangePasswordBody }) => {
-        const { currentPassword, newPassword, revokeOtherSessions } = body;
+    mockChangePassword = jest.fn(async ({ body }: { body: ChangePasswordBody }) => {
+      const { currentPassword, newPassword, revokeOtherSessions } = body;
 
-        if (currentPassword !== currentPasswordState.value) {
-          throw new Error('INVALID_PASSWORD');
-        }
-
-        if (newPassword.includes('pwned')) {
-          throw new Error('PASSWORD_PWNED');
-        }
-
-        currentPasswordState.value = newPassword;
-
-        if (revokeOtherSessions !== false) {
-          sessionState.tokens = ['new-session'];
-        } else {
-          sessionState.tokens = [...sessionState.tokens, 'new-session'];
-        }
+      if (currentPassword !== currentPasswordState.value) {
+        throw new Error('INVALID_PASSWORD');
       }
-    );
+
+      if (newPassword.includes('pwned')) {
+        throw new Error('PASSWORD_PWNED');
+      }
+
+      currentPasswordState.value = newPassword;
+
+      if (revokeOtherSessions !== false) {
+        sessionState.tokens = ['new-session'];
+      } else {
+        sessionState.tokens = [...sessionState.tokens, 'new-session'];
+      }
+    });
     mockGetSession = jest.fn(async () => ({ tokens: sessionState.tokens }));
   });
 

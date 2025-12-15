@@ -1,11 +1,8 @@
+import NavigationBar from '@/components/layout/navigation/nav-bar';
 import type { PermissionSet } from '@/lib/auth/roles';
 import { type ReactNode } from 'react';
-import NavigationBar from '@/components/layout/navigation/nav-bar';
-import {
-  MobileNavPushLayout,
-  NavDrawerProvider,
-} from './navigation/nav-drawer-context';
 import { buildAdminNavItems, buildAdminNavSections } from './navigation/admin-nav-items.constants';
+import { MobileNavPushLayout, NavDrawerProvider } from './navigation/nav-drawer-context';
 import { Sidebar } from './navigation/sidebar';
 
 type AdminLayoutWrapperProps = {
@@ -13,10 +10,7 @@ type AdminLayoutWrapperProps = {
   permissions: PermissionSet;
 };
 
-export default function AdminLayoutWrapper({
-  children,
-  permissions,
-}: AdminLayoutWrapperProps) {
+export default function AdminLayoutWrapper({ children, permissions }: AdminLayoutWrapperProps) {
   const navSections = buildAdminNavSections(permissions);
   const navItems = buildAdminNavItems(permissions);
 
@@ -28,9 +22,7 @@ export default function AdminLayoutWrapper({
           <Sidebar sections={navSections} />
           <div className="flex-1 min-w-0">
             <main className="px-4 pb-10 pt-6 md:px-8 lg:px-10">
-              <div className="mx-auto w-full max-w-6xl">
-                {children}
-              </div>
+              <div className="mx-auto w-full max-w-6xl">{children}</div>
             </main>
           </div>
         </div>

@@ -16,11 +16,6 @@ export {
   type ShirtSize,
   type BloodType,
   type CountryCode,
-  type ProfileMetadata
+  type ProfileMetadata,
 } from './metadata';
-export type {
-  ProfileInput,
-  ProfileRecord,
-  ProfileStatus,
-  ProfileUpsertInput,
-} from './types';
+export type { ProfileInput, ProfileRecord, ProfileStatus, ProfileUpsertInput } from './types';

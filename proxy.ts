@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { handleAuthRedirects } from '@/proxy/auth-guard';
 import { handleI18nRouting } from '@/proxy/i18n';
 import {
@@ -6,6 +5,7 @@ import {
   getPreferredLocaleRedirect,
   getTrailingSlashRedirect,
 } from '@/proxy/localization';
+import { NextRequest } from 'next/server';
 
 // Configure which routes the proxy should run on
 export const config = {
@@ -18,8 +18,8 @@ export const config = {
      * - _vercel (Vercel internals)
      * - Static files (containing a dot)
      */
-    '/((?!api|trpc|_next|_vercel|.*\\..*).*)'
-  ]
+    '/((?!api|trpc|_next|_vercel|.*\\..*).*)',
+  ],
 };
 
 export async function proxy(req: NextRequest) {

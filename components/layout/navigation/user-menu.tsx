@@ -1,6 +1,7 @@
 'use client';
 
 import { useAppTheme } from '@/components/providers/app-theme';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,11 +12,10 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
-import { routing, type AppLocale } from '@/i18n/routing';
+import { type AppLocale, routing } from '@/i18n/routing';
 import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
 import { capitalize } from '@/utils/capitalize';
@@ -66,7 +66,7 @@ export function UserMenu({ user }: { user: User | null }) {
     router.replace(
       // @ts-expect-error -- Params from the active route already match the pathname; next-intl requires them when pathnames are configured.
       { pathname, params, query },
-      { locale: targetLocale }
+      { locale: targetLocale },
     );
   };
 
@@ -90,9 +90,7 @@ export function UserMenu({ user }: { user: User | null }) {
       aria-label={displayName}
     >
       <Avatar className="h-8 w-8">
-        <AvatarFallback className="text-sm font-semibold">
-          {initials}
-        </AvatarFallback>
+        <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
       </Avatar>
     </Button>
   );
@@ -103,9 +101,7 @@ export function UserMenu({ user }: { user: User | null }) {
       <DropdownMenuContent className="w-64" align="end">
         <DropdownMenuLabel className="flex items-center gap-3">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="text-sm font-semibold">
-              {initials}
-            </AvatarFallback>
+            <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
           </Avatar>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{displayName}</p>
@@ -127,11 +123,9 @@ export function UserMenu({ user }: { user: User | null }) {
               onClick={() => handleLocaleChange(availableLocale)}
               className="flex items-center gap-2"
             >
-              <Languages className="h-4 w-4"/>
-              <span className="flex-1">
-                {tLocale('locale', { locale: availableLocale })}
-              </span>
-              {availableLocale === locale && <Check className="h-4 w-4"/>}
+              <Languages className="h-4 w-4" />
+              <span className="flex-1">{tLocale('locale', { locale: availableLocale })}</span>
+              {availableLocale === locale && <Check className="h-4 w-4" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
@@ -146,11 +140,11 @@ export function UserMenu({ user }: { user: User | null }) {
           onValueChange={(value) => setTheme(value as ThemeOption)}
         >
           <DropdownMenuRadioItem value="light">
-            <Sun className="mr-2 h-4 w-4"/>
+            <Sun className="mr-2 h-4 w-4" />
             {tTheme('light')}
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="dark">
-            <Moon className="mr-2 h-4 w-4"/>
+            <Moon className="mr-2 h-4 w-4" />
             {tTheme('dark')}
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>

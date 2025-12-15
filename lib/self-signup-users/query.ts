@@ -22,7 +22,9 @@ export type NormalizedSelfSignupUsersQuery = Required<
   Pick<SelfSignupUsersQuery, 'page' | 'pageSize' | 'sortBy' | 'sortDir' | 'role' | 'search'>
 >;
 
-export function normalizeSelfSignupUsersQuery(query?: SelfSignupUsersQuery): NormalizedSelfSignupUsersQuery {
+export function normalizeSelfSignupUsersQuery(
+  query?: SelfSignupUsersQuery,
+): NormalizedSelfSignupUsersQuery {
   const page = Math.max(1, Number.isFinite(query?.page) ? Math.floor(Number(query?.page)) : 1);
 
   const rawPageSize = Number.isFinite(query?.pageSize)
@@ -30,19 +32,26 @@ export function normalizeSelfSignupUsersQuery(query?: SelfSignupUsersQuery): Nor
     : DEFAULT_SELF_SIGNUP_USERS_PAGE_SIZE;
   const pageSize = Math.min(Math.max(1, rawPageSize), MAX_SELF_SIGNUP_USERS_PAGE_SIZE);
 
-  const sortBy: NormalizedSelfSignupUsersQuery['sortBy'] = ['createdAt', 'name', 'email', 'role'].includes(
-    query?.sortBy as string,
-  )
+  const sortBy: NormalizedSelfSignupUsersQuery['sortBy'] = [
+    'createdAt',
+    'name',
+    'email',
+    'role',
+  ].includes(query?.sortBy as string)
     ? (query?.sortBy as NormalizedSelfSignupUsersQuery['sortBy'])
     : 'createdAt';
 
-  const defaultSortDir: NormalizedSelfSignupUsersQuery['sortDir'] = sortBy === 'createdAt' ? 'desc' : 'asc';
+  const defaultSortDir: NormalizedSelfSignupUsersQuery['sortDir'] =
+    sortBy === 'createdAt' ? 'desc' : 'asc';
   const sortDir: NormalizedSelfSignupUsersQuery['sortDir'] =
     query?.sortDir === 'asc' || query?.sortDir === 'desc' ? query.sortDir : defaultSortDir;
 
-  const role: NormalizedSelfSignupUsersQuery['role'] = ['organizer', 'athlete', 'volunteer', 'all'].includes(
-    query?.role as string,
-  )
+  const role: NormalizedSelfSignupUsersQuery['role'] = [
+    'organizer',
+    'athlete',
+    'volunteer',
+    'all',
+  ].includes(query?.role as string)
     ? (query?.role as NormalizedSelfSignupUsersQuery['role'])
     : 'all';
 
@@ -53,7 +62,9 @@ export function normalizeSelfSignupUsersQuery(query?: SelfSignupUsersQuery): Nor
 
 type RawSearchParams = Record<string, string | string[] | undefined>;
 
-export function parseSelfSignupUsersSearchParams(rawSearchParams?: RawSearchParams): SelfSignupUsersQuery {
+export function parseSelfSignupUsersSearchParams(
+  rawSearchParams?: RawSearchParams,
+): SelfSignupUsersQuery {
   const normalizeNumber = (value?: string | string[]) => {
     if (!value) return undefined;
     const raw = Array.isArray(value) ? value[0] : value;
@@ -76,14 +87,10 @@ export function parseSelfSignupUsersSearchParams(rawSearchParams?: RawSearchPara
   const dirValue = rawSearchParams?.dir;
   const rawDir = Array.isArray(dirValue) ? dirValue[0] : dirValue;
   const sortDir: SelfSignupUsersQuery['sortDir'] =
-    rawDir === 'asc' || rawDir === 'desc'
-      ? rawDir
-      : sortBy === 'createdAt'
-        ? 'desc'
-        : 'asc';
+    rawDir === 'asc' || rawDir === 'desc' ? rawDir : sortBy === 'createdAt' ? 'desc' : 'asc';
 
   const searchValue = rawSearchParams?.search;
-  const search = Array.isArray(searchValue) ? searchValue[0] : searchValue ?? '';
+  const search = Array.isArray(searchValue) ? searchValue[0] : (searchValue ?? '');
 
   return {
     page: Math.max(1, normalizeNumber(rawSearchParams?.page) ?? 1),

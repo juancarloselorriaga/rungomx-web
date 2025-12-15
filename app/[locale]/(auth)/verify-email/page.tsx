@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button';
 import { VerifyEmailResend } from '@/components/auth/verify-email-resend';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { LocalePageProps } from '@/types/next';
@@ -51,8 +51,7 @@ export default async function VerifyEmailPage({
         <p className="text-muted-foreground">{t('description')}</p>
         {email && (
           <p className="text-sm">
-            {t('sentTo')}{' '}
-            <span className="font-semibold">{email}</span>
+            {t('sentTo')} <span className="font-semibold">{email}</span>
           </p>
         )}
       </div>

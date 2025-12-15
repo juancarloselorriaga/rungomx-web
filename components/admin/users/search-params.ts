@@ -43,4 +43,3 @@ export function buildAdminUsersHref(
   const queryString = params.toString();
   return queryString ? `${basePath}?${queryString}` : basePath;
 }
-

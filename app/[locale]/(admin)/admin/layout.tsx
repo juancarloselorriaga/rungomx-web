@@ -22,9 +22,5 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
     redirect(getPathname({ href: '/dashboard', locale }));
   }
 
-  return (
-    <AdminLayoutWrapper permissions={authContext.permissions}>
-      {children}
-    </AdminLayoutWrapper>
-  );
+  return <AdminLayoutWrapper permissions={authContext.permissions}>{children}</AdminLayoutWrapper>;
 }

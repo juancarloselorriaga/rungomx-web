@@ -17,15 +17,12 @@ export type ReverseGeocodeOptions = {
 };
 
 export interface LocationProvider {
-  forwardGeocode(
-    query: string,
-    options?: LocationSearchOptions
-  ): Promise<LocationValue[]>;
+  forwardGeocode(query: string, options?: LocationSearchOptions): Promise<LocationValue[]>;
 
   reverseGeocode(
     lat: number,
     lng: number,
-    options?: ReverseGeocodeOptions
+    options?: ReverseGeocodeOptions,
   ): Promise<LocationValue | null>;
 }
 
@@ -38,4 +35,3 @@ export function getLocationProvider(): LocationProvider {
       return mapboxLocationProvider;
   }
 }
-

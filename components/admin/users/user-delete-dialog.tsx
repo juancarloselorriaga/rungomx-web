@@ -1,6 +1,5 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { deleteInternalUser } from '@/app/actions/admin-users-delete';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
@@ -110,9 +110,7 @@ export function UserDeleteDialog({
           <AlertTriangle className="mt-0.5 size-5 text-destructive" />
           <div className="space-y-1">
             <p className="font-semibold text-destructive">{t('warning.title')}</p>
-            <p className="text-muted-foreground">
-              {t('warning.description')}
-            </p>
+            <p className="text-muted-foreground">{t('warning.description')}</p>
           </div>
         </div>
 
@@ -122,7 +120,11 @@ export function UserDeleteDialog({
         </div>
 
         {error ? (
-          <div className={cn('rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive')}>
+          <div
+            className={cn(
+              'rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive',
+            )}
+          >
             {error}
           </div>
         ) : null}

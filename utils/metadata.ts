@@ -1,11 +1,11 @@
 import { siteUrl } from '@/config/url';
 import { Metadata } from 'next';
 import {
-  PartialMetadataMessages,
+  getMetadataMessages,
   NotFoundMessages,
   PageMetaMessages,
+  PartialMetadataMessages,
   SeoDefaultMessages,
-  getMetadataMessages,
 } from './staticMessages';
 
 export type PageMetaSelector = (messages: PartialMetadataMessages) => PageMetaMessages | undefined;
@@ -29,7 +29,7 @@ const NO_INDEX_ROBOTS: Metadata['robots'] = {
 
 function resolveMessages<T>(
   locale: string,
-  select: (messages: PartialMetadataMessages) => T | undefined
+  select: (messages: PartialMetadataMessages) => T | undefined,
 ): T | undefined {
   return select(getMetadataMessages(locale));
 }
@@ -37,7 +37,7 @@ function resolveMessages<T>(
 function buildAbsoluteUrl(path?: string): string {
   const base = siteUrl.endsWith('/') ? siteUrl.slice(0, -1) : siteUrl;
   const normalizedPath = (path ?? DEFAULT_OG_IMAGE_PATH).startsWith('/')
-    ? path ?? DEFAULT_OG_IMAGE_PATH
+    ? (path ?? DEFAULT_OG_IMAGE_PATH)
     : `/${path}`;
 
   return `${base}${normalizedPath}`;
@@ -64,7 +64,7 @@ function sanitizeKeywords(keywords?: (string | null | undefined)[]) {
 export function createPageMetadata(
   locale: string,
   select: PageMetaSelector,
-  { url, imagePath, alternates, robots, localeOverride }: PageMetadataOptions = {}
+  { url, imagePath, alternates, robots, localeOverride }: PageMetadataOptions = {},
 ): Metadata {
   const pageMeta = resolveMessages(locale, select);
   if (!pageMeta) return {};
@@ -100,7 +100,7 @@ export function createDefaultSeoMetadata(
     localeOverride,
     alternates,
     robots,
-  }: PageMetadataOptions & { localeOverride?: string } = {}
+  }: PageMetadataOptions & { localeOverride?: string } = {},
 ): Metadata {
   const meta = resolveMessages(locale, select);
   if (!meta) return {};
@@ -171,10 +171,7 @@ export function createBasicMetadata({
   };
 }
 
-export function createNotFoundMetadata(
-  locale: string,
-  select: NotFoundSelector
-): Metadata {
+export function createNotFoundMetadata(locale: string, select: NotFoundSelector): Metadata {
   const messages = resolveMessages(locale, select);
   if (!messages) return createBasicMetadata({ robots: NO_INDEX_ROBOTS });
 

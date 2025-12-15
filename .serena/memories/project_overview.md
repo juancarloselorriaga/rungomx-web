@@ -1,9 +1,11 @@
 # Project Overview
 
 ## Purpose
+
 RunGoMX is a web application platform for creating, managing, and promoting races and sporting events in Mexico. It's an all-in-one platform for race organization including registrations, payments, results, rankings, and more.
 
 ## Tech Stack
+
 - **Framework**: Next.js 16.0.3 (React 19.2.0)
 - **Language**: TypeScript 5.x with strict mode enabled
 - **Styling**: Tailwind CSS 4.x
@@ -15,6 +17,7 @@ RunGoMX is a web application platform for creating, managing, and promoting race
 - **Formatting**: Prettier
 
 ## Project Structure
+
 ```
 ├── app/                    # Next.js App Router pages
 │   ├── (auth)/            # Auth routes (sign-in, sign-up)
@@ -35,6 +38,7 @@ RunGoMX is a web application platform for creating, managing, and promoting race
 ```
 
 ## Key Features
+
 - Route-based layout groups: (auth), (protected), (public)
 - Authentication system (in development - currently stubbed)
 - Theme switching (light/dark mode)

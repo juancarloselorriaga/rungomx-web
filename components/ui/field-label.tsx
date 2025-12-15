@@ -12,7 +12,7 @@ export function FieldLabel({ children, required, error }: FieldLabelProps) {
       <span
         className={cn(
           'inline-flex items-center gap-1 font-medium align-middle',
-          error ? 'text-destructive' : 'text-foreground'
+          error ? 'text-destructive' : 'text-foreground',
         )}
       >
         {children}

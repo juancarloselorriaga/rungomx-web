@@ -11,14 +11,13 @@ import {
 } from './utils';
 
 export default getRequestConfig(async ({ requestLocale }) => {
-
   // This typically corresponds to the `[locale]` segment
   const locale = await requestLocale;
 
   // Ensure that the incoming locale is valid
-  const resolvedLocale = (hasLocale(routing.locales, locale)
-    ? locale
-    : routing.defaultLocale) as (typeof routing.locales)[number];
+  const resolvedLocale = (
+    hasLocale(routing.locales, locale) ? locale : routing.defaultLocale
+  ) as (typeof routing.locales)[number];
 
   const storedPathname = getStoredRoutePathname();
   const pathname = storedPathname ?? getRequestPathname();

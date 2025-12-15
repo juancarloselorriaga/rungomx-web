@@ -74,7 +74,7 @@ You usually run the agents in this order:
 
 For a new project:
 
-- Replace any hard coded paths in your commands with your own paths.  
+- Replace any hard coded paths in your commands with your own paths.
 - Keep the logical steps the same:
   - Analyze
   - Plan

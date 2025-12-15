@@ -130,7 +130,7 @@ describe('updateAccountNameAction', () => {
       expect.objectContaining({
         name: 'New Name',
         updatedAt: expect.any(Date),
-      })
+      }),
     );
     expect(eqMock).toHaveBeenCalledWith(expect.anything(), 'user-1');
     expect(mockGetSession).toHaveBeenCalledWith({
@@ -279,7 +279,7 @@ describe('changePasswordAction', () => {
     });
     expect(consoleSpy).toHaveBeenCalledWith(
       '[account] Failed to change password',
-      expect.any(Error)
+      expect.any(Error),
     );
 
     consoleSpy.mockRestore();

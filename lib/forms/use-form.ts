@@ -1,15 +1,11 @@
 'use client';
 
 import type React from 'react';
-import { useState, useTransition, useCallback, useRef } from 'react';
-import type {
-  UseFormOptions,
-  UseFormReturn,
-  FieldErrors,
-} from './types';
+import { useCallback, useRef, useState, useTransition } from 'react';
+import type { FieldErrors, UseFormOptions, UseFormReturn } from './types';
 
 export function useForm<TFieldValues extends Record<string, unknown>, TResult = unknown>(
-  options: UseFormOptions<TFieldValues, TResult>
+  options: UseFormOptions<TFieldValues, TResult>,
 ): UseFormReturn<TFieldValues> {
   const { defaultValues, onSubmit, onSuccess, onError } = options;
 
@@ -32,7 +28,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
       onChange: (
         value:
           | TFieldValues[K]
-          | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+          | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
       ) => {
         const nextValue =
           value && typeof value === 'object' && 'target' in value
@@ -46,7 +42,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
         }
       },
     }),
-    [values, errors]
+    [values, errors],
   );
 
   /**
@@ -63,11 +59,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
           const result = await onSubmit(values);
 
           if (!result.ok) {
-            if (
-              result.error === 'INVALID_INPUT' &&
-              'fieldErrors' in result &&
-              result.fieldErrors
-            ) {
+            if (result.error === 'INVALID_INPUT' && 'fieldErrors' in result && result.fieldErrors) {
               // Map server field errors to form errors
               const newErrors: FieldErrors<TFieldValues> = {};
 
@@ -107,7 +99,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
         }
       });
     },
-    [values, onSubmit, onSuccess, onError]
+    [values, onSubmit, onSuccess, onError],
   );
 
   /**
@@ -140,7 +132,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
     <K extends keyof TFieldValues>(field: K, value: TFieldValues[K]) => {
       setValues((prev) => ({ ...prev, [field]: value }));
     },
-    []
+    [],
   );
 
   return {

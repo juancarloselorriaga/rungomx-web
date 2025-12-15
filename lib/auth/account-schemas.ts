@@ -1,11 +1,7 @@
 import { z } from 'zod';
 
 const trimmedString = (max: number, min = 1) =>
-  z
-    .string()
-    .trim()
-    .min(min, 'REQUIRED')
-    .max(max, 'TOO_LONG');
+  z.string().trim().min(min, 'REQUIRED').max(max, 'TOO_LONG');
 
 export const accountNameUpdateSchema = z.object({
   name: trimmedString(255),

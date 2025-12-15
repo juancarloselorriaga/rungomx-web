@@ -9,7 +9,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   return createLocalizedPageMetadata(
     locale,
     '/results',
-    (messages) => messages.Pages?.Results?.metadata
+    (messages) => messages.Pages?.Results?.metadata,
   );
 }
 
@@ -20,9 +20,7 @@ export default async function ResultsPage({ params }: LocalePageProps) {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
-      <p className="text-muted-foreground">
-        {t('description')}
-      </p>
+      <p className="text-muted-foreground">{t('description')}</p>
     </div>
   );
 }

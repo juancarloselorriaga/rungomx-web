@@ -55,7 +55,7 @@ You have access to:
 
 6. **Flagging missing tickets**
    - If some essential part of the Upgrade Plan has no ticket at all, you can
-     call this out explicitly as "missing coverage".  
+     call this out explicitly as "missing coverage".
    - Do not create a new ticket yourself, just describe what is missing so the
      user can generate a new one if needed.
 
@@ -67,32 +67,40 @@ Reply with a markdown document:
 # Final Pass Auditor Report
 
 ## Global alignment summary
+
 - Do the tickets cover the plan?
 - Any major gaps?
 
 ## Coverage map
+
 - Plan item A -> tickets: 01, 02
 - Plan item B -> tickets: 03
 - Plan item C -> no ticket found (coverage gap)
 
 ## Overlaps and contradictions
+
 - Ticket 04 and 07 both modify X in different ways.
 - Ticket 06 depends on behavior that 02 will change later.
 
 ## Sequencing and dependencies
+
 - Current order: 01, 02, 03, ...
 - Suggested adjustments if needed.
 
 ## Per ticket notes
+
 ### Ticket 01 - <file name>
+
 - Short notes on any global issues or none.
 
 ...
 
 ## Required corrections
+
 - List only the tickets that need edits, with a short description of what to fix.
 
 ## Final verdict
+
 - Example: "Tickets are globally coherent and ready for implementation."
 - Or: "Before implementation, fix coverage gaps for items X and Y, and reconcile conflicts between tickets A and B."
 ```

@@ -1,15 +1,9 @@
 'use client';
 
 import { upsertProfileAction } from '@/app/actions/profile';
-import {
-  ProfileBasicContactSection
-} from '@/components/settings/profile/profile-basic-contact-section';
-import {
-  ProfileDemographicsSection
-} from '@/components/settings/profile/profile-demographics-section';
-import {
-  ProfileEmergencyContactSection
-} from '@/components/settings/profile/profile-emergency-contact-section';
+import { ProfileBasicContactSection } from '@/components/settings/profile/profile-basic-contact-section';
+import { ProfileDemographicsSection } from '@/components/settings/profile/profile-demographics-section';
+import { ProfileEmergencyContactSection } from '@/components/settings/profile/profile-emergency-contact-section';
 import { ProfileMedicalSection } from '@/components/settings/profile/profile-medical-section';
 import { ProfilePhysicalSection } from '@/components/settings/profile/profile-physical-section';
 import { Button } from '@/components/ui/button';
@@ -98,7 +92,7 @@ function ProfileForm({
 
   const requiredFields = useMemo(
     () => new Set(requiredFieldKeys ?? profileMetadata.requiredFieldKeys ?? []),
-    [profileMetadata.requiredFieldKeys, requiredFieldKeys]
+    [profileMetadata.requiredFieldKeys, requiredFieldKeys],
   );
 
   const form = useForm<ProfileFormValues, UpsertProfileSuccess>({
@@ -109,9 +103,7 @@ function ProfileForm({
 
       if (!result.ok) {
         const fieldErrors =
-          'fieldErrors' in result
-            ? translateFieldErrors(result.fieldErrors)
-            : undefined;
+          'fieldErrors' in result ? translateFieldErrors(result.fieldErrors) : undefined;
         if (result.error === 'INVALID_INPUT') {
           return {
             ok: false,
@@ -209,12 +201,12 @@ function ProfileForm({
 
   return (
     <Form form={form} className="space-y-4">
-      <FormError/>
+      <FormError />
 
       {showStatusCard ? (
         <div className="rounded-lg border bg-muted/30 p-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4"/>
+            <CheckCircle2 className="h-4 w-4" />
             {t('status.label')}{' '}
             {profileStatus.isComplete ? t('status.complete') : t('status.incomplete')}
           </div>
@@ -262,8 +254,7 @@ function ProfileForm({
         isBusy={isBusy}
       />
 
-      <div
-        className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
         {mode === 'completion' && onSignOutClick ? (
           <Button
             type="button"
@@ -272,11 +263,11 @@ function ProfileForm({
             onClick={onSignOutClick}
             disabled={isBusy}
           >
-            <LogOut className="h-4 w-4"/>
+            <LogOut className="h-4 w-4" />
             {t('actions.signOut')}
           </Button>
         ) : (
-          <div/>
+          <div />
         )}
 
         <div className="flex items-center gap-2">

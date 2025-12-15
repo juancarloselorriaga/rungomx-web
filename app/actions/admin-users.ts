@@ -2,11 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { withAdminUser } from '@/lib/auth/action-wrapper';
-import {
-  updateUserInternalRoles,
-  type CanonicalRole,
-  type PermissionSet,
-} from '@/lib/auth/roles';
+import { type CanonicalRole, type PermissionSet, updateUserInternalRoles } from '@/lib/auth/roles';
 import { resolveUserContext } from '@/lib/auth/user-context';
 import { ProfileMetadata } from '@/lib/profiles/metadata';
 import { ProfileRequirementSummary } from '@/lib/profiles/requirements';
@@ -103,4 +99,3 @@ export const createStaffUser = withAdminUser<CreateInternalUserResult>({
 })(async (_adminContext, input: unknown) => {
   return createInternalUser('internal.staff', input);
 });
-

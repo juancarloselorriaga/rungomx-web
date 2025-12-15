@@ -47,12 +47,13 @@ describe('createAuthorizedAction', () => {
   it('passes context to the wrapped action on success', async () => {
     const guard = jest.fn<Promise<TestContext>, []>(async () => ({ userId: 'user-1' }));
 
-    const wrapped = createAuthorizedAction<TestContext, TestResult>(guard, handlers)(
-      async (ctx, input: string) => ({
-        ok: true,
-        value: `${ctx.userId}:${input}`,
-      }),
-    );
+    const wrapped = createAuthorizedAction<TestContext, TestResult>(
+      guard,
+      handlers,
+    )(async (ctx, input: string) => ({
+      ok: true,
+      value: `${ctx.userId}:${input}`,
+    }));
 
     const result = await wrapped('payload');
 
@@ -65,9 +66,10 @@ describe('createAuthorizedAction', () => {
       throw { code: 'UNAUTHENTICATED' } as { code: string };
     });
 
-    const wrapped = createAuthorizedAction<TestContext, TestResult>(guard, handlers)(
-      async () => ({ ok: true, value: 'should-not-run' }),
-    );
+    const wrapped = createAuthorizedAction<TestContext, TestResult>(
+      guard,
+      handlers,
+    )(async () => ({ ok: true, value: 'should-not-run' }));
 
     const result = await wrapped();
     expect(result).toEqual({ ok: false, error: 'UNAUTHENTICATED' });
@@ -78,9 +80,10 @@ describe('createAuthorizedAction', () => {
       throw { code: 'FORBIDDEN' } as { code: string };
     });
 
-    const wrapped = createAuthorizedAction<TestContext, TestResult>(guard, handlers)(
-      async () => ({ ok: true, value: 'should-not-run' }),
-    );
+    const wrapped = createAuthorizedAction<TestContext, TestResult>(
+      guard,
+      handlers,
+    )(async () => ({ ok: true, value: 'should-not-run' }));
 
     const result = await wrapped();
     expect(result).toEqual({ ok: false, error: 'FORBIDDEN' });
@@ -98,9 +101,10 @@ describe('createAuthorizedAction', () => {
       } as { code: string; profileStatus: unknown };
     });
 
-    const wrapped = createAuthorizedAction<TestContext, TestResult>(guard, handlers)(
-      async () => ({ ok: true, value: 'should-not-run' }),
-    );
+    const wrapped = createAuthorizedAction<TestContext, TestResult>(
+      guard,
+      handlers,
+    )(async () => ({ ok: true, value: 'should-not-run' }));
 
     const result = await wrapped();
     expect(result).toEqual({ ok: false, error: 'PROFILE_INCOMPLETE' });
@@ -111,9 +115,10 @@ describe('createAuthorizedAction', () => {
       throw new Error('boom');
     });
 
-    const wrapped = createAuthorizedAction<TestContext, TestResult>(guard, handlers)(
-      async () => ({ ok: true, value: 'should-not-run' }),
-    );
+    const wrapped = createAuthorizedAction<TestContext, TestResult>(
+      guard,
+      handlers,
+    )(async () => ({ ok: true, value: 'should-not-run' }));
 
     await expect(wrapped()).rejects.toThrow('boom');
   });

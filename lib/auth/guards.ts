@@ -1,5 +1,5 @@
 import type { ProfileStatus } from '@/lib/profiles/types';
-import { getAuthContext, type AuthContext } from './server';
+import { type AuthContext, getAuthContext } from './server';
 import type { Session } from './types';
 
 export class UnauthenticatedError extends Error {

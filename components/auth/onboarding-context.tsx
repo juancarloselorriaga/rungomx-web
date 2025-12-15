@@ -2,7 +2,7 @@
 
 import { useSession } from '@/lib/auth/client';
 import { ProfileStatus } from '@/lib/profiles/types';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 
 type OnboardingOverrides = {
   profileStatusOverride: ProfileStatus | null;
@@ -13,13 +13,11 @@ type OnboardingOverrides = {
 
 const OnboardingContext = createContext<OnboardingOverrides | null>(null);
 
-function OnboardingOverridesProviderInner({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function OnboardingOverridesProviderInner({ children }: { children: ReactNode }) {
   const [profileStatusOverride, setProfileStatusOverride] = useState<ProfileStatus | null>(null);
-  const [needsRoleAssignmentOverride, setNeedsRoleAssignmentOverride] = useState<boolean | null>(null);
+  const [needsRoleAssignmentOverride, setNeedsRoleAssignmentOverride] = useState<boolean | null>(
+    null,
+  );
 
   return (
     <OnboardingContext.Provider

@@ -1,13 +1,6 @@
 'use client';
 
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -31,9 +24,7 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 function applyTheme(next: Theme, disableTransitions: boolean) {
   const root = document.documentElement;
-  const removeTransitionBlocker = disableTransitions
-    ? injectTransitionBlocker(root)
-    : undefined;
+  const removeTransitionBlocker = disableTransitions ? injectTransitionBlocker(root) : undefined;
 
   root.classList.toggle('dark', next === 'dark');
   root.style.colorScheme = next === 'dark' ? 'dark' : 'light';
@@ -67,9 +58,8 @@ export function AppThemeProvider({
         hasStored: false,
       };
     }
-    const stored =(localStorage.getItem(STORAGE_KEY) as Theme | null)
-    const prefersDark =
-      enableSystem && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
+    const prefersDark = enableSystem && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initial = stored ?? (prefersDark ? 'dark' : defaultTheme);
     return {
       theme: forcedTheme ?? initial,
@@ -80,9 +70,7 @@ export function AppThemeProvider({
   const initial = getInitialState();
 
   const [theme, setThemeState] = useState<Theme>(initial.theme);
-  const [hasStoredPreference, setHasStoredPreference] = useState<boolean>(
-    initial.hasStored,
-  );
+  const [hasStoredPreference, setHasStoredPreference] = useState<boolean>(initial.hasStored);
 
   // Keep DOM and storage in sync when the theme changes
   useEffect(() => {
@@ -98,10 +86,7 @@ export function AppThemeProvider({
   useEffect(() => {
     if (forcedTheme) return;
     const handler = (event: StorageEvent) => {
-      if (
-        (event.key === STORAGE_KEY) &&
-        event.newValue
-      ) {
+      if (event.key === STORAGE_KEY && event.newValue) {
         const next = event.newValue as Theme;
         setThemeState(next);
         setHasStoredPreference(true);
@@ -125,15 +110,18 @@ export function AppThemeProvider({
     return () => media.removeEventListener('change', listener);
   }, [disableTransitionOnChange, enableSystem, forcedTheme, hasStoredPreference]);
 
-  const setTheme = useCallback((next: Theme) => {
-    if (forcedTheme) {
-      // Respect forced theme; no-op to avoid conflicting writes
-      setThemeState(forcedTheme);
-      return;
-    }
-    setHasStoredPreference(true);
-    setThemeState(next);
-  }, [forcedTheme]);
+  const setTheme = useCallback(
+    (next: Theme) => {
+      if (forcedTheme) {
+        // Respect forced theme; no-op to avoid conflicting writes
+        setThemeState(forcedTheme);
+        return;
+      }
+      setHasStoredPreference(true);
+      setThemeState(next);
+    },
+    [forcedTheme],
+  );
 
   const value = useMemo(
     () => ({ theme: forcedTheme ?? theme, setTheme, forcedTheme }),

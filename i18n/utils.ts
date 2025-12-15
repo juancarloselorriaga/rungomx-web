@@ -1,27 +1,27 @@
-import { AsyncLocalStorage } from 'node:async_hooks';
 import { cacheLife, cacheTag } from 'next/cache';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { z } from 'zod';
-import { routing, type AppLocale } from './routing';
 import {
-  type Messages,
-  componentsSchema,
-  messagesSchema,
-  pagesSchema,
-  rootAuthSchema,
-  rootCommonSchema,
-  rootErrorsSchema,
-  rootNavigationSchema,
-  rootEmailsSchema,
-} from './types';
-import {
-  rootNamespaceLoaders,
   componentNamespaceLoaders,
-  pageNamespaceLoaders,
   generatedRouteNamespaceMap,
   manualRouteOverrides,
   type NamespaceLoader,
   type NamespaceSelection,
+  pageNamespaceLoaders,
+  rootNamespaceLoaders,
 } from './loaders.generated';
+import { type AppLocale, routing } from './routing';
+import {
+  componentsSchema,
+  type Messages,
+  messagesSchema,
+  pagesSchema,
+  rootAuthSchema,
+  rootCommonSchema,
+  rootEmailsSchema,
+  rootErrorsSchema,
+  rootNavigationSchema,
+} from './types';
 
 type ParsedIssue = { path: PropertyKey[]; message: string };
 
@@ -33,10 +33,10 @@ const routeNamespaceMap: Record<string, NamespaceSelection> = {
 
 // Derive constants from generated loaders
 const DEFAULT_BASE_NAMESPACES = Object.keys(
-  rootNamespaceLoaders
+  rootNamespaceLoaders,
 ) as (keyof typeof rootNamespaceLoaders)[];
 const DEFAULT_COMPONENT_NAMESPACES = Object.keys(
-  componentNamespaceLoaders
+  componentNamespaceLoaders,
 ) as (keyof typeof componentNamespaceLoaders)[];
 const ALL_PAGES = Object.keys(pageNamespaceLoaders) as (keyof typeof pageNamespaceLoaders)[];
 
@@ -65,12 +65,10 @@ const formatZodIssues = (issues: ParsedIssue[]) =>
 
 const loadNamespaceGroup = async <const TLoaders extends Record<string, NamespaceLoader<unknown>>>(
   locale: AppLocale,
-  loaders: TLoaders
+  loaders: TLoaders,
 ) => {
   const entries = await Promise.all(
-    Object.entries(loaders).map(
-      async ([key, loader]) => [key, await loader(locale)] as const
-    )
+    Object.entries(loaders).map(async ([key, loader]) => [key, await loader(locale)] as const),
   );
 
   return Object.fromEntries(entries) as {
@@ -99,12 +97,9 @@ export function validateMessages(locale: string, raw: unknown): Messages {
 
 function pickLoaders<TLoaders, TKey extends keyof TLoaders>(
   loaders: TLoaders,
-  keys: readonly TKey[]
+  keys: readonly TKey[],
 ) {
-  return keys.reduce(
-    (acc, key) => ({ ...acc, [key]: loaders[key] }),
-    {} as Pick<TLoaders, TKey>
-  );
+  return keys.reduce((acc, key) => ({ ...acc, [key]: loaders[key] }), {} as Pick<TLoaders, TKey>);
 }
 
 function normalizePathname(pathname: string | undefined): string {
@@ -177,10 +172,7 @@ function resolveRouteNamespaces(pathname: string): NamespaceSelection {
 }
 
 function makePickRecord<TKeys extends readonly string[]>(keys: TKeys) {
-  return keys.reduce(
-    (acc, key) => ({ ...acc, [key]: true }),
-    {} as Record<TKeys[number], true>
-  );
+  return keys.reduce((acc, key) => ({ ...acc, [key]: true }), {} as Record<TKeys[number], true>);
 }
 
 function buildSchema(selection: NamespaceSelection) {
@@ -215,7 +207,7 @@ function isFullSelection(selection: NamespaceSelection) {
 function validateSelectedMessages(
   locale: string,
   selection: NamespaceSelection,
-  raw: unknown
+  raw: unknown,
 ): Messages {
   const schema = isFullSelection(selection) ? messagesSchema : buildSchema(selection);
   const result = schema.safeParse(raw);
@@ -246,13 +238,13 @@ function assertPayloadSize(messages: Messages, pathname: string) {
   if (size > warnThreshold && size <= ROUTE_MESSAGES_BYTE_LIMIT) {
     // Soft warning to make oversized payloads visible during development
     console.warn(
-      `[i18n] Serialized messages for "${pathname}" approaching limit (${size}/${ROUTE_MESSAGES_BYTE_LIMIT} bytes).`
+      `[i18n] Serialized messages for "${pathname}" approaching limit (${size}/${ROUTE_MESSAGES_BYTE_LIMIT} bytes).`,
     );
   }
 
   if (size > ROUTE_MESSAGES_BYTE_LIMIT) {
     throw new Error(
-      `Serialized messages for "${pathname}" exceed ${ROUTE_MESSAGES_BYTE_LIMIT} bytes (got ${size}).`
+      `Serialized messages for "${pathname}" exceed ${ROUTE_MESSAGES_BYTE_LIMIT} bytes (got ${size}).`,
     );
   }
 
@@ -261,7 +253,7 @@ function assertPayloadSize(messages: Messages, pathname: string) {
 
 async function loadMessagesForSelection(
   locale: AppLocale,
-  selection: NamespaceSelection
+  selection: NamespaceSelection,
 ): Promise<Messages> {
   'use cache';
   cacheTag('i18n-messages', `i18n-${locale}`);
@@ -298,10 +290,7 @@ export async function loadMessages(locale: AppLocale): Promise<Messages> {
  * - Validates the selected namespaces against partial schemas
  * - Enforces payload-size guardrails before returning
  */
-export async function loadRouteMessages(
-  locale: AppLocale,
-  pathname: string
-): Promise<Messages> {
+export async function loadRouteMessages(locale: AppLocale, pathname: string): Promise<Messages> {
   const normalizedPath = normalizePathname(pathname);
   const existing = routeContext.getStore();
   if (existing?.messages && existing.pathname === normalizedPath) {

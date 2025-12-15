@@ -1,12 +1,12 @@
 import { listSelfSignupUsers } from '@/app/actions/self-signup-users-list';
 import { SelfSignupUsersClient } from '@/components/admin/users/self-signup-users-client';
+import { getAuthContext } from '@/lib/auth/server';
 import {
-  normalizeSelfSignupUsersQuery,
   type NormalizedSelfSignupUsersQuery,
+  normalizeSelfSignupUsersQuery,
   parseSelfSignupUsersSearchParams,
 } from '@/lib/self-signup-users/query';
 import { type SerializedSelfSignupUserRow } from '@/lib/self-signup-users/types';
-import { getAuthContext } from '@/lib/auth/server';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -28,11 +28,14 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
       title: t('title'),
       description: t('description'),
     }),
-    { robots: { index: false, follow: false } }
+    { robots: { index: false, follow: false } },
   );
 }
 
-export default async function SelfSignupUsersPage({ params, searchParams }: SelfSignupUsersPageProps) {
+export default async function SelfSignupUsersPage({
+  params,
+  searchParams,
+}: SelfSignupUsersPageProps) {
   await configPageLocale(params, { pathname: '/admin/users/self-signup' });
   const authContext = await getAuthContext();
 

@@ -99,27 +99,25 @@ describe('i18n Workflow Integration', () => {
       });
 
       const enContent = JSON.parse(
-        mockFs.readFileSync('/test/project/messages/pages/pricing/en.json', 'utf8')
+        mockFs.readFileSync('/test/project/messages/pages/pricing/en.json', 'utf8'),
       );
       const esContent = JSON.parse(
-        mockFs.readFileSync('/test/project/messages/pages/pricing/es.json', 'utf8')
+        mockFs.readFileSync('/test/project/messages/pages/pricing/es.json', 'utf8'),
       );
 
       // Step 4: Validate that both locales have matching keys
       const enKeys = new Set(Object.keys(enContent));
       const esKeys = new Set(Object.keys(esContent));
 
-      const allKeysMatch = [...enKeys].every((key) => esKeys.has(key)) &&
-                          [...esKeys].every((key) => enKeys.has(key));
+      const allKeysMatch =
+        [...enKeys].every((key) => esKeys.has(key)) && [...esKeys].every((key) => enKeys.has(key));
 
       expect(allKeysMatch).toBe(true);
 
       // Step 5: Verify nested keys also match
       expect(enContent.plans).toBeDefined();
       expect(esContent.plans).toBeDefined();
-      expect(Object.keys(enContent.plans)).toEqual(
-        Object.keys(esContent.plans)
-      );
+      expect(Object.keys(enContent.plans)).toEqual(Object.keys(esContent.plans));
     });
 
     it('detects missing translations in new page', () => {
@@ -156,12 +154,8 @@ describe('i18n Workflow Integration', () => {
         return JSON.stringify({});
       });
 
-      const enContent = JSON.parse(
-        mockFs.readFileSync('/pricing/en.json', 'utf8')
-      );
-      const esContent = JSON.parse(
-        mockFs.readFileSync('/pricing/es.json', 'utf8')
-      );
+      const enContent = JSON.parse(mockFs.readFileSync('/pricing/en.json', 'utf8'));
+      const esContent = JSON.parse(mockFs.readFileSync('/pricing/es.json', 'utf8'));
 
       const enKeys = new Set(Object.keys(enContent));
       const esKeys = new Set(Object.keys(esContent));
@@ -197,12 +191,8 @@ describe('i18n Workflow Integration', () => {
         return JSON.stringify({});
       });
 
-      const enContent = JSON.parse(
-        mockFs.readFileSync('/common/en.json', 'utf8')
-      );
-      const esContent = JSON.parse(
-        mockFs.readFileSync('/common/es.json', 'utf8')
-      );
+      const enContent = JSON.parse(mockFs.readFileSync('/common/en.json', 'utf8'));
+      const esContent = JSON.parse(mockFs.readFileSync('/common/es.json', 'utf8'));
 
       const enKeys = new Set(Object.keys(enContent));
       const esKeys = new Set(Object.keys(esContent));
@@ -237,12 +227,8 @@ describe('i18n Workflow Integration', () => {
         return JSON.stringify({});
       });
 
-      const enContent = JSON.parse(
-        mockFs.readFileSync('/navigation/en.json', 'utf8')
-      );
-      const esContent = JSON.parse(
-        mockFs.readFileSync('/navigation/es.json', 'utf8')
-      );
+      const enContent = JSON.parse(mockFs.readFileSync('/navigation/en.json', 'utf8'));
+      const esContent = JSON.parse(mockFs.readFileSync('/navigation/es.json', 'utf8'));
 
       // Helper to collect all nested keys
       const collectKeys = (obj: any, prefix = ''): string[] => {
@@ -301,11 +287,7 @@ describe('i18n Workflow Integration', () => {
 
       const camelCaseNames = componentNames.map(toCamelCase);
 
-      expect(camelCaseNames).toEqual([
-        'userMenu',
-        'themeSwitcher',
-        'localeSwitcher',
-      ]);
+      expect(camelCaseNames).toEqual(['userMenu', 'themeSwitcher', 'localeSwitcher']);
     });
   });
 
@@ -493,17 +475,14 @@ describe('i18n Workflow Integration', () => {
       ];
 
       const jsonFiles = stagedFiles.filter(
-        (file) => file.endsWith('.json') && file.startsWith('messages/')
+        (file) => file.endsWith('.json') && file.startsWith('messages/'),
       );
 
-      expect(jsonFiles).toEqual([
-        'messages/common/en.json',
-        'messages/pages/home/es.json',
-      ]);
+      expect(jsonFiles).toEqual(['messages/common/en.json', 'messages/pages/home/es.json']);
     });
 
     it('blocks commit if validation fails', () => {
-       // Simulate validation failure
+      // Simulate validation failure
       const commitAllowed = false;
 
       expect(commitAllowed).toBe(false);

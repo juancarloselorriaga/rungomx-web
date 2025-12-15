@@ -28,7 +28,7 @@ export function UsersSectionSubnav({ className }: UsersSectionSubnavProps) {
         description: t('selfSignup.description'),
       },
     ],
-    [t]
+    [t],
   );
 
   return <SectionSubnav items={items} className={className} />;

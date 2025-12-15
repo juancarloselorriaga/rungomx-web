@@ -16,7 +16,9 @@ export type CleanupUnverifiedUsersResult = {
   deleted: number;
 };
 
-export async function cleanupExpiredUnverifiedUsers(cutoff: Date): Promise<CleanupUnverifiedUsersResult> {
+export async function cleanupExpiredUnverifiedUsers(
+  cutoff: Date,
+): Promise<CleanupUnverifiedUsersResult> {
   const candidates = await db
     .select({
       id: users.id,
@@ -58,4 +60,3 @@ export async function cleanupExpiredUnverifiedUsers(cutoff: Date): Promise<Clean
     deleted,
   };
 }
-

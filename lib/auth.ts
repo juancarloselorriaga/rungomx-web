@@ -106,28 +106,22 @@ export const auth = betterAuth({
       };
     }),
     haveIBeenPwned({
-      paths: [
-        '/sign-up/email',
-        '/change-password',
-        '/reset-password',
-      ],
-      customPasswordCompromisedMessage: 'This password has been found in a data breach. Please choose a more secure password.',
+      paths: ['/sign-up/email', '/change-password', '/reset-password'],
+      customPasswordCompromisedMessage:
+        'This password has been found in a data breach. Please choose a more secure password.',
     }),
   ],
   socialProviders:
     googleClientId && googleClientSecret
       ? {
-        google: {
-          clientId: googleClientId,
-          clientSecret: googleClientSecret,
-        },
-      }
+          google: {
+            clientId: googleClientId,
+            clientSecret: googleClientSecret,
+          },
+        }
       : undefined,
   emailVerification: {
-    sendVerificationEmail: async ({
-      user,
-      url
-    }, request) => {
+    sendVerificationEmail: async ({ user, url }, request) => {
       try {
         const locale = extractLocaleFromRequest(request);
 

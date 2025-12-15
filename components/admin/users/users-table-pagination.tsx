@@ -1,10 +1,10 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { buildAdminUsersQueryObject } from '@/components/admin/users/search-params';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type UsersTablePaginationProps = {
   page: number;
@@ -47,9 +47,7 @@ export function UsersTablePagination({
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-xs text-muted-foreground">
-        {t('showing', { start, end, total })}
-      </div>
+      <div className="text-xs text-muted-foreground">{t('showing', { start, end, total })}</div>
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" disabled={prevDisabled} asChild={!prevDisabled}>
           {prevDisabled ? (

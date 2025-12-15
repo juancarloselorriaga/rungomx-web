@@ -21,7 +21,7 @@ export function generateVerificationEmailHTML({
   alternativeText,
   footer,
   title,
-  locale
+  locale,
 }: VerificationEmailTemplateProps): string {
   return `
     <!DOCTYPE html>
@@ -84,7 +84,10 @@ export function generateVerificationEmailText({
   url,
   ignoreMessage,
   footer,
-}: Pick<VerificationEmailTemplateProps, 'greeting' | 'message' | 'url' | 'ignoreMessage' | 'footer'>): string {
+}: Pick<
+  VerificationEmailTemplateProps,
+  'greeting' | 'message' | 'url' | 'ignoreMessage' | 'footer'
+>): string {
   return `
 ${greeting}
 

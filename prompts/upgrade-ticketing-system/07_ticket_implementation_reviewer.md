@@ -71,31 +71,39 @@ Reply in markdown:
 # Review for Ticket <NN> - <ticket title>
 
 ## Summary
+
 - Short summary of your overall impression.
 
 ## Ticket alignment
+
 - What matches the ticket.
 - What is missing or over implemented.
 
 ## Code review (changed files only)
+
 - File by file comments.
 - Potential bugs, edge cases, or simplifications.
 
 ## Boundary and scope check
+
 - Note any out of scope changes and whether they must be reverted.
 
 ## Upgrade Plan consistency
+
 - How this change fits with the Upgrade Plan.
 - Any conflicts with earlier or later tickets.
 
 ## Tests review
+
 - Which tests were added or modified.
 - What is missing to fully validate the change.
 
 ## Required corrections
+
 - Concrete list of changes that must be made before approval.
 
 ## Final verdict
+
 - "Approved as is."
 - Or: "Needs changes" with a short justification.
 ```

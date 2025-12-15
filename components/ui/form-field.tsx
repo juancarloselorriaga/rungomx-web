@@ -1,6 +1,6 @@
-import { FieldLabel } from './field-label';
-import { FieldError } from './field-error';
 import { cn } from '@/lib/utils';
+import { FieldError } from './field-error';
+import { FieldLabel } from './field-label';
 
 interface FormFieldProps {
   label: React.ReactNode;

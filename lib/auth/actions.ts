@@ -1,7 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
 import { siteUrl } from '@/config/url';
+import { cookies } from 'next/headers';
 
 /**
  * Server Actions for password reset flow
@@ -26,7 +26,7 @@ interface EmailVerificationResponse {
  */
 export async function requestPasswordReset(
   email: string,
-  redirectTo: string
+  redirectTo: string,
 ): Promise<PasswordResetResponse> {
   try {
     // Get the locale cookie to pass it along to Better Auth
@@ -38,8 +38,8 @@ export async function requestPasswordReset(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Origin': baseURL,
-        ...(cookieHeader && { 'Cookie': cookieHeader }),
+        Origin: baseURL,
+        ...(cookieHeader && { Cookie: cookieHeader }),
       },
       body: JSON.stringify({ email, redirectTo }),
       cache: 'no-store',
@@ -51,8 +51,8 @@ export async function requestPasswordReset(
       return {
         data: null,
         error: {
-          message: data.message || 'Failed to send password reset email'
-        }
+          message: data.message || 'Failed to send password reset email',
+        },
       };
     }
 
@@ -61,7 +61,7 @@ export async function requestPasswordReset(
     console.error('❌ Password reset request failed:', error);
     return {
       data: null,
-      error: { message: 'Network error. Please try again.' }
+      error: { message: 'Network error. Please try again.' },
     };
   }
 }
@@ -72,7 +72,7 @@ export async function requestPasswordReset(
  */
 export async function requestEmailVerification(
   email: string,
-  callbackURL?: string
+  callbackURL?: string,
 ): Promise<EmailVerificationResponse> {
   try {
     const cookieStore = await cookies();
@@ -83,8 +83,8 @@ export async function requestEmailVerification(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Origin': baseURL,
-        ...(cookieHeader && { 'Cookie': cookieHeader }),
+        Origin: baseURL,
+        ...(cookieHeader && { Cookie: cookieHeader }),
       },
       body: JSON.stringify({ email, callbackURL }),
       cache: 'no-store',
@@ -96,8 +96,8 @@ export async function requestEmailVerification(
       return {
         data: null,
         error: {
-          message: data.message || 'Failed to send verification email'
-        }
+          message: data.message || 'Failed to send verification email',
+        },
       };
     }
 
@@ -106,7 +106,7 @@ export async function requestEmailVerification(
     console.error('❌ Email verification request failed:', error);
     return {
       data: null,
-      error: { message: 'Network error. Please try again.' }
+      error: { message: 'Network error. Please try again.' },
     };
   }
 }
@@ -117,14 +117,14 @@ export async function requestEmailVerification(
  */
 export async function resetPasswordWithToken(
   newPassword: string,
-  token: string
+  token: string,
 ): Promise<PasswordResetResponse> {
   try {
     const response = await fetch(`${baseURL}/api/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Origin': baseURL,
+        Origin: baseURL,
       },
       body: JSON.stringify({ newPassword, token }),
       cache: 'no-store',
@@ -136,8 +136,8 @@ export async function resetPasswordWithToken(
       return {
         data: null,
         error: {
-          message: data.message || 'Failed to reset password'
-        }
+          message: data.message || 'Failed to reset password',
+        },
       };
     }
 
@@ -146,7 +146,7 @@ export async function resetPasswordWithToken(
     console.error('❌ Password reset failed:', error);
     return {
       data: null,
-      error: { message: 'Network error. Please try again.' }
+      error: { message: 'Network error. Please try again.' },
     };
   }
 }

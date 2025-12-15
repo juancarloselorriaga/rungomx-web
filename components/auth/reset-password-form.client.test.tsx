@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { resetPasswordWithToken } from '@/lib/auth/actions';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ResetPasswordForm } from './reset-password-form';
 
@@ -18,10 +19,7 @@ jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-import { resetPasswordWithToken } from '@/lib/auth/actions';
-
 describe('ResetPasswordForm', () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset URL so we can assert redirect changes it

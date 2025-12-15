@@ -24,18 +24,13 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({
-  params,
-}: Omit<Props, 'children'>): Promise<Metadata> {
+export async function generateMetadata({ params }: Omit<Props, 'children'>): Promise<Metadata> {
   const { locale } = await params;
   return await generateRootMetadata(locale);
 }
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: Props) {
-  const { locale } = await params as { locale: AppLocale };
+export default async function LocaleLayout({ children, params }: Props) {
+  const { locale } = (await params) as { locale: AppLocale };
 
   // Ensure that the incoming `locale` is valid
   if (!routing.locales.includes(locale)) {

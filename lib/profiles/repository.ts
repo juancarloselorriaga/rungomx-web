@@ -4,13 +4,12 @@ import { eq } from 'drizzle-orm';
 import { profileUpsertSchema } from './schema';
 import type { ProfileInsert, ProfileRecord, ProfileUpsertInput } from './types';
 
-const NULLABLE_FIELDS = new Set([
-  'latitude',
-  'longitude',
-  'locationDisplay',
-]);
+const NULLABLE_FIELDS = new Set(['latitude', 'longitude', 'locationDisplay']);
 
-function buildProfileValues(userId: string, input: ProfileUpsertInput): {
+function buildProfileValues(
+  userId: string,
+  input: ProfileUpsertInput,
+): {
   insert: ProfileInsert;
   update: Partial<ProfileInsert>;
 } {
@@ -47,7 +46,7 @@ export async function getProfileByUserId(userId: string): Promise<ProfileRecord 
 
 export async function upsertProfile(
   userId: string,
-  input: ProfileUpsertInput
+  input: ProfileUpsertInput,
 ): Promise<ProfileRecord> {
   const { insert, update } = buildProfileValues(userId, input);
 

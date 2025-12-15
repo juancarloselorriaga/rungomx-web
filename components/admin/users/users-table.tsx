@@ -1,19 +1,19 @@
 'use client';
 
-import { useFormatter, useTranslations } from 'next-intl';
 import type { AdminUserRow } from '@/app/actions/admin-users-list';
 import { buildAdminUsersQueryObject } from '@/components/admin/users/search-params';
 import { UsersPermissionBadge } from '@/components/admin/users/users-permission-badge';
 import { UsersTableActions } from '@/components/admin/users/users-table-actions';
 import { UsersTablePagination } from '@/components/admin/users/users-table-pagination';
-import { UsersTableToolbar } from '@/components/admin/users/users-table-toolbar';
 import { UsersTableSkeleton } from '@/components/admin/users/users-table-skeleton';
+import { UsersTableToolbar } from '@/components/admin/users/users-table-toolbar';
 import { Button } from '@/components/ui/button';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import type { ColumnKey } from '@/lib/admin-users/types';
 import { cn } from '@/lib/utils';
-import { usePathname, useRouter } from '@/i18n/navigation';
-import { useSearchParams } from 'next/navigation';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 type UsersTableProps = {
@@ -81,7 +81,7 @@ export function UsersTable({
 
   const handleNavigate = (
     updates: Record<string, string | null | undefined>,
-    options?: { replace?: boolean }
+    options?: { replace?: boolean },
   ) => {
     const queryObject = buildAdminUsersQueryObject(searchParams.toString(), updates);
     const href = { pathname, query: queryObject } as unknown as Parameters<typeof router.push>[0];
@@ -157,7 +157,13 @@ export function UsersTable({
                   onClick={() => handleSort('name')}
                 >
                   {t('columns.name')}
-                  {titleSort ? titleSort === 'asc' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" /> : null}
+                  {titleSort ? (
+                    titleSort === 'asc' ? (
+                      <ChevronUp className="size-4" />
+                    ) : (
+                      <ChevronDown className="size-4" />
+                    )
+                  ) : null}
                 </button>
               </th>
               {visibleColumns.role ? (
@@ -168,7 +174,13 @@ export function UsersTable({
                     onClick={() => handleSort('role')}
                   >
                     {t('columns.internalRole')}
-                    {roleSort ? roleSort === 'asc' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" /> : null}
+                    {roleSort ? (
+                      roleSort === 'asc' ? (
+                        <ChevronUp className="size-4" />
+                      ) : (
+                        <ChevronDown className="size-4" />
+                      )
+                    ) : null}
                   </button>
                 </th>
               ) : null}
@@ -185,11 +197,21 @@ export function UsersTable({
                     onClick={() => handleSort('createdAt')}
                   >
                     {t('columns.created')}
-                    {createdSort ? createdSort === 'asc' ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" /> : null}
+                    {createdSort ? (
+                      createdSort === 'asc' ? (
+                        <ChevronUp className="size-4" />
+                      ) : (
+                        <ChevronDown className="size-4" />
+                      )
+                    ) : null}
                   </button>
                 </th>
               ) : null}
-              {visibleColumns.actions ? <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('columns.actions')}</th> : null}
+              {visibleColumns.actions ? (
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t('columns.actions')}
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -209,12 +231,22 @@ export function UsersTable({
               <tr>
                 <td
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
-                  colSpan={1 + Number(visibleColumns.role) + Number(visibleColumns.permissions) + Number(visibleColumns.created) + Number(visibleColumns.actions)}
+                  colSpan={
+                    1 +
+                    Number(visibleColumns.role) +
+                    Number(visibleColumns.permissions) +
+                    Number(visibleColumns.created) +
+                    Number(visibleColumns.actions)
+                  }
                 >
                   <div className="flex flex-col items-center gap-3">
                     <div>
-                      <p className="font-semibold text-foreground">{t('emptyState.noMatches.title')}</p>
-                      <p className="text-xs text-muted-foreground">{t('emptyState.noMatches.description')}</p>
+                      <p className="font-semibold text-foreground">
+                        {t('emptyState.noMatches.title')}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('emptyState.noMatches.description')}
+                      </p>
                     </div>
                     <Button size="sm" variant="outline" onClick={handleClearFilters}>
                       {t('emptyState.noMatches.clearButton')}
@@ -248,9 +280,18 @@ export function UsersTable({
                   {visibleColumns.permissions ? (
                     <td className={cn('px-4 align-top', rowPadding)}>
                       <div className="flex flex-wrap gap-2">
-                        <UsersPermissionBadge label={tPermissions('adminArea')} enabled={user.permissions.canAccessAdminArea} />
-                        <UsersPermissionBadge label={tPermissions('manageUsers')} enabled={user.permissions.canManageUsers} />
-                        <UsersPermissionBadge label={tPermissions('staffTools')} enabled={user.permissions.canViewStaffTools} />
+                        <UsersPermissionBadge
+                          label={tPermissions('adminArea')}
+                          enabled={user.permissions.canAccessAdminArea}
+                        />
+                        <UsersPermissionBadge
+                          label={tPermissions('manageUsers')}
+                          enabled={user.permissions.canManageUsers}
+                        />
+                        <UsersPermissionBadge
+                          label={tPermissions('staffTools')}
+                          enabled={user.permissions.canViewStaffTools}
+                        />
                       </div>
                     </td>
                   ) : null}

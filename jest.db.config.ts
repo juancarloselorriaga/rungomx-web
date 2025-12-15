@@ -1,9 +1,9 @@
-import type { Config } from 'jest'
-import nextJest from 'next/jest.js'
+import type { Config } from 'jest';
+import nextJest from 'next/jest.js';
 
 const createJestConfig = nextJest({
   dir: './',
-})
+});
 
 const config: Config = {
   displayName: 'database',
@@ -14,6 +14,6 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
-}
+};
 
-export default createJestConfig(config)
+export default createJestConfig(config);

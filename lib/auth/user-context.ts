@@ -1,13 +1,16 @@
 import { buildProfileMetadata, type ProfileMetadata } from '@/lib/profiles/metadata';
-import { buildProfileRequirementSummary, type ProfileRequirementSummary } from '@/lib/profiles/requirements';
+import { getProfileByUserId } from '@/lib/profiles/repository';
+import {
+  buildProfileRequirementSummary,
+  type ProfileRequirementSummary,
+} from '@/lib/profiles/requirements';
 import { computeProfileStatus } from '@/lib/profiles/status';
 import { type ProfileRecord, ProfileStatus } from '@/lib/profiles/types';
-import { getProfileByUserId } from '@/lib/profiles/repository';
 import { EMPTY_PROFILE_STATUS } from './constants';
 import {
+  type CanonicalRole,
   getSelectableExternalRoles,
   getUserRolesWithInternalFlag,
-  type CanonicalRole,
   type PermissionSet,
 } from './roles';
 
@@ -31,7 +34,7 @@ export type ResolvedUserContext = {
 };
 
 export async function resolveUserContext(
-  user: BasicUser | null | undefined
+  user: BasicUser | null | undefined,
 ): Promise<ResolvedUserContext> {
   if (!user) {
     return {
@@ -58,7 +61,9 @@ export async function resolveUserContext(
 
   const roleLookup = await getUserRolesWithInternalFlag(user.id);
   const profile = await getProfileByUserId(user.id);
-  const profileRequirements = buildProfileRequirementSummary(roleLookup.profileRequirementCategories);
+  const profileRequirements = buildProfileRequirementSummary(
+    roleLookup.profileRequirementCategories,
+  );
   const profileMetadata = buildProfileMetadata(profileRequirements);
   const profileStatus = computeProfileStatus({
     profile,

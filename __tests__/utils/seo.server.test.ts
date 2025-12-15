@@ -1,12 +1,16 @@
-import enMetadata from '@/messages/metadata/en.json';
 import { routing } from '@/i18n/routing';
+import enMetadata from '@/messages/metadata/en.json';
 import {
   createDefaultSeoMetadata,
   createPageMetadata,
   type PageMetaSelector,
 } from '@/utils/metadata';
+import {
+  createLocalizedPageMetadata,
+  generateAlternateMetadata,
+  generateRootMetadata,
+} from '@/utils/seo';
 import type { PartialMetadataMessages } from '@/utils/staticMessages';
-import { generateAlternateMetadata, generateRootMetadata, createLocalizedPageMetadata } from '@/utils/seo';
 
 jest.mock('@/config/url', () => ({
   siteUrl: 'https://example.com',
@@ -16,11 +20,12 @@ jest.mock('@/utils/metadata', () => {
   const actual = jest.requireActual<typeof import('@/utils/metadata')>('@/utils/metadata');
   return {
     ...actual,
-    createDefaultSeoMetadata: jest.fn((...args: Parameters<typeof actual.createDefaultSeoMetadata>) =>
-      actual.createDefaultSeoMetadata(...args)
+    createDefaultSeoMetadata: jest.fn(
+      (...args: Parameters<typeof actual.createDefaultSeoMetadata>) =>
+        actual.createDefaultSeoMetadata(...args),
     ),
     createPageMetadata: jest.fn((...args: Parameters<typeof actual.createPageMetadata>) =>
-      actual.createPageMetadata(...args)
+      actual.createPageMetadata(...args),
     ),
   };
 });
@@ -140,7 +145,8 @@ describe('createLocalizedPageMetadata', () => {
   });
 
   it('creates page metadata with alternates in one call', async () => {
-    const selector: PageMetaSelector = (messages: PartialMetadataMessages) => messages.Pages?.About?.metadata;
+    const selector: PageMetaSelector = (messages: PartialMetadataMessages) =>
+      messages.Pages?.About?.metadata;
     await createLocalizedPageMetadata('es', '/about', selector, {
       imagePath: '/og-about.jpg',
     });
@@ -162,7 +168,8 @@ describe('createLocalizedPageMetadata', () => {
   });
 
   it('handles dynamic params correctly', async () => {
-    const selector: PageMetaSelector = (messages: PartialMetadataMessages) => messages.Pages?.About?.metadata;
+    const selector: PageMetaSelector = (messages: PartialMetadataMessages) =>
+      messages.Pages?.About?.metadata;
     await createLocalizedPageMetadata('en', '/news/[slug]', selector, {
       params: { slug: 'test-article' },
     });
@@ -183,13 +190,15 @@ describe('createLocalizedPageMetadata', () => {
       'en',
       '/about',
       (messages) => messages.Pages?.About?.metadata,
-      { imagePath: '/og-about.jpg' }
+      { imagePath: '/og-about.jpg' },
     );
 
     expect(metadata.title).toBe(enMetadata.Pages.About.metadata.title);
     expect(metadata.description).toBe(enMetadata.Pages.About.metadata.description);
     expect(metadata.openGraph?.title).toBe(enMetadata.Pages.About.metadata.openGraph?.title);
     // @ts-expect-error - testing optional chaining
-    expect(metadata.openGraph?.images?.[0]?.alt).toBe(enMetadata.Pages.About.metadata.openGraph?.imageAlt);
+    expect(metadata.openGraph?.images?.[0]?.alt).toBe(
+      enMetadata.Pages.About.metadata.openGraph?.imageAlt,
+    );
   });
 });

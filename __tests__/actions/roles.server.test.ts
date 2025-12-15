@@ -29,7 +29,11 @@ jest.mock('@/lib/auth/guards', () => ({
 }));
 
 jest.mock('@/lib/auth/roles', () => ({
-  getSelectableExternalRoles: () => ['external.organizer', 'external.athlete', 'external.volunteer'],
+  getSelectableExternalRoles: () => [
+    'external.organizer',
+    'external.athlete',
+    'external.volunteer',
+  ],
   updateUserExternalRoles: (...args: unknown[]) => mockUpdateRoles(...args),
 }));
 
@@ -109,7 +113,7 @@ describe('assignExternalRoles', () => {
       expect.objectContaining({
         needsRoleAssignment: false,
         canonicalRoles: ['external.organizer'],
-      })
+      }),
     );
   });
 });

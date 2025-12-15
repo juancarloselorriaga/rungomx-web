@@ -43,7 +43,9 @@ function extractLocaleFromAcceptLanguage(acceptLanguage: string): AppLocale | nu
  * @param request - The Better Auth request object
  * @returns The extracted locale or the default locale
  */
-export function extractLocaleFromRequest(request?: Request | { url?: string; headers?: Headers }): AppLocale {
+export function extractLocaleFromRequest(
+  request?: Request | { url?: string; headers?: Headers },
+): AppLocale {
   if (!request) return routing.defaultLocale;
 
   const headers = request.headers;
@@ -87,7 +89,7 @@ export function extractLocaleFromRequest(request?: Request | { url?: string; hea
  */
 export function extractLocaleFromCallbackURL(
   callbackURL: string,
-  fallbackRequest?: Request | { url?: string; headers?: Headers }
+  fallbackRequest?: Request | { url?: string; headers?: Headers },
 ): AppLocale {
   if (!callbackURL) {
     return fallbackRequest ? extractLocaleFromRequest(fallbackRequest) : routing.defaultLocale;

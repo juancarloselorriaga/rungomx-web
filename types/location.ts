@@ -12,4 +12,3 @@ export type LocationValue = {
 };
 
 export type PublicLocationValue = Omit<LocationValue, 'raw'>;
-

@@ -1,4 +1,4 @@
-import { getCountries, isSupportedCountry, type CountryCode } from 'libphonenumber-js';
+import { type CountryCode, getCountries, isSupportedCountry } from 'libphonenumber-js';
 import enCountries from 'react-phone-number-input/locale/en.json';
 import esCountries from 'react-phone-number-input/locale/es.json';
 
@@ -48,7 +48,7 @@ export function getCountryName(code: CountryCode, locale: 'en' | 'es'): string {
  * @returns Array of objects with code and name
  */
 export function getCountriesWithNames(
-  locale: 'en' | 'es'
+  locale: 'en' | 'es',
 ): Array<{ code: CountryCode; name: string }> {
   const countries = getAllowedCountries();
   return countries.map((code) => ({

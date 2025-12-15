@@ -31,9 +31,7 @@ export function HighlightedListSection({
       <h2 className="mb-8 text-3xl font-bold text-foreground">{title}</h2>
       <div className="mb-8 text-lg leading-relaxed text-muted-foreground">
         <p className="mb-4">{intro}</p>
-        {calloutText && (
-          <p className="font-medium text-foreground">{calloutText}</p>
-        )}
+        {calloutText && <p className="font-medium text-foreground">{calloutText}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -48,15 +46,8 @@ export function HighlightedListSection({
         ))}
       </div>
 
-      <div
-        className={cn(
-          'mt-8 rounded-xl p-6 text-center',
-          highlightVariants[highlightedVariant]
-        )}
-      >
-        <p className="text-xl font-semibold text-primary-foreground">
-          {highlightedText}
-        </p>
+      <div className={cn('mt-8 rounded-xl p-6 text-center', highlightVariants[highlightedVariant])}>
+        <p className="text-xl font-semibold text-primary-foreground">{highlightedText}</p>
       </div>
     </div>
   );

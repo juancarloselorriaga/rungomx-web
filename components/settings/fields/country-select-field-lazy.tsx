@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import dynamic from "next/dynamic";
-import { FormFieldSkeleton } from "@/components/ui/form-field-skeleton";
+import { FormFieldSkeleton } from '@/components/ui/form-field-skeleton';
+import dynamic from 'next/dynamic';
 
 /**
  * Lazy-loaded CountrySelectField component with code-splitting
@@ -31,11 +31,11 @@ import { FormFieldSkeleton } from "@/components/ui/form-field-skeleton";
  */
 export const CountrySelectField = dynamic(
   () =>
-    import("./country-select-field").then((mod) => ({
+    import('./country-select-field').then((mod) => ({
       default: mod.CountrySelectField,
     })),
   {
     loading: () => <FormFieldSkeleton />,
     ssr: false, // Country select is client-only due to locale detection
-  }
+  },
 );
