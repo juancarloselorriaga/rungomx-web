@@ -1,21 +1,12 @@
+import { db as appDb } from '@/db';
 import * as schema from '@/db/schema';
-import { neon } from '@neondatabase/serverless';
-import { sql } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/neon-http';
 
 /**
  * Get database instance for testing
  * Uses DATABASE_URL from environment (should point to test branch)
  */
 export function getTestDb() {
-  const connectionString = process.env.DATABASE_URL;
-
-  if (!connectionString) {
-    throw new Error('DATABASE_URL is not set');
-  }
-
-  const client = neon(connectionString);
-  return drizzle(client, { schema });
+  return appDb;
 }
 
 /**
@@ -23,20 +14,15 @@ export function getTestDb() {
  * Useful for ensuring clean state between tests
  */
 export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
-  const tables = [
-    'contact_submissions',
-    'verifications',
-    'user_roles',
-    'sessions',
-    'accounts',
-    'profiles',
-    'roles',
-    'users',
-  ];
-
-  for (const table of tables) {
-    await db.execute(sql.raw(`TRUNCATE TABLE ${table} CASCADE`));
-  }
+  // Delete in FK-safe order to avoid deadlocks on the remote Neon instance.
+  await db.delete(schema.verifications);
+  await db.delete(schema.sessions);
+  await db.delete(schema.accounts);
+  await db.delete(schema.userRoles);
+  await db.delete(schema.profiles);
+  await db.delete(schema.contactSubmissions);
+  await db.delete(schema.users);
+  await db.delete(schema.roles);
 }
 
 /**
