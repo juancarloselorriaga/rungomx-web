@@ -101,4 +101,59 @@ describe('deleteOwnAccount', () => {
     expect(result).toEqual({ ok: true });
     expect(mockSignOut).toHaveBeenCalled();
   });
+
+  describe('Edge Cases', () => {
+    it('returns SERVER_ERROR for empty password string', async () => {
+      mockRequireAuthenticated.mockResolvedValueOnce({ user: { id: 'user-1' } });
+
+      const result = await deleteOwnAccount({ password: '' });
+
+      expect(result).toEqual({ ok: false, error: 'SERVER_ERROR' });
+      expect(mockVerifyUserCredentialPassword).not.toHaveBeenCalled();
+      expect(mockDeleteUser).not.toHaveBeenCalled();
+    });
+
+    it('returns SERVER_ERROR for missing password field', async () => {
+      mockRequireAuthenticated.mockResolvedValueOnce({ user: { id: 'user-1' } });
+
+      const result = await deleteOwnAccount({});
+
+      expect(result).toEqual({ ok: false, error: 'SERVER_ERROR' });
+      expect(mockVerifyUserCredentialPassword).not.toHaveBeenCalled();
+    });
+
+    it('returns SERVER_ERROR when deleteUser returns SERVER_ERROR', async () => {
+      mockRequireAuthenticated.mockResolvedValueOnce({ user: { id: 'user-1' } });
+      mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
+      mockDeleteUser.mockResolvedValueOnce({ ok: false, error: 'SERVER_ERROR' });
+
+      const result = await deleteOwnAccount({ password: 'pw' });
+
+      expect(result).toEqual({ ok: false, error: 'SERVER_ERROR' });
+      expect(mockSignOut).not.toHaveBeenCalled();
+    });
+
+    it('succeeds even if signOut throws (graceful degradation)', async () => {
+      mockRequireAuthenticated.mockResolvedValueOnce({ user: { id: 'user-1' } });
+      mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
+      mockDeleteUser.mockResolvedValueOnce({ ok: true });
+      mockSignOut.mockRejectedValueOnce(new Error('Sign out failed'));
+
+      const result = await deleteOwnAccount({ password: 'pw' });
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('verifies password using the authenticated user id', async () => {
+      const userId = 'specific-user-id';
+      mockRequireAuthenticated.mockResolvedValueOnce({ user: { id: userId } });
+      mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
+      mockDeleteUser.mockResolvedValueOnce({ ok: true });
+      mockSignOut.mockResolvedValueOnce({ success: true });
+
+      await deleteOwnAccount({ password: 'pw' });
+
+      expect(mockVerifyUserCredentialPassword).toHaveBeenCalledWith(userId, 'pw');
+    });
+  });
 });

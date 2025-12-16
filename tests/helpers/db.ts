@@ -23,7 +23,16 @@ export function getTestDb() {
  * Useful for ensuring clean state between tests
  */
 export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
-  const tables = ['user_roles', 'sessions', 'accounts', 'profiles', 'roles', 'users'];
+  const tables = [
+    'contact_submissions',
+    'verifications',
+    'user_roles',
+    'sessions',
+    'accounts',
+    'profiles',
+    'roles',
+    'users',
+  ];
 
   for (const table of tables) {
     await db.execute(sql.raw(`TRUNCATE TABLE ${table} CASCADE`));
