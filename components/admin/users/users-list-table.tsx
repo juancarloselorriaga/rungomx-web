@@ -13,7 +13,39 @@ import { cn } from '@/lib/utils';
 import { useFormatter } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+
+function useDensityStorage(storageKey: string) {
+  const subscribe = useCallback(
+    (callback: () => void) => {
+      const handleStorage = (e: StorageEvent) => {
+        if (e.key === storageKey) callback();
+      };
+      window.addEventListener('storage', handleStorage);
+      return () => window.removeEventListener('storage', handleStorage);
+    },
+    [storageKey],
+  );
+
+  const getSnapshot = useCallback(() => {
+    const stored = window.localStorage.getItem(storageKey);
+    return stored === 'comfortable' || stored === 'compact' ? stored : 'comfortable';
+  }, [storageKey]);
+
+  const getServerSnapshot = useCallback(() => 'comfortable' as const, []);
+
+  const density = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  const setDensity = useCallback(
+    (value: UsersListDensity) => {
+      window.localStorage.setItem(storageKey, value);
+      window.dispatchEvent(new StorageEvent('storage', { key: storageKey }));
+    },
+    [storageKey],
+  );
+
+  return [density, setDensity] as const;
+}
 
 export type UsersListRow = {
   userId: string;
@@ -97,11 +129,8 @@ export function UsersListTable<TRoleFilter extends string>({
 
   const defaultRoleKey = roleOptions[0]?.key;
 
-  const [density, setDensity] = useState<UsersListDensity>(() => {
-    if (typeof window === 'undefined') return 'comfortable';
-    const stored = window.localStorage.getItem(densityStorageKey);
-    return stored === 'comfortable' || stored === 'compact' ? stored : 'comfortable';
-  });
+  const [density, setDensity] = useDensityStorage(densityStorageKey);
+
   const [columnVisibility, setColumnVisibility] = useState<Record<UsersListColumnKey, boolean>>({
     name: true,
     role: true,
@@ -112,11 +141,6 @@ export function UsersListTable<TRoleFilter extends string>({
   useEffect(() => {
     onLoadingChangeAction?.(false);
   }, [users, query, onLoadingChangeAction]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(densityStorageKey, density);
-  }, [density, densityStorageKey]);
 
   const navigate = (updates: Record<string, string | null | undefined>, options?: { replace?: boolean }) => {
     const queryObject = buildAdminUsersQueryObject(searchParams.toString(), updates);
