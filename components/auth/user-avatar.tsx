@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from '@/i18n/navigation';
 import { User } from '@/lib/auth/types';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,8 @@ const avatarVariants = cva('cursor-pointer bg-primary/10', {
       default: 'h-10 w-10',
       sm: 'h-8 w-8 text-sm',
       xs: 'h-6 w-6 text-sm',
+      lg: 'h-16 w-16 text-lg',
+      xl: 'h-24 w-24 text-2xl',
     },
   },
   defaultVariants: {
@@ -20,21 +22,44 @@ const avatarVariants = cva('cursor-pointer bg-primary/10', {
 });
 
 interface UserAvatarProps
-  extends Omit<ComponentProps<typeof Link>, 'href'>, VariantProps<typeof avatarVariants> {
+  extends Omit<ComponentProps<typeof Link>, 'href'>,
+    VariantProps<typeof avatarVariants> {
   user: User | null;
   className?: string;
   avatarClassName?: string;
+  linkDisabled?: boolean;
 }
 
-const UserAvatar: FC<UserAvatarProps> = ({ user, size, className, avatarClassName, ...props }) => {
-  return (
+const UserAvatar: FC<UserAvatarProps> = ({
+  user,
+  size,
+  className,
+  avatarClassName,
+  linkDisabled = false,
+  ...props
+}) => {
+  const fallbackContent = capitalize(user?.email?.[0] || '?');
+  const imageUrl = user?.image;
+
+  const avatarElement = (
     <Avatar className={cn(avatarVariants({ size }), className)}>
-      <AvatarFallback className={cn('cursor-pointer', avatarClassName)} asChild>
-        <Link href="/settings" {...props}>
-          {capitalize(user?.email?.[0] || '?')}
-        </Link>
+      {imageUrl && (
+        <AvatarImage src={imageUrl} alt={user?.name || 'User avatar'} className="object-cover" />
+      )}
+      <AvatarFallback className={cn('cursor-pointer', avatarClassName)}>
+        {fallbackContent}
       </AvatarFallback>
     </Avatar>
+  );
+
+  if (linkDisabled) {
+    return avatarElement;
+  }
+
+  return (
+    <Link href="/settings" className="flex" {...props}>
+      {avatarElement}
+    </Link>
   );
 };
 

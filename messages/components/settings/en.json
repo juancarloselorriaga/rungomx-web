@@ -204,5 +204,33 @@
         "toast": "Your account has been deleted."
       }
     }
+  },
+  "profilePicture": {
+    "title": "Profile picture",
+    "description": "Upload a photo to personalize your profile.",
+    "hint": "JPEG, PNG, WebP, or GIF. Max {maxSize}MB.",
+    "preview": "Preview",
+    "uploading": "Uploading...",
+    "deleting": "Deleting...",
+    "actions": {
+      "upload": "Upload photo",
+      "change": "Change photo",
+      "delete": "Delete"
+    },
+    "success": {
+      "uploaded": "Profile picture updated.",
+      "deleted": "Profile picture removed."
+    },
+    "errors": {
+      "invalidImage": "Invalid image. Please try another file.",
+      "uploadFailed": "Upload failed. Please try again.",
+      "deleteFailed": "Could not delete the picture. Please try again."
+    },
+    "deleteDialog": {
+      "title": "Delete profile picture?",
+      "description": "This will remove your profile picture. You can upload a new one anytime.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
   }
 }

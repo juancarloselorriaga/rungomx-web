@@ -204,5 +204,33 @@
         "toast": "Tu cuenta ha sido eliminada."
       }
     }
+  },
+  "profilePicture": {
+    "title": "Foto de perfil",
+    "description": "Sube una foto para personalizar tu perfil.",
+    "hint": "JPEG, PNG, WebP o GIF. Máximo {maxSize}MB.",
+    "preview": "Vista previa",
+    "uploading": "Subiendo...",
+    "deleting": "Eliminando...",
+    "actions": {
+      "upload": "Subir foto",
+      "change": "Cambiar foto",
+      "delete": "Eliminar"
+    },
+    "success": {
+      "uploaded": "Foto de perfil actualizada.",
+      "deleted": "Foto de perfil eliminada."
+    },
+    "errors": {
+      "invalidImage": "Imagen no válida. Intenta con otro archivo.",
+      "uploadFailed": "Error al subir. Intenta de nuevo.",
+      "deleteFailed": "No se pudo eliminar la foto. Intenta de nuevo."
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar foto de perfil?",
+      "description": "Esto eliminará tu foto de perfil. Puedes subir una nueva en cualquier momento.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar"
+    }
   }
 }

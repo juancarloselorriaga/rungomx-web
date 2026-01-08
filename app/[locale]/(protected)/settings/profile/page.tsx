@@ -1,3 +1,4 @@
+import { ProfilePictureSection } from '@/components/settings/profile/profile-picture-section';
 import { ProfileSettingsForm } from '@/components/settings/profile/profile-settings-form';
 import { SettingsSectionSubnav } from '@/components/settings/settings-section-subnav';
 import { getAuthContext } from '@/lib/auth/server';
@@ -35,6 +36,8 @@ export default async function ProfileSettingsPage({ params }: LocalePageProps) {
       </div>
 
       <SettingsSectionSubnav />
+
+      <ProfilePictureSection user={authContext.user} isInternal={authContext.isInternal} />
 
       <ProfileSettingsForm
         profile={authContext.profile}
