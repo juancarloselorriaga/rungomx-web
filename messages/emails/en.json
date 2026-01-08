@@ -19,5 +19,34 @@
     "alternativeText": "If the button doesn't work, copy and paste this link into your browser:",
     "expirationNote": "This link will expire in 1 hour for security reasons.",
     "footer": "© {year} RungoMX. All rights reserved."
+  },
+  "userDeletion": {
+    "user": {
+      "subject": "Your RungoMX account has been deleted",
+      "title": "Account Deleted",
+      "greeting": "Hello {userName}",
+      "messageSelfDeleted": "Your RungoMX account has been successfully deleted as requested. All your personal data has been removed from our systems.",
+      "messageAdminDeleted": "Your RungoMX account has been deleted by an administrator. All your personal data has been removed from our systems.",
+      "whatHappened": "What happened to your data?",
+      "dataExplanation": "In compliance with data protection regulations, we have anonymized all personally identifiable information associated with your account, including your email, name, and profile details.",
+      "questions": "If you have any questions or believe this was done in error, please contact our support team.",
+      "farewell": "Thank you for being part of RungoMX.",
+      "footer": "© {year} RungoMX. All rights reserved."
+    },
+    "admin": {
+      "subject": "[Admin] User account deleted",
+      "title": "User Account Deleted",
+      "intro": "A user account has been deleted from the system.",
+      "labels": {
+        "deletedUser": "Deleted User",
+        "deletedUserEmail": "Original Email",
+        "deletedBy": "Deleted By",
+        "deletionType": "Deletion Type",
+        "deletedAt": "Deleted At"
+      },
+      "deletionTypeSelf": "Self-deletion (user requested)",
+      "deletionTypeAdmin": "Admin-initiated",
+      "footer": "© {year} RungoMX. All rights reserved."
+    }
   }
 }

@@ -165,5 +165,44 @@
       "invalidInput": "Check the required fields and try again.",
       "changePassword": "We couldn't change your password. Please try again."
     }
+  },
+  "accountDeleteSection": {
+    "sectionLabel": "Danger zone",
+    "title": "Delete account",
+    "description": "Permanently delete your account and all associated data. This action cannot be undone.",
+    "actions": {
+      "delete": "Delete account"
+    },
+    "dialog": {
+      "title": "Delete your account?",
+      "description": "This will permanently delete your account and remove all your data from our servers.",
+      "warning": {
+        "title": "This action is irreversible",
+        "description": "Your profile, settings, and all associated data will be permanently deleted."
+      },
+      "accountInfo": {
+        "label": "Account to be deleted"
+      },
+      "fields": {
+        "password": {
+          "label": "Confirm your password",
+          "required": "Password is required"
+        }
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "confirmDelete": "Delete my account",
+        "deleting": "Deleting..."
+      },
+      "errors": {
+        "unauthenticated": "You must be signed in to delete your account.",
+        "noPassword": "You need to set a password before you can delete your account.",
+        "invalidPassword": "The password is incorrect.",
+        "genericError": "Something went wrong. Please try again."
+      },
+      "success": {
+        "toast": "Your account has been deleted."
+      }
+    }
   }
 }

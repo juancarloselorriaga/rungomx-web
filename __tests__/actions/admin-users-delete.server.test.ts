@@ -1,7 +1,8 @@
 import { deleteInternalUser } from '@/app/actions/admin-users-delete';
+import type { DeletedUserInfo } from '@/lib/users/delete-user';
 
 type MockAdminContext = {
-  user: { id: string };
+  user: { id: string; name?: string };
 };
 
 const mockRequireAdmin = jest.fn<Promise<MockAdminContext>, unknown[]>();
@@ -10,9 +11,12 @@ const mockVerifyUserCredentialPassword = jest.fn<
   unknown[]
 >();
 const mockDeleteUser = jest.fn<
-  Promise<{ ok: true } | { ok: false; error: 'NOT_FOUND' | 'SERVER_ERROR' }>,
+  Promise<
+    { ok: true; deletedUser: DeletedUserInfo } | { ok: false; error: 'NOT_FOUND' | 'SERVER_ERROR' }
+  >,
   unknown[]
 >();
+const mockSendNotifications = jest.fn<Promise<void>, unknown[]>();
 
 jest.mock('@/lib/auth/guards', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdmin(...args),
@@ -26,12 +30,29 @@ jest.mock('@/lib/users/delete-user', () => ({
   deleteUser: (...args: unknown[]) => mockDeleteUser(...args),
 }));
 
+jest.mock('@/lib/users/email', () => ({
+  sendUserDeletionNotifications: (...args: unknown[]) => mockSendNotifications(...args),
+}));
+
+jest.mock('@/i18n/routing', () => ({
+  routing: {
+    defaultLocale: 'es',
+  },
+}));
+
 describe('deleteInternalUser', () => {
+  const defaultDeletedUser: DeletedUserInfo = {
+    email: 'target@example.com',
+    name: 'Target User',
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdmin.mockReset();
     mockVerifyUserCredentialPassword.mockReset();
     mockDeleteUser.mockReset();
+    mockSendNotifications.mockReset();
+    mockSendNotifications.mockResolvedValue(undefined);
   });
 
   it('returns UNAUTHENTICATED when the admin guard rejects', async () => {
@@ -104,9 +125,35 @@ describe('deleteInternalUser', () => {
   });
 
   it('returns ok when deletion succeeds', async () => {
-    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1' } });
+    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1', name: 'Admin' } });
     mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
-    mockDeleteUser.mockResolvedValueOnce({ ok: true });
+    mockDeleteUser.mockResolvedValueOnce({ ok: true, deletedUser: defaultDeletedUser });
+
+    const result = await deleteInternalUser({ userId: 'user-2', adminPassword: 'pw' });
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it('sends deletion notifications on success', async () => {
+    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1', name: 'Admin User' } });
+    mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
+    mockDeleteUser.mockResolvedValueOnce({ ok: true, deletedUser: defaultDeletedUser });
+
+    await deleteInternalUser({ userId: 'user-2', adminPassword: 'pw' });
+
+    expect(mockSendNotifications).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deletedUser: defaultDeletedUser,
+        isSelfDeletion: false,
+      }),
+    );
+  });
+
+  it('succeeds even if notifications fail', async () => {
+    mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1', name: 'Admin' } });
+    mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
+    mockDeleteUser.mockResolvedValueOnce({ ok: true, deletedUser: defaultDeletedUser });
+    mockSendNotifications.mockRejectedValueOnce(new Error('SMTP down'));
 
     const result = await deleteInternalUser({ userId: 'user-2', adminPassword: 'pw' });
 
@@ -147,9 +194,9 @@ describe('deleteInternalUser', () => {
     it('verifies admin password (not target user password)', async () => {
       const adminId = 'admin-user-id';
       const targetId = 'target-user-id';
-      mockRequireAdmin.mockResolvedValue({ user: { id: adminId } });
+      mockRequireAdmin.mockResolvedValue({ user: { id: adminId, name: 'Admin' } });
       mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
-      mockDeleteUser.mockResolvedValueOnce({ ok: true });
+      mockDeleteUser.mockResolvedValueOnce({ ok: true, deletedUser: defaultDeletedUser });
 
       await deleteInternalUser({ userId: targetId, adminPassword: 'admin-pw' });
 
@@ -160,9 +207,9 @@ describe('deleteInternalUser', () => {
     it('passes admin id as deletedByUserId to deleteUser', async () => {
       const adminId = 'admin-user-id';
       const targetId = 'target-user-id';
-      mockRequireAdmin.mockResolvedValue({ user: { id: adminId } });
+      mockRequireAdmin.mockResolvedValue({ user: { id: adminId, name: 'Admin' } });
       mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
-      mockDeleteUser.mockResolvedValueOnce({ ok: true });
+      mockDeleteUser.mockResolvedValueOnce({ ok: true, deletedUser: defaultDeletedUser });
 
       await deleteInternalUser({ userId: targetId, adminPassword: 'pw' });
 
@@ -170,6 +217,16 @@ describe('deleteInternalUser', () => {
         targetUserId: targetId,
         deletedByUserId: adminId,
       });
+    });
+
+    it('does not send notifications when deletion fails', async () => {
+      mockRequireAdmin.mockResolvedValue({ user: { id: 'admin-1', name: 'Admin' } });
+      mockVerifyUserCredentialPassword.mockResolvedValueOnce({ ok: true });
+      mockDeleteUser.mockResolvedValueOnce({ ok: false, error: 'NOT_FOUND' });
+
+      await deleteInternalUser({ userId: 'user-404', adminPassword: 'pw' });
+
+      expect(mockSendNotifications).not.toHaveBeenCalled();
     });
   });
 });

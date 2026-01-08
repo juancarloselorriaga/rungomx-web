@@ -1,8 +1,10 @@
 'use server';
 
+import { routing } from '@/i18n/routing';
 import { withAdminUser } from '@/lib/auth/action-wrapper';
 import { verifyUserCredentialPassword } from '@/lib/auth/credential-password';
 import { deleteUser } from '@/lib/users/delete-user';
+import { sendUserDeletionNotifications } from '@/lib/users/email';
 import { z } from 'zod';
 
 const deleteInternalUserSchema = z.object({
@@ -50,6 +52,15 @@ export const deleteInternalUser = withAdminUser<DeleteInternalUserResult>({
     if (!result.ok) {
       return { ok: false, error: result.error };
     }
+
+    sendUserDeletionNotifications({
+      deletedUser: result.deletedUser,
+      deletedBy: { id: user.id, name: user.name ?? '' },
+      isSelfDeletion: false,
+      locale: routing.defaultLocale,
+    }).catch((error) => {
+      console.error('[admin-users-delete] Notification failed:', error);
+    });
 
     return { ok: true };
   } catch (error) {

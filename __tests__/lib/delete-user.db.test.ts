@@ -42,7 +42,10 @@ describe('deleteUser - Database Integration', () => {
         deletedByUserId: user.id,
       });
 
-      expect(result).toEqual({ ok: true });
+      expect(result).toEqual({
+        ok: true,
+        deletedUser: { email: 'person@example.com', name: 'John Doe' },
+      });
 
       const [deletedUser] = await db
         .select()
@@ -178,7 +181,7 @@ describe('deleteUser - Database Integration', () => {
 
       const result = await deleteUser({ targetUserId: user.id, deletedByUserId: user.id });
 
-      expect(result).toEqual({ ok: true });
+      expect(result.ok).toBe(true);
 
       const [deletedUser] = await db
         .select()
@@ -208,7 +211,7 @@ describe('deleteUser - Database Integration', () => {
       const user = await createTestUser(db);
 
       const firstDelete = await deleteUser({ targetUserId: user.id, deletedByUserId: user.id });
-      expect(firstDelete).toEqual({ ok: true });
+      expect(firstDelete.ok).toBe(true);
 
       const secondDelete = await deleteUser({ targetUserId: user.id, deletedByUserId: user.id });
       expect(secondDelete).toEqual({ ok: false, error: 'NOT_FOUND' });

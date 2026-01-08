@@ -60,8 +60,8 @@ jest.mock('@/db', () => {
     })),
   };
 
-  const transaction = jest.fn(async (callback: (trx: typeof tx) => Promise<void>) => {
-    await callback(tx);
+  const transaction = jest.fn(async <T>(callback: (trx: typeof tx) => Promise<T>): Promise<T> => {
+    return callback(tx);
   });
 
   return { db: { transaction }, __pushSelect, __getCalls, __reset };
@@ -84,11 +84,14 @@ describe('deleteUser', () => {
   });
 
   it('revokes sessions/accounts and anonymizes user data', async () => {
-    __pushSelect([{ email: 'person@example.com' }]);
+    __pushSelect([{ email: 'person@example.com', name: 'Person Name' }]);
 
     const result = await deleteUser({ targetUserId: 'user-1', deletedByUserId: 'admin-1' });
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({
+      ok: true,
+      deletedUser: { email: 'person@example.com', name: 'Person Name' },
+    });
 
     const calls = __getCalls();
 

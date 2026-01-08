@@ -165,5 +165,44 @@
       "invalidInput": "Revisa los campos obligatorios e inténtalo de nuevo.",
       "changePassword": "No pudimos cambiar tu contraseña. Intenta de nuevo."
     }
+  },
+  "accountDeleteSection": {
+    "sectionLabel": "Zona de peligro",
+    "title": "Eliminar cuenta",
+    "description": "Elimina permanentemente tu cuenta y todos los datos asociados. Esta acción no se puede deshacer.",
+    "actions": {
+      "delete": "Eliminar cuenta"
+    },
+    "dialog": {
+      "title": "¿Eliminar tu cuenta?",
+      "description": "Esto eliminará permanentemente tu cuenta y todos tus datos de nuestros servidores.",
+      "warning": {
+        "title": "Esta acción es irreversible",
+        "description": "Tu perfil, configuración y todos los datos asociados serán eliminados permanentemente."
+      },
+      "accountInfo": {
+        "label": "Cuenta a eliminar"
+      },
+      "fields": {
+        "password": {
+          "label": "Confirma tu contraseña",
+          "required": "La contraseña es requerida"
+        }
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "confirmDelete": "Eliminar mi cuenta",
+        "deleting": "Eliminando..."
+      },
+      "errors": {
+        "unauthenticated": "Debes iniciar sesión para eliminar tu cuenta.",
+        "noPassword": "Necesitas establecer una contraseña antes de eliminar tu cuenta.",
+        "invalidPassword": "La contraseña es incorrecta.",
+        "genericError": "Algo salió mal. Intenta de nuevo."
+      },
+      "success": {
+        "toast": "Tu cuenta ha sido eliminada."
+      }
+    }
   }
 }

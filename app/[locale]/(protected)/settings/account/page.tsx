@@ -1,3 +1,4 @@
+import { AccountDeleteSection } from '@/components/settings/account/account-delete-section';
 import { AccountNameForm } from '@/components/settings/account/account-name-form';
 import { AccountPasswordForm } from '@/components/settings/account/account-password-form';
 import { SettingsSectionSubnav } from '@/components/settings/settings-section-subnav';
@@ -41,6 +42,7 @@ export default async function AccountSettingsPage({ params }: LocalePageProps) {
       <div className="space-y-6">
         <AccountNameForm defaultName={user?.name ?? ''} email={user?.email ?? ''} />
         <AccountPasswordForm />
+        <AccountDeleteSection userEmail={user?.email ?? ''} />
       </div>
     </div>
   );

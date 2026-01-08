@@ -17,8 +17,13 @@ export type DeleteUserIntent = {
   deletedByUserId: string;
 };
 
+export type DeletedUserInfo = {
+  email: string;
+  name: string;
+};
+
 export type DeleteUserResult =
-  | { ok: true }
+  | { ok: true; deletedUser: DeletedUserInfo }
   | { ok: false; error: 'NOT_FOUND' | 'SERVER_ERROR' };
 
 class UserNotFoundError extends Error {
@@ -45,9 +50,9 @@ export async function deleteUser(intent: DeleteUserIntent): Promise<DeleteUserRe
   const deletedAt = new Date();
 
   try {
-    await db.transaction(async (tx) => {
+    const deletedUser = await db.transaction(async (tx) => {
       const existing = await tx
-        .select({ email: users.email })
+        .select({ email: users.email, name: users.name })
         .from(users)
         .where(and(eq(users.id, intent.targetUserId), isNull(users.deletedAt)));
 
@@ -56,6 +61,10 @@ export async function deleteUser(intent: DeleteUserIntent): Promise<DeleteUserRe
         throw new UserNotFoundError();
       }
 
+      const deletedUserInfo: DeletedUserInfo = {
+        email: target.email,
+        name: target.name ?? '',
+      };
       const previousEmail = target.email;
 
       await tx.delete(sessions).where(eq(sessions.userId, intent.targetUserId));
@@ -114,9 +123,11 @@ export async function deleteUser(intent: DeleteUserIntent): Promise<DeleteUserRe
           emailVerified: false,
         })
         .where(and(eq(users.id, intent.targetUserId), isNull(users.deletedAt)));
+
+      return deletedUserInfo;
     });
 
-    return { ok: true };
+    return { ok: true, deletedUser };
   } catch (error) {
     if (error instanceof UserNotFoundError) {
       return { ok: false, error: 'NOT_FOUND' };

@@ -19,5 +19,34 @@
     "alternativeText": "Si el botón no funciona, copia y pega este enlace en tu navegador:",
     "expirationNote": "Este enlace expirará en 1 hora por razones de seguridad.",
     "footer": "© {year} RungoMX. Todos los derechos reservados."
+  },
+  "userDeletion": {
+    "user": {
+      "subject": "Tu cuenta de RungoMX ha sido eliminada",
+      "title": "Cuenta Eliminada",
+      "greeting": "Hola {userName}",
+      "messageSelfDeleted": "Tu cuenta de RungoMX ha sido eliminada exitosamente como lo solicitaste. Todos tus datos personales han sido removidos de nuestros sistemas.",
+      "messageAdminDeleted": "Tu cuenta de RungoMX ha sido eliminada por un administrador. Todos tus datos personales han sido removidos de nuestros sistemas.",
+      "whatHappened": "¿Qué pasó con tus datos?",
+      "dataExplanation": "En cumplimiento con las regulaciones de protección de datos, hemos anonimizado toda la información de identificación personal asociada con tu cuenta, incluyendo tu email, nombre y detalles de perfil.",
+      "questions": "Si tienes alguna pregunta o crees que esto fue un error, por favor contacta a nuestro equipo de soporte.",
+      "farewell": "Gracias por ser parte de RungoMX.",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    },
+    "admin": {
+      "subject": "[Admin] Cuenta de usuario eliminada",
+      "title": "Cuenta de Usuario Eliminada",
+      "intro": "Una cuenta de usuario ha sido eliminada del sistema.",
+      "labels": {
+        "deletedUser": "Usuario Eliminado",
+        "deletedUserEmail": "Email Original",
+        "deletedBy": "Eliminado Por",
+        "deletionType": "Tipo de Eliminación",
+        "deletedAt": "Eliminado el"
+      },
+      "deletionTypeSelf": "Auto-eliminación (solicitada por usuario)",
+      "deletionTypeAdmin": "Iniciada por administrador",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    }
   }
 }
