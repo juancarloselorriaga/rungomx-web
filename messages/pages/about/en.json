@@ -1,14 +1,19 @@
 {
   "hero": {
+    "badge": "About RunGoMX",
     "title": "Who we are",
-    "description": "RunGoMX was born in Mexico to transform the way race directors and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place."
+    "description": "RunGoMX was born in Mexico to transform the way race directors and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place.",
+    "primaryCta": "Get Started",
+    "secondaryCta": "Create Account"
   },
   "vision": {
+    "eyebrow": "Our Vision",
     "title": "Our vision",
     "paragraph1": "We want Mexico to be a reference in sports innovation in Latin America. That every race, regardless of its size, has access to world-class tools without paying world-class prices.",
     "paragraph2": "We believe that technology should serve the sport, not complicate it. That's why we build solutions designed for the Mexican context: simple, accessible and powerful."
   },
   "whyWeExist": {
+    "eyebrow": "The Challenge",
     "title": "Why we exist",
     "intro": "Running in Mexico has grown enormously, but the digital infrastructure has not grown at the same pace. Organizers and runners face recurring problems:",
     "butText": "But that's changing.",
@@ -23,6 +28,7 @@
     "solution": "RunGoMX comes to solve that."
   },
   "whatWeDo": {
+    "eyebrow": "Our Platform",
     "title": "What we do",
     "subtitle": "We create a complete ecosystem for running in Mexico:",
     "forRunners": {
@@ -49,6 +55,7 @@
     "tagline": "One platform for the entire lifecycle of your race."
   },
   "philosophy": {
+    "eyebrow": "Our Values",
     "title": "Our philosophy",
     "intro": "We are a team of Mexican technologists passionate about running and innovation. We don't copy foreign models; we build from scratch with a local mindset.",
     "believeIn": "We believe in:",
@@ -89,6 +96,7 @@
     "tagline": "That's why our platform doesn't just work technically: it works for the real context of Mexico."
   },
   "commitment": {
+    "eyebrow": "Our Commitment",
     "title": "Our commitment",
     "goals": [
       "RunGoMX is not just software. It's a long-term commitment to the running community in Mexico.",
@@ -97,6 +105,8 @@
       "Because at the end of the day, our success is measured in successful races, happy runners and an increasingly strong running community."
     ],
     "mission": "Our mission is clear:",
-    "tagline": "Mexican technology. Mexican running."
+    "tagline": "Mexican technology. Mexican running.",
+    "primaryCta": "Get Started",
+    "secondaryCta": "Contact Us"
   }
 }

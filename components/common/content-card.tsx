@@ -2,17 +2,21 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-const cardVariants = cva('rounded-2xl p-8 shadow-lg md:p-12', {
+const cardVariants = cva('rounded-2xl p-8 md:p-10', {
   variants: {
     variant: {
-      default: 'bg-card ring-1 ring-border',
+      default: 'bg-card border border-border',
       'branded-blue':
-        'bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-blue-dark)] text-primary-foreground shadow-xl',
+        'bg-[var(--brand-blue)]/10 border border-[var(--brand-blue)]/20 text-foreground',
       'branded-green':
-        'bg-gradient-to-br from-[var(--brand-green)] to-[var(--brand-green-dark)] text-primary-foreground shadow-xl',
+        'bg-[var(--brand-green)]/10 border border-[var(--brand-green)]/20 text-foreground',
       'branded-indigo':
-        'bg-gradient-to-br from-[var(--brand-indigo)] to-[var(--brand-blue-dark)] text-primary-foreground shadow-xl',
-      dark: 'bg-gradient-to-br from-foreground to-foreground/90 text-background ring-1 ring-background/20',
+        'bg-[var(--brand-indigo)]/10 border border-[var(--brand-indigo)]/20 text-foreground',
+      'solid-blue':
+        'bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-blue-dark)] text-white shadow-lg',
+      'solid-green':
+        'bg-gradient-to-br from-[var(--brand-green)] to-[var(--brand-green-dark)] text-white shadow-lg',
+      dark: 'bg-muted/50 border border-border text-foreground',
     },
   },
   defaultVariants: {
@@ -27,16 +31,15 @@ export interface ContentCardProps extends VariantProps<typeof cardVariants> {
 }
 
 export function ContentCard({ title, children, variant, className }: ContentCardProps) {
-  const isBranded = variant?.includes('branded');
-  const isDark = variant === 'dark';
+  const isSolid = variant?.startsWith('solid-');
 
   return (
     <div className={cn(cardVariants({ variant }), className)}>
       {title && (
         <h2
           className={cn(
-            'mb-6 text-3xl font-bold',
-            isBranded || isDark ? 'text-inherit' : 'text-foreground',
+            'mb-6 text-2xl md:text-3xl font-bold',
+            isSolid ? 'text-inherit' : 'text-foreground',
           )}
         >
           {title}
@@ -44,8 +47,8 @@ export function ContentCard({ title, children, variant, className }: ContentCard
       )}
       <div
         className={cn(
-          'space-y-4 text-lg leading-relaxed',
-          isBranded || isDark ? 'opacity-90' : 'text-muted-foreground',
+          'space-y-4 text-base md:text-lg leading-relaxed',
+          isSolid ? 'text-white/90' : 'text-muted-foreground',
         )}
       >
         {children}
