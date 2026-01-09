@@ -1,7 +1,7 @@
 'use client';
 
+import UserAvatar from '@/components/auth/user-avatar';
 import { useAppTheme } from '@/components/providers/app-theme';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,25 +19,11 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
 import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
-import { capitalize } from '@/utils/capitalize';
 import { Check, Languages, LogOut, Moon, Sun, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useMemo, useTransition } from 'react';
+import { useTransition } from 'react';
 
 type ThemeOption = 'light' | 'dark';
-
-function getInitials(user: User | null) {
-  if (user?.name) {
-    const [first = '', second = ''] = user.name.split(' ');
-    return (`${first[0] ?? ''}${second[0] ?? ''}`.trim() || '?').toUpperCase();
-  }
-
-  if (user?.email) {
-    return capitalize(user.email[0] ?? '?');
-  }
-
-  return '?';
-}
 
 export function UserMenu({ user }: { user: User | null }) {
   const router = useRouter();
@@ -62,8 +48,6 @@ export function UserMenu({ user }: { user: User | null }) {
     });
   };
 
-  const initials = useMemo(() => getInitials(user), [user]);
-
   const triggerAvatar = (
     <Button
       variant="ghost"
@@ -71,9 +55,7 @@ export function UserMenu({ user }: { user: User | null }) {
       size="icon"
       aria-label={displayName}
     >
-      <Avatar className="h-8 w-8">
-        <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
-      </Avatar>
+      <UserAvatar user={user} size="sm" linkDisabled className="h-8 w-8" />
     </Button>
   );
 
@@ -82,9 +64,7 @@ export function UserMenu({ user }: { user: User | null }) {
       <DropdownMenuTrigger asChild>{triggerAvatar}</DropdownMenuTrigger>
       <DropdownMenuContent className="w-64" align="end">
         <DropdownMenuLabel className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="text-sm font-semibold">{initials}</AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user} linkDisabled className="h-10 w-10" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold">{displayName}</p>
             {displayEmail ? (
