@@ -27,7 +27,7 @@ This plan is **strictly limited to Events** (creation, discovery, event pages, r
 - UltraSignup’s “Creating a New Event” doc emphasizes required setup inputs (website/FB page, description, pricing, registration details) and explicitly calls out trail/ultra-specific content that should be included in descriptions such as **course description, cutoffs, aid station info, packet pickup, start times, refund policy, swag**. (https://help.ultrasignup.com/hc/en-us/articles/30339236980365-Creating-a-New-Event)
 - UltraSignup’s setup checklist (“Quick Start”) indicates registration won’t open without **waiver, location, and pricing**, and highlights configuration areas for photos, location, payments, description, questions, add-ons, capacity, and order edits. (https://help.ultrasignup.com/hc/en-us/articles/30339286849805-Quick-Start-Complete-Your-Event-Setup)
 - UltraSignup distance setup expects “distances” as discrete offerings; it documents constraints like **no duplicate distances** (must alter numeric distance and use a label to differentiate). (https://help.ultrasignup.com/hc/en-us/articles/30339201314061-Add-Another-Distance)
-- UltraSignup capacity can be set **across all distances** or **per distance**, and waitlist can be enabled when filled (observed; we will not implement waitlist operations in this plan). (https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)
+- UltraSignup capacity can be set **across all distances** or **per distance**. (https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)
 - UltraSignup pricing supports **up to three tiers** directly (0/1/2 price changes), supports special pricing labels (member/youth), and documents taxes/fees behavior. (https://help.ultrasignup.com/hc/en-us/articles/30339226191245-Event-Pricing-Setup)
 
 ### Event Website (public event pages)
@@ -43,7 +43,7 @@ This plan is **strictly limited to Events** (creation, discovery, event pages, r
 
 - UltraSignup event pages emphasize trail/ultra-specific information in-page: **Description & Terrain**, awards, aid station details, parking, packet pickup/race-day details, and include explicit **course composition and elevation gain** in the description. (https://ultrasignup.com/register.aspx?eid=19181)
 - UltraSignup pages can include “Course Information” links like **Aid Station Distances and Cutoffs** and **Elevation Profiles**, plus start times per distance and an explicit race capacity across distances. (https://ultrasignup.com/register.aspx?eid=13825)
-- UltraSignup event pages show registration status and capacity signals such as **sold out + waitlist**, including “Waitlist NO CHARGE” (presence only; not implementing waitlist ops here). (https://ultrasignup.com/register.aspx?eid=19181)
+- UltraSignup event pages show registration status and capacity signals such as **sold out**. (https://ultrasignup.com/register.aspx?eid=19181)
 
 ### Registration (participant UX)
 
@@ -74,7 +74,7 @@ This plan is **strictly limited to Events** (creation, discovery, event pages, r
 - UltraSignup event search supports location search + map/grid view and filters including:
   - Only open events / show past events / only virtual events. (https://ultrasignup.com/events/search.aspx)
   - Distance radius (25/50/100/200/300/500 miles), month filter, and coarse difficulty/distance/duration buckets. (https://ultrasignup.com/events/search.aspx)
-  - The search UI loads events via a “closest events” service endpoint with parameters for open/past/virtual + lat/lng + radius + months. (https://ultrasignup.com/js/usu.events.search.js?v=5.7)
+  - The search UI loads events via a “closest events” service endpoint with parameters for open/past/virtual + lat/lng + radius + months. (https://ultrasignup.com/js/usu.events.search.js?v=5.7) Referenced only to understand filter dimensions; we will not scrape or mirror UltraSignup.
 
 ### Terminology notes (as used by RunSignup vs UltraSignup)
 
@@ -107,7 +107,7 @@ This plan is **strictly limited to Events** (creation, discovery, event pages, r
 
 ### RunGoMx customer call requirements (additions beyond RunSignup/UltraSignup research)
 
-These items come from customer discovery (not from RunSignup/UltraSignup research) and should shape RunGoMx’s roadmap:
+These requirements come from internal discovery, not from RunSignup/UltraSignup research.
 
 - Discovery/search must include filters for: **type/sport**, **month**, **distance(s)**, **state/region**, and a **map view**.
 - Supported sport types should include: **Trail Running, Triathlon, Cycling, MTB, Gravel Bike, Duathlon, Backyard Ultra**.
@@ -136,8 +136,7 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
 | Waiver (single + acceptance stored)                                   | Yes (first page waiver; stored with IP) (https://info.runsignup.com/2021/11/17/multiple-waivers/)                                                                                                 | Yes (waiver + required initials) (https://ultrasignup.com/registration_step2.aspx?did=134389&ci=10779387)                                                                           | v1                | Start with one waiver per edition; store acceptance metadata; v2 can support multiple waivers per distance.                |
 | Registration custom questions                                         | Yes (documented flexibility) (https://info.runsignup.com/products/registration/)                                                                                                                  | Yes (questions in registration step) (https://ultrasignup.com/registration_step2.aspx?did=134389&ci=10779387)                                                                       | v2                | Model as typed questions with answers; avoid over-generalizing early.                                                      |
 | Add-ons (shirts/merch/donations concept)                              | Yes (add-ons during registration) (https://info.runsignup.com/2025/12/22/store-vs-add-ons/)                                                                                                       | Yes (distance-scoped, qty 1–5, taxes, export) (https://help.ultrasignup.com/hc/en-us/articles/30339240810509-Creating-Add-Ons)                                                      | v2                | v1 can stub the data model; v2 implements selection + totals.                                                              |
-| Capacity (per distance + across distances)                            | Yes (“spots left” messaging) (https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K)                                                                                               | Yes (documented; waitlist optional) (https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)                                                               | v1                | Basic full vs available; enforce transactionally; waitlist deferred (observe only).                                        |
-| Waitlist                                                              | Mentioned on RunSignup product page; observed on UltraSignup pages (https://ultrasignup.com/register.aspx?eid=19181)                                                                              | Yes (https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)                                                                                               | v3 (deferred ops) | Keep data model hooks; do not implement ops tooling in this plan.                                                          |
+| Capacity (per distance + across distances)                            | Yes (capacity/limit messaging) (https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K)                                                                                              | Yes (documented: per distance or across distances) (https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)                                                | v1                | Basic available vs full; enforce transactionally.                                                                           |
 | Refund policy page/section (config placeholder)                       | Yes (dedicated refund policy page) (https://runsignup.com/Race/176380/RefundPolicy)                                                                                                               | Emphasized as clarity in waiver/description (https://help.ultrasignup.com/hc/en-us/articles/30339325581197-Refund-Policy-Making-Things-Crystal-Clear)                               | v1                | Store policy text + flags only; no automation.                                                                             |
 | Transfer policy placeholder (config only)                             | Documented/mentioned as capability in product copy (https://info.runsignup.com/products/registration/)                                                                                            | Documented bib transfer workflow (https://help.ultrasignup.com/hc/en-us/articles/30339234344973-Set-Up-Bib-Transfer-Option)                                                         | v3 (config only)  | Model policy + deadlines; do not implement full transfer ops yet.                                                          |
 | Deferral/credit policy placeholder (config only)                      | Mentioned as capability in product copy (https://info.runsignup.com/products/registration/)                                                                                                       | Credits/rollovers documented (https://help.ultrasignup.com/hc/en-us/articles/30339290435213-Creating-and-Applying-Rollover-Credits)                                                 | v3 (config only)  | Model “credit policy” config and future hooks; do not implement rollover operations.                                       |
@@ -219,7 +218,7 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
   - Registration open/close window (and “registration closes” display parity with UltraSignup). (https://ultrasignup.com/register.aspx?eid=19181)
   - Manual “registration paused” override (does not unpublish the event; blocks new registrations).
   - At least one distance with price (single price only in v1).
-  - Capacity (per distance OR across all distances) and “sold out / spots left” messaging. (https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K, https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)
+  - Capacity (per distance OR across all distances) and a clear “sold out” state when full. (https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K, https://help.ultrasignup.com/hc/en-us/articles/30339258356877-Set-Your-Capacity)
   - Prominent Q&A/FAQ section (structured items) editable by the organizer (non-negotiable for RunGoMx; keep even as website CMS expands in Phase 2).
   - Unique public event code/ID (short stable identifier for support + exports; future results uploads).
 - Public:
@@ -228,7 +227,7 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
 - Registration:
   - Account-required registration (consistent with our existing auth baseline); guest registration is planned for v3 (UltraSignup supports guest). (https://ultrasignup.com/members/login.aspx?ReturnUrl=%2fregistration_step0.aspx%3fdid%3d134389%26ci%3d10779327)
   - Collect required participant info (prefill from `profiles` table when available) and store per-registration snapshot:
-    - First/last name, date of birth, phone, email, sex/gender, city/state, emergency contact name + phone.
+    - First/last name, date of birth, phone, email, sex/gender, gender identity (optional), results division (if required for awards/scoring), city/state, emergency contact name + phone.
   - Capture waiver acceptance (single waiver per edition) with timestamp + IP/user-agent (parity with RunSignup/UltraSignup). (https://info.runsignup.com/2021/11/17/multiple-waivers/, https://ultrasignup.com/registration_step2.aspx?did=134389&ci=10779387)
   - Compute totals and show a “payment step placeholder” with a PaymentPending state (no real payment).
 
@@ -276,7 +275,7 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
 
 #### Edge cases
 
-- Capacity race conditions: enforce capacity at DB level with transactional checks; do not rely on client-side “spots left” only. (Messaging is public on both platforms.) (https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K)
+- Capacity race conditions: enforce capacity at DB level with transactional checks; do not rely on client-side remaining-capacity display only. (https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K)
 - Timezone correctness for registration close times shown publicly. (https://ultrasignup.com/register.aspx?eid=19181)
 - Minor registration: v1 can block minors or treat as “needs confirmation” until we decide required legal posture; both platforms include minors handling. (RunSignup: https://runsignup.com/Race/Register/?raceId=90618&eventId=1076439)
 
@@ -518,6 +517,8 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
 
 ## 6. Data model (entities + relationships + key fields)
 
+We choose an `EventSeries` + `EventEdition` model from day 1 to support annual renewals, stable public URLs, and a clean split between the “evergreen” event identity and year-specific details; this avoids costly migrations after v1.
+
 High-level entities (names are conceptual; final naming should match our Drizzle conventions):
 
 - **Organization**
@@ -551,8 +552,8 @@ High-level entities (names are conceptual; final naming should match our Drizzle
   - `createdAt`, `updatedAt`
 - **Registrant**
   - `id`, `registrationId`, `userId` (nullable for guest/multi-participant later)
-  - `profileSnapshot` (JSON: name/email/dob/gender/phone/address/emergency contact)
-  - `division` (results division), `genderIdentity` (optional)
+  - `profileSnapshot` (JSON: name/email/dob/sex/phone/address/emergency contact)
+  - `resultsDivision` (used for awards/scoring), `genderIdentity` (self-reported, optional); store both and never force them to match
 - **Waiver**
   - `id`, `editionId` (or distanceId later), `title`, `body`, `versionHash`, `displayOrder`
 - **WaiverAcceptance**
@@ -632,8 +633,7 @@ Key relationships:
 
 - `Available` → `Full` when capacity is reached (distance-level or shared pool).
 - While `Full`:
-  - Registration CTA shows “Sold out” (UltraSignup) or “spots left” messaging when near full (RunSignup). (https://ultrasignup.com/register.aspx?eid=19181, https://runsignup.com/Race/Events/NJ/Hillsborough/TheResolutionRun5K)
-  - Waitlist is a **future** behavior: we keep schema hooks but defer operational waitlist in this plan.
+  - Registration is blocked and the CTA shows “Sold out”. (https://ultrasignup.com/register.aspx?eid=19181)
 
 ## 8. Key workflows (step-by-step)
 
@@ -732,9 +732,9 @@ Key relationships:
 
 - `/[locale]/events`:
   - Filters: type/sport, month, distance range, state/region, location (autocomplete) + radius, open-only, virtual.
-  - Components: filter panel, results list/cards, pagination, (v2) map/list toggle.
+  - Components: filter panel, results list/cards with registration status (Open/Paused/Closed/SoldOut) and optional “X spots left” when low, pagination, (v2) map/list toggle.
 - `/[locale]/events/[slug]`:
-  - Hero + key facts (date/time, location, registration close, capacity status).
+  - Hero + key facts (date/time, location, registration close, capacity status; show “X spots left” when below a threshold).
   - Distances list + pricing schedule preview + external URL (if provided).
   - Prominent Q&A/FAQ section (Phase 1+).
   - Attachments/media links (Phase 2+: photos + PDF).
@@ -757,7 +757,7 @@ Key relationships:
 ## 11. Risks and mitigations (security, fraud, data integrity, SEO duplication, permissions)
 
 - **Authorization gaps (org vs global roles)**: enforce org membership checks in _every_ organizer server action; keep a single permissions helper to avoid drift.
-- **Capacity oversubscription**: enforce at DB/transaction level; never rely only on UI “spots left”.
+- **Capacity oversubscription**: enforce at DB/transaction level; never rely only on UI remaining-capacity display.
 - **Data privacy for waivers/medical info**: store only what is required; separate PII snapshot vs event config; add auditing and access controls for organizer exports.
 - **XSS in organizer-edited content**: use a restricted block schema + sanitization; do not allow raw HTML by default.
 - **SEO duplication (tabs/subpages)**: canonicalize to `/events/[slug]` and set consistent alternates; avoid indexing draft/unlisted; only include published in sitemap. (Align with existing `robots.ts` and `sitemap.ts` patterns.)
@@ -772,8 +772,8 @@ Key relationships:
 - Do we want **account-required registration** in v1 (simpler, aligns with current auth), or **guest registration** (UltraSignup supports it) from day 1? (https://ultrasignup.com/members/login.aspx?ReturnUrl=%2fregistration_step0.aspx%3fdid%3d134389%26ci%3d10779327)
 - Minor registration policy: will we support minors in v1, and what legal text/guardian verification is required? (RunSignup shows explicit minor/guardian messaging.) (https://runsignup.com/Race/Register/?raceId=90618&eventId=1076439)
 - Do we need a strict “event approval” workflow (UltraSignup requires verification of website/FB page to prevent fake events)? (https://help.ultrasignup.com/hc/en-us/articles/30339236980365-Creating-a-New-Event)
-- Should the initial schema include **EventSeries/EventEdition** now (recommended) or postpone until post-v1?
-- How should we represent **division vs gender identity** in RunGoMx to match UltraSignup’s “backup division” note? (https://ultrasignup.com/registration_step0.aspx?did=134389&ci=10779327)
+- Waitlist is deferred (not planned in phases 0–3).
+- How should we represent **division vs gender identity** in RunGoMx UX to match UltraSignup’s “backup division” note? Store both separately and never force them to match. (https://ultrasignup.com/registration_step0.aspx?did=134389&ci=10779327)
 - What is the desired “platform fee” model for v2 totals display (flat vs %), and do we need tax modeling now or later?
 - Directors: do we need event-scoped secondary directors, or is org membership sufficient (creator invites other users and assigns permissions)?
 - Group registrations: who is the payer (director vs group leader), and what is the exact rule for existing athletes (error/skip/link) when an uploaded row matches an existing account?
@@ -800,7 +800,7 @@ Key relationships:
 
 - https://ultrasignup.com/events/search.aspx
 - https://ultrasignup.com/js/usu.events.search.js?v=5.7
-- https://ultrasignup.com/service/events.svc/closestevents?open=1&past=0&virtual=0&lat=0&lng=0&mi=200&mo=12
+- https://ultrasignup.com/service/events.svc/closestevents?open=1&past=0&virtual=0&lat=0&lng=0&mi=200&mo=12 (Referenced only to understand filter dimensions; do not scrape or mirror UltraSignup.)
 - https://ultrasignup.com/register.aspx?eid=2483
 - https://ultrasignup.com/register.aspx?eid=19181
 - https://ultrasignup.com/register.aspx?eid=13825
