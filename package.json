@@ -26,7 +26,8 @@
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged"
+    "pre-commit": "pnpm lint-staged",
+    "commit-msg": "scripts/clean-commit-msg.sh"
   },
   "lint-staged": {
     "messages/**/*.json": [

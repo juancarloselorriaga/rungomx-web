@@ -9,4 +9,4 @@ if [ -f "$SIMPLE_GIT_HOOKS_RC" ]; then
     . "$SIMPLE_GIT_HOOKS_RC"
 fi
 
-scripts/clean-commit-msg.sh "$1"
+pnpm lint-staged
