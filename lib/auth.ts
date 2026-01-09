@@ -174,6 +174,11 @@ export const auth = betterAuth({
   trustedOrigins: async (request) => {
     const origins = new Set(trustedOrigins);
 
+    // request is undefined during initialization and auth.api calls
+    if (!request) {
+      return Array.from(origins);
+    }
+
     // Always trust the current host serving the request (covers aliases and previews)
     const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
     const protocol = request.headers.get('x-forwarded-proto') ?? 'https';
