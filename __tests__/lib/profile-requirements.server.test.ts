@@ -1,3 +1,12 @@
+jest.mock('next-intl/routing', () => ({
+  defineRouting: jest.fn(() => ({
+    locales: ['es', 'en'] as const,
+    defaultLocale: 'es',
+    localePrefix: 'as-needed',
+    pathnames: {},
+  })),
+}));
+
 import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
 import { createProfileValidationSchema } from '@/lib/profiles/schema';
 import type { ProfileUpsertInput } from '@/lib/profiles/types';

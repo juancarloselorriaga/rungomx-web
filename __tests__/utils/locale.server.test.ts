@@ -7,7 +7,11 @@ jest.mock('next-intl/routing', () => ({
   })),
 }));
 
-import { extractLocaleFromCallbackURL, extractLocaleFromRequest } from '@/lib/utils/locale';
+import {
+  extractLocaleFromCallbackURL,
+  extractLocaleFromRequest,
+  getUserPreferredLocale,
+} from '@/lib/utils/locale';
 
 describe('extractLocaleFromRequest', () => {
   it('prefers NEXT_LOCALE cookie over Accept-Language', () => {
@@ -181,6 +185,129 @@ describe('extractLocaleFromCallbackURL', () => {
     it('handles production URL scenario', () => {
       const callbackURL = 'https://myapp.com/en/reset-password';
       expect(extractLocaleFromCallbackURL(callbackURL)).toBe('en');
+    });
+  });
+});
+
+describe('getUserPreferredLocale', () => {
+  describe('with profile locale', () => {
+    it('returns profile locale when valid', () => {
+      expect(getUserPreferredLocale('en')).toBe('en');
+      expect(getUserPreferredLocale('es')).toBe('es');
+    });
+
+    it('ignores fallback request when profile locale is valid', () => {
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/test',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=es',
+        }),
+      };
+      expect(getUserPreferredLocale('en', fallbackRequest)).toBe('en');
+    });
+  });
+
+  describe('with invalid/missing profile locale', () => {
+    it('falls back to request extraction when profile locale is null', () => {
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/test',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=en',
+        }),
+      };
+      expect(getUserPreferredLocale(null, fallbackRequest)).toBe('en');
+    });
+
+    it('falls back to request extraction when profile locale is undefined', () => {
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/test',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=es',
+        }),
+      };
+      expect(getUserPreferredLocale(undefined, fallbackRequest)).toBe('es');
+    });
+
+    it('falls back to request extraction when profile locale is empty string', () => {
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/test',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=en',
+        }),
+      };
+      expect(getUserPreferredLocale('', fallbackRequest)).toBe('en');
+    });
+
+    it('falls back to request extraction when profile locale is invalid', () => {
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/test',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=es',
+        }),
+      };
+      expect(getUserPreferredLocale('fr', fallbackRequest)).toBe('es');
+    });
+  });
+
+  describe('without fallback request', () => {
+    it('returns default locale when profile locale is null and no request', () => {
+      expect(getUserPreferredLocale(null)).toBe('es'); // default locale
+    });
+
+    it('returns default locale when profile locale is undefined and no request', () => {
+      expect(getUserPreferredLocale(undefined)).toBe('es');
+    });
+
+    it('returns default locale when profile locale is invalid and no request', () => {
+      expect(getUserPreferredLocale('fr')).toBe('es');
+    });
+  });
+
+  describe('real-world scenarios', () => {
+    it('uses DB locale for authenticated user even if browser has different locale', () => {
+      // User has 'en' saved in DB but browser cookie says 'es'
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/auth/session',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=es',
+          'accept-language': 'es-MX,es;q=0.9',
+        }),
+      };
+      expect(getUserPreferredLocale('en', fallbackRequest)).toBe('en');
+    });
+
+    it('uses request locale for user without DB preference', () => {
+      // User has no locale saved (null), so use browser preference
+      const fallbackRequest = {
+        url: 'http://localhost:3000/api/auth/session',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=en',
+        }),
+      };
+      expect(getUserPreferredLocale(null, fallbackRequest)).toBe('en');
+    });
+
+    it('handles email sending scenario with profile locale', () => {
+      // Simulating email handler getting locale for a user with saved preference
+      const request = {
+        url: 'http://localhost:3000/api/auth/request-password-reset',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=es', // Browser shows Spanish
+        }),
+      };
+      // But user's profile has English saved - should use English for email
+      expect(getUserPreferredLocale('en', request)).toBe('en');
+    });
+
+    it('handles email sending scenario without profile locale', () => {
+      // User without saved locale - fall back to request extraction
+      const request = {
+        url: 'http://localhost:3000/api/auth/request-password-reset',
+        headers: new Headers({
+          cookie: 'NEXT_LOCALE=es',
+        }),
+      };
+      expect(getUserPreferredLocale(null, request)).toBe('es');
     });
   });
 });

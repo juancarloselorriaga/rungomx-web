@@ -23,6 +23,7 @@ describe('computeProfileStatus', () => {
     shirtSize: null,
     weightKg: null,
     heightCm: null,
+    locale: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,

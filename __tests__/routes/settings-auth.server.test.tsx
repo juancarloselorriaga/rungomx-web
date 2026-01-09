@@ -34,6 +34,9 @@ jest.mock('@/components/layout/admin-layout-wrapper', () => ({
   __esModule: true,
   default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
+jest.mock('@/components/locale-sync-wrapper', () => ({
+  LocaleSyncWrapper: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 jest.mock('@/components/settings/settings-shell', () => ({
   SettingsShell: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));

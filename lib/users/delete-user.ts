@@ -20,6 +20,7 @@ export type DeleteUserIntent = {
 export type DeletedUserInfo = {
   email: string;
   name: string;
+  locale: string | null;
 };
 
 export type DeleteUserResult =
@@ -61,9 +62,16 @@ export async function deleteUser(intent: DeleteUserIntent): Promise<DeleteUserRe
         throw new UserNotFoundError();
       }
 
+      // Fetch profile locale before wiping (for notification emails)
+      const [profile] = await tx
+        .select({ locale: profiles.locale })
+        .from(profiles)
+        .where(eq(profiles.userId, intent.targetUserId));
+
       const deletedUserInfo: DeletedUserInfo = {
         email: target.email,
         name: target.name ?? '',
+        locale: profile?.locale ?? null,
       };
       const previousEmail = target.email;
 

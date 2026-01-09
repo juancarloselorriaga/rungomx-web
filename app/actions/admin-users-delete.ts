@@ -1,10 +1,10 @@
 'use server';
 
-import { routing } from '@/i18n/routing';
 import { withAdminUser } from '@/lib/auth/action-wrapper';
 import { verifyUserCredentialPassword } from '@/lib/auth/credential-password';
 import { deleteUser } from '@/lib/users/delete-user';
 import { sendUserDeletionNotifications } from '@/lib/users/email';
+import { getUserPreferredLocale } from '@/lib/utils/locale';
 import { z } from 'zod';
 
 const deleteInternalUserSchema = z.object({
@@ -53,11 +53,14 @@ export const deleteInternalUser = withAdminUser<DeleteInternalUserResult>({
       return { ok: false, error: result.error };
     }
 
+    // Use deleted user's DB locale preference (falls back to default if not set)
+    const locale = getUserPreferredLocale(result.deletedUser.locale);
+
     sendUserDeletionNotifications({
       deletedUser: result.deletedUser,
       deletedBy: { id: user.id, name: user.name ?? '' },
       isSelfDeletion: false,
-      locale: routing.defaultLocale,
+      locale,
     }).catch((error) => {
       console.error('[admin-users-delete] Notification failed:', error);
     });

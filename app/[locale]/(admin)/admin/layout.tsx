@@ -1,4 +1,5 @@
 import AdminLayoutWrapper from '@/components/layout/admin-layout-wrapper';
+import { LocaleSyncWrapper } from '@/components/locale-sync-wrapper';
 import { getPathname } from '@/i18n/navigation';
 import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
@@ -22,5 +23,9 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
     redirect(getPathname({ href: '/dashboard', locale }));
   }
 
-  return <AdminLayoutWrapper permissions={authContext.permissions}>{children}</AdminLayoutWrapper>;
+  return (
+    <LocaleSyncWrapper>
+      <AdminLayoutWrapper permissions={authContext.permissions}>{children}</AdminLayoutWrapper>
+    </LocaleSyncWrapper>
+  );
 }

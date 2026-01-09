@@ -18,7 +18,7 @@ const mockDeleteUser = jest.fn<
 >();
 const mockSignOut = jest.fn<Promise<{ success: boolean }>, unknown[]>();
 const mockSendNotifications = jest.fn<Promise<void>, unknown[]>();
-const mockExtractLocale = jest.fn<string, unknown[]>();
+const mockGetUserPreferredLocale = jest.fn<string, unknown[]>();
 
 jest.mock('next/headers', () => ({
   headers: async () => new Headers(),
@@ -41,7 +41,7 @@ jest.mock('@/lib/users/email', () => ({
 }));
 
 jest.mock('@/lib/utils/locale', () => ({
-  extractLocaleFromRequest: (...args: unknown[]) => mockExtractLocale(...args),
+  getUserPreferredLocale: (...args: unknown[]) => mockGetUserPreferredLocale(...args),
 }));
 
 jest.mock('@/lib/auth', () => ({
@@ -56,6 +56,7 @@ describe('deleteOwnAccount', () => {
   const defaultDeletedUser: DeletedUserInfo = {
     email: 'test@example.com',
     name: 'Test User',
+    locale: 'en',
   };
 
   beforeEach(() => {
@@ -65,8 +66,8 @@ describe('deleteOwnAccount', () => {
     mockDeleteUser.mockReset();
     mockSignOut.mockReset();
     mockSendNotifications.mockReset();
-    mockExtractLocale.mockReset();
-    mockExtractLocale.mockReturnValue('en');
+    mockGetUserPreferredLocale.mockReset();
+    mockGetUserPreferredLocale.mockReturnValue('en');
     mockSendNotifications.mockResolvedValue(undefined);
   });
 

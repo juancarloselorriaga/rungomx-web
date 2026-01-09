@@ -1,3 +1,12 @@
+jest.mock('next-intl/routing', () => ({
+  defineRouting: jest.fn(() => ({
+    locales: ['es', 'en'] as const,
+    defaultLocale: 'es',
+    localePrefix: 'as-needed',
+    pathnames: {},
+  })),
+}));
+
 import { upsertProfileAction } from '@/app/actions/profile';
 import { buildProfileMetadata } from '@/lib/profiles/metadata';
 import { buildProfileRequirementSummary } from '@/lib/profiles/requirements';
@@ -91,6 +100,7 @@ const profileFromInput = (userId: string, input: ProfileUpsertInput): ProfileRec
   shirtSize: input.shirtSize ?? null,
   weightKg: (input.weightKg ?? null) as ProfileRecord['weightKg'],
   heightCm: (input.heightCm ?? null) as ProfileRecord['heightCm'],
+  locale: (input.locale ?? null) as ProfileRecord['locale'],
   createdAt: new Date(),
   updatedAt: new Date(),
   deletedAt: null,

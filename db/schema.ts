@@ -117,6 +117,7 @@ export const profiles = pgTable('profiles', {
   state: varchar('state', { length: 100 }),
   postalCode: varchar('postal_code', { length: 10 }),
   country: varchar('country', { length: 2 }).default('MX').notNull(),
+  locale: varchar('locale', { length: 2 }),
   latitude: decimal('latitude', { precision: 10, scale: 7 }),
   longitude: decimal('longitude', { precision: 10, scale: 7 }),
   locationDisplay: varchar('location_display', { length: 255 }),

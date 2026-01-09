@@ -5,7 +5,7 @@ import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { verifyUserCredentialPassword } from '@/lib/auth/credential-password';
 import { deleteUser } from '@/lib/users/delete-user';
 import { sendUserDeletionNotifications } from '@/lib/users/email';
-import { extractLocaleFromRequest } from '@/lib/utils/locale';
+import { getUserPreferredLocale } from '@/lib/utils/locale';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -39,9 +39,6 @@ export const deleteOwnAccount = withAuthenticatedUser<DeleteOwnAccountResult>({
       return { ok: false, error: passwordCheck.error };
     }
 
-    // Extract locale before signing out (while session is still valid)
-    const locale = extractLocaleFromRequest({ headers: reqHeaders as unknown as Headers });
-
     // Sign out FIRST while session is still valid - this properly clears cookies
     try {
       await auth.api.signOut({ headers: reqHeaders });
@@ -57,6 +54,11 @@ export const deleteOwnAccount = withAuthenticatedUser<DeleteOwnAccountResult>({
     }
 
     if (result.ok) {
+      // Use DB locale preference with request fallback for notification email
+      const locale = getUserPreferredLocale(result.deletedUser.locale, {
+        headers: reqHeaders as unknown as Headers,
+      });
+
       sendUserDeletionNotifications({
         deletedUser: result.deletedUser,
         deletedBy: { id: user.id, name: user.name ?? '' },

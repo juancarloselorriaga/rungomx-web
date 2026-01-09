@@ -1,3 +1,12 @@
+jest.mock('next-intl/routing', () => ({
+  defineRouting: jest.fn(() => ({
+    locales: ['es', 'en'] as const,
+    defaultLocale: 'es',
+    localePrefix: 'as-needed',
+    pathnames: {},
+  })),
+}));
+
 import { submitContactSubmission } from '@/app/actions/contact-submission';
 import { auth } from '@/lib/auth';
 import type { PermissionSet } from '@/lib/auth/roles';
@@ -229,7 +238,6 @@ describe('submitContactSubmission', () => {
         needsRoleAssignment: false,
         profileRequirements: defaultRequirements,
         profileMetadata: defaultMetadata,
-        profile: null,
         availableExternalRoles: [],
         profileStatus: EMPTY_PROFILE_STATUS,
       },
@@ -325,7 +333,6 @@ describe('submitContactSubmission', () => {
         needsRoleAssignment: false,
         profileRequirements: defaultRequirements,
         profileMetadata: defaultMetadata,
-        profile: null,
         availableExternalRoles: [],
         profileStatus: EMPTY_PROFILE_STATUS,
       },

@@ -17,6 +17,7 @@ const mockDeleteUser = jest.fn<
   unknown[]
 >();
 const mockSendNotifications = jest.fn<Promise<void>, unknown[]>();
+const mockGetUserPreferredLocale = jest.fn<string, unknown[]>();
 
 jest.mock('@/lib/auth/guards', () => ({
   requireAdminUser: (...args: unknown[]) => mockRequireAdmin(...args),
@@ -34,16 +35,15 @@ jest.mock('@/lib/users/email', () => ({
   sendUserDeletionNotifications: (...args: unknown[]) => mockSendNotifications(...args),
 }));
 
-jest.mock('@/i18n/routing', () => ({
-  routing: {
-    defaultLocale: 'es',
-  },
+jest.mock('@/lib/utils/locale', () => ({
+  getUserPreferredLocale: (...args: unknown[]) => mockGetUserPreferredLocale(...args),
 }));
 
 describe('deleteInternalUser', () => {
   const defaultDeletedUser: DeletedUserInfo = {
     email: 'target@example.com',
     name: 'Target User',
+    locale: 'es',
   };
 
   beforeEach(() => {
@@ -52,6 +52,8 @@ describe('deleteInternalUser', () => {
     mockVerifyUserCredentialPassword.mockReset();
     mockDeleteUser.mockReset();
     mockSendNotifications.mockReset();
+    mockGetUserPreferredLocale.mockReset();
+    mockGetUserPreferredLocale.mockReturnValue('es');
     mockSendNotifications.mockResolvedValue(undefined);
   });
 

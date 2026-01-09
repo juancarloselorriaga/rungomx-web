@@ -1,3 +1,12 @@
+jest.mock('next-intl/routing', () => ({
+  defineRouting: jest.fn(() => ({
+    locales: ['es', 'en'] as const,
+    defaultLocale: 'es',
+    localePrefix: 'as-needed',
+    pathnames: {},
+  })),
+}));
+
 import { accountNameUpdateSchema, passwordChangeSchema } from '@/lib/auth/account-schemas';
 import { createProfileValidationSchema } from '@/lib/profiles/schema';
 import type { ProfileUpsertInput } from '@/lib/profiles/types';

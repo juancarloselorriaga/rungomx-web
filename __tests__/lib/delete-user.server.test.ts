@@ -84,13 +84,16 @@ describe('deleteUser', () => {
   });
 
   it('revokes sessions/accounts and anonymizes user data', async () => {
+    // First select: user data
     __pushSelect([{ email: 'person@example.com', name: 'Person Name' }]);
+    // Second select: profile locale
+    __pushSelect([{ locale: 'en' }]);
 
     const result = await deleteUser({ targetUserId: 'user-1', deletedByUserId: 'admin-1' });
 
     expect(result).toEqual({
       ok: true,
-      deletedUser: { email: 'person@example.com', name: 'Person Name' },
+      deletedUser: { email: 'person@example.com', name: 'Person Name', locale: 'en' },
     });
 
     const calls = __getCalls();

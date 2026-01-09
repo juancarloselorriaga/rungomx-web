@@ -2,7 +2,8 @@ import { siteUrl } from '@/config/url';
 import { db } from '@/db';
 import { resolveUserContext } from '@/lib/auth/user-context';
 import { sendPasswordResetEmail, sendVerificationEmail } from '@/lib/email';
-import { extractLocaleFromCallbackURL, extractLocaleFromRequest } from '@/lib/utils/locale';
+import { getProfileByUserId } from '@/lib/profiles/repository';
+import { extractLocaleFromCallbackURL, isValidLocale } from '@/lib/utils/locale';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { customSession, haveIBeenPwned } from 'better-auth/plugins';
@@ -49,13 +50,19 @@ export const auth = betterAuth({
     autoSignIn: false,
     sendResetPassword: async ({ user, url }, request) => {
       try {
+        // Try to get user's preferred locale from their profile
+        const profile = await getProfileByUserId(user.id);
+
         // Extract locale from the url which contains the redirectTo parameter
         // The url looks like: http://localhost:3000/api/auth/verify?token=...&callbackURL=/en/reset-password
         const urlObj = new URL(url);
         const callbackURL = urlObj.searchParams.get('callbackURL') || '';
 
-        // Extract locale from callbackURL, with fallback to request-based extraction
-        const locale = extractLocaleFromCallbackURL(callbackURL, request);
+        // Priority: DB profile locale > callback URL locale > request extraction > default
+        const locale =
+          profile?.locale && isValidLocale(profile.locale)
+            ? profile.locale
+            : extractLocaleFromCallbackURL(callbackURL, request);
 
         // Use the callbackURL directly if provided, otherwise construct it
         const resetPasswordURL = callbackURL || `${siteUrl}/${locale}/reset-password`;
@@ -100,7 +107,8 @@ export const auth = betterAuth({
           profileRequirements: resolved.profileRequirements,
           profileMetadata: resolved.profileMetadata,
           availableExternalRoles: resolved.availableExternalRoles,
-          profile: resolved.profile,
+          // Note: profile is at session.profile, NOT session.user.profile
+          // better-auth's client reconstruction overwrites nested user properties
         },
         session,
       };
@@ -123,14 +131,24 @@ export const auth = betterAuth({
   emailVerification: {
     sendVerificationEmail: async ({ user, url }, request) => {
       try {
-        const locale = extractLocaleFromRequest(request);
+        // Try to get user's preferred locale from their profile
+        const profile = await getProfileByUserId(user.id);
+
+        // Extract locale from the url which contains the callbackURL parameter
+        const urlObj = new URL(url);
+        const callbackURL = urlObj.searchParams.get('callbackURL') || '';
+
+        // Priority: DB profile locale > callback URL locale > request extraction > default
+        const locale =
+          profile?.locale && isValidLocale(profile.locale)
+            ? profile.locale
+            : extractLocaleFromCallbackURL(callbackURL, request);
 
         // Construct the success page URL with proper locale
         const successURL = `${siteUrl}/${locale}/verify-email-success`;
 
         // Modify the verification URL to include callbackURL parameter
-        const urlObj = new URL(url);
-        const originalCallbackURL = urlObj.searchParams.get('callbackURL');
+        const originalCallbackURL = callbackURL;
         const successUrlObj = new URL(successURL);
 
         if (originalCallbackURL) {

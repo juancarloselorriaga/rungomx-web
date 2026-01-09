@@ -1,6 +1,6 @@
 import { AppLocale, routing } from '@/i18n/routing';
 
-function isValidLocale(locale: string): locale is AppLocale {
+export function isValidLocale(locale: string): locale is AppLocale {
   return routing.locales.includes(locale as AppLocale);
 }
 
@@ -112,4 +112,25 @@ export function extractLocaleFromCallbackURL(
 
   // If no locale found in callback URL, fall back to request-based extraction
   return fallbackRequest ? extractLocaleFromRequest(fallbackRequest) : routing.defaultLocale;
+}
+
+/**
+ * Gets the user's preferred locale with fallbacks.
+ * Priority: DB profile locale > request extraction > default
+ *
+ * @param profileLocale - The locale stored in the user's profile (if any)
+ * @param fallbackRequest - Optional request object to extract locale from if profile has no locale
+ * @returns The preferred locale
+ */
+export function getUserPreferredLocale(
+  profileLocale: string | null | undefined,
+  fallbackRequest?: Request | { url?: string; headers?: Headers },
+): AppLocale {
+  // 1. Check DB profile locale
+  if (profileLocale && isValidLocale(profileLocale)) {
+    return profileLocale;
+  }
+
+  // 2. Fall back to request-based extraction
+  return extractLocaleFromRequest(fallbackRequest);
 }

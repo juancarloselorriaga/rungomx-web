@@ -135,6 +135,7 @@ export async function createTestProfile(
     state?: string | null;
     postalCode?: string | null;
     country?: string;
+    locale?: string | null;
     emergencyContactName?: string | null;
     emergencyContactPhone?: string | null;
     medicalConditions?: string | null;
@@ -151,6 +152,7 @@ export async function createTestProfile(
       state: overrides.state,
       postalCode: overrides.postalCode,
       country: overrides.country ?? 'MX',
+      locale: overrides.locale,
       emergencyContactName: overrides.emergencyContactName,
       emergencyContactPhone: overrides.emergencyContactPhone,
       medicalConditions: overrides.medicalConditions,

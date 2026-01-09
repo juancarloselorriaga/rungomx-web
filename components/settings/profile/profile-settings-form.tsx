@@ -6,8 +6,10 @@ import { ProfileDemographicsSection } from '@/components/settings/profile/profil
 import { ProfileEmergencyContactSection } from '@/components/settings/profile/profile-emergency-contact-section';
 import { ProfileMedicalSection } from '@/components/settings/profile/profile-medical-section';
 import { ProfilePhysicalSection } from '@/components/settings/profile/profile-physical-section';
+import { ProfilePreferencesSection } from '@/components/settings/profile/profile-preferences-section';
 import { Button } from '@/components/ui/button';
-import { useRouter } from '@/i18n/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
+import type { AppLocale } from '@/i18n/routing';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
 import {
@@ -18,6 +20,7 @@ import {
 import type { ProfileRecord, ProfileStatus, ProfileUpsertInput } from '@/lib/profiles/types';
 import { CheckCircle2, LogOut } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 
@@ -29,6 +32,7 @@ const DEFAULT_VALUES: ProfileFormValues = {
   state: '',
   postalCode: '',
   country: 'MX',
+  locale: '',
   latitude: '',
   longitude: '',
   locationDisplay: '',
@@ -83,8 +87,10 @@ function ProfileForm({
   disableActions = false,
 }: ProfileFormProps) {
   const t = useTranslations('components.settings.profileForm');
-  const locale = useLocale();
+  const currentLocale = useLocale();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const initialValues = useMemo(() => toFormValues(profile), [profile]);
   const lastSavedValuesRef = useRef<ProfileFormValues>(initialValues);
@@ -131,14 +137,25 @@ function ProfileForm({
       };
     },
     onSuccess: (data) => {
+      toast.success(t('success.updated'));
+      onUpdateAction?.(data);
+
+      // If locale was changed, redirect to the new locale with full page reload
+      // This ensures completely fresh form state with correct profile data
+      const newLocale = data.profile?.locale as AppLocale | null | undefined;
+      if (newLocale && newLocale !== currentLocale) {
+        const queryString = searchParams?.size ? `?${searchParams.toString()}` : '';
+        window.location.replace(`/${newLocale}${pathname}${queryString}`);
+        return;
+      }
+
+      // Only update form values when NOT redirecting
       const nextValues = toFormValues(data.profile);
       lastSavedValuesRef.current = nextValues;
       Object.entries(nextValues).forEach(([key, value]) => {
         form.setFieldValue(key as keyof ProfileFormValues, value as string);
         form.clearError(key as keyof ProfileFormValues);
       });
-      toast.success(t('success.updated'));
-      onUpdateAction?.(data);
       router.refresh();
     },
   });
@@ -216,7 +233,7 @@ function ProfileForm({
       <ProfileBasicContactSection
         form={form}
         t={tProfileForm}
-        locale={locale}
+        locale={currentLocale}
         isRequiredField={isRequiredField}
         countryOptions={countryOptions}
         isBusy={isBusy}
@@ -234,7 +251,7 @@ function ProfileForm({
         t={tProfileForm}
         isRequiredField={isRequiredField}
         metadata={profileMetadata}
-        locale={locale}
+        locale={currentLocale}
         isBusy={isBusy}
       />
 
@@ -253,6 +270,8 @@ function ProfileForm({
         metadata={profileMetadata}
         isBusy={isBusy}
       />
+
+      <ProfilePreferencesSection form={form} t={tProfileForm} isBusy={isBusy} />
 
       <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
         {mode === 'completion' && onSignOutClick ? (

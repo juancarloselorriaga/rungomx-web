@@ -1,7 +1,10 @@
+import { routing } from '@/i18n/routing';
 import { optionalPhoneNumber } from '@/lib/phone/schema';
 import { z } from 'zod';
 import { type CountryCode, isValidCountryCode } from './countries';
 import { BLOOD_TYPES, GENDER_CODES, SHIRT_SIZES } from './metadata';
+
+const VALID_LOCALES = routing.locales as readonly [string, ...string[]];
 
 const optionalTrimmedString = (maxLength: number) =>
   z.preprocess((val) => {
@@ -90,6 +93,7 @@ export const profileSchema = z.object({
   state: optionalTrimmedString(100),
   postalCode: optionalTrimmedString(10),
   country: optionalCountryCode(),
+  locale: optionalEnum(VALID_LOCALES),
   latitude: optionalNumber(),
   longitude: optionalNumber(),
   locationDisplay: optionalTrimmedString(255),

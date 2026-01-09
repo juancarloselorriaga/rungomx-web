@@ -55,6 +55,10 @@
       "medical": {
         "title": "Información médica",
         "description": "Datos de salud opcionales para tu seguridad."
+      },
+      "preferences": {
+        "title": "Preferencias",
+        "description": "Preferencias de idioma y visualización."
       }
     },
     "fields": {
@@ -74,7 +78,10 @@
       "medicalConditions": "Condiciones médicas",
       "bio": "Bio / notas",
       "weightKg": "Peso",
-      "heightCm": "Estatura"
+      "heightCm": "Estatura",
+      "locale": "Idioma preferido",
+      "localeDefault": "Usar el del navegador",
+      "localeOption": "{locale, select, es {Español} en {English} other {{locale}}}"
     },
     "hints": {
       "locationDisplay": "Se muestra en tu perfil. Ejemplo: Ciudad de México, MX.",

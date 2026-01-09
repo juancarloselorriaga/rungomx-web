@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { profileUpsertSchema } from './schema';
 import type { ProfileInsert, ProfileRecord, ProfileUpsertInput } from './types';
 
-const NULLABLE_FIELDS = new Set(['latitude', 'longitude', 'locationDisplay']);
+const NULLABLE_FIELDS = new Set(['latitude', 'longitude', 'locationDisplay', 'locale']);
 
 function buildProfileValues(
   userId: string,

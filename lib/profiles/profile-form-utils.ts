@@ -6,6 +6,7 @@ export type ProfileFormValuesBase = {
   state?: string;
   postalCode?: string;
   country?: string;
+  locale?: string;
   latitude?: string;
   longitude?: string;
   locationDisplay?: string;
@@ -88,6 +89,7 @@ export function toProfileFormValuesFromRecord(
     state: profile.state ?? defaults.state,
     postalCode: profile.postalCode ?? defaults.postalCode,
     country: normalizeCountryCode(profile.country ?? defaults.country, defaults.country),
+    locale: profile.locale ?? defaults.locale,
     latitude: formatNumericProfileInput(profile.latitude ?? defaults.latitude),
     longitude: formatNumericProfileInput(profile.longitude ?? defaults.longitude),
     locationDisplay: profile.locationDisplay ?? defaults.locationDisplay,
@@ -129,6 +131,8 @@ export function buildProfileUpsertPayloadFromForm(
 
   const country = normalizeCountryCode(values.country ?? '', countryFallback);
   assign('country', country);
+
+  assignNullable('locale', values.locale);
 
   assignNullable('latitude', values.latitude);
   assignNullable('longitude', values.longitude);

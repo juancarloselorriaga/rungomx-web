@@ -44,7 +44,7 @@ describe('deleteUser - Database Integration', () => {
 
       expect(result).toEqual({
         ok: true,
-        deletedUser: { email: 'person@example.com', name: 'John Doe' },
+        deletedUser: { email: 'person@example.com', name: 'John Doe', locale: null },
       });
 
       const [deletedUser] = await db
@@ -135,6 +135,28 @@ describe('deleteUser - Database Integration', () => {
       expect(profile.emergencyContactName).toBeNull();
       expect(profile.emergencyContactPhone).toBeNull();
       expect(profile.country).toBe('MX');
+    });
+
+    it('returns profile locale for notification emails before wiping', async () => {
+      const user = await createTestUser(db, {
+        email: 'english-user@example.com',
+        name: 'English User',
+      });
+      await createTestProfile(db, user.id, { locale: 'en' });
+
+      const result = await deleteUser({
+        targetUserId: user.id,
+        deletedByUserId: user.id,
+      });
+
+      expect(result).toEqual({
+        ok: true,
+        deletedUser: {
+          email: 'english-user@example.com',
+          name: 'English User',
+          locale: 'en',
+        },
+      });
     });
 
     it('anonymizes contact submissions linked to user', async () => {

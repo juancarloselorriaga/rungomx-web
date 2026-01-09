@@ -14,14 +14,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Link, usePathname, useRouter } from '@/i18n/navigation';
-import { type AppLocale, routing } from '@/i18n/routing';
+import { useLocaleChange } from '@/hooks/use-locale-change';
+import { Link, useRouter } from '@/i18n/navigation';
+import { routing } from '@/i18n/routing';
 import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
 import { capitalize } from '@/utils/capitalize';
 import { Check, Languages, LogOut, Moon, Sun, User as UserIcon } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useMemo, useTransition } from 'react';
 
 type ThemeOption = 'light' | 'dark';
@@ -40,13 +40,10 @@ function getInitials(user: User | null) {
 }
 
 export function UserMenu({ user }: { user: User | null }) {
-  const locale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
-  const params = useParams();
-  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const { theme, setTheme } = useAppTheme();
+  const { changeLocale, currentLocale } = useLocaleChange();
 
   const tAuth = useTranslations('auth');
   const tTheme = useTranslations('components.themeSwitcher');
@@ -54,21 +51,6 @@ export function UserMenu({ user }: { user: User | null }) {
 
   const displayName = user?.name || user?.email || 'Guest';
   const displayEmail = user?.email;
-
-  const handleLocaleChange = (targetLocale: AppLocale) => {
-    if (targetLocale === locale) return;
-
-    const query =
-      searchParams && searchParams.size > 0
-        ? Object.fromEntries(searchParams.entries())
-        : undefined;
-
-    router.replace(
-      // @ts-expect-error -- Params from the active route already match the pathname; next-intl requires them when pathnames are configured.
-      { pathname, params, query },
-      { locale: targetLocale },
-    );
-  };
 
   const handleSignOut = () => {
     startTransition(async () => {
@@ -120,12 +102,12 @@ export function UserMenu({ user }: { user: User | null }) {
           {routing.locales.map((availableLocale) => (
             <DropdownMenuItem
               key={availableLocale}
-              onClick={() => handleLocaleChange(availableLocale)}
+              onClick={() => changeLocale(availableLocale)}
               className="flex items-center gap-2"
             >
               <Languages className="h-4 w-4" />
               <span className="flex-1">{tLocale('locale', { locale: availableLocale })}</span>
-              {availableLocale === locale && <Check className="h-4 w-4" />}
+              {availableLocale === currentLocale && <Check className="h-4 w-4" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuGroup>
