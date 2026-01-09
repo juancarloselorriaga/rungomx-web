@@ -8,7 +8,7 @@ import { ProfileMedicalSection } from '@/components/settings/profile/profile-med
 import { ProfilePhysicalSection } from '@/components/settings/profile/profile-physical-section';
 import { ProfilePreferencesSection } from '@/components/settings/profile/profile-preferences-section';
 import { Button } from '@/components/ui/button';
-import { usePathname, useRouter } from '@/i18n/navigation';
+import { getPathname, useRouter } from '@/i18n/navigation';
 import type { AppLocale } from '@/i18n/routing';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
@@ -89,7 +89,6 @@ function ProfileForm({
   const t = useTranslations('components.settings.profileForm');
   const currentLocale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const initialValues = useMemo(() => toFormValues(profile), [profile]);
@@ -142,10 +141,16 @@ function ProfileForm({
 
       // If locale was changed, redirect to the new locale with full page reload
       // This ensures completely fresh form state with correct profile data
+      // Use getPathname to respect localePrefix:'as-needed' and localized pathnames
+      // Hardcode href to avoid any risk of pathname mismatch from localized URLs
       const newLocale = data.profile?.locale as AppLocale | null | undefined;
       if (newLocale && newLocale !== currentLocale) {
         const queryString = searchParams?.size ? `?${searchParams.toString()}` : '';
-        window.location.replace(`/${newLocale}${pathname}${queryString}`);
+        const localizedPath = getPathname({
+          locale: newLocale,
+          href: '/settings/profile',
+        });
+        window.location.replace(`${localizedPath}${queryString}`);
         return;
       }
 
