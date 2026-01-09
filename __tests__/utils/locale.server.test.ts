@@ -18,7 +18,7 @@ describe('extractLocaleFromRequest', () => {
     const request = {
       url: 'http://localhost:3000/api/auth/sign-up/email',
       headers: new Headers({
-        cookie: 'sprintmx-theme=dark; NEXT_LOCALE=es; other=value',
+        cookie: 'rungomx-theme=dark; NEXT_LOCALE=es; other=value',
         'accept-language': 'en-US,en;q=0.9',
       }),
     };
