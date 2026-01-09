@@ -1,14 +1,19 @@
 {
   "hero": {
+    "badge": "Acerca de RunGoMX",
     "title": "Quiénes somos",
-    "description": "RunGoMX nace en México para transformar la manera en que directores de carrera y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar."
+    "description": "RunGoMX nace en México para transformar la manera en que directores de carrera y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar.",
+    "primaryCta": "Comenzar",
+    "secondaryCta": "Crear Cuenta"
   },
   "vision": {
+    "eyebrow": "Nuestra Visión",
     "title": "Nuestra visión",
     "paragraph1": "Queremos que México sea referente en innovación deportiva en Latinoamérica. Que cada carrera, sin importar su tamaño, tenga acceso a herramientas de clase mundial sin pagar precios de clase mundial.",
     "paragraph2": "Creemos que la tecnología debe servir al deporte, no complicarlo. Por eso construimos soluciones pensadas para el contexto mexicano: simples, accesibles y poderosas."
   },
   "whyWeExist": {
+    "eyebrow": "El Reto",
     "title": "Por qué existimos",
     "intro": "El running en México ha crecido enormemente, pero la infraestructura digital no ha crecido al mismo ritmo. Los directores de carrera y corredores enfrentan problemas recurrentes:",
     "butText": "Pero eso está cambiando.",
@@ -23,6 +28,7 @@
     "solution": "RunGoMX llega para resolver eso."
   },
   "whatWeDo": {
+    "eyebrow": "Nuestra Plataforma",
     "title": "Qué hacemos",
     "subtitle": "Creamos un ecosistema completo para el running en México:",
     "forRunners": {
@@ -49,6 +55,7 @@
     "tagline": "Una sola plataforma para todo el ciclo de vida de tu carrera."
   },
   "philosophy": {
+    "eyebrow": "Nuestros Valores",
     "title": "Nuestra filosofía",
     "intro": "Somos un equipo de tecnólogos mexicanos apasionados por el running y la innovación. No copiamos modelos extranjeros; construimos desde cero con mentalidad local.",
     "believeIn": "Creemos en:",
@@ -89,6 +96,7 @@
     "tagline": "Por eso nuestra plataforma no solo funciona técnicamente: funciona para el contexto real de México."
   },
   "commitment": {
+    "eyebrow": "Nuestro Compromiso",
     "title": "Nuestro compromiso",
     "goals": [
       "RunGoMX no es solo software. Es un compromiso de largo plazo con la comunidad del running en México.",
@@ -97,6 +105,8 @@
       "Porque al final del día, nuestro éxito se mide en carreras exitosas, corredores felices y una comunidad de running cada vez más fuerte."
     ],
     "mission": "Nuestra misión es clara:",
-    "tagline": "Tecnología mexicana. Running mexicano."
+    "tagline": "Tecnología mexicana. Running mexicano.",
+    "primaryCta": "Comenzar",
+    "secondaryCta": "Contáctanos"
   }
 }
