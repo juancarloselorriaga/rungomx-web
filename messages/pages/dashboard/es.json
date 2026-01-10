@@ -77,5 +77,23 @@
         "usersLabel": "{count, number} usuarios"
       }
     }
+  },
+  "events": {
+    "title": "Eventos",
+    "description": "Administra tus eventos e inscripciones.",
+    "metadata": {
+      "title": "Eventos | RunGoMX",
+      "description": "Administra tus eventos e inscripciones en RunGoMX."
+    },
+    "comingSoon": "La gestión de eventos estará disponible pronto. Esta funcionalidad está actualmente en desarrollo.",
+    "emptyState": {
+      "title": "Sin eventos",
+      "description": "Crea tu primer evento para comenzar a gestionar inscripciones.",
+      "action": "Crear evento"
+    },
+    "createEvent": {
+      "title": "Crear evento",
+      "description": "Configura un nuevo evento para tu organización."
+    }
   }
 }

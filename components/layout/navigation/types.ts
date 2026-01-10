@@ -18,7 +18,13 @@ export type PublicNavIconName =
   | 'Calendar'
   | 'Newspaper';
 
-export type ProtectedNavIconName = 'LayoutDashboard' | 'Settings' | 'User' | 'Users' | 'FileText';
+export type ProtectedNavIconName =
+  | 'LayoutDashboard'
+  | 'Settings'
+  | 'User'
+  | 'Users'
+  | 'FileText'
+  | 'Calendar';
 
 export type NavIconName = PublicNavIconName | ProtectedNavIconName;
 

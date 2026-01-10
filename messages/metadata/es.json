@@ -237,6 +237,18 @@
           "imageAlt": "Términos y condiciones"
         }
       }
+    },
+    "DashboardEvents": {
+      "metadata": {
+        "title": "Gestionar Eventos | RunGoMX",
+        "description": "Crea, administra y publica tus eventos de running y carreras con RunGoMX.",
+        "keywords": ["gestión de eventos", "organizador de carreras", "dashboard de eventos"],
+        "openGraph": {
+          "title": "Gestionar Eventos | RunGoMX",
+          "description": "Crea y administra tus eventos de running con RunGoMX.",
+          "imageAlt": "Dashboard de gestión de eventos"
+        }
+      }
     }
   },
   "Components": {

@@ -6,6 +6,7 @@ import {
   index,
   integer,
   jsonb,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -13,6 +14,16 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+export const organizationRoleEnum = pgEnum('organization_role', ['owner', 'admin', 'editor', 'viewer']);
+
+// =============================================================================
+// USER & AUTH TABLES
+// =============================================================================
 
 export const users = pgTable(
   'users',
@@ -210,3 +221,290 @@ export const rateLimits = pgTable(
     expiresAtIdx: index('rate_limits_expires_at_idx').on(table.expiresAt),
   }),
 );
+
+// =============================================================================
+// EVENTS PLATFORM TABLES (Phase 0)
+// =============================================================================
+
+export const organizations = pgTable(
+  'organizations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    slug: varchar('slug', { length: 100 }).notNull().unique(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    slugIdx: uniqueIndex('organizations_slug_idx').on(table.slug),
+  }),
+);
+
+export const organizationMemberships = pgTable(
+  'organization_memberships',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: organizationRoleEnum('role').notNull(), // 'owner' | 'admin' | 'editor' | 'viewer'
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    orgUserUnique: uniqueIndex('org_memberships_org_user_idx').on(table.organizationId, table.userId),
+  }),
+);
+
+export const eventSeries = pgTable(
+  'event_series',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    slug: varchar('slug', { length: 100 }).notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    sportType: varchar('sport_type', { length: 50 }).notNull(), // from SPORT_TYPES constant
+    status: varchar('status', { length: 20 }).notNull().default('active'), // 'active' | 'archived'
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    orgSlugUnique: uniqueIndex('event_series_org_slug_idx').on(table.organizationId, table.slug),
+  }),
+);
+
+export const eventEditions = pgTable(
+  'event_editions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    seriesId: uuid('series_id')
+      .notNull()
+      .references(() => eventSeries.id, { onDelete: 'cascade' }),
+    editionLabel: varchar('edition_label', { length: 50 }).notNull(), // e.g., "2026"
+    publicCode: varchar('public_code', { length: 20 }).notNull().unique(), // short stable ID
+    slug: varchar('slug', { length: 100 }).notNull(),
+    visibility: varchar('visibility', { length: 20 }).notNull().default('draft'), // 'draft' | 'published' | 'unlisted' | 'archived'
+    startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }),
+    endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }),
+    timezone: varchar('timezone', { length: 50 }).notNull().default('America/Mexico_City'),
+    registrationOpensAt: timestamp('registration_opens_at', { withTimezone: true, mode: 'date' }),
+    registrationClosesAt: timestamp('registration_closes_at', { withTimezone: true, mode: 'date' }),
+    isRegistrationPaused: boolean('is_registration_paused').notNull().default(false),
+    locationDisplay: varchar('location_display', { length: 255 }),
+    address: varchar('address', { length: 500 }),
+    city: varchar('city', { length: 100 }),
+    state: varchar('state', { length: 100 }),
+    country: varchar('country', { length: 100 }).default('MX'),
+    latitude: decimal('latitude', { precision: 10, scale: 7 }),
+    longitude: decimal('longitude', { precision: 10, scale: 7 }),
+    externalUrl: varchar('external_url', { length: 500 }),
+    heroImageMediaId: uuid('hero_image_media_id'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    publicCodeIdx: uniqueIndex('event_editions_public_code_idx').on(table.publicCode),
+    seriesSlugUnique: uniqueIndex('event_editions_series_slug_idx').on(table.seriesId, table.slug),
+  }),
+);
+
+export const eventDistances = pgTable('event_distances', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  label: varchar('label', { length: 100 }).notNull(), // e.g., "50K", "Half Marathon"
+  distanceValue: decimal('distance_value', { precision: 10, scale: 2 }),
+  distanceUnit: varchar('distance_unit', { length: 10 }).notNull().default('km'), // 'km' | 'mi'
+  kind: varchar('kind', { length: 20 }).notNull().default('distance'), // 'distance' | 'timed'
+  startTimeLocal: timestamp('start_time_local', { withTimezone: true, mode: 'date' }),
+  timeLimitMinutes: integer('time_limit_minutes'),
+  terrain: varchar('terrain', { length: 20 }), // 'road' | 'trail' | 'mixed'
+  isVirtual: boolean('is_virtual').notNull().default(false),
+  capacity: integer('capacity'),
+  capacityScope: varchar('capacity_scope', { length: 20 }).notNull().default('per_distance'), // 'per_distance' | 'shared_pool'
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const pricingTiers = pgTable('pricing_tiers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  distanceId: uuid('distance_id')
+    .notNull()
+    .references(() => eventDistances.id, { onDelete: 'cascade' }),
+  label: varchar('label', { length: 100 }),
+  startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }),
+  endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }),
+  priceCents: integer('price_cents').notNull(),
+  currency: varchar('currency', { length: 3 }).notNull().default('MXN'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const registrations = pgTable('registrations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  distanceId: uuid('distance_id')
+    .notNull()
+    .references(() => eventDistances.id, { onDelete: 'cascade' }),
+  buyerUserId: uuid('buyer_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 20 }).notNull().default('started'), // 'started' | 'submitted' | 'payment_pending' | 'confirmed' | 'cancelled'
+  basePriceCents: integer('base_price_cents'),
+  feesCents: integer('fees_cents'),
+  taxCents: integer('tax_cents'),
+  totalCents: integer('total_cents'),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const registrants = pgTable('registrants', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  registrationId: uuid('registration_id')
+    .notNull()
+    .references(() => registrations.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }), // nullable for guest/batch registrations
+  profileSnapshot: jsonb('profile_snapshot').$type<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    phone?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    emergencyContactName?: string;
+    emergencyContactPhone?: string;
+  }>(),
+  division: varchar('division', { length: 20 }), // results division
+  genderIdentity: varchar('gender_identity', { length: 50 }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const waivers = pgTable('waivers', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  body: text('body').notNull(),
+  versionHash: varchar('version_hash', { length: 64 }).notNull(), // SHA-256 of body for tracking changes
+  displayOrder: integer('display_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const waiverAcceptances = pgTable('waiver_acceptances', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  registrationId: uuid('registration_id')
+    .notNull()
+    .references(() => registrations.id, { onDelete: 'cascade' }),
+  waiverId: uuid('waiver_id')
+    .notNull()
+    .references(() => waivers.id, { onDelete: 'cascade' }),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }).notNull(),
+  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
+  userAgent: text('user_agent'),
+  signatureType: varchar('signature_type', { length: 20 }).notNull(), // 'checkbox' | 'initials' | 'signature'
+  signatureValue: text('signature_value'), // For initials/signature, stores the value
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+});
+
+export const eventWebsiteContent = pgTable('event_website_content', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  locale: varchar('locale', { length: 10 }).notNull().default('es'),
+  blocksJson: jsonb('blocks_json').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const media = pgTable('media', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'cascade' }),
+  blobUrl: text('blob_url').notNull(),
+  altText: varchar('alt_text', { length: 255 }),
+  kind: varchar('kind', { length: 20 }).notNull(), // 'image' | 'pdf' | 'document'
+  mimeType: varchar('mime_type', { length: 100 }),
+  sizeBytes: integer('size_bytes'),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const auditLogs = pgTable('audit_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'restrict' }), // required for org-scoped event audits
+  actorUserId: uuid('actor_user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'restrict' }), // preserve audit trail even if user is deleted
+  action: varchar('action', { length: 100 }).notNull(), // e.g., 'event.create', 'event.update'
+  entityType: varchar('entity_type', { length: 50 }).notNull(), // e.g., 'event_edition', 'event_distance'
+  entityId: uuid('entity_id').notNull(),
+  beforeJson: jsonb('before_json').$type<Record<string, unknown>>(),
+  afterJson: jsonb('after_json').$type<Record<string, unknown>>(),
+  ipAddress: varchar('ip_address', { length: 45 }),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+});
