@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
+  Calendar,
   FileText,
   LayoutDashboard,
   Megaphone,
@@ -28,6 +29,7 @@ const iconMap = {
   User,
   FileText,
   Users,
+  Calendar,
 } as const satisfies Record<ProtectedNavIconName, typeof LayoutDashboard>;
 
 interface SidebarProps {

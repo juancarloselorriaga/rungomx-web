@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { resolveUserContext } from '@/lib/auth/user-context';
+import type { OrgMembership } from '@/lib/organizations/permissions';
 import { ProfileMetadata } from '@/lib/profiles/metadata';
 import { ProfileRequirementSummary } from '@/lib/profiles/requirements';
 import { ProfileRecord, ProfileStatus } from '@/lib/profiles/types';
@@ -21,17 +22,21 @@ export type AuthContext = {
   profileStatus: ProfileStatus;
   profile: ProfileRecord | null;
   availableExternalRoles: CanonicalRole[];
+  /** Organization memberships for the current user (lazy-loaded on demand) */
+  organizationMemberships?: OrgMembership[];
 };
 
 export const getSession = cache(async () => {
-  'use cache: private';
+  // Note: React cache() provides request-level memoization
+  // Cannot use 'use cache: private' because we call headers() which is a dynamic API
   return await auth.api.getSession({
     headers: await headers(),
   });
 });
 
 export const getAuthContext = cache(async (): Promise<AuthContext> => {
-  'use cache: private';
+  // Note: React cache() provides request-level memoization
+  // Cannot use 'use cache: private' because getSession() calls headers()
   const session = await getSession();
 
   if (!session?.user) {
@@ -111,7 +116,49 @@ export const getAuthContext = cache(async (): Promise<AuthContext> => {
 });
 
 export const getCurrentUser = cache(async () => {
-  'use cache: private';
+  // Note: Uses React cache() for request-level memoization only
+  // Cannot use 'use cache: private' because getAuthContext() calls headers()
   const context = await getAuthContext();
   return context.user;
 });
+
+/**
+ * Get the current user's organization memberships.
+ * This is a separate cached function to avoid loading memberships on every request.
+ * Use this when you need to check organization-level permissions.
+ *
+ * @returns Array of organization memberships, or empty array if not authenticated
+ */
+export const getOrgMemberships = cache(async (): Promise<OrgMembership[]> => {
+  // Note: Uses React cache() for request-level memoization only
+  // Cannot use 'use cache: private' because getSession() calls headers()
+  const session = await getSession();
+
+  if (!session?.user?.id) {
+    return [];
+  }
+
+  // Dynamic import to avoid circular dependencies
+  const { getUserOrgMemberships } = await import('@/lib/organizations/permissions');
+  return getUserOrgMemberships(session.user.id);
+});
+
+/**
+ * Get the auth context with organization memberships populated.
+ * Use this when you need both auth context and org memberships.
+ *
+ * @returns AuthContext with organizationMemberships populated
+ */
+export const getAuthContextWithOrgs = cache(async (): Promise<AuthContext> => {
+  // Note: Uses React cache() for request-level memoization only
+  // Cannot use 'use cache: private' because dependencies call headers()
+  const [authContext, memberships] = await Promise.all([getAuthContext(), getOrgMemberships()]);
+
+  return {
+    ...authContext,
+    organizationMemberships: memberships,
+  };
+});
+
+// Re-export OrgMembership type for convenience
+export type { OrgMembership } from '@/lib/organizations/permissions';

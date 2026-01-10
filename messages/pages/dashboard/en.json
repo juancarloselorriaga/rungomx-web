@@ -77,5 +77,23 @@
         "usersLabel": "{count, number} users"
       }
     }
+  },
+  "events": {
+    "title": "Events",
+    "description": "Manage your events and race registrations.",
+    "metadata": {
+      "title": "Events | RunGoMX",
+      "description": "Manage your events and race registrations on RunGoMX."
+    },
+    "comingSoon": "Events management is coming soon. This feature is currently under development.",
+    "emptyState": {
+      "title": "No events yet",
+      "description": "Create your first event to start managing registrations.",
+      "action": "Create event"
+    },
+    "createEvent": {
+      "title": "Create event",
+      "description": "Set up a new event for your organization."
+    }
   }
 }

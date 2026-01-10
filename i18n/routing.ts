@@ -65,6 +65,14 @@ export const routing = defineRouting({
       es: '/tablero',
       en: '/dashboard',
     },
+    '/dashboard/events': {
+      es: '/tablero/eventos',
+      en: '/dashboard/events',
+    },
+    '/dashboard/events/new': {
+      es: '/tablero/eventos/nuevo',
+      en: '/dashboard/events/new',
+    },
     '/settings': {
       es: '/configuracion',
       en: '/settings',

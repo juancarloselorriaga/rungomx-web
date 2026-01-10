@@ -2,13 +2,26 @@ import { relations } from 'drizzle-orm';
 
 import {
   accounts,
+  auditLogs,
   contactSubmissions,
+  eventDistances,
+  eventEditions,
+  eventSeries,
+  eventWebsiteContent,
+  media,
+  organizationMemberships,
+  organizations,
+  pricingTiers,
   profiles,
   rateLimits,
+  registrants,
+  registrations,
   roles,
   sessions,
   userRoles,
   users,
+  waiverAcceptances,
+  waivers,
 } from './schema';
 
 export const usersRelations = relations(users, ({ many, one }) => ({
@@ -20,6 +33,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
   userRoles: many(userRoles),
   contactSubmissions: many(contactSubmissions),
+  organizationMemberships: many(organizationMemberships),
+  registrations: many(registrations),
+  registrants: many(registrants),
+  auditLogs: many(auditLogs),
 }));
 
 export const accountsRelations = relations(accounts, ({ one }) => ({
@@ -68,6 +85,139 @@ export const contactSubmissionsRelations = relations(contactSubmissions, ({ one 
 export const rateLimitsRelations = relations(rateLimits, ({ one }) => ({
   user: one(users, {
     fields: [rateLimits.identifier],
+    references: [users.id],
+  }),
+}));
+
+// =============================================================================
+// EVENTS PLATFORM RELATIONS (Phase 0)
+// =============================================================================
+
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  memberships: many(organizationMemberships),
+  eventSeries: many(eventSeries),
+  media: many(media),
+  auditLogs: many(auditLogs),
+}));
+
+export const organizationMembershipsRelations = relations(organizationMemberships, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationMemberships.organizationId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [organizationMemberships.userId],
+    references: [users.id],
+  }),
+}));
+
+export const eventSeriesRelations = relations(eventSeries, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [eventSeries.organizationId],
+    references: [organizations.id],
+  }),
+  editions: many(eventEditions),
+}));
+
+export const eventEditionsRelations = relations(eventEditions, ({ one, many }) => ({
+  series: one(eventSeries, {
+    fields: [eventEditions.seriesId],
+    references: [eventSeries.id],
+  }),
+  heroImage: one(media, {
+    fields: [eventEditions.heroImageMediaId],
+    references: [media.id],
+  }),
+  distances: many(eventDistances),
+  registrations: many(registrations),
+  waivers: many(waivers),
+  websiteContent: many(eventWebsiteContent),
+}));
+
+export const eventDistancesRelations = relations(eventDistances, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [eventDistances.editionId],
+    references: [eventEditions.id],
+  }),
+  pricingTiers: many(pricingTiers),
+  registrations: many(registrations),
+}));
+
+export const pricingTiersRelations = relations(pricingTiers, ({ one }) => ({
+  distance: one(eventDistances, {
+    fields: [pricingTiers.distanceId],
+    references: [eventDistances.id],
+  }),
+}));
+
+export const registrationsRelations = relations(registrations, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [registrations.editionId],
+    references: [eventEditions.id],
+  }),
+  distance: one(eventDistances, {
+    fields: [registrations.distanceId],
+    references: [eventDistances.id],
+  }),
+  buyer: one(users, {
+    fields: [registrations.buyerUserId],
+    references: [users.id],
+  }),
+  registrants: many(registrants),
+  waiverAcceptances: many(waiverAcceptances),
+}));
+
+export const registrantsRelations = relations(registrants, ({ one }) => ({
+  registration: one(registrations, {
+    fields: [registrants.registrationId],
+    references: [registrations.id],
+  }),
+  user: one(users, {
+    fields: [registrants.userId],
+    references: [users.id],
+  }),
+}));
+
+export const waiversRelations = relations(waivers, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [waivers.editionId],
+    references: [eventEditions.id],
+  }),
+  acceptances: many(waiverAcceptances),
+}));
+
+export const waiverAcceptancesRelations = relations(waiverAcceptances, ({ one }) => ({
+  registration: one(registrations, {
+    fields: [waiverAcceptances.registrationId],
+    references: [registrations.id],
+  }),
+  waiver: one(waivers, {
+    fields: [waiverAcceptances.waiverId],
+    references: [waivers.id],
+  }),
+}));
+
+export const eventWebsiteContentRelations = relations(eventWebsiteContent, ({ one }) => ({
+  edition: one(eventEditions, {
+    fields: [eventWebsiteContent.editionId],
+    references: [eventEditions.id],
+  }),
+}));
+
+export const mediaRelations = relations(media, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [media.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [auditLogs.organizationId],
+    references: [organizations.id],
+  }),
+  actor: one(users, {
+    fields: [auditLogs.actorUserId],
     references: [users.id],
   }),
 }));

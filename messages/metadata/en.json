@@ -237,6 +237,18 @@
           "imageAlt": "Terms of service"
         }
       }
+    },
+    "DashboardEvents": {
+      "metadata": {
+        "title": "Manage Events | RunGoMX",
+        "description": "Create, manage, and publish your running events and races with RunGoMX.",
+        "keywords": ["event management", "race organizer", "event dashboard"],
+        "openGraph": {
+          "title": "Manage Events | RunGoMX",
+          "description": "Create and manage your running events with RunGoMX.",
+          "imageAlt": "Event management dashboard"
+        }
+      }
     }
   },
   "Components": {

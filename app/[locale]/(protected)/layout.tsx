@@ -4,8 +4,8 @@ import {
   NavDrawerProvider,
 } from '@/components/layout/navigation/nav-drawer-context';
 import {
-  protectedNavItems,
-  protectedNavSections,
+  buildProtectedNavItems,
+  buildProtectedNavSections,
 } from '@/components/layout/navigation/protected-nav-items.constants';
 import { Sidebar } from '@/components/layout/navigation/sidebar';
 import ProtectedLayoutWrapper from '@/components/layout/protected-layout-wrapper';
@@ -33,7 +33,13 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
     );
   }
 
-  if (!authContext.permissions.canAccessUserArea || authContext.isInternal) {
+  // Redirect non-user-area users to admin, EXCEPT internal staff with events management permissions
+  // (they need access to organizer shell for support per Phase 0 plan)
+  const canAccessProtectedArea =
+    authContext.permissions.canAccessUserArea ||
+    (authContext.isInternal && authContext.permissions.canManageEvents);
+
+  if (!canAccessProtectedArea) {
     redirect(
       getPathname({
         href: '/admin',
@@ -42,13 +48,17 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
     );
   }
 
+  // Build nav items based on user permissions
+  const navSections = buildProtectedNavSections(authContext.permissions);
+  const navItems = buildProtectedNavItems(authContext.permissions);
+
   return (
     <ProtectedLayoutWrapper>
       <NavDrawerProvider>
         <MobileNavPushLayout className="min-h-screen bg-background">
-          <NavigationBar items={protectedNavItems} variant="protected" />
+          <NavigationBar items={navItems} variant="protected" />
           <div className="flex">
-            <Sidebar sections={protectedNavSections} />
+            <Sidebar sections={navSections} />
             <div className="flex-1 min-w-0">
               <main className="px-4 pb-10 pt-6 md:px-8 lg:px-10">
                 <div className="mx-auto w-full max-w-6xl">{children}</div>
