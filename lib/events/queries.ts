@@ -789,7 +789,7 @@ export async function searchPublicEvents(
       .innerJoin(pricingTiers, eq(eventDistances.id, pricingTiers.distanceId))
       .where(
         and(
-          sql`${eventDistances.editionId} = ANY(${eventIds})`,
+          sql`${eventDistances.editionId} IN ${eventIds}`,
           isNull(eventDistances.deletedAt),
           isNull(pricingTiers.deletedAt),
         ),
