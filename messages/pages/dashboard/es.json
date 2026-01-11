@@ -93,7 +93,91 @@
     },
     "createEvent": {
       "title": "Crear evento",
-      "description": "Configura un nuevo evento para tu organización."
+      "description": "Configura un nuevo evento para tu organización.",
+      "button": "Crear evento",
+      "submit": "Crear evento",
+      "steps": {
+        "organization": "Organización",
+        "event": "Detalles del evento",
+        "continue": "Continuar"
+      },
+      "organization": {
+        "title": "Seleccionar organización",
+        "description": "Elige la organización que hospedará este evento, o crea una nueva.",
+        "createNew": "Crear nueva organización",
+        "backToList": "Volver a organizaciones",
+        "nameLabel": "Nombre de la organización",
+        "namePlaceholder": "Mi Organizadora de Carreras",
+        "slugLabel": "Slug de URL"
+      },
+      "event": {
+        "title": "Detalles del evento",
+        "organizationLabel": "Organización",
+        "seriesLabel": "Serie de eventos",
+        "newSeries": "Nueva serie",
+        "seriesNameLabel": "Nombre de la serie",
+        "seriesNamePlaceholder": "Ultra Trail México",
+        "seriesSlugLabel": "Slug de URL de la serie",
+        "sportTypeLabel": "Tipo de deporte",
+        "editionDetails": "Detalles de la edición",
+        "editionLabelLabel": "Etiqueta de edición",
+        "editionSlugLabel": "Slug de URL de edición",
+        "dateLabel": "Fecha del evento",
+        "cityLabel": "Ciudad",
+        "cityPlaceholder": "Ciudad de México",
+        "stateLabel": "Estado",
+        "statePlaceholder": "CDMX"
+      }
+    },
+    "registrations": "inscripciones",
+    "distance": "distancia",
+    "distances": "distancias",
+    "visibility": {
+      "draft": "Borrador",
+      "published": "Publicado",
+      "unlisted": "No listado",
+      "archived": "Archivado"
+    },
+    "sportTypes": {
+      "trail_running": "Trail Running",
+      "triathlon": "Triatlón",
+      "cycling": "Ciclismo",
+      "mtb": "Ciclismo de Montaña",
+      "gravel_bike": "Gravel Bike",
+      "duathlon": "Duatlón",
+      "backyard_ultra": "Backyard Ultra"
+    },
+    "detail": {
+      "settings": "Configuración",
+      "eventDate": "Fecha del evento",
+      "location": "Ubicación",
+      "distances": "Distancias",
+      "registrations": "Inscripciones",
+      "manageEvent": "Configuración del evento",
+      "manageEventDescription": "Editar detalles del evento, fechas y configuración de inscripciones",
+      "manageFaq": "FAQ",
+      "manageFaqDescription": "Agregar y editar preguntas frecuentes",
+      "viewPublicPage": "Ver página pública",
+      "viewPublicPageDescription": "Ver cómo aparece tu evento a los participantes",
+      "distancesTitle": "Distancias",
+      "noDistances": "Aún no hay distancias. Ve a configuración para agregar distancias.",
+      "faqTitle": "Preguntas frecuentes",
+      "editFaq": "Editar todas",
+      "viewAllFaq": "+{count} preguntas más"
+    },
+    "faq": {
+      "title": "Preguntas Frecuentes",
+      "description": "Agrega preguntas y respuestas que se mostrarán en la página de tu evento.",
+      "emptyState": "Aún no hay preguntas. Agrega tu primera pregunta para ayudar a los participantes.",
+      "addFirst": "Agregar primera pregunta",
+      "addAnother": "Agregar otra pregunta",
+      "questionLabel": "Pregunta",
+      "questionPlaceholder": "¿Qué deben saber los participantes?",
+      "answerLabel": "Respuesta",
+      "answerPlaceholder": "Proporciona una respuesta útil...",
+      "add": "Agregar",
+      "save": "Guardar",
+      "cancel": "Cancelar"
     }
   }
 }

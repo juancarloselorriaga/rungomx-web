@@ -1,4 +1,162 @@
 {
   "title": "Events",
-  "description": "Browse upcoming and past sprint events."
+  "description": "Browse upcoming and past running events.",
+  "metadata": {
+    "title": "Events | RunGoMX",
+    "description": "Find and register for trail running, triathlon, cycling, and other endurance events in Mexico."
+  },
+  "detail": {
+    "registrationOpen": "Registration open",
+    "registrationClosed": "Registration closed",
+    "registrationOpens": "Registration opens {date}",
+    "registrationCloses": "Registration closes {date}",
+    "registerNow": "Register now",
+    "selectDistance": "Select distance",
+    "eventDate": "Event date",
+    "location": "Location",
+    "organizer": "Organized by",
+    "about": "About the event",
+    "distances": "Distances",
+    "faq": "Frequently Asked Questions",
+    "viewMap": "View on map",
+    "spotsRemaining": "{count} spots remaining",
+    "soldOut": "Sold out",
+    "unlimited": "Unlimited spots",
+    "fromPrice": "From {price}",
+    "free": "Free",
+    "virtualEvent": "Virtual event",
+    "timeLimit": "{hours}h time limit",
+    "terrain": {
+      "road": "Road",
+      "trail": "Trail",
+      "mixed": "Mixed terrain",
+      "track": "Track"
+    },
+    "notFound": {
+      "title": "Event not found",
+      "description": "This event may have been removed or is not available yet.",
+      "backToEvents": "Back to events"
+    }
+  },
+  "register": {
+    "title": "Register",
+    "steps": {
+      "distance": "Select distance",
+      "info": "Your information",
+      "waiver": "Waiver",
+      "payment": "Payment",
+      "confirmation": "Confirmation"
+    },
+    "distance": {
+      "title": "Select your distance",
+      "description": "Choose the distance you want to participate in.",
+      "continue": "Continue"
+    },
+    "info": {
+      "title": "Participant information",
+      "description": "Enter your details for registration.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "email": "Email",
+      "phone": "Phone number",
+      "dateOfBirth": "Date of birth",
+      "gender": "Gender",
+      "genderOptions": {
+        "male": "Male",
+        "female": "Female",
+        "other": "Other",
+        "preferNotToSay": "Prefer not to say"
+      },
+      "emergencyContact": "Emergency contact name",
+      "emergencyPhone": "Emergency contact phone",
+      "teamName": "Team name (optional)",
+      "continue": "Continue"
+    },
+    "waiver": {
+      "title": "Waiver agreement",
+      "description": "Please read and accept the waiver(s) to continue.",
+      "waiverNumber": "Waiver {number} of {total}",
+      "accept": "I have read and agree to the waiver terms",
+      "acceptThis": "I have read and agree to the terms of \"{title}\"",
+      "continue": "Accept and continue"
+    },
+    "payment": {
+      "title": "Payment",
+      "description": "Complete your payment to finalize registration.",
+      "summary": "Order summary",
+      "distance": "Distance",
+      "price": "Price",
+      "total": "Total",
+      "paymentMethods": "Payment methods",
+      "comingSoon": "Online payment coming soon. For now, please contact the organizer to complete your registration.",
+      "contactOrganizer": "Contact organizer",
+      "complete": "Complete registration"
+    },
+    "confirmation": {
+      "title": "Registration complete!",
+      "description": "You have successfully registered for {eventName}.",
+      "registrationId": "Registration ID",
+      "distance": "Distance",
+      "whatNext": "What's next?",
+      "nextSteps": "You will receive a confirmation email with more details about the event. Check your inbox for further instructions.",
+      "viewEvent": "View event details",
+      "backToEvents": "Browse more events"
+    },
+    "errors": {
+      "distanceRequired": "Please select a distance",
+      "soldOut": "This distance is sold out",
+      "registrationClosed": "Registration is closed for this event",
+      "alreadyRegistered": "You are already registered for this event"
+    },
+    "loginRequired": {
+      "title": "Sign in required",
+      "description": "You need to be signed in to register for this event.",
+      "signIn": "Sign in",
+      "signUp": "Create account"
+    }
+  },
+  "search": {
+    "placeholder": "Search events...",
+    "noResults": "No events found",
+    "noResultsDescription": "Try adjusting your filters or check back later for new events.",
+    "clearFilters": "Clear filters"
+  },
+  "filters": {
+    "sportType": "Sport type",
+    "allSports": "All sports",
+    "state": "State",
+    "allStates": "All states",
+    "dateRange": "Date range",
+    "anyDate": "Any date",
+    "upcoming": "Upcoming",
+    "thisMonth": "This month",
+    "nextMonth": "Next month"
+  },
+  "card": {
+    "registrationOpen": "Registration open",
+    "registrationClosed": "Registration closed",
+    "comingSoon": "Coming soon",
+    "fromPrice": "From {price}",
+    "freeEvent": "Free",
+    "viewEvent": "View event"
+  },
+  "pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {current} of {total}",
+    "showing": "Showing {start}-{end} of {total} events"
+  },
+  "emptyState": {
+    "title": "No events yet",
+    "description": "There are no published events at the moment. Check back soon!"
+  },
+  "sportTypes": {
+    "trail_running": "Trail Running",
+    "triathlon": "Triathlon",
+    "cycling": "Cycling",
+    "mtb": "Mountain Biking",
+    "gravel_bike": "Gravel Bike",
+    "duathlon": "Duathlon",
+    "backyard_ultra": "Backyard Ultra"
+  }
 }

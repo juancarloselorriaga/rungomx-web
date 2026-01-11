@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
-import { routing } from '@/i18n/routing';
+import { StaticPathname } from '@/i18n/routing';
 import { signIn, signUp } from '@/lib/auth/client';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, Lock, Mail, UserRoundPlus } from 'lucide-react';
@@ -18,10 +18,13 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const isAppPathname = (value: string): value is keyof typeof routing.pathnames =>
-    Object.prototype.hasOwnProperty.call(routing.pathnames, value);
-  const targetPath: keyof typeof routing.pathnames =
-    callbackPath && isAppPathname(callbackPath) ? callbackPath : '/dashboard';
+  // Static pathnames are routes without dynamic segments (e.g., no [eventId])
+  // We only allow redirecting to static routes after auth
+  // SECURITY: Reject protocol-relative URLs like //evil.com
+  const isStaticPathname = (value: string): value is StaticPathname =>
+    !value.includes('[') && (value === '/' || (value.startsWith('/') && !value.startsWith('//')));
+  const targetPath: StaticPathname =
+    callbackPath && isStaticPathname(callbackPath) ? callbackPath : '/dashboard';
 
   const form = useForm<
     { name: string; email: string; password: string },

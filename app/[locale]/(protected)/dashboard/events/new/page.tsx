@@ -1,13 +1,16 @@
 import { getPathname, Link } from '@/i18n/navigation';
 import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
+import { getUserOrganizations, getOrganizationEventSeries } from '@/lib/events/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+
+import { CreateEventForm } from './create-event-form';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -33,8 +36,17 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
 
+  // Get user's organizations with their series
+  const organizations = await getUserOrganizations(authContext.user!.id);
+  const organizationsWithSeries = await Promise.all(
+    organizations.map(async (org) => {
+      const series = await getOrganizationEventSeries(org.id);
+      return { ...org, series };
+    }),
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <Link
           href="/dashboard/events"
@@ -47,23 +59,7 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
         <p className="text-muted-foreground">{t('createEvent.description')}</p>
       </div>
 
-      {/* Coming soon placeholder - will be replaced with event creation form */}
-      <div className="rounded-lg border bg-card p-8 shadow-sm">
-        <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
-          <div className="rounded-full bg-muted p-4">
-            <Calendar className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold">{t('createEvent.title')}</h2>
-            <p className="text-muted-foreground max-w-md">{t('createEvent.description')}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Coming soon notice */}
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-        <p className="text-sm text-amber-800 dark:text-amber-200">{t('comingSoon')}</p>
-      </div>
+      <CreateEventForm organizations={organizationsWithSeries} />
     </div>
   );
 }

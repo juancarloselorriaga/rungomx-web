@@ -31,6 +31,7 @@ export const AUDIT_ACTIONS = {
   // Distances
   'distance.create': 'Distance created',
   'distance.update': 'Distance updated',
+  'distance.update_price': 'Distance price updated',
   'distance.delete': 'Distance deleted',
 
   // Pricing Tiers
@@ -42,6 +43,12 @@ export const AUDIT_ACTIONS = {
   'waiver.create': 'Waiver created',
   'waiver.update': 'Waiver updated',
   'waiver.delete': 'Waiver deleted',
+
+  // FAQ Items
+  'faq.create': 'FAQ item created',
+  'faq.update': 'FAQ item updated',
+  'faq.delete': 'FAQ item deleted',
+  'faq.reorder': 'FAQ items reordered',
 
   // Website Content
   'website.update': 'Website content updated',

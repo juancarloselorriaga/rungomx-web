@@ -6,6 +6,7 @@ import {
   contactSubmissions,
   eventDistances,
   eventEditions,
+  eventFaqItems,
   eventSeries,
   eventWebsiteContent,
   media,
@@ -132,6 +133,7 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   registrations: many(registrations),
   waivers: many(waivers),
   websiteContent: many(eventWebsiteContent),
+  faqItems: many(eventFaqItems),
 }));
 
 export const eventDistancesRelations = relations(eventDistances, ({ one, many }) => ({
@@ -200,6 +202,13 @@ export const waiverAcceptancesRelations = relations(waiverAcceptances, ({ one })
 export const eventWebsiteContentRelations = relations(eventWebsiteContent, ({ one }) => ({
   edition: one(eventEditions, {
     fields: [eventWebsiteContent.editionId],
+    references: [eventEditions.id],
+  }),
+}));
+
+export const eventFaqItemsRelations = relations(eventFaqItems, ({ one }) => ({
+  edition: one(eventEditions, {
+    fields: [eventFaqItems.editionId],
     references: [eventEditions.id],
   }),
 }));

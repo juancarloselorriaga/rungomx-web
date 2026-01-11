@@ -1,0 +1,600 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
+import { useRouter } from '@/i18n/navigation';
+import { createOrganization } from '@/lib/organizations/actions';
+import { createEventSeries, createEventEdition } from '@/lib/events/actions';
+import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
+import { Form, FormError, useForm } from '@/lib/forms';
+import { cn } from '@/lib/utils';
+import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState, useMemo, useEffect } from 'react';
+
+type EventSeriesSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  sportType: string;
+};
+
+type OrganizationWithSeries = {
+  id: string;
+  name: string;
+  slug: string;
+  role: string;
+  series: EventSeriesSummary[];
+};
+
+type CreateEventFormProps = {
+  organizations: OrganizationWithSeries[];
+};
+
+type Step = 'organization' | 'event';
+
+// Utility to generate slug from name
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 100);
+}
+
+export function CreateEventForm({ organizations }: CreateEventFormProps) {
+  const t = useTranslations('pages.dashboard.events.createEvent');
+  const tSport = useTranslations('pages.dashboard.events.sportTypes');
+  const router = useRouter();
+  const [step, setStep] = useState<Step>('organization');
+
+  // Organization step state
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
+    organizations.length === 1 ? organizations[0].id : null,
+  );
+  const [showNewOrg, setShowNewOrg] = useState(organizations.length === 0);
+  const [newOrgName, setNewOrgName] = useState('');
+  const [newOrgSlug, setNewOrgSlug] = useState('');
+  const [orgSlugManuallyEdited, setOrgSlugManuallyEdited] = useState(false);
+  const [isCreatingOrg, setIsCreatingOrg] = useState(false);
+  const [orgError, setOrgError] = useState<string | null>(null);
+
+  // Handle organization name change with auto-slug
+  function handleOrgNameChange(name: string) {
+    setNewOrgName(name);
+    // Auto-generate slug if not manually edited
+    if (!orgSlugManuallyEdited) {
+      setNewOrgSlug(generateSlug(name));
+    }
+  }
+
+  function handleOrgSlugChange(slug: string) {
+    setOrgSlugManuallyEdited(true);
+    setNewOrgSlug(slug.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+  }
+
+  // Find selected organization
+  const selectedOrg = useMemo(
+    () => organizations.find((org) => org.id === selectedOrgId) || null,
+    [organizations, selectedOrgId],
+  );
+
+  // Event step state  
+  const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
+  const [showNewSeries, setShowNewSeries] = useState(true);
+
+  // Validate organization step
+  const canProceedToEvent = showNewOrg
+    ? newOrgName.trim().length >= 2 && newOrgSlug.length >= 2
+    : selectedOrgId !== null;
+
+  // Handle proceeding to event step (may need to create org first)
+  async function handleProceedToEvent() {
+    setOrgError(null);
+
+    if (showNewOrg) {
+      // Create new organization
+      setIsCreatingOrg(true);
+      try {
+        const result = await createOrganization({
+          name: newOrgName.trim(),
+          slug: newOrgSlug.trim(),
+        });
+
+        if (!result.ok) {
+          setOrgError(result.error);
+          setIsCreatingOrg(false);
+          return;
+        }
+
+        // Update selected org with newly created one
+        setSelectedOrgId(result.data.id);
+        setShowNewOrg(false);
+      } catch {
+        setOrgError('Failed to create organization');
+        setIsCreatingOrg(false);
+        return;
+      }
+      setIsCreatingOrg(false);
+    }
+
+    setStep('event');
+  }
+
+  // Event form
+  const form = useForm<
+    {
+      seriesName: string;
+      seriesSlug: string;
+      sportType: SportType;
+      editionLabel: string;
+      editionSlug: string;
+      startsAt: string;
+      city: string;
+      state: string;
+    },
+    { eventId: string }
+  >({
+    defaultValues: {
+      seriesName: '',
+      seriesSlug: '',
+      sportType: 'trail_running',
+      editionLabel: new Date().getFullYear().toString(),
+      editionSlug: new Date().getFullYear().toString(),
+      startsAt: '',
+      city: '',
+      state: '',
+    },
+    onSubmit: async (values) => {
+      if (!selectedOrgId) {
+        return { ok: false, error: 'VALIDATION_ERROR', message: 'Organization required' };
+      }
+
+      let seriesId = selectedSeriesId;
+
+      // Create new series if needed
+      if (showNewSeries || !seriesId) {
+        const seriesResult = await createEventSeries({
+          organizationId: selectedOrgId,
+          name: values.seriesName.trim(),
+          slug: values.seriesSlug.trim(),
+          sportType: values.sportType,
+        });
+
+        if (!seriesResult.ok) {
+          return { ok: false, error: 'SERVER_ERROR', message: seriesResult.error };
+        }
+
+        seriesId = seriesResult.data.id;
+      }
+
+      // Create edition
+      const editionResult = await createEventEdition({
+        seriesId,
+        editionLabel: values.editionLabel.trim(),
+        slug: values.editionSlug.trim(),
+        timezone: 'America/Mexico_City',
+        country: 'MX',
+        startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : undefined,
+        city: values.city.trim() || undefined,
+        state: values.state.trim() || undefined,
+      });
+
+      if (!editionResult.ok) {
+        return { ok: false, error: 'SERVER_ERROR', message: editionResult.error };
+      }
+
+      return { ok: true, data: { eventId: editionResult.data.id } };
+    },
+    onSuccess: (result) => {
+      router.push({
+        pathname: '/dashboard/events/[eventId]',
+        params: { eventId: result.eventId },
+      });
+    },
+  });
+
+  // Track if series slug was manually edited
+  const [seriesSlugManuallyEdited, setSeriesSlugManuallyEdited] = useState(false);
+
+  // Handle series name change with auto-slug
+  function handleSeriesNameChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const name = e.target.value;
+    form.setFieldValue('seriesName', name);
+    if (!seriesSlugManuallyEdited && showNewSeries) {
+      form.setFieldValue('seriesSlug', generateSlug(name));
+    }
+  }
+
+  function handleSeriesSlugChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setSeriesSlugManuallyEdited(true);
+    form.setFieldValue('seriesSlug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+  }
+
+  // When selecting existing series, populate sport type
+  useEffect(() => {
+    if (selectedSeriesId && selectedOrg) {
+      const series = selectedOrg.series.find((s) => s.id === selectedSeriesId);
+      if (series) {
+        form.setFieldValue('sportType', series.sportType as SportType);
+      }
+    }
+  }, [selectedSeriesId, selectedOrg, form]);
+
+  return (
+    <div className="space-y-6">
+      {/* Step indicator */}
+      <div className="flex items-center gap-4">
+        <StepIndicator
+          number={1}
+          label={t('steps.organization')}
+          status={step === 'organization' ? 'current' : 'complete'}
+        />
+        <div className="h-px flex-1 bg-border" />
+        <StepIndicator
+          number={2}
+          label={t('steps.event')}
+          status={step === 'event' ? 'current' : 'pending'}
+        />
+      </div>
+
+      {/* Organization step */}
+      {step === 'organization' && (
+        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-6">
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold">{t('organization.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('organization.description')}</p>
+          </div>
+
+          {/* Existing organizations */}
+          {organizations.length > 0 && !showNewOrg && (
+            <div className="space-y-3">
+              {organizations.map((org) => (
+                <button
+                  key={org.id}
+                  type="button"
+                  onClick={() => setSelectedOrgId(org.id)}
+                  className={cn(
+                    'w-full flex items-center gap-4 p-4 rounded-lg border text-left transition-colors',
+                    selectedOrgId === org.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/50',
+                  )}
+                >
+                  <Building2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{org.name}</p>
+                    <p className="text-sm text-muted-foreground">{org.series.length} series</p>
+                  </div>
+                  {selectedOrgId === org.id && (
+                    <Check className="h-5 w-5 text-primary flex-shrink-0" />
+                  )}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNewOrg(true);
+                  setSelectedOrgId(null);
+                }}
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border border-dashed border-border hover:border-primary/50 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Building2 className="h-4 w-4" />
+                {t('organization.createNew')}
+              </button>
+            </div>
+          )}
+
+          {/* New organization form */}
+          {showNewOrg && (
+            <div className="space-y-4">
+              {organizations.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowNewOrg(false);
+                    setNewOrgName('');
+                    setNewOrgSlug('');
+                  }}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t('organization.backToList')}
+                </Button>
+              )}
+
+              <FormField
+                label={t('organization.nameLabel')}
+                required
+                error={orgError}
+              >
+                <input
+                  type="text"
+                  value={newOrgName}
+                  onChange={(e) => handleOrgNameChange(e.target.value)}
+                  placeholder={t('organization.namePlaceholder')}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={isCreatingOrg}
+                />
+              </FormField>
+
+              <FormField
+                label={t('organization.slugLabel')}
+                required
+              >
+                <input
+                  type="text"
+                  value={newOrgSlug}
+                  onChange={(e) => handleOrgSlugChange(e.target.value)}
+                  placeholder="my-organization"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                  disabled={isCreatingOrg}
+                />
+              </FormField>
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              onClick={handleProceedToEvent}
+              disabled={!canProceedToEvent || isCreatingOrg}
+            >
+              {isCreatingOrg ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <ArrowRight className="h-4 w-4 mr-2" />
+              )}
+              {t('steps.continue')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Event step */}
+      {step === 'event' && (
+        <Form form={form} className="rounded-lg border bg-card p-6 shadow-sm space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setStep('organization')}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <h2 className="text-lg font-semibold">{t('event.title')}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {t('event.organizationLabel')}: {selectedOrg?.name}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <FormError />
+
+          {/* Series selection/creation */}
+          {selectedOrg && selectedOrg.series.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{t('event.seriesLabel')}</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowNewSeries(true);
+                    setSelectedSeriesId(null);
+                  }}
+                  className={cn(
+                    'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
+                    showNewSeries
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border hover:border-primary/50',
+                  )}
+                >
+                  {t('event.newSeries')}
+                </button>
+                {selectedOrg.series.map((series) => (
+                  <button
+                    key={series.id}
+                    type="button"
+                    onClick={() => {
+                      setShowNewSeries(false);
+                      setSelectedSeriesId(series.id);
+                    }}
+                    className={cn(
+                      'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
+                      !showNewSeries && selectedSeriesId === series.id
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border hover:border-primary/50',
+                    )}
+                  >
+                    {series.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* New series fields */}
+          {showNewSeries && (
+            <>
+              <FormField
+                label={t('event.seriesNameLabel')}
+                required
+                error={form.errors.seriesName}
+              >
+                <input
+                  type="text"
+                  value={form.values.seriesName}
+                  onChange={handleSeriesNameChange}
+                  placeholder={t('event.seriesNamePlaceholder')}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+
+              <FormField
+                label={t('event.seriesSlugLabel')}
+                required
+                error={form.errors.seriesSlug}
+              >
+                <input
+                  type="text"
+                  value={form.values.seriesSlug}
+                  onChange={handleSeriesSlugChange}
+                  placeholder="ultra-trail-mx"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+
+              <FormField
+                label={t('event.sportTypeLabel')}
+                required
+                error={form.errors.sportType}
+              >
+                <select
+                  {...form.register('sportType')}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={form.isSubmitting}
+                >
+                  {SPORT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {tSport(type)}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            </>
+          )}
+
+          {/* Edition fields */}
+          <div className="border-t pt-6 space-y-4">
+            <p className="text-sm font-medium text-muted-foreground">{t('event.editionDetails')}</p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                label={t('event.editionLabelLabel')}
+                required
+                error={form.errors.editionLabel}
+              >
+                <input
+                  type="text"
+                  {...form.register('editionLabel')}
+                  placeholder="2025"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+
+              <FormField
+                label={t('event.editionSlugLabel')}
+                required
+                error={form.errors.editionSlug}
+              >
+                <input
+                  type="text"
+                  {...form.register('editionSlug')}
+                  placeholder="2025"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+            </div>
+
+            <FormField
+              label={t('event.dateLabel')}
+              error={form.errors.startsAt}
+            >
+              <input
+                type="date"
+                {...form.register('startsAt')}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                disabled={form.isSubmitting}
+              />
+            </FormField>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                label={t('event.cityLabel')}
+                error={form.errors.city}
+              >
+                <input
+                  type="text"
+                  {...form.register('city')}
+                  placeholder={t('event.cityPlaceholder')}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+
+              <FormField
+                label={t('event.stateLabel')}
+                error={form.errors.state}
+              >
+                <input
+                  type="text"
+                  {...form.register('state')}
+                  placeholder={t('event.statePlaceholder')}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={form.isSubmitting}>
+              {form.isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <CalendarPlus className="h-4 w-4 mr-2" />
+              )}
+              {t('submit')}
+            </Button>
+          </div>
+        </Form>
+      )}
+    </div>
+  );
+}
+
+// Step indicator component
+function StepIndicator({
+  number,
+  label,
+  status,
+}: {
+  number: number;
+  label: string;
+  status: 'pending' | 'current' | 'complete';
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className={cn(
+          'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors',
+          status === 'complete' && 'bg-primary text-primary-foreground',
+          status === 'current' && 'bg-primary text-primary-foreground',
+          status === 'pending' && 'bg-muted text-muted-foreground',
+        )}
+      >
+        {status === 'complete' ? <Check className="h-4 w-4" /> : number}
+      </div>
+      <span
+        className={cn(
+          'text-sm font-medium',
+          status === 'pending' && 'text-muted-foreground',
+        )}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
