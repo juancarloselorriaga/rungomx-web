@@ -178,6 +178,53 @@
       "add": "Add",
       "save": "Save",
       "cancel": "Cancel"
+    },
+    "settings": {
+      "title": "Event Settings",
+      "description": "Configure your event details, visibility, distances, and registration settings.",
+      "visibility": {
+        "title": "Event Visibility",
+        "description": "Control who can see and access your event. Published events appear in the public directory."
+      },
+      "registration": {
+        "title": "Registration Status",
+        "description": "Pause or resume registration for this event. Paused events won't accept new registrations.",
+        "active": "Active",
+        "paused": "Paused",
+        "pause": "Pause Registration",
+        "resume": "Resume Registration"
+      },
+      "details": {
+        "title": "Event Details",
+        "editionLabel": "Edition Label",
+        "slug": "URL Slug",
+        "startsAt": "Start Date",
+        "endsAt": "End Date",
+        "locationSection": "Location",
+        "city": "City",
+        "state": "State",
+        "address": "Address",
+        "registrationWindow": "Registration Window",
+        "registrationOpensAt": "Registration Opens",
+        "registrationClosesAt": "Registration Closes",
+        "save": "Save Changes"
+      },
+      "distances": {
+        "title": "Distances",
+        "add": "Add Distance",
+        "empty": "No distances added yet. Add your first distance to enable registration.",
+        "labelField": "Label",
+        "distanceValue": "Distance (km)",
+        "terrain": "Terrain",
+        "price": "Price (MXN)",
+        "capacity": "Capacity",
+        "unlimited": "Unlimited",
+        "registered": "registered",
+        "addDistance": "Add Distance",
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirmDelete": "Are you sure you want to delete this distance? This action cannot be undone."
+      }
     }
   }
 }

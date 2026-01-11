@@ -178,6 +178,53 @@
       "add": "Agregar",
       "save": "Guardar",
       "cancel": "Cancelar"
+    },
+    "settings": {
+      "title": "Configuración del Evento",
+      "description": "Configura los detalles, visibilidad, distancias y ajustes de inscripción de tu evento.",
+      "visibility": {
+        "title": "Visibilidad del Evento",
+        "description": "Controla quién puede ver y acceder a tu evento. Los eventos publicados aparecen en el directorio público."
+      },
+      "registration": {
+        "title": "Estado de Inscripciones",
+        "description": "Pausa o reanuda las inscripciones para este evento. Los eventos pausados no aceptarán nuevas inscripciones.",
+        "active": "Activo",
+        "paused": "Pausado",
+        "pause": "Pausar Inscripciones",
+        "resume": "Reanudar Inscripciones"
+      },
+      "details": {
+        "title": "Detalles del Evento",
+        "editionLabel": "Etiqueta de Edición",
+        "slug": "Slug de URL",
+        "startsAt": "Fecha de Inicio",
+        "endsAt": "Fecha de Fin",
+        "locationSection": "Ubicación",
+        "city": "Ciudad",
+        "state": "Estado",
+        "address": "Dirección",
+        "registrationWindow": "Ventana de Inscripción",
+        "registrationOpensAt": "Apertura de Inscripciones",
+        "registrationClosesAt": "Cierre de Inscripciones",
+        "save": "Guardar Cambios"
+      },
+      "distances": {
+        "title": "Distancias",
+        "add": "Agregar Distancia",
+        "empty": "Aún no hay distancias. Agrega tu primera distancia para habilitar inscripciones.",
+        "labelField": "Etiqueta",
+        "distanceValue": "Distancia (km)",
+        "terrain": "Terreno",
+        "price": "Precio (MXN)",
+        "capacity": "Capacidad",
+        "unlimited": "Ilimitado",
+        "registered": "inscritos",
+        "addDistance": "Agregar Distancia",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "confirmDelete": "¿Estás seguro de que deseas eliminar esta distancia? Esta acción no se puede deshacer."
+      }
     }
   }
 }

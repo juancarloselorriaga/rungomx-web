@@ -52,6 +52,9 @@ export function PhoneInput({
   const locale = useLocale();
   const labels = LOCALE_LABELS[locale as keyof typeof LOCALE_LABELS] || LOCALE_LABELS.en;
 
+  // Generate data-testid from name or label for test automation
+  const testId = name || (typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+
   return (
     <FormField label={label} required={required} error={error} className={className}>
       {name ? <input type="hidden" name={name} value={value || ''} readOnly /> : null}
@@ -76,9 +79,13 @@ export function PhoneInput({
             inputClassName,
           ),
           maxLength: 25, // E.164 max is 15 digits, plus formatting characters (spaces, dashes, parentheses)
+          // Add data-testid for Playwright automation
+          'data-testid': testId ? `phone-input-${testId}` : undefined,
         }}
         countrySelectProps={{
           className: cn('border-0 bg-transparent text-sm outline-none', 'focus:ring-0'),
+          // Add data-testid for country select
+          'data-testid': testId ? `phone-country-${testId}` : undefined,
         }}
       />
     </FormField>
