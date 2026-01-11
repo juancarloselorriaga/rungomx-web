@@ -51,7 +51,9 @@ export const TERRAIN_TYPES = ['road', 'trail', 'mixed'] as const;
 export type TerrainType = (typeof TERRAIN_TYPES)[number];
 
 // Capacity scope (how capacity is counted)
-export const CAPACITY_SCOPES = ['per_distance', 'shared_pool'] as const;
+// Phase 1: Only per_distance is supported; shared_pool enforcement requires
+// edition-level capacity counting and is planned for a future phase
+export const CAPACITY_SCOPES = ['per_distance'] as const;
 export type CapacityScope = (typeof CAPACITY_SCOPES)[number];
 
 // Media kinds

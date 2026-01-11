@@ -50,6 +50,7 @@ export const AUDIT_ENTITY_TYPES = [
   'event_series',
   'event_edition',
   'event_distance',
+  'event_faq_item',
   'pricing_tier',
   'registration',
   'registrant',

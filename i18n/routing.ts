@@ -73,6 +73,26 @@ export const routing = defineRouting({
       es: '/tablero/eventos/nuevo',
       en: '/dashboard/events/new',
     },
+    '/dashboard/events/[eventId]': {
+      es: '/tablero/eventos/[eventId]',
+      en: '/dashboard/events/[eventId]',
+    },
+    '/dashboard/events/[eventId]/settings': {
+      es: '/tablero/eventos/[eventId]/configuracion',
+      en: '/dashboard/events/[eventId]/settings',
+    },
+    '/dashboard/events/[eventId]/faq': {
+      es: '/tablero/eventos/[eventId]/faq',
+      en: '/dashboard/events/[eventId]/faq',
+    },
+    '/events/[seriesSlug]/[editionSlug]': {
+      es: '/eventos/[seriesSlug]/[editionSlug]',
+      en: '/events/[seriesSlug]/[editionSlug]',
+    },
+    '/events/[seriesSlug]/[editionSlug]/register': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/inscripcion',
+      en: '/events/[seriesSlug]/[editionSlug]/register',
+    },
     '/settings': {
       es: '/configuracion',
       en: '/settings',
@@ -129,3 +149,12 @@ export const routing = defineRouting({
 });
 
 export type AppLocale = (typeof routing.locales)[number];
+
+// Type representing all pathnames in the routing config
+export type AppPathname = keyof typeof routing.pathnames;
+
+// Type representing only static pathnames (no dynamic segments like [eventId])
+// Used for callback URLs in auth forms where we redirect to static pages
+export type StaticPathname = {
+  [K in AppPathname]: K extends `${string}[${string}]${string}` ? never : K;
+}[AppPathname];

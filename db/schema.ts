@@ -316,6 +316,7 @@ export const eventEditions = pgTable(
     longitude: decimal('longitude', { precision: 10, scale: 7 }),
     externalUrl: varchar('external_url', { length: 500 }),
     heroImageMediaId: uuid('hero_image_media_id'),
+    description: text('description'), // Event description (rich text or plain)
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -465,6 +466,22 @@ export const eventWebsiteContent = pgTable('event_website_content', {
     .references(() => eventEditions.id, { onDelete: 'cascade' }),
   locale: varchar('locale', { length: 10 }).notNull().default('es'),
   blocksJson: jsonb('blocks_json').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const eventFaqItems = pgTable('event_faq_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  question: varchar('question', { length: 500 }).notNull(),
+  answer: text('answer').notNull(),
+  sortOrder: integer('sort_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
     .defaultNow()

@@ -93,7 +93,91 @@
     },
     "createEvent": {
       "title": "Create event",
-      "description": "Set up a new event for your organization."
+      "description": "Set up a new event for your organization.",
+      "button": "Create event",
+      "submit": "Create event",
+      "steps": {
+        "organization": "Organization",
+        "event": "Event details",
+        "continue": "Continue"
+      },
+      "organization": {
+        "title": "Select organization",
+        "description": "Choose the organization that will host this event, or create a new one.",
+        "createNew": "Create new organization",
+        "backToList": "Back to organizations",
+        "nameLabel": "Organization name",
+        "namePlaceholder": "My Race Organization",
+        "slugLabel": "URL slug"
+      },
+      "event": {
+        "title": "Event details",
+        "organizationLabel": "Organization",
+        "seriesLabel": "Event series",
+        "newSeries": "New series",
+        "seriesNameLabel": "Series name",
+        "seriesNamePlaceholder": "Ultra Trail Mexico",
+        "seriesSlugLabel": "Series URL slug",
+        "sportTypeLabel": "Sport type",
+        "editionDetails": "Edition details",
+        "editionLabelLabel": "Edition label",
+        "editionSlugLabel": "Edition URL slug",
+        "dateLabel": "Event date",
+        "cityLabel": "City",
+        "cityPlaceholder": "Mexico City",
+        "stateLabel": "State",
+        "statePlaceholder": "CDMX"
+      }
+    },
+    "registrations": "registrations",
+    "distance": "distance",
+    "distances": "distances",
+    "visibility": {
+      "draft": "Draft",
+      "published": "Published",
+      "unlisted": "Unlisted",
+      "archived": "Archived"
+    },
+    "sportTypes": {
+      "trail_running": "Trail Running",
+      "triathlon": "Triathlon",
+      "cycling": "Cycling",
+      "mtb": "Mountain Biking",
+      "gravel_bike": "Gravel Bike",
+      "duathlon": "Duathlon",
+      "backyard_ultra": "Backyard Ultra"
+    },
+    "detail": {
+      "settings": "Settings",
+      "eventDate": "Event Date",
+      "location": "Location",
+      "distances": "Distances",
+      "registrations": "Registrations",
+      "manageEvent": "Event Settings",
+      "manageEventDescription": "Edit event details, dates, and registration settings",
+      "manageFaq": "FAQ",
+      "manageFaqDescription": "Add and edit frequently asked questions",
+      "viewPublicPage": "View Public Page",
+      "viewPublicPageDescription": "See how your event appears to participants",
+      "distancesTitle": "Distances",
+      "noDistances": "No distances added yet. Go to settings to add distances.",
+      "faqTitle": "FAQ",
+      "editFaq": "Edit all",
+      "viewAllFaq": "+{count} more questions"
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Add questions and answers that will be displayed on your event page.",
+      "emptyState": "No FAQ items yet. Add your first question to help participants understand your event.",
+      "addFirst": "Add first question",
+      "addAnother": "Add another question",
+      "questionLabel": "Question",
+      "questionPlaceholder": "What should participants know?",
+      "answerLabel": "Answer",
+      "answerPlaceholder": "Provide a helpful answer...",
+      "add": "Add",
+      "save": "Save",
+      "cancel": "Cancel"
     }
   }
 }

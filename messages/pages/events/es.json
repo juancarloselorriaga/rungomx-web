@@ -1,4 +1,162 @@
 {
   "title": "Eventos",
-  "description": "Explora eventos próximos y pasados de carreras."
+  "description": "Explora eventos próximos y pasados de carreras.",
+  "metadata": {
+    "title": "Eventos | RunGoMX",
+    "description": "Encuentra e inscríbete en eventos de trail running, triatlón, ciclismo y otros deportes de resistencia en México."
+  },
+  "detail": {
+    "registrationOpen": "Inscripciones abiertas",
+    "registrationClosed": "Inscripciones cerradas",
+    "registrationOpens": "Inscripciones abren el {date}",
+    "registrationCloses": "Inscripciones cierran el {date}",
+    "registerNow": "Inscribirme",
+    "selectDistance": "Seleccionar distancia",
+    "eventDate": "Fecha del evento",
+    "location": "Ubicación",
+    "organizer": "Organizado por",
+    "about": "Acerca del evento",
+    "distances": "Distancias",
+    "faq": "Preguntas Frecuentes",
+    "viewMap": "Ver en mapa",
+    "spotsRemaining": "{count} lugares disponibles",
+    "soldOut": "Agotado",
+    "unlimited": "Lugares ilimitados",
+    "fromPrice": "Desde {price}",
+    "free": "Gratis",
+    "virtualEvent": "Evento virtual",
+    "timeLimit": "{hours}h límite de tiempo",
+    "terrain": {
+      "road": "Ruta",
+      "trail": "Trail",
+      "mixed": "Terreno mixto",
+      "track": "Pista"
+    },
+    "notFound": {
+      "title": "Evento no encontrado",
+      "description": "Este evento puede haber sido eliminado o aún no está disponible.",
+      "backToEvents": "Volver a eventos"
+    }
+  },
+  "register": {
+    "title": "Inscripción",
+    "steps": {
+      "distance": "Seleccionar distancia",
+      "info": "Tu información",
+      "waiver": "Deslinde",
+      "payment": "Pago",
+      "confirmation": "Confirmación"
+    },
+    "distance": {
+      "title": "Selecciona tu distancia",
+      "description": "Elige la distancia en la que deseas participar.",
+      "continue": "Continuar"
+    },
+    "info": {
+      "title": "Información del participante",
+      "description": "Ingresa tus datos para la inscripción.",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "dateOfBirth": "Fecha de nacimiento",
+      "gender": "Género",
+      "genderOptions": {
+        "male": "Masculino",
+        "female": "Femenino",
+        "other": "Otro",
+        "preferNotToSay": "Prefiero no decir"
+      },
+      "emergencyContact": "Nombre del contacto de emergencia",
+      "emergencyPhone": "Teléfono de emergencia",
+      "teamName": "Nombre del equipo (opcional)",
+      "continue": "Continuar"
+    },
+    "waiver": {
+      "title": "Aceptación de deslinde",
+      "description": "Por favor lee y acepta el/los deslinde(s) de responsabilidad para continuar.",
+      "waiverNumber": "Deslinde {number} de {total}",
+      "accept": "He leído y acepto los términos del deslinde",
+      "acceptThis": "He leído y acepto los términos de \"{title}\"",
+      "continue": "Aceptar y continuar"
+    },
+    "payment": {
+      "title": "Pago",
+      "description": "Completa tu pago para finalizar la inscripción.",
+      "summary": "Resumen del pedido",
+      "distance": "Distancia",
+      "price": "Precio",
+      "total": "Total",
+      "paymentMethods": "Métodos de pago",
+      "comingSoon": "Pago en línea próximamente. Por ahora, contacta al organizador para completar tu inscripción.",
+      "contactOrganizer": "Contactar organizador",
+      "complete": "Completar inscripción"
+    },
+    "confirmation": {
+      "title": "¡Inscripción completa!",
+      "description": "Te has inscrito exitosamente a {eventName}.",
+      "registrationId": "ID de inscripción",
+      "distance": "Distancia",
+      "whatNext": "¿Qué sigue?",
+      "nextSteps": "Recibirás un correo de confirmación con más detalles del evento. Revisa tu bandeja de entrada para más instrucciones.",
+      "viewEvent": "Ver detalles del evento",
+      "backToEvents": "Explorar más eventos"
+    },
+    "errors": {
+      "distanceRequired": "Por favor selecciona una distancia",
+      "soldOut": "Esta distancia está agotada",
+      "registrationClosed": "Las inscripciones están cerradas para este evento",
+      "alreadyRegistered": "Ya estás inscrito en este evento"
+    },
+    "loginRequired": {
+      "title": "Inicio de sesión requerido",
+      "description": "Necesitas iniciar sesión para inscribirte en este evento.",
+      "signIn": "Iniciar sesión",
+      "signUp": "Crear cuenta"
+    }
+  },
+  "search": {
+    "placeholder": "Buscar eventos...",
+    "noResults": "No se encontraron eventos",
+    "noResultsDescription": "Intenta ajustar tus filtros o vuelve más tarde para ver nuevos eventos.",
+    "clearFilters": "Limpiar filtros"
+  },
+  "filters": {
+    "sportType": "Tipo de deporte",
+    "allSports": "Todos los deportes",
+    "state": "Estado",
+    "allStates": "Todos los estados",
+    "dateRange": "Rango de fechas",
+    "anyDate": "Cualquier fecha",
+    "upcoming": "Próximos",
+    "thisMonth": "Este mes",
+    "nextMonth": "Próximo mes"
+  },
+  "card": {
+    "registrationOpen": "Inscripciones abiertas",
+    "registrationClosed": "Inscripciones cerradas",
+    "comingSoon": "Próximamente",
+    "fromPrice": "Desde {price}",
+    "freeEvent": "Gratis",
+    "viewEvent": "Ver evento"
+  },
+  "pagination": {
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {current} de {total}",
+    "showing": "Mostrando {start}-{end} de {total} eventos"
+  },
+  "emptyState": {
+    "title": "Sin eventos",
+    "description": "No hay eventos publicados por el momento. ¡Vuelve pronto!"
+  },
+  "sportTypes": {
+    "trail_running": "Trail Running",
+    "triathlon": "Triatlón",
+    "cycling": "Ciclismo",
+    "mtb": "Ciclismo de Montaña",
+    "gravel_bike": "Gravel Bike",
+    "duathlon": "Duatlón",
+    "backyard_ultra": "Backyard Ultra"
+  }
 }

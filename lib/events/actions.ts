@@ -1,12 +1,22 @@
 'use server';
 
 import { customAlphabet } from 'nanoid';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, or, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { eventEditions, eventSeries } from '@/db/schema';
+import {
+  eventDistances,
+  eventEditions,
+  eventFaqItems,
+  eventSeries,
+  pricingTiers,
+  registrants,
+  registrations,
+  waiverAcceptances,
+  waivers,
+} from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
@@ -17,7 +27,15 @@ import {
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
 
-import { EVENT_VISIBILITY, SPORT_TYPES } from './constants';
+import {
+  CAPACITY_SCOPES,
+  DISTANCE_KINDS,
+  DISTANCE_UNITS,
+  EVENT_VISIBILITY,
+  SIGNATURE_TYPES,
+  SPORT_TYPES,
+  TERRAIN_TYPES,
+} from './constants';
 
 // =============================================================================
 // Helpers
@@ -446,6 +464,11 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.country !== undefined) updateData.country = updates.country;
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
 
+  // Guard: reject empty updates to prevent invalid SQL
+  if (Object.keys(updateData).length === 0) {
+    return { ok: false, error: 'No fields to update', code: 'VALIDATION_ERROR' };
+  }
+
   // Update edition and audit log in a transaction (Phase 0 requirement)
   const requestContext = await getRequestContext(await headers());
   const updated = await db.transaction(async (tx) => {
@@ -455,6 +478,14 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
       .where(eq(eventEditions.id, editionId))
       .returning();
 
+    // Build comprehensive before/after for audit log
+    const auditBefore: Record<string, unknown> = {};
+    const auditAfter: Record<string, unknown> = {};
+    for (const key of Object.keys(updateData)) {
+      auditBefore[key] = (edition as never)[key];
+      auditAfter[key] = (updatedEdition as never)[key];
+    }
+
     // Write audit log in same transaction (ensures atomicity)
     const auditResult = await createAuditLog(
       {
@@ -463,8 +494,8 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
         action: 'event.update',
         entityType: 'event_edition',
         entityId: editionId,
-        before: { editionLabel: edition.editionLabel, slug: edition.slug },
-        after: { editionLabel: updatedEdition.editionLabel, slug: updatedEdition.slug },
+        before: auditBefore,
+        after: auditAfter,
         request: requestContext,
       },
       tx,
@@ -707,4 +738,1481 @@ export const checkSlugAvailability = withAuthenticatedUser<ActionResult<{ availa
   }
 
   return { ok: false, error: 'Either organizationId or seriesId is required', code: 'VALIDATION_ERROR' };
+});
+
+// =============================================================================
+// Distance Actions
+// =============================================================================
+
+const createDistanceSchema = z.object({
+  editionId: z.string().uuid(),
+  label: z.string().min(1).max(100),
+  distanceValue: z.number().positive().optional(),
+  distanceUnit: z.enum(DISTANCE_UNITS).default('km'),
+  kind: z.enum(DISTANCE_KINDS).default('distance'),
+  startTimeLocal: z.string().datetime().optional(),
+  timeLimitMinutes: z.number().int().positive().optional(),
+  terrain: z.enum(TERRAIN_TYPES).optional(),
+  isVirtual: z.boolean().default(false),
+  capacity: z.number().int().positive().optional(),
+  capacityScope: z.enum(CAPACITY_SCOPES).default('per_distance'),
+  priceCents: z.number().int().nonnegative(), // Required initial price
+});
+
+const updateDistanceSchema = z.object({
+  distanceId: z.string().uuid(),
+  label: z.string().min(1).max(100).optional(),
+  distanceValue: z.number().positive().optional().nullable(),
+  distanceUnit: z.enum(DISTANCE_UNITS).optional(),
+  kind: z.enum(DISTANCE_KINDS).optional(),
+  startTimeLocal: z.string().datetime().optional().nullable(),
+  timeLimitMinutes: z.number().int().positive().optional().nullable(),
+  terrain: z.enum(TERRAIN_TYPES).optional().nullable(),
+  isVirtual: z.boolean().optional(),
+  capacity: z.number().int().positive().optional().nullable(),
+  capacityScope: z.enum(CAPACITY_SCOPES).optional(),
+});
+
+const deleteDistanceSchema = z.object({
+  distanceId: z.string().uuid(),
+});
+
+type DistanceData = {
+  id: string;
+  label: string;
+  distanceValue: string | null;
+  distanceUnit: string;
+  kind: string;
+  capacity: number | null;
+  isVirtual: boolean;
+  editionId: string;
+};
+
+/**
+ * Create a new distance for an event edition.
+ * Also creates the initial pricing tier.
+ */
+export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof createDistanceSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = createDistanceSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, priceCents, ...distanceData } = validated.data;
+
+  // Get edition and check permissions
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  // Get max sort order
+  const existingDistances = await db.query.eventDistances.findMany({
+    where: and(eq(eventDistances.editionId, editionId), isNull(eventDistances.deletedAt)),
+    orderBy: (d, { desc }) => [desc(d.sortOrder)],
+    limit: 1,
+  });
+  const nextSortOrder = (existingDistances[0]?.sortOrder ?? -1) + 1;
+
+  const requestContext = await getRequestContext(await headers());
+  const distance = await db.transaction(async (tx) => {
+    const [newDistance] = await tx
+      .insert(eventDistances)
+      .values({
+        editionId,
+        label: distanceData.label,
+        distanceValue: distanceData.distanceValue?.toString(),
+        distanceUnit: distanceData.distanceUnit,
+        kind: distanceData.kind,
+        startTimeLocal: distanceData.startTimeLocal ? new Date(distanceData.startTimeLocal) : undefined,
+        timeLimitMinutes: distanceData.timeLimitMinutes,
+        terrain: distanceData.terrain,
+        isVirtual: distanceData.isVirtual,
+        capacity: distanceData.capacity,
+        capacityScope: distanceData.capacityScope,
+        sortOrder: nextSortOrder,
+      })
+      .returning();
+
+    // Create initial pricing tier (v1: single price)
+    await tx.insert(pricingTiers).values({
+      distanceId: newDistance.id,
+      label: 'Standard',
+      priceCents,
+      currency: 'MXN',
+      sortOrder: 0,
+    });
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'distance.create',
+        entityType: 'event_distance',
+        entityId: newDistance.id,
+        after: { label: distanceData.label, priceCents },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+
+    return newDistance;
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: distance.id,
+      label: distance.label,
+      distanceValue: distance.distanceValue,
+      distanceUnit: distance.distanceUnit,
+      kind: distance.kind,
+      capacity: distance.capacity,
+      isVirtual: distance.isVirtual,
+      editionId: distance.editionId,
+    },
+  };
+});
+
+/**
+ * Update a distance.
+ */
+export const updateDistance = withAuthenticatedUser<ActionResult<DistanceData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof updateDistanceSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = updateDistanceSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { distanceId, ...updates } = validated.data;
+
+  // Get distance and check permissions
+  const distance = await db.query.eventDistances.findFirst({
+    where: and(eq(eventDistances.id, distanceId), isNull(eventDistances.deletedAt)),
+    with: { edition: { with: { series: true } } },
+  });
+
+  if (!distance?.edition?.series) {
+    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, distance.edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (updates.label !== undefined) updateData.label = updates.label;
+  if (updates.distanceValue !== undefined) {
+    updateData.distanceValue = updates.distanceValue === null ? null : updates.distanceValue.toString();
+  }
+  if (updates.distanceUnit !== undefined) updateData.distanceUnit = updates.distanceUnit;
+  if (updates.kind !== undefined) updateData.kind = updates.kind;
+  if (updates.startTimeLocal !== undefined) updateData.startTimeLocal = updates.startTimeLocal ? new Date(updates.startTimeLocal) : null;
+  if (updates.timeLimitMinutes !== undefined) updateData.timeLimitMinutes = updates.timeLimitMinutes;
+  if (updates.terrain !== undefined) updateData.terrain = updates.terrain;
+  if (updates.isVirtual !== undefined) updateData.isVirtual = updates.isVirtual;
+  if (updates.capacity !== undefined) updateData.capacity = updates.capacity;
+  if (updates.capacityScope !== undefined) updateData.capacityScope = updates.capacityScope;
+
+  // Guard: reject empty updates to prevent invalid SQL
+  if (Object.keys(updateData).length === 0) {
+    return { ok: false, error: 'No fields to update', code: 'VALIDATION_ERROR' };
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  const updated = await db.transaction(async (tx) => {
+    const [updatedDistance] = await tx
+      .update(eventDistances)
+      .set(updateData)
+      .where(eq(eventDistances.id, distanceId))
+      .returning();
+
+    // Build comprehensive before/after for audit log (include all changed fields)
+    const auditBefore: Record<string, unknown> = {};
+    const auditAfter: Record<string, unknown> = {};
+    for (const key of Object.keys(updateData)) {
+      auditBefore[key] = (distance as never)[key];
+      auditAfter[key] = (updatedDistance as never)[key];
+    }
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: distance.edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'distance.update',
+        entityType: 'event_distance',
+        entityId: distanceId,
+        before: auditBefore,
+        after: auditAfter,
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+
+    return updatedDistance;
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: updated.id,
+      label: updated.label,
+      distanceValue: updated.distanceValue,
+      distanceUnit: updated.distanceUnit,
+      kind: updated.kind,
+      capacity: updated.capacity,
+      isVirtual: updated.isVirtual,
+      editionId: updated.editionId,
+    },
+  };
+});
+
+/**
+ * Soft-delete a distance.
+ */
+export const deleteDistance = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof deleteDistanceSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = deleteDistanceSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { distanceId } = validated.data;
+
+  const distance = await db.query.eventDistances.findFirst({
+    where: and(eq(eventDistances.id, distanceId), isNull(eventDistances.deletedAt)),
+    with: { edition: { with: { series: true } } },
+  });
+
+  if (!distance?.edition?.series) {
+    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, distance.edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  // Check if there are any registrations for this distance
+  const existingRegistrations = await db.query.registrations.findFirst({
+    where: and(eq(registrations.distanceId, distanceId), isNull(registrations.deletedAt)),
+  });
+
+  if (existingRegistrations) {
+    return { ok: false, error: 'Cannot delete distance with existing registrations', code: 'HAS_REGISTRATIONS' };
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  await db.transaction(async (tx) => {
+    await tx
+      .update(eventDistances)
+      .set({ deletedAt: new Date() })
+      .where(eq(eventDistances.id, distanceId));
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: distance.edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'distance.delete',
+        entityType: 'event_distance',
+        entityId: distanceId,
+        before: { label: distance.label },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+  });
+
+  return { ok: true, data: undefined };
+});
+
+/**
+ * Update distance price (v1: single price).
+ */
+const updateDistancePriceSchema = z.object({
+  distanceId: z.string().uuid(),
+  priceCents: z.number().int().nonnegative(),
+});
+
+export const updateDistancePrice = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof updateDistancePriceSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = updateDistancePriceSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { distanceId, priceCents } = validated.data;
+
+  const distance = await db.query.eventDistances.findFirst({
+    where: and(eq(eventDistances.id, distanceId), isNull(eventDistances.deletedAt)),
+    with: { edition: { with: { series: true } }, pricingTiers: true },
+  });
+
+  if (!distance?.edition?.series) {
+    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, distance.edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditRegistrationSettings');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  await db.transaction(async (tx) => {
+    // Update the first (and only in v1) pricing tier
+    const tier = distance.pricingTiers.find(t => !t.deletedAt);
+    if (tier) {
+      await tx
+        .update(pricingTiers)
+        .set({ priceCents })
+        .where(eq(pricingTiers.id, tier.id));
+    } else {
+      // Create if doesn't exist
+      await tx.insert(pricingTiers).values({
+        distanceId,
+        label: 'Standard',
+        priceCents,
+        currency: 'MXN',
+        sortOrder: 0,
+      });
+    }
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: distance.edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'distance.update_price',
+        entityType: 'event_distance',
+        entityId: distanceId,
+        before: { priceCents: tier?.priceCents },
+        after: { priceCents },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+  });
+
+  return { ok: true, data: undefined };
+});
+
+// =============================================================================
+// FAQ Actions
+// =============================================================================
+
+const createFaqItemSchema = z.object({
+  editionId: z.string().uuid(),
+  question: z.string().min(1).max(500),
+  answer: z.string().min(1),
+});
+
+const updateFaqItemSchema = z.object({
+  faqItemId: z.string().uuid(),
+  question: z.string().min(1).max(500).optional(),
+  answer: z.string().min(1).optional(),
+});
+
+const deleteFaqItemSchema = z.object({
+  faqItemId: z.string().uuid(),
+});
+
+const reorderFaqItemsSchema = z.object({
+  editionId: z.string().uuid(),
+  itemIds: z.array(z.string().uuid()),
+});
+
+type FaqItemData = {
+  id: string;
+  question: string;
+  answer: string;
+  sortOrder: number;
+  editionId: string;
+};
+
+/**
+ * Create a new FAQ item.
+ */
+export const createFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof createFaqItemSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = createFaqItemSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, question, answer } = validated.data;
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  // Get max sort order
+  const existingItems = await db.query.eventFaqItems.findMany({
+    where: and(eq(eventFaqItems.editionId, editionId), isNull(eventFaqItems.deletedAt)),
+    orderBy: (f, { desc }) => [desc(f.sortOrder)],
+    limit: 1,
+  });
+  const nextSortOrder = (existingItems[0]?.sortOrder ?? -1) + 1;
+
+  const requestContext = await getRequestContext(await headers());
+  const faqItem = await db.transaction(async (tx) => {
+    const [newItem] = await tx
+      .insert(eventFaqItems)
+      .values({
+        editionId,
+        question,
+        answer,
+        sortOrder: nextSortOrder,
+      })
+      .returning();
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'faq.create',
+        entityType: 'event_faq_item',
+        entityId: newItem.id,
+        after: { question },
+        request: requestContext,
+      },
+      tx,
+    );
+
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+    return newItem;
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: faqItem.id,
+      question: faqItem.question,
+      answer: faqItem.answer,
+      sortOrder: faqItem.sortOrder,
+      editionId: faqItem.editionId,
+    },
+  };
+});
+
+/**
+ * Update an FAQ item.
+ */
+export const updateFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof updateFaqItemSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = updateFaqItemSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { faqItemId, ...updates } = validated.data;
+
+  const faqItem = await db.query.eventFaqItems.findFirst({
+    where: and(eq(eventFaqItems.id, faqItemId), isNull(eventFaqItems.deletedAt)),
+    with: { edition: { with: { series: true } } },
+  });
+
+  if (!faqItem?.edition?.series) {
+    return { ok: false, error: 'FAQ item not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, faqItem.edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (updates.question !== undefined) updateData.question = updates.question;
+  if (updates.answer !== undefined) updateData.answer = updates.answer;
+
+  // Guard: reject empty updates to prevent invalid SQL
+  if (Object.keys(updateData).length === 0) {
+    return { ok: false, error: 'No fields to update', code: 'VALIDATION_ERROR' };
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  const updated = await db.transaction(async (tx) => {
+    const [updatedItem] = await tx
+      .update(eventFaqItems)
+      .set(updateData)
+      .where(eq(eventFaqItems.id, faqItemId))
+      .returning();
+
+    // Build comprehensive before/after for audit log (include all changed fields)
+    const auditBefore: Record<string, unknown> = {};
+    const auditAfter: Record<string, unknown> = {};
+    for (const key of Object.keys(updateData)) {
+      auditBefore[key] = (faqItem as never)[key];
+      auditAfter[key] = (updatedItem as never)[key];
+    }
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: faqItem.edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'faq.update',
+        entityType: 'event_faq_item',
+        entityId: faqItemId,
+        before: auditBefore,
+        after: auditAfter,
+        request: requestContext,
+      },
+      tx,
+    );
+
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+    return updatedItem;
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: updated.id,
+      question: updated.question,
+      answer: updated.answer,
+      sortOrder: updated.sortOrder,
+      editionId: updated.editionId,
+    },
+  };
+});
+
+/**
+ * Delete an FAQ item.
+ */
+export const deleteFaqItem = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof deleteFaqItemSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = deleteFaqItemSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { faqItemId } = validated.data;
+
+  const faqItem = await db.query.eventFaqItems.findFirst({
+    where: and(eq(eventFaqItems.id, faqItemId), isNull(eventFaqItems.deletedAt)),
+    with: { edition: { with: { series: true } } },
+  });
+
+  if (!faqItem?.edition?.series) {
+    return { ok: false, error: 'FAQ item not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, faqItem.edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  await db.transaction(async (tx) => {
+    await tx
+      .update(eventFaqItems)
+      .set({ deletedAt: new Date() })
+      .where(eq(eventFaqItems.id, faqItemId));
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: faqItem.edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'faq.delete',
+        entityType: 'event_faq_item',
+        entityId: faqItemId,
+        before: { question: faqItem.question },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+  });
+
+  return { ok: true, data: undefined };
+});
+
+/**
+ * Reorder FAQ items.
+ */
+export const reorderFaqItems = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof reorderFaqItemsSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = reorderFaqItemsSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, itemIds } = validated.data;
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const requestContext = await getRequestContext(await headers());
+
+  try {
+    await db.transaction(async (tx) => {
+      // Verify all items belong to this edition before updating
+      const existingItems = await tx.query.eventFaqItems.findMany({
+        where: and(
+          eq(eventFaqItems.editionId, editionId),
+          isNull(eventFaqItems.deletedAt),
+        ),
+      });
+
+      const existingIds = new Set(existingItems.map(item => item.id));
+      const invalidIds = itemIds.filter(id => !existingIds.has(id));
+
+      if (invalidIds.length > 0) {
+        throw new Error('INVALID_ITEM_IDS');
+      }
+
+      // Update each item with scoped query (editionId + id)
+      for (let i = 0; i < itemIds.length; i++) {
+        await tx
+          .update(eventFaqItems)
+          .set({ sortOrder: i })
+          .where(
+            and(
+              eq(eventFaqItems.id, itemIds[i]),
+              eq(eventFaqItems.editionId, editionId),
+              isNull(eventFaqItems.deletedAt),
+            ),
+          );
+      }
+
+      const auditResult = await createAuditLog(
+        {
+          organizationId: edition.series.organizationId,
+          actorUserId: authContext.user.id,
+          action: 'faq.reorder',
+          entityType: 'event_edition',
+          entityId: editionId,
+          after: { itemIds },
+          request: requestContext,
+        },
+        tx,
+      );
+
+      if (!auditResult.ok) {
+        throw new Error(`Failed to create audit log: ${auditResult.error}`);
+      }
+    });
+
+    return { ok: true, data: undefined };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'INVALID_ITEM_IDS') {
+      return { ok: false, error: 'One or more FAQ items do not belong to this edition', code: 'INVALID_INPUT' };
+    }
+    throw error;
+  }
+});
+
+// =============================================================================
+// Waiver Actions
+// =============================================================================
+
+const createWaiverSchema = z.object({
+  editionId: z.string().uuid(),
+  title: z.string().min(1).max(255),
+  body: z.string().min(1),
+});
+
+const updateWaiverSchema = z.object({
+  waiverId: z.string().uuid(),
+  title: z.string().min(1).max(255).optional(),
+  body: z.string().min(1).optional(),
+});
+
+type WaiverData = {
+  id: string;
+  title: string;
+  body: string;
+  versionHash: string;
+  editionId: string;
+};
+
+/**
+ * Generate a hash of the waiver body for version tracking.
+ */
+async function generateWaiverHash(body: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(body);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Create a waiver for an event edition.
+ */
+export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof createWaiverSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = createWaiverSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, title, body } = validated.data;
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditRegistrationSettings');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const versionHash = await generateWaiverHash(body);
+
+  const requestContext = await getRequestContext(await headers());
+  const waiver = await db.transaction(async (tx) => {
+    const [newWaiver] = await tx
+      .insert(waivers)
+      .values({
+        editionId,
+        title,
+        body,
+        versionHash,
+        displayOrder: 0,
+      })
+      .returning();
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'waiver.create',
+        entityType: 'waiver',
+        entityId: newWaiver.id,
+        after: { title },
+        request: requestContext,
+      },
+      tx,
+    );
+
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+    return newWaiver;
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: waiver.id,
+      title: waiver.title,
+      body: waiver.body,
+      versionHash: waiver.versionHash,
+      editionId: waiver.editionId,
+    },
+  };
+});
+
+/**
+ * Update a waiver.
+ */
+export const updateWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof updateWaiverSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = updateWaiverSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { waiverId, ...updates } = validated.data;
+
+  const waiver = await db.query.waivers.findFirst({
+    where: and(eq(waivers.id, waiverId), isNull(waivers.deletedAt)),
+    with: { edition: { with: { series: true } } },
+  });
+
+  if (!waiver?.edition?.series) {
+    return { ok: false, error: 'Waiver not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, waiver.edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditRegistrationSettings');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (updates.title !== undefined) updateData.title = updates.title;
+  if (updates.body !== undefined) {
+    updateData.body = updates.body;
+    updateData.versionHash = await generateWaiverHash(updates.body);
+  }
+
+  // Guard: reject empty updates to prevent invalid SQL
+  if (Object.keys(updateData).length === 0) {
+    return { ok: false, error: 'No fields to update', code: 'VALIDATION_ERROR' };
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  const updated = await db.transaction(async (tx) => {
+    const [updatedWaiver] = await tx
+      .update(waivers)
+      .set(updateData)
+      .where(eq(waivers.id, waiverId))
+      .returning();
+
+    // Build comprehensive before/after for audit log (include all changed fields)
+    const auditBefore: Record<string, unknown> = {};
+    const auditAfter: Record<string, unknown> = {};
+    for (const key of Object.keys(updateData)) {
+      auditBefore[key] = (waiver as never)[key];
+      auditAfter[key] = (updatedWaiver as never)[key];
+    }
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: waiver.edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'waiver.update',
+        entityType: 'waiver',
+        entityId: waiverId,
+        before: auditBefore,
+        after: auditAfter,
+        request: requestContext,
+      },
+      tx,
+    );
+
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+    return updatedWaiver;
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: updated.id,
+      title: updated.title,
+      body: updated.body,
+      versionHash: updated.versionHash,
+      editionId: updated.editionId,
+    },
+  };
+});
+
+// =============================================================================
+// Registration Actions
+// =============================================================================
+
+const startRegistrationSchema = z.object({
+  distanceId: z.string().uuid(),
+});
+
+const submitRegistrantInfoSchema = z.object({
+  registrationId: z.string().uuid(),
+  profileSnapshot: z.object({
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    email: z.string().email(),
+    dateOfBirth: z.string(), // ISO date string
+    gender: z.string().optional(),
+    phone: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    emergencyContactName: z.string().optional(),
+    emergencyContactPhone: z.string().optional(),
+  }),
+  division: z.string().optional(),
+  genderIdentity: z.string().optional(),
+});
+
+const acceptWaiverSchema = z
+  .object({
+    registrationId: z.string().uuid(),
+    waiverId: z.string().uuid(),
+    signatureType: z.enum(SIGNATURE_TYPES),
+    signatureValue: z.string().optional(),
+  })
+  .refine(
+    data => {
+      // If signatureType is 'initials' or 'signature', signatureValue must be provided
+      if (data.signatureType === 'initials' || data.signatureType === 'signature') {
+        return data.signatureValue && data.signatureValue.trim().length > 0;
+      }
+      return true;
+    },
+    {
+      message: 'Signature value is required for initials and signature types',
+      path: ['signatureValue'],
+    },
+  );
+
+const finalizeRegistrationSchema = z.object({
+  registrationId: z.string().uuid(),
+});
+
+type RegistrationData = {
+  id: string;
+  status: string;
+  distanceId: string;
+  editionId: string;
+  totalCents: number | null;
+};
+
+/**
+ * Start a new registration.
+ */
+export const startRegistration = withAuthenticatedUser<ActionResult<RegistrationData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof startRegistrationSchema>) => {
+  const validated = startRegistrationSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { distanceId } = validated.data;
+
+  // Get distance with edition and check registration availability
+  const distance = await db.query.eventDistances.findFirst({
+    where: and(eq(eventDistances.id, distanceId), isNull(eventDistances.deletedAt)),
+    with: {
+      edition: { with: { series: true } },
+      pricingTiers: { where: isNull(pricingTiers.deletedAt) },
+    },
+  });
+
+  if (!distance?.edition?.series) {
+    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
+  }
+
+  const edition = distance.edition;
+
+  // Check registration is open
+  if (edition.visibility !== 'published') {
+    return { ok: false, error: 'Event is not published', code: 'NOT_PUBLISHED' };
+  }
+
+  if (edition.isRegistrationPaused) {
+    return { ok: false, error: 'Registration is paused', code: 'REGISTRATION_PAUSED' };
+  }
+
+  const now = new Date();
+  if (edition.registrationOpensAt && now < edition.registrationOpensAt) {
+    return { ok: false, error: 'Registration has not opened yet', code: 'REGISTRATION_NOT_OPEN' };
+  }
+
+  if (edition.registrationClosesAt && now > edition.registrationClosesAt) {
+    return { ok: false, error: 'Registration has closed', code: 'REGISTRATION_CLOSED' };
+  }
+
+  // Get price (before transaction so we can fail fast)
+  const activeTier = distance.pricingTiers
+    .filter(t => {
+      if (t.startsAt && now < t.startsAt) return false;
+      if (t.endsAt && now > t.endsAt) return false;
+      return true;
+    })
+    .sort((a, b) => a.sortOrder - b.sortOrder)[0];
+
+  const priceCents = activeTier?.priceCents ?? 0;
+  const feesCents = Math.round(priceCents * 0.05); // 5% platform fee placeholder
+  const totalCents = priceCents + feesCents;
+
+  // Start registration within transaction to ensure atomicity of anti-squatting + capacity checks
+  try {
+    const registration = await db.transaction(async (tx) => {
+      // Lock the distance row to serialize all checks per distance
+      // This lock applies even when capacity is null to ensure anti-squatting atomicity
+      await tx.execute(sql`SELECT id FROM ${eventDistances} WHERE id = ${distanceId} FOR UPDATE`);
+
+      // Anti-squatting: Check for existing active registration by this user for this distance
+      // Now atomic - concurrent requests will serialize due to the distance lock above
+      const existingRegistration = await tx.query.registrations.findFirst({
+        where: and(
+          eq(registrations.buyerUserId, authContext.user.id),
+          eq(registrations.distanceId, distanceId),
+          or(
+            eq(registrations.status, 'started'),
+            eq(registrations.status, 'submitted'),
+            eq(registrations.status, 'payment_pending'),
+          ),
+          isNull(registrations.deletedAt),
+        ),
+      });
+
+      // If existing active registration found, return it (idempotent)
+      if (existingRegistration) {
+        return existingRegistration;
+      }
+
+      // Check capacity with locked distance row
+      if (distance.capacity) {
+        const reservedCount = await tx.query.registrations.findMany({
+          where: and(
+            eq(registrations.distanceId, distanceId),
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+              eq(registrations.status, 'confirmed'),
+            ),
+            isNull(registrations.deletedAt),
+          ),
+        });
+        if (reservedCount.length >= distance.capacity) {
+          throw new Error('SOLD_OUT');
+        }
+      }
+
+      // Create new registration
+      const [newReg] = await tx
+        .insert(registrations)
+        .values({
+          editionId: edition.id,
+          distanceId,
+          buyerUserId: authContext.user.id,
+          status: 'started',
+          basePriceCents: priceCents,
+          feesCents,
+          taxCents: 0,
+          totalCents,
+        })
+        .returning();
+
+      return newReg;
+    });
+
+    return {
+      ok: true,
+      data: {
+        id: registration.id,
+        status: registration.status,
+        distanceId: registration.distanceId,
+        editionId: registration.editionId,
+        totalCents: registration.totalCents,
+      },
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'SOLD_OUT') {
+      return { ok: false, error: 'Distance is sold out', code: 'SOLD_OUT' };
+    }
+    throw error;
+  }
+});
+
+/**
+ * Submit registrant info.
+ */
+export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<RegistrationData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof submitRegistrantInfoSchema>) => {
+  const validated = submitRegistrantInfoSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { registrationId, profileSnapshot, division, genderIdentity } = validated.data;
+
+  const registration = await db.query.registrations.findFirst({
+    where: and(
+      eq(registrations.id, registrationId),
+      eq(registrations.buyerUserId, authContext.user.id),
+      isNull(registrations.deletedAt),
+    ),
+  });
+
+  if (!registration) {
+    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  }
+
+  if (registration.status !== 'started') {
+    return { ok: false, error: 'Registration has already been submitted', code: 'ALREADY_SUBMITTED' };
+  }
+
+  await db.transaction(async (tx) => {
+    // Create or update registrant
+    const existingRegistrant = await tx.query.registrants.findFirst({
+      where: eq(registrants.registrationId, registrationId),
+    });
+
+    if (existingRegistrant) {
+      await tx
+        .update(registrants)
+        .set({
+          profileSnapshot,
+          division,
+          genderIdentity,
+          userId: authContext.user.id,
+        })
+        .where(eq(registrants.id, existingRegistrant.id));
+    } else {
+      await tx.insert(registrants).values({
+        registrationId,
+        userId: authContext.user.id,
+        profileSnapshot,
+        division,
+        genderIdentity,
+      });
+    }
+  });
+
+  return {
+    ok: true,
+    data: {
+      id: registration.id,
+      status: registration.status,
+      distanceId: registration.distanceId,
+      editionId: registration.editionId,
+      totalCents: registration.totalCents,
+    },
+  };
+});
+
+/**
+ * Accept a waiver.
+ */
+export const acceptWaiver = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof acceptWaiverSchema>) => {
+  const validated = acceptWaiverSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { registrationId, waiverId, signatureType, signatureValue } = validated.data;
+
+  const registration = await db.query.registrations.findFirst({
+    where: and(
+      eq(registrations.id, registrationId),
+      eq(registrations.buyerUserId, authContext.user.id),
+      isNull(registrations.deletedAt),
+    ),
+  });
+
+  if (!registration) {
+    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  }
+
+  const waiver = await db.query.waivers.findFirst({
+    where: and(
+      eq(waivers.id, waiverId),
+      eq(waivers.editionId, registration.editionId),
+      isNull(waivers.deletedAt),
+    ),
+  });
+
+  if (!waiver) {
+    return { ok: false, error: 'Waiver not found', code: 'NOT_FOUND' };
+  }
+
+  const headersList = await headers();
+  const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || null;
+  const userAgent = headersList.get('user-agent');
+
+  await db.insert(waiverAcceptances).values({
+    registrationId,
+    waiverId,
+    acceptedAt: new Date(),
+    ipAddress,
+    userAgent,
+    signatureType,
+    signatureValue,
+  });
+
+  return { ok: true, data: undefined };
+});
+
+/**
+ * Finalize registration (moves to payment_pending or confirmed in no-payment mode).
+ */
+export const finalizeRegistration = withAuthenticatedUser<ActionResult<RegistrationData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof finalizeRegistrationSchema>) => {
+  const validated = finalizeRegistrationSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { registrationId } = validated.data;
+
+  const registration = await db.query.registrations.findFirst({
+    where: and(
+      eq(registrations.id, registrationId),
+      eq(registrations.buyerUserId, authContext.user.id),
+      isNull(registrations.deletedAt),
+    ),
+    with: {
+      registrants: true,
+      waiverAcceptances: true,
+      distance: true,
+      edition: {
+        with: {
+          waivers: { where: isNull(waivers.deletedAt) },
+          series: true,
+        },
+      },
+    },
+  });
+
+  if (!registration) {
+    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  }
+
+  // Validate registrant info exists
+  if (!registration.registrants.length) {
+    return { ok: false, error: 'Registrant info is required', code: 'MISSING_REGISTRANT' };
+  }
+
+  // Validate all waivers accepted
+  const requiredWaivers = registration.edition.waivers.map(w => w.id);
+  const acceptedWaivers = registration.waiverAcceptances.map(a => a.waiverId);
+  const missingWaivers = requiredWaivers.filter(w => !acceptedWaivers.includes(w));
+
+  if (missingWaivers.length > 0) {
+    return { ok: false, error: 'All waivers must be accepted', code: 'MISSING_WAIVER' };
+  }
+
+  // Re-validate event state and capacity before confirming
+  try {
+    const updated = await db.transaction(async (tx) => {
+      // Re-fetch current edition and distance state inside transaction for freshness
+      const currentEdition = await tx.query.eventEditions.findFirst({
+        where: eq(eventEditions.id, registration.editionId),
+      });
+
+      const currentDistance = await tx.query.eventDistances.findFirst({
+        where: eq(eventDistances.id, registration.distanceId),
+      });
+
+      if (!currentEdition || !currentDistance) {
+        throw new Error('EVENT_NOT_FOUND');
+      }
+
+      // Re-check event visibility and registration availability using fresh data
+      if (currentEdition.visibility !== 'published') {
+        throw new Error('EVENT_NOT_PUBLISHED');
+      }
+
+      if (currentEdition.isRegistrationPaused) {
+        throw new Error('REGISTRATION_PAUSED');
+      }
+
+      const now = new Date();
+      if (currentEdition.registrationOpensAt && now < currentEdition.registrationOpensAt) {
+        throw new Error('REGISTRATION_NOT_OPEN');
+      }
+
+      if (currentEdition.registrationClosesAt && now > currentEdition.registrationClosesAt) {
+        throw new Error('REGISTRATION_CLOSED');
+      }
+
+      // Lock distance row and re-check capacity transactionally
+      if (currentDistance.capacity) {
+        // SELECT FOR UPDATE to serialize capacity checks per distance
+        await tx.execute(sql`SELECT id FROM ${eventDistances} WHERE id = ${registration.distanceId} FOR UPDATE`);
+
+        // Count with consistent reserved statuses (matching startRegistration)
+        const reservedCount = await tx.query.registrations.findMany({
+          where: and(
+            eq(registrations.distanceId, registration.distanceId),
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+              eq(registrations.status, 'confirmed'),
+            ),
+            isNull(registrations.deletedAt),
+            // Exclude the current registration from count
+            sql`${registrations.id} != ${registrationId}`,
+          ),
+        });
+        if (reservedCount.length >= currentDistance.capacity) {
+          throw new Error('SOLD_OUT');
+        }
+      }
+
+      // Confirm the registration with guarded transition
+      const [confirmedReg] = await tx
+        .update(registrations)
+        .set({ status: 'confirmed' })
+        .where(
+          and(
+            eq(registrations.id, registrationId),
+            // Only confirm if in expected prior state
+            or(eq(registrations.status, 'started'), eq(registrations.status, 'submitted')),
+          ),
+        )
+        .returning();
+
+      if (!confirmedReg) {
+        throw new Error('INVALID_STATE_TRANSITION');
+      }
+
+      return confirmedReg;
+    });
+
+    return {
+      ok: true,
+      data: {
+        id: updated.id,
+        status: updated.status,
+        distanceId: updated.distanceId,
+        editionId: updated.editionId,
+        totalCents: updated.totalCents,
+      },
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      switch (error.message) {
+        case 'EVENT_NOT_FOUND':
+          return { ok: false, error: 'Event or distance not found', code: 'NOT_FOUND' };
+        case 'EVENT_NOT_PUBLISHED':
+          return { ok: false, error: 'Event is not published', code: 'NOT_PUBLISHED' };
+        case 'REGISTRATION_PAUSED':
+          return { ok: false, error: 'Registration is paused', code: 'REGISTRATION_PAUSED' };
+        case 'REGISTRATION_NOT_OPEN':
+          return { ok: false, error: 'Registration has not opened yet', code: 'REGISTRATION_NOT_OPEN' };
+        case 'REGISTRATION_CLOSED':
+          return { ok: false, error: 'Registration has closed', code: 'REGISTRATION_CLOSED' };
+        case 'SOLD_OUT':
+          return { ok: false, error: 'Distance is sold out', code: 'SOLD_OUT' };
+        case 'INVALID_STATE_TRANSITION':
+          return { ok: false, error: 'Registration cannot be confirmed from current state', code: 'INVALID_STATE' };
+      }
+    }
+    throw error;
+  }
 });
