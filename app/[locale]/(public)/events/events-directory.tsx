@@ -1,13 +1,30 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Link } from '@/i18n/navigation';
 import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { cn } from '@/lib/utils';
-import { Calendar, ChevronLeft, ChevronRight, Loader2, MapPin, Search, X } from 'lucide-react';
+import type { PublicLocationValue } from '@/types/location';
+import { format } from 'date-fns';
+import { es, enUS } from 'date-fns/locale';
+import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, Loader2, MapPin, Ruler, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useCallback, useRef, useState, useTransition } from 'react';
+
+// Date preset type
+type DatePreset = 'any' | 'upcoming' | 'thisMonth' | 'nextMonth' | 'next3Months' | 'custom';
+
+// Dynamic import for LocationField (uses Mapbox GL which requires browser APIs)
+const LocationField = dynamic(
+  () => import('@/components/location/location-field').then((mod) => mod.LocationField),
+  { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
+);
 
 type PublicEventSummary = {
   id: string;
@@ -64,14 +81,36 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
   const [stateFilter, setStateFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  // Debounce timer ref
+  // New filter state
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [datePreset, setDatePreset] = useState<DatePreset>('any');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(undefined);
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>(undefined);
+  const [openOnly, setOpenOnly] = useState(false);
+  const [isVirtual, setIsVirtual] = useState<boolean | undefined>(undefined);
+  const [distanceRange, setDistanceRange] = useState<[number, number]>([0, 200]);
+  const [distanceRangeEnabled, setDistanceRangeEnabled] = useState(false);
+  const [searchLocation, setSearchLocation] = useState<PublicLocationValue | null>(null);
+  const [searchRadius, setSearchRadius] = useState(50);
+
+  // Debounce timer refs
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const distanceDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch events with given parameters
   const fetchEvents = useCallback(async (params: {
     q?: string;
     sportType?: string;
     state?: string;
+    dateFrom?: string; // ISO date string
+    dateTo?: string; // ISO date string
+    openOnly?: boolean;
+    isVirtual?: boolean;
+    distanceMin?: number;
+    distanceMax?: number;
+    lat?: number;
+    lng?: number;
+    radiusKm?: number;
     page: number;
   }) => {
     const searchParams = new URLSearchParams();
@@ -84,6 +123,33 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     if (params.state) {
       searchParams.set('state', params.state);
     }
+    if (params.dateFrom) {
+      searchParams.set('dateFrom', params.dateFrom);
+    }
+    if (params.dateTo) {
+      searchParams.set('dateTo', params.dateTo);
+    }
+    if (params.openOnly) {
+      searchParams.set('openOnly', 'true');
+    }
+    if (params.isVirtual !== undefined) {
+      searchParams.set('isVirtual', String(params.isVirtual));
+    }
+    if (params.distanceMin !== undefined) {
+      searchParams.set('distanceMin', String(params.distanceMin));
+    }
+    if (params.distanceMax !== undefined) {
+      searchParams.set('distanceMax', String(params.distanceMax));
+    }
+    if (params.lat !== undefined) {
+      searchParams.set('lat', String(params.lat));
+    }
+    if (params.lng !== undefined) {
+      searchParams.set('lng', String(params.lng));
+    }
+    if (params.radiusKm !== undefined) {
+      searchParams.set('radiusKm', String(params.radiusKm));
+    }
     searchParams.set('page', params.page.toString());
 
     const response = await fetch(`/api/events?${searchParams.toString()}`);
@@ -93,6 +159,64 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
       setPagination(data.pagination);
     }
   }, []);
+
+  // Helper to calculate date range from preset
+  function getDateRangeFromPreset(preset: DatePreset, fromDate?: Date, toDate?: Date): { dateFrom?: string; dateTo?: string } {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    switch (preset) {
+      case 'any':
+        return {}; // No date filter - backend defaults to future events
+      case 'upcoming':
+        return { dateFrom: today.toISOString() }; // From today onwards (explicit)
+      case 'thisMonth': {
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        return { dateFrom: monthStart.toISOString(), dateTo: monthEnd.toISOString() };
+      }
+      case 'nextMonth': {
+        const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59, 999);
+        return { dateFrom: nextMonthStart.toISOString(), dateTo: nextMonthEnd.toISOString() };
+      }
+      case 'next3Months': {
+        const threeMonthsEnd = new Date(now.getFullYear(), now.getMonth() + 3, 0, 23, 59, 59, 999);
+        return { dateFrom: today.toISOString(), dateTo: threeMonthsEnd.toISOString() };
+      }
+      case 'custom':
+        return {
+          dateFrom: fromDate?.toISOString(),
+          dateTo: toDate?.toISOString(),
+        };
+      default:
+        return {};
+    }
+  }
+
+  // Helper to build current filter params
+  function buildFilterParams(overrides: Partial<Parameters<typeof fetchEvents>[0]> & { datePreset?: DatePreset; customFrom?: Date; customTo?: Date } = {}) {
+    const effectivePreset = overrides.datePreset ?? datePreset;
+    const effectiveFrom = overrides.customFrom ?? customDateFrom;
+    const effectiveTo = overrides.customTo ?? customDateTo;
+    const dateRange = getDateRangeFromPreset(effectivePreset, effectiveFrom, effectiveTo);
+
+    return {
+      q: search,
+      sportType,
+      state: stateFilter,
+      ...dateRange,
+      openOnly,
+      isVirtual,
+      distanceMin: distanceRangeEnabled ? distanceRange[0] : undefined,
+      distanceMax: distanceRangeEnabled ? distanceRange[1] : undefined,
+      lat: searchLocation?.lat,
+      lng: searchLocation?.lng,
+      radiusKm: searchLocation ? searchRadius : undefined,
+      page: 1,
+      ...overrides,
+    };
+  }
 
   // Handle search input with debounce
   function handleSearchChange(value: string) {
@@ -107,7 +231,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     debounceRef.current = setTimeout(() => {
       setPage(1);
       startTransition(() => {
-        fetchEvents({ q: value, sportType, state: stateFilter, page: 1 });
+        fetchEvents(buildFilterParams({ q: value }));
       });
     }, 300);
   }
@@ -117,7 +241,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     setSportType(value);
     setPage(1);
     startTransition(() => {
-      fetchEvents({ q: search, sportType: value, state: stateFilter, page: 1 });
+      fetchEvents(buildFilterParams({ sportType: value }));
     });
   }
 
@@ -125,14 +249,113 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     setStateFilter(value);
     setPage(1);
     startTransition(() => {
-      fetchEvents({ q: search, sportType, state: value, page: 1 });
+      fetchEvents(buildFilterParams({ state: value }));
     });
+  }
+
+  function handleDatePresetChange(preset: DatePreset) {
+    setDatePreset(preset);
+    // Clear custom dates when switching to a preset
+    if (preset !== 'custom') {
+      setCustomDateFrom(undefined);
+      setCustomDateTo(undefined);
+    }
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({ datePreset: preset }));
+    });
+  }
+
+  function handleCustomDateFromChange(date: Date | undefined) {
+    setCustomDateFrom(date);
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({ customFrom: date }));
+    });
+  }
+
+  function handleCustomDateToChange(date: Date | undefined) {
+    setCustomDateTo(date);
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({ customTo: date }));
+    });
+  }
+
+  function handleOpenOnlyChange(checked: boolean) {
+    setOpenOnly(checked);
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({ openOnly: checked }));
+    });
+  }
+
+  function handleVirtualChange(value: boolean | undefined) {
+    setIsVirtual(value);
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({ isVirtual: value }));
+    });
+  }
+
+  function handleDistanceRangeEnabledChange(enabled: boolean) {
+    setDistanceRangeEnabled(enabled);
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({
+        distanceMin: enabled ? distanceRange[0] : undefined,
+        distanceMax: enabled ? distanceRange[1] : undefined,
+      }));
+    });
+  }
+
+  function handleDistanceRangeChange(range: number[]) {
+    setDistanceRange(range as [number, number]);
+  }
+
+  function handleDistanceRangeCommit(range: number[]) {
+    // Clear existing timer
+    if (distanceDebounceRef.current) {
+      clearTimeout(distanceDebounceRef.current);
+    }
+
+    distanceDebounceRef.current = setTimeout(() => {
+      setPage(1);
+      startTransition(() => {
+        fetchEvents(buildFilterParams({
+          distanceMin: distanceRangeEnabled ? range[0] : undefined,
+          distanceMax: distanceRangeEnabled ? range[1] : undefined,
+        }));
+      });
+    }, 300);
+  }
+
+  function handleLocationChange(location: PublicLocationValue | null) {
+    setSearchLocation(location);
+    setPage(1);
+    startTransition(() => {
+      fetchEvents(buildFilterParams({
+        lat: location?.lat,
+        lng: location?.lng,
+        radiusKm: location ? searchRadius : undefined,
+      }));
+    });
+  }
+
+  function handleRadiusChange(radius: number) {
+    setSearchRadius(radius);
+    if (searchLocation) {
+      setPage(1);
+      startTransition(() => {
+        fetchEvents(buildFilterParams({ radiusKm: radius }));
+      });
+    }
   }
 
   function handlePageChange(newPage: number) {
     setPage(newPage);
     startTransition(() => {
-      fetchEvents({ q: search, sportType, state: stateFilter, page: newPage });
+      fetchEvents(buildFilterParams({ page: newPage }));
     });
   }
 
@@ -140,13 +363,23 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     setSearch('');
     setSportType('');
     setStateFilter('');
+    setDatePreset('any');
+    setCustomDateFrom(undefined);
+    setCustomDateTo(undefined);
+    setOpenOnly(false);
+    setIsVirtual(undefined);
+    setDistanceRange([0, 200]);
+    setDistanceRangeEnabled(false);
+    setSearchLocation(null);
+    setSearchRadius(50);
     setPage(1);
     startTransition(() => {
       fetchEvents({ page: 1 });
     });
   }
 
-  const hasFilters = search.trim() || sportType || stateFilter;
+  const hasFilters = search.trim() || sportType || stateFilter || datePreset !== 'any' ||
+    openOnly || isVirtual !== undefined || distanceRangeEnabled || searchLocation;
 
   return (
     <div className="space-y-6">
@@ -202,8 +435,207 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
               </option>
             ))}
           </select>
+
+          {/* More filters toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="gap-1"
+          >
+            <Filter className="h-4 w-4" />
+            {t('filters.advanced')}
+            {showAdvancedFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
         </div>
       </div>
+
+      {/* Advanced filters panel */}
+      {showAdvancedFilters && (
+        <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Date range filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('filters.dateRange')}</label>
+              <select
+                value={datePreset}
+                onChange={(e) => handleDatePresetChange(e.target.value as DatePreset)}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                <option value="any">{t('filters.anyDate')}</option>
+                <option value="upcoming">{t('filters.upcoming')}</option>
+                <option value="thisMonth">{t('filters.thisMonth')}</option>
+                <option value="nextMonth">{t('filters.nextMonth')}</option>
+                <option value="next3Months">{t('filters.next3Months')}</option>
+                <option value="custom">{t('filters.customRange')}</option>
+              </select>
+            </div>
+
+            {/* Custom date range pickers - shown only when 'custom' preset is selected */}
+            {datePreset === 'custom' && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('filters.from')}</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !customDateFrom && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateFrom ? (
+                          format(customDateFrom, 'PPP', { locale: locale === 'es' ? es : enUS })
+                        ) : (
+                          <span>{t('filters.selectDate')}</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateFrom}
+                        onSelect={handleCustomDateFromChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('filters.to')}</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !customDateTo && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {customDateTo ? (
+                          format(customDateTo, 'PPP', { locale: locale === 'es' ? es : enUS })
+                        ) : (
+                          <span>{t('filters.selectDate')}</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={customDateTo}
+                        onSelect={handleCustomDateToChange}
+                        disabled={(date) => customDateFrom ? date < customDateFrom : false}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </>
+            )}
+
+            {/* Open registration toggle */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('filters.openOnly')}</label>
+              <div className="flex items-center gap-2 pt-1">
+                <Switch
+                  id="open-only"
+                  checked={openOnly}
+                  onCheckedChange={handleOpenOnlyChange}
+                />
+                <label htmlFor="open-only" className="text-sm text-muted-foreground cursor-pointer">
+                  {openOnly ? t('filters.openOnlyEnabled') : t('filters.openOnlyDisabled')}
+                </label>
+              </div>
+            </div>
+
+            {/* Virtual/In-person filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">{t('filters.eventFormat')}</label>
+              <select
+                value={isVirtual === undefined ? '' : String(isVirtual)}
+                onChange={(e) => handleVirtualChange(
+                  e.target.value === '' ? undefined : e.target.value === 'true'
+                )}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                <option value="">{t('filters.allFormats')}</option>
+                <option value="false">{t('filters.inPerson')}</option>
+                <option value="true">{t('filters.virtual')}</option>
+              </select>
+            </div>
+
+            {/* Distance range filter */}
+            <div className="space-y-2 sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Ruler className="h-4 w-4" />
+                  {t('filters.distanceRange')}
+                </label>
+                <Switch
+                  id="distance-range-enabled"
+                  checked={distanceRangeEnabled}
+                  onCheckedChange={handleDistanceRangeEnabledChange}
+                />
+              </div>
+              {distanceRangeEnabled && (
+                <div className="space-y-3 pt-2">
+                  <Slider
+                    value={distanceRange}
+                    onValueChange={handleDistanceRangeChange}
+                    onValueCommit={handleDistanceRangeCommit}
+                    min={0}
+                    max={200}
+                    step={5}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>{distanceRange[0]} km</span>
+                    <span>{distanceRange[1]} km</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Location + radius filter */}
+            <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+              <label className="text-sm font-medium">{t('filters.nearLocation')}</label>
+              <div className="flex gap-2 items-start flex-wrap sm:flex-nowrap">
+                <div className="flex-1 min-w-[200px]">
+                  <LocationField
+                    label=""
+                    location={searchLocation}
+                    country="MX"
+                    language={locale}
+                    onLocationChangeAction={handleLocationChange}
+                  />
+                </div>
+                {searchLocation && (
+                  <select
+                    value={searchRadius}
+                    onChange={(e) => handleRadiusChange(Number(e.target.value))}
+                    className="rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  >
+                    <option value="10">10 km</option>
+                    <option value="25">25 km</option>
+                    <option value="50">50 km</option>
+                    <option value="100">100 km</option>
+                    <option value="200">200 km</option>
+                  </select>
+                )}
+              </div>
+              {searchLocation && (
+                <p className="text-xs text-muted-foreground">
+                  {t('filters.searchingNear', { location: searchLocation.formattedAddress, radius: searchRadius })}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Active filters */}
       {hasFilters && (
@@ -220,6 +652,55 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {stateFilter}
               <button type="button" onClick={() => handleStateChange('')}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {datePreset !== 'any' && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+              {datePreset === 'custom' ? (
+                <>
+                  {customDateFrom && format(customDateFrom, 'PP', { locale: locale === 'es' ? es : enUS })}
+                  {customDateFrom && customDateTo && ' - '}
+                  {customDateTo && format(customDateTo, 'PP', { locale: locale === 'es' ? es : enUS })}
+                  {!customDateFrom && !customDateTo && t('filters.customRange')}
+                </>
+              ) : (
+                t(`filters.${datePreset}`)
+              )}
+              <button type="button" onClick={() => handleDatePresetChange('any')}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {openOnly && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+              {t('filters.openOnly')}
+              <button type="button" onClick={() => handleOpenOnlyChange(false)}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {isVirtual !== undefined && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+              {isVirtual ? t('filters.virtual') : t('filters.inPerson')}
+              <button type="button" onClick={() => handleVirtualChange(undefined)}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {distanceRangeEnabled && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+              {distanceRange[0]}-{distanceRange[1]} km
+              <button type="button" onClick={() => handleDistanceRangeEnabledChange(false)}>
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {searchLocation && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+              {searchRadius} km · {searchLocation.city || searchLocation.formattedAddress.split(',')[0]}
+              <button type="button" onClick={() => handleLocationChange(null)}>
                 <X className="h-3 w-3" />
               </button>
             </span>
