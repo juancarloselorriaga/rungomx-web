@@ -282,7 +282,7 @@ export async function assignExternalRole(
  * Create a test organization
  *
  * @param db - Database instance from getTestDb()
- * @param userId - Owner user's ID
+ * @param userId - Owner user's ID (added as membership with 'owner' role)
  * @param overrides - Optional organization fields
  * @returns Created organization
  */
@@ -292,11 +292,6 @@ export async function createTestOrganization(
   overrides: {
     name?: string;
     slug?: string;
-    description?: string | null;
-    website?: string | null;
-    logoUrl?: string | null;
-    contactEmail?: string | null;
-    contactPhone?: string | null;
   } = {},
 ) {
   const timestamp = Date.now();
@@ -305,14 +300,15 @@ export async function createTestOrganization(
     .values({
       name: overrides.name ?? `Test Org ${timestamp}`,
       slug: overrides.slug ?? `test-org-${timestamp}`,
-      description: overrides.description,
-      website: overrides.website,
-      logoUrl: overrides.logoUrl,
-      contactEmail: overrides.contactEmail,
-      contactPhone: overrides.contactPhone,
-      ownerId: userId,
     })
     .returning();
+
+  // Add owner membership
+  await db.insert(schema.organizationMemberships).values({
+    organizationId: organization.id,
+    userId,
+    role: 'owner',
+  });
 
   return organization;
 }
@@ -331,7 +327,8 @@ export async function createTestEventSeries(
   overrides: {
     name?: string;
     slug?: string;
-    description?: string | null;
+    sportType?: string;
+    status?: 'active' | 'archived';
   } = {},
 ) {
   const timestamp = Date.now();
@@ -340,7 +337,8 @@ export async function createTestEventSeries(
     .values({
       name: overrides.name ?? `Test Event ${timestamp}`,
       slug: overrides.slug ?? `test-event-${timestamp}`,
-      description: overrides.description,
+      sportType: overrides.sportType ?? 'trail_running',
+      status: overrides.status ?? 'active',
       organizationId,
     })
     .returning();
@@ -361,16 +359,23 @@ export async function createTestEventEdition(
   seriesId: string,
   overrides: {
     editionLabel?: string;
-    visibility?: 'draft' | 'published' | 'archived';
-    registrationEnabled?: boolean;
-    maxParticipants?: number | null;
-    eventDate?: Date | null;
-    eventTimeHours?: number | null;
-    eventTimeMinutes?: number | null;
-    locationName?: string | null;
-    locationAddress?: string | null;
-    locationLatitude?: string | null;
-    locationLongitude?: string | null;
+    slug?: string;
+    publicCode?: string;
+    visibility?: 'draft' | 'published' | 'unlisted' | 'archived';
+    startsAt?: Date | null;
+    endsAt?: Date | null;
+    timezone?: string;
+    registrationOpensAt?: Date | null;
+    registrationClosesAt?: Date | null;
+    isRegistrationPaused?: boolean;
+    locationDisplay?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    latitude?: string | null;
+    longitude?: string | null;
+    description?: string | null;
   } = {},
 ) {
   const timestamp = Date.now();
@@ -378,16 +383,23 @@ export async function createTestEventEdition(
     .insert(schema.eventEditions)
     .values({
       editionLabel: overrides.editionLabel ?? `${timestamp}`,
+      slug: overrides.slug ?? `edition-${timestamp}`,
+      publicCode: overrides.publicCode ?? `TEST${timestamp.toString().slice(-8)}`,
       visibility: overrides.visibility ?? 'draft',
-      registrationEnabled: overrides.registrationEnabled ?? true,
-      maxParticipants: overrides.maxParticipants,
-      eventDate: overrides.eventDate,
-      eventTimeHours: overrides.eventTimeHours,
-      eventTimeMinutes: overrides.eventTimeMinutes,
-      locationName: overrides.locationName,
-      locationAddress: overrides.locationAddress,
-      locationLatitude: overrides.locationLatitude,
-      locationLongitude: overrides.locationLongitude,
+      startsAt: overrides.startsAt,
+      endsAt: overrides.endsAt,
+      timezone: overrides.timezone ?? 'America/Mexico_City',
+      registrationOpensAt: overrides.registrationOpensAt,
+      registrationClosesAt: overrides.registrationClosesAt,
+      isRegistrationPaused: overrides.isRegistrationPaused ?? false,
+      locationDisplay: overrides.locationDisplay,
+      address: overrides.address,
+      city: overrides.city,
+      state: overrides.state,
+      country: overrides.country ?? 'MX',
+      latitude: overrides.latitude,
+      longitude: overrides.longitude,
+      description: overrides.description,
       seriesId,
     })
     .returning();
@@ -408,22 +420,26 @@ export async function createTestDistance(
   editionId: string,
   overrides: {
     label?: string;
-    distanceKm?: number;
-    terrain?: 'road' | 'trail' | 'mixed' | 'track' | 'other';
-    elevationGain?: number | null;
-    maxCapacity?: number | null;
-    currentRegistrations?: number;
+    distanceValue?: string;
+    distanceUnit?: 'km' | 'mi';
+    kind?: 'distance' | 'timed';
+    terrain?: 'road' | 'trail' | 'mixed';
+    capacity?: number | null;
+    isVirtual?: boolean;
+    sortOrder?: number;
   } = {},
 ) {
   const [distance] = await db
     .insert(schema.eventDistances)
     .values({
       label: overrides.label ?? '10K',
-      distanceKm: overrides.distanceKm ?? 10,
+      distanceValue: overrides.distanceValue ?? '10',
+      distanceUnit: overrides.distanceUnit ?? 'km',
+      kind: overrides.kind ?? 'distance',
       terrain: overrides.terrain ?? 'road',
-      elevationGain: overrides.elevationGain,
-      maxCapacity: overrides.maxCapacity,
-      currentRegistrations: overrides.currentRegistrations ?? 0,
+      capacity: overrides.capacity,
+      isVirtual: overrides.isVirtual ?? false,
+      sortOrder: overrides.sortOrder ?? 0,
       editionId,
     })
     .returning();
@@ -443,21 +459,23 @@ export async function createTestPricingTier(
   db: ReturnType<typeof getTestDb>,
   distanceId: string,
   overrides: {
-    label?: string;
-    priceInCents?: number;
+    label?: string | null;
+    priceCents?: number;
     currency?: string;
-    startDate?: Date | null;
-    endDate?: Date | null;
+    startsAt?: Date | null;
+    endsAt?: Date | null;
+    sortOrder?: number;
   } = {},
 ) {
   const [tier] = await db
     .insert(schema.pricingTiers)
     .values({
       label: overrides.label ?? 'Early Bird',
-      priceInCents: overrides.priceInCents ?? 50000, // MX$500.00
+      priceCents: overrides.priceCents ?? 50000, // MX$500.00
       currency: overrides.currency ?? 'MXN',
-      startDate: overrides.startDate,
-      endDate: overrides.endDate,
+      startsAt: overrides.startsAt,
+      endsAt: overrides.endsAt,
+      sortOrder: overrides.sortOrder ?? 0,
       distanceId,
     })
     .returning();

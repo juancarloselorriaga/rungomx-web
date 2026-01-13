@@ -46,8 +46,8 @@ export default defineConfig({
 
   // Shared settings for all projects
   use: {
-    // Base URL for tests
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
+    // Base URL for tests (use port 3001 to avoid conflicts with dev server)
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001',
 
     // Collect trace on failure
     trace: 'on-first-retry',
@@ -95,18 +95,25 @@ export default defineConfig({
     // },
   ],
 
-  // Run local dev server before tests
+  // Run local dev server before tests on port 3001 to avoid conflicts
   webServer: {
-    command: 'NODE_ENV=test pnpm dev',
-    url: 'http://localhost:3000',
+    command: 'NODE_ENV=test PORT=3001 pnpm dev',
+    url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
     stderr: 'pipe',
     timeout: 120 * 1000, // 2 minutes to start
     env: {
       // Force dev server to use test database
-      DATABASE_URL: process.env.DATABASE_URL,
-      NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM: process.env.NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM,
+      ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
+      ...(process.env.NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM && {
+        NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM: process.env.NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM,
+      }),
+      // Mapbox tokens for location search
+      ...(process.env.MAPBOX_ACCESS_TOKEN && { MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN }),
+      ...(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && {
+        NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
+      }),
     },
   },
 });
