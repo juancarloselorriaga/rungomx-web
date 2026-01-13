@@ -175,7 +175,7 @@ export function EventsDirectory({
   // Fetch events with given parameters
   const fetchEvents = useCallback(async (params: EventsSearchParams) => {
       const searchParams = new URLSearchParams();
-      if (params.q && params.q.trim().length >= 2) {
+      if (params.q && params.q.trim().length >= 3) {
         searchParams.set('q', params.q.trim());
       }
       if (params.sportType) {
@@ -405,7 +405,7 @@ export function EventsDirectory({
       const trimmed = value.trim();
       updateQueryParams(
         {
-          q: trimmed.length >= 2 ? trimmed : null,
+          q: trimmed.length >= 3 ? trimmed : null,
           page: 1,
         },
         { replace: true, scroll: false },
