@@ -121,6 +121,11 @@
     "noResultsDescription": "Try adjusting your filters or check back later for new events.",
     "clearFilters": "Clear filters"
   },
+  "share": {
+    "copyLink": "Share",
+    "copied": "Link copied",
+    "copyFailed": "Unable to copy link"
+  },
   "filters": {
     "sportType": "Sport type",
     "allSports": "All sports",

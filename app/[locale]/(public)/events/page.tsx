@@ -7,6 +7,11 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 
 import { EventsDirectory } from './events-directory';
+import {
+  EVENTS_PAGE_LIMIT,
+  parseDateParam,
+  parseEventsSearchParams,
+} from './search-params';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -17,7 +22,11 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   );
 }
 
-export default async function EventsPage({ params }: LocalePageProps) {
+type EventsPageProps = LocalePageProps & {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function EventsPage({ params, searchParams }: EventsPageProps) {
   // Opt out of static prerendering - this page uses current date for filtering
   await connection();
 
@@ -28,8 +37,21 @@ export default async function EventsPage({ params }: LocalePageProps) {
     namespace: 'pages.events',
   });
 
+  const resolvedSearchParams = await searchParams;
+  const parsedParams = parseEventsSearchParams(resolvedSearchParams);
+  const dateFrom = parseDateParam(parsedParams.dateFrom);
+  const dateTo = parseDateParam(parsedParams.dateTo);
+  const page = parsedParams.page ?? 1;
+  const limit = EVENTS_PAGE_LIMIT;
+
   // Fetch initial events directly from DB (avoid self-HTTP call)
-  const { events: dbEvents, pagination } = await searchPublicEvents({ limit: 12 });
+  const { events: dbEvents, pagination } = await searchPublicEvents({
+    ...parsedParams,
+    dateFrom,
+    dateTo,
+    page,
+    limit,
+  });
 
   // Serialize dates to strings for client component (matches API format)
   const events = dbEvents.map((event) => ({

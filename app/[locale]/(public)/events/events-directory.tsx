@@ -2,10 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { cn } from '@/lib/utils';
 import type { PublicLocationValue } from '@/types/location';
@@ -16,16 +18,27 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
-  Loader2,
   MapPin,
   Ruler,
   Search,
+  Share2,
   X,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { useCallback, useRef, useState, useTransition } from 'react';
+import { toast } from 'sonner';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
+
+import {
+  EVENTS_PAGE_LIMIT,
+  buildEventsQueryObject,
+  parseDateParam,
+  parseEventsSearchParams,
+  type EventsSearchParamUpdates,
+  type EventsSearchParams,
+} from './search-params';
 
 // Date preset type
 type DatePreset = 'any' | 'upcoming' | 'thisMonth' | 'nextMonth' | 'next3Months' | 'custom';
@@ -113,6 +126,12 @@ export function EventsDirectory({
 }: EventsDirectoryProps) {
   const t = useTranslations('pages.events');
   const [isPending, startTransition] = useTransition();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = '/events';
+  const parsedParams = useMemo(() => parseEventsSearchParams(searchParams), [searchParams]);
+  const locationLabel = searchParams.get('location') || undefined;
+  const currentPage = parsedParams.page ?? 1;
 
   // State
   const [events, setEvents] = useState(initialEvents);
@@ -120,7 +139,6 @@ export function EventsDirectory({
   const [search, setSearch] = useState('');
   const [sportType, setSportType] = useState<string>('');
   const [stateFilter, setStateFilter] = useState('');
-  const [page, setPage] = useState(1);
 
   // New filter state
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
@@ -137,6 +155,10 @@ export function EventsDirectory({
   // Debounce timer refs
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const distanceDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasHydratedRef = useRef(false);
+  const shouldScrollRef = useRef(false);
+  const pendingLocationRef = useRef<{ lat: number; lng: number } | null>(null);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   // Calendar formatters for locale
   const calendarFormatters = {
@@ -151,22 +173,7 @@ export function EventsDirectory({
   };
 
   // Fetch events with given parameters
-  const fetchEvents = useCallback(
-    async (params: {
-      q?: string;
-      sportType?: string;
-      state?: string;
-      dateFrom?: string; // ISO date string
-      dateTo?: string; // ISO date string
-      openOnly?: boolean;
-      isVirtual?: boolean;
-      distanceMin?: number;
-      distanceMax?: number;
-      lat?: number;
-      lng?: number;
-      radiusKm?: number;
-      page: number;
-    }) => {
+  const fetchEvents = useCallback(async (params: EventsSearchParams) => {
       const searchParams = new URLSearchParams();
       if (params.q && params.q.trim().length >= 2) {
         searchParams.set('q', params.q.trim());
@@ -204,7 +211,8 @@ export function EventsDirectory({
       if (params.radiusKm !== undefined) {
         searchParams.set('radiusKm', String(params.radiusKm));
       }
-      searchParams.set('page', params.page.toString());
+      searchParams.set('page', String(params.page ?? 1));
+      searchParams.set('limit', String(params.limit ?? EVENTS_PAGE_LIMIT));
 
       const response = await fetch(`/api/events?${searchParams.toString()}`);
       if (response.ok) {
@@ -212,9 +220,7 @@ export function EventsDirectory({
         setEvents(data.events);
         setPagination(data.pagination);
       }
-    },
-    [],
-  );
+    }, []);
 
   // Helper to calculate date range from preset
   function getDateRangeFromPreset(
@@ -254,35 +260,136 @@ export function EventsDirectory({
     }
   }
 
-  // Helper to build current filter params
-  function buildFilterParams(
-    overrides: Partial<Parameters<typeof fetchEvents>[0]> & {
-      datePreset?: DatePreset;
-      customFrom?: Date;
-      customTo?: Date;
-    } = {},
-  ) {
-    const effectivePreset = overrides.datePreset ?? datePreset;
-    const effectiveFrom = overrides.customFrom ?? customDateFrom;
-    const effectiveTo = overrides.customTo ?? customDateTo;
-    const dateRange = getDateRangeFromPreset(effectivePreset, effectiveFrom, effectiveTo);
+  const updateQueryParams = useCallback(
+    (updates: EventsSearchParamUpdates, options: { replace?: boolean; scroll?: boolean } = {}) => {
+      const query = buildEventsQueryObject(searchParams.toString(), {
+        limit: EVENTS_PAGE_LIMIT,
+        ...updates,
+      });
+      const navigate = options.replace ? router.replace : router.push;
+      navigate({ pathname, query }, { scroll: options.scroll ?? false });
+    },
+    [pathname, router, searchParams],
+  );
 
-    return {
-      q: search,
-      sportType,
-      state: stateFilter,
-      ...dateRange,
-      openOnly,
-      isVirtual,
-      distanceMin: distanceRangeEnabled ? distanceRange[0] : undefined,
-      distanceMax: distanceRangeEnabled ? distanceRange[1] : undefined,
-      lat: searchLocation?.lat,
-      lng: searchLocation?.lng,
-      radiusKm: searchLocation ? searchRadius : undefined,
-      page: 1,
-      ...overrides,
-    };
-  }
+  const scrollToResults = useCallback(() => {
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
+  useEffect(() => {
+    setSearch(parsedParams.q ?? '');
+    setSportType(parsedParams.sportType ?? '');
+    setStateFilter(parsedParams.state ?? '');
+    setOpenOnly(Boolean(parsedParams.openOnly));
+    setIsVirtual(parsedParams.isVirtual);
+
+    const hasAdvancedFilters =
+      Boolean(parsedParams.dateFrom || parsedParams.dateTo) ||
+      Boolean(parsedParams.openOnly) ||
+      parsedParams.isVirtual !== undefined ||
+      parsedParams.distanceMin !== undefined ||
+      parsedParams.distanceMax !== undefined ||
+      parsedParams.lat !== undefined ||
+      parsedParams.lng !== undefined ||
+      parsedParams.radiusKm !== undefined;
+    if (hasAdvancedFilters) {
+      setShowAdvancedFilters(true);
+    }
+
+    const nextCustomFrom = parseDateParam(parsedParams.dateFrom);
+    const nextCustomTo = parseDateParam(parsedParams.dateTo);
+    setCustomDateFrom(nextCustomFrom);
+    setCustomDateTo(nextCustomTo);
+    if (parsedParams.dateFrom || parsedParams.dateTo) {
+      const shouldKeepPreset =
+        datePreset !== 'any' &&
+        datePreset !== 'custom' &&
+        (() => {
+          const expected = getDateRangeFromPreset(datePreset);
+          return (
+            expected.dateFrom === parsedParams.dateFrom &&
+            expected.dateTo === parsedParams.dateTo
+          );
+        })();
+
+      if (!shouldKeepPreset && datePreset !== 'custom') {
+        setDatePreset('custom');
+      }
+    } else if (datePreset !== 'custom') {
+      setDatePreset('any');
+    }
+
+    const hasDistanceRange =
+      parsedParams.distanceMin !== undefined || parsedParams.distanceMax !== undefined;
+    setDistanceRangeEnabled(hasDistanceRange);
+    setDistanceRange([
+      parsedParams.distanceMin ?? 0,
+      parsedParams.distanceMax ?? 200,
+    ]);
+    setSearchRadius(parsedParams.radiusKm ?? 50);
+  }, [datePreset, parsedParams]);
+
+  useEffect(() => {
+    if (parsedParams.lat === undefined || parsedParams.lng === undefined) {
+      if (pendingLocationRef.current) {
+        return;
+      }
+      if (searchLocation) {
+        setSearchLocation(null);
+      }
+      return;
+    }
+
+    if (pendingLocationRef.current) {
+      const latDelta = Math.abs(pendingLocationRef.current.lat - parsedParams.lat);
+      const lngDelta = Math.abs(pendingLocationRef.current.lng - parsedParams.lng);
+      if (latDelta <= 0.0001 && lngDelta <= 0.0001) {
+        pendingLocationRef.current = null;
+      }
+    }
+
+    if (!searchLocation && locationLabel) {
+      const city = locationLabel.split(',')[0]?.trim();
+      setSearchLocation({
+        lat: parsedParams.lat,
+        lng: parsedParams.lng,
+        formattedAddress: locationLabel,
+        city: city || undefined,
+      });
+      return;
+    }
+
+    if (searchLocation) {
+      const latDelta = Math.abs(searchLocation.lat - parsedParams.lat);
+      const lngDelta = Math.abs(searchLocation.lng - parsedParams.lng);
+      if (latDelta > 0.0001 || lngDelta > 0.0001) {
+        setSearchLocation(null);
+      }
+    }
+  }, [locationLabel, parsedParams.lat, parsedParams.lng, searchLocation]);
+
+  useEffect(() => {
+    if (!hasHydratedRef.current) {
+      hasHydratedRef.current = true;
+      return;
+    }
+
+    startTransition(() => {
+      void fetchEvents({
+        ...parsedParams,
+        page: currentPage,
+        limit: EVENTS_PAGE_LIMIT,
+      });
+    });
+  }, [currentPage, fetchEvents, parsedParams, startTransition]);
+
+  useEffect(() => {
+    if (!shouldScrollRef.current) return;
+    shouldScrollRef.current = false;
+    scrollToResults();
+  }, [currentPage, scrollToResults]);
 
   // Handle search input with debounce
   function handleSearchChange(value: string) {
@@ -295,28 +402,38 @@ export function EventsDirectory({
 
     // Debounce the search
     debounceRef.current = setTimeout(() => {
-      setPage(1);
-      startTransition(() => {
-        fetchEvents(buildFilterParams({ q: value }));
-      });
+      const trimmed = value.trim();
+      updateQueryParams(
+        {
+          q: trimmed.length >= 2 ? trimmed : null,
+          page: 1,
+        },
+        { replace: true, scroll: false },
+      );
     }, 300);
   }
 
   // Handle filter changes
   function handleSportTypeChange(value: string) {
     setSportType(value);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ sportType: value }));
-    });
+    updateQueryParams(
+      {
+        sportType: value || null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleStateChange(value: string) {
     setStateFilter(value);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ state: value }));
-    });
+    updateQueryParams(
+      {
+        state: value || null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleDatePresetChange(preset: DatePreset) {
@@ -326,55 +443,89 @@ export function EventsDirectory({
       setCustomDateFrom(undefined);
       setCustomDateTo(undefined);
     }
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ datePreset: preset }));
-    });
+    if (preset === 'custom') {
+      updateQueryParams(
+        {
+          dateFrom: null,
+          dateTo: null,
+          page: 1,
+        },
+        { replace: true, scroll: false },
+      );
+      return;
+    }
+
+    const dateRange = getDateRangeFromPreset(preset);
+    updateQueryParams(
+      {
+        dateFrom: dateRange.dateFrom ?? null,
+        dateTo: dateRange.dateTo ?? null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleCustomDateFromChange(date: Date | undefined) {
     setCustomDateFrom(date);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ customFrom: date }));
-    });
+    setDatePreset('custom');
+    const dateRange = getDateRangeFromPreset('custom', date, customDateTo);
+    updateQueryParams(
+      {
+        dateFrom: dateRange.dateFrom ?? null,
+        dateTo: dateRange.dateTo ?? null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleCustomDateToChange(date: Date | undefined) {
     setCustomDateTo(date);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ customTo: date }));
-    });
+    setDatePreset('custom');
+    const dateRange = getDateRangeFromPreset('custom', customDateFrom, date);
+    updateQueryParams(
+      {
+        dateFrom: dateRange.dateFrom ?? null,
+        dateTo: dateRange.dateTo ?? null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleOpenOnlyChange(checked: boolean) {
     setOpenOnly(checked);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ openOnly: checked }));
-    });
+    updateQueryParams(
+      {
+        openOnly: checked ? true : null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleVirtualChange(value: boolean | undefined) {
     setIsVirtual(value);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ isVirtual: value }));
-    });
+    updateQueryParams(
+      {
+        isVirtual: value === undefined ? null : value,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleDistanceRangeEnabledChange(enabled: boolean) {
     setDistanceRangeEnabled(enabled);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(
-        buildFilterParams({
-          distanceMin: enabled ? distanceRange[0] : undefined,
-          distanceMax: enabled ? distanceRange[1] : undefined,
-        }),
-      );
-    });
+    updateQueryParams(
+      {
+        distanceMin: enabled ? distanceRange[0] : null,
+        distanceMax: enabled ? distanceRange[1] : null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleDistanceRangeChange(range: number[]) {
@@ -388,50 +539,62 @@ export function EventsDirectory({
     }
 
     distanceDebounceRef.current = setTimeout(() => {
-      setPage(1);
-      startTransition(() => {
-        fetchEvents(
-          buildFilterParams({
-            distanceMin: distanceRangeEnabled ? range[0] : undefined,
-            distanceMax: distanceRangeEnabled ? range[1] : undefined,
-          }),
-        );
-      });
+      updateQueryParams(
+        {
+          distanceMin: distanceRangeEnabled ? range[0] : null,
+          distanceMax: distanceRangeEnabled ? range[1] : null,
+          page: 1,
+        },
+        { replace: true, scroll: false },
+      );
     }, 300);
   }
 
   function handleLocationChange(location: PublicLocationValue | null) {
     setSearchLocation(location);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents(
-        buildFilterParams({
-          lat: location?.lat,
-          lng: location?.lng,
-          radiusKm: location ? searchRadius : undefined,
-        }),
-      );
-    });
+    pendingLocationRef.current = location ? { lat: location.lat, lng: location.lng } : null;
+    updateQueryParams(
+      {
+        lat: location?.lat ?? null,
+        lng: location?.lng ?? null,
+        radiusKm: location ? searchRadius : null,
+        location: location?.formattedAddress ?? null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
   }
 
   function handleRadiusChange(radius: number) {
     setSearchRadius(radius);
     if (searchLocation) {
-      setPage(1);
-      startTransition(() => {
-        fetchEvents(buildFilterParams({ radiusKm: radius }));
-      });
+      updateQueryParams(
+        {
+          radiusKm: radius,
+          page: 1,
+        },
+        { replace: true, scroll: false },
+      );
     }
   }
 
   function handlePageChange(newPage: number) {
-    setPage(newPage);
-    startTransition(() => {
-      fetchEvents(buildFilterParams({ page: newPage }));
-    });
+    shouldScrollRef.current = true;
+    updateQueryParams(
+      {
+        page: newPage,
+      },
+      { replace: false, scroll: false },
+    );
   }
 
   function clearFilters() {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    if (distanceDebounceRef.current) {
+      clearTimeout(distanceDebounceRef.current);
+    }
     setSearch('');
     setSportType('');
     setStateFilter('');
@@ -444,10 +607,37 @@ export function EventsDirectory({
     setDistanceRangeEnabled(false);
     setSearchLocation(null);
     setSearchRadius(50);
-    setPage(1);
-    startTransition(() => {
-      fetchEvents({ page: 1 });
-    });
+    updateQueryParams(
+      {
+        q: null,
+        sportType: null,
+        state: null,
+        dateFrom: null,
+        dateTo: null,
+        openOnly: null,
+        isVirtual: null,
+        distanceMin: null,
+        distanceMax: null,
+        lat: null,
+        lng: null,
+        radiusKm: null,
+        location: null,
+        page: 1,
+      },
+      { replace: true, scroll: false },
+    );
+  }
+
+  async function handleCopyLink() {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard not available');
+      }
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success(t('share.copied'));
+    } catch {
+      toast.error(t('share.copyFailed'));
+    }
   }
 
   const hasFilters =
@@ -458,7 +648,9 @@ export function EventsDirectory({
     openOnly ||
     isVirtual !== undefined ||
     distanceRangeEnabled ||
-    searchLocation;
+    searchLocation ||
+    (parsedParams.lat !== undefined && parsedParams.lng !== undefined);
+  const skeletonCount = pagination.limit || EVENTS_PAGE_LIMIT;
 
   return (
     <div className="space-y-6">
@@ -516,15 +708,22 @@ export function EventsDirectory({
           </select>
 
           {/* More filters toggle */}
-          <Button
+          <IconTooltipButton
             variant="outline"
-            size="default"
+            size="icon"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className={cn('min-w-auto', showAdvancedFilters && '')}
+            label={t('filters.advanced')}
           >
             <Filter className={cn('w-4 h-4', showAdvancedFilters ? 'text-primary' : '')} />
-            {/*{t('filters.advanced')}*/}
-          </Button>
+          </IconTooltipButton>
+          <IconTooltipButton
+            variant="outline"
+            size="icon"
+            onClick={handleCopyLink}
+            label={t('share.copyLink')}
+          >
+            <Share2 className="h-4 w-4" />
+          </IconTooltipButton>
         </div>
       </div>
 
@@ -805,10 +1004,39 @@ export function EventsDirectory({
         </div>
       )}
 
+      <div ref={resultsRef} className="scroll-mt-24" />
+
       {/* Loading state */}
       {isPending && (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: skeletonCount }).map((_, index) => (
+            <div
+              key={`event-skeleton-${index}`}
+              className="rounded-lg border bg-card shadow-sm overflow-hidden"
+            >
+              <Skeleton className="aspect-[16/9] w-full" />
+              <div className="p-4 space-y-3">
+                <div className="space-y-2">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <Skeleton className="h-5 w-16" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -855,7 +1083,7 @@ export function EventsDirectory({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handlePageChange(Math.max(1, page - 1))}
+              onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
               disabled={pagination.page <= 1}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
@@ -867,7 +1095,7 @@ export function EventsDirectory({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handlePageChange(page + 1)}
+              onClick={() => handlePageChange(pagination.page + 1)}
               disabled={!pagination.hasMore}
             >
               {t('pagination.next')}
