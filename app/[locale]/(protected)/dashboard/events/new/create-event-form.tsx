@@ -9,8 +9,14 @@ import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+
+const LocationField = dynamic(
+  () => import('@/components/location/location-field').then((mod) => mod.LocationField),
+  { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
+);
 
 type EventSeriesSummary = {
   id: string;
@@ -124,6 +130,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
   }
 
   // Event form
+  const locale = useLocale();
   const form = useForm<
     {
       seriesName: string;
@@ -134,6 +141,9 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       startsAt: string;
       city: string;
       state: string;
+      latitude: string;
+      longitude: string;
+      locationDisplay: string;
     },
     { eventId: string }
   >({
@@ -146,6 +156,9 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       startsAt: '',
       city: '',
       state: '',
+      latitude: '',
+      longitude: '',
+      locationDisplay: '',
     },
     onSubmit: async (values) => {
       if (!selectedOrgId) {
@@ -180,6 +193,9 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : undefined,
         city: values.city.trim() || undefined,
         state: values.state.trim() || undefined,
+        latitude: values.latitude || undefined,
+        longitude: values.longitude || undefined,
+        locationDisplay: values.locationDisplay || undefined,
       });
 
       if (!editionResult.ok) {
@@ -520,33 +536,35 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
               />
             </FormField>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                label={t('event.cityLabel')}
-                error={form.errors.city}
-              >
-                <input
-                  type="text"
-                  {...form.register('city')}
-                  placeholder={t('event.cityPlaceholder')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={form.isSubmitting}
-                />
-              </FormField>
-
-              <FormField
-                label={t('event.stateLabel')}
-                error={form.errors.state}
-              >
-                <input
-                  type="text"
-                  {...form.register('state')}
-                  placeholder={t('event.statePlaceholder')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={form.isSubmitting}
-                />
-              </FormField>
-            </div>
+            <LocationField
+              label={t('event.locationLabel')}
+              location={
+                form.values.latitude && form.values.longitude
+                  ? {
+                      lat: Number(form.values.latitude),
+                      lng: Number(form.values.longitude),
+                      formattedAddress: form.values.locationDisplay || '',
+                    }
+                  : null
+              }
+              country="MX"
+              language={locale}
+              onLocationChangeAction={(location) => {
+                if (location) {
+                  form.setFieldValue('latitude', String(location.lat));
+                  form.setFieldValue('longitude', String(location.lng));
+                  form.setFieldValue('locationDisplay', location.formattedAddress || '');
+                  if (location.city) form.setFieldValue('city', location.city);
+                  if (location.region) form.setFieldValue('state', location.region);
+                } else {
+                  form.setFieldValue('latitude', '');
+                  form.setFieldValue('longitude', '');
+                  form.setFieldValue('locationDisplay', '');
+                  form.setFieldValue('city', '');
+                  form.setFieldValue('state', '');
+                }
+              }}
+            />
           </div>
 
           <div className="flex justify-end">

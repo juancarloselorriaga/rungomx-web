@@ -30,8 +30,14 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useState, useTransition } from 'react';
+import dynamic from 'next/dynamic';
+
+const LocationField = dynamic(
+  () => import('@/components/location/location-field').then((mod) => mod.LocationField),
+  { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
+);
 
 type EventSettingsFormProps = {
   event: EventEditionDetail;
@@ -49,6 +55,7 @@ const visibilityStyles: Record<VisibilityType, string> = {
 export function EventSettingsForm({ event }: EventSettingsFormProps) {
   const t = useTranslations('pages.dashboard.events.settings');
   const tVis = useTranslations('pages.dashboard.events.visibility');
+  const locale = useLocale();
   const router = useRouter();
   const [, startTransition] = useTransition();
 
@@ -62,6 +69,8 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
     state: string;
     locationDisplay: string;
     address: string;
+    latitude: string;
+    longitude: string;
     externalUrl: string;
     registrationOpensAt: string;
     registrationClosesAt: string;
@@ -75,6 +84,8 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
       state: event.state || '',
       locationDisplay: event.locationDisplay || '',
       address: event.address || '',
+      latitude: event.latitude || '',
+      longitude: event.longitude || '',
       externalUrl: event.externalUrl || '',
       registrationOpensAt: event.registrationOpensAt ? formatDateTimeForInput(event.registrationOpensAt) : '',
       registrationClosesAt: event.registrationClosesAt ? formatDateTimeForInput(event.registrationClosesAt) : '',
@@ -90,6 +101,8 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
         state: values.state || null,
         locationDisplay: values.locationDisplay || null,
         address: values.address || null,
+        latitude: values.latitude || null,
+        longitude: values.longitude || null,
         externalUrl: values.externalUrl || null,
         registrationOpensAt: values.registrationOpensAt ? new Date(values.registrationOpensAt).toISOString() : null,
         registrationClosesAt: values.registrationClosesAt ? new Date(values.registrationClosesAt).toISOString() : null,
@@ -288,36 +301,35 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
               <h3 className="font-medium">{t('details.locationSection')}</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField label={t('details.city')} error={detailsForm.errors.city}>
-                <input
-                  type="text"
-                  {...detailsForm.register('city')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={detailsForm.isSubmitting}
-                />
-              </FormField>
-
-              <FormField label={t('details.state')} error={detailsForm.errors.state}>
-                <input
-                  type="text"
-                  {...detailsForm.register('state')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={detailsForm.isSubmitting}
-                />
-              </FormField>
-            </div>
-
-            <div className="mt-4">
-              <FormField label={t('details.address')} error={detailsForm.errors.address}>
-                <input
-                  type="text"
-                  {...detailsForm.register('address')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={detailsForm.isSubmitting}
-                />
-              </FormField>
-            </div>
+            <LocationField
+              label={t('details.locationLabel')}
+              location={
+                detailsForm.values.latitude && detailsForm.values.longitude
+                  ? {
+                      lat: Number(detailsForm.values.latitude),
+                      lng: Number(detailsForm.values.longitude),
+                      formattedAddress: detailsForm.values.locationDisplay || '',
+                    }
+                  : null
+              }
+              country="MX"
+              language={locale}
+              onLocationChangeAction={(location) => {
+                if (location) {
+                  detailsForm.setFieldValue('latitude', String(location.lat));
+                  detailsForm.setFieldValue('longitude', String(location.lng));
+                  detailsForm.setFieldValue('locationDisplay', location.formattedAddress || '');
+                  if (location.city) detailsForm.setFieldValue('city', location.city);
+                  if (location.region) detailsForm.setFieldValue('state', location.region);
+                } else {
+                  detailsForm.setFieldValue('latitude', '');
+                  detailsForm.setFieldValue('longitude', '');
+                  detailsForm.setFieldValue('locationDisplay', '');
+                  detailsForm.setFieldValue('city', '');
+                  detailsForm.setFieldValue('state', '');
+                }
+              }}
+            />
           </div>
 
           <div className="border-t pt-4">

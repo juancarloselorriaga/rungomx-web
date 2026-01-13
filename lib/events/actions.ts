@@ -109,6 +109,8 @@ const createEventEditionSchema = z.object({
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   country: z.string().max(100).default('MX'),
+  latitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
+  longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional(),
 });
 
@@ -131,6 +133,8 @@ const updateEventEditionSchema = z.object({
   city: z.string().max(100).optional().nullable(),
   state: z.string().max(100).optional().nullable(),
   country: z.string().max(100).optional().nullable(),
+  latitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
+  longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional().nullable(),
 });
 
@@ -292,7 +296,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
   }
 
-  const { seriesId, editionLabel, slug, startsAt, endsAt, timezone, locationDisplay, city, state, country, externalUrl } = validated.data;
+  const { seriesId, editionLabel, slug, startsAt, endsAt, timezone, locationDisplay, city, state, country, latitude, longitude, externalUrl } = validated.data;
 
   // Check membership via series (internal staff with canManageEvents bypass this check)
   if (!authContext.permissions.canManageEvents) {
@@ -356,6 +360,8 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
         city,
         state,
         country,
+        latitude,
+        longitude,
         externalUrl,
       })
       .returning();
@@ -462,6 +468,8 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.city !== undefined) updateData.city = updates.city;
   if (updates.state !== undefined) updateData.state = updates.state;
   if (updates.country !== undefined) updateData.country = updates.country;
+  if (updates.latitude !== undefined) updateData.latitude = updates.latitude;
+  if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
 
   // Guard: reject empty updates to prevent invalid SQL
