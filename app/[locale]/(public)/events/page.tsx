@@ -3,6 +3,7 @@ import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 
 import { EventsDirectory } from './events-directory';
@@ -17,6 +18,9 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 }
 
 export default async function EventsPage({ params }: LocalePageProps) {
+  // Opt out of static prerendering - this page uses current date for filtering
+  await connection();
+
   const { locale } = await configPageLocale(params, { pathname: '/events' });
 
   const t = await getTranslations({

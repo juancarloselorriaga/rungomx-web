@@ -673,7 +673,7 @@ export async function searchPublicEvents(
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
   const offset = (page - 1) * limit;
-  const now = new Date();
+  // Note: 'now' is created lazily inside conditionals to avoid Next.js prerender issues
 
   // Build conditions
   const conditions = [
@@ -718,6 +718,7 @@ export async function searchPublicEvents(
 
     // Default: only future events (when no date filters applied)
     if (!dateFrom && !dateTo) {
+      const now = new Date();
       const futureCondition = sql`(${eventEditions.startsAt} >= ${now} OR ${eventEditions.startsAt} IS NULL)`;
       conditions.push(futureCondition);
     }
@@ -737,6 +738,7 @@ export async function searchPublicEvents(
 
   // Open registration only filter
   if (openOnly) {
+    const now = new Date();
     conditions.push(
       sql`(
         ${eventEditions.isRegistrationPaused} = false
