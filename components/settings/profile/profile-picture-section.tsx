@@ -103,7 +103,7 @@ export function ProfilePictureSection({
         }
       }
     },
-    [user?.id, user?.image, t, onUpdateAction, router],
+    [user?.id, t, onUpdateAction, router],
   );
 
   const handleDelete = useCallback(async () => {

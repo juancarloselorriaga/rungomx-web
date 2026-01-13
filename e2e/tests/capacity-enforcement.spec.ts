@@ -218,7 +218,7 @@ test.describe('Capacity Enforcement', () => {
     ]);
 
     // Both try to submit simultaneously
-    const results = await Promise.allSettled([
+    await Promise.allSettled([
       page1.getByRole('button', { name: /complete registration/i }).click(),
       page2.getByRole('button', { name: /complete registration/i }).click(),
     ]);
