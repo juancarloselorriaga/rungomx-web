@@ -130,7 +130,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { q, sportType, state, city, distanceKind, openOnly, isVirtual, distanceMin, distanceMax, lat, lng, radiusKm, dateFrom, dateTo, month, page, limit } = parsed.data;
+    const normalizedQuery = parsed.data.q?.trim();
+    const q = normalizedQuery && normalizedQuery.length >= 3 ? normalizedQuery : undefined;
+    const {
+      sportType,
+      state,
+      city,
+      distanceKind,
+      openOnly,
+      isVirtual,
+      distanceMin,
+      distanceMax,
+      lat,
+      lng,
+      radiusKm,
+      dateFrom,
+      dateTo,
+      month,
+      page,
+      limit,
+    } = parsed.data;
 
     // Use shared query function
     const result = await searchPublicEvents({

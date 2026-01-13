@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, or, sql } from 'drizzle-orm';
 import { connection } from 'next/server';
 
 import { db } from '@/db';
@@ -680,6 +680,8 @@ export async function searchPublicEvents(
   await connection();
 
   const { q, sportType, state, city, dateFrom, dateTo, month, distanceKind, openOnly, isVirtual, distanceMin, distanceMax, lat, lng, radiusKm } = params;
+  const normalizedQuery = q?.trim();
+  const searchQuery = normalizedQuery && normalizedQuery.length >= 3 ? normalizedQuery : undefined;
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
   const offset = (page - 1) * limit;
@@ -693,8 +695,17 @@ export async function searchPublicEvents(
   ];
 
   // Text search
-  if (q && q.trim().length >= 2) {
-    conditions.push(sql`${eventSeries.name} ILIKE ${'%' + q.trim() + '%'}`);
+  if (searchQuery) {
+    const likeQuery = `%${searchQuery}%`;
+    const loweredName = sql`lower(${eventSeries.name})`;
+    const loweredQuery = sql`lower(${searchQuery})`;
+    const similarityExpr = sql`word_similarity(${loweredQuery}, ${loweredName})`;
+    conditions.push(
+      or(
+        sql`${similarityExpr} > 0.39`,
+        sql`${eventSeries.name} ILIKE ${likeQuery}`,
+      ),
+    );
   }
 
   // Sport type filter
@@ -812,6 +823,13 @@ export async function searchPublicEvents(
   }
 
   // Query events
+  const orderBy = searchQuery
+    ? [
+        sql`word_similarity(lower(${searchQuery}), lower(${eventSeries.name})) DESC`,
+        desc(eventEditions.startsAt),
+      ]
+    : [desc(eventEditions.startsAt)];
+
   const events = await db
     .select({
       id: eventEditions.id,
@@ -835,7 +853,7 @@ export async function searchPublicEvents(
     .from(eventEditions)
     .innerJoin(eventSeries, eq(eventEditions.seriesId, eventSeries.id))
     .where(and(...conditions))
-    .orderBy(desc(eventEditions.startsAt))
+    .orderBy(...orderBy)
     .limit(limit)
     .offset(offset);
 

@@ -100,7 +100,8 @@ function parseBooleanParam(value: string | undefined): boolean | undefined {
 }
 
 export function parseEventsSearchParams(params: SearchParamsInput): EventsSearchParams {
-  const q = getSearchParamValue(params, 'q')?.trim();
+  const rawQuery = getSearchParamValue(params, 'q')?.trim();
+  const q = rawQuery && rawQuery.length >= 3 ? rawQuery : undefined;
   const sportType = getSearchParamValue(params, 'sportType')?.trim();
   const state = getSearchParamValue(params, 'state')?.trim();
   const dateFrom = getSearchParamValue(params, 'dateFrom') || undefined;
@@ -119,7 +120,7 @@ export function parseEventsSearchParams(params: SearchParamsInput): EventsSearch
   const limit = parseNumberParam(getSearchParamValue(params, 'limit'), { min: 1, max: 50 });
 
   return {
-    q: q || undefined,
+    q,
     sportType: sportType || undefined,
     state: state || undefined,
     dateFrom,
