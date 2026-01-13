@@ -9,7 +9,6 @@ import {
 } from '../utils/fixtures';
 import {
   signInAsOrganizer,
-  createOrganization,
   createEvent,
   generateTestName,
 } from '../utils/helpers';

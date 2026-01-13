@@ -55,7 +55,7 @@ export async function signUpTestUser(
   // Create user directly in database with proper UUID
   const userId = randomUUID();
 
-  const [user] = await db
+  await db
     .insert(schema.users)
     .values({
       id: userId,
