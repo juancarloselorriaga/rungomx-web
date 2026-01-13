@@ -867,6 +867,7 @@ export async function searchPublicEvents(
   }
 
   // Transform results
+  const now = new Date();
   const publicEvents: PublicEventSummary[] = events.map((event) => {
     const priceInfo = priceMap.get(event.id);
 

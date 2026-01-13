@@ -10,8 +10,18 @@ import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { cn } from '@/lib/utils';
 import type { PublicLocationValue } from '@/types/location';
 import { format } from 'date-fns';
-import { es, enUS } from 'date-fns/locale';
-import { Calendar as CalendarIcon, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Filter, Loader2, MapPin, Ruler, Search, X } from 'lucide-react';
+import { enUS, es } from 'date-fns/locale';
+import {
+  Calendar as CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Loader2,
+  MapPin,
+  Ruler,
+  Search,
+  X,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -62,14 +72,45 @@ type EventsDirectoryProps = {
 
 // Mexican states for filter dropdown
 const MEXICAN_STATES = [
-  'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas',
-  'Chihuahua', 'Coahuila', 'Colima', 'CDMX', 'Durango', 'Estado de México',
-  'Guanajuato', 'Guerrero', 'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit',
-  'Nuevo León', 'Oaxaca', 'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí',
-  'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas',
+  'Aguascalientes',
+  'Baja California',
+  'Baja California Sur',
+  'Campeche',
+  'Chiapas',
+  'Chihuahua',
+  'Coahuila',
+  'Colima',
+  'CDMX',
+  'Durango',
+  'Estado de México',
+  'Guanajuato',
+  'Guerrero',
+  'Hidalgo',
+  'Jalisco',
+  'Michoacán',
+  'Morelos',
+  'Nayarit',
+  'Nuevo León',
+  'Oaxaca',
+  'Puebla',
+  'Querétaro',
+  'Quintana Roo',
+  'San Luis Potosí',
+  'Sinaloa',
+  'Sonora',
+  'Tabasco',
+  'Tamaulipas',
+  'Tlaxcala',
+  'Veracruz',
+  'Yucatán',
+  'Zacatecas',
 ];
 
-export function EventsDirectory({ initialEvents, initialPagination, locale }: EventsDirectoryProps) {
+export function EventsDirectory({
+  initialEvents,
+  initialPagination,
+  locale,
+}: EventsDirectoryProps) {
   const t = useTranslations('pages.events');
   const [isPending, startTransition] = useTransition();
 
@@ -97,71 +138,90 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const distanceDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch events with given parameters
-  const fetchEvents = useCallback(async (params: {
-    q?: string;
-    sportType?: string;
-    state?: string;
-    dateFrom?: string; // ISO date string
-    dateTo?: string; // ISO date string
-    openOnly?: boolean;
-    isVirtual?: boolean;
-    distanceMin?: number;
-    distanceMax?: number;
-    lat?: number;
-    lng?: number;
-    radiusKm?: number;
-    page: number;
-  }) => {
-    const searchParams = new URLSearchParams();
-    if (params.q && params.q.trim().length >= 2) {
-      searchParams.set('q', params.q.trim());
-    }
-    if (params.sportType) {
-      searchParams.set('sportType', params.sportType);
-    }
-    if (params.state) {
-      searchParams.set('state', params.state);
-    }
-    if (params.dateFrom) {
-      searchParams.set('dateFrom', params.dateFrom);
-    }
-    if (params.dateTo) {
-      searchParams.set('dateTo', params.dateTo);
-    }
-    if (params.openOnly) {
-      searchParams.set('openOnly', 'true');
-    }
-    if (params.isVirtual !== undefined) {
-      searchParams.set('isVirtual', String(params.isVirtual));
-    }
-    if (params.distanceMin !== undefined) {
-      searchParams.set('distanceMin', String(params.distanceMin));
-    }
-    if (params.distanceMax !== undefined) {
-      searchParams.set('distanceMax', String(params.distanceMax));
-    }
-    if (params.lat !== undefined) {
-      searchParams.set('lat', String(params.lat));
-    }
-    if (params.lng !== undefined) {
-      searchParams.set('lng', String(params.lng));
-    }
-    if (params.radiusKm !== undefined) {
-      searchParams.set('radiusKm', String(params.radiusKm));
-    }
-    searchParams.set('page', params.page.toString());
+  // Calendar formatters for locale
+  const calendarFormatters = {
+    formatCaption: (date: Date) =>
+      new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date),
+    formatWeekdayName: (date: Date) =>
+      new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date),
+    formatMonthDropdown: (date: Date) =>
+      new Intl.DateTimeFormat(locale, { month: 'long' }).format(date),
+    formatYearDropdown: (date: Date) =>
+      new Intl.DateTimeFormat(locale, { year: 'numeric' }).format(date),
+  };
 
-    const response = await fetch(`/api/events?${searchParams.toString()}`);
-    if (response.ok) {
-      const data = await response.json();
-      setEvents(data.events);
-      setPagination(data.pagination);
-    }
-  }, []);
+  // Fetch events with given parameters
+  const fetchEvents = useCallback(
+    async (params: {
+      q?: string;
+      sportType?: string;
+      state?: string;
+      dateFrom?: string; // ISO date string
+      dateTo?: string; // ISO date string
+      openOnly?: boolean;
+      isVirtual?: boolean;
+      distanceMin?: number;
+      distanceMax?: number;
+      lat?: number;
+      lng?: number;
+      radiusKm?: number;
+      page: number;
+    }) => {
+      const searchParams = new URLSearchParams();
+      if (params.q && params.q.trim().length >= 2) {
+        searchParams.set('q', params.q.trim());
+      }
+      if (params.sportType) {
+        searchParams.set('sportType', params.sportType);
+      }
+      if (params.state) {
+        searchParams.set('state', params.state);
+      }
+      if (params.dateFrom) {
+        searchParams.set('dateFrom', params.dateFrom);
+      }
+      if (params.dateTo) {
+        searchParams.set('dateTo', params.dateTo);
+      }
+      if (params.openOnly) {
+        searchParams.set('openOnly', 'true');
+      }
+      if (params.isVirtual !== undefined) {
+        searchParams.set('isVirtual', String(params.isVirtual));
+      }
+      if (params.distanceMin !== undefined) {
+        searchParams.set('distanceMin', String(params.distanceMin));
+      }
+      if (params.distanceMax !== undefined) {
+        searchParams.set('distanceMax', String(params.distanceMax));
+      }
+      if (params.lat !== undefined) {
+        searchParams.set('lat', String(params.lat));
+      }
+      if (params.lng !== undefined) {
+        searchParams.set('lng', String(params.lng));
+      }
+      if (params.radiusKm !== undefined) {
+        searchParams.set('radiusKm', String(params.radiusKm));
+      }
+      searchParams.set('page', params.page.toString());
+
+      const response = await fetch(`/api/events?${searchParams.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data.events);
+        setPagination(data.pagination);
+      }
+    },
+    [],
+  );
 
   // Helper to calculate date range from preset
-  function getDateRangeFromPreset(preset: DatePreset, fromDate?: Date, toDate?: Date): { dateFrom?: string; dateTo?: string } {
+  function getDateRangeFromPreset(
+    preset: DatePreset,
+    fromDate?: Date,
+    toDate?: Date,
+  ): { dateFrom?: string; dateTo?: string } {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -195,7 +255,13 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
   }
 
   // Helper to build current filter params
-  function buildFilterParams(overrides: Partial<Parameters<typeof fetchEvents>[0]> & { datePreset?: DatePreset; customFrom?: Date; customTo?: Date } = {}) {
+  function buildFilterParams(
+    overrides: Partial<Parameters<typeof fetchEvents>[0]> & {
+      datePreset?: DatePreset;
+      customFrom?: Date;
+      customTo?: Date;
+    } = {},
+  ) {
     const effectivePreset = overrides.datePreset ?? datePreset;
     const effectiveFrom = overrides.customFrom ?? customDateFrom;
     const effectiveTo = overrides.customTo ?? customDateTo;
@@ -302,10 +368,12 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     setDistanceRangeEnabled(enabled);
     setPage(1);
     startTransition(() => {
-      fetchEvents(buildFilterParams({
-        distanceMin: enabled ? distanceRange[0] : undefined,
-        distanceMax: enabled ? distanceRange[1] : undefined,
-      }));
+      fetchEvents(
+        buildFilterParams({
+          distanceMin: enabled ? distanceRange[0] : undefined,
+          distanceMax: enabled ? distanceRange[1] : undefined,
+        }),
+      );
     });
   }
 
@@ -322,10 +390,12 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     distanceDebounceRef.current = setTimeout(() => {
       setPage(1);
       startTransition(() => {
-        fetchEvents(buildFilterParams({
-          distanceMin: distanceRangeEnabled ? range[0] : undefined,
-          distanceMax: distanceRangeEnabled ? range[1] : undefined,
-        }));
+        fetchEvents(
+          buildFilterParams({
+            distanceMin: distanceRangeEnabled ? range[0] : undefined,
+            distanceMax: distanceRangeEnabled ? range[1] : undefined,
+          }),
+        );
       });
     }, 300);
   }
@@ -334,11 +404,13 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     setSearchLocation(location);
     setPage(1);
     startTransition(() => {
-      fetchEvents(buildFilterParams({
-        lat: location?.lat,
-        lng: location?.lng,
-        radiusKm: location ? searchRadius : undefined,
-      }));
+      fetchEvents(
+        buildFilterParams({
+          lat: location?.lat,
+          lng: location?.lng,
+          radiusKm: location ? searchRadius : undefined,
+        }),
+      );
     });
   }
 
@@ -378,8 +450,15 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
     });
   }
 
-  const hasFilters = search.trim() || sportType || stateFilter || datePreset !== 'any' ||
-    openOnly || isVirtual !== undefined || distanceRangeEnabled || searchLocation;
+  const hasFilters =
+    search.trim() ||
+    sportType ||
+    stateFilter ||
+    datePreset !== 'any' ||
+    openOnly ||
+    isVirtual !== undefined ||
+    distanceRangeEnabled ||
+    searchLocation;
 
   return (
     <div className="space-y-6">
@@ -439,13 +518,12 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
           {/* More filters toggle */}
           <Button
             variant="outline"
-            size="sm"
+            size="default"
             onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            className="gap-1"
+            className={cn('min-w-auto', showAdvancedFilters && '')}
           >
-            <Filter className="h-4 w-4" />
-            {t('filters.advanced')}
-            {showAdvancedFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            <Filter className={cn('w-4 h-4', showAdvancedFilters ? 'text-primary' : '')} />
+            {/*{t('filters.advanced')}*/}
           </Button>
         </div>
       </div>
@@ -482,7 +560,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
                         variant="outline"
                         className={cn(
                           'w-full justify-start text-left font-normal',
-                          !customDateFrom && 'text-muted-foreground'
+                          !customDateFrom && 'text-muted-foreground',
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -493,11 +571,16 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
                       <Calendar
                         mode="single"
+                        captionLayout="dropdown"
+                        hideNavigation
                         selected={customDateFrom}
                         onSelect={handleCustomDateFromChange}
+                        weekStartsOn={locale === 'es' ? 1 : 0}
+                        formatters={calendarFormatters}
+                        className="min-w-[280px]"
                         initialFocus
                       />
                     </PopoverContent>
@@ -512,7 +595,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
                         variant="outline"
                         className={cn(
                           'w-full justify-start text-left font-normal',
-                          !customDateTo && 'text-muted-foreground'
+                          !customDateTo && 'text-muted-foreground',
                         )}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
@@ -523,12 +606,17 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
                         )}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
+                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
                       <Calendar
                         mode="single"
+                        captionLayout="dropdown"
+                        hideNavigation
                         selected={customDateTo}
                         onSelect={handleCustomDateToChange}
-                        disabled={(date) => customDateFrom ? date < customDateFrom : false}
+                        disabled={(date) => (customDateFrom ? date < customDateFrom : false)}
+                        weekStartsOn={locale === 'es' ? 1 : 0}
+                        formatters={calendarFormatters}
+                        className="min-w-[280px]"
                         initialFocus
                       />
                     </PopoverContent>
@@ -541,11 +629,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
             <div className="space-y-2">
               <label className="text-sm font-medium">{t('filters.openOnly')}</label>
               <div className="flex items-center gap-2 pt-1">
-                <Switch
-                  id="open-only"
-                  checked={openOnly}
-                  onCheckedChange={handleOpenOnlyChange}
-                />
+                <Switch id="open-only" checked={openOnly} onCheckedChange={handleOpenOnlyChange} />
                 <label htmlFor="open-only" className="text-sm text-muted-foreground cursor-pointer">
                   {openOnly ? t('filters.openOnlyEnabled') : t('filters.openOnlyDisabled')}
                 </label>
@@ -557,9 +641,9 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
               <label className="text-sm font-medium">{t('filters.eventFormat')}</label>
               <select
                 value={isVirtual === undefined ? '' : String(isVirtual)}
-                onChange={(e) => handleVirtualChange(
-                  e.target.value === '' ? undefined : e.target.value === 'true'
-                )}
+                onChange={(e) =>
+                  handleVirtualChange(e.target.value === '' ? undefined : e.target.value === 'true')
+                }
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
               >
                 <option value="">{t('filters.allFormats')}</option>
@@ -603,7 +687,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
             {/* Location + radius filter */}
             <div className="space-y-2 sm:col-span-2 lg:col-span-3">
               <label className="text-sm font-medium">{t('filters.nearLocation')}</label>
-              <div className="flex gap-2 items-start flex-wrap sm:flex-nowrap">
+              <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap">
                 <div className="flex-1 min-w-[200px]">
                   <LocationField
                     label=""
@@ -617,7 +701,7 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
                   <select
                     value={searchRadius}
                     onChange={(e) => handleRadiusChange(Number(e.target.value))}
-                    className="rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                    className="mt-2 h-10 min-w-[100px] rounded-md border bg-background px-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                   >
                     <option value="10">10 km</option>
                     <option value="25">25 km</option>
@@ -629,7 +713,10 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
               </div>
               {searchLocation && (
                 <p className="text-xs text-muted-foreground">
-                  {t('filters.searchingNear', { location: searchLocation.formattedAddress, radius: searchRadius })}
+                  {t('filters.searchingNear', {
+                    location: searchLocation.formattedAddress,
+                    radius: searchRadius,
+                  })}
                 </p>
               )}
             </div>
@@ -660,9 +747,11 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {datePreset === 'custom' ? (
                 <>
-                  {customDateFrom && format(customDateFrom, 'PP', { locale: locale === 'es' ? es : enUS })}
+                  {customDateFrom &&
+                    format(customDateFrom, 'PP', { locale: locale === 'es' ? es : enUS })}
                   {customDateFrom && customDateTo && ' - '}
-                  {customDateTo && format(customDateTo, 'PP', { locale: locale === 'es' ? es : enUS })}
+                  {customDateTo &&
+                    format(customDateTo, 'PP', { locale: locale === 'es' ? es : enUS })}
                   {!customDateFrom && !customDateTo && t('filters.customRange')}
                 </>
               ) : (
@@ -699,7 +788,8 @@ export function EventsDirectory({ initialEvents, initialPagination, locale }: Ev
           )}
           {searchLocation && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
-              {searchRadius} km · {searchLocation.city || searchLocation.formattedAddress.split(',')[0]}
+              {searchRadius} km ·{' '}
+              {searchLocation.city || searchLocation.formattedAddress.split(',')[0]}
               <button type="button" onClick={() => handleLocationChange(null)}>
                 <X className="h-3 w-3" />
               </button>
@@ -860,7 +950,7 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
         <div className="space-y-1 text-sm">
           {eventDate && (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4 flex-shrink-0" />
+              <CalendarIcon className="h-4 w-4 flex-shrink-0" />
               <span>{eventDate}</span>
             </div>
           )}
