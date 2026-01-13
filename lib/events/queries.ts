@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
+import { connection } from 'next/server';
 
 import { db } from '@/db';
 import {
@@ -647,6 +648,12 @@ export type SearchEventsParams = {
   month?: string; // YYYY-MM format for specific month filtering
   distanceKind?: string; // Filter by distance kind (e.g., '5k', '10k', 'marathon', etc.)
   openOnly?: boolean; // Only show events with open registration
+  isVirtual?: boolean; // true = virtual only, false = in-person only, undefined = all
+  distanceMin?: number; // Minimum distance in km
+  distanceMax?: number; // Maximum distance in km
+  lat?: number; // User location latitude for proximity search
+  lng?: number; // User location longitude for proximity search
+  radiusKm?: number; // Search radius in kilometers
   page?: number;
   limit?: number;
 };
@@ -669,7 +676,10 @@ export type SearchEventsResult = {
 export async function searchPublicEvents(
   params: SearchEventsParams,
 ): Promise<SearchEventsResult> {
-  const { q, sportType, state, city, dateFrom, dateTo, month, distanceKind, openOnly } = params;
+  // Signal Next.js that this function requires request context (enables dynamic Date usage)
+  await connection();
+
+  const { q, sportType, state, city, dateFrom, dateTo, month, distanceKind, openOnly, isVirtual, distanceMin, distanceMax, lat, lng, radiusKm } = params;
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
   const offset = (page - 1) * limit;
@@ -745,6 +755,59 @@ export async function searchPublicEvents(
         AND (${eventEditions.registrationOpensAt} IS NULL OR ${eventEditions.registrationOpensAt} <= ${now})
         AND (${eventEditions.registrationClosesAt} IS NULL OR ${eventEditions.registrationClosesAt} >= ${now})
       )`,
+    );
+  }
+
+  // Virtual/in-person event filter (events that have at least one virtual/in-person distance)
+  if (isVirtual !== undefined) {
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${eventDistances}
+        WHERE ${eventDistances.editionId} = ${eventEditions.id}
+          AND ${eventDistances.isVirtual} = ${isVirtual}
+          AND ${eventDistances.deletedAt} IS NULL
+      )`,
+    );
+  }
+
+  // Distance range filter (events with at least one distance in the specified km range)
+  if (distanceMin !== undefined || distanceMax !== undefined) {
+    // Build conditional parts for distance range
+    const minCondition = distanceMin !== undefined
+      ? sql`CAST(${eventDistances.distanceValue} AS NUMERIC) >= ${distanceMin}`
+      : sql`TRUE`;
+    const maxCondition = distanceMax !== undefined
+      ? sql`CAST(${eventDistances.distanceValue} AS NUMERIC) <= ${distanceMax}`
+      : sql`TRUE`;
+
+    conditions.push(
+      sql`EXISTS (
+        SELECT 1 FROM ${eventDistances}
+        WHERE ${eventDistances.editionId} = ${eventEditions.id}
+          AND ${eventDistances.distanceValue} IS NOT NULL
+          AND ${eventDistances.deletedAt} IS NULL
+          AND ${minCondition}
+          AND ${maxCondition}
+      )`,
+    );
+  }
+
+  // Location + radius filter using Haversine formula (Earth radius = 6371 km)
+  if (lat !== undefined && lng !== undefined && radiusKm !== undefined) {
+    conditions.push(sql`${eventEditions.latitude} IS NOT NULL`);
+    conditions.push(sql`${eventEditions.longitude} IS NOT NULL`);
+    conditions.push(
+      sql`(
+        6371 * acos(
+          LEAST(1.0, GREATEST(-1.0,
+            cos(radians(${lat})) *
+            cos(radians(CAST(${eventEditions.latitude} AS DOUBLE PRECISION))) *
+            cos(radians(CAST(${eventEditions.longitude} AS DOUBLE PRECISION)) - radians(${lng})) +
+            sin(radians(${lat})) *
+            sin(radians(CAST(${eventEditions.latitude} AS DOUBLE PRECISION)))
+          ))
+        )
+      ) <= ${radiusKm}`,
     );
   }
 
