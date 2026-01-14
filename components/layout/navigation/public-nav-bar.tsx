@@ -2,6 +2,7 @@ import { NavDrawerTrigger } from '@/components/layout/navigation/nav-drawer-trig
 import { NavItems } from '@/components/layout/navigation/nav-items';
 import type { NavItem } from '@/components/layout/navigation/types';
 import { Link } from '@/i18n/navigation';
+import { getCurrentUser } from '@/lib/auth/server';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { AuthCtaWithSession } from './auth-cta-with-session';
@@ -12,6 +13,7 @@ interface PublicNavigationBarProps {
 }
 
 export default async function PublicNavigationBar({ items }: PublicNavigationBarProps) {
+  const user = await getCurrentUser();
   const t = await getTranslations('common');
   const showNavItems = items.length > 0;
 
@@ -39,9 +41,9 @@ export default async function PublicNavigationBar({ items }: PublicNavigationBar
         <div className="flex-1" />
 
         <div className="flex items-center justify-end gap-2">
-          <AuthCtaWithSession />
+          <AuthCtaWithSession initialUser={user} />
           <Suspense fallback={null}>
-            <UserMenuWithSession />
+            <UserMenuWithSession initialUser={user} />
           </Suspense>
         </div>
       </div>

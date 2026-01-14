@@ -1,10 +1,18 @@
 'use client';
 
 import { useSession } from '@/lib/auth/client';
+import type { User } from '@/lib/auth/types';
 import { UserMenu } from './user-menu';
 
-export function UserMenuWithSession() {
-  const { data } = useSession();
+interface UserMenuWithSessionProps {
+  initialUser?: User | null;
+}
 
-  return <UserMenu user={data?.user ?? null} />;
+export function UserMenuWithSession({ initialUser }: UserMenuWithSessionProps) {
+  const { data, isPending } = useSession();
+
+  // Use server state during hydration, then client state for real-time updates
+  const user = isPending ? (initialUser ?? null) : (data?.user ?? null);
+
+  return <UserMenu user={user} />;
 }
