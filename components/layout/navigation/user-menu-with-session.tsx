@@ -1,18 +1,16 @@
 'use client';
 
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/lib/auth/client';
-import type { User } from '@/lib/auth/types';
 import { UserMenu } from './user-menu';
 
-interface UserMenuWithSessionProps {
-  initialUser?: User | null;
-}
-
-export function UserMenuWithSession({ initialUser }: UserMenuWithSessionProps) {
+export function UserMenuWithSession() {
   const { data, isPending } = useSession();
 
-  // Use server state during hydration, then client state for real-time updates
-  const user = isPending ? (initialUser ?? null) : (data?.user ?? null);
+  // Show skeleton while session is loading to avoid flash
+  if (isPending) {
+    return <Skeleton className="h-10 w-10 rounded-full" />;
+  }
 
-  return <UserMenu user={user} />;
+  return <UserMenu user={data?.user ?? null} />;
 }
