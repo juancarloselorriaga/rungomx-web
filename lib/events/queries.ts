@@ -455,6 +455,7 @@ export type PublicEventDetail = {
   seriesName: string;
   sportType: string;
   organizationName: string;
+  sharedCapacity: number | null;
   distances: PublicDistanceInfo[];
   faqItems: EventFaqItem[];
   waivers: EventWaiver[];
@@ -471,6 +472,7 @@ export type PublicDistanceInfo = {
   isVirtual: boolean;
   capacity: number | null;
   spotsRemaining: number | null;
+  capacityScope: 'per_distance' | 'shared_pool';
   priceCents: number;
   currency: string;
 };
@@ -620,6 +622,7 @@ export async function getPublicEventBySlug(
     seriesName: series.name,
     sportType: series.sportType,
     organizationName: series.organization?.name ?? '',
+    sharedCapacity: sharedCapacity,
     distances: edition.distances.map((d) => {
       const regCount = registrationCountMap.get(d.id) ?? 0;
       const spotsRemaining =
@@ -639,6 +642,7 @@ export async function getPublicEventBySlug(
         isVirtual: d.isVirtual,
         capacity: d.capacity,
         spotsRemaining,
+        capacityScope: d.capacityScope as 'per_distance' | 'shared_pool',
         priceCents: d.pricingTiers[0]?.priceCents ?? 0,
         currency: d.pricingTiers[0]?.currency ?? 'MXN',
       };

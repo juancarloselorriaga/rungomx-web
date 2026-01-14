@@ -39,6 +39,11 @@
     "spotsRemaining": "{count} lugares disponibles",
     "soldOut": "Agotado",
     "unlimited": "Lugares ilimitados",
+    "capacity": {
+      "sharedPoolBanner": "Estas distancias comparten una reserva común de {total} lugares totales",
+      "sharedPoolLabel": "Reserva compartida",
+      "totalSharedCapacity": "{total} lugares totales en todas las distancias"
+    },
     "fromPrice": "Desde {price}",
     "free": "Gratis",
     "virtualEvent": "Evento virtual",

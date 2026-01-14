@@ -39,6 +39,11 @@
     "spotsRemaining": "{count} spots remaining",
     "soldOut": "Sold out",
     "unlimited": "Unlimited spots",
+    "capacity": {
+      "sharedPoolBanner": "These distances share a combined pool of {total} total spots",
+      "sharedPoolLabel": "Shared pool",
+      "totalSharedCapacity": "{total} total spots across all distances"
+    },
     "fromPrice": "From {price}",
     "free": "Free",
     "virtualEvent": "Virtual event",

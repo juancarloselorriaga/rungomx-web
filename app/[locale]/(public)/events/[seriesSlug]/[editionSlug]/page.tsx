@@ -6,7 +6,7 @@ import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { generateAlternateMetadata } from '@/utils/seo';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Calendar, ExternalLink, MapPin, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, ExternalLink, Info, MapPin, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
@@ -149,6 +149,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     }).format(cents / 100);
   };
 
+  // Calculate if event uses shared capacity pool
+  const hasSharedPool =
+    event.sharedCapacity !== null &&
+    event.distances.some((d) => d.capacityScope === 'shared_pool');
+
   return (
     <div className="min-h-screen">
       {/* Hero section */}
@@ -261,6 +266,21 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             {event.distances.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold mb-6">{t('detail.distances')}</h2>
+
+                {/* Shared capacity banner */}
+                {hasSharedPool && event.sharedCapacity && (
+                  <div className="rounded-lg border bg-muted/40 p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium">
+                          {t('detail.capacity.sharedPoolBanner', { total: event.sharedCapacity })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid gap-4">
                   {event.distances.map((distance) => (
                     <DistanceCard
@@ -272,6 +292,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                         pathname: '/events/[seriesSlug]/[editionSlug]/register',
                         params: { seriesSlug, editionSlug },
                       }}
+                      sharedCapacity={event.sharedCapacity}
                     />
                   ))}
                 </div>
@@ -418,11 +439,13 @@ async function DistanceCard({
   locale,
   isRegistrationOpen,
   registerPath,
+  sharedCapacity,
 }: {
   distance: PublicDistanceInfo;
   locale: string;
   isRegistrationOpen: boolean;
   registerPath: { pathname: '/events/[seriesSlug]/[editionSlug]/register'; params: { seriesSlug: string; editionSlug: string } };
+  sharedCapacity: number | null;
 }) {
   const t = await getTranslations({ locale: locale as 'es' | 'en', namespace: 'pages.events.detail' });
 
@@ -456,18 +479,25 @@ async function DistanceCard({
             <span className="text-primary">{t('virtualEvent')}</span>
           )}
         </div>
-        <div className="flex flex-wrap gap-3 text-sm">
-          {distance.capacity ? (
+        <div className="flex flex-wrap gap-3 text-sm items-center">
+          {distance.spotsRemaining !== null ? (
             isSoldOut ? (
               <span className="text-destructive flex items-center gap-1">
                 <Users className="h-4 w-4" />
                 {t('soldOut')}
               </span>
             ) : (
-              <span className="text-muted-foreground flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {t('spotsRemaining', { count: distance.spotsRemaining ?? 0 })}
-              </span>
+              <>
+                <span className="text-muted-foreground flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {t('spotsRemaining', { count: distance.spotsRemaining ?? 0 })}
+                </span>
+                {distance.capacityScope === 'shared_pool' && sharedCapacity && (
+                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {t('capacity.sharedPoolLabel')}
+                  </span>
+                )}
+              </>
             )
           ) : (
             <span className="text-muted-foreground flex items-center gap-1">

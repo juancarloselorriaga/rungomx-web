@@ -38,6 +38,7 @@ export function RegistrationFlow({
   userProfile,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
+  const tDetail = useTranslations('pages.events.detail');
   const waiverSignatureLabels = {
     initials: t('waiver.signatureLabels.initials'),
     signature: t('waiver.signatureLabels.signature'),
@@ -277,6 +278,16 @@ export function RegistrationFlow({
               <p className="text-sm text-muted-foreground">{t('distance.description')}</p>
             </div>
 
+            {/* Shared capacity info */}
+            {event.sharedCapacity &&
+              event.distances.some((d) => d.capacityScope === 'shared_pool') && (
+                <div className="rounded-lg border bg-muted/40 p-3 mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    {tDetail('capacity.totalSharedCapacity', { total: event.sharedCapacity })}
+                  </p>
+                </div>
+              )}
+
             <div className="space-y-3">
               {event.distances.map((distance) => {
                 const isSoldOut =
@@ -304,13 +315,20 @@ export function RegistrationFlow({
                             {distance.distanceValue} {distance.distanceUnit}
                           </p>
                         )}
-                        {distance.capacity && (
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <Users className="h-4 w-4" />
-                            {isSoldOut
-                              ? t('errors.soldOut')
-                              : `${distance.spotsRemaining} spots remaining`}
-                          </p>
+                        {distance.spotsRemaining !== null && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              {isSoldOut
+                                ? t('errors.soldOut')
+                                : tDetail('spotsRemaining', { count: distance.spotsRemaining })}
+                            </p>
+                            {distance.capacityScope === 'shared_pool' && event.sharedCapacity && (
+                              <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                {tDetail('capacity.sharedPoolLabel')}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div className="text-right">
