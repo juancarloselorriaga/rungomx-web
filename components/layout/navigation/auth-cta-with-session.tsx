@@ -1,23 +1,22 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from '@/i18n/navigation';
 import { useSession } from '@/lib/auth/client';
-import type { User } from '@/lib/auth/types';
 import { useTranslations } from 'next-intl';
 
-interface AuthCtaWithSessionProps {
-  initialUser?: User | null;
-}
-
-export function AuthCtaWithSession({ initialUser }: AuthCtaWithSessionProps) {
+export function AuthCtaWithSession() {
   const tAuth = useTranslations('auth');
   const tHome = useTranslations('pages.home');
   const { data, isPending } = useSession();
 
-  // Use server state during hydration, then client state for real-time updates
-  const user = isPending ? initialUser : (data?.user ?? null);
-  const isLoggedIn = !!user;
+  // Show skeleton while session is loading to avoid flash
+  if (isPending) {
+    return <Skeleton className="h-8 min-w-[128px] rounded-md" />;
+  }
+
+  const isLoggedIn = !!data?.user;
   const label = isLoggedIn ? tHome('actions.goToDashboard') : tAuth('signIn');
   const href = isLoggedIn ? '/dashboard' : '/sign-in';
 
