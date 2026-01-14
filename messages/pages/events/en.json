@@ -121,6 +121,13 @@
     "noResultsDescription": "Try adjusting your filters or check back later for new events.",
     "clearFilters": "Clear filters"
   },
+  "nearby": {
+    "nearYou": "Near you",
+    "viewAll": "View all",
+    "viewAllActive": "Viewing all",
+    "fromProfile": "From profile",
+    "change": "Change"
+  },
   "share": {
     "copyLink": "Share",
     "copied": "Link copied",

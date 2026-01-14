@@ -700,12 +700,13 @@ export async function searchPublicEvents(
     const loweredName = sql`lower(${eventSeries.name})`;
     const loweredQuery = sql`lower(${searchQuery})`;
     const similarityExpr = sql`word_similarity(${loweredQuery}, ${loweredName})`;
-    conditions.push(
-      or(
-        sql`${similarityExpr} > 0.39`,
-        sql`${eventSeries.name} ILIKE ${likeQuery}`,
-      ),
+    const textCondition = or(
+      sql`${similarityExpr} > 0.39`,
+      sql`${eventSeries.name} ILIKE ${likeQuery}`,
     );
+    if (textCondition) {
+      conditions.push(textCondition);
+    }
   }
 
   // Sport type filter

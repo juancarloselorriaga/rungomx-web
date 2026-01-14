@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { getAuthContext } from '@/lib/auth/server';
+import { DEFAULT_PROFILE_NEARBY_RADIUS_KM, DISTANCE_KINDS, SPORT_TYPES } from '@/lib/events/constants';
 import { searchPublicEvents } from '@/lib/events/queries';
-import { DISTANCE_KINDS, SPORT_TYPES } from '@/lib/events/constants';
 
 /**
  * Public events search API.
  * Returns published events with optional filtering.
  * Uses shared searchPublicEvents() query function.
  */
+
+function parseProfileCoordinate(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
 
 const searchParamsSchema = z.object({
   // Text search
@@ -73,6 +83,10 @@ const searchParamsSchema = z.object({
       const parsed = parseFloat(v);
       return Number.isFinite(parsed) && parsed > 0 && parsed <= 500 ? parsed : undefined;
     }),
+  useProfileLocation: z
+    .string()
+    .optional()
+    .transform((v) => v === '1' || v === 'true'),
 
   // Date range
   dateFrom: z.string().datetime().optional(),
@@ -115,6 +129,7 @@ export async function GET(request: NextRequest) {
       lat: url.searchParams.get('lat') || undefined,
       lng: url.searchParams.get('lng') || undefined,
       radiusKm: url.searchParams.get('radiusKm') || undefined,
+      useProfileLocation: url.searchParams.get('useProfileLocation') || undefined,
       dateFrom: url.searchParams.get('dateFrom') || undefined,
       dateTo: url.searchParams.get('dateTo') || undefined,
       month: url.searchParams.get('month') || undefined,
@@ -144,12 +159,35 @@ export async function GET(request: NextRequest) {
       lat,
       lng,
       radiusKm,
+      useProfileLocation,
       dateFrom,
       dateTo,
       month,
       page,
       limit,
     } = parsed.data;
+
+    const hasExplicitLocationIntent = ['lat', 'lng', 'radiusKm', 'location', 'state', 'city'].some(
+      (key) => url.searchParams.get(key) !== null,
+    );
+    let effectiveLat = lat;
+    let effectiveLng = lng;
+    let effectiveRadiusKm = radiusKm;
+
+    if (useProfileLocation && !hasExplicitLocationIntent && lat === undefined && lng === undefined) {
+      const authContext = await getAuthContext();
+      const profileLat = parseProfileCoordinate(authContext.profile?.latitude);
+      const profileLng = parseProfileCoordinate(authContext.profile?.longitude);
+      const hasProfileLocation = profileLat !== undefined && profileLng !== undefined;
+
+      if (hasProfileLocation) {
+        effectiveLat = profileLat;
+        effectiveLng = profileLng;
+        if (effectiveRadiusKm === undefined) {
+          effectiveRadiusKm = DEFAULT_PROFILE_NEARBY_RADIUS_KM;
+        }
+      }
+    }
 
     // Use shared query function
     const result = await searchPublicEvents({
@@ -162,9 +200,9 @@ export async function GET(request: NextRequest) {
       isVirtual,
       distanceMin,
       distanceMax,
-      lat,
-      lng,
-      radiusKm,
+      lat: effectiveLat,
+      lng: effectiveLng,
+      radiusKm: effectiveRadiusKm,
       dateFrom: dateFrom ? new Date(dateFrom) : undefined,
       dateTo: dateTo ? new Date(dateTo) : undefined,
       month,

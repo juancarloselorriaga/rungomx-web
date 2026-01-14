@@ -8,8 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Link, useRouter } from '@/i18n/navigation';
-import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
+import { useSession } from '@/lib/auth/client';
+import { DEFAULT_PROFILE_NEARBY_RADIUS_KM, SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { cn } from '@/lib/utils';
+import type { ProfileRecord } from '@/lib/profiles/types';
 import type { PublicLocationValue } from '@/types/location';
 import { format } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
@@ -34,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import {
   EVENTS_PAGE_LIMIT,
   buildEventsQueryObject,
+  hasExplicitLocationIntent,
   parseDateParam,
   parseEventsSearchParams,
   type EventsSearchParamUpdates,
@@ -80,8 +83,18 @@ type Pagination = {
 type EventsDirectoryProps = {
   initialEvents: PublicEventSummary[];
   initialPagination: Pagination;
+  initialNearbyEligible: boolean;
   locale: string;
 };
+
+function parseProfileCoordinate(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
 
 // Mexican states for filter dropdown
 const MEXICAN_STATES = [
@@ -122,6 +135,7 @@ const MEXICAN_STATES = [
 export function EventsDirectory({
   initialEvents,
   initialPagination,
+  initialNearbyEligible,
   locale,
 }: EventsDirectoryProps) {
   const t = useTranslations('pages.events');
@@ -132,6 +146,24 @@ export function EventsDirectory({
   const parsedParams = useMemo(() => parseEventsSearchParams(searchParams), [searchParams]);
   const locationLabel = searchParams.get('location') || undefined;
   const currentPage = parsedParams.page ?? 1;
+  const { data: sessionData } = useSession();
+  const sessionUser = sessionData?.user ?? null;
+  const sessionProfile = (sessionData?.profile ??
+    (sessionUser as { profile?: ProfileRecord | null } | null)?.profile ??
+    null) as ProfileRecord | null;
+  const sessionProfileLat = parseProfileCoordinate(sessionProfile?.latitude);
+  const sessionProfileLng = parseProfileCoordinate(sessionProfile?.longitude);
+  const hasSessionProfileLocation =
+    sessionProfileLat !== undefined && sessionProfileLng !== undefined;
+  const isAuthenticated = Boolean(sessionUser) || initialNearbyEligible;
+  const hasProfileLocation = hasSessionProfileLocation || initialNearbyEligible;
+  const hasSearchIntent = Boolean(parsedParams.q);
+  const hasLocationIntent = useMemo(
+    () => hasExplicitLocationIntent(searchParams),
+    [searchParams],
+  );
+  const isNearbyEligible =
+    isAuthenticated && hasProfileLocation && hasSearchIntent && !hasLocationIntent;
 
   // State
   const [events, setEvents] = useState(initialEvents);
@@ -150,7 +182,9 @@ export function EventsDirectory({
   const [distanceRange, setDistanceRange] = useState<[number, number]>([0, 200]);
   const [distanceRangeEnabled, setDistanceRangeEnabled] = useState(false);
   const [searchLocation, setSearchLocation] = useState<PublicLocationValue | null>(null);
-  const [searchRadius, setSearchRadius] = useState(50);
+  const [searchRadius, setSearchRadius] = useState(DEFAULT_PROFILE_NEARBY_RADIUS_KM);
+  const [nearbyDisabled, setNearbyDisabled] = useState(false);
+  const nearbyEnabled = isNearbyEligible && !nearbyDisabled;
 
   // Debounce timer refs
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -213,6 +247,9 @@ export function EventsDirectory({
       }
       searchParams.set('page', String(params.page ?? 1));
       searchParams.set('limit', String(params.limit ?? EVENTS_PAGE_LIMIT));
+      if (nearbyEnabled) {
+        searchParams.set('useProfileLocation', '1');
+      }
 
       const response = await fetch(`/api/events?${searchParams.toString()}`);
       if (response.ok) {
@@ -220,7 +257,7 @@ export function EventsDirectory({
         setEvents(data.events);
         setPagination(data.pagination);
       }
-    }, []);
+    }, [nearbyEnabled]);
 
   // Helper to calculate date range from preset
   function getDateRangeFromPreset(
@@ -328,7 +365,7 @@ export function EventsDirectory({
       parsedParams.distanceMin ?? 0,
       parsedParams.distanceMax ?? 200,
     ]);
-    setSearchRadius(parsedParams.radiusKm ?? 50);
+    setSearchRadius(parsedParams.radiusKm ?? DEFAULT_PROFILE_NEARBY_RADIUS_KM);
   }, [datePreset, parsedParams]);
 
   useEffect(() => {
@@ -606,7 +643,7 @@ export function EventsDirectory({
     setDistanceRange([0, 200]);
     setDistanceRangeEnabled(false);
     setSearchLocation(null);
-    setSearchRadius(50);
+    setSearchRadius(DEFAULT_PROFILE_NEARBY_RADIUS_KM);
     updateQueryParams(
       {
         q: null,
@@ -726,6 +763,31 @@ export function EventsDirectory({
           </IconTooltipButton>
         </div>
       </div>
+
+      {isNearbyEligible && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {nearbyEnabled ? t('nearby.nearYou') : t('nearby.viewAllActive')}
+            </span>
+            {nearbyEnabled ? (
+              <span className="text-xs text-muted-foreground">{t('nearby.fromProfile')}</span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setNearbyDisabled((prev) => !prev)}
+            >
+              {nearbyEnabled ? t('nearby.viewAll') : t('nearby.nearYou')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowAdvancedFilters(true)}>
+              {t('nearby.change')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Advanced filters panel */}
       {showAdvancedFilters && (
