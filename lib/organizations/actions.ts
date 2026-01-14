@@ -14,6 +14,7 @@ import { ORG_MEMBERSHIP_ROLES } from '@/lib/events/constants';
 import { isEventsEnabled } from '@/lib/features/flags';
 
 import { getOrgMembership, requireOrgPermission } from './permissions';
+import { lookupUserByEmail as lookupUserByEmailQuery } from './queries';
 
 // =============================================================================
 // Schemas
@@ -54,6 +55,11 @@ const updateOrgMemberSchema = z.object({
 const removeOrgMemberSchema = z.object({
   organizationId: z.string().uuid(),
   userId: z.string().uuid(),
+});
+
+const lookupUserByEmailSchema = z.object({
+  organizationId: z.string().uuid(),
+  email: z.string().email(),
 });
 
 // =============================================================================
@@ -284,10 +290,12 @@ export const addOrgMember = withAuthenticatedUser<ActionResult<{ membershipId: s
 
   // Check membership and permissions
   const membership = await getOrgMembership(authContext.user.id, organizationId);
-  try {
-    requireOrgPermission(membership, 'canManageMembers');
-  } catch {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  if (!authContext.permissions.canManageEvents) {
+    try {
+      requireOrgPermission(membership, 'canManageMembers');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
   }
 
   // Check if user is already a member
@@ -359,10 +367,12 @@ export const updateOrgMember = withAuthenticatedUser<ActionResult>({
 
   // Check membership and permissions
   const membership = await getOrgMembership(authContext.user.id, organizationId);
-  try {
-    requireOrgPermission(membership, 'canManageMembers');
-  } catch {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  if (!authContext.permissions.canManageEvents) {
+    try {
+      requireOrgPermission(membership, 'canManageMembers');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
   }
 
   // Get current membership
@@ -443,10 +453,12 @@ export const removeOrgMember = withAuthenticatedUser<ActionResult>({
 
   // Check membership and permissions
   const membership = await getOrgMembership(authContext.user.id, organizationId);
-  try {
-    requireOrgPermission(membership, 'canManageMembers');
-  } catch {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  if (!authContext.permissions.canManageEvents) {
+    try {
+      requireOrgPermission(membership, 'canManageMembers');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
   }
 
   // Get current membership
@@ -521,4 +533,41 @@ export const checkOrgSlugAvailability = withAuthenticatedUser<ActionResult<{ ava
   });
 
   return { ok: true, data: { available: !existing } };
+});
+
+/**
+ * Lookup a user by email for membership management.
+ * Requires owner role (or internal staff with canManageEvents).
+ */
+export const lookupUserByEmail = withAuthenticatedUser<
+  ActionResult<{ userId: string; name: string; email: string }>
+>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof lookupUserByEmailSchema>) => {
+  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = lookupUserByEmailSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { organizationId, email } = validated.data;
+
+  const membership = await getOrgMembership(authContext.user.id, organizationId);
+  if (!authContext.permissions.canManageEvents) {
+    try {
+      requireOrgPermission(membership, 'canManageMembers');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const user = await lookupUserByEmailQuery(email);
+  if (!user) {
+    return { ok: false, error: 'User not found', code: 'NOT_FOUND' };
+  }
+
+  return { ok: true, data: { userId: user.id, name: user.name, email: user.email } };
 });

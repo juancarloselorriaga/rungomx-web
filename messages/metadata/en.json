@@ -249,6 +249,18 @@
           "imageAlt": "Event management dashboard"
         }
       }
+    },
+    "DashboardOrganizations": {
+      "metadata": {
+        "title": "Organizations | RunGoMX",
+        "description": "Manage organization memberships and team access on RunGoMX.",
+        "keywords": ["organizations", "team access", "event management"],
+        "openGraph": {
+          "title": "Organizations | RunGoMX",
+          "description": "Manage organization memberships and team access on RunGoMX.",
+          "imageAlt": "Organization management dashboard"
+        }
+      }
     }
   },
   "Components": {

@@ -12,6 +12,11 @@ export const FEATURE_FLAGS = {
    * When true, external organizers can access the events dashboard.
    */
   EVENTS_PLATFORM_ENABLED: process.env.NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM === 'true',
+  /**
+   * When true, finalizeRegistration auto-confirms registrations (no-payment mode).
+   * Keep false in production until payment integrations are live.
+   */
+  EVENTS_NO_PAYMENT_MODE: process.env.NEXT_PUBLIC_FEATURE_EVENTS_NO_PAYMENT_MODE === 'true',
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
@@ -34,6 +39,13 @@ export type FeatureFlag = keyof typeof FEATURE_FLAGS;
  */
 export function isEventsEnabled(): boolean {
   return FEATURE_FLAGS.EVENTS_PLATFORM_ENABLED;
+}
+
+/**
+ * Check if no-payment mode is enabled for event registrations.
+ */
+export function isEventsNoPaymentMode(): boolean {
+  return FEATURE_FLAGS.EVENTS_NO_PAYMENT_MODE;
 }
 
 /**

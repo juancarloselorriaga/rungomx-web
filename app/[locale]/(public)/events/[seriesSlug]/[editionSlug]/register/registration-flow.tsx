@@ -38,6 +38,14 @@ export function RegistrationFlow({
   userProfile,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
+  const waiverSignatureLabels = {
+    initials: t('waiver.signatureLabels.initials'),
+    signature: t('waiver.signatureLabels.signature'),
+  } as const;
+  const waiverSignaturePlaceholders = {
+    initials: t('waiver.signaturePlaceholders.initials'),
+    signature: t('waiver.signaturePlaceholders.signature'),
+  } as const;
   const [isPending, startTransition] = useTransition();
 
   // Flow state
@@ -62,6 +70,7 @@ export function RegistrationFlow({
 
   // Waiver tracking - map of waiverId -> accepted status
   const [acceptedWaivers, setAcceptedWaivers] = useState<Record<string, boolean>>({});
+  const [waiverSignatures, setWaiverSignatures] = useState<Record<string, string>>({});
 
   // Format price
   const formatPrice = (cents: number, currency: string) => {
@@ -131,8 +140,14 @@ export function RegistrationFlow({
   }
 
   // Check if all waivers are accepted
-  const allWaiversAccepted = event.waivers.length > 0 &&
-    event.waivers.every((w) => acceptedWaivers[w.id]);
+  const allWaiversAccepted =
+    event.waivers.length > 0 &&
+    event.waivers.every((waiver) => {
+      if (waiver.signatureType === 'checkbox') {
+        return acceptedWaivers[waiver.id];
+      }
+      return Boolean(waiverSignatures[waiver.id]?.trim());
+    });
 
   async function handleWaiverAccept() {
     if (!registrationId || !allWaiversAccepted) return;
@@ -144,7 +159,11 @@ export function RegistrationFlow({
         const result = await acceptWaiver({
           registrationId,
           waiverId: waiver.id,
-          signatureType: 'checkbox',
+          signatureType: waiver.signatureType as 'checkbox' | 'initials' | 'signature',
+          signatureValue:
+            waiver.signatureType === 'checkbox'
+              ? undefined
+              : waiverSignatures[waiver.id]?.trim() || undefined,
         });
 
         if (!result.ok) {
@@ -473,21 +492,52 @@ export function RegistrationFlow({
                   <p className="text-sm whitespace-pre-wrap">{waiver.body}</p>
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={acceptedWaivers[waiver.id] ?? false}
-                    onChange={(e) =>
-                      setAcceptedWaivers((prev) => ({
-                        ...prev,
-                        [waiver.id]: e.target.checked,
-                      }))
-                    }
-                    className="mt-1 h-4 w-4 rounded border-gray-300"
-                    disabled={isPending}
-                  />
-                  <span className="text-sm">
-                    {t('waiver.acceptThis', { title: waiver.title })}
-                  </span>
+                  {waiver.signatureType === 'checkbox' ? (
+                    <>
+                      <input
+                        type="checkbox"
+                        checked={acceptedWaivers[waiver.id] ?? false}
+                        onChange={(e) =>
+                          setAcceptedWaivers((prev) => ({
+                            ...prev,
+                            [waiver.id]: e.target.checked,
+                          }))
+                        }
+                        className="mt-1 h-4 w-4 rounded border-gray-300"
+                        disabled={isPending}
+                      />
+                      <span className="text-sm">
+                        {t('waiver.acceptThis', { title: waiver.title })}
+                      </span>
+                    </>
+                  ) : (
+                    <div className="space-y-2 w-full">
+                      <span className="text-sm">
+                        {
+                          waiverSignatureLabels[
+                            waiver.signatureType as keyof typeof waiverSignatureLabels
+                          ]
+                        }
+                      </span>
+                      <input
+                        type="text"
+                        value={waiverSignatures[waiver.id] ?? ''}
+                        onChange={(e) =>
+                          setWaiverSignatures((prev) => ({
+                            ...prev,
+                            [waiver.id]: e.target.value,
+                          }))
+                        }
+                        placeholder={
+                          waiverSignaturePlaceholders[
+                            waiver.signatureType as keyof typeof waiverSignaturePlaceholders
+                          ]
+                        }
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        disabled={isPending}
+                      />
+                    </div>
+                  )}
                 </label>
               </div>
             ))}
@@ -609,6 +659,36 @@ export function RegistrationFlow({
               <p className="text-sm text-muted-foreground">{t('confirmation.nextSteps')}</p>
             </div>
 
+            {event.policyConfig && (
+              <div className="rounded-lg border bg-muted/40 p-4 text-left space-y-3">
+                <h3 className="font-medium">{t('confirmation.policiesTitle')}</h3>
+                <PolicySummary
+                  locale={locale}
+                  timezone={event.timezone}
+                  label={t('confirmation.refundPolicy')}
+                  enabled={event.policyConfig.refundsAllowed}
+                  text={event.policyConfig.refundPolicyText}
+                  deadline={event.policyConfig.refundDeadline}
+                />
+                <PolicySummary
+                  locale={locale}
+                  timezone={event.timezone}
+                  label={t('confirmation.transferPolicy')}
+                  enabled={event.policyConfig.transfersAllowed}
+                  text={event.policyConfig.transferPolicyText}
+                  deadline={event.policyConfig.transferDeadline}
+                />
+                <PolicySummary
+                  locale={locale}
+                  timezone={event.timezone}
+                  label={t('confirmation.deferralPolicy')}
+                  enabled={event.policyConfig.deferralsAllowed}
+                  text={event.policyConfig.deferralPolicyText}
+                  deadline={event.policyConfig.deferralDeadline}
+                />
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
               <Button asChild>
                 <Link
@@ -627,6 +707,42 @@ export function RegistrationFlow({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function PolicySummary({
+  locale,
+  timezone,
+  label,
+  enabled,
+  text,
+  deadline,
+}: {
+  locale: string;
+  timezone: string;
+  label: string;
+  enabled: boolean;
+  text: string | null;
+  deadline: Date | null;
+}) {
+  if (!enabled && !text && !deadline) {
+    return null;
+  }
+
+  const deadlineText = deadline
+    ? new Intl.DateTimeFormat(locale, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: timezone,
+      }).format(new Date(deadline))
+    : null;
+
+  return (
+    <div className="text-sm text-muted-foreground space-y-1">
+      <p className="font-medium text-foreground">{label}</p>
+      {text && <p className="whitespace-pre-wrap">{text}</p>}
+      {deadlineText && <p>{deadlineText}</p>}
     </div>
   );
 }

@@ -61,6 +61,7 @@ type PublicEventSummary = {
   seriesSlug: string;
   startsAt: string | null;
   endsAt: string | null;
+  timezone: string;
   locationDisplay: string | null;
   city: string | null;
   state: string | null;
@@ -1181,6 +1182,7 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
         month: 'short',
         day: 'numeric',
         year: 'numeric',
+        timeZone: event.timezone,
       })
     : null;
 

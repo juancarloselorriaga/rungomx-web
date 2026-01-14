@@ -122,6 +122,8 @@
         "editionDetails": "Detalles de la edición",
         "editionLabelLabel": "Etiqueta de edición",
         "editionSlugLabel": "Slug de URL de edición",
+        "descriptionLabel": "Descripción del evento",
+        "descriptionPlaceholder": "Comparte lo más importante de este evento...",
         "dateLabel": "Fecha del evento",
         "locationLabel": "Ubicación del evento",
         "cityLabel": "Ciudad",
@@ -138,6 +140,12 @@
       "published": "Publicado",
       "unlisted": "No listado",
       "archived": "Archivado"
+    },
+    "slugStatus": {
+      "checking": "Verificando disponibilidad...",
+      "available": "Disponible",
+      "taken": "El slug ya está en uso",
+      "error": "No se pudo verificar; se validará al enviar"
     },
     "sportTypes": {
       "trail_running": "Trail Running",
@@ -158,8 +166,24 @@
       "manageEventDescription": "Editar detalles del evento, fechas y configuración de inscripciones",
       "manageFaq": "FAQ",
       "manageFaqDescription": "Agregar y editar preguntas frecuentes",
+      "manageWaivers": "Deslindes",
+      "manageWaiversDescription": "Crear y ordenar deslindes para participantes",
+      "managePolicies": "Políticas",
+      "managePoliciesDescription": "Definir políticas de reembolso, transferencia y diferimiento",
+      "publicCodeLabel": "Código público",
       "viewPublicPage": "Ver página pública",
       "viewPublicPageDescription": "Ver cómo aparece tu evento a los participantes",
+      "capacity": {
+        "title": "Estado de capacidad",
+        "sharedPool": "Cupo compartido entre todas las distancias",
+        "perDistance": "Capacidad por distancia",
+        "totalLabel": "Capacidad total",
+        "remainingLabel": "Cupos restantes",
+        "unlimited": "Sin límite",
+        "soldOut": "Agotado",
+        "distanceLimit": "{count, number} cupos totales",
+        "viewAll": "Ver {count, number} distancias más"
+      },
       "distancesTitle": "Distancias",
       "noDistances": "Aún no hay distancias. Ve a configuración para agregar distancias.",
       "faqTitle": "Preguntas frecuentes",
@@ -180,12 +204,68 @@
       "save": "Guardar",
       "cancel": "Cancelar"
     },
+    "waivers": {
+      "title": "Deslindes",
+      "description": "Crea deslindes que los participantes deben aceptar antes de inscribirse.",
+      "emptyState": "Aún no hay deslindes. Agrega tu primer deslinde para obtener el consentimiento.",
+      "addFirst": "Agregar primer deslinde",
+      "addAnother": "Agregar otro deslinde",
+      "titleLabel": "Título del deslinde",
+      "titlePlaceholder": "Deslinde del participante",
+      "bodyLabel": "Texto del deslinde",
+      "bodyPlaceholder": "Escribe los términos del deslinde...",
+      "signatureTypeLabel": "Tipo de firma",
+      "signatureTypes": {
+        "checkbox": "Confirmación con casilla",
+        "initials": "Iniciales",
+        "signature": "Firma completa"
+      },
+      "add": "Agregar deslinde",
+      "save": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "policies": {
+      "title": "Políticas",
+      "description": "Agrega marcadores para políticas de reembolso, transferencia y diferimiento.",
+      "save": "Guardar políticas",
+      "refund": {
+        "title": "Política de reembolso",
+        "description": "Explica elegibilidad y fechas límite para reembolsos.",
+        "textLabel": "Texto de la política de reembolso",
+        "deadlineLabel": "Fecha límite de reembolso"
+      },
+      "transfer": {
+        "title": "Política de transferencia",
+        "description": "Explica reglas y fechas límite para transferencias.",
+        "textLabel": "Texto de la política de transferencia",
+        "deadlineLabel": "Fecha límite de transferencia"
+      },
+      "deferral": {
+        "title": "Política de diferimiento",
+        "description": "Explica reglas y fechas límite para diferimientos o créditos.",
+        "textLabel": "Texto de la política de diferimiento",
+        "deadlineLabel": "Fecha límite de diferimiento"
+      }
+    },
     "settings": {
       "title": "Configuración del Evento",
       "description": "Configura los detalles, visibilidad, distancias y ajustes de inscripción de tu evento.",
+      "wizard": {
+        "title": "Termina la configuración de tu evento",
+        "description": "Agrega tu primera distancia y publica cuando estés listo para compartir.",
+        "steps": {
+          "distance": "Agrega al menos una distancia con precio.",
+          "publish": "Publica el evento para que sea visible."
+        }
+      },
       "visibility": {
         "title": "Visibilidad del Evento",
-        "description": "Controla quién puede ver y acceder a tu evento. Los eventos publicados aparecen en el directorio público."
+        "description": "Controla quién puede ver y acceder a tu evento. Los eventos publicados aparecen en el directorio público.",
+        "errors": {
+          "missingDistances": "Agrega al menos una distancia antes de publicar.",
+          "missingPrices": "Agrega al menos un precio para cada distancia antes de publicar.",
+          "generic": "No se pudo actualizar la visibilidad. Intenta de nuevo."
+        }
       },
       "registration": {
         "title": "Estado de Inscripciones",
@@ -195,10 +275,54 @@
         "pause": "Pausar Inscripciones",
         "resume": "Reanudar Inscripciones"
       },
+      "heroImage": {
+        "title": "Imagen principal",
+        "description": "Muestra una imagen amplia en la página del evento y en la tarjeta del directorio.",
+        "helper": "Recomendado 16:9. Tamaño máximo {maxSize}MB.",
+        "empty": "Aún no hay imagen principal",
+        "actions": {
+          "upload": "Subir imagen",
+          "change": "Cambiar imagen",
+          "remove": "Quitar imagen",
+          "removing": "Quitando..."
+        },
+        "success": {
+          "uploaded": "Imagen principal actualizada.",
+          "removed": "Imagen principal eliminada."
+        },
+        "errors": {
+          "invalidType": "Sube un JPG, PNG, WebP o GIF.",
+          "fileTooLarge": "La imagen debe pesar menos de {maxSize}MB.",
+          "uploadFailed": "No se pudo subir la imagen. Intenta de nuevo.",
+          "saveFailed": "No se pudo guardar la imagen principal."
+        }
+      },
+      "capacity": {
+        "title": "Configuración de capacidad",
+        "description": "Elige si la capacidad es por distancia o compartida en todo el evento.",
+        "toggleLabel": "Compartir capacidad entre todas las distancias",
+        "toggleHelp": "Cuando está activo, todas las distancias usan el mismo cupo.",
+        "sharedCapacityLabel": "Capacidad total",
+        "sharedCapacityPlaceholder": "ej. 500",
+        "sharedCapacityHelp": "Total de inscritos permitidos entre todas las distancias.",
+        "sharedPoolHint": "Modo de cupo compartido activo.",
+        "sharedPoolTag": "Cupo compartido",
+        "save": "Guardar capacidad",
+        "success": "Configuración de capacidad actualizada.",
+        "errors": {
+          "required": "Ingresa una capacidad total para activar el cupo compartido.",
+          "saveFailed": "No se pudo actualizar la capacidad."
+        }
+      },
+      "descriptionField": {
+        "label": "Descripción del evento",
+        "help": "Da a los participantes una visión clara del evento."
+      },
       "details": {
         "title": "Detalles del Evento",
         "editionLabel": "Etiqueta de Edición",
         "slug": "Slug de URL",
+        "timezone": "Zona horaria",
         "startsAt": "Fecha de Inicio",
         "endsAt": "Fecha de Fin",
         "locationSection": "Ubicación",
@@ -227,6 +351,58 @@
         "cancel": "Cancelar",
         "confirmDelete": "¿Estás seguro de que deseas eliminar esta distancia? Esta acción no se puede deshacer."
       }
+    }
+  },
+  "organizations": {
+    "title": "Organizaciones",
+    "description": "Administra tus organizaciones y el acceso del equipo.",
+    "emptyState": {
+      "title": "Sin organizaciones aún",
+      "description": "Verás organizaciones aquí cuando te inviten o crees una."
+    },
+    "table": {
+      "slug": "Slug",
+      "member": "Miembro",
+      "email": "Correo",
+      "role": "Rol",
+      "actions": "Acciones"
+    },
+    "detail": {
+      "backToList": "Volver a organizaciones",
+      "slugLabel": "Slug",
+      "membersTitle": "Miembros de la organización",
+      "membersDescription": "Administra los roles del equipo de la organización.",
+      "membersReadOnly": "Solo los propietarios pueden agregar, eliminar o cambiar roles.",
+      "supportAccess": "Acceso de soporte habilitado para el equipo interno.",
+      "membersEmpty": "No hay miembros en esta organización.",
+      "addMemberTitle": "Agregar miembro",
+      "addMemberDescription": "Invita compañeros por correo y asigna su rol.",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "miembro@ejemplo.com",
+      "roleLabel": "Rol"
+    },
+    "roles": {
+      "owner": "Propietario",
+      "admin": "Administrador",
+      "editor": "Editor",
+      "viewer": "Visualizador",
+      "support": "Soporte"
+    },
+    "actions": {
+      "add": "Agregar miembro",
+      "remove": "Eliminar"
+    },
+    "labels": {
+      "you": "Tú"
+    },
+    "errors": {
+      "unauthenticated": "Inicia sesión para administrar miembros.",
+      "forbidden": "No tienes permiso para administrar miembros.",
+      "validation": "Revisa el formulario e inténtalo de nuevo.",
+      "notFound": "No encontramos un usuario con ese correo.",
+      "alreadyMember": "Ese usuario ya es miembro.",
+      "lastOwner": "Debes mantener al menos un propietario.",
+      "generic": "Ocurrió un error. Inténtalo de nuevo."
     }
   }
 }

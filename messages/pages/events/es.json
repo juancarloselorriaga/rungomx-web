@@ -8,8 +8,10 @@
   "detail": {
     "registrationOpen": "Inscripciones abiertas",
     "registrationClosed": "Inscripciones cerradas",
+    "registrationDetails": "Detalles de inscripción",
     "registrationOpens": "Inscripciones abren el {date}",
     "registrationCloses": "Inscripciones cierran el {date}",
+    "registrationPaused": "Las inscripciones están pausadas",
     "registerNow": "Inscribirme",
     "selectDistance": "Seleccionar distancia",
     "eventDate": "Fecha del evento",
@@ -18,6 +20,21 @@
     "about": "Acerca del evento",
     "distances": "Distancias",
     "faq": "Preguntas Frecuentes",
+    "policies": {
+      "title": "Políticas",
+      "refund": {
+        "title": "Reembolsos",
+        "deadline": "Reembolsos disponibles hasta {date}"
+      },
+      "transfer": {
+        "title": "Transferencias",
+        "deadline": "Transferencias disponibles hasta {date}"
+      },
+      "deferral": {
+        "title": "Diferimientos",
+        "deadline": "Diferimientos disponibles hasta {date}"
+      }
+    },
     "viewMap": "Ver en mapa",
     "spotsRemaining": "{count} lugares disponibles",
     "soldOut": "Agotado",
@@ -78,6 +95,14 @@
       "waiverNumber": "Deslinde {number} de {total}",
       "accept": "He leído y acepto los términos del deslinde",
       "acceptThis": "He leído y acepto los términos de \"{title}\"",
+      "signatureLabels": {
+        "initials": "Escribe tus iniciales",
+        "signature": "Escribe tu nombre completo como firma"
+      },
+      "signaturePlaceholders": {
+        "initials": "Ej. JC",
+        "signature": "Nombre completo"
+      },
       "continue": "Aceptar y continuar"
     },
     "payment": {
@@ -97,6 +122,10 @@
       "description": "Te has inscrito exitosamente a {eventName}.",
       "registrationId": "ID de inscripción",
       "distance": "Distancia",
+      "policiesTitle": "Políticas del evento",
+      "refundPolicy": "Política de reembolsos",
+      "transferPolicy": "Política de transferencias",
+      "deferralPolicy": "Política de diferimientos",
       "whatNext": "¿Qué sigue?",
       "nextSteps": "Recibirás un correo de confirmación con más detalles del evento. Revisa tu bandeja de entrada para más instrucciones.",
       "viewEvent": "Ver detalles del evento",

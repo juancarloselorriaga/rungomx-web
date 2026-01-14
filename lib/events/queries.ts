@@ -6,56 +6,12 @@ import {
   eventDistances,
   eventEditions,
   eventSeries,
+  media,
   organizationMemberships,
   organizations,
   pricingTiers,
   registrations,
 } from '@/db/schema';
-import type { OrgMembershipRole } from './constants';
-
-// =============================================================================
-// Organization Queries
-// =============================================================================
-
-export type UserOrganization = {
-  id: string;
-  name: string;
-  slug: string;
-  role: OrgMembershipRole;
-  createdAt: Date;
-};
-
-/**
- * Get all organizations a user is a member of.
- */
-export async function getUserOrganizations(userId: string): Promise<UserOrganization[]> {
-  const memberships = await db
-    .select({
-      id: organizations.id,
-      name: organizations.name,
-      slug: organizations.slug,
-      role: organizationMemberships.role,
-      createdAt: organizations.createdAt,
-    })
-    .from(organizationMemberships)
-    .innerJoin(organizations, eq(organizationMemberships.organizationId, organizations.id))
-    .where(
-      and(
-        eq(organizationMemberships.userId, userId),
-        isNull(organizationMemberships.deletedAt),
-        isNull(organizations.deletedAt),
-      ),
-    )
-    .orderBy(asc(organizations.name));
-
-  return memberships.map((m) => ({
-    id: m.id,
-    name: m.name,
-    slug: m.slug,
-    role: m.role as OrgMembershipRole,
-    createdAt: m.createdAt,
-  }));
-}
 
 /**
  * Get event series for an organization.
@@ -254,6 +210,7 @@ export type EventEditionDetail = {
   registrationOpensAt: Date | null;
   registrationClosesAt: Date | null;
   isRegistrationPaused: boolean;
+  sharedCapacity: number | null;
   locationDisplay: string | null;
   address: string | null;
   city: string | null;
@@ -263,6 +220,7 @@ export type EventEditionDetail = {
   longitude: string | null;
   externalUrl: string | null;
   heroImageMediaId: string | null;
+  heroImageUrl: string | null;
   seriesId: string;
   seriesName: string;
   seriesSlug: string;
@@ -273,6 +231,7 @@ export type EventEditionDetail = {
   distances: EventDistanceDetail[];
   faqItems: EventFaqItem[];
   waivers: EventWaiver[];
+  policyConfig: EventPolicyConfig | null;
 };
 
 export type EventDistanceDetail = {
@@ -305,6 +264,20 @@ export type EventWaiver = {
   title: string;
   body: string;
   versionHash: string;
+  signatureType: 'checkbox' | 'initials' | 'signature';
+  displayOrder: number;
+};
+
+export type EventPolicyConfig = {
+  refundsAllowed: boolean;
+  refundPolicyText: string | null;
+  refundDeadline: Date | null;
+  transfersAllowed: boolean;
+  transferPolicyText: string | null;
+  transferDeadline: Date | null;
+  deferralsAllowed: boolean;
+  deferralPolicyText: string | null;
+  deferralDeadline: Date | null;
 };
 
 export async function getEventEditionDetail(eventId: string): Promise<EventEditionDetail | null> {
@@ -316,6 +289,8 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
           organization: true,
         },
       },
+      heroImage: true,
+      policyConfig: true,
       distances: {
         where: isNull(eventDistances.deletedAt),
         orderBy: (d, { asc }) => [asc(d.sortOrder)],
@@ -333,6 +308,7 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
       },
       waivers: {
         where: (w, { isNull }) => isNull(w.deletedAt),
+        orderBy: (w, { asc }) => [asc(w.displayOrder)],
       },
     },
   });
@@ -355,7 +331,12 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
       .where(
         and(
           sql`${registrations.distanceId} IN ${distanceIds}`,
-          eq(registrations.status, 'confirmed'),
+          or(
+            eq(registrations.status, 'started'),
+            eq(registrations.status, 'submitted'),
+            eq(registrations.status, 'payment_pending'),
+            eq(registrations.status, 'confirmed'),
+          ),
           isNull(registrations.deletedAt),
         ),
       )
@@ -365,6 +346,7 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
       regCounts.map((r) => [r.distanceId, Number(r.count)]),
     );
   }
+
 
   return {
     id: edition.id,
@@ -379,6 +361,7 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
     registrationOpensAt: edition.registrationOpensAt,
     registrationClosesAt: edition.registrationClosesAt,
     isRegistrationPaused: edition.isRegistrationPaused,
+    sharedCapacity: edition.sharedCapacity,
     locationDisplay: edition.locationDisplay,
     address: edition.address,
     city: edition.city,
@@ -388,6 +371,7 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
     longitude: edition.longitude,
     externalUrl: edition.externalUrl,
     heroImageMediaId: edition.heroImageMediaId,
+    heroImageUrl: edition.heroImage?.deletedAt ? null : edition.heroImage?.blobUrl ?? null,
     seriesId: edition.seriesId,
     seriesName: edition.series.name,
     seriesSlug: edition.series.slug,
@@ -423,7 +407,22 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
       title: w.title,
       body: w.body,
       versionHash: w.versionHash,
+      signatureType: w.signatureType as EventWaiver['signatureType'],
+      displayOrder: w.displayOrder,
     })),
+    policyConfig: edition.policyConfig
+      ? {
+          refundsAllowed: edition.policyConfig.refundsAllowed,
+          refundPolicyText: edition.policyConfig.refundPolicyText,
+          refundDeadline: edition.policyConfig.refundDeadline,
+          transfersAllowed: edition.policyConfig.transfersAllowed,
+          transferPolicyText: edition.policyConfig.transferPolicyText,
+          transferDeadline: edition.policyConfig.transferDeadline,
+          deferralsAllowed: edition.policyConfig.deferralsAllowed,
+          deferralPolicyText: edition.policyConfig.deferralPolicyText,
+          deferralDeadline: edition.policyConfig.deferralDeadline,
+        }
+      : null,
   };
 }
 
@@ -435,6 +434,7 @@ export type PublicEventDetail = {
   publicCode: string;
   slug: string;
   editionLabel: string;
+  visibility: string;
   description: string | null;
   startsAt: Date | null;
   endsAt: Date | null;
@@ -458,6 +458,7 @@ export type PublicEventDetail = {
   distances: PublicDistanceInfo[];
   faqItems: EventFaqItem[];
   waivers: EventWaiver[];
+  policyConfig: EventPolicyConfig | null;
 };
 
 export type PublicDistanceInfo = {
@@ -493,10 +494,15 @@ export async function getPublicEventBySlug(
     where: and(
       eq(eventEditions.seriesId, series.id),
       eq(eventEditions.slug, editionSlug),
-      eq(eventEditions.visibility, 'published'),
+      or(
+        eq(eventEditions.visibility, 'published'),
+        eq(eventEditions.visibility, 'unlisted'),
+      ),
       isNull(eventEditions.deletedAt),
     ),
     with: {
+      heroImage: true,
+      policyConfig: true,
       distances: {
         where: isNull(eventDistances.deletedAt),
         orderBy: (d, { asc }) => [asc(d.sortOrder)],
@@ -514,6 +520,7 @@ export async function getPublicEventBySlug(
       },
       waivers: {
         where: (w, { isNull }) => isNull(w.deletedAt),
+        orderBy: (w, { asc }) => [asc(w.displayOrder)],
       },
     },
   });
@@ -536,7 +543,12 @@ export async function getPublicEventBySlug(
       .where(
         and(
           sql`${registrations.distanceId} IN ${distanceIds}`,
-          eq(registrations.status, 'confirmed'),
+          or(
+            eq(registrations.status, 'started'),
+            eq(registrations.status, 'submitted'),
+            eq(registrations.status, 'payment_pending'),
+            eq(registrations.status, 'confirmed'),
+          ),
           isNull(registrations.deletedAt),
         ),
       )
@@ -545,6 +557,32 @@ export async function getPublicEventBySlug(
     registrationCountMap = new Map(
       regCounts.map((r) => [r.distanceId, Number(r.count)]),
     );
+  }
+
+  const sharedCapacity = edition.sharedCapacity ?? null;
+  const hasSharedPool = Boolean(
+    sharedCapacity &&
+      edition.distances.some((d) => d.capacityScope === 'shared_pool'),
+  );
+  let sharedReservedCount = 0;
+
+  if (hasSharedPool) {
+    const sharedCounts = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.editionId, edition.id),
+          or(
+            eq(registrations.status, 'started'),
+            eq(registrations.status, 'submitted'),
+            eq(registrations.status, 'payment_pending'),
+            eq(registrations.status, 'confirmed'),
+          ),
+          isNull(registrations.deletedAt),
+        ),
+      );
+    sharedReservedCount = Number(sharedCounts[0]?.count ?? 0);
   }
 
   // Determine registration status
@@ -561,6 +599,7 @@ export async function getPublicEventBySlug(
     publicCode: edition.publicCode,
     slug: edition.slug,
     editionLabel: edition.editionLabel,
+    visibility: edition.visibility,
     description: edition.description,
     startsAt: edition.startsAt,
     endsAt: edition.endsAt,
@@ -577,13 +616,18 @@ export async function getPublicEventBySlug(
     latitude: edition.latitude,
     longitude: edition.longitude,
     externalUrl: edition.externalUrl,
-    heroImageUrl: null, // TODO: resolve media URL
+    heroImageUrl: edition.heroImage?.deletedAt ? null : edition.heroImage?.blobUrl ?? null,
     seriesName: series.name,
     sportType: series.sportType,
     organizationName: series.organization?.name ?? '',
     distances: edition.distances.map((d) => {
       const regCount = registrationCountMap.get(d.id) ?? 0;
-      const spotsRemaining = d.capacity ? d.capacity - regCount : null;
+      const spotsRemaining =
+        d.capacityScope === 'shared_pool' && sharedCapacity
+          ? Math.max(sharedCapacity - sharedReservedCount, 0)
+          : d.capacity
+            ? d.capacity - regCount
+            : null;
 
       return {
         id: d.id,
@@ -610,7 +654,22 @@ export async function getPublicEventBySlug(
       title: w.title,
       body: w.body,
       versionHash: w.versionHash,
+      signatureType: w.signatureType as EventWaiver['signatureType'],
+      displayOrder: w.displayOrder,
     })),
+    policyConfig: edition.policyConfig
+      ? {
+          refundsAllowed: edition.policyConfig.refundsAllowed,
+          refundPolicyText: edition.policyConfig.refundPolicyText,
+          refundDeadline: edition.policyConfig.refundDeadline,
+          transfersAllowed: edition.policyConfig.transfersAllowed,
+          transferPolicyText: edition.policyConfig.transferPolicyText,
+          transferDeadline: edition.policyConfig.transferDeadline,
+          deferralsAllowed: edition.policyConfig.deferralsAllowed,
+          deferralPolicyText: edition.policyConfig.deferralPolicyText,
+          deferralDeadline: edition.policyConfig.deferralDeadline,
+        }
+      : null,
   };
 }
 
@@ -627,6 +686,7 @@ export type PublicEventSummary = {
   seriesSlug: string;
   startsAt: Date | null;
   endsAt: Date | null;
+  timezone: string;
   locationDisplay: string | null;
   city: string | null;
   state: string | null;
@@ -669,6 +729,12 @@ export type SearchEventsResult = {
   };
 };
 
+export type PublishedEventRoute = {
+  seriesSlug: string;
+  editionSlug: string;
+  updatedAt: Date;
+};
+
 /**
  * Search published events with pagination and filtering.
  * Shared by API route and SSR pages to avoid self-fetch.
@@ -677,7 +743,9 @@ export async function searchPublicEvents(
   params: SearchEventsParams,
 ): Promise<SearchEventsResult> {
   // Signal Next.js that this function requires request context (enables dynamic Date usage)
-  await connection();
+  if (process.env.NODE_ENV !== 'test') {
+    await connection();
+  }
 
   const { q, sportType, state, city, dateFrom, dateTo, month, distanceKind, openOnly, isVirtual, distanceMin, distanceMax, lat, lng, radiusKm } = params;
   const normalizedQuery = q?.trim();
@@ -839,6 +907,7 @@ export async function searchPublicEvents(
       editionLabel: eventEditions.editionLabel,
       startsAt: eventEditions.startsAt,
       endsAt: eventEditions.endsAt,
+      timezone: eventEditions.timezone,
       locationDisplay: eventEditions.locationDisplay,
       city: eventEditions.city,
       state: eventEditions.state,
@@ -847,12 +916,17 @@ export async function searchPublicEvents(
       registrationClosesAt: eventEditions.registrationClosesAt,
       isRegistrationPaused: eventEditions.isRegistrationPaused,
       heroImageMediaId: eventEditions.heroImageMediaId,
+      heroImageUrl: media.blobUrl,
       seriesName: eventSeries.name,
       seriesSlug: eventSeries.slug,
       sportType: eventSeries.sportType,
     })
     .from(eventEditions)
     .innerJoin(eventSeries, eq(eventEditions.seriesId, eventSeries.id))
+    .leftJoin(
+      media,
+      and(eq(eventEditions.heroImageMediaId, media.id), isNull(media.deletedAt)),
+    )
     .where(and(...conditions))
     .orderBy(...orderBy)
     .limit(limit)
@@ -907,12 +981,13 @@ export async function searchPublicEvents(
       seriesSlug: event.seriesSlug,
       startsAt: event.startsAt,
       endsAt: event.endsAt,
+      timezone: event.timezone,
       locationDisplay: event.locationDisplay,
       city: event.city,
       state: event.state,
       country: event.country,
       sportType: event.sportType,
-      heroImageUrl: null, // TODO: resolve media URL
+      heroImageUrl: event.heroImageUrl ?? null,
       isRegistrationOpen,
       minPriceCents: priceInfo?.minPrice ?? null,
       currency: priceInfo?.currency ?? 'MXN',
@@ -939,4 +1014,28 @@ export async function searchPublicEvents(
       hasMore: page < totalPages,
     },
   };
+}
+
+/**
+ * Return published event routes for sitemap generation.
+ */
+export async function getPublishedEventRoutesForSitemap(): Promise<PublishedEventRoute[]> {
+  await connection();
+
+  return db
+    .select({
+      seriesSlug: eventSeries.slug,
+      editionSlug: eventEditions.slug,
+      updatedAt: eventEditions.updatedAt,
+    })
+    .from(eventEditions)
+    .innerJoin(eventSeries, eq(eventEditions.seriesId, eventSeries.id))
+    .where(
+      and(
+        eq(eventEditions.visibility, 'published'),
+        isNull(eventEditions.deletedAt),
+        isNull(eventSeries.deletedAt),
+      ),
+    )
+    .orderBy(desc(eventEditions.updatedAt));
 }

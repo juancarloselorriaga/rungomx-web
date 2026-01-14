@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { Switch } from '@/components/ui/switch';
 import { useRouter } from '@/i18n/navigation';
 import {
   updateEventEdition,
@@ -11,8 +12,17 @@ import {
   updateDistance,
   deleteDistance,
   updateDistancePrice,
+  checkSlugAvailability,
+  confirmEventMediaUpload,
+  updateEventCapacitySettings,
 } from '@/lib/events/actions';
 import { TERRAIN_TYPES, EVENT_VISIBILITY, type TerrainType } from '@/lib/events/constants';
+import {
+  EVENT_MEDIA_BLOB_PREFIX,
+  EVENT_MEDIA_IMAGE_TYPES,
+  EVENT_MEDIA_MAX_FILE_SIZE,
+} from '@/lib/events/media/constants';
+import { validateEventImageFile } from '@/lib/events/media/utils';
 import type { EventEditionDetail, EventDistanceDetail } from '@/lib/events/queries';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
@@ -20,6 +30,7 @@ import {
   Calendar,
   Check,
   Eye,
+  ImagePlus,
   Loader2,
   MapPin,
   Pause,
@@ -28,11 +39,15 @@ import {
   Save,
   Settings2,
   Trash2,
+  Users,
   X,
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
+import { upload } from '@vercel/blob/client';
+import { toast } from 'sonner';
+import Image from 'next/image';
 
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
@@ -41,9 +56,20 @@ const LocationField = dynamic(
 
 type EventSettingsFormProps = {
   event: EventEditionDetail;
+  wizardMode?: boolean;
 };
 
 type VisibilityType = 'draft' | 'published' | 'unlisted' | 'archived';
+type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error';
+
+const TIMEZONE_OPTIONS = [
+  { value: 'America/Mexico_City', label: 'America/Mexico_City' },
+  { value: 'America/Cancun', label: 'America/Cancun' },
+  { value: 'America/Tijuana', label: 'America/Tijuana' },
+  { value: 'America/Chihuahua', label: 'America/Chihuahua' },
+  { value: 'America/Hermosillo', label: 'America/Hermosillo' },
+  { value: 'America/Mazatlan', label: 'America/Mazatlan' },
+] as const;
 
 const visibilityStyles: Record<VisibilityType, string> = {
   draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
@@ -52,17 +78,40 @@ const visibilityStyles: Record<VisibilityType, string> = {
   archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
-export function EventSettingsForm({ event }: EventSettingsFormProps) {
+export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFormProps) {
   const t = useTranslations('pages.dashboard.events.settings');
+  const tSlug = useTranslations('pages.dashboard.events');
   const tVis = useTranslations('pages.dashboard.events.visibility');
+  const tDescription = useTranslations('pages.dashboard.events.settings.descriptionField');
+  const tCapacity = useTranslations('pages.dashboard.events.settings.capacity');
   const locale = useLocale();
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [editionSlugStatus, setEditionSlugStatus] = useState<SlugStatus>('idle');
+  const editionSlugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editionSlugRequestIdRef = useRef(0);
+  const heroImageInputRef = useRef<HTMLInputElement>(null);
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(event.heroImageUrl ?? null);
+  const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null);
+  const [isUploadingHeroImage, setIsUploadingHeroImage] = useState(false);
+  const [isSavingHeroImage, setIsSavingHeroImage] = useState(false);
+  const [capacityScope, setCapacityScope] = useState<'per_distance' | 'shared_pool'>(
+    event.sharedCapacity ? 'shared_pool' : 'per_distance',
+  );
+  const [sharedCapacityValue, setSharedCapacityValue] = useState(
+    event.sharedCapacity ? String(event.sharedCapacity) : '',
+  );
+  const [capacityError, setCapacityError] = useState<string | null>(null);
+  const [isUpdatingCapacity, setIsUpdatingCapacity] = useState(false);
+  const maxHeroImageSizeMb = Math.floor(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
+  const tHero = useTranslations('pages.dashboard.events.settings.heroImage');
 
   // Event details form
   const detailsForm = useForm<{
     editionLabel: string;
     slug: string;
+    description: string;
+    timezone: string;
     startsAt: string;
     endsAt: string;
     city: string;
@@ -78,6 +127,8 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
     defaultValues: {
       editionLabel: event.editionLabel,
       slug: event.slug,
+      description: event.description || '',
+      timezone: event.timezone,
       startsAt: event.startsAt ? formatDateForInput(event.startsAt) : '',
       endsAt: event.endsAt ? formatDateForInput(event.endsAt) : '',
       city: event.city || '',
@@ -91,10 +142,16 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
       registrationClosesAt: event.registrationClosesAt ? formatDateTimeForInput(event.registrationClosesAt) : '',
     },
     onSubmit: async (values) => {
+      if (editionSlugStatus === 'taken') {
+        return { ok: false, error: 'VALIDATION_ERROR', message: tSlug('slugStatus.taken') };
+      }
+
       const result = await updateEventEdition({
         editionId: event.id,
         editionLabel: values.editionLabel || undefined,
         slug: values.slug || undefined,
+        description: values.description.trim() || null,
+        timezone: values.timezone || undefined,
         startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : null,
         endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
         city: values.city || null,
@@ -135,6 +192,14 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
         startTransition(() => {
           router.refresh();
         });
+      } else {
+        const errorKey =
+          result.code === 'MISSING_DISTANCE'
+            ? 'errors.missingDistances'
+            : result.code === 'MISSING_PRICING'
+              ? 'errors.missingPrices'
+              : 'errors.generic';
+        toast.error(t(`visibility.${errorKey}`));
       }
     } finally {
       setIsUpdatingVisibility(false);
@@ -165,11 +230,235 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
 
   // Distance management state
   const [distances, setDistances] = useState<EventDistanceDetail[]>(event.distances);
-  const [showAddDistance, setShowAddDistance] = useState(false);
+  const [showAddDistance, setShowAddDistance] = useState(wizardMode && event.distances.length === 0);
   const [editingDistanceId, setEditingDistanceId] = useState<string | null>(null);
+
+  function handleEditionSlugChange(nextSlug: string) {
+    const trimmed = nextSlug.trim();
+    if (trimmed.length < 2 || trimmed === event.slug) {
+      setEditionSlugStatus('idle');
+      return;
+    }
+
+    if (editionSlugTimeoutRef.current) {
+      clearTimeout(editionSlugTimeoutRef.current);
+    }
+
+    setEditionSlugStatus('checking');
+    const requestId = ++editionSlugRequestIdRef.current;
+
+    editionSlugTimeoutRef.current = setTimeout(async () => {
+      const result = await checkSlugAvailability({
+        seriesId: event.seriesId,
+        slug: trimmed,
+      });
+
+      if (editionSlugRequestIdRef.current !== requestId) return;
+
+      if (!result.ok) {
+        setEditionSlugStatus('error');
+        return;
+      }
+
+      setEditionSlugStatus(result.data.available ? 'available' : 'taken');
+    }, 400);
+  }
+
+  const isEditionSlugTaken =
+    detailsForm.values.slug.trim().length >= 2 &&
+    detailsForm.values.slug.trim() !== event.slug &&
+    editionSlugStatus === 'taken';
+  const slugStatusClass = (status: SlugStatus) =>
+    status === 'available'
+      ? 'text-emerald-600'
+      : status === 'taken'
+        ? 'text-destructive'
+        : 'text-muted-foreground';
+
+  const slugStatusLabel = (status: SlugStatus) => {
+    switch (status) {
+      case 'checking':
+        return tSlug('slugStatus.checking');
+      case 'available':
+        return tSlug('slugStatus.available');
+      case 'taken':
+        return tSlug('slugStatus.taken');
+      case 'error':
+        return tSlug('slugStatus.error');
+      default:
+        return null;
+    }
+  };
+  const slugField = detailsForm.register('slug');
+  const heroImagePreview = heroPreviewUrl ?? heroImageUrl;
+  const isHeroImageBusy = isUploadingHeroImage || isSavingHeroImage;
+  const sharedCapacityEnabled = capacityScope === 'shared_pool';
+
+  useEffect(() => {
+    return () => {
+      if (heroPreviewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(heroPreviewUrl);
+      }
+    };
+  }, [heroPreviewUrl]);
+
+  async function handleHeroImageSelect(changeEvent: React.ChangeEvent<HTMLInputElement>) {
+    const file = changeEvent.target.files?.[0];
+    if (!file) return;
+
+    const validation = validateEventImageFile(file);
+    if (!validation.valid) {
+      const errorKey =
+        validation.reason === 'file_too_large' ? 'errors.fileTooLarge' : 'errors.invalidType';
+      toast.error(tHero(errorKey, { maxSize: maxHeroImageSizeMb }));
+      if (heroImageInputRef.current) {
+        heroImageInputRef.current.value = '';
+      }
+      return;
+    }
+
+    setIsUploadingHeroImage(true);
+    const previewUrl = URL.createObjectURL(file);
+    setHeroPreviewUrl(previewUrl);
+
+    try {
+      const safeName = file.name.replace(/\s+/g, '-');
+      const uploadPath = `${EVENT_MEDIA_BLOB_PREFIX}/${event.organizationId}/${event.id}/${crypto.randomUUID()}-${safeName}`;
+      const blob = await upload(uploadPath, file, {
+        access: 'public',
+        handleUploadUrl: '/api/events/media',
+        clientPayload: JSON.stringify({
+          organizationId: event.organizationId,
+          purpose: 'event-hero-image',
+        }),
+      });
+
+      const confirmResult = await confirmEventMediaUpload({
+        organizationId: event.organizationId,
+        blobUrl: blob.url,
+        kind: 'image',
+      });
+
+      if (!confirmResult.ok) {
+        throw new Error(confirmResult.error);
+      }
+
+      const updateResult = await updateEventEdition({
+        editionId: event.id,
+        heroImageMediaId: confirmResult.data.mediaId,
+      });
+
+      if (!updateResult.ok) {
+        throw new Error(updateResult.error);
+      }
+
+      setHeroImageUrl(blob.url);
+      setHeroPreviewUrl(null);
+      toast.success(tHero('success.uploaded'));
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error('[events] Hero image upload failed:', error);
+      toast.error(tHero('errors.uploadFailed'));
+      setHeroPreviewUrl(null);
+    } finally {
+      setIsUploadingHeroImage(false);
+      if (heroImageInputRef.current) {
+        heroImageInputRef.current.value = '';
+      }
+    }
+  }
+
+  async function handleHeroImageRemove() {
+    if (!heroImageUrl || isHeroImageBusy) return;
+
+    setIsSavingHeroImage(true);
+    try {
+      const result = await updateEventEdition({
+        editionId: event.id,
+        heroImageMediaId: null,
+      });
+
+      if (!result.ok) {
+        throw new Error(result.error);
+      }
+
+      setHeroImageUrl(null);
+      setHeroPreviewUrl(null);
+      toast.success(tHero('success.removed'));
+      startTransition(() => {
+        router.refresh();
+      });
+    } catch (error) {
+      console.error('[events] Hero image remove failed:', error);
+      toast.error(tHero('errors.saveFailed'));
+    } finally {
+      setIsSavingHeroImage(false);
+    }
+  }
+
+  function handleHeroImageUploadClick() {
+    heroImageInputRef.current?.click();
+  }
+
+  async function handleCapacitySave() {
+    setIsUpdatingCapacity(true);
+    setCapacityError(null);
+
+    let sharedCapacity: number | null = null;
+    if (sharedCapacityEnabled) {
+      const parsedCapacity = Number(sharedCapacityValue);
+      if (!sharedCapacityValue || Number.isNaN(parsedCapacity) || parsedCapacity <= 0) {
+        setCapacityError(tCapacity('errors.required'));
+        setIsUpdatingCapacity(false);
+        return;
+      }
+      sharedCapacity = parsedCapacity;
+    }
+
+    const result = await updateEventCapacitySettings({
+      editionId: event.id,
+      capacityScope: sharedCapacityEnabled ? 'shared_pool' : 'per_distance',
+      sharedCapacity: sharedCapacityEnabled ? sharedCapacity : null,
+    });
+
+    setIsUpdatingCapacity(false);
+
+    if (!result.ok) {
+      setCapacityError(tCapacity('errors.saveFailed'));
+      return;
+    }
+
+    setCapacityScope(result.data.capacityScope);
+    setSharedCapacityValue(result.data.sharedCapacity ? String(result.data.sharedCapacity) : '');
+    setDistances((prev) =>
+      prev.map((distance) => ({ ...distance, capacityScope: result.data.capacityScope })),
+    );
+    toast.success(tCapacity('success'));
+    startTransition(() => {
+      router.refresh();
+    });
+  }
 
   return (
     <div className="space-y-8">
+      {wizardMode && (
+        <section className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+          <p className="font-semibold text-sm">{t('wizard.title')}</p>
+          <p className="text-sm text-muted-foreground">{t('wizard.description')}</p>
+          <div className="mt-3 flex flex-col gap-1 text-sm">
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              <span>{t('wizard.steps.distance')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-primary" />
+              <span>{t('wizard.steps.publish')}</span>
+            </div>
+          </div>
+        </section>
+      )}
       {/* Visibility Section */}
       <section className="rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -242,6 +531,89 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
         </Button>
       </section>
 
+      {/* Hero Image Section */}
+      <section className="rounded-lg border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <ImagePlus className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">{tHero('title')}</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">{tHero('description')}</p>
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="relative aspect-[16/9] w-full max-w-xl overflow-hidden rounded-lg border bg-muted">
+            {heroImagePreview ? (
+              <Image
+                src={heroImagePreview}
+                alt={`${event.seriesName} ${event.editionLabel}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 768px"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {tHero('empty')}
+                </span>
+              </div>
+            )}
+            {isUploadingHeroImage && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <Loader2 className="h-6 w-6 animate-spin text-white" />
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-muted-foreground">
+              {tHero('helper', { maxSize: maxHeroImageSizeMb })}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleHeroImageUploadClick}
+                disabled={isHeroImageBusy}
+              >
+                <ImagePlus className="h-4 w-4 mr-2" />
+                {heroImagePreview ? tHero('actions.change') : tHero('actions.upload')}
+              </Button>
+
+              {heroImagePreview && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleHeroImageRemove}
+                  disabled={isHeroImageBusy}
+                  className="text-destructive hover:bg-destructive/10"
+                >
+                  {isSavingHeroImage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {tHero('actions.removing')}
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {tHero('actions.remove')}
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <input
+          ref={heroImageInputRef}
+          type="file"
+          accept={EVENT_MEDIA_IMAGE_TYPES.join(',')}
+          onChange={handleHeroImageSelect}
+          className="hidden"
+        />
+      </section>
+
       {/* Event Details Section */}
       <section className="rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
@@ -266,14 +638,54 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
             </FormField>
 
             <FormField label={t('details.slug')} error={detailsForm.errors.slug}>
-              <input
-                type="text"
-                {...detailsForm.register('slug')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
-                disabled={detailsForm.isSubmitting}
-              />
+              <div className="space-y-1">
+                <input
+                  type="text"
+                  name={slugField.name}
+                  value={slugField.value}
+                  onChange={(event) => {
+                    slugField.onChange(event);
+                    handleEditionSlugChange(event.target.value);
+                  }}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                  disabled={detailsForm.isSubmitting}
+                />
+                {detailsForm.values.slug.trim().length >= 2 &&
+                  detailsForm.values.slug.trim() !== event.slug &&
+                  editionSlugStatus !== 'idle' && (
+                  <p className={cn('text-xs', slugStatusClass(editionSlugStatus))}>
+                    {slugStatusLabel(editionSlugStatus)}
+                  </p>
+                )}
+              </div>
             </FormField>
           </div>
+
+          <FormField label={tDescription('label')} error={detailsForm.errors.description}>
+            <div className="space-y-2">
+              <textarea
+                {...detailsForm.register('description')}
+                rows={4}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
+                disabled={detailsForm.isSubmitting}
+              />
+              <p className="text-xs text-muted-foreground">{tDescription('help')}</p>
+            </div>
+          </FormField>
+
+          <FormField label={t('details.timezone')} error={detailsForm.errors.timezone}>
+            <select
+              {...detailsForm.register('timezone')}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              disabled={detailsForm.isSubmitting}
+            >
+              {TIMEZONE_OPTIONS.map((tz) => (
+                <option key={tz.value} value={tz.value}>
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
@@ -363,7 +775,7 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={detailsForm.isSubmitting}>
+            <Button type="submit" disabled={detailsForm.isSubmitting || isEditionSlugTaken}>
               {detailsForm.isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
@@ -373,6 +785,64 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
             </Button>
           </div>
         </Form>
+      </section>
+
+      {/* Capacity Section */}
+      <section className="rounded-lg border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Users className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">{tCapacity('title')}</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">{tCapacity('description')}</p>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">{tCapacity('toggleLabel')}</p>
+              <p className="text-xs text-muted-foreground">{tCapacity('toggleHelp')}</p>
+            </div>
+            <Switch
+              checked={sharedCapacityEnabled}
+              onCheckedChange={(checked) => {
+                setCapacityScope(checked ? 'shared_pool' : 'per_distance');
+                setCapacityError(null);
+              }}
+              disabled={isUpdatingCapacity}
+            />
+          </div>
+
+          {sharedCapacityEnabled && (
+            <FormField label={tCapacity('sharedCapacityLabel')} error={capacityError}>
+              <div className="space-y-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={sharedCapacityValue}
+                  onChange={(event) => setSharedCapacityValue(event.target.value)}
+                  placeholder={tCapacity('sharedCapacityPlaceholder')}
+                  className="w-full max-w-xs rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  disabled={isUpdatingCapacity}
+                />
+                <p className="text-xs text-muted-foreground">{tCapacity('sharedCapacityHelp')}</p>
+              </div>
+            </FormField>
+          )}
+
+          {!sharedCapacityEnabled && capacityError && (
+            <p className="text-sm text-destructive">{capacityError}</p>
+          )}
+
+          <div className="flex justify-end">
+            <Button type="button" onClick={handleCapacitySave} disabled={isUpdatingCapacity}>
+              {isUpdatingCapacity ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {tCapacity('save')}
+            </Button>
+          </div>
+        </div>
       </section>
 
       {/* Distances Section */}
@@ -393,6 +863,7 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
         {showAddDistance && (
           <AddDistanceForm
             eventId={event.id}
+            sharedCapacityEnabled={sharedCapacityEnabled}
             onSuccess={(newDistance) => {
               setDistances([...distances, newDistance]);
               setShowAddDistance(false);
@@ -415,6 +886,7 @@ export function EventSettingsForm({ event }: EventSettingsFormProps) {
                 key={distance.id}
                 distance={distance}
                 isEditing={editingDistanceId === distance.id}
+                sharedCapacityEnabled={sharedCapacityEnabled}
                 onEdit={() => setEditingDistanceId(distance.id)}
                 onCancelEdit={() => setEditingDistanceId(null)}
                 onUpdate={(updated) => {
@@ -451,14 +923,17 @@ function formatDateTimeForInput(date: Date): string {
 // Add Distance Form
 function AddDistanceForm({
   eventId,
+  sharedCapacityEnabled,
   onSuccess,
   onCancel,
 }: {
   eventId: string;
+  sharedCapacityEnabled: boolean;
   onSuccess: (distance: EventDistanceDetail) => void;
   onCancel: () => void;
 }) {
   const t = useTranslations('pages.dashboard.events.settings.distances');
+  const tCapacity = useTranslations('pages.dashboard.events.settings.capacity');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -469,6 +944,11 @@ function AddDistanceForm({
 
     const formData = new FormData(e.currentTarget);
     const terrainValue = formData.get('terrain') as string;
+    const capacityValue = sharedCapacityEnabled
+      ? undefined
+      : formData.get('capacity')
+        ? Number(formData.get('capacity'))
+        : undefined;
     const result = await createDistance({
       editionId: eventId,
       label: formData.get('label') as string,
@@ -478,9 +958,9 @@ function AddDistanceForm({
       distanceUnit: 'km',
       kind: 'distance',
       isVirtual: false,
-      capacityScope: 'per_distance',
+      capacityScope: sharedCapacityEnabled ? 'shared_pool' : 'per_distance',
       terrain: terrainValue ? (terrainValue as TerrainType) : undefined,
-      capacity: formData.get('capacity') ? Number(formData.get('capacity')) : undefined,
+      capacity: capacityValue,
       priceCents: Math.round(Number(formData.get('price')) * 100),
     });
 
@@ -502,7 +982,7 @@ function AddDistanceForm({
       terrain: null,
       isVirtual: result.data.isVirtual,
       capacity: result.data.capacity,
-      capacityScope: 'per_distance',
+      capacityScope: result.data.capacityScope,
       sortOrder: 0,
       priceCents: Math.round(Number(formData.get('price')) * 100),
       currency: 'MXN',
@@ -571,17 +1051,22 @@ function AddDistanceForm({
             />
           </div>
         </FormField>
-
-        <FormField label={t('capacity')}>
-          <input
-            type="number"
-            name="capacity"
-            min="1"
-            placeholder={t('unlimited')}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            disabled={isSubmitting}
-          />
-        </FormField>
+        {sharedCapacityEnabled ? (
+          <div className="text-xs text-muted-foreground flex items-center">
+            {tCapacity('sharedPoolHint')}
+          </div>
+        ) : (
+          <FormField label={t('capacity')}>
+            <input
+              type="number"
+              name="capacity"
+              min="1"
+              placeholder={t('unlimited')}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              disabled={isSubmitting}
+            />
+          </FormField>
+        )}
       </div>
 
       <div className="flex justify-end gap-2">
@@ -602,6 +1087,7 @@ function AddDistanceForm({
 function DistanceItem({
   distance,
   isEditing,
+  sharedCapacityEnabled,
   onEdit,
   onCancelEdit,
   onUpdate,
@@ -609,12 +1095,14 @@ function DistanceItem({
 }: {
   distance: EventDistanceDetail;
   isEditing: boolean;
+  sharedCapacityEnabled: boolean;
   onEdit: () => void;
   onCancelEdit: () => void;
   onUpdate: (updated: EventDistanceDetail) => void;
   onDelete: () => void;
 }) {
   const t = useTranslations('pages.dashboard.events.settings.distances');
+  const tCapacity = useTranslations('pages.dashboard.events.settings.capacity');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -642,6 +1130,11 @@ function DistanceItem({
     const newPriceCents = Math.round(Number(formData.get('price')) * 100);
     const terrainValue = formData.get('terrain') as string;
     const distanceValue = formData.get('distanceValue') as string;
+    const capacityValue = sharedCapacityEnabled
+      ? undefined
+      : formData.get('capacity')
+        ? Number(formData.get('capacity'))
+        : null;
 
     // Update distance
     const distanceResult = await updateDistance({
@@ -649,7 +1142,7 @@ function DistanceItem({
       label: formData.get('label') as string,
       distanceValue: distanceValue ? Number(distanceValue) : null,
       terrain: terrainValue ? (terrainValue as TerrainType) : null,
-      capacity: formData.get('capacity') ? Number(formData.get('capacity')) : null,
+      ...(sharedCapacityEnabled ? {} : { capacity: capacityValue }),
     });
 
     // Update price if changed
@@ -672,7 +1165,7 @@ function DistanceItem({
       label: formData.get('label') as string,
       distanceValue: distanceValue || null,
       terrain: terrainValue || null,
-      capacity: formData.get('capacity') ? Number(formData.get('capacity')) : null,
+      ...(sharedCapacityEnabled ? {} : { capacity: capacityValue ?? null }),
       priceCents: newPriceCents,
     });
   }
@@ -740,17 +1233,23 @@ function DistanceItem({
             </div>
           </FormField>
 
-          <FormField label={t('capacity')}>
-            <input
-              type="number"
-              name="capacity"
-              min="1"
-              defaultValue={distance.capacity || ''}
-              placeholder={t('unlimited')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-              disabled={isUpdating}
-            />
-          </FormField>
+          {sharedCapacityEnabled ? (
+            <div className="text-xs text-muted-foreground flex items-center">
+              {tCapacity('sharedPoolHint')}
+            </div>
+          ) : (
+            <FormField label={t('capacity')}>
+              <input
+                type="number"
+                name="capacity"
+                min="1"
+                defaultValue={distance.capacity || ''}
+                placeholder={t('unlimited')}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                disabled={isUpdating}
+              />
+            </FormField>
+          )}
         </div>
 
         <div className="flex justify-end gap-2">
@@ -780,7 +1279,11 @@ function DistanceItem({
         <p className="text-sm text-muted-foreground">
           {distance.distanceValue} {distance.distanceUnit}
           {distance.terrain && ` • ${distance.terrain}`}
-          {distance.capacity && ` • ${distance.capacity} spots`}
+          {sharedCapacityEnabled
+            ? ` • ${tCapacity('sharedPoolTag')}`
+            : distance.capacity
+              ? ` • ${distance.capacity} spots`
+              : ''}
         </p>
       </div>
       <div className="flex items-center gap-4">

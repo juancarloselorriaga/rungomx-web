@@ -91,6 +91,7 @@ export default async function EventsPage({ params, searchParams }: EventsPagePro
     ...event,
     startsAt: event.startsAt?.toISOString() ?? null,
     endsAt: event.endsAt?.toISOString() ?? null,
+    timezone: event.timezone,
   }));
 
   return (

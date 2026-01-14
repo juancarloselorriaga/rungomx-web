@@ -4,9 +4,11 @@ import { getPublicEventBySlug, type PublicDistanceInfo } from '@/lib/events/quer
 import type { SportType } from '@/lib/events/constants';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
+import { generateAlternateMetadata } from '@/utils/seo';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Calendar, ExternalLink, MapPin, Users } from 'lucide-react';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
@@ -15,7 +17,7 @@ type EventDetailPageProps = LocalePageProps & {
 };
 
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
-  const { seriesSlug, editionSlug } = await params;
+  const { locale, seriesSlug, editionSlug } = await params;
   const event = await getPublicEventBySlug(seriesSlug, editionSlug);
 
   if (!event) {
@@ -26,15 +28,26 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
   }
 
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
+  const { canonical, languages, openGraphLocale } = await generateAlternateMetadata(
+    locale,
+    '/events/[seriesSlug]/[editionSlug]',
+    { seriesSlug, editionSlug },
+  );
 
   return {
     title: `${event.seriesName} ${event.editionLabel} | RunGoMX`,
     description: event.description || `${event.seriesName} - ${location}`,
+    alternates: { canonical, languages },
     openGraph: {
       title: `${event.seriesName} ${event.editionLabel}`,
       description: event.description || `${event.seriesName} - ${location}`,
       type: 'website',
+      url: canonical,
+      locale: openGraphLocale,
     },
+    ...(event.visibility === 'unlisted'
+      ? { robots: { index: false, follow: false } }
+      : {}),
   };
 }
 
@@ -51,13 +64,73 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   // Format dates
   const eventDate = event.startsAt
-    ? new Date(event.startsAt).toLocaleDateString(locale, {
+    ? new Intl.DateTimeFormat(locale, {
         weekday: 'long',
         month: 'long',
         day: 'numeric',
         year: 'numeric',
-      })
+        timeZone: event.timezone,
+      }).format(new Date(event.startsAt))
     : null;
+
+  const formatRegistrationDate = (value: Date) =>
+    new Intl.DateTimeFormat(locale, {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      timeZone: event.timezone,
+    }).format(new Date(value));
+
+  const registrationOpensAt = event.registrationOpensAt
+    ? formatRegistrationDate(event.registrationOpensAt)
+    : null;
+  const registrationClosesAt = event.registrationClosesAt
+    ? formatRegistrationDate(event.registrationClosesAt)
+    : null;
+  const hasRegistrationDetails = Boolean(
+    registrationOpensAt || registrationClosesAt || event.isRegistrationPaused,
+  );
+  const policyCopy = {
+    refund: {
+      title: t('detail.policies.refund.title'),
+      deadline: (date: string) => t('detail.policies.refund.deadline', { date }),
+    },
+    transfer: {
+      title: t('detail.policies.transfer.title'),
+      deadline: (date: string) => t('detail.policies.transfer.deadline', { date }),
+    },
+    deferral: {
+      title: t('detail.policies.deferral.title'),
+      deadline: (date: string) => t('detail.policies.deferral.deadline', { date }),
+    },
+  } as const;
+  const policyConfig = event.policyConfig;
+  const policySections: Array<{
+    key: keyof typeof policyCopy;
+    enabled: boolean;
+    text: string | null;
+    deadline: Date | null;
+  }> = policyConfig
+    ? [
+        {
+          key: 'refund',
+          enabled: policyConfig.refundsAllowed,
+          text: policyConfig.refundPolicyText,
+          deadline: policyConfig.refundDeadline,
+        },
+        {
+          key: 'transfer',
+          enabled: policyConfig.transfersAllowed,
+          text: policyConfig.transferPolicyText,
+          deadline: policyConfig.transferDeadline,
+        },
+        {
+          key: 'deferral',
+          enabled: policyConfig.deferralsAllowed,
+          text: policyConfig.deferralPolicyText,
+          deadline: policyConfig.deferralDeadline,
+        },
+      ]
+    : [];
 
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
 
@@ -88,6 +161,19 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             <ArrowLeft className="h-4 w-4" />
             {t('title')}
           </Link>
+
+          {event.heroImageUrl && (
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border bg-muted mb-6">
+              <Image
+                src={event.heroImageUrl}
+                alt={`${event.seriesName} ${event.editionLabel}`}
+                fill
+                className="object-cover"
+                priority
+                sizes="100vw"
+              />
+            </div>
+          )}
 
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
             <div className="space-y-4">
@@ -216,6 +302,43 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 </div>
               </section>
             )}
+
+            {policySections.some((policy) => policy.enabled || policy.text || policy.deadline) && (
+              <section>
+                <h2 className="text-2xl font-bold mb-6">{t('detail.policies.title')}</h2>
+                <div className="grid gap-4">
+                  {policySections.map((policy) => {
+                    if (!policy.enabled && !policy.text && !policy.deadline) {
+                      return null;
+                    }
+
+                    const deadlineText = policy.deadline
+                      ? new Intl.DateTimeFormat(locale, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                          timeZone: event.timezone,
+                        }).format(new Date(policy.deadline))
+                      : null;
+
+                    return (
+                      <div key={policy.key} className="rounded-lg border bg-card p-4">
+                        <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
+                        {policy.text && (
+                          <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">
+                            {policy.text}
+                          </p>
+                        )}
+                        {deadlineText && (
+                          <p className="text-xs text-muted-foreground mt-3">
+                            {policyCopy[policy.key].deadline(deadlineText)}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -263,6 +386,23 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   Official website
                   <ExternalLink className="h-3 w-3" />
                 </a>
+              )}
+
+              {hasRegistrationDetails && (
+                <div className="border-t pt-4 space-y-2">
+                  <h3 className="font-semibold">{t('detail.registrationDetails')}</h3>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    {registrationOpensAt && (
+                      <p>{t('detail.registrationOpens', { date: registrationOpensAt })}</p>
+                    )}
+                    {registrationClosesAt && (
+                      <p>{t('detail.registrationCloses', { date: registrationClosesAt })}</p>
+                    )}
+                    {event.isRegistrationPaused && (
+                      <p className="text-destructive">{t('detail.registrationPaused')}</p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
