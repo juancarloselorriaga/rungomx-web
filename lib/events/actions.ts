@@ -10,7 +10,9 @@ import {
   eventDistances,
   eventEditions,
   eventFaqItems,
+  eventPolicyConfigs,
   eventSeries,
+  media,
   pricingTiers,
   registrants,
   registrations,
@@ -20,7 +22,7 @@ import {
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
-import { isEventsEnabled } from '@/lib/features/flags';
+import { isEventsEnabled, isEventsNoPaymentMode } from '@/lib/features/flags';
 import {
   canUserAccessSeries,
   getOrgMembership,
@@ -112,6 +114,7 @@ const createEventEditionSchema = z.object({
   latitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional(),
+  description: z.string().max(5000).optional(),
 });
 
 const updateEventEditionSchema = z.object({
@@ -136,12 +139,37 @@ const updateEventEditionSchema = z.object({
   latitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional().nullable(),
+  description: z.string().max(5000).optional().nullable(),
+  heroImageMediaId: z.string().uuid().optional().nullable(),
 });
 
 const updateEventVisibilitySchema = z.object({
   editionId: z.string().uuid(),
   visibility: z.enum(EVENT_VISIBILITY),
 });
+
+const updateEventCapacitySchema = z
+  .object({
+    editionId: z.string().uuid(),
+    capacityScope: z.enum(CAPACITY_SCOPES),
+    sharedCapacity: z.number().int().positive().optional().nullable(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.capacityScope === 'shared_pool' && !data.sharedCapacity) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Shared capacity is required for shared pool mode',
+        path: ['sharedCapacity'],
+      });
+    }
+    if (data.capacityScope === 'per_distance' && data.sharedCapacity) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Shared capacity must be empty for per-distance mode',
+        path: ['sharedCapacity'],
+      });
+    }
+  });
 
 const pauseRegistrationSchema = z.object({
   editionId: z.string().uuid(),
@@ -152,6 +180,25 @@ const checkSlugAvailabilitySchema = z.object({
   organizationId: z.string().uuid().optional(),
   seriesId: z.string().uuid().optional(),
   slug: z.string().min(2).max(100),
+});
+
+const updateEventPolicySchema = z.object({
+  editionId: z.string().uuid(),
+  refundsAllowed: z.boolean(),
+  refundPolicyText: z.string().max(5000).optional().nullable(),
+  refundDeadline: z.string().datetime().optional().nullable(),
+  transfersAllowed: z.boolean(),
+  transferPolicyText: z.string().max(5000).optional().nullable(),
+  transferDeadline: z.string().datetime().optional().nullable(),
+  deferralsAllowed: z.boolean(),
+  deferralPolicyText: z.string().max(5000).optional().nullable(),
+  deferralDeadline: z.string().datetime().optional().nullable(),
+});
+
+const confirmEventMediaUploadSchema = z.object({
+  organizationId: z.string().uuid(),
+  blobUrl: z.string().url(),
+  kind: z.enum(['image', 'pdf', 'document']).optional(),
 });
 
 // =============================================================================
@@ -177,6 +224,28 @@ type EventEditionData = {
   slug: string;
   visibility: string;
   seriesId: string;
+};
+
+type EventCapacityData = {
+  capacityScope: (typeof CAPACITY_SCOPES)[number];
+  sharedCapacity: number | null;
+};
+
+type EventPolicyConfigData = {
+  refundsAllowed: boolean;
+  refundPolicyText: string | null;
+  refundDeadline: string | null;
+  transfersAllowed: boolean;
+  transferPolicyText: string | null;
+  transferDeadline: string | null;
+  deferralsAllowed: boolean;
+  deferralPolicyText: string | null;
+  deferralDeadline: string | null;
+};
+
+type ConfirmEventMediaUploadData = {
+  mediaId: string;
+  blobUrl: string;
 };
 
 // =============================================================================
@@ -296,7 +365,22 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
   }
 
-  const { seriesId, editionLabel, slug, startsAt, endsAt, timezone, locationDisplay, city, state, country, latitude, longitude, externalUrl } = validated.data;
+  const {
+    seriesId,
+    editionLabel,
+    slug,
+    startsAt,
+    endsAt,
+    timezone,
+    locationDisplay,
+    city,
+    state,
+    country,
+    latitude,
+    longitude,
+    externalUrl,
+    description,
+  } = validated.data;
 
   // Check membership via series (internal staff with canManageEvents bypass this check)
   if (!authContext.permissions.canManageEvents) {
@@ -363,6 +447,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
         latitude,
         longitude,
         externalUrl,
+        description: description || undefined,
       })
       .returning();
 
@@ -454,6 +539,24 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     }
   }
 
+  if (updates.heroImageMediaId !== undefined && updates.heroImageMediaId !== null) {
+    const heroImage = await db.query.media.findFirst({
+      where: and(
+        eq(media.id, updates.heroImageMediaId),
+        eq(media.organizationId, edition.series.organizationId),
+        isNull(media.deletedAt),
+      ),
+    });
+
+    if (!heroImage) {
+      return { ok: false, error: 'Invalid hero image selection', code: 'VALIDATION_ERROR' };
+    }
+
+    if (heroImage.kind !== 'image') {
+      await db.update(media).set({ kind: 'image' }).where(eq(media.id, heroImage.id));
+    }
+  }
+
   // Build update object
   const updateData: Record<string, unknown> = {};
   if (updates.editionLabel !== undefined) updateData.editionLabel = updates.editionLabel;
@@ -471,6 +574,8 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.latitude !== undefined) updateData.latitude = updates.latitude;
   if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
+  if (updates.description !== undefined) updateData.description = updates.description;
+  if (updates.heroImageMediaId !== undefined) updateData.heroImageMediaId = updates.heroImageMediaId;
 
   // Guard: reject empty updates to prevent invalid SQL
   if (Object.keys(updateData).length === 0) {
@@ -530,6 +635,297 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
 });
 
 /**
+ * Update event capacity settings (shared pool vs per-distance).
+ * Requires edit permission in the organization.
+ */
+export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<EventCapacityData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof updateEventCapacitySchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) {
+    return { ok: false, ...accessError };
+  }
+
+  const validated = updateEventCapacitySchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, capacityScope, sharedCapacity } = validated.data;
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const nextSharedCapacity = capacityScope === 'shared_pool' ? sharedCapacity ?? null : null;
+  const previousScope = edition.sharedCapacity ? 'shared_pool' : 'per_distance';
+  const requestContext = await getRequestContext(await headers());
+
+  await db.transaction(async (tx) => {
+    const [updatedEdition] = await tx
+      .update(eventEditions)
+      .set({ sharedCapacity: nextSharedCapacity })
+      .where(eq(eventEditions.id, editionId))
+      .returning();
+
+    await tx
+      .update(eventDistances)
+      .set({ capacityScope })
+      .where(
+        and(
+          eq(eventDistances.editionId, editionId),
+          isNull(eventDistances.deletedAt),
+        ),
+      );
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'event.update',
+        entityType: 'event_edition',
+        entityId: editionId,
+        before: {
+          sharedCapacity: edition.sharedCapacity,
+          capacityScope: previousScope,
+        },
+        after: {
+          sharedCapacity: updatedEdition.sharedCapacity,
+          capacityScope,
+        },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error('Failed to create audit log');
+    }
+  });
+
+  return { ok: true, data: { capacityScope, sharedCapacity: nextSharedCapacity } };
+});
+
+/**
+ * Update event policy placeholders (refund/transfer/deferral).
+ * Requires edit permission in the organization.
+ */
+export const updateEventPolicyConfig = withAuthenticatedUser<ActionResult<EventPolicyConfigData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof updateEventPolicySchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) {
+    return { ok: false, ...accessError };
+  }
+
+  const validated = updateEventPolicySchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const data = validated.data;
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, data.editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditRegistrationSettings');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const normalizeText = (value: string | null | undefined) => value?.trim() || null;
+  const payload = {
+    refundsAllowed: data.refundsAllowed,
+    refundPolicyText: normalizeText(data.refundPolicyText),
+    refundDeadline: data.refundDeadline ? new Date(data.refundDeadline) : null,
+    transfersAllowed: data.transfersAllowed,
+    transferPolicyText: normalizeText(data.transferPolicyText),
+    transferDeadline: data.transferDeadline ? new Date(data.transferDeadline) : null,
+    deferralsAllowed: data.deferralsAllowed,
+    deferralPolicyText: normalizeText(data.deferralPolicyText),
+    deferralDeadline: data.deferralDeadline ? new Date(data.deferralDeadline) : null,
+  };
+
+  const requestContext = await getRequestContext(await headers());
+  const existing = await db.query.eventPolicyConfigs.findFirst({
+    where: eq(eventPolicyConfigs.editionId, data.editionId),
+  });
+
+  const updated = await db.transaction(async (tx) => {
+    const [record] = existing
+      ? await tx
+          .update(eventPolicyConfigs)
+          .set(payload)
+          .where(eq(eventPolicyConfigs.editionId, data.editionId))
+          .returning()
+      : await tx
+          .insert(eventPolicyConfigs)
+          .values({ editionId: data.editionId, ...payload })
+          .returning();
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'policy.update',
+        entityType: 'event_policy_config',
+        entityId: record.id,
+        before: existing ?? undefined,
+        after: record,
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error('Failed to create audit log');
+    }
+
+    return record;
+  });
+
+  return {
+    ok: true,
+    data: {
+      refundsAllowed: updated.refundsAllowed,
+      refundPolicyText: updated.refundPolicyText,
+      refundDeadline: updated.refundDeadline ? updated.refundDeadline.toISOString() : null,
+      transfersAllowed: updated.transfersAllowed,
+      transferPolicyText: updated.transferPolicyText,
+      transferDeadline: updated.transferDeadline ? updated.transferDeadline.toISOString() : null,
+      deferralsAllowed: updated.deferralsAllowed,
+      deferralPolicyText: updated.deferralPolicyText,
+      deferralDeadline: updated.deferralDeadline ? updated.deferralDeadline.toISOString() : null,
+    },
+  };
+});
+
+/**
+ * Confirm an event media upload by looking up the media record and returning its ID.
+ * Requires edit permission in the organization.
+ */
+export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<ConfirmEventMediaUploadData>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof confirmEventMediaUploadSchema>) => {
+  // Phase 0 gate: check global organizer permission + feature flag
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) {
+    return { ok: false, ...accessError };
+  }
+
+  const validated = confirmEventMediaUploadSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { organizationId, blobUrl, kind } = validated.data;
+  const expectedKind = kind ?? 'document';
+
+  if (!blobUrl.includes('vercel-storage.com') && !blobUrl.includes('blob.vercel-storage.com')) {
+    return { ok: false, error: 'Invalid media URL', code: 'VALIDATION_ERROR' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const MAX_MEDIA_LOOKUP_ATTEMPTS = 3;
+  let uploadedMedia = null as typeof media.$inferSelect | null;
+
+  for (let attempt = 0; attempt < MAX_MEDIA_LOOKUP_ATTEMPTS; attempt += 1) {
+    uploadedMedia = await db.query.media.findFirst({
+      where: and(
+        eq(media.organizationId, organizationId),
+        eq(media.blobUrl, blobUrl),
+        isNull(media.deletedAt),
+      ),
+    });
+
+    if (uploadedMedia) break;
+
+    if (attempt < MAX_MEDIA_LOOKUP_ATTEMPTS - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+    }
+  }
+
+  if (!uploadedMedia) {
+    const requestContext = await getRequestContext(await headers());
+    const [created] = await db
+      .insert(media)
+      .values({
+        organizationId,
+        blobUrl,
+        kind: expectedKind,
+        mimeType: null,
+        sizeBytes: null,
+      })
+      .returning();
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId,
+        actorUserId: authContext.user.id,
+        action: 'media.upload',
+        entityType: 'media',
+        entityId: created.id,
+        after: {
+          blobUrl: created.blobUrl,
+          kind: created.kind,
+          mimeType: created.mimeType,
+          sizeBytes: created.sizeBytes,
+          source: 'confirm',
+        },
+        request: requestContext,
+      },
+    );
+
+    if (!auditResult.ok) {
+      return { ok: false, error: 'Failed to create audit log', code: 'SERVER_ERROR' };
+    }
+
+    return { ok: true, data: { mediaId: created.id, blobUrl: created.blobUrl } };
+  }
+
+  if (uploadedMedia.kind !== expectedKind) {
+    await db
+      .update(media)
+      .set({ kind: expectedKind })
+      .where(eq(media.id, uploadedMedia.id));
+  }
+
+  return { ok: true, data: { mediaId: uploadedMedia.id, blobUrl: uploadedMedia.blobUrl } };
+});
+
+/**
  * Update event visibility (publish/unpublish/archive).
  * Requires publish permission for publish/unpublish/archive.
  */
@@ -570,6 +966,27 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
   }
 
   const previousVisibility = edition.visibility;
+
+  if (visibility === 'published' && previousVisibility !== 'published') {
+    const distances = await db.query.eventDistances.findMany({
+      where: and(eq(eventDistances.editionId, editionId), isNull(eventDistances.deletedAt)),
+      with: {
+        pricingTiers: {
+          where: isNull(pricingTiers.deletedAt),
+          limit: 1,
+        },
+      },
+    });
+
+    if (distances.length === 0) {
+      return { ok: false, error: 'Event must have at least one distance', code: 'MISSING_DISTANCE' };
+    }
+
+    const hasMissingPrices = distances.some((distance) => distance.pricingTiers.length === 0);
+    if (hasMissingPrices) {
+      return { ok: false, error: 'Each distance must have at least one price', code: 'MISSING_PRICING' };
+    }
+  }
 
   // Determine audit action based on visibility transition
   let action: 'event.publish' | 'event.unpublish' | 'event.archive' | 'event.update';
@@ -792,6 +1209,7 @@ type DistanceData = {
   distanceUnit: string;
   kind: string;
   capacity: number | null;
+  capacityScope: string;
   isVirtual: boolean;
   editionId: string;
 };
@@ -841,6 +1259,7 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
   const nextSortOrder = (existingDistances[0]?.sortOrder ?? -1) + 1;
 
   const requestContext = await getRequestContext(await headers());
+  const resolvedCapacityScope = edition.sharedCapacity ? 'shared_pool' : distanceData.capacityScope;
   const distance = await db.transaction(async (tx) => {
     const [newDistance] = await tx
       .insert(eventDistances)
@@ -855,7 +1274,7 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
         terrain: distanceData.terrain,
         isVirtual: distanceData.isVirtual,
         capacity: distanceData.capacity,
-        capacityScope: distanceData.capacityScope,
+        capacityScope: resolvedCapacityScope,
         sortOrder: nextSortOrder,
       })
       .returning();
@@ -898,6 +1317,7 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
       distanceUnit: distance.distanceUnit,
       kind: distance.kind,
       capacity: distance.capacity,
+      capacityScope: distance.capacityScope,
       isVirtual: distance.isVirtual,
       editionId: distance.editionId,
     },
@@ -1004,6 +1424,7 @@ export const updateDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
       distanceUnit: updated.distanceUnit,
       kind: updated.kind,
       capacity: updated.capacity,
+      capacityScope: updated.capacityScope,
       isVirtual: updated.isVirtual,
       editionId: updated.editionId,
     },
@@ -1537,12 +1958,19 @@ const createWaiverSchema = z.object({
   editionId: z.string().uuid(),
   title: z.string().min(1).max(255),
   body: z.string().min(1),
+  signatureType: z.enum(SIGNATURE_TYPES).default('checkbox'),
 });
 
 const updateWaiverSchema = z.object({
   waiverId: z.string().uuid(),
   title: z.string().min(1).max(255).optional(),
   body: z.string().min(1).optional(),
+  signatureType: z.enum(SIGNATURE_TYPES).optional(),
+});
+
+const reorderWaiversSchema = z.object({
+  editionId: z.string().uuid(),
+  waiverIds: z.array(z.string().uuid()).min(1),
 });
 
 type WaiverData = {
@@ -1550,6 +1978,8 @@ type WaiverData = {
   title: string;
   body: string;
   versionHash: string;
+  signatureType: string;
+  displayOrder: number;
   editionId: string;
 };
 
@@ -1578,7 +2008,7 @@ export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
     return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
   }
 
-  const { editionId, title, body } = validated.data;
+  const { editionId, title, body, signatureType } = validated.data;
 
   const edition = await db.query.eventEditions.findFirst({
     where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
@@ -1600,6 +2030,12 @@ export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
 
   const versionHash = await generateWaiverHash(body);
 
+  const existingWaivers = await db.query.waivers.findMany({
+    where: and(eq(waivers.editionId, editionId), isNull(waivers.deletedAt)),
+    orderBy: (w, { desc }) => [desc(w.displayOrder)],
+    limit: 1,
+  });
+  const nextDisplayOrder = (existingWaivers[0]?.displayOrder ?? -1) + 1;
   const requestContext = await getRequestContext(await headers());
   const waiver = await db.transaction(async (tx) => {
     const [newWaiver] = await tx
@@ -1609,7 +2045,8 @@ export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
         title,
         body,
         versionHash,
-        displayOrder: 0,
+        signatureType,
+        displayOrder: nextDisplayOrder,
       })
       .returning();
 
@@ -1640,6 +2077,8 @@ export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
       title: waiver.title,
       body: waiver.body,
       versionHash: waiver.versionHash,
+      signatureType: waiver.signatureType,
+      displayOrder: waiver.displayOrder,
       editionId: waiver.editionId,
     },
   };
@@ -1685,6 +2124,7 @@ export const updateWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
     updateData.body = updates.body;
     updateData.versionHash = await generateWaiverHash(updates.body);
   }
+  if (updates.signatureType !== undefined) updateData.signatureType = updates.signatureType;
 
   // Guard: reject empty updates to prevent invalid SQL
   if (Object.keys(updateData).length === 0) {
@@ -1735,9 +2175,89 @@ export const updateWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
       title: updated.title,
       body: updated.body,
       versionHash: updated.versionHash,
+      signatureType: updated.signatureType,
+      displayOrder: updated.displayOrder,
       editionId: updated.editionId,
     },
   };
+});
+
+/**
+ * Reorder waivers for an event edition.
+ */
+export const reorderWaivers = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof reorderWaiversSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = reorderWaiversSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, waiverIds } = validated.data;
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditRegistrationSettings');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const existing = await db.query.waivers.findMany({
+    where: and(eq(waivers.editionId, editionId), isNull(waivers.deletedAt)),
+    orderBy: (w, { asc }) => [asc(w.displayOrder)],
+  });
+  const existingIds = new Set(existing.map((w) => w.id));
+
+  const allValid = waiverIds.every((id) => existingIds.has(id));
+  if (!allValid || waiverIds.length !== existingIds.size) {
+    return { ok: false, error: 'Waiver list mismatch', code: 'VALIDATION_ERROR' };
+  }
+
+  const requestContext = await getRequestContext(await headers());
+  await db.transaction(async (tx) => {
+    await Promise.all(
+      waiverIds.map((id, index) =>
+        tx
+          .update(waivers)
+          .set({ displayOrder: index })
+          .where(eq(waivers.id, id)),
+      ),
+    );
+
+    const auditResult = await createAuditLog(
+      {
+        organizationId: edition.series.organizationId,
+        actorUserId: authContext.user.id,
+        action: 'waiver.reorder',
+        entityType: 'waiver',
+        entityId: waiverIds[0],
+        before: { order: existing.map((w) => w.id) },
+        after: { order: waiverIds },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error(`Failed to create audit log: ${auditResult.error}`);
+    }
+  });
+
+  return { ok: true, data: undefined };
 });
 
 // =============================================================================
@@ -1886,8 +2406,27 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
         return existingRegistration;
       }
 
-      // Check capacity with locked distance row
-      if (distance.capacity) {
+      // Check capacity with locked distance row (or shared pool on edition)
+      if (distance.capacityScope === 'shared_pool' && distance.edition.sharedCapacity) {
+        await tx.execute(sql`SELECT id FROM ${eventEditions} WHERE id = ${edition.id} FOR UPDATE`);
+
+        const reservedCount = await tx.query.registrations.findMany({
+          where: and(
+            eq(registrations.editionId, edition.id),
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+              eq(registrations.status, 'confirmed'),
+            ),
+            isNull(registrations.deletedAt),
+          ),
+        });
+
+        if (reservedCount.length >= distance.edition.sharedCapacity) {
+          throw new Error('SOLD_OUT');
+        }
+      } else if (distance.capacity) {
         const reservedCount = await tx.query.registrations.findMany({
           where: and(
             eq(registrations.distanceId, distanceId),
@@ -1970,43 +2509,67 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
     return { ok: false, error: 'Registration has already been submitted', code: 'ALREADY_SUBMITTED' };
   }
 
-  await db.transaction(async (tx) => {
-    // Create or update registrant
-    const existingRegistrant = await tx.query.registrants.findFirst({
-      where: eq(registrants.registrationId, registrationId),
-    });
+  try {
+    const updatedRegistration = await db.transaction(async (tx) => {
+      // Create or update registrant
+      const existingRegistrant = await tx.query.registrants.findFirst({
+        where: eq(registrants.registrationId, registrationId),
+      });
 
-    if (existingRegistrant) {
-      await tx
-        .update(registrants)
-        .set({
+      if (existingRegistrant) {
+        await tx
+          .update(registrants)
+          .set({
+            profileSnapshot,
+            division,
+            genderIdentity,
+            userId: authContext.user.id,
+          })
+          .where(eq(registrants.id, existingRegistrant.id));
+      } else {
+        await tx.insert(registrants).values({
+          registrationId,
+          userId: authContext.user.id,
           profileSnapshot,
           division,
           genderIdentity,
-          userId: authContext.user.id,
-        })
-        .where(eq(registrants.id, existingRegistrant.id));
-    } else {
-      await tx.insert(registrants).values({
-        registrationId,
-        userId: authContext.user.id,
-        profileSnapshot,
-        division,
-        genderIdentity,
-      });
-    }
-  });
+        });
+      }
 
-  return {
-    ok: true,
-    data: {
-      id: registration.id,
-      status: registration.status,
-      distanceId: registration.distanceId,
-      editionId: registration.editionId,
-      totalCents: registration.totalCents,
-    },
-  };
+      const [updated] = await tx
+        .update(registrations)
+        .set({ status: 'submitted' })
+        .where(
+          and(
+            eq(registrations.id, registrationId),
+            eq(registrations.status, 'started'),
+          ),
+        )
+        .returning();
+
+      if (!updated) {
+        throw new Error('INVALID_STATE_TRANSITION');
+      }
+
+      return updated;
+    });
+
+    return {
+      ok: true,
+      data: {
+        id: updatedRegistration.id,
+        status: updatedRegistration.status,
+        distanceId: updatedRegistration.distanceId,
+        editionId: updatedRegistration.editionId,
+        totalCents: updatedRegistration.totalCents,
+      },
+    };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'INVALID_STATE_TRANSITION') {
+      return { ok: false, error: 'Registration cannot be submitted from current state', code: 'INVALID_STATE' };
+    }
+    throw error;
+  }
 });
 
 /**
@@ -2046,6 +2609,24 @@ export const acceptWaiver = withAuthenticatedUser<ActionResult>({
     return { ok: false, error: 'Waiver not found', code: 'NOT_FOUND' };
   }
 
+  if (waiver.signatureType !== signatureType) {
+    return { ok: false, error: 'Signature type mismatch', code: 'VALIDATION_ERROR' };
+  }
+
+  const normalizedSignatureValue =
+    signatureType === 'checkbox' ? null : signatureValue?.trim() || null;
+
+  const existingAcceptance = await db.query.waiverAcceptances.findFirst({
+    where: and(
+      eq(waiverAcceptances.registrationId, registrationId),
+      eq(waiverAcceptances.waiverId, waiverId),
+    ),
+  });
+
+  if (existingAcceptance) {
+    return { ok: true, data: undefined };
+  }
+
   const headersList = await headers();
   const ipAddress = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || null;
   const userAgent = headersList.get('user-agent');
@@ -2053,11 +2634,12 @@ export const acceptWaiver = withAuthenticatedUser<ActionResult>({
   await db.insert(waiverAcceptances).values({
     registrationId,
     waiverId,
+    waiverVersionHash: waiver.versionHash,
     acceptedAt: new Date(),
     ipAddress,
     userAgent,
     signatureType,
-    signatureValue,
+    signatureValue: normalizedSignatureValue,
   });
 
   return { ok: true, data: undefined };
@@ -2082,31 +2664,43 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
       eq(registrations.buyerUserId, authContext.user.id),
       isNull(registrations.deletedAt),
     ),
-    with: {
-      registrants: true,
-      waiverAcceptances: true,
-      distance: true,
-      edition: {
-        with: {
-          waivers: { where: isNull(waivers.deletedAt) },
-          series: true,
-        },
-      },
-    },
   });
 
   if (!registration) {
     return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
+  const [registrationRegistrants, registrationWaivers, editionWaivers] = await Promise.all([
+    db.query.registrants.findMany({
+      where: eq(registrants.registrationId, registrationId),
+    }),
+    db.query.waiverAcceptances.findMany({
+      where: eq(waiverAcceptances.registrationId, registrationId),
+    }),
+    db.query.waivers.findMany({
+      where: and(
+        eq(waivers.editionId, registration.editionId),
+        isNull(waivers.deletedAt),
+      ),
+    }),
+  ]);
+
+  const distance = await db.query.eventDistances.findFirst({
+    where: eq(eventDistances.id, registration.distanceId),
+  });
+
+  if (!distance) {
+    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
+  }
+
   // Validate registrant info exists
-  if (!registration.registrants.length) {
+  if (!registrationRegistrants.length) {
     return { ok: false, error: 'Registrant info is required', code: 'MISSING_REGISTRANT' };
   }
 
   // Validate all waivers accepted
-  const requiredWaivers = registration.edition.waivers.map(w => w.id);
-  const acceptedWaivers = registration.waiverAcceptances.map(a => a.waiverId);
+  const requiredWaivers = editionWaivers.map(w => w.id);
+  const acceptedWaivers = registrationWaivers.map(a => a.waiverId);
   const missingWaivers = requiredWaivers.filter(w => !acceptedWaivers.includes(w));
 
   if (missingWaivers.length > 0) {
@@ -2147,8 +2741,28 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         throw new Error('REGISTRATION_CLOSED');
       }
 
-      // Lock distance row and re-check capacity transactionally
-      if (currentDistance.capacity) {
+      // Lock rows and re-check capacity transactionally
+      if (currentDistance.capacityScope === 'shared_pool' && currentEdition.sharedCapacity) {
+        await tx.execute(sql`SELECT id FROM ${eventEditions} WHERE id = ${registration.editionId} FOR UPDATE`);
+
+        const reservedCount = await tx.query.registrations.findMany({
+          where: and(
+            eq(registrations.editionId, registration.editionId),
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+              eq(registrations.status, 'confirmed'),
+            ),
+            isNull(registrations.deletedAt),
+            // Exclude the current registration from count
+            sql`${registrations.id} != ${registrationId}`,
+          ),
+        });
+        if (reservedCount.length >= currentEdition.sharedCapacity) {
+          throw new Error('SOLD_OUT');
+        }
+      } else if (currentDistance.capacity) {
         // SELECT FOR UPDATE to serialize capacity checks per distance
         await tx.execute(sql`SELECT id FROM ${eventDistances} WHERE id = ${registration.distanceId} FOR UPDATE`);
 
@@ -2172,10 +2786,12 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         }
       }
 
-      // Confirm the registration with guarded transition
-      const [confirmedReg] = await tx
+      const nextStatus = isEventsNoPaymentMode() ? 'confirmed' : 'payment_pending';
+
+      // Move registration forward with guarded transition
+      const [updatedReg] = await tx
         .update(registrations)
-        .set({ status: 'confirmed' })
+        .set({ status: nextStatus })
         .where(
           and(
             eq(registrations.id, registrationId),
@@ -2185,11 +2801,11 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         )
         .returning();
 
-      if (!confirmedReg) {
+      if (!updatedReg) {
         throw new Error('INVALID_STATE_TRANSITION');
       }
 
-      return confirmedReg;
+      return updatedReg;
     });
 
     return {
@@ -2218,7 +2834,7 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         case 'SOLD_OUT':
           return { ok: false, error: 'Distance is sold out', code: 'SOLD_OUT' };
         case 'INVALID_STATE_TRANSITION':
-          return { ok: false, error: 'Registration cannot be confirmed from current state', code: 'INVALID_STATE' };
+          return { ok: false, error: 'Registration cannot be finalized from current state', code: 'INVALID_STATE' };
       }
     }
     throw error;

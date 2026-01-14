@@ -43,6 +43,7 @@ export const AUDIT_ACTIONS = {
   'waiver.create': 'Waiver created',
   'waiver.update': 'Waiver updated',
   'waiver.delete': 'Waiver deleted',
+  'waiver.reorder': 'Waivers reordered',
 
   // FAQ Items
   'faq.create': 'FAQ item created',
@@ -52,6 +53,9 @@ export const AUDIT_ACTIONS = {
 
   // Website Content
   'website.update': 'Website content updated',
+
+  // Policies
+  'policy.update': 'Policy configuration updated',
 
   // Media
   'media.upload': 'Media uploaded',

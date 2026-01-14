@@ -69,6 +69,14 @@ export const routing = defineRouting({
       es: '/tablero/eventos',
       en: '/dashboard/events',
     },
+    '/dashboard/organizations': {
+      es: '/tablero/organizaciones',
+      en: '/dashboard/organizations',
+    },
+    '/dashboard/organizations/[orgId]': {
+      es: '/tablero/organizaciones/[orgId]',
+      en: '/dashboard/organizations/[orgId]',
+    },
     '/dashboard/events/new': {
       es: '/tablero/eventos/nuevo',
       en: '/dashboard/events/new',
@@ -84,6 +92,14 @@ export const routing = defineRouting({
     '/dashboard/events/[eventId]/faq': {
       es: '/tablero/eventos/[eventId]/faq',
       en: '/dashboard/events/[eventId]/faq',
+    },
+    '/dashboard/events/[eventId]/waivers': {
+      es: '/tablero/eventos/[eventId]/deslindes',
+      en: '/dashboard/events/[eventId]/waivers',
+    },
+    '/dashboard/events/[eventId]/policies': {
+      es: '/tablero/eventos/[eventId]/politicas',
+      en: '/dashboard/events/[eventId]/policies',
     },
     '/events/[seriesSlug]/[editionSlug]': {
       es: '/eventos/[seriesSlug]/[editionSlug]',

@@ -10,37 +10,34 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
-import { EventSettingsForm } from './event-settings-form';
+import { WaiverManager } from './waiver-manager';
 
-type SettingsPageProps = LocalePageProps & {
+type WaiverPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ params }: SettingsPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: WaiverPageProps): Promise<Metadata> {
   const { eventId } = await params;
   const event = await getEventEditionDetail(eventId);
 
   if (!event) {
     return {
-      title: 'Settings | RunGoMX',
+      title: 'Waivers | RunGoMX',
       robots: { index: false, follow: false },
     };
   }
 
   return {
-    title: `Settings - ${event.seriesName} ${event.editionLabel} | RunGoMX`,
+    title: `Waivers - ${event.seriesName} ${event.editionLabel} | RunGoMX`,
     robots: { index: false, follow: false },
   };
 }
 
-export default async function EventSettingsPage({ params, searchParams }: SettingsPageProps) {
+export default async function WaiverManagementPage({ params }: WaiverPageProps) {
   const { locale, eventId } = await params;
-  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/settings' });
-  const t = await getTranslations('pages.dashboard.events.settings');
+  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/waivers' });
+  const t = await getTranslations('pages.dashboard.events.waivers');
   const authContext = await getAuthContext();
-  const resolvedSearchParams = await searchParams;
-  const wizardMode = resolvedSearchParams?.wizard === '1';
 
   // Phase 0 gate
   const canAccessEvents =
@@ -63,7 +60,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <Link
           href={{ pathname: '/dashboard/events/[eventId]', params: { eventId } }}
@@ -76,7 +73,10 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <EventSettingsForm event={event} wizardMode={wizardMode} />
+      <WaiverManager
+        eventId={eventId}
+        initialWaivers={event.waivers}
+      />
     </div>
   );
 }

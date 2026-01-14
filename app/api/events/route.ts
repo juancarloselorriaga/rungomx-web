@@ -215,6 +215,7 @@ export async function GET(request: NextRequest) {
       ...event,
       startsAt: event.startsAt?.toISOString() ?? null,
       endsAt: event.endsAt?.toISOString() ?? null,
+      timezone: event.timezone,
     }));
 
     return NextResponse.json({

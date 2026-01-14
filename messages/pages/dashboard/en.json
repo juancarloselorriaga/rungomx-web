@@ -122,6 +122,8 @@
         "editionDetails": "Edition details",
         "editionLabelLabel": "Edition label",
         "editionSlugLabel": "Edition URL slug",
+        "descriptionLabel": "Event description",
+        "descriptionPlaceholder": "Share what makes this event special...",
         "dateLabel": "Event date",
         "locationLabel": "Event location",
         "cityLabel": "City",
@@ -138,6 +140,12 @@
       "published": "Published",
       "unlisted": "Unlisted",
       "archived": "Archived"
+    },
+    "slugStatus": {
+      "checking": "Checking availability...",
+      "available": "Available",
+      "taken": "Slug is already taken",
+      "error": "Could not verify; will validate on submit"
     },
     "sportTypes": {
       "trail_running": "Trail Running",
@@ -158,8 +166,24 @@
       "manageEventDescription": "Edit event details, dates, and registration settings",
       "manageFaq": "FAQ",
       "manageFaqDescription": "Add and edit frequently asked questions",
+      "manageWaivers": "Waivers",
+      "manageWaiversDescription": "Create and order participant waivers",
+      "managePolicies": "Policies",
+      "managePoliciesDescription": "Set refund, transfer, and deferral placeholders",
+      "publicCodeLabel": "Public code",
       "viewPublicPage": "View Public Page",
       "viewPublicPageDescription": "See how your event appears to participants",
+      "capacity": {
+        "title": "Capacity status",
+        "sharedPool": "Shared pool across all distances",
+        "perDistance": "Capacity set per distance",
+        "totalLabel": "Total capacity",
+        "remainingLabel": "Spots remaining",
+        "unlimited": "Unlimited",
+        "soldOut": "Sold out",
+        "distanceLimit": "{count, number} total spots",
+        "viewAll": "View all {count, number} more distances"
+      },
       "distancesTitle": "Distances",
       "noDistances": "No distances added yet. Go to settings to add distances.",
       "faqTitle": "FAQ",
@@ -180,12 +204,68 @@
       "save": "Save",
       "cancel": "Cancel"
     },
+    "waivers": {
+      "title": "Waivers",
+      "description": "Create waivers that participants must accept before registering.",
+      "emptyState": "No waivers yet. Add your first waiver to collect participant consent.",
+      "addFirst": "Add first waiver",
+      "addAnother": "Add another waiver",
+      "titleLabel": "Waiver title",
+      "titlePlaceholder": "Participant waiver",
+      "bodyLabel": "Waiver text",
+      "bodyPlaceholder": "Enter waiver terms...",
+      "signatureTypeLabel": "Signature type",
+      "signatureTypes": {
+        "checkbox": "Checkbox acknowledgment",
+        "initials": "Initials",
+        "signature": "Full signature"
+      },
+      "add": "Add waiver",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "policies": {
+      "title": "Policies",
+      "description": "Add placeholders for refund, transfer, and deferral policies.",
+      "save": "Save policies",
+      "refund": {
+        "title": "Refund policy",
+        "description": "Explain refund eligibility and deadlines.",
+        "textLabel": "Refund policy text",
+        "deadlineLabel": "Refund deadline"
+      },
+      "transfer": {
+        "title": "Transfer policy",
+        "description": "Explain transfer rules and deadlines.",
+        "textLabel": "Transfer policy text",
+        "deadlineLabel": "Transfer deadline"
+      },
+      "deferral": {
+        "title": "Deferral policy",
+        "description": "Explain deferral or credit rules and deadlines.",
+        "textLabel": "Deferral policy text",
+        "deadlineLabel": "Deferral deadline"
+      }
+    },
     "settings": {
       "title": "Event Settings",
       "description": "Configure your event details, visibility, distances, and registration settings.",
+      "wizard": {
+        "title": "Finish setting up your event",
+        "description": "Add your first distance, then publish when you are ready to share.",
+        "steps": {
+          "distance": "Add at least one distance with pricing.",
+          "publish": "Publish the event to make it visible."
+        }
+      },
       "visibility": {
         "title": "Event Visibility",
-        "description": "Control who can see and access your event. Published events appear in the public directory."
+        "description": "Control who can see and access your event. Published events appear in the public directory.",
+        "errors": {
+          "missingDistances": "Add at least one distance before publishing.",
+          "missingPrices": "Add at least one price for every distance before publishing.",
+          "generic": "Unable to update visibility. Please try again."
+        }
       },
       "registration": {
         "title": "Registration Status",
@@ -195,10 +275,54 @@
         "pause": "Pause Registration",
         "resume": "Resume Registration"
       },
+      "heroImage": {
+        "title": "Hero image",
+        "description": "Show a wide image on your event page and directory card.",
+        "helper": "Recommended 16:9. Max size {maxSize}MB.",
+        "empty": "No hero image yet",
+        "actions": {
+          "upload": "Upload image",
+          "change": "Change image",
+          "remove": "Remove image",
+          "removing": "Removing..."
+        },
+        "success": {
+          "uploaded": "Hero image updated.",
+          "removed": "Hero image removed."
+        },
+        "errors": {
+          "invalidType": "Please upload a JPG, PNG, WebP, or GIF.",
+          "fileTooLarge": "Image must be smaller than {maxSize}MB.",
+          "uploadFailed": "Upload failed. Please try again.",
+          "saveFailed": "Could not save the hero image."
+        }
+      },
+      "capacity": {
+        "title": "Capacity settings",
+        "description": "Choose whether capacity is per distance or shared across the event.",
+        "toggleLabel": "Share capacity across all distances",
+        "toggleHelp": "When enabled, all distances pull from one shared pool.",
+        "sharedCapacityLabel": "Total capacity",
+        "sharedCapacityPlaceholder": "e.g. 500",
+        "sharedCapacityHelp": "Total registrants allowed across all distances.",
+        "sharedPoolHint": "Shared pool mode enabled.",
+        "sharedPoolTag": "Shared pool",
+        "save": "Save capacity",
+        "success": "Capacity settings updated.",
+        "errors": {
+          "required": "Enter a total capacity to enable shared pool mode.",
+          "saveFailed": "Could not update capacity settings."
+        }
+      },
+      "descriptionField": {
+        "label": "Event description",
+        "help": "Give participants a clear overview of the event."
+      },
       "details": {
         "title": "Event Details",
         "editionLabel": "Edition Label",
         "slug": "URL Slug",
+        "timezone": "Timezone",
         "startsAt": "Start Date",
         "endsAt": "End Date",
         "locationSection": "Location",
@@ -227,6 +351,58 @@
         "cancel": "Cancel",
         "confirmDelete": "Are you sure you want to delete this distance? This action cannot be undone."
       }
+    }
+  },
+  "organizations": {
+    "title": "Organizations",
+    "description": "Manage your organization memberships and team access.",
+    "emptyState": {
+      "title": "No organizations yet",
+      "description": "You'll see organizations here once you're invited or create one."
+    },
+    "table": {
+      "slug": "Slug",
+      "member": "Member",
+      "email": "Email",
+      "role": "Role",
+      "actions": "Actions"
+    },
+    "detail": {
+      "backToList": "Back to organizations",
+      "slugLabel": "Slug",
+      "membersTitle": "Organization members",
+      "membersDescription": "Manage roles for your organization team.",
+      "membersReadOnly": "Only owners can add, remove, or change roles.",
+      "supportAccess": "Support access enabled for staff.",
+      "membersEmpty": "No members found for this organization.",
+      "addMemberTitle": "Add a member",
+      "addMemberDescription": "Invite teammates by email and assign their role.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "member@example.com",
+      "roleLabel": "Role"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "editor": "Editor",
+      "viewer": "Viewer",
+      "support": "Support"
+    },
+    "actions": {
+      "add": "Add member",
+      "remove": "Remove"
+    },
+    "labels": {
+      "you": "You"
+    },
+    "errors": {
+      "unauthenticated": "Sign in to manage members.",
+      "forbidden": "You do not have permission to manage members.",
+      "validation": "Please check the form and try again.",
+      "notFound": "No user found with that email.",
+      "alreadyMember": "That user is already a member.",
+      "lastOwner": "You must keep at least one owner.",
+      "generic": "Something went wrong. Please try again."
     }
   }
 }

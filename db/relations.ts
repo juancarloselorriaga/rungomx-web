@@ -7,6 +7,7 @@ import {
   eventDistances,
   eventEditions,
   eventFaqItems,
+  eventPolicyConfigs,
   eventSeries,
   eventWebsiteContent,
   media,
@@ -128,6 +129,10 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   heroImage: one(media, {
     fields: [eventEditions.heroImageMediaId],
     references: [media.id],
+  }),
+  policyConfig: one(eventPolicyConfigs, {
+    fields: [eventEditions.id],
+    references: [eventPolicyConfigs.editionId],
   }),
   distances: many(eventDistances),
   registrations: many(registrations),

@@ -1,5 +1,6 @@
 import { siteUrl } from '@/config/url';
 import { type AppLocale, routing } from '@/i18n/routing';
+import { getPublishedEventRoutesForSitemap } from '@/lib/events/queries';
 import { MetadataRoute } from 'next';
 
 // Capture timestamp once at module load for deterministic lastModified
@@ -54,7 +55,13 @@ function resolvePrefix(locale: AppLocale): string {
   return `/${locale}`;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+const applyParams = (path: string, params: Record<string, string>) =>
+  path.replace(/\[\.{3}?([\w-]+)]|\[([\w-]+)]/g, (_, catchAll, single) => {
+    const key = (catchAll || single) as string;
+    return params[key] ?? `[${key}]`;
+  });
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sitemapEntries: MetadataRoute.Sitemap = [];
 
   staticRoutes.forEach((pathname) => {
@@ -69,6 +76,38 @@ export default function sitemap(): MetadataRoute.Sitemap {
         changeFrequency: pathname === '/' ? 'daily' : 'weekly',
         priority: pathname === '/' ? 1.0 : 0.8,
       });
+    });
+  });
+
+  const publishedEvents = await getPublishedEventRoutesForSitemap();
+  const eventPathname = '/events/[seriesSlug]/[editionSlug]';
+
+  publishedEvents.forEach((event) => {
+    const alternates: Record<string, string> = {};
+
+    routing.locales.forEach((locale) => {
+      const externalPath = resolveExternalPathname(locale, eventPathname);
+      const localizedPath = applyParams(externalPath, {
+        seriesSlug: event.seriesSlug,
+        editionSlug: event.editionSlug,
+      });
+      const prefix = resolvePrefix(locale);
+      alternates[locale] = `${siteUrl}${prefix}${localizedPath === '/' ? '' : localizedPath}`;
+    });
+
+    const canonicalLocale = routing.defaultLocale;
+    const canonicalPath = applyParams(
+      resolveExternalPathname(canonicalLocale, eventPathname),
+      { seriesSlug: event.seriesSlug, editionSlug: event.editionSlug },
+    );
+    const canonicalUrl = `${siteUrl}${resolvePrefix(canonicalLocale)}${canonicalPath === '/' ? '' : canonicalPath}`;
+
+    sitemapEntries.push({
+      url: canonicalUrl,
+      lastModified: event.updatedAt ?? buildTimestamp,
+      alternates: { languages: alternates },
+      changeFrequency: 'weekly',
+      priority: 0.7,
     });
   });
 

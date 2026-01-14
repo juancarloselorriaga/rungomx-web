@@ -249,6 +249,18 @@
           "imageAlt": "Dashboard de gestión de eventos"
         }
       }
+    },
+    "DashboardOrganizations": {
+      "metadata": {
+        "title": "Organizaciones | RunGoMX",
+        "description": "Administra las organizaciones y el acceso del equipo en RunGoMX.",
+        "keywords": ["organizaciones", "acceso de equipo", "gestión de eventos"],
+        "openGraph": {
+          "title": "Organizaciones | RunGoMX",
+          "description": "Administra las organizaciones y el acceso del equipo en RunGoMX.",
+          "imageAlt": "Dashboard de organizaciones"
+        }
+      }
     }
   },
   "Components": {

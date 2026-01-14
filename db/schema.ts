@@ -307,6 +307,7 @@ export const eventEditions = pgTable(
     registrationOpensAt: timestamp('registration_opens_at', { withTimezone: true, mode: 'date' }),
     registrationClosesAt: timestamp('registration_closes_at', { withTimezone: true, mode: 'date' }),
     isRegistrationPaused: boolean('is_registration_paused').notNull().default(false),
+    sharedCapacity: integer('shared_capacity'),
     locationDisplay: varchar('location_display', { length: 255 }),
     address: varchar('address', { length: 500 }),
     city: varchar('city', { length: 100 }),
@@ -434,6 +435,7 @@ export const waivers = pgTable('waivers', {
   title: varchar('title', { length: 255 }).notNull(),
   body: text('body').notNull(),
   versionHash: varchar('version_hash', { length: 64 }).notNull(), // SHA-256 of body for tracking changes
+  signatureType: varchar('signature_type', { length: 20 }).notNull().default('checkbox'),
   displayOrder: integer('display_order').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
@@ -451,13 +453,19 @@ export const waiverAcceptances = pgTable('waiver_acceptances', {
   waiverId: uuid('waiver_id')
     .notNull()
     .references(() => waivers.id, { onDelete: 'cascade' }),
+  waiverVersionHash: varchar('waiver_version_hash', { length: 64 }).notNull(),
   acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }).notNull(),
   ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
   userAgent: text('user_agent'),
   signatureType: varchar('signature_type', { length: 20 }).notNull(), // 'checkbox' | 'initials' | 'signature'
   signatureValue: text('signature_value'), // For initials/signature, stores the value
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-});
+}, (table) => ({
+  registrationWaiverUnique: uniqueIndex('waiver_acceptances_registration_waiver_idx').on(
+    table.registrationId,
+    table.waiverId,
+  ),
+}));
 
 export const eventWebsiteContent = pgTable('event_website_content', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -488,6 +496,28 @@ export const eventFaqItems = pgTable('event_faq_items', {
     .notNull()
     .$onUpdate(() => new Date()),
   deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const eventPolicyConfigs = pgTable('event_policy_configs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' })
+    .unique(),
+  refundsAllowed: boolean('refunds_allowed').notNull().default(false),
+  refundPolicyText: text('refund_policy_text'),
+  refundDeadline: timestamp('refund_deadline', { withTimezone: true, mode: 'date' }),
+  transfersAllowed: boolean('transfers_allowed').notNull().default(false),
+  transferPolicyText: text('transfer_policy_text'),
+  transferDeadline: timestamp('transfer_deadline', { withTimezone: true, mode: 'date' }),
+  deferralsAllowed: boolean('deferrals_allowed').notNull().default(false),
+  deferralPolicyText: text('deferral_policy_text'),
+  deferralDeadline: timestamp('deferral_deadline', { withTimezone: true, mode: 'date' }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
 });
 
 export const media = pgTable('media', {

@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
-import { createEventSeries, createEventEdition } from '@/lib/events/actions';
+import { checkSlugAvailability, createEventSeries, createEventEdition } from '@/lib/events/actions';
 import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 
 const LocationField = dynamic(
@@ -38,6 +38,7 @@ type CreateEventFormProps = {
 };
 
 type Step = 'organization' | 'event';
+type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error';
 
 // Utility to generate slug from name
 function generateSlug(name: string): string {
@@ -52,6 +53,7 @@ function generateSlug(name: string): string {
 
 export function CreateEventForm({ organizations }: CreateEventFormProps) {
   const t = useTranslations('pages.dashboard.events.createEvent');
+  const tSlug = useTranslations('pages.dashboard.events');
   const tSport = useTranslations('pages.dashboard.events.sportTypes');
   const router = useRouter();
   const [step, setStep] = useState<Step>('organization');
@@ -90,6 +92,12 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
   // Event step state  
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
   const [showNewSeries, setShowNewSeries] = useState(true);
+  const [seriesSlugStatus, setSeriesSlugStatus] = useState<SlugStatus>('idle');
+  const [editionSlugStatus, setEditionSlugStatus] = useState<SlugStatus>('idle');
+  const seriesSlugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editionSlugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seriesSlugRequestIdRef = useRef(0);
+  const editionSlugRequestIdRef = useRef(0);
 
   // Validate organization step
   const canProceedToEvent = showNewOrg
@@ -138,6 +146,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       sportType: SportType;
       editionLabel: string;
       editionSlug: string;
+      description: string;
       startsAt: string;
       city: string;
       state: string;
@@ -153,6 +162,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       sportType: 'trail_running',
       editionLabel: new Date().getFullYear().toString(),
       editionSlug: new Date().getFullYear().toString(),
+      description: '',
       startsAt: '',
       city: '',
       state: '',
@@ -163,6 +173,10 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
     onSubmit: async (values) => {
       if (!selectedOrgId) {
         return { ok: false, error: 'VALIDATION_ERROR', message: 'Organization required' };
+      }
+
+      if ((showNewSeries && seriesSlugStatus === 'taken') || editionSlugStatus === 'taken') {
+        return { ok: false, error: 'VALIDATION_ERROR', message: tSlug('slugStatus.taken') };
       }
 
       let seriesId = selectedSeriesId;
@@ -188,6 +202,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         seriesId,
         editionLabel: values.editionLabel.trim(),
         slug: values.editionSlug.trim(),
+        description: values.description.trim() || undefined,
         timezone: 'America/Mexico_City',
         country: 'MX',
         startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : undefined,
@@ -206,8 +221,9 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
     },
     onSuccess: (result) => {
       router.push({
-        pathname: '/dashboard/events/[eventId]',
+        pathname: '/dashboard/events/[eventId]/settings',
         params: { eventId: result.eventId },
+        query: { wizard: '1' },
       });
     },
   });
@@ -218,16 +234,115 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
   // Handle series name change with auto-slug
   function handleSeriesNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const name = e.target.value;
+    const nextSlug = generateSlug(name);
     form.setFieldValue('seriesName', name);
     if (!seriesSlugManuallyEdited && showNewSeries) {
-      form.setFieldValue('seriesSlug', generateSlug(name));
+      form.setFieldValue('seriesSlug', nextSlug);
+      scheduleSeriesSlugCheck(nextSlug);
     }
   }
 
   function handleSeriesSlugChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const nextSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     setSeriesSlugManuallyEdited(true);
-    form.setFieldValue('seriesSlug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
+    form.setFieldValue('seriesSlug', nextSlug);
+    scheduleSeriesSlugCheck(nextSlug);
   }
+
+  function scheduleSeriesSlugCheck(nextSlug: string) {
+    if (!showNewSeries) {
+      setSeriesSlugStatus('idle');
+      return;
+    }
+
+    const trimmed = nextSlug.trim();
+    if (!selectedOrgId || trimmed.length < 2) {
+      setSeriesSlugStatus('idle');
+      return;
+    }
+
+    if (seriesSlugTimeoutRef.current) {
+      clearTimeout(seriesSlugTimeoutRef.current);
+    }
+
+    setSeriesSlugStatus('checking');
+    const requestId = ++seriesSlugRequestIdRef.current;
+
+    seriesSlugTimeoutRef.current = setTimeout(async () => {
+      const result = await checkSlugAvailability({
+        organizationId: selectedOrgId,
+        slug: trimmed,
+      });
+
+      if (seriesSlugRequestIdRef.current !== requestId) return;
+
+      if (!result.ok) {
+        setSeriesSlugStatus('error');
+        return;
+      }
+
+      setSeriesSlugStatus(result.data.available ? 'available' : 'taken');
+    }, 400);
+  }
+
+  function handleEditionSlugChange(nextSlug: string, seriesIdOverride?: string) {
+    const seriesId = seriesIdOverride ?? selectedSeriesId;
+    const trimmed = nextSlug.trim();
+    if (showNewSeries || trimmed.length < 2 || !seriesId) {
+      setEditionSlugStatus('idle');
+      return;
+    }
+
+    if (editionSlugTimeoutRef.current) {
+      clearTimeout(editionSlugTimeoutRef.current);
+    }
+
+    setEditionSlugStatus('checking');
+    const requestId = ++editionSlugRequestIdRef.current;
+
+    editionSlugTimeoutRef.current = setTimeout(async () => {
+      const result = await checkSlugAvailability({
+        seriesId,
+        slug: trimmed,
+      });
+
+      if (editionSlugRequestIdRef.current !== requestId) return;
+
+      if (!result.ok) {
+        setEditionSlugStatus('error');
+        return;
+      }
+
+      setEditionSlugStatus(result.data.available ? 'available' : 'taken');
+    }, 400);
+  }
+
+  const isSeriesSlugTaken =
+    showNewSeries && form.values.seriesSlug.trim().length >= 2 && seriesSlugStatus === 'taken';
+  const isEditionSlugTaken =
+    !showNewSeries && form.values.editionSlug.trim().length >= 2 && editionSlugStatus === 'taken';
+  const slugStatusClass = (status: SlugStatus) =>
+    status === 'available'
+      ? 'text-emerald-600'
+      : status === 'taken'
+        ? 'text-destructive'
+        : 'text-muted-foreground';
+
+  const slugStatusLabel = (status: SlugStatus) => {
+    switch (status) {
+      case 'checking':
+        return tSlug('slugStatus.checking');
+      case 'available':
+        return tSlug('slugStatus.available');
+      case 'taken':
+        return tSlug('slugStatus.taken');
+      case 'error':
+        return tSlug('slugStatus.error');
+      default:
+        return null;
+    }
+  };
+  const editionSlugField = form.register('editionSlug');
 
   // When selecting existing series, populate sport type
   useEffect(() => {
@@ -405,6 +520,8 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                   onClick={() => {
                     setShowNewSeries(true);
                     setSelectedSeriesId(null);
+                    setSeriesSlugStatus('idle');
+                    setEditionSlugStatus('idle');
                   }}
                   className={cn(
                     'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
@@ -422,6 +539,8 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                     onClick={() => {
                       setShowNewSeries(false);
                       setSelectedSeriesId(series.id);
+                      setSeriesSlugStatus('idle');
+                      handleEditionSlugChange(form.values.editionSlug, series.id);
                     }}
                     className={cn(
                       'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
@@ -460,14 +579,23 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                 required
                 error={form.errors.seriesSlug}
               >
-                <input
-                  type="text"
-                  value={form.values.seriesSlug}
-                  onChange={handleSeriesSlugChange}
-                  placeholder="ultra-trail-mx"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
-                  disabled={form.isSubmitting}
-                />
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    value={form.values.seriesSlug}
+                    onChange={handleSeriesSlugChange}
+                    placeholder="ultra-trail-mx"
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                    disabled={form.isSubmitting}
+                  />
+                  {showNewSeries &&
+                    form.values.seriesSlug.trim().length >= 2 &&
+                    seriesSlugStatus !== 'idle' && (
+                    <p className={cn('text-xs', slugStatusClass(seriesSlugStatus))}>
+                      {slugStatusLabel(seriesSlugStatus)}
+                    </p>
+                  )}
+                </div>
               </FormField>
 
               <FormField
@@ -514,15 +642,40 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                 required
                 error={form.errors.editionSlug}
               >
-                <input
-                  type="text"
-                  {...form.register('editionSlug')}
-                  placeholder="2025"
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
-                  disabled={form.isSubmitting}
-                />
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    name={editionSlugField.name}
+                    value={editionSlugField.value}
+                    onChange={(event) => {
+                      editionSlugField.onChange(event);
+                      handleEditionSlugChange(event.target.value);
+                    }}
+                    placeholder="2025"
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                    disabled={form.isSubmitting}
+                  />
+                  {form.values.editionSlug.trim().length >= 2 && editionSlugStatus !== 'idle' && (
+                    <p className={cn('text-xs', slugStatusClass(editionSlugStatus))}>
+                      {slugStatusLabel(editionSlugStatus)}
+                    </p>
+                  )}
+                </div>
               </FormField>
             </div>
+
+            <FormField
+              label={t('event.descriptionLabel')}
+              error={form.errors.description}
+            >
+              <textarea
+                {...form.register('description')}
+                placeholder={t('event.descriptionPlaceholder')}
+                rows={4}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
+                disabled={form.isSubmitting}
+              />
+            </FormField>
 
             <FormField
               label={t('event.dateLabel')}
@@ -568,7 +721,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={form.isSubmitting}>
+            <Button type="submit" disabled={form.isSubmitting || isSeriesSlugTaken || isEditionSlugTaken}>
               {form.isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (

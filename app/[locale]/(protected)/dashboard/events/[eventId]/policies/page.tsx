@@ -10,39 +10,35 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
-import { EventSettingsForm } from './event-settings-form';
+import { PoliciesForm } from './policies-form';
 
-type SettingsPageProps = LocalePageProps & {
+type PoliciesPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-export async function generateMetadata({ params }: SettingsPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PoliciesPageProps): Promise<Metadata> {
   const { eventId } = await params;
   const event = await getEventEditionDetail(eventId);
 
   if (!event) {
     return {
-      title: 'Settings | RunGoMX',
+      title: 'Policies | RunGoMX',
       robots: { index: false, follow: false },
     };
   }
 
   return {
-    title: `Settings - ${event.seriesName} ${event.editionLabel} | RunGoMX`,
+    title: `Policies - ${event.seriesName} ${event.editionLabel} | RunGoMX`,
     robots: { index: false, follow: false },
   };
 }
 
-export default async function EventSettingsPage({ params, searchParams }: SettingsPageProps) {
+export default async function PoliciesPage({ params }: PoliciesPageProps) {
   const { locale, eventId } = await params;
-  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/settings' });
-  const t = await getTranslations('pages.dashboard.events.settings');
+  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/policies' });
+  const t = await getTranslations('pages.dashboard.events.policies');
   const authContext = await getAuthContext();
-  const resolvedSearchParams = await searchParams;
-  const wizardMode = resolvedSearchParams?.wizard === '1';
 
-  // Phase 0 gate
   const canAccessEvents =
     (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
     authContext.permissions.canManageEvents;
@@ -50,20 +46,18 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
     redirect(getPathname({ href: '/dashboard', locale }));
   }
 
-  // Get event details
   const event = await getEventEditionDetail(eventId);
   if (!event) {
     notFound();
   }
 
-  // Check if user can access this event's series
   const canAccess = await canUserAccessSeries(authContext.user!.id, event.seriesId);
   if (!canAccess) {
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6">
       <div>
         <Link
           href={{ pathname: '/dashboard/events/[eventId]', params: { eventId } }}
@@ -76,7 +70,10 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <EventSettingsForm event={event} wizardMode={wizardMode} />
+      <PoliciesForm
+        eventId={eventId}
+        initialPolicies={event.policyConfig}
+      />
     </div>
   );
 }

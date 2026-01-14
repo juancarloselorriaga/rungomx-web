@@ -6,15 +6,17 @@ import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  ExternalLink, 
-  HelpCircle, 
-  MapPin, 
-  Settings, 
-  Ticket, 
-  Users 
+import {
+  ArrowLeft,
+  Calendar,
+  ClipboardList,
+  ExternalLink,
+  FileText,
+  HelpCircle,
+  MapPin,
+  Settings,
+  Ticket,
+  Users,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -91,6 +93,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     (sum, d) => sum + d.registrationCount,
     0,
   );
+  const hasSharedPool =
+    Boolean(event.sharedCapacity) ||
+    event.distances.some((distance) => distance.capacityScope === 'shared_pool');
+  const sharedSpotsRemaining = hasSharedPool
+    ? Math.max((event.sharedCapacity ?? 0) - totalRegistrations, 0)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -119,6 +127,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </span>
             </div>
             <p className="text-muted-foreground mt-1">{event.organizationName}</p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-sm">
+              <span className="text-muted-foreground">{tDetail('publicCodeLabel')}</span>
+              <span className="font-mono font-semibold">{event.publicCode}</span>
+            </div>
           </div>
           <Link
             href={{ pathname: '/dashboard/events/[eventId]/settings', params: { eventId } }}
@@ -197,6 +209,32 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           </div>
         </Link>
 
+        <Link
+          href={{ pathname: '/dashboard/events/[eventId]/waivers', params: { eventId } }}
+          className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
+        >
+          <div className="rounded-full bg-muted p-3">
+            <FileText className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="font-semibold">{tDetail('manageWaivers')}</h3>
+            <p className="text-sm text-muted-foreground">{tDetail('manageWaiversDescription')}</p>
+          </div>
+        </Link>
+
+        <Link
+          href={{ pathname: '/dashboard/events/[eventId]/policies', params: { eventId } }}
+          className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
+        >
+          <div className="rounded-full bg-muted p-3">
+            <ClipboardList className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="font-semibold">{tDetail('managePolicies')}</h3>
+            <p className="text-sm text-muted-foreground">{tDetail('managePoliciesDescription')}</p>
+          </div>
+        </Link>
+
         {event.visibility === 'published' && (
           <Link
             href={{ 
@@ -214,6 +252,114 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             </div>
           </Link>
         )}
+      </div>
+
+      {/* Capacity status */}
+      <div className="rounded-lg border bg-card shadow-sm">
+        <div className="border-b px-6 py-4">
+          <h2 className="text-lg font-semibold">{tDetail('capacity.title')}</h2>
+        </div>
+        <div className="px-6 py-4 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {hasSharedPool ? tDetail('capacity.sharedPool') : tDetail('capacity.perDistance')}
+          </p>
+
+          {hasSharedPool ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="rounded-md border bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">{tDetail('capacity.totalLabel')}</p>
+                <p className="text-lg font-semibold">{event.sharedCapacity}</p>
+              </div>
+              <div className="rounded-md border bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">
+                  {tDetail('capacity.remainingLabel')}
+                </p>
+                <p className="text-lg font-semibold">
+                  {sharedSpotsRemaining === 0
+                    ? tDetail('capacity.soldOut')
+                    : sharedSpotsRemaining}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="divide-y">
+                {event.distances.slice(0, 5).map((distance) => {
+                const remaining =
+                  distance.capacity !== null
+                    ? Math.max(distance.capacity - distance.registrationCount, 0)
+                    : null;
+                return (
+                  <div key={distance.id} className="py-3 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{distance.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {distance.capacity !== null
+                          ? tDetail('capacity.distanceLimit', { count: distance.capacity })
+                          : tDetail('capacity.unlimited')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">
+                        {tDetail('capacity.remainingLabel')}
+                      </p>
+                      <p className="font-semibold">
+                        {remaining === null
+                          ? tDetail('capacity.unlimited')
+                          : remaining === 0
+                            ? tDetail('capacity.soldOut')
+                            : remaining}
+                      </p>
+                    </div>
+                  </div>
+                );
+                })}
+              </div>
+
+              {event.distances.length > 5 && (
+                <details className="rounded-md border bg-muted/30 px-4 py-2">
+                  <summary className="cursor-pointer text-sm font-medium text-primary">
+                    {tDetail('capacity.viewAll', {
+                      count: event.distances.length - 5,
+                    })}
+                  </summary>
+                  <div className="mt-3 divide-y">
+                    {event.distances.slice(5).map((distance) => {
+                      const remaining =
+                        distance.capacity !== null
+                          ? Math.max(distance.capacity - distance.registrationCount, 0)
+                          : null;
+                      return (
+                        <div key={distance.id} className="py-3 flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">{distance.label}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {distance.capacity !== null
+                                ? tDetail('capacity.distanceLimit', { count: distance.capacity })
+                                : tDetail('capacity.unlimited')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-muted-foreground">
+                              {tDetail('capacity.remainingLabel')}
+                            </p>
+                            <p className="font-semibold">
+                              {remaining === null
+                                ? tDetail('capacity.unlimited')
+                                : remaining === 0
+                                  ? tDetail('capacity.soldOut')
+                                  : remaining}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Distances section */}

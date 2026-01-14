@@ -1,7 +1,8 @@
 import { getPathname, Link } from '@/i18n/navigation';
 import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
-import { getUserOrganizations, getOrganizationEventSeries } from '@/lib/events/queries';
+import { getUserOrganizations } from '@/lib/organizations/queries';
+import { getOrganizationEventSeries } from '@/lib/events/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';

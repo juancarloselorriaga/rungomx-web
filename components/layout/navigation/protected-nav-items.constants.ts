@@ -34,6 +34,11 @@ export function buildProtectedNavSections(
       labelKey: 'events',
       iconName: 'Calendar',
     });
+    items.push({
+      href: '/dashboard/organizations',
+      labelKey: 'organizations',
+      iconName: 'Users',
+    });
   }
 
   return [

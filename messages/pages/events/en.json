@@ -8,8 +8,10 @@
   "detail": {
     "registrationOpen": "Registration open",
     "registrationClosed": "Registration closed",
+    "registrationDetails": "Registration details",
     "registrationOpens": "Registration opens {date}",
     "registrationCloses": "Registration closes {date}",
+    "registrationPaused": "Registration is paused",
     "registerNow": "Register now",
     "selectDistance": "Select distance",
     "eventDate": "Event date",
@@ -18,6 +20,21 @@
     "about": "About the event",
     "distances": "Distances",
     "faq": "Frequently Asked Questions",
+    "policies": {
+      "title": "Policies",
+      "refund": {
+        "title": "Refunds",
+        "deadline": "Refunds available until {date}"
+      },
+      "transfer": {
+        "title": "Transfers",
+        "deadline": "Transfers available until {date}"
+      },
+      "deferral": {
+        "title": "Deferrals",
+        "deadline": "Deferrals available until {date}"
+      }
+    },
     "viewMap": "View on map",
     "spotsRemaining": "{count} spots remaining",
     "soldOut": "Sold out",
@@ -78,6 +95,14 @@
       "waiverNumber": "Waiver {number} of {total}",
       "accept": "I have read and agree to the waiver terms",
       "acceptThis": "I have read and agree to the terms of \"{title}\"",
+      "signatureLabels": {
+        "initials": "Enter your initials",
+        "signature": "Type your full name as signature"
+      },
+      "signaturePlaceholders": {
+        "initials": "e.g. JC",
+        "signature": "Full name"
+      },
       "continue": "Accept and continue"
     },
     "payment": {
@@ -97,6 +122,10 @@
       "description": "You have successfully registered for {eventName}.",
       "registrationId": "Registration ID",
       "distance": "Distance",
+      "policiesTitle": "Event policies",
+      "refundPolicy": "Refund policy",
+      "transferPolicy": "Transfer policy",
+      "deferralPolicy": "Deferral policy",
       "whatNext": "What's next?",
       "nextSteps": "You will receive a confirmation email with more details about the event. Check your inbox for further instructions.",
       "viewEvent": "View event details",
