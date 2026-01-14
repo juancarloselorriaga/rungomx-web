@@ -3,14 +3,21 @@
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { useSession } from '@/lib/auth/client';
+import type { User } from '@/lib/auth/types';
 import { useTranslations } from 'next-intl';
 
-export function AuthCtaWithSession() {
+interface AuthCtaWithSessionProps {
+  initialUser?: User | null;
+}
+
+export function AuthCtaWithSession({ initialUser }: AuthCtaWithSessionProps) {
   const tAuth = useTranslations('auth');
   const tHome = useTranslations('pages.home');
-  const { data } = useSession();
+  const { data, isPending } = useSession();
 
-  const isLoggedIn = !!data?.user;
+  // Use server state during hydration, then client state for real-time updates
+  const user = isPending ? initialUser : (data?.user ?? null);
+  const isLoggedIn = !!user;
   const label = isLoggedIn ? tHome('actions.goToDashboard') : tAuth('signIn');
   const href = isLoggedIn ? '/dashboard' : '/sign-in';
 
