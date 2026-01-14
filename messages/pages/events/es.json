@@ -121,6 +121,13 @@
     "noResultsDescription": "Intenta ajustar tus filtros o vuelve más tarde para ver nuevos eventos.",
     "clearFilters": "Limpiar filtros"
   },
+  "nearby": {
+    "nearYou": "Cerca de ti",
+    "viewAll": "Ver todo",
+    "viewAllActive": "Mostrando todo",
+    "fromProfile": "Desde tu perfil",
+    "change": "Cambiar"
+  },
   "share": {
     "copyLink": "Compartir",
     "copied": "Enlace copiado",

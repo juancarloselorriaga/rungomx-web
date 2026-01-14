@@ -3,7 +3,7 @@ export const EVENTS_PAGE_LIMIT = 12;
 export type EventsSearchParamValue = string | number | boolean | null | undefined;
 export type EventsSearchParamUpdates = Record<string, EventsSearchParamValue>;
 
-type SearchParamsInput =
+export type SearchParamsInput =
   | string
   | URLSearchParams
   | Record<string, string | string[] | undefined>
@@ -97,6 +97,14 @@ function parseBooleanParam(value: string | undefined): boolean | undefined {
   if (value === 'true') return true;
   if (value === 'false') return false;
   return undefined;
+}
+
+const EXPLICIT_LOCATION_PARAMS = ['lat', 'lng', 'radiusKm', 'location', 'state', 'city'] as const;
+
+export function hasExplicitLocationIntent(params: SearchParamsInput): boolean {
+  return EXPLICIT_LOCATION_PARAMS.some(
+    (key) => getSearchParamValue(params, key) !== undefined,
+  );
 }
 
 export function parseEventsSearchParams(params: SearchParamsInput): EventsSearchParams {

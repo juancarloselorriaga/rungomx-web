@@ -42,6 +42,8 @@ export type OrgMembershipRole = (typeof ORG_MEMBERSHIP_ROLES)[number];
 export const DISTANCE_UNITS = ['km', 'mi'] as const;
 export type DistanceUnit = (typeof DISTANCE_UNITS)[number];
 
+export const DEFAULT_PROFILE_NEARBY_RADIUS_KM = 50;
+
 // Distance kinds (distance-based vs time-based events)
 export const DISTANCE_KINDS = ['distance', 'timed'] as const;
 export type DistanceKind = (typeof DISTANCE_KINDS)[number];
