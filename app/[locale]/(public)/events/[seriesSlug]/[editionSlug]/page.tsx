@@ -152,7 +152,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   return (
     <div className="min-h-screen">
       {/* Hero section */}
-      <div className="relative bg-muted">
+      <div className="relative bg-muted rounded-2xl">
         <div className="container mx-auto px-4 py-12 max-w-7xl">
           <Link
             href="/events"
