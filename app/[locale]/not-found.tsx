@@ -5,19 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { ArrowLeft, Calendar, HelpCircle, Home, Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export default function NotFound() {
   const router = useRouter();
   const t = useTranslations('components.errorBoundary.notFound');
   const tCommon = useTranslations('common');
   const tNav = useTranslations('navigation');
-  const [hasHistory, setHasHistory] = useState(false);
-
-  useEffect(() => {
-    // Check if browser has history for back button
-    setHasHistory(typeof window !== 'undefined' && window.history.length > 1);
-  }, []);
+  const [hasHistory] = useState(
+    typeof window !== 'undefined' && window.history.length > 1,
+  );
 
   return (
     <div className="w-full relative flex h-screen items-center justify-center overflow-hidden">

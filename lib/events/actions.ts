@@ -859,16 +859,16 @@ export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<Confir
   }
 
   const MAX_MEDIA_LOOKUP_ATTEMPTS = 3;
-  let uploadedMedia = null as typeof media.$inferSelect | null;
+  let uploadedMedia: typeof media.$inferSelect | null = null;
 
   for (let attempt = 0; attempt < MAX_MEDIA_LOOKUP_ATTEMPTS; attempt += 1) {
-    uploadedMedia = await db.query.media.findFirst({
+    uploadedMedia = (await db.query.media.findFirst({
       where: and(
         eq(media.organizationId, organizationId),
         eq(media.blobUrl, blobUrl),
         isNull(media.deletedAt),
       ),
-    });
+    })) ?? null;
 
     if (uploadedMedia) break;
 
@@ -889,6 +889,10 @@ export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<Confir
         sizeBytes: null,
       })
       .returning();
+
+    if (!created) {
+      return { ok: false, error: 'Failed to create media record', code: 'SERVER_ERROR' };
+    }
 
     const auditResult = await createAuditLog(
       {

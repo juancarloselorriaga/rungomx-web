@@ -8,6 +8,7 @@ import { cleanDatabase, getTestDb } from '@/tests/helpers/db';
 const FUTURE_OFFSET_MS = 7 * 24 * 60 * 60 * 1000;
 
 async function cleanupEvents(db: ReturnType<typeof getTestDb>) {
+  await db.delete(schema.auditLogs);
   await db.delete(schema.pricingTiers);
   await db.delete(schema.eventDistances);
   await db.delete(schema.eventEditions);
