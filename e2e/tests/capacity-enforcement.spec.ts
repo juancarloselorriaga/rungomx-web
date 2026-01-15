@@ -305,7 +305,7 @@ test.describe('Capacity Enforcement', () => {
 
     // Limited distance should show sold out
     const limitedSection = athletePage.locator(':has-text("Limited Distance")');
-    await expect(limitedSection.getByText(/sold out|0 spots/i)).toBeVisible();
+    await expect(limitedSection.getByText(/sold out|0 spots/i).first()).toBeVisible();
 
     // 10K distance should still show available
     const tenKSection = athletePage.locator(':has-text("10K Trail Run")');
