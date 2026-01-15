@@ -6,7 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { requestPasswordReset } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
-import { Loader2, Mail, Send } from 'lucide-react';
+import { Loader2, Send } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 

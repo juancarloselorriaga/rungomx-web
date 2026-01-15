@@ -5,7 +5,7 @@ import { FormField } from '@/components/ui/form-field';
 import { resetPasswordWithToken } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
-import { KeyRound, Loader2, Lock } from 'lucide-react';
+import { KeyRound, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
