@@ -5,153 +5,155 @@ import { FormField } from '@/components/ui/form-field';
 import { Switch } from '@/components/ui/switch';
 import { updateEventPolicyConfig } from '@/lib/events/actions';
 import type { EventPolicyConfig } from '@/lib/events/queries';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, Save } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
 type PoliciesFormProps = {
   eventId: string;
   initialPolicies: EventPolicyConfig | null;
 };
 
+type PolicyFormValues = {
+  refundsAllowed: boolean;
+  refundPolicyText: string;
+  refundDeadline: string;
+  transfersAllowed: boolean;
+  transferPolicyText: string;
+  transferDeadline: string;
+  deferralsAllowed: boolean;
+  deferralPolicyText: string;
+  deferralDeadline: string;
+};
+
+function toFormValues(policies: EventPolicyConfig | null): PolicyFormValues {
+  return {
+    refundsAllowed: policies?.refundsAllowed ?? false,
+    refundPolicyText: policies?.refundPolicyText ?? '',
+    refundDeadline: policies?.refundDeadline ? formatDateTimeForInput(policies.refundDeadline) : '',
+    transfersAllowed: policies?.transfersAllowed ?? false,
+    transferPolicyText: policies?.transferPolicyText ?? '',
+    transferDeadline: policies?.transferDeadline ? formatDateTimeForInput(policies.transferDeadline) : '',
+    deferralsAllowed: policies?.deferralsAllowed ?? false,
+    deferralPolicyText: policies?.deferralPolicyText ?? '',
+    deferralDeadline: policies?.deferralDeadline ? formatDateTimeForInput(policies.deferralDeadline) : '',
+  };
+}
+
 export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
   const t = useTranslations('pages.dashboard.events.policies');
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
 
-  const [refundsAllowed, setRefundsAllowed] = useState(initialPolicies?.refundsAllowed ?? false);
-  const [refundPolicyText, setRefundPolicyText] = useState(initialPolicies?.refundPolicyText ?? '');
-  const [refundDeadline, setRefundDeadline] = useState(
-    initialPolicies?.refundDeadline ? formatDateTimeForInput(initialPolicies.refundDeadline) : '',
-  );
-
-  const [transfersAllowed, setTransfersAllowed] = useState(initialPolicies?.transfersAllowed ?? false);
-  const [transferPolicyText, setTransferPolicyText] = useState(initialPolicies?.transferPolicyText ?? '');
-  const [transferDeadline, setTransferDeadline] = useState(
-    initialPolicies?.transferDeadline ? formatDateTimeForInput(initialPolicies.transferDeadline) : '',
-  );
-
-  const [deferralsAllowed, setDeferralsAllowed] = useState(initialPolicies?.deferralsAllowed ?? false);
-  const [deferralPolicyText, setDeferralPolicyText] = useState(initialPolicies?.deferralPolicyText ?? '');
-  const [deferralDeadline, setDeferralDeadline] = useState(
-    initialPolicies?.deferralDeadline ? formatDateTimeForInput(initialPolicies.deferralDeadline) : '',
-  );
-
-  async function handleSave() {
-    setError(null);
-
-    startTransition(async () => {
+  const form = useForm<PolicyFormValues, null>({
+    defaultValues: toFormValues(initialPolicies),
+    onSubmit: async (values) => {
       const result = await updateEventPolicyConfig({
         editionId: eventId,
-        refundsAllowed,
-        refundPolicyText: refundPolicyText || null,
-        refundDeadline: refundDeadline ? new Date(refundDeadline).toISOString() : null,
-        transfersAllowed,
-        transferPolicyText: transferPolicyText || null,
-        transferDeadline: transferDeadline ? new Date(transferDeadline).toISOString() : null,
-        deferralsAllowed,
-        deferralPolicyText: deferralPolicyText || null,
-        deferralDeadline: deferralDeadline ? new Date(deferralDeadline).toISOString() : null,
+        refundsAllowed: values.refundsAllowed,
+        refundPolicyText: values.refundPolicyText || null,
+        refundDeadline: values.refundDeadline ? new Date(values.refundDeadline).toISOString() : null,
+        transfersAllowed: values.transfersAllowed,
+        transferPolicyText: values.transferPolicyText || null,
+        transferDeadline: values.transferDeadline ? new Date(values.transferDeadline).toISOString() : null,
+        deferralsAllowed: values.deferralsAllowed,
+        deferralPolicyText: values.deferralPolicyText || null,
+        deferralDeadline: values.deferralDeadline ? new Date(values.deferralDeadline).toISOString() : null,
       });
 
       if (!result.ok) {
-        setError(result.error);
-        return;
+        return {
+          ok: false,
+          error: result.code ?? 'SERVER_ERROR',
+          message: result.error ?? t('errorSaving'),
+        };
       }
 
+      return { ok: true, data: null };
+    },
+    onSuccess: () => {
+      toast.success(t('saved'));
       router.refresh();
-    });
-  }
+    },
+  });
 
   return (
-    <div className="space-y-6">
-      {error && (
-        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+    <Form form={form} className="space-y-6">
+      <FormError />
 
       <PolicySection
         title={t('refund.title')}
         description={t('refund.description')}
-        enabled={refundsAllowed}
-        onToggle={setRefundsAllowed}
+        enabledKey="refundsAllowed"
+        policyKey="refundPolicyText"
+        deadlineKey="refundDeadline"
         policyLabel={t('refund.textLabel')}
-        policyValue={refundPolicyText}
-        onPolicyChange={setRefundPolicyText}
         deadlineLabel={t('refund.deadlineLabel')}
-        deadlineValue={refundDeadline}
-        onDeadlineChange={setRefundDeadline}
-        disabled={isPending}
+        form={form}
       />
 
       <PolicySection
         title={t('transfer.title')}
         description={t('transfer.description')}
-        enabled={transfersAllowed}
-        onToggle={setTransfersAllowed}
+        enabledKey="transfersAllowed"
+        policyKey="transferPolicyText"
+        deadlineKey="transferDeadline"
         policyLabel={t('transfer.textLabel')}
-        policyValue={transferPolicyText}
-        onPolicyChange={setTransferPolicyText}
         deadlineLabel={t('transfer.deadlineLabel')}
-        deadlineValue={transferDeadline}
-        onDeadlineChange={setTransferDeadline}
-        disabled={isPending}
+        form={form}
       />
 
       <PolicySection
         title={t('deferral.title')}
         description={t('deferral.description')}
-        enabled={deferralsAllowed}
-        onToggle={setDeferralsAllowed}
+        enabledKey="deferralsAllowed"
+        policyKey="deferralPolicyText"
+        deadlineKey="deferralDeadline"
         policyLabel={t('deferral.textLabel')}
-        policyValue={deferralPolicyText}
-        onPolicyChange={setDeferralPolicyText}
         deadlineLabel={t('deferral.deadlineLabel')}
-        deadlineValue={deferralDeadline}
-        onDeadlineChange={setDeferralDeadline}
-        disabled={isPending}
+        form={form}
       />
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={isPending}>
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+        <Button type="submit" disabled={form.isSubmitting}>
+          {form.isSubmitting ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           {t('save')}
         </Button>
       </div>
-    </div>
+    </Form>
   );
 }
 
 type PolicySectionProps = {
   title: string;
   description: string;
-  enabled: boolean;
-  onToggle: (value: boolean) => void;
+  enabledKey: keyof PolicyFormValues;
+  policyKey: keyof PolicyFormValues;
+  deadlineKey: keyof PolicyFormValues;
   policyLabel: string;
-  policyValue: string;
-  onPolicyChange: (value: string) => void;
   deadlineLabel: string;
-  deadlineValue: string;
-  onDeadlineChange: (value: string) => void;
-  disabled: boolean;
+  form: ReturnType<typeof useForm<PolicyFormValues, null>>;
 };
 
 function PolicySection({
   title,
   description,
-  enabled,
-  onToggle,
+  enabledKey,
+  policyKey,
+  deadlineKey,
   policyLabel,
-  policyValue,
-  onPolicyChange,
   deadlineLabel,
-  deadlineValue,
-  onDeadlineChange,
-  disabled,
+  form,
 }: PolicySectionProps) {
+  const enabled = form.values[enabledKey] as boolean;
+  const policyValue = form.values[policyKey] as string;
+  const deadlineValue = form.values[deadlineKey] as string;
+
   return (
     <section className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
       <div className="flex items-center justify-between gap-4">
@@ -159,26 +161,30 @@ function PolicySection({
           <h2 className="font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-        <Switch checked={enabled} onCheckedChange={onToggle} disabled={disabled} />
+        <Switch
+          checked={enabled}
+          onCheckedChange={(value) => form.setFieldValue(enabledKey, value as never)}
+          disabled={form.isSubmitting}
+        />
       </div>
 
-      <FormField label={policyLabel}>
+      <FormField label={policyLabel} error={form.errors[policyKey]}>
         <textarea
           value={policyValue}
-          onChange={(event) => onPolicyChange(event.target.value)}
+          onChange={(event) => form.setFieldValue(policyKey, event.target.value as never)}
           rows={3}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-          disabled={!enabled || disabled}
+          disabled={!enabled || form.isSubmitting}
         />
       </FormField>
 
-      <FormField label={deadlineLabel}>
+      <FormField label={deadlineLabel} error={form.errors[deadlineKey]}>
         <input
           type="datetime-local"
           value={deadlineValue}
-          onChange={(event) => onDeadlineChange(event.target.value)}
+          onChange={(event) => form.setFieldValue(deadlineKey, event.target.value as never)}
           className="w-full max-w-xs rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-          disabled={!enabled || disabled}
+          disabled={!enabled || form.isSubmitting}
         />
       </FormField>
     </section>
