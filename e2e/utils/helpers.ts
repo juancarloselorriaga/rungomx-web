@@ -364,14 +364,28 @@ export async function createEvent(
   await editionSlugInput.click();
   await editionSlugInput.fill(editionLabel.toLowerCase());
 
-  // Fill location
-  const cityInput = page.getByPlaceholder(/mexico city/i);
-  await cityInput.click();
-  await cityInput.fill(city);
+  // Fill location using the new LocationField component
+  // Click the location picker button
+  const locationBtn = page.getByText(/no location selected yet/i);
+  await locationBtn.click();
 
-  const stateInput = page.getByPlaceholder(/cdmx/i);
-  await stateInput.click();
-  await stateInput.fill(state);
+  // Wait for location dialog to appear
+  const locationDialog = page.getByRole('dialog');
+  await expect(locationDialog).toBeVisible({ timeout: 5000 });
+
+  // Search for the location in the search input
+  const searchInput = locationDialog.getByPlaceholder(/search for a place or address/i);
+  await searchInput.fill(`${city}, ${state}, Mexico`);
+
+  // Wait for and click the first search result
+  await page.waitForTimeout(500); // Wait for debounced search
+  const firstResult = locationDialog.locator('button').filter({ hasText: city }).first();
+  await expect(firstResult).toBeVisible({ timeout: 10000 });
+  await firstResult.click();
+
+  // Confirm the location selection
+  const confirmBtn = locationDialog.getByRole('button', { name: /use this location/i });
+  await confirmBtn.click();
 
   // Select future date if date field is visible
   const dateInput = page.locator('input[type="date"]');
@@ -386,11 +400,11 @@ export async function createEvent(
   await page.getByRole('button', { name: /create event/i }).click();
 
   // Wait for redirect to event dashboard
-  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}$/, { timeout: 15000 });
+  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}/, { timeout: 15000 });
 
   // Extract event ID from URL
   const url = page.url();
-  const eventId = url.match(/\/events\/([a-f0-9-]{36})$/)?.[1] || '';
+  const eventId = url.match(/\/events\/([a-f0-9-]{36})/)?.[1] || '';
 
   return { seriesName, editionLabel, eventId };
 }
