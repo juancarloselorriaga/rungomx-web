@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { connection } from 'next/server';
 
 import { db } from '@/db';
@@ -317,6 +317,8 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
     return null;
   }
 
+  const now = new Date();
+
   // Get registration counts per distance
   const distanceIds = edition.distances.map((d) => d.id);
   let registrationCountMap = new Map<string, number>();
@@ -332,10 +334,15 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
         and(
           sql`${registrations.distanceId} IN ${distanceIds}`,
           or(
-            eq(registrations.status, 'started'),
-            eq(registrations.status, 'submitted'),
-            eq(registrations.status, 'payment_pending'),
             eq(registrations.status, 'confirmed'),
+            and(
+              or(
+                eq(registrations.status, 'started'),
+                eq(registrations.status, 'submitted'),
+                eq(registrations.status, 'payment_pending'),
+              ),
+              gt(registrations.expiresAt, now),
+            ),
           ),
           isNull(registrations.deletedAt),
         ),
@@ -531,6 +538,8 @@ export async function getPublicEventBySlug(
     return null;
   }
 
+  const now = new Date();
+
   // Get registration counts per distance
   const distanceIds = edition.distances.map((d) => d.id);
   let registrationCountMap = new Map<string, number>();
@@ -546,10 +555,15 @@ export async function getPublicEventBySlug(
         and(
           sql`${registrations.distanceId} IN ${distanceIds}`,
           or(
-            eq(registrations.status, 'started'),
-            eq(registrations.status, 'submitted'),
-            eq(registrations.status, 'payment_pending'),
             eq(registrations.status, 'confirmed'),
+            and(
+              or(
+                eq(registrations.status, 'started'),
+                eq(registrations.status, 'submitted'),
+                eq(registrations.status, 'payment_pending'),
+              ),
+              gt(registrations.expiresAt, now),
+            ),
           ),
           isNull(registrations.deletedAt),
         ),
@@ -576,10 +590,15 @@ export async function getPublicEventBySlug(
         and(
           eq(registrations.editionId, edition.id),
           or(
-            eq(registrations.status, 'started'),
-            eq(registrations.status, 'submitted'),
-            eq(registrations.status, 'payment_pending'),
             eq(registrations.status, 'confirmed'),
+            and(
+              or(
+                eq(registrations.status, 'started'),
+                eq(registrations.status, 'submitted'),
+                eq(registrations.status, 'payment_pending'),
+              ),
+              gt(registrations.expiresAt, now),
+            ),
           ),
           isNull(registrations.deletedAt),
         ),
@@ -588,7 +607,6 @@ export async function getPublicEventBySlug(
   }
 
   // Determine registration status
-  const now = new Date();
   let isRegistrationOpen = false;
   if (!edition.isRegistrationPaused) {
     const hasOpened = !edition.registrationOpensAt || now >= edition.registrationOpensAt;

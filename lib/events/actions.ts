@@ -1,7 +1,7 @@
 'use server';
 
 import { customAlphabet } from 'nanoid';
-import { and, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -48,6 +48,49 @@ import {
  * Format: 6 uppercase alphanumeric characters (e.g., "ABC123")
  */
 const generatePublicCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 6);
+
+const STARTED_TTL_MINUTES = Number(process.env.EVENTS_REGISTRATION_STARTED_TTL_MINUTES ?? '30');
+const SUBMITTED_TTL_MINUTES = Number(process.env.EVENTS_REGISTRATION_SUBMITTED_TTL_MINUTES ?? '30');
+const PAYMENT_PENDING_TTL_HOURS = Number(process.env.EVENTS_REGISTRATION_PAYMENT_PENDING_TTL_HOURS ?? '24');
+
+const resolveTtl = (value: number, fallback: number) =>
+  Number.isFinite(value) && value > 0 ? value : fallback;
+
+const STARTED_TTL_MINUTES_RESOLVED = resolveTtl(STARTED_TTL_MINUTES, 30);
+const SUBMITTED_TTL_MINUTES_RESOLVED = resolveTtl(SUBMITTED_TTL_MINUTES, 30);
+const PAYMENT_PENDING_TTL_HOURS_RESOLVED = resolveTtl(PAYMENT_PENDING_TTL_HOURS, 24);
+
+function computeExpiresAt(
+  now: Date,
+  status: 'started' | 'submitted' | 'payment_pending',
+): Date {
+  switch (status) {
+    case 'started':
+      return new Date(now.getTime() + STARTED_TTL_MINUTES_RESOLVED * 60 * 1000);
+    case 'submitted':
+      return new Date(now.getTime() + SUBMITTED_TTL_MINUTES_RESOLVED * 60 * 1000);
+    case 'payment_pending':
+      return new Date(now.getTime() + PAYMENT_PENDING_TTL_HOURS_RESOLVED * 60 * 60 * 1000);
+  }
+
+  throw new Error(`Unsupported registration status: ${status}`);
+}
+
+function isExpiredHold(status: string, expiresAt: Date | null, now: Date): boolean {
+  if (status === 'cancelled') {
+    return true;
+  }
+
+  if (status === 'confirmed') {
+    return false;
+  }
+
+  if (status === 'started' || status === 'submitted' || status === 'payment_pending') {
+    return expiresAt === null || expiresAt <= now;
+  }
+
+  return true;
+}
 
 /**
  * Check if the user has permission to access the events platform.
@@ -2386,6 +2429,8 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
   // Start registration within transaction to ensure atomicity of anti-squatting + capacity checks
   try {
     const registration = await db.transaction(async (tx) => {
+      const now = new Date();
+
       // Lock the distance row to serialize all checks per distance
       // This lock applies even when capacity is null to ensure anti-squatting atomicity
       await tx.execute(sql`SELECT id FROM ${eventDistances} WHERE id = ${distanceId} FOR UPDATE`);
@@ -2401,6 +2446,7 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
             eq(registrations.status, 'submitted'),
             eq(registrations.status, 'payment_pending'),
           ),
+          gt(registrations.expiresAt, now),
           isNull(registrations.deletedAt),
         ),
       });
@@ -2418,10 +2464,15 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
           where: and(
             eq(registrations.editionId, edition.id),
             or(
-              eq(registrations.status, 'started'),
-              eq(registrations.status, 'submitted'),
-              eq(registrations.status, 'payment_pending'),
               eq(registrations.status, 'confirmed'),
+              and(
+                or(
+                  eq(registrations.status, 'started'),
+                  eq(registrations.status, 'submitted'),
+                  eq(registrations.status, 'payment_pending'),
+                ),
+                gt(registrations.expiresAt, now),
+              ),
             ),
             isNull(registrations.deletedAt),
           ),
@@ -2435,10 +2486,15 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
           where: and(
             eq(registrations.distanceId, distanceId),
             or(
-              eq(registrations.status, 'started'),
-              eq(registrations.status, 'submitted'),
-              eq(registrations.status, 'payment_pending'),
               eq(registrations.status, 'confirmed'),
+              and(
+                or(
+                  eq(registrations.status, 'started'),
+                  eq(registrations.status, 'submitted'),
+                  eq(registrations.status, 'payment_pending'),
+                ),
+                gt(registrations.expiresAt, now),
+              ),
             ),
             isNull(registrations.deletedAt),
           ),
@@ -2460,6 +2516,7 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
           feesCents,
           taxCents: 0,
           totalCents,
+          expiresAt: computeExpiresAt(now, 'started'),
         })
         .returning();
 
@@ -2509,6 +2566,15 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
     return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
+  const now = new Date();
+  if (isExpiredHold(registration.status, registration.expiresAt, now)) {
+    return {
+      ok: false,
+      error: 'Registration expired. Please start again.',
+      code: 'REGISTRATION_EXPIRED',
+    };
+  }
+
   if (registration.status !== 'started') {
     return { ok: false, error: 'Registration has already been submitted', code: 'ALREADY_SUBMITTED' };
   }
@@ -2542,7 +2608,10 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
 
       const [updated] = await tx
         .update(registrations)
-        .set({ status: 'submitted' })
+        .set({
+          status: 'submitted',
+          expiresAt: computeExpiresAt(now, 'submitted'),
+        })
         .where(
           and(
             eq(registrations.id, registrationId),
@@ -2599,6 +2668,15 @@ export const acceptWaiver = withAuthenticatedUser<ActionResult>({
 
   if (!registration) {
     return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  }
+
+  const now = new Date();
+  if (isExpiredHold(registration.status, registration.expiresAt, now)) {
+    return {
+      ok: false,
+      error: 'Registration expired. Please start again.',
+      code: 'REGISTRATION_EXPIRED',
+    };
   }
 
   const waiver = await db.query.waivers.findFirst({
@@ -2674,6 +2752,28 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
     return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
+  const now = new Date();
+  if (isExpiredHold(registration.status, registration.expiresAt, now)) {
+    return {
+      ok: false,
+      error: 'Registration expired. Please start again.',
+      code: 'REGISTRATION_EXPIRED',
+    };
+  }
+
+  if (registration.status === 'confirmed') {
+    return {
+      ok: true,
+      data: {
+        id: registration.id,
+        status: registration.status,
+        distanceId: registration.distanceId,
+        editionId: registration.editionId,
+        totalCents: registration.totalCents,
+      },
+    };
+  }
+
   const [registrationRegistrants, registrationWaivers, editionWaivers] = await Promise.all([
     db.query.registrants.findMany({
       where: eq(registrants.registrationId, registrationId),
@@ -2714,6 +2814,8 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
   // Re-validate event state and capacity before confirming
   try {
     const updated = await db.transaction(async (tx) => {
+      const now = new Date();
+
       // Re-fetch current edition and distance state inside transaction for freshness
       const currentEdition = await tx.query.eventEditions.findFirst({
         where: eq(eventEditions.id, registration.editionId),
@@ -2736,7 +2838,6 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         throw new Error('REGISTRATION_PAUSED');
       }
 
-      const now = new Date();
       if (currentEdition.registrationOpensAt && now < currentEdition.registrationOpensAt) {
         throw new Error('REGISTRATION_NOT_OPEN');
       }
@@ -2753,10 +2854,15 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
           where: and(
             eq(registrations.editionId, registration.editionId),
             or(
-              eq(registrations.status, 'started'),
-              eq(registrations.status, 'submitted'),
-              eq(registrations.status, 'payment_pending'),
               eq(registrations.status, 'confirmed'),
+              and(
+                or(
+                  eq(registrations.status, 'started'),
+                  eq(registrations.status, 'submitted'),
+                  eq(registrations.status, 'payment_pending'),
+                ),
+                gt(registrations.expiresAt, now),
+              ),
             ),
             isNull(registrations.deletedAt),
             // Exclude the current registration from count
@@ -2775,10 +2881,15 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
           where: and(
             eq(registrations.distanceId, registration.distanceId),
             or(
-              eq(registrations.status, 'started'),
-              eq(registrations.status, 'submitted'),
-              eq(registrations.status, 'payment_pending'),
               eq(registrations.status, 'confirmed'),
+              and(
+                or(
+                  eq(registrations.status, 'started'),
+                  eq(registrations.status, 'submitted'),
+                  eq(registrations.status, 'payment_pending'),
+                ),
+                gt(registrations.expiresAt, now),
+              ),
             ),
             isNull(registrations.deletedAt),
             // Exclude the current registration from count
@@ -2791,11 +2902,13 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
       }
 
       const nextStatus = isEventsNoPaymentMode() ? 'confirmed' : 'payment_pending';
+      const nextExpiresAt =
+        nextStatus === 'confirmed' ? null : computeExpiresAt(now, 'payment_pending');
 
       // Move registration forward with guarded transition
       const [updatedReg] = await tx
         .update(registrations)
-        .set({ status: nextStatus })
+        .set({ status: nextStatus, expiresAt: nextExpiresAt })
         .where(
           and(
             eq(registrations.id, registrationId),
