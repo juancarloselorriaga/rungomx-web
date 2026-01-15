@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
@@ -12,6 +13,7 @@ import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, Loader2 } from '
 import { useTranslations, useLocale } from 'next-intl';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { SeriesCombobox } from '@/components/events/series-combobox';
 
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
@@ -512,48 +514,26 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
 
           {/* Series selection/creation */}
           {selectedOrg && selectedOrg.series.length > 0 && (
-            <div className="space-y-3">
-              <p className="text-sm font-medium">{t('event.seriesLabel')}</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNewSeries(true);
-                    setSelectedSeriesId(null);
-                    setSeriesSlugStatus('idle');
-                    setEditionSlugStatus('idle');
-                  }}
-                  className={cn(
-                    'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
-                    showNewSeries
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50',
-                  )}
-                >
-                  {t('event.newSeries')}
-                </button>
-                {selectedOrg.series.map((series) => (
-                  <button
-                    key={series.id}
-                    type="button"
-                    onClick={() => {
-                      setShowNewSeries(false);
-                      setSelectedSeriesId(series.id);
-                      setSeriesSlugStatus('idle');
-                      handleEditionSlugChange(form.values.editionSlug, series.id);
-                    }}
-                    className={cn(
-                      'px-3 py-1.5 rounded-md text-sm font-medium border transition-colors',
-                      !showNewSeries && selectedSeriesId === series.id
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border hover:border-primary/50',
-                    )}
-                  >
-                    {series.name}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <FormField label={t('event.seriesLabel')}>
+              <SeriesCombobox
+                series={selectedOrg.series}
+                selectedSeriesId={selectedSeriesId}
+                showNewSeries={showNewSeries}
+                onSelectNewSeries={() => {
+                  setShowNewSeries(true);
+                  setSelectedSeriesId(null);
+                  setSeriesSlugStatus('idle');
+                  setEditionSlugStatus('idle');
+                }}
+                onSelectSeries={(seriesId) => {
+                  setShowNewSeries(false);
+                  setSelectedSeriesId(seriesId);
+                  setSeriesSlugStatus('idle');
+                  handleEditionSlugChange(form.values.editionSlug, seriesId);
+                }}
+                disabled={form.isSubmitting}
+              />
+            </FormField>
           )}
 
           {/* New series fields */}
@@ -622,7 +602,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
           <div className="border-t pt-6 space-y-4">
             <p className="text-sm font-medium text-muted-foreground">{t('event.editionDetails')}</p>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 label={t('event.editionLabelLabel')}
                 required
@@ -681,11 +661,11 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
               label={t('event.dateLabel')}
               error={form.errors.startsAt}
             >
-              <input
-                type="date"
-                {...form.register('startsAt')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                disabled={form.isSubmitting}
+              <DatePicker
+                locale={locale}
+                value={form.values.startsAt}
+                onChangeAction={(value) => form.setFieldValue('startsAt', value)}
+                clearLabel={t('event.clearDate')}
               />
             </FormField>
 
