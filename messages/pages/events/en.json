@@ -35,6 +35,9 @@
         "deadline": "Deferrals available until {date}"
       }
     },
+    "otherEditions": {
+      "title": "Other editions"
+    },
     "viewMap": "View on map",
     "spotsRemaining": "{count} spots remaining",
     "soldOut": "Sold out",
