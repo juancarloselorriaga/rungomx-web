@@ -11,7 +11,7 @@ import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, Loader2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { SeriesCombobox } from '@/components/events/series-combobox';
 
@@ -287,37 +287,40 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
     }, 400);
   }
 
-  function handleEditionSlugChange(nextSlug: string, seriesIdOverride?: string) {
-    const seriesId = seriesIdOverride ?? selectedSeriesId;
-    const trimmed = nextSlug.trim();
-    if (showNewSeries || trimmed.length < 2 || !seriesId) {
-      setEditionSlugStatus('idle');
-      return;
-    }
-
-    if (editionSlugTimeoutRef.current) {
-      clearTimeout(editionSlugTimeoutRef.current);
-    }
-
-    setEditionSlugStatus('checking');
-    const requestId = ++editionSlugRequestIdRef.current;
-
-    editionSlugTimeoutRef.current = setTimeout(async () => {
-      const result = await checkSlugAvailability({
-        seriesId,
-        slug: trimmed,
-      });
-
-      if (editionSlugRequestIdRef.current !== requestId) return;
-
-      if (!result.ok) {
-        setEditionSlugStatus('error');
+  const handleEditionSlugChange = useCallback(
+    (nextSlug: string, seriesIdOverride?: string) => {
+      const seriesId = seriesIdOverride ?? selectedSeriesId;
+      const trimmed = nextSlug.trim();
+      if (showNewSeries || trimmed.length < 2 || !seriesId) {
+        setEditionSlugStatus('idle');
         return;
       }
 
-      setEditionSlugStatus(result.data.available ? 'available' : 'taken');
-    }, 400);
-  }
+      if (editionSlugTimeoutRef.current) {
+        clearTimeout(editionSlugTimeoutRef.current);
+      }
+
+      setEditionSlugStatus('checking');
+      const requestId = ++editionSlugRequestIdRef.current;
+
+      editionSlugTimeoutRef.current = setTimeout(async () => {
+        const result = await checkSlugAvailability({
+          seriesId,
+          slug: trimmed,
+        });
+
+        if (editionSlugRequestIdRef.current !== requestId) return;
+
+        if (!result.ok) {
+          setEditionSlugStatus('error');
+          return;
+        }
+
+        setEditionSlugStatus(result.data.available ? 'available' : 'taken');
+      }, 400);
+    },
+    [selectedSeriesId, showNewSeries],
+  );
 
   const isSeriesSlugTaken =
     showNewSeries && form.values.seriesSlug.trim().length >= 2 && seriesSlugStatus === 'taken';
@@ -346,6 +349,29 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
   };
   const editionSlugField = form.register('editionSlug');
 
+  // Memoize callbacks to prevent infinite re-renders in Popover
+  const handleSelectNewSeries = useCallback(() => {
+    // Defer state updates to allow Popover to close cleanly
+    setTimeout(() => {
+      setShowNewSeries(true);
+      setSelectedSeriesId(null);
+      setSeriesSlugStatus('idle');
+      setEditionSlugStatus('idle');
+    }, 0);
+  }, []);
+
+  const handleSelectSeries = useCallback((seriesId: string) => {
+    // Defer state updates to allow Popover to close cleanly
+    setTimeout(() => {
+      setShowNewSeries(false);
+      setSelectedSeriesId(seriesId);
+      setSeriesSlugStatus('idle');
+    }, 0);
+  }, []);
+
+  // Note: Edition slug validation will happen when user manually changes the slug field
+  // This avoids infinite loops while still providing validation feedback
+
   // When selecting existing series, populate sport type
   useEffect(() => {
     if (selectedSeriesId && selectedOrg) {
@@ -354,7 +380,8 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         form.setFieldValue('sportType', series.sportType as SportType);
       }
     }
-  }, [form, selectedSeriesId, selectedOrg]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeriesId, selectedOrg]);
 
   return (
     <div className="space-y-6">
@@ -516,21 +543,12 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
           {selectedOrg && selectedOrg.series.length > 0 && (
             <FormField label={t('event.seriesLabel')}>
               <SeriesCombobox
+                key={`${showNewSeries}-${selectedSeriesId || 'new'}`}
                 series={selectedOrg.series}
                 selectedSeriesId={selectedSeriesId}
                 showNewSeries={showNewSeries}
-                onSelectNewSeries={() => {
-                  setShowNewSeries(true);
-                  setSelectedSeriesId(null);
-                  setSeriesSlugStatus('idle');
-                  setEditionSlugStatus('idle');
-                }}
-                onSelectSeries={(seriesId) => {
-                  setShowNewSeries(false);
-                  setSelectedSeriesId(seriesId);
-                  setSeriesSlugStatus('idle');
-                  handleEditionSlugChange(form.values.editionSlug, seriesId);
-                }}
+                onSelectNewSeries={handleSelectNewSeries}
+                onSelectSeries={handleSelectSeries}
                 disabled={form.isSubmitting}
               />
             </FormField>
