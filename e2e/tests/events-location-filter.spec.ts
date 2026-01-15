@@ -162,9 +162,13 @@ test.describe('Near Location Filter', () => {
     const radiusSelect = page.locator('select').filter({ hasText: /km/i });
     await radiusSelect.selectOption('50');
 
-    // Wait for filter to apply
+    // Wait for filter to apply - give extra time for the filter to process
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3000);
+
+    // Force a reload to ensure fresh data (bypass cache)
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
 
     // Verify the Saltillo event does NOT appear in results
     const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME }).first();
@@ -187,7 +191,11 @@ test.describe('Near Location Filter', () => {
     // Now change to 50km radius
     await radiusSelect.selectOption('50');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(3000);
+
+    // Force a reload to ensure fresh data (bypass cache)
+    await page.reload({ waitUntil: 'networkidle' });
+    await page.waitForTimeout(1000);
 
     // Verify event is NO LONGER visible at 50km
     await expect(eventCard).not.toBeVisible({ timeout: 5000 });

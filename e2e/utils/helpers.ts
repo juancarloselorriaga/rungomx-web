@@ -591,9 +591,13 @@ export async function completeRegistrationForm(
   // Continue
   await page.getByRole('button', { name: /continue/i }).click();
 
-  // Wait for navigation to payment step
+  // Wait for navigation to either waiver or payment step
   await page.waitForLoadState('networkidle');
-  await expect(page.getByRole('heading', { name: /payment/i })).toBeVisible({ timeout: 10000 });
+
+  // Check for either waiver or payment heading (events may or may not have waivers)
+  const waiverHeading = page.getByRole('heading', { name: /waiver/i });
+  const paymentHeading = page.getByRole('heading', { name: /payment/i });
+  await expect(waiverHeading.or(paymentHeading)).toBeVisible({ timeout: 10000 });
 }
 
 /**

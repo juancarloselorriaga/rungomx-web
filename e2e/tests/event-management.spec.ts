@@ -225,7 +225,7 @@ test.describe('Event Management', () => {
 
     // Update location using LocationField component
     // Click on the location field to open the dialog
-    const locationButton = page.locator('button').filter({ hasText: /Monterrey|No location selected/i }).first();
+    const locationButton = page.getByRole('button', { name: /event location/i });
     await locationButton.click();
 
     // Wait for location dialog
