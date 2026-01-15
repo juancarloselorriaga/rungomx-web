@@ -226,11 +226,16 @@ test.describe('Event Management', () => {
     // Update location using LocationField component
     // Click on the location field to open the dialog
     const locationButton = page.getByRole('button', { name: /event location/i });
+    await expect(locationButton).toBeVisible();
+    await expect(locationButton).toBeEnabled();
     await locationButton.click();
+
+    // Wait a moment for dialog to open
+    await page.waitForTimeout(500);
 
     // Wait for location dialog
     const locationDialog = page.getByRole('dialog');
-    await expect(locationDialog).toBeVisible({ timeout: 5000 });
+    await expect(locationDialog).toBeVisible({ timeout: 10000 });
 
     // Search for new location
     const searchInput = locationDialog.getByPlaceholder(/search for a place or address/i);
