@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from '@/i18n/navigation';
@@ -689,20 +690,20 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
-              <input
-                type="date"
-                {...detailsForm.register('startsAt')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                disabled={detailsForm.isSubmitting}
+              <DatePicker
+                locale={locale}
+                value={detailsForm.values.startsAt || ''}
+                onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
+                clearLabel={t('details.clearDate')}
               />
             </FormField>
 
             <FormField label={t('details.endsAt')} error={detailsForm.errors.endsAt}>
-              <input
-                type="date"
-                {...detailsForm.register('endsAt')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                disabled={detailsForm.isSubmitting}
+              <DatePicker
+                locale={locale}
+                value={detailsForm.values.endsAt || ''}
+                onChangeAction={(value) => detailsForm.setFieldValue('endsAt', value)}
+                clearLabel={t('details.clearDate')}
               />
             </FormField>
           </div>
@@ -752,11 +753,16 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
                 label={t('details.registrationOpensAt')}
                 error={detailsForm.errors.registrationOpensAt}
               >
-                <input
-                  type="datetime-local"
-                  {...detailsForm.register('registrationOpensAt')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={detailsForm.isSubmitting}
+                <DatePicker
+                  locale={locale}
+                  value={detailsForm.values.registrationOpensAt ? detailsForm.values.registrationOpensAt.split('T')[0] : ''}
+                  onChangeAction={(value) => {
+                    // Preserve time if it exists, otherwise set to start of day
+                    const currentValue = detailsForm.values.registrationOpensAt;
+                    const timepart = currentValue ? currentValue.split('T')[1] : '00:00';
+                    detailsForm.setFieldValue('registrationOpensAt', value ? `${value}T${timepart}` : '');
+                  }}
+                  clearLabel={t('details.clearDate')}
                 />
               </FormField>
 
@@ -764,11 +770,16 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
                 label={t('details.registrationClosesAt')}
                 error={detailsForm.errors.registrationClosesAt}
               >
-                <input
-                  type="datetime-local"
-                  {...detailsForm.register('registrationClosesAt')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={detailsForm.isSubmitting}
+                <DatePicker
+                  locale={locale}
+                  value={detailsForm.values.registrationClosesAt ? detailsForm.values.registrationClosesAt.split('T')[0] : ''}
+                  onChangeAction={(value) => {
+                    // Preserve time if it exists, otherwise set to end of day
+                    const currentValue = detailsForm.values.registrationClosesAt;
+                    const timepart = currentValue ? currentValue.split('T')[1] : '23:59';
+                    detailsForm.setFieldValue('registrationClosesAt', value ? `${value}T${timepart}` : '');
+                  }}
+                  clearLabel={t('details.clearDate')}
                 />
               </FormField>
             </div>
