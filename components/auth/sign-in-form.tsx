@@ -7,7 +7,7 @@ import { StaticPathname } from '@/i18n/routing';
 import { signIn } from '@/lib/auth/client';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
-import { Loader2, Lock, LogIn, Mail } from 'lucide-react';
+import { Loader2, LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 
