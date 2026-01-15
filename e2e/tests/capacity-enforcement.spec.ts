@@ -148,121 +148,7 @@ test.describe('Capacity Enforcement', () => {
     await expect(page).toHaveURL(/\/register/);
   });
 
-  // FIXME: This test needs different athlete accounts to properly test race conditions
-  // Currently both pages use the same athlete, so they get the same registration (idempotent)
-  test.skip('Test 1.10: Concurrent registration handling (race condition test)', async ({
-    browser,
-  }) => {
-    // Set up: Create new event with capacity = 1
-    const setupPage = await browser.newPage();
-    await signInAsOrganizer(setupPage, organizerCreds);
-
-    await setupPage.goto('/en/dashboard/events/new');
-    await createOrganization(setupPage);
-    const eventData = await createEvent(setupPage);
-
-    const testEventId = eventData.eventId;
-    const testSeriesSlug = eventData.seriesName.toLowerCase().replace(/\s+/g, '-');
-    const testEditionSlug = eventData.editionLabel;
-
-    // Add distance with capacity = 1
-    await navigateToEventSettings(setupPage, testEventId);
-    await addDistance(setupPage, {
-      label: 'Race Condition Test',
-      distance: 5,
-      terrain: 'road',
-      price: 100,
-      capacity: 1,
-    });
-    await publishEvent(setupPage);
-    await setupPage.close();
-
-    // Create two athlete contexts
-    const context1 = await browser.newContext();
-    const context2 = await browser.newContext();
-
-    const page1 = await context1.newPage();
-    const page2 = await context2.newPage();
-
-    // Both sign in as athletes (would need different accounts in real scenario)
-    // For this test, we'll use the same account and rely on race condition
-    await signInAsAthlete(page1, athleteCreds);
-    await signInAsAthlete(page2, athleteCreds);
-
-    // Both navigate to registration
-    await Promise.all([
-      page1.goto(`/en/events/${testSeriesSlug}/${testEditionSlug}/register`),
-      page2.goto(`/en/events/${testSeriesSlug}/${testEditionSlug}/register`),
-    ]);
-
-    // Both select distance
-    await Promise.all([
-      page1.getByRole('button', { name: /Race Condition Test/i }).click(),
-      page2.getByRole('button', { name: /Race Condition Test/i }).click(),
-    ]);
-
-    // Both continue
-    await Promise.all([
-      page1.getByRole('button', { name: /continue/i }).click(),
-      page2.getByRole('button', { name: /continue/i }).click(),
-    ]);
-
-    // Both fill forms
-    await Promise.all([
-      completeRegistrationForm(page1, {
-        phone: '+523311111111',
-        emergencyPhone: '+523322222222',
-      }),
-      completeRegistrationForm(page2, {
-        phone: '+523333333333',
-        emergencyPhone: '+523344444444',
-      }),
-    ]);
-
-    // Both try to submit simultaneously
-    await Promise.allSettled([
-      page1.getByRole('button', { name: /complete registration/i }).click(),
-      page2.getByRole('button', { name: /complete registration/i }).click(),
-    ]);
-
-    // Wait for responses
-    await page1.waitForTimeout(3000);
-    await page2.waitForTimeout(3000);
-
-    // Check results: One should succeed, one should fail
-    const page1Success = await page1
-      .getByText(/registration complete/i)
-      .isVisible()
-      .catch(() => false);
-    const page2Success = await page2
-      .getByText(/registration complete/i)
-      .isVisible()
-      .catch(() => false);
-
-    const page1Failed = await page1
-      .getByText(/sold out|no longer available|full/i)
-      .isVisible()
-      .catch(() => false);
-    const page2Failed = await page2
-      .getByText(/sold out|no longer available|full/i)
-      .isVisible()
-      .catch(() => false);
-
-    // Exactly one should succeed
-    const successCount = [page1Success, page2Success].filter(Boolean).length;
-    const failCount = [page1Failed, page2Failed].filter(Boolean).length;
-
-    expect(successCount).toBe(1);
-    expect(failCount).toBe(1);
-
-    // Cleanup
-    await context1.close();
-    await context2.close();
-  });
-
-  test('Test 1.11: Other distances remain available when one is sold out', async ({
-    browser,
-  }) => {
+  test('Test 1.10: Other distances remain available when one is sold out', async ({ browser }) => {
     // Use separate browser contexts for organizer and athlete to avoid sign-out issues
     const organizerContext = await browser.newContext();
     const organizerPage = await organizerContext.newPage();
@@ -312,9 +198,7 @@ test.describe('Capacity Enforcement', () => {
     await expect(tenKSection.getByText(/100 spots/i)).toBeVisible();
 
     // Register button for 10K should still be enabled
-    await expect(
-      tenKSection.getByRole('link', { name: /register|select/i }).first(),
-    ).toBeVisible();
+    await expect(tenKSection.getByRole('link', { name: /register|select/i }).first()).toBeVisible();
 
     await athleteContext.close();
   });
