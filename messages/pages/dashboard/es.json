@@ -232,6 +232,8 @@
       "title": "Políticas",
       "description": "Agrega marcadores para políticas de reembolso, transferencia y diferimiento.",
       "save": "Guardar políticas",
+      "saved": "Políticas guardadas exitosamente",
+      "errorSaving": "Error al guardar las políticas",
       "refund": {
         "title": "Política de reembolso",
         "description": "Explica elegibilidad y fechas límite para reembolsos.",
@@ -337,6 +339,7 @@
         "registrationWindow": "Ventana de Inscripción",
         "registrationOpensAt": "Apertura de Inscripciones",
         "registrationClosesAt": "Cierre de Inscripciones",
+        "clearDate": "Borrar",
         "save": "Guardar Cambios"
       },
       "distances": {

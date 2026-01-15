@@ -100,8 +100,7 @@ test.describe('Near Location Filter', () => {
     await page.waitForLoadState('networkidle');
 
     // Open advanced filters by clicking the filter button
-    const filterRow = page.locator('.flex.gap-2.flex-wrap');
-    const filterBtn = filterRow.locator('button').last();
+    const filterBtn = page.getByRole('button', { name: /more filters/i });
     await filterBtn.click();
 
     // Wait for the advanced filters panel to appear

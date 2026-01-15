@@ -161,8 +161,8 @@ test.describe('Event Creation', () => {
     // Verify event created successfully
     expect(eventData.eventId).toMatch(/^[a-f0-9-]{36}$/);
 
-    // Should be on event dashboard
-    await expect(page).toHaveURL(`/en/dashboard/events/${eventData.eventId}`);
+    // Should be on event dashboard (may include /settings?wizard=1 for new events)
+    await expect(page).toHaveURL(new RegExp(`/en/dashboard/events/${eventData.eventId}`));
 
     // Event name should be visible (use first() to avoid strict mode violation with route announcer)
     await expect(page.getByText(eventData.seriesName).first()).toBeVisible();

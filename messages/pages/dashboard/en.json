@@ -232,6 +232,8 @@
       "title": "Policies",
       "description": "Add placeholders for refund, transfer, and deferral policies.",
       "save": "Save policies",
+      "saved": "Policies saved successfully",
+      "errorSaving": "Failed to save policies",
       "refund": {
         "title": "Refund policy",
         "description": "Explain refund eligibility and deadlines.",
@@ -337,6 +339,7 @@
         "registrationWindow": "Registration Window",
         "registrationOpensAt": "Registration Opens",
         "registrationClosesAt": "Registration Closes",
+        "clearDate": "Clear",
         "save": "Save Changes"
       },
       "distances": {
