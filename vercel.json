@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/cleanup-expired-rate-limits",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-expired-event-registrations",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

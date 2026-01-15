@@ -14,6 +14,7 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 // =============================================================================
 // ENUMS
@@ -374,29 +375,38 @@ export const pricingTiers = pgTable('pricing_tiers', {
   deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
 });
 
-export const registrations = pgTable('registrations', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  editionId: uuid('edition_id')
-    .notNull()
-    .references(() => eventEditions.id, { onDelete: 'cascade' }),
-  distanceId: uuid('distance_id')
-    .notNull()
-    .references(() => eventDistances.id, { onDelete: 'cascade' }),
-  buyerUserId: uuid('buyer_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  status: varchar('status', { length: 20 }).notNull().default('started'), // 'started' | 'submitted' | 'payment_pending' | 'confirmed' | 'cancelled'
-  basePriceCents: integer('base_price_cents'),
-  feesCents: integer('fees_cents'),
-  taxCents: integer('tax_cents'),
-  totalCents: integer('total_cents'),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
-    .defaultNow()
-    .notNull()
-    .$onUpdate(() => new Date()),
-  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
-});
+export const registrations = pgTable(
+  'registrations',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    distanceId: uuid('distance_id')
+      .notNull()
+      .references(() => eventDistances.id, { onDelete: 'cascade' }),
+    buyerUserId: uuid('buyer_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: varchar('status', { length: 20 }).notNull().default('started'), // 'started' | 'submitted' | 'payment_pending' | 'confirmed' | 'cancelled'
+    basePriceCents: integer('base_price_cents'),
+    feesCents: integer('fees_cents'),
+    taxCents: integer('tax_cents'),
+    totalCents: integer('total_cents'),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    statusExpiresAtIdx: index('registrations_status_expires_at_idx')
+      .on(table.status, table.expiresAt)
+      .where(sql`${table.deletedAt} is null and ${table.expiresAt} is not null`),
+  }),
+);
 
 export const registrants = pgTable('registrants', {
   id: uuid('id').defaultRandom().primaryKey(),
