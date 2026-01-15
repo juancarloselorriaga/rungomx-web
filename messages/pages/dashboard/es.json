@@ -363,6 +363,7 @@
   "organizations": {
     "title": "Organizaciones",
     "description": "Administra tus organizaciones y el acceso del equipo.",
+    "createButton": "Crear Organización",
     "emptyState": {
       "title": "Sin organizaciones aún",
       "description": "Verás organizaciones aquí cuando te inviten o crees una."
@@ -410,6 +411,105 @@
       "alreadyMember": "Ese usuario ya es miembro.",
       "lastOwner": "Debes mantener al menos un propietario.",
       "generic": "Ocurrió un error. Inténtalo de nuevo."
+    },
+    "createDialog": {
+      "title": "Crear Organización",
+      "description": "Crea una nueva organización para gestionar eventos y miembros del equipo.",
+      "banner": {
+        "title": "Serás el propietario",
+        "description": "Podrás invitar miembros del equipo y gestionar permisos después de crearla."
+      },
+      "fields": {
+        "name": {
+          "label": "Nombre de la Organización",
+          "placeholder": "Mi Club de Running"
+        },
+        "slug": {
+          "label": "Slug de URL",
+          "placeholder": "mi-club-de-running",
+          "hint": "Usado en URLs. Solo letras minúsculas, números y guiones."
+        }
+      },
+      "slugStatus": {
+        "checking": "Verificando disponibilidad...",
+        "available": "El slug está disponible",
+        "taken": "Este slug ya está en uso",
+        "error": "No se pudo verificar la disponibilidad"
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "create": "Crear Organización",
+        "creating": "Creando..."
+      },
+      "errors": {
+        "slugTaken": "Este slug ya está en uso. Por favor elige otro."
+      },
+      "success": {
+        "toast": "Organización \"{name}\" creada exitosamente"
+      }
+    },
+    "settings": {
+      "title": "Configuración de la Organización",
+      "fields": {
+        "name": {
+          "label": "Nombre de la Organización",
+          "placeholder": "Mi Club de Running"
+        },
+        "slug": {
+          "label": "Slug de URL",
+          "placeholder": "mi-club-de-running",
+          "hint": "Usado en URLs. Solo letras minúsculas, números y guiones."
+        }
+      },
+      "slugStatus": {
+        "checking": "Verificando disponibilidad...",
+        "available": "El slug está disponible",
+        "taken": "Este slug ya está en uso",
+        "error": "No se pudo verificar la disponibilidad"
+      },
+      "buttons": {
+        "save": "Guardar Cambios",
+        "saving": "Guardando...",
+        "delete": "Eliminar Organización"
+      },
+      "errors": {
+        "slugTaken": "Este slug ya está en uso. Por favor elige otro."
+      },
+      "success": {
+        "toast": "Configuración de la organización guardada exitosamente"
+      }
+    },
+    "deleteDialog": {
+      "title": "Eliminar Organización",
+      "description": "¿Estás seguro de que deseas eliminar \"{name}\"? Esta acción no se puede deshacer.",
+      "warning": {
+        "title": "Esto es permanente",
+        "description": "Todos los datos de la organización, incluyendo el acceso de miembros, serán eliminados permanentemente."
+      },
+      "orgInfo": {
+        "willBeDeleted": "Esta organización será eliminada permanentemente"
+      },
+      "fields": {
+        "confirmName": {
+          "label": "Escribe \"{name}\" para confirmar",
+          "mismatch": "El nombre de la organización no coincide"
+        }
+      },
+      "buttons": {
+        "cancel": "Cancelar",
+        "delete": "Eliminar Organización",
+        "deleting": "Eliminando..."
+      },
+      "errors": {
+        "unauthenticated": "Inicia sesión para eliminar esta organización.",
+        "forbidden": "Solo los propietarios pueden eliminar una organización.",
+        "notFound": "Organización no encontrada.",
+        "hasActiveEvents": "No se puede eliminar una organización con {count, plural, one {# evento activo} other {# eventos activos}}. Archiva o elimina todos los eventos primero.",
+        "genericError": "Ocurrió un error. Inténtalo de nuevo."
+      },
+      "success": {
+        "toast": "La organización \"{name}\" ha sido eliminada"
+      }
     }
   }
 }
