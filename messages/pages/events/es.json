@@ -35,6 +35,9 @@
         "deadline": "Diferimientos disponibles hasta {date}"
       }
     },
+    "otherEditions": {
+      "title": "Otras ediciones"
+    },
     "viewMap": "Ver en mapa",
     "spotsRemaining": "{count} lugares disponibles",
     "soldOut": "Agotado",

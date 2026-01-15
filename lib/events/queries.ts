@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull, ne, or, sql } from 'drizzle-orm';
 import { connection } from 'next/server';
 
 import { db } from '@/db';
@@ -442,6 +442,8 @@ export type PublicEventDetail = {
   slug: string;
   editionLabel: string;
   visibility: string;
+  seriesId: string;
+  seriesSlug: string;
   description: string | null;
   startsAt: Date | null;
   endsAt: Date | null;
@@ -620,6 +622,8 @@ export async function getPublicEventBySlug(
     slug: edition.slug,
     editionLabel: edition.editionLabel,
     visibility: edition.visibility,
+    seriesId: series.id,
+    seriesSlug: series.slug,
     description: edition.description,
     startsAt: edition.startsAt,
     endsAt: edition.endsAt,
@@ -693,6 +697,69 @@ export async function getPublicEventBySlug(
         }
       : null,
   };
+}
+
+export type PublicSeriesEditionSummary = {
+  id: string;
+  slug: string;
+  editionLabel: string;
+  startsAt: Date | null;
+  timezone: string;
+  locationDisplay: string | null;
+  city: string | null;
+  state: string | null;
+  registrationOpensAt: Date | null;
+  registrationClosesAt: Date | null;
+  isRegistrationPaused: boolean;
+  isRegistrationOpen: boolean;
+};
+
+export async function getPublicOtherEditionsForSeries(
+  seriesId: string,
+  currentEditionId: string,
+  { limit = 10 }: { limit?: number } = {},
+): Promise<PublicSeriesEditionSummary[]> {
+  const editions = await db
+    .select({
+      id: eventEditions.id,
+      slug: eventEditions.slug,
+      editionLabel: eventEditions.editionLabel,
+      startsAt: eventEditions.startsAt,
+      timezone: eventEditions.timezone,
+      locationDisplay: eventEditions.locationDisplay,
+      city: eventEditions.city,
+      state: eventEditions.state,
+      registrationOpensAt: eventEditions.registrationOpensAt,
+      registrationClosesAt: eventEditions.registrationClosesAt,
+      isRegistrationPaused: eventEditions.isRegistrationPaused,
+    })
+    .from(eventEditions)
+    .where(
+      and(
+        eq(eventEditions.seriesId, seriesId),
+        ne(eventEditions.id, currentEditionId),
+        eq(eventEditions.visibility, 'published'),
+        isNull(eventEditions.deletedAt),
+      ),
+    )
+    .orderBy(desc(eventEditions.startsAt), desc(eventEditions.createdAt))
+    .limit(limit);
+
+  const now = new Date();
+
+  return editions.map((edition) => {
+    let isRegistrationOpen = false;
+    if (!edition.isRegistrationPaused) {
+      const hasOpened = !edition.registrationOpensAt || now >= edition.registrationOpensAt;
+      const hasNotClosed = !edition.registrationClosesAt || now <= edition.registrationClosesAt;
+      isRegistrationOpen = hasOpened && hasNotClosed;
+    }
+
+    return {
+      ...edition,
+      isRegistrationOpen,
+    };
+  });
 }
 
 // =============================================================================

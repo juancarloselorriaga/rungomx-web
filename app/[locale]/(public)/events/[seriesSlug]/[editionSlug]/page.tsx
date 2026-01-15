@@ -1,6 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
-import { getPublicEventBySlug, type PublicDistanceInfo } from '@/lib/events/queries';
+import {
+  getPublicEventBySlug,
+  getPublicOtherEditionsForSeries,
+  type PublicDistanceInfo,
+} from '@/lib/events/queries';
 import type { SportType } from '@/lib/events/constants';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -61,6 +65,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   if (!event) {
     notFound();
   }
+
+  const otherEditions = await getPublicOtherEditionsForSeries(event.seriesId, event.id);
 
   // Format dates
   const eventDate = event.startsAt
@@ -423,6 +429,60 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       <p className="text-destructive">{t('detail.registrationPaused')}</p>
                     )}
                   </div>
+                </div>
+              )}
+
+              {otherEditions.length > 0 && (
+                <div className="border-t pt-4 space-y-3">
+                  <h3 className="font-semibold">{t('detail.otherEditions.title')}</h3>
+                  <ul className="space-y-2">
+                    {otherEditions.map((edition) => {
+                      const editionDate = edition.startsAt
+                        ? new Intl.DateTimeFormat(locale, {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            timeZone: edition.timezone,
+                          }).format(new Date(edition.startsAt))
+                        : 'TBA';
+                      const editionLocation =
+                        edition.locationDisplay ||
+                        [edition.city, edition.state].filter(Boolean).join(', ');
+
+                      return (
+                        <li key={edition.id}>
+                          <Link
+                            href={{
+                              pathname: '/events/[seriesSlug]/[editionSlug]',
+                              params: { seriesSlug, editionSlug: edition.slug },
+                            }}
+                            className="group block rounded-md -mx-2 px-2 py-1.5 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium truncate">{edition.editionLabel}</p>
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {[editionDate, editionLocation].filter(Boolean).join(' · ')}
+                                </p>
+                              </div>
+                              <span
+                                className={cn(
+                                  'text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap',
+                                  edition.isRegistrationOpen
+                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                    : 'bg-muted text-muted-foreground',
+                                )}
+                              >
+                                {edition.isRegistrationOpen
+                                  ? t('detail.registrationOpen')
+                                  : t('detail.registrationClosed')}
+                              </span>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
                 </div>
               )}
             </div>
