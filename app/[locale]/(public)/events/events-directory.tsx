@@ -608,7 +608,10 @@ export function EventsDirectory({
     if (searchLocation) {
       updateQueryParams(
         {
+          lat: searchLocation.lat,
+          lng: searchLocation.lng,
           radiusKm: radius,
+          location: searchLocation.formattedAddress,
           page: 1,
         },
         { replace: true, scroll: false },
