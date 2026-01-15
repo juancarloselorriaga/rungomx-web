@@ -42,6 +42,11 @@ export function Sidebar({ items, sections }: SidebarProps) {
   const t = useTranslations('navigation');
   const resolvedSections: readonly NavSection<ProtectedNavIconName>[] =
     sections ?? (items ? [{ items }] : []);
+  const allItemHrefs = resolvedSections.flatMap((section) =>
+    section.items.map((item) =>
+      typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/'),
+    ),
+  );
 
   if (resolvedSections.length === 0) return null;
 
@@ -89,6 +94,9 @@ export function Sidebar({ items, sections }: SidebarProps) {
                 const itemHref =
                   typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/');
                 const label = t(item.labelKey);
+                const hasChild = allItemHrefs.some(
+                  (href) => href !== itemHref && href.startsWith(`${itemHref}/`),
+                );
 
                 return (
                   <NavLink
@@ -98,6 +106,7 @@ export function Sidebar({ items, sections }: SidebarProps) {
                     label={label}
                     iconSize={ICON_SIZE}
                     collapsed={collapsed}
+                    allowPrefixMatch={!hasChild}
                   />
                 );
               })}
