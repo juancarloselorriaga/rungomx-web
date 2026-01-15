@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { resetPasswordWithToken } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 import { KeyRound, Loader2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
@@ -69,22 +70,17 @@ export function ResetPasswordForm() {
     <Form form={form} className="space-y-4">
       <FormError />
 
-      <FormField
-        label={
-          <span className="flex items-center gap-2 text-sm font-medium text-foreground/80">
-            <Lock className="size-4 text-muted-foreground" />
-            {t('newPassword')}
-          </span>
-        }
-        required
-        error={form.errors.password}
-      >
+      <FormField label={t('newPassword')} required error={form.errors.password}>
         <input
           id="password"
           required
           type="password"
           autoComplete="new-password"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+          className={cn(
+            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
+            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+            form.errors.password && 'border-destructive focus-visible:border-destructive',
+          )}
           placeholder="••••••••"
           {...form.register('password')}
           disabled={isPending || form.isSubmitting}
@@ -93,22 +89,17 @@ export function ResetPasswordForm() {
         />
       </FormField>
 
-      <FormField
-        label={
-          <span className="flex items-center gap-2 text-sm font-medium text-foreground/80">
-            <KeyRound className="size-4 text-muted-foreground" />
-            {t('confirmPassword')}
-          </span>
-        }
-        required
-        error={form.errors.confirmPassword}
-      >
+      <FormField label={t('confirmPassword')} required error={form.errors.confirmPassword}>
         <input
           id="confirmPassword"
           required
           type="password"
           autoComplete="new-password"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+          className={cn(
+            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
+            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+            form.errors.confirmPassword && 'border-destructive focus-visible:border-destructive',
+          )}
           placeholder="••••••••"
           {...form.register('confirmPassword')}
           disabled={isPending || form.isSubmitting}
