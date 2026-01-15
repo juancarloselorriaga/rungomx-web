@@ -13,6 +13,7 @@ interface NavLinkProps {
   iconSize?: number;
   showLabel?: boolean;
   collapsed?: boolean;
+  allowPrefixMatch?: boolean;
   iconClassName?: string;
   linkClassName?: string;
   activeClassName?: string;
@@ -29,6 +30,7 @@ export function NavLink({
   iconSize = 20,
   showLabel = true,
   collapsed = false,
+  allowPrefixMatch = true,
   iconClassName,
   linkClassName,
   activeClassName = 'bg-primary/15 text-primary hover:text-foreground',
@@ -39,9 +41,9 @@ export function NavLink({
 }: NavLinkProps) {
   const pathname = usePathname();
   const itemHref = typeof href === 'string' ? href : (href.pathname ?? '/');
-  const allowPrefixMatch = itemHref !== '/admin';
+  const shouldAllowPrefixMatch = allowPrefixMatch && itemHref !== '/admin';
   const isActive =
-    pathname === itemHref || (allowPrefixMatch && pathname.startsWith(`${itemHref}/`));
+    pathname === itemHref || (shouldAllowPrefixMatch && pathname.startsWith(`${itemHref}/`));
 
   return (
     <Link

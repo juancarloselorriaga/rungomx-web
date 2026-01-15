@@ -56,6 +56,9 @@ export function NavItems({
   onItemClick,
 }: NavItemsProps) {
   const t = useTranslations('navigation');
+  const itemHrefs = items.map((item) =>
+    typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/'),
+  );
 
   return (
     <div className={cn('flex flex-col space-y-4 p-4', containerClassName)}>
@@ -63,6 +66,9 @@ export function NavItems({
         const Icon = iconMap[item.iconName];
         const label = t(item.labelKey);
         const itemHref = typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/');
+        const hasChild = itemHrefs.some(
+          (href) => href !== itemHref && href.startsWith(`${itemHref}/`),
+        );
 
         const content = (
           <NavLink
@@ -71,6 +77,7 @@ export function NavItems({
             label={label}
             iconSize={iconSize}
             showLabel={showLabels}
+            allowPrefixMatch={!hasChild}
             iconClassName={iconClassName}
             linkClassName={linkClassName}
             onClick={onItemClick}
