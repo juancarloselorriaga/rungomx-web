@@ -223,13 +223,31 @@ test.describe('Event Management', () => {
     // Scroll to details section
     await page.getByRole('heading', { name: /details/i }).scrollIntoViewIfNeeded();
 
-    // Update city
-    const cityInput = page.getByLabel(/city/i);
-    await cityInput.clear();
-    await cityInput.fill('Guadalajara');
+    // Update location using LocationField component
+    // Click on the location field to open the dialog
+    const locationButton = page.locator('button').filter({ hasText: /Monterrey|No location selected/i }).first();
+    await locationButton.click();
+
+    // Wait for location dialog
+    const locationDialog = page.getByRole('dialog');
+    await expect(locationDialog).toBeVisible({ timeout: 5000 });
+
+    // Search for new location
+    const searchInput = locationDialog.getByPlaceholder(/search for a place or address/i);
+    await searchInput.fill('Guadalajara, Jalisco, Mexico');
+    await page.waitForTimeout(500);
+
+    // Select first result
+    const firstResult = locationDialog.locator('button').filter({ hasText: /Guadalajara/i }).first();
+    await expect(firstResult).toBeVisible({ timeout: 10000 });
+    await firstResult.click();
+
+    // Confirm location selection
+    const confirmBtn = locationDialog.getByRole('button', { name: /use this location/i });
+    await confirmBtn.click();
 
     // Save changes
-    await page.getByRole('button', { name: /save/i }).click();
+    await page.getByRole('button', { name: /save changes/i }).click();
 
     // Wait for success message or confirmation
     await page.waitForTimeout(1000);

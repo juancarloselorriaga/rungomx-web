@@ -578,8 +578,8 @@ export async function completeRegistrationForm(
   // Fill phone
   await fillPhoneInput(page, /^phone/i, phone);
 
-  // Fill date of birth
-  await page.getByRole('textbox', { name: /date of birth/i }).fill(dob);
+  // Fill date of birth - use getByLabel since date inputs don't have 'textbox' role
+  await page.getByLabel(/date of birth/i).fill(dob);
 
   // Select gender
   await page.getByRole('combobox', { name: /gender/i }).selectOption(gender);
