@@ -352,7 +352,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         form.setFieldValue('sportType', series.sportType as SportType);
       }
     }
-  }, [selectedSeriesId, selectedOrg, form]);
+  }, [selectedSeriesId, selectedOrg]);
 
   return (
     <div className="space-y-6">
