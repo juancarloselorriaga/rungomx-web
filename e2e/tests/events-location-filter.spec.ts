@@ -148,7 +148,7 @@ test.describe('Near Location Filter', () => {
     await page.waitForTimeout(1500);
 
     // Verify the Saltillo event appears in results
-    const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME });
+    const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME }).first();
     await expect(eventCard).toBeVisible({ timeout: 15000 });
 
     // Verify location is shown
@@ -167,7 +167,7 @@ test.describe('Near Location Filter', () => {
     await page.waitForTimeout(1500);
 
     // Verify the Saltillo event does NOT appear in results
-    const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME });
+    const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME }).first();
     await expect(eventCard).not.toBeVisible({ timeout: 5000 });
   });
 
@@ -181,7 +181,7 @@ test.describe('Near Location Filter', () => {
     await page.waitForTimeout(1500);
 
     // Verify event is visible at 200km
-    const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME });
+    const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME }).first();
     await expect(eventCard).toBeVisible({ timeout: 15000 });
 
     // Now change to 50km radius

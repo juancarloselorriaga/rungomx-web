@@ -167,8 +167,8 @@ test.describe('Event Creation', () => {
     // Event name should be visible (use first() to avoid strict mode violation with route announcer)
     await expect(page.getByText(eventData.seriesName).first()).toBeVisible();
 
-    // Event should be in Draft status
-    await expect(page.getByText(/draft/i)).toBeVisible();
+    // Event should be in Draft status (use first() to avoid strict mode violation)
+    await expect(page.getByText(/draft/i).first()).toBeVisible();
   });
 
   test('Test 1.3: Created event appears in organizer event list', async ({ page }) => {
