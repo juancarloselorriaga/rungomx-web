@@ -169,44 +169,28 @@ test.describe('Athlete Registration', () => {
     await expect(participantHeading.or(paymentHeading)).toBeVisible();
   });
 
-  test('Test 1.8f: Fill participant information or skip to payment', async ({ page }) => {
+  test('Test 1.8f-h: Complete registration flow (combined)', async ({ page }) => {
     await signInAsAthlete(page, athleteCreds);
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
 
-    // Select distance
+    // Step 1: Select distance
     await page.getByRole('button', { name: /10K Trail Run/i }).click();
     await page.getByRole('button', { name: /continue/i }).click();
 
-    // Check if we're on participant info step or already on payment (profile complete skips this step)
+    // Step 2: Fill participant information (if shown)
     const participantHeading = page.getByRole('heading', { name: /participant information/i });
+    const waiverHeading = page.getByRole('heading', { name: /waiver/i });
     const paymentHeading = page.getByRole('heading', { name: /payment/i });
 
-    // Wait for one of them to appear
-    await expect(participantHeading.or(paymentHeading)).toBeVisible();
+    // Wait for participant info, waiver, or payment step
+    await expect(participantHeading.or(waiverHeading).or(paymentHeading)).toBeVisible();
 
     // If on participant info step, fill the form
     if (await participantHeading.isVisible().catch(() => false)) {
       await completeRegistrationForm(page);
     }
 
-    // Should be on waiver or payment step
-    const waiverHeading = page.getByRole('heading', { name: /waiver/i });
-    await expect(waiverHeading.or(paymentHeading)).toBeVisible();
-  });
-
-  test('Test 1.8g: View order summary', async ({ page }) => {
-    await signInAsAthlete(page, athleteCreds);
-
-    // Navigate to register page - should continue from existing registration (after test 1.8f)
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
-    await page.waitForLoadState('networkidle');
-
-    // Should be on waiver or payment step (participant info was completed in 1.8f)
-    const waiverHeading = page.getByRole('heading', { name: /waiver/i });
-    const paymentHeading = page.getByRole('heading', { name: /payment/i });
-    await expect(waiverHeading.or(paymentHeading)).toBeVisible({ timeout: 10000 });
-
-    // If on waiver step, accept waiver to proceed to payment
+    // Step 3: Handle waiver if present
     if (await waiverHeading.isVisible().catch(() => false)) {
       // Accept all waivers (checkboxes)
       const waiverCheckboxes = page.locator('input[type="checkbox"]');
@@ -218,28 +202,13 @@ test.describe('Athlete Registration', () => {
       await page.waitForLoadState('networkidle');
     }
 
-    // Should now be on payment page
+    // Step 4: View order summary on payment page
     await expect(page.getByRole('heading', { name: /payment/i })).toBeVisible();
-
-    // Verify order summary on payment page
     await expect(page.getByText('10K Trail Run')).toBeVisible();
     await expect(page.getByText(/MX\$500/).first()).toBeVisible();
-
-    // Total should be displayed (use first() to avoid strict mode)
     await expect(page.getByText(/total/i).first()).toBeVisible();
-  });
 
-  test('Test 1.8h: Complete registration', async ({ page }) => {
-    await signInAsAthlete(page, athleteCreds);
-
-    // Navigate to register page - should continue from existing registration (now on payment step)
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
-    await page.waitForLoadState('networkidle');
-
-    // Should be on payment step (waiver was handled in 1.8g if present)
-    await expect(page.getByRole('heading', { name: /payment/i })).toBeVisible({ timeout: 10000 });
-
-    // Complete registration
+    // Step 5: Complete registration
     await page.getByRole('button', { name: /complete registration/i }).click();
 
     // Should show confirmation
