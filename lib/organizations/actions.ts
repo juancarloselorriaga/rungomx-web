@@ -5,7 +5,7 @@ import { headers } from 'next/headers';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { organizationMemberships, organizations } from '@/db/schema';
+import { eventSeries, organizationMemberships, organizations } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
@@ -55,6 +55,10 @@ const updateOrgMemberSchema = z.object({
 const removeOrgMemberSchema = z.object({
   organizationId: z.string().uuid(),
   userId: z.string().uuid(),
+});
+
+const deleteOrganizationSchema = z.object({
+  organizationId: z.string().uuid(),
 });
 
 const lookupUserByEmailSchema = z.object({
@@ -198,12 +202,12 @@ export const updateOrganization = withAuthenticatedUser<ActionResult<Organizatio
 
   const { organizationId, name, slug } = validated.data;
 
-  // Check membership and permissions
+  // Check membership and permissions - only owners can edit (support staff exempt)
   const membership = await getOrgMembership(authContext.user.id, organizationId);
-  try {
-    requireOrgPermission(membership, 'canEditEventConfig');
-  } catch {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  if (!authContext.permissions.canManageEvents) {
+    if (!membership || membership.role !== 'owner') {
+      return { ok: false, error: 'Only owners can edit an organization', code: 'FORBIDDEN' };
+    }
   }
 
   // Get current state for audit
@@ -570,4 +574,98 @@ export const lookupUserByEmail = withAuthenticatedUser<
   }
 
   return { ok: true, data: { userId: user.id, name: user.name, email: user.email } };
+});
+
+/**
+ * Delete an organization (soft delete).
+ * Requires owner role. Cannot delete if org has active (non-deleted) event series.
+ */
+export const deleteOrganization = withAuthenticatedUser<ActionResult>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof deleteOrganizationSchema>) => {
+  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = deleteOrganizationSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { organizationId } = validated.data;
+
+  // Check membership and permissions - only owners can delete
+  const membership = await getOrgMembership(authContext.user.id, organizationId);
+  if (!authContext.permissions.canManageEvents) {
+    if (!membership || membership.role !== 'owner') {
+      return { ok: false, error: 'Only owners can delete an organization', code: 'FORBIDDEN' };
+    }
+  }
+
+  // Get current organization
+  const current = await db.query.organizations.findFirst({
+    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
+  });
+
+  if (!current) {
+    return { ok: false, error: 'Organization not found', code: 'NOT_FOUND' };
+  }
+
+  // Check for active event series (non-deleted and status='active')
+  const activeEventSeries = await db.query.eventSeries.findMany({
+    where: and(
+      eq(eventSeries.organizationId, organizationId),
+      isNull(eventSeries.deletedAt),
+      eq(eventSeries.status, 'active'),
+    ),
+  });
+
+  if (activeEventSeries.length > 0) {
+    return {
+      ok: false,
+      error: `Cannot delete organization with ${activeEventSeries.length} active event series. Archive or delete all events first.`,
+      code: 'HAS_ACTIVE_EVENTS',
+    };
+  }
+
+  // Soft delete organization and all memberships in a transaction
+  const requestContext = await getRequestContext(await headers());
+  await db.transaction(async (tx) => {
+    const deletedAt = new Date();
+
+    // Soft delete the organization
+    await tx.update(organizations).set({ deletedAt }).where(eq(organizations.id, organizationId));
+
+    // Soft delete all memberships
+    await tx
+      .update(organizationMemberships)
+      .set({ deletedAt })
+      .where(
+        and(
+          eq(organizationMemberships.organizationId, organizationId),
+          isNull(organizationMemberships.deletedAt),
+        ),
+      );
+
+    // Write audit log
+    const auditResult = await createAuditLog(
+      {
+        organizationId,
+        actorUserId: authContext.user.id,
+        action: 'org.delete',
+        entityType: 'organization',
+        entityId: organizationId,
+        before: { name: current.name, slug: current.slug },
+        after: { name: current.name, slug: current.slug, deletedAt },
+        request: requestContext,
+      },
+      tx,
+    );
+
+    if (!auditResult.ok) {
+      throw new Error('Failed to create audit log');
+    }
+  });
+
+  return { ok: true, data: undefined };
 });

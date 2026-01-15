@@ -363,6 +363,7 @@
   "organizations": {
     "title": "Organizations",
     "description": "Manage your organization memberships and team access.",
+    "createButton": "Create Organization",
     "emptyState": {
       "title": "No organizations yet",
       "description": "You'll see organizations here once you're invited or create one."
@@ -410,6 +411,105 @@
       "alreadyMember": "That user is already a member.",
       "lastOwner": "You must keep at least one owner.",
       "generic": "Something went wrong. Please try again."
+    },
+    "createDialog": {
+      "title": "Create Organization",
+      "description": "Create a new organization to manage events and team members.",
+      "banner": {
+        "title": "You'll be the owner",
+        "description": "You can invite team members and manage permissions after creation."
+      },
+      "fields": {
+        "name": {
+          "label": "Organization Name",
+          "placeholder": "My Running Club"
+        },
+        "slug": {
+          "label": "URL Slug",
+          "placeholder": "my-running-club",
+          "hint": "Used in URLs. Only lowercase letters, numbers, and hyphens."
+        }
+      },
+      "slugStatus": {
+        "checking": "Checking availability...",
+        "available": "Slug is available",
+        "taken": "This slug is already taken",
+        "error": "Could not check availability"
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "create": "Create Organization",
+        "creating": "Creating..."
+      },
+      "errors": {
+        "slugTaken": "This slug is already taken. Please choose another."
+      },
+      "success": {
+        "toast": "Organization \"{name}\" created successfully"
+      }
+    },
+    "settings": {
+      "title": "Organization Settings",
+      "fields": {
+        "name": {
+          "label": "Organization Name",
+          "placeholder": "My Running Club"
+        },
+        "slug": {
+          "label": "URL Slug",
+          "placeholder": "my-running-club",
+          "hint": "Used in URLs. Only lowercase letters, numbers, and hyphens."
+        }
+      },
+      "slugStatus": {
+        "checking": "Checking availability...",
+        "available": "Slug is available",
+        "taken": "This slug is already taken",
+        "error": "Could not check availability"
+      },
+      "buttons": {
+        "save": "Save Changes",
+        "saving": "Saving...",
+        "delete": "Delete Organization"
+      },
+      "errors": {
+        "slugTaken": "This slug is already taken. Please choose another."
+      },
+      "success": {
+        "toast": "Organization settings saved successfully"
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete Organization",
+      "description": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+      "warning": {
+        "title": "This is permanent",
+        "description": "All organization data, including member access, will be permanently deleted."
+      },
+      "orgInfo": {
+        "willBeDeleted": "This organization will be permanently deleted"
+      },
+      "fields": {
+        "confirmName": {
+          "label": "Type \"{name}\" to confirm",
+          "mismatch": "Organization name does not match"
+        }
+      },
+      "buttons": {
+        "cancel": "Cancel",
+        "delete": "Delete Organization",
+        "deleting": "Deleting..."
+      },
+      "errors": {
+        "unauthenticated": "Sign in to delete this organization.",
+        "forbidden": "Only owners can delete an organization.",
+        "notFound": "Organization not found.",
+        "hasActiveEvents": "Cannot delete organization with {count, plural, one {# active event} other {# active events}}. Archive or delete all events first.",
+        "genericError": "Something went wrong. Please try again."
+      },
+      "success": {
+        "toast": "Organization \"{name}\" has been deleted"
+      }
     }
   }
 }

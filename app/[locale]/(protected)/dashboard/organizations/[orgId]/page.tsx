@@ -12,6 +12,7 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
 import { OrganizationMembersManager } from './organization-members-manager';
+import { OrganizationSettingsForm } from './organization-settings-form';
 
 type OrganizationDetailPageProps = LocalePageProps & {
   params: Promise<{ locale: string; orgId: string }>;
@@ -59,6 +60,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
 
   const canManageMembers =
     isSupportUser || (membership ? hasOrgPermission(membership.role, 'canManageMembers') : false);
+  const isOwner = membership?.role === 'owner';
 
   return (
     <div className="space-y-6">
@@ -75,6 +77,13 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
           {t('detail.slugLabel')}: {organization.slug}
         </p>
       </div>
+
+      <OrganizationSettingsForm
+        organizationId={organization.id}
+        name={organization.name}
+        slug={organization.slug}
+        canEdit={isOwner}
+      />
 
       <OrganizationMembersManager
         organizationId={organization.id}
