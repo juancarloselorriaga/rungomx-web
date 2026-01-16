@@ -23,11 +23,13 @@ import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
 import { isEventsEnabled, isEventsNoPaymentMode } from '@/lib/features/flags';
+import type { AppLocale } from '@/i18n/routing';
 import {
   canUserAccessSeries,
   getOrgMembership,
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
+import { sendRegistrationCompletionEmail } from '@/lib/events/registration-email';
 
 import {
   CAPACITY_SCOPES,
@@ -2924,6 +2926,21 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
 
       return updatedReg;
     });
+
+    try {
+      if (updated.status === 'confirmed' || updated.status === 'payment_pending') {
+        await sendRegistrationCompletionEmail({
+          registrationId: updated.id,
+          userId: authContext.user!.id,
+          status: updated.status,
+          userEmail: authContext.user!.email,
+          userName: authContext.user!.name,
+          locale: authContext.profile?.locale as AppLocale | undefined,
+        });
+      }
+    } catch (error) {
+      console.error('[registration-email] Failed to send registration email:', error);
+    }
 
     return {
       ok: true,
