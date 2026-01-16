@@ -13,3 +13,6 @@ config({ path: resolve(__dirname, '../.env.test') });
 if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in .env.test');
 }
+
+// Neon is remote and cleanup operations can be slow; avoid flaky hook timeouts.
+jest.setTimeout(20_000);

@@ -99,6 +99,7 @@ test.describe('Athlete Registration', () => {
     // Add distance and publish
     await navigateToEventSettings(page, eventId);
     await addDistance(page, DISTANCE_DATA.trail10k);
+    await addDistance(page, DISTANCE_DATA.road5k);
     await publishEvent(page);
 
     await context.close();
@@ -147,6 +148,13 @@ test.describe('Athlete Registration', () => {
 
     // Should be on registration page
     await expect(page).toHaveURL(/\/register/);
+  });
+
+  test('Test 1.8d-2: Organizer sees warning when registering own event', async ({ page }) => {
+    await signInAsOrganizer(page, organizerCreds);
+    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
+
+    await expect(page.getByText(/registering for your own event/i)).toBeVisible();
   });
 
   test('Test 1.8e: Select distance', async ({ page }) => {
@@ -239,15 +247,11 @@ test.describe('Athlete Registration', () => {
     // Try to register again for the same event
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
 
-    // Should show message that user is already registered
-    // Or prevent duplicate registration in some way
-    const alreadyRegistered = page.getByText(/already registered|already signed up/i);
-    const isVisible = await alreadyRegistered.isVisible().catch(() => false);
-
-    if (isVisible) {
-      await expect(alreadyRegistered).toBeVisible();
-    }
-    // If duplicate prevention is handled differently, adjust assertion
+    // Select a different distance and attempt to continue.
+    // Policy: users cannot register twice in the same edition (including different distances).
+    await page.getByRole('button', { name: /5K Road Race/i }).click();
+    await page.getByRole('button', { name: /continue/i }).click();
+    await expect(page.getByText(/already registered/i)).toBeVisible();
   });
 
   test('Test 1.8j: Capacity decrements after registration', async ({ page }) => {
@@ -269,16 +273,21 @@ test.describe('Athlete Registration', () => {
     await page.getByRole('button', { name: /10K Trail Run/i }).click();
     await page.getByRole('button', { name: /continue/i }).click();
 
-    // Try to continue without filling required fields
-    await page.getByRole('button', { name: /continue/i }).click();
-
-    // Should still be on participant information step - use heading to be specific
+    // Wait for the participant information step to load
     await expect(page.getByRole('heading', { name: /participant information/i })).toBeVisible();
 
-    // Validation errors should be shown
-    // (Implementation may vary - look for error messages or highlighted fields)
-    const errorMessages = page.locator('[role="alert"], .error, [class*="error"]');
-    const errorCount = await errorMessages.count();
-    expect(errorCount).toBeGreaterThan(0);
+    // Clear required fields to make the form incomplete
+    // The form pre-fills from user profile, so we need to explicitly clear them
+    await page.getByLabel(/first name/i).clear();
+    await page.getByLabel(/last name/i).clear();
+    await page.getByLabel(/email/i).clear();
+
+    // Try to continue without filling required fields
+    // The Continue button should be disabled
+    const continueButton = page.getByRole('button', { name: /continue/i });
+    await expect(continueButton).toBeDisabled();
+
+    // Should still be on participant information step
+    await expect(page.getByRole('heading', { name: /participant information/i })).toBeVisible();
   });
 });
