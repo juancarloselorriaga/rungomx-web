@@ -1396,6 +1396,74 @@ export async function getMyRegistrationDetail(
   };
 }
 
+// =============================================================================
+// Active Registration Check
+// =============================================================================
+
+export type ActiveRegistrationInfo = {
+  registrationId: string;
+  distanceId: string;
+  distanceLabel: string;
+  status: 'started' | 'submitted' | 'payment_pending' | 'confirmed';
+  expiresAt: Date | null;
+};
+
+/**
+ * Check if user has an active registration for an event edition.
+ * Active means:
+ * - status === 'confirmed' AND deletedAt IS NULL
+ * - OR status IN ('started', 'submitted', 'payment_pending') AND expiresAt > NOW() AND deletedAt IS NULL
+ */
+export async function getActiveRegistrationForEdition(
+  userId: string,
+  editionId: string,
+): Promise<ActiveRegistrationInfo | null> {
+  const now = new Date();
+
+  const [registration] = await db
+    .select({
+      registrationId: registrations.id,
+      distanceId: registrations.distanceId,
+      distanceLabel: eventDistances.label,
+      status: registrations.status,
+      expiresAt: registrations.expiresAt,
+    })
+    .from(registrations)
+    .innerJoin(eventDistances, eq(registrations.distanceId, eventDistances.id))
+    .where(
+      and(
+        eq(registrations.buyerUserId, userId),
+        eq(registrations.editionId, editionId),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+            ),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
+    )
+    .orderBy(desc(registrations.createdAt))
+    .limit(1);
+
+  if (!registration) {
+    return null;
+  }
+
+  return {
+    registrationId: registration.registrationId,
+    distanceId: registration.distanceId,
+    distanceLabel: registration.distanceLabel,
+    status: registration.status as ActiveRegistrationInfo['status'],
+    expiresAt: registration.expiresAt,
+  };
+}
+
 /**
  * Return published event routes for sitemap generation.
  */

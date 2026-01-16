@@ -12,10 +12,10 @@ import {
   acceptWaiver,
   finalizeRegistration,
 } from '@/lib/events/actions';
-import type { PublicEventDetail } from '@/lib/events/queries';
+import type { ActiveRegistrationInfo, PublicEventDetail } from '@/lib/events/queries';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, Check, CheckCircle, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CheckCircle, Info, Loader2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition, useEffect } from 'react';
 
@@ -39,6 +39,7 @@ type RegistrationFlowProps = {
   userId: string;
   showOrganizerSelfRegistrationWarning?: boolean;
   preSelectedDistanceId?: string;
+  existingRegistration?: ActiveRegistrationInfo | null;
 };
 
 export function RegistrationFlow({
@@ -49,6 +50,7 @@ export function RegistrationFlow({
   userProfile,
   showOrganizerSelfRegistrationWarning,
   preSelectedDistanceId,
+  existingRegistration,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
@@ -276,6 +278,35 @@ export function RegistrationFlow({
         </h1>
       </div>
 
+      {/* Already registered banner */}
+      {existingRegistration && step === 'distance' && (
+        <div className="mb-6 rounded-lg border border-info-foreground/30 bg-info p-4">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-info-foreground mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-info-foreground">
+                {t('alreadyRegistered.title')}
+              </h3>
+              <p className="text-sm text-info-foreground/90 mt-1">
+                {t('alreadyRegistered.description', { distanceName: existingRegistration.distanceLabel })}
+              </p>
+              {existingRegistration.status !== 'confirmed' && (
+                <p className="text-sm text-info-foreground/80 mt-1">
+                  {t('alreadyRegistered.inProgress', { status: existingRegistration.status })}
+                </p>
+              )}
+              <div className="mt-3">
+                <Button asChild variant="secondary" size="sm">
+                  <Link href="/dashboard/my-registrations">
+                    {t('alreadyRegistered.viewRegistrations')}
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Progress indicator */}
       {step !== 'confirmation' && (
         <div className="mb-8">
@@ -364,24 +395,35 @@ export function RegistrationFlow({
               {event.distances.map((distance) => {
                 const isSoldOut =
                   distance.spotsRemaining !== null && distance.spotsRemaining <= 0;
+                const isRegisteredDistance = existingRegistration?.distanceId === distance.id;
+                const isDisabled = isSoldOut || isPending || !!existingRegistration;
 
                 return (
                   <button
                     key={distance.id}
                     type="button"
-                    onClick={() => !isSoldOut && setSelectedDistanceId(distance.id)}
-                    disabled={isSoldOut || isPending}
+                    onClick={() => !isDisabled && setSelectedDistanceId(distance.id)}
+                    disabled={isDisabled}
                     className={cn(
                       'w-full text-left rounded-lg border p-4 transition-all',
-                      selectedDistanceId === distance.id
-                        ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                        : 'border-border hover:border-primary/50',
-                      isSoldOut && 'opacity-50 cursor-not-allowed',
+                      isRegisteredDistance
+                        ? 'border-info-foreground/30 bg-info'
+                        : selectedDistanceId === distance.id
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary'
+                          : 'border-border hover:border-primary/50',
+                      isDisabled && !isRegisteredDistance && 'opacity-50 cursor-not-allowed',
                     )}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-medium">{distance.label}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">{distance.label}</h3>
+                          {isRegisteredDistance && (
+                            <span className="inline-flex items-center rounded-full bg-info-foreground/15 px-2 py-0.5 text-xs font-medium text-info-foreground">
+                              {t('alreadyRegistered.yourRegistration')}
+                            </span>
+                          )}
+                        </div>
                         {distance.distanceValue && (
                           <p className="text-sm text-muted-foreground">
                             {distance.distanceValue} {distance.distanceUnit}
@@ -421,7 +463,7 @@ export function RegistrationFlow({
             <div className="flex justify-end">
               <Button
                 onClick={handleDistanceSelect}
-                disabled={!selectedDistanceId || isPending}
+                disabled={!selectedDistanceId || isPending || !!existingRegistration}
               >
                 {isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

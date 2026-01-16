@@ -1,5 +1,5 @@
 import { getAuthContextWithOrgs } from '@/lib/auth/server';
-import { getPublicEventBySlug } from '@/lib/events/queries';
+import { getActiveRegistrationForEdition, getPublicEventBySlug } from '@/lib/events/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
@@ -58,6 +58,12 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
     );
   }
 
+  // Check if user already has an active registration
+  const existingRegistration = await getActiveRegistrationForEdition(
+    authContext.user!.id,
+    event.id,
+  );
+
   // Get user profile data to pre-fill form
   const userProfile = {
     firstName: authContext.user!.name?.split(' ')[0] || '',
@@ -86,6 +92,7 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
       userId={authContext.user!.id}
       showOrganizerSelfRegistrationWarning={isOrganizerForEvent}
       preSelectedDistanceId={preSelectedDistanceId}
+      existingRegistration={existingRegistration}
     />
   );
 }
