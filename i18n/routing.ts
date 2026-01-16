@@ -101,6 +101,14 @@ export const routing = defineRouting({
       es: '/tablero/eventos/[eventId]/politicas',
       en: '/dashboard/events/[eventId]/policies',
     },
+    '/dashboard/my-registrations': {
+      es: '/tablero/inscripciones',
+      en: '/dashboard/my-registrations',
+    },
+    '/dashboard/my-registrations/[registrationId]': {
+      es: '/tablero/inscripciones/[registrationId]',
+      en: '/dashboard/my-registrations/[registrationId]',
+    },
     '/events/[seriesSlug]/[editionSlug]': {
       es: '/eventos/[seriesSlug]/[editionSlug]',
       en: '/events/[seriesSlug]/[editionSlug]',
