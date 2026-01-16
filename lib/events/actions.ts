@@ -2287,6 +2287,7 @@ const submitRegistrantInfoSchema = z.object({
     email: z.string().email(),
     dateOfBirth: z.string(), // ISO date string
     gender: z.string().optional(),
+    genderDescription: z.string().max(100).optional(),
     phone: z.string().optional(),
     city: z.string().optional(),
     state: z.string().optional(),

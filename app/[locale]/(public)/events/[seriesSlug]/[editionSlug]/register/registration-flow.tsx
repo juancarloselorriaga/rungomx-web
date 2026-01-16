@@ -1,7 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
+import { GenderField } from '@/components/settings/fields/gender-field';
+import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Link } from '@/i18n/navigation';
 import {
   startRegistration,
@@ -49,6 +52,7 @@ export function RegistrationFlow({
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
+  const tCommon = useTranslations('common');
   const waiverSignatureLabels = {
     initials: t('waiver.signatureLabels.initials'),
     signature: t('waiver.signatureLabels.signature'),
@@ -87,6 +91,7 @@ export function RegistrationFlow({
   const [phone, setPhone] = useState(userProfile.phone);
   const [dateOfBirth, setDateOfBirth] = useState(userProfile.dateOfBirth);
   const [gender, setGender] = useState(userProfile.gender);
+  const [genderDescription, setGenderDescription] = useState('');
   const [emergencyContact, setEmergencyContact] = useState(userProfile.emergencyContactName);
   const [emergencyPhone, setEmergencyPhone] = useState(userProfile.emergencyContactPhone);
   const [teamName, setTeamName] = useState('');
@@ -167,6 +172,7 @@ export function RegistrationFlow({
           email: email.trim(),
           dateOfBirth: dateOfBirth || new Date().toISOString().split('T')[0], // Required field
           gender: gender || undefined,
+          genderDescription: gender === 'self_described' ? genderDescription.trim() : undefined,
           phone: phone.trim() || undefined,
           emergencyContactName: emergencyContact.trim() || undefined,
           emergencyContactPhone: emergencyPhone.trim() || undefined,
@@ -467,42 +473,33 @@ export function RegistrationFlow({
                 />
               </FormField>
 
-              <FormField label={t('info.phone')}>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
-                />
-              </FormField>
+              <PhoneField
+                label={t('info.phone')}
+                name="phone"
+                value={phone}
+                onChangeAction={setPhone}
+                disabled={isPending}
+              />
 
               <FormField label={t('info.dateOfBirth')}>
-                <input
-                  type="date"
+                <DatePicker
+                  locale={locale}
                   value={dateOfBirth}
-                  onChange={(e) => setDateOfBirth(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
+                  onChangeAction={setDateOfBirth}
+                  clearLabel={tCommon('clear')}
+                  name="dateOfBirth"
                 />
               </FormField>
 
-              <FormField label={t('info.gender')}>
-                <select
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
-                >
-                  <option value="">-</option>
-                  <option value="male">{t('info.genderOptions.male')}</option>
-                  <option value="female">{t('info.genderOptions.female')}</option>
-                  <option value="other">{t('info.genderOptions.other')}</option>
-                  <option value="prefer_not_to_say">
-                    {t('info.genderOptions.preferNotToSay')}
-                  </option>
-                </select>
-              </FormField>
+              <GenderField
+                label={t('info.gender')}
+                value={gender}
+                description={genderDescription}
+                onChangeAction={setGender}
+                onDescriptionChangeAction={setGenderDescription}
+                options={['female', 'male', 'non_binary', 'prefer_not_to_say', 'self_described']}
+                disabled={isPending}
+              />
 
               <FormField label={t('info.emergencyContact')}>
                 <input
@@ -514,15 +511,13 @@ export function RegistrationFlow({
                 />
               </FormField>
 
-              <FormField label={t('info.emergencyPhone')}>
-                <input
-                  type="tel"
-                  value={emergencyPhone}
-                  onChange={(e) => setEmergencyPhone(e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
-                />
-              </FormField>
+              <PhoneField
+                label={t('info.emergencyPhone')}
+                name="emergencyPhone"
+                value={emergencyPhone}
+                onChangeAction={setEmergencyPhone}
+                disabled={isPending}
+              />
             </div>
 
             <FormField label={t('info.teamName')}>
