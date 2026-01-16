@@ -11,6 +11,7 @@ import { LoginRequired } from './login-required';
 
 type RegisterPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
+  searchParams?: Promise<{ distanceId?: string }>;
 };
 
 export async function generateMetadata({ params }: RegisterPageProps): Promise<Metadata> {
@@ -31,8 +32,9 @@ export async function generateMetadata({ params }: RegisterPageProps): Promise<M
   };
 }
 
-export default async function RegisterPage({ params }: RegisterPageProps) {
+export default async function RegisterPage({ params, searchParams }: RegisterPageProps) {
   const { locale, seriesSlug, editionSlug } = await params;
+  const { distanceId: preSelectedDistanceId } = (await searchParams) ?? {};
   await configPageLocale(params, { pathname: '/events/[seriesSlug]/[editionSlug]/register' });
 
   const event = await getPublicEventBySlug(seriesSlug, editionSlug);
@@ -61,6 +63,13 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
     firstName: authContext.user!.name?.split(' ')[0] || '',
     lastName: authContext.user!.name?.split(' ').slice(1).join(' ') || '',
     email: authContext.user!.email || '',
+    phone: authContext.profile?.phone || '',
+    dateOfBirth: authContext.profile?.dateOfBirth
+      ? new Date(authContext.profile.dateOfBirth).toISOString().split('T')[0]
+      : '',
+    gender: authContext.profile?.gender || '',
+    emergencyContactName: authContext.profile?.emergencyContactName || '',
+    emergencyContactPhone: authContext.profile?.emergencyContactPhone || '',
   };
 
   const isOrganizerForEvent = Boolean(
@@ -76,6 +85,7 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
       userProfile={userProfile}
       userId={authContext.user!.id}
       showOrganizerSelfRegistrationWarning={isOrganizerForEvent}
+      preSelectedDistanceId={preSelectedDistanceId}
     />
   );
 }

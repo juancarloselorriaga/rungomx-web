@@ -297,6 +297,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       registerPath={{
                         pathname: '/events/[seriesSlug]/[editionSlug]/register',
                         params: { seriesSlug, editionSlug },
+                        query: { distanceId: distance.id },
                       }}
                       sharedCapacity={event.sharedCapacity}
                     />
@@ -504,7 +505,7 @@ async function DistanceCard({
   distance: PublicDistanceInfo;
   locale: string;
   isRegistrationOpen: boolean;
-  registerPath: { pathname: '/events/[seriesSlug]/[editionSlug]/register'; params: { seriesSlug: string; editionSlug: string } };
+  registerPath: { pathname: '/events/[seriesSlug]/[editionSlug]/register'; params: { seriesSlug: string; editionSlug: string }; query?: { distanceId: string } };
   sharedCapacity: number | null;
 }) {
   const t = await getTranslations({ locale: locale as 'es' | 'en', namespace: 'pages.events.detail' });
