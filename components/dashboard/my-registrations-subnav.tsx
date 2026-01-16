@@ -31,11 +31,23 @@ export function MyRegistrationsSubnav() {
   const activeView = getActiveView(searchParams?.get('view') ?? null);
   type LinkHref = ComponentProps<typeof Link>['href'];
 
-  const labels: Record<RegistrationView, string> = {
-    upcoming: t('tabs.upcoming'),
-    in_progress: t('tabs.inProgress'),
-    past: t('tabs.past'),
-    cancelled: t('tabs.cancelled'),
+  const labels: Record<RegistrationView, { full: string; short: string }> = {
+    upcoming: {
+      full: t('tabs.upcoming'),
+      short: t('tabs.upcomingShort'),
+    },
+    in_progress: {
+      full: t('tabs.inProgress'),
+      short: t('tabs.inProgressShort'),
+    },
+    past: {
+      full: t('tabs.past'),
+      short: t('tabs.pastShort'),
+    },
+    cancelled: {
+      full: t('tabs.cancelled'),
+      short: t('tabs.cancelledShort'),
+    },
   };
 
   return (
@@ -61,8 +73,11 @@ export function MyRegistrationsSubnav() {
               replace={isActive}
               className="flex min-w-0 w-full items-center justify-center overflow-hidden"
             >
-              <span className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold leading-tight">
-                {labels[view]}
+              <span className="inline text-sm font-semibold leading-tight lg:hidden">
+                {labels[view].short}
+              </span>
+              <span className="hidden text-sm font-semibold leading-tight lg:inline">
+                {labels[view].full}
               </span>
             </Link>
           </Button>
