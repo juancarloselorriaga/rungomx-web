@@ -221,7 +221,19 @@ function extractManualOverrides(): string | null {
   }
 
   const between = content.slice(start + MANUAL_OVERRIDES_START.length, end).trim();
-  return between.length ? between : null;
+  if (!between.length) return null;
+
+  /**
+   * Keep only the actual override export (and any helper code around it), not the scaffold comments.
+   * Otherwise every regeneration duplicates the scaffold lines because we print them in the generator too.
+   */
+  const betweenLines = between.split('\n');
+  const exportLineIndex = betweenLines.findIndex((line) =>
+    line.trimStart().startsWith('export const manualRouteOverrides'),
+  );
+  const cleaned =
+    exportLineIndex >= 0 ? betweenLines.slice(exportLineIndex).join('\n').trim() : between;
+  return cleaned.length ? cleaned : null;
 }
 
 /**
@@ -264,7 +276,15 @@ function generateSelectionHelpers(
   pageNamespaces: string[],
 ): string {
   const defaultBaseStr = rootNamespaces.map((n) => `'${n}'`).join(', ');
+  const routeBaseStr = rootNamespaces
+    .filter((n) => n !== 'emails')
+    .map((n) => `'${n}'`)
+    .join(', ');
   const defaultComponentsStr = componentNamespaces.map((n) => `'${n}'`).join(', ');
+  const publicComponentsStr = componentNamespaces
+    .filter((n) => n !== 'profile' && n !== 'settings')
+    .map((n) => `'${n}'`)
+    .join(', ');
   const defaultPagesStr = pageNamespaces.map((n) => `'${n}'`).join(', ');
 
   return `// ============================================
@@ -278,7 +298,11 @@ export type NamespaceSelection = {
 };
 
 const DEFAULT_BASE_NAMESPACES = [${defaultBaseStr}] as const;
+// Route-scoped bundles should stay small: emails are server-only and don't need to be shipped for page rendering.
+const DEFAULT_ROUTE_BASE_NAMESPACES = [${routeBaseStr}] as const;
 const DEFAULT_COMPONENT_NAMESPACES = [${defaultComponentsStr}] as const;
+// Public routes don't render profile/settings UI; excluding them keeps route-scoped payloads under the guardrail.
+const DEFAULT_PUBLIC_COMPONENT_NAMESPACES = [${publicComponentsStr}] as const;
 const DEFAULT_PAGE_NAMESPACES = [${defaultPagesStr}] as const;
 
 type BaseNamespace = typeof DEFAULT_BASE_NAMESPACES[number];
@@ -286,13 +310,13 @@ type ComponentNamespace = typeof DEFAULT_COMPONENT_NAMESPACES[number];
 type PageNamespace = typeof DEFAULT_PAGE_NAMESPACES[number];
 
 export const publicSelection = (pages: string[] = []): NamespaceSelection => ({
-  base: DEFAULT_BASE_NAMESPACES,
-  components: DEFAULT_COMPONENT_NAMESPACES,
+  base: DEFAULT_ROUTE_BASE_NAMESPACES,
+  components: DEFAULT_PUBLIC_COMPONENT_NAMESPACES,
   pages: pages as PageNamespace[],
 });
 
 export const protectedSelection = (pages: string[] = []): NamespaceSelection => ({
-  base: DEFAULT_BASE_NAMESPACES,
+  base: DEFAULT_ROUTE_BASE_NAMESPACES,
   components: ['themeSwitcher', 'localeSwitcher', 'errorBoundary'],
   pages: pages as PageNamespace[],
 });

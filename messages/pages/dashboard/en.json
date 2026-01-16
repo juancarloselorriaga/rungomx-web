@@ -6,6 +6,83 @@
     "signedInAs": "Signed in as {email}",
     "signedOut": "Session not available."
   },
+  "myRegistrations": {
+    "title": "My registrations",
+    "description": "Track your upcoming and past event registrations.",
+    "tabs": {
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "cancelled": "Cancelled/Expired",
+      "inProgress": "In progress"
+    },
+    "emptyState": {
+      "title": "No registrations yet",
+      "description": "When you sign up for an event, it will show up here.",
+      "action": "Browse events"
+    },
+    "status": {
+      "confirmed": "Confirmed",
+      "payment_pending": "Payment pending",
+      "cancelled": "Cancelled",
+      "started": "Started",
+      "submitted": "Submitted",
+      "expired": "Expired"
+    },
+    "actions": {
+      "viewDetails": "View details",
+      "viewEvent": "View event page",
+      "print": "Print",
+      "payNow": "Pay now"
+    },
+    "labels": {
+      "ticket": "Ticket",
+      "ticketCode": "Ticket code",
+      "registrationId": "Registration ID",
+      "supportId": "Support ID",
+      "status": "Status",
+      "eventDetails": "Event details",
+      "eventDate": "Event date",
+      "location": "Location",
+      "distance": "Distance",
+      "registrationDetails": "Registration details",
+      "createdAt": "Registered on",
+      "paymentHoldExpires": "Payment hold expires",
+      "priceBreakdown": "Price breakdown",
+      "basePrice": "Base",
+      "fees": "Fees",
+      "tax": "Tax",
+      "total": "Total",
+      "participantSnapshot": "Participant snapshot",
+      "waivers": "Waiver acceptances",
+      "fields": {
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "phone": "Phone",
+        "dateOfBirth": "Date of birth",
+        "gender": "Gender",
+        "city": "City",
+        "state": "State",
+        "country": "Country",
+        "emergencyContactName": "Emergency contact",
+        "emergencyContactPhone": "Emergency phone"
+      }
+    },
+    "detail": {
+      "ticketNote": "Show this code or QR at check-in.",
+      "paymentPendingNote": "Payment is pending. You can complete payment once the feature is available.",
+      "noWaivers": "No waivers on file.",
+      "waiverAccepted": "Accepted",
+      "waiverSignature": "Signature",
+      "eventLink": "View event page",
+      "officialSite": "Official event site",
+      "signatureTypes": {
+        "checkbox": "Checkbox",
+        "initials": "Initials",
+        "signature": "Signature"
+      }
+    }
+  },
   "admin": {
     "title": "Admin workspace",
     "staffTitle": "Staff workspace",

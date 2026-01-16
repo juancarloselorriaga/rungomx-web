@@ -48,5 +48,33 @@
       "deletionTypeAdmin": "Iniciada por administrador",
       "footer": "© {year} RungoMX. Todos los derechos reservados."
     }
+  },
+  "registrationConfirmation": {
+    "subject": "Tu inscripción está confirmada — {eventName}",
+    "title": "Inscripción confirmada",
+    "greeting": "Hola {userName},",
+    "message": "Tu inscripción para {eventName} está lista. Conserva este correo como tu boleto para el check-in.",
+    "eventDateLabel": "Fecha del evento",
+    "locationLabel": "Ubicación",
+    "ticketCodeLabel": "Código de boleto",
+    "registrationIdLabel": "ID de inscripción",
+    "ctaLabel": "Ver boleto",
+    "qrAlt": "Código QR del boleto",
+    "reminder": "Muestra este correo o código en el check-in.",
+    "footer": "© {year} RungoMX. Todos los derechos reservados."
+  },
+  "registrationPaymentPending": {
+    "subject": "Pago pendiente — completa tu inscripción a {eventName}",
+    "title": "Pago pendiente",
+    "greeting": "Hola {userName},",
+    "message": "Guardamos tu inscripción para {eventName}, pero el pago sigue pendiente. Usa el botón para continuar cuando los pagos estén disponibles.",
+    "eventDateLabel": "Fecha del evento",
+    "locationLabel": "Ubicación",
+    "ticketCodeLabel": "Código de boleto",
+    "registrationIdLabel": "ID de inscripción",
+    "ctaLabel": "Pagar ahora",
+    "qrAlt": "Código QR del boleto",
+    "reminder": "Conserva este correo para el check-in.",
+    "footer": "© {year} RungoMX. Todos los derechos reservados."
   }
 }

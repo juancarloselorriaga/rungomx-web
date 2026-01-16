@@ -128,7 +128,7 @@
     "confirmation": {
       "title": "Registration complete!",
       "description": "You have successfully registered for {eventName}.",
-      "registrationId": "Registration ID",
+      "registrationId": "Ticket code",
       "distance": "Distance",
       "policiesTitle": "Event policies",
       "refundPolicy": "Refund policy",
