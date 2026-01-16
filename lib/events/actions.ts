@@ -30,6 +30,11 @@ import {
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
 import { sendRegistrationCompletionEmail } from '@/lib/events/registration-email';
+import { computeExpiresAt, isExpiredHold } from '@/lib/events/registration-holds';
+import {
+  StartRegistrationError,
+  startRegistrationForUser,
+} from '@/lib/events/start-registration';
 
 import {
   CAPACITY_SCOPES,
@@ -50,49 +55,6 @@ import {
  * Format: 6 uppercase alphanumeric characters (e.g., "ABC123")
  */
 const generatePublicCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 6);
-
-const STARTED_TTL_MINUTES = Number(process.env.EVENTS_REGISTRATION_STARTED_TTL_MINUTES ?? '30');
-const SUBMITTED_TTL_MINUTES = Number(process.env.EVENTS_REGISTRATION_SUBMITTED_TTL_MINUTES ?? '30');
-const PAYMENT_PENDING_TTL_HOURS = Number(process.env.EVENTS_REGISTRATION_PAYMENT_PENDING_TTL_HOURS ?? '24');
-
-const resolveTtl = (value: number, fallback: number) =>
-  Number.isFinite(value) && value > 0 ? value : fallback;
-
-const STARTED_TTL_MINUTES_RESOLVED = resolveTtl(STARTED_TTL_MINUTES, 30);
-const SUBMITTED_TTL_MINUTES_RESOLVED = resolveTtl(SUBMITTED_TTL_MINUTES, 30);
-const PAYMENT_PENDING_TTL_HOURS_RESOLVED = resolveTtl(PAYMENT_PENDING_TTL_HOURS, 24);
-
-function computeExpiresAt(
-  now: Date,
-  status: 'started' | 'submitted' | 'payment_pending',
-): Date {
-  switch (status) {
-    case 'started':
-      return new Date(now.getTime() + STARTED_TTL_MINUTES_RESOLVED * 60 * 1000);
-    case 'submitted':
-      return new Date(now.getTime() + SUBMITTED_TTL_MINUTES_RESOLVED * 60 * 1000);
-    case 'payment_pending':
-      return new Date(now.getTime() + PAYMENT_PENDING_TTL_HOURS_RESOLVED * 60 * 60 * 1000);
-  }
-
-  throw new Error(`Unsupported registration status: ${status}`);
-}
-
-function isExpiredHold(status: string, expiresAt: Date | null, now: Date): boolean {
-  if (status === 'cancelled') {
-    return true;
-  }
-
-  if (status === 'confirmed') {
-    return false;
-  }
-
-  if (status === 'started' || status === 'submitted' || status === 'payment_pending') {
-    return expiresAt === null || expiresAt <= now;
-  }
-
-  return true;
-}
 
 /**
  * Check if the user has permission to access the events platform.
@@ -2381,150 +2343,8 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
   }
 
   const { distanceId } = validated.data;
-
-  // Get distance with edition and check registration availability
-  const distance = await db.query.eventDistances.findFirst({
-    where: and(eq(eventDistances.id, distanceId), isNull(eventDistances.deletedAt)),
-    with: {
-      edition: { with: { series: true } },
-      pricingTiers: { where: isNull(pricingTiers.deletedAt) },
-    },
-  });
-
-  if (!distance?.edition?.series) {
-    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
-  }
-
-  const edition = distance.edition;
-
-  // Check registration is open
-  if (edition.visibility !== 'published') {
-    return { ok: false, error: 'Event is not published', code: 'NOT_PUBLISHED' };
-  }
-
-  if (edition.isRegistrationPaused) {
-    return { ok: false, error: 'Registration is paused', code: 'REGISTRATION_PAUSED' };
-  }
-
-  const now = new Date();
-  if (edition.registrationOpensAt && now < edition.registrationOpensAt) {
-    return { ok: false, error: 'Registration has not opened yet', code: 'REGISTRATION_NOT_OPEN' };
-  }
-
-  if (edition.registrationClosesAt && now > edition.registrationClosesAt) {
-    return { ok: false, error: 'Registration has closed', code: 'REGISTRATION_CLOSED' };
-  }
-
-  // Get price (before transaction so we can fail fast)
-  const activeTier = distance.pricingTiers
-    .filter(t => {
-      if (t.startsAt && now < t.startsAt) return false;
-      if (t.endsAt && now > t.endsAt) return false;
-      return true;
-    })
-    .sort((a, b) => a.sortOrder - b.sortOrder)[0];
-
-  const priceCents = activeTier?.priceCents ?? 0;
-  const feesCents = Math.round(priceCents * 0.05); // 5% platform fee placeholder
-  const totalCents = priceCents + feesCents;
-
-  // Start registration within transaction to ensure atomicity of anti-squatting + capacity checks
   try {
-    const registration = await db.transaction(async (tx) => {
-      const now = new Date();
-
-      // Lock the distance row to serialize all checks per distance
-      // This lock applies even when capacity is null to ensure anti-squatting atomicity
-      await tx.execute(sql`SELECT id FROM ${eventDistances} WHERE id = ${distanceId} FOR UPDATE`);
-
-      // Anti-squatting: Check for existing active registration by this user for this distance
-      // Now atomic - concurrent requests will serialize due to the distance lock above
-      const existingRegistration = await tx.query.registrations.findFirst({
-        where: and(
-          eq(registrations.buyerUserId, authContext.user.id),
-          eq(registrations.distanceId, distanceId),
-          or(
-            eq(registrations.status, 'started'),
-            eq(registrations.status, 'submitted'),
-            eq(registrations.status, 'payment_pending'),
-          ),
-          gt(registrations.expiresAt, now),
-          isNull(registrations.deletedAt),
-        ),
-      });
-
-      // If existing active registration found, return it (idempotent)
-      if (existingRegistration) {
-        return existingRegistration;
-      }
-
-      // Check capacity with locked distance row (or shared pool on edition)
-      if (distance.capacityScope === 'shared_pool' && distance.edition.sharedCapacity) {
-        await tx.execute(sql`SELECT id FROM ${eventEditions} WHERE id = ${edition.id} FOR UPDATE`);
-
-        const reservedCount = await tx.query.registrations.findMany({
-          where: and(
-            eq(registrations.editionId, edition.id),
-            or(
-              eq(registrations.status, 'confirmed'),
-              and(
-                or(
-                  eq(registrations.status, 'started'),
-                  eq(registrations.status, 'submitted'),
-                  eq(registrations.status, 'payment_pending'),
-                ),
-                gt(registrations.expiresAt, now),
-              ),
-            ),
-            isNull(registrations.deletedAt),
-          ),
-        });
-
-        if (reservedCount.length >= distance.edition.sharedCapacity) {
-          throw new Error('SOLD_OUT');
-        }
-      } else if (distance.capacity) {
-        const reservedCount = await tx.query.registrations.findMany({
-          where: and(
-            eq(registrations.distanceId, distanceId),
-            or(
-              eq(registrations.status, 'confirmed'),
-              and(
-                or(
-                  eq(registrations.status, 'started'),
-                  eq(registrations.status, 'submitted'),
-                  eq(registrations.status, 'payment_pending'),
-                ),
-                gt(registrations.expiresAt, now),
-              ),
-            ),
-            isNull(registrations.deletedAt),
-          ),
-        });
-        if (reservedCount.length >= distance.capacity) {
-          throw new Error('SOLD_OUT');
-        }
-      }
-
-      // Create new registration
-      const [newReg] = await tx
-        .insert(registrations)
-        .values({
-          editionId: edition.id,
-          distanceId,
-          buyerUserId: authContext.user.id,
-          status: 'started',
-          basePriceCents: priceCents,
-          feesCents,
-          taxCents: 0,
-          totalCents,
-          expiresAt: computeExpiresAt(now, 'started'),
-        })
-        .returning();
-
-      return newReg;
-    });
-
+    const registration = await startRegistrationForUser(authContext.user.id, distanceId);
     return {
       ok: true,
       data: {
@@ -2536,9 +2356,10 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
       },
     };
   } catch (error) {
-    if (error instanceof Error && error.message === 'SOLD_OUT') {
-      return { ok: false, error: 'Distance is sold out', code: 'SOLD_OUT' };
+    if (error instanceof StartRegistrationError) {
+      return { ok: false, error: error.message, code: error.code };
     }
+
     throw error;
   }
 });
