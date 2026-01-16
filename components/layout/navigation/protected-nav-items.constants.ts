@@ -17,6 +17,15 @@ export function buildProtectedNavSections(
       labelKey: 'dashboard',
       iconName: 'LayoutDashboard',
     },
+    ...(permissions.canAccessUserArea
+      ? [
+          {
+            href: '/dashboard/my-registrations',
+            labelKey: 'myRegistrations',
+            iconName: 'FileText',
+          } as const,
+        ]
+      : []),
     {
       href: '/settings/profile',
       labelKey: 'profile',
