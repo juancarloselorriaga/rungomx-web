@@ -1,4 +1,4 @@
-import { getAuthContext } from '@/lib/auth/server';
+import { getAuthContextWithOrgs } from '@/lib/auth/server';
 import { getPublicEventBySlug } from '@/lib/events/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -42,7 +42,7 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
   }
 
   // Check if user is logged in
-  const authContext = await getAuthContext();
+  const authContext = await getAuthContextWithOrgs();
   const isLoggedIn = !!authContext.user;
 
   if (!isLoggedIn) {
@@ -63,6 +63,10 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
     email: authContext.user!.email || '',
   };
 
+  const isOrganizerForEvent = Boolean(
+    authContext.organizationMemberships?.some((membership) => membership.organizationId === event.organizationId),
+  );
+
   return (
     <RegistrationFlow
       locale={locale}
@@ -71,6 +75,7 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
       editionSlug={editionSlug}
       userProfile={userProfile}
       userId={authContext.user!.id}
+      showOrganizerSelfRegistrationWarning={isOrganizerForEvent}
     />
   );
 }
