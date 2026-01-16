@@ -139,6 +139,13 @@
       "viewEvent": "Ver detalles del evento",
       "backToEvents": "Explorar más eventos"
     },
+    "alreadyRegistered": {
+      "title": "Ya estás inscrito",
+      "description": "Tienes un registro activo para {distanceName}.",
+      "inProgress": "Estado: {status} - Completa tu inscripción desde Mis Inscripciones.",
+      "viewRegistrations": "Ver mis inscripciones",
+      "yourRegistration": "Tu inscripción"
+    },
     "errors": {
       "distanceRequired": "Por favor selecciona una distancia",
       "soldOut": "Esta distancia está agotada",

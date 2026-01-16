@@ -139,6 +139,13 @@
       "viewEvent": "View event details",
       "backToEvents": "Browse more events"
     },
+    "alreadyRegistered": {
+      "title": "You're already registered",
+      "description": "You have an active registration for {distanceName}.",
+      "inProgress": "Status: {status} - Complete your registration from My Registrations.",
+      "viewRegistrations": "View my registrations",
+      "yourRegistration": "Your registration"
+    },
     "errors": {
       "distanceRequired": "Please select a distance",
       "soldOut": "This distance is sold out",
