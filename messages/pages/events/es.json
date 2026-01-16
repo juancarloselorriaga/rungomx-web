@@ -128,7 +128,7 @@
     "confirmation": {
       "title": "¡Inscripción completa!",
       "description": "Te has inscrito exitosamente a {eventName}.",
-      "registrationId": "ID de inscripción",
+      "registrationId": "Código de boleto",
       "distance": "Distancia",
       "policiesTitle": "Políticas del evento",
       "refundPolicy": "Política de reembolsos",

@@ -154,6 +154,30 @@
         }
       }
     },
+    "DashboardMyRegistrations": {
+      "metadata": {
+        "title": "Mis inscripciones | RunGoMX",
+        "description": "Consulta tus inscripciones próximas y pasadas en RunGoMX.",
+        "keywords": ["inscripciones", "boletos", "eventos"],
+        "openGraph": {
+          "title": "Mis inscripciones | RunGoMX",
+          "description": "Consulta tus inscripciones y detalles de boletos.",
+          "imageAlt": "Mis inscripciones"
+        }
+      }
+    },
+    "DashboardMyRegistrationDetail": {
+      "metadata": {
+        "title": "Detalle de inscripción | RunGoMX",
+        "description": "Revisa el boleto y la información del evento.",
+        "keywords": ["detalle de inscripción", "boleto", "evento"],
+        "openGraph": {
+          "title": "Detalle de inscripción | RunGoMX",
+          "description": "Revisa el boleto y la información del evento.",
+          "imageAlt": "Detalle de inscripción"
+        }
+      }
+    },
     "Settings": {
       "metadata": {
         "title": "Configuración | RunGoMX",

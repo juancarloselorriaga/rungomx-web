@@ -6,6 +6,83 @@
     "signedInAs": "Sesión iniciada como {email}",
     "signedOut": "No hay una sesión activa."
   },
+  "myRegistrations": {
+    "title": "Mis inscripciones",
+    "description": "Consulta tus inscripciones próximas y pasadas.",
+    "tabs": {
+      "upcoming": "Próximas",
+      "past": "Pasadas",
+      "cancelled": "Canceladas/Vencidas",
+      "inProgress": "En progreso"
+    },
+    "emptyState": {
+      "title": "Sin inscripciones todavía",
+      "description": "Cuando te inscribas a un evento, aparecerá aquí.",
+      "action": "Explorar eventos"
+    },
+    "status": {
+      "confirmed": "Confirmada",
+      "payment_pending": "Pago pendiente",
+      "cancelled": "Cancelada",
+      "started": "Iniciada",
+      "submitted": "Enviada",
+      "expired": "Vencida"
+    },
+    "actions": {
+      "viewDetails": "Ver detalles",
+      "viewEvent": "Ver página del evento",
+      "print": "Imprimir",
+      "payNow": "Pagar ahora"
+    },
+    "labels": {
+      "ticket": "Boleto",
+      "ticketCode": "Código de boleto",
+      "registrationId": "ID de inscripción",
+      "supportId": "ID para soporte",
+      "status": "Estado",
+      "eventDetails": "Detalles del evento",
+      "eventDate": "Fecha del evento",
+      "location": "Ubicación",
+      "distance": "Distancia",
+      "registrationDetails": "Detalles de la inscripción",
+      "createdAt": "Inscrito el",
+      "paymentHoldExpires": "La reserva de pago vence",
+      "priceBreakdown": "Desglose de precio",
+      "basePrice": "Base",
+      "fees": "Cargos",
+      "tax": "Impuestos",
+      "total": "Total",
+      "participantSnapshot": "Datos del participante",
+      "waivers": "Aceptaciones de deslinde",
+      "fields": {
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "email": "Correo",
+        "phone": "Teléfono",
+        "dateOfBirth": "Fecha de nacimiento",
+        "gender": "Género",
+        "city": "Ciudad",
+        "state": "Estado",
+        "country": "País",
+        "emergencyContactName": "Contacto de emergencia",
+        "emergencyContactPhone": "Teléfono de emergencia"
+      }
+    },
+    "detail": {
+      "ticketNote": "Muestra este código o QR en el check-in.",
+      "paymentPendingNote": "El pago está pendiente. Podrás completar el pago cuando la función esté disponible.",
+      "noWaivers": "No hay deslindes registrados.",
+      "waiverAccepted": "Aceptado",
+      "waiverSignature": "Firma",
+      "eventLink": "Ver página del evento",
+      "officialSite": "Sitio oficial del evento",
+      "signatureTypes": {
+        "checkbox": "Casilla",
+        "initials": "Iniciales",
+        "signature": "Firma"
+      }
+    }
+  },
   "admin": {
     "title": "Área administrativa",
     "staffTitle": "Área de staff",

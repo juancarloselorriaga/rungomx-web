@@ -48,5 +48,33 @@
       "deletionTypeAdmin": "Admin-initiated",
       "footer": "© {year} RungoMX. All rights reserved."
     }
+  },
+  "registrationConfirmation": {
+    "subject": "Your registration is confirmed — {eventName}",
+    "title": "Registration confirmed",
+    "greeting": "Hi {userName},",
+    "message": "You're registered for {eventName}. Keep this email as your ticket for check-in.",
+    "eventDateLabel": "Event date",
+    "locationLabel": "Location",
+    "ticketCodeLabel": "Ticket code",
+    "registrationIdLabel": "Registration ID",
+    "ctaLabel": "View ticket",
+    "qrAlt": "Ticket QR code",
+    "reminder": "Show this email or code at check-in.",
+    "footer": "© {year} RungoMX. All rights reserved."
+  },
+  "registrationPaymentPending": {
+    "subject": "Payment pending — complete your registration for {eventName}",
+    "title": "Payment pending",
+    "greeting": "Hi {userName},",
+    "message": "We saved your registration for {eventName}, but payment is still pending. Use the button below to continue when payments are available.",
+    "eventDateLabel": "Event date",
+    "locationLabel": "Location",
+    "ticketCodeLabel": "Ticket code",
+    "registrationIdLabel": "Registration ID",
+    "ctaLabel": "Pay now",
+    "qrAlt": "Ticket QR code",
+    "reminder": "Keep this email handy for check-in.",
+    "footer": "© {year} RungoMX. All rights reserved."
   }
 }

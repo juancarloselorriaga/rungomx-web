@@ -154,6 +154,30 @@
         }
       }
     },
+    "DashboardMyRegistrations": {
+      "metadata": {
+        "title": "My registrations | RunGoMX",
+        "description": "View your upcoming and past event registrations in RunGoMX.",
+        "keywords": ["registrations", "tickets", "events"],
+        "openGraph": {
+          "title": "My registrations | RunGoMX",
+          "description": "See your event registrations and ticket details.",
+          "imageAlt": "My registrations"
+        }
+      }
+    },
+    "DashboardMyRegistrationDetail": {
+      "metadata": {
+        "title": "Registration details | RunGoMX",
+        "description": "Review ticket details and event information for your registration.",
+        "keywords": ["registration details", "ticket", "event"],
+        "openGraph": {
+          "title": "Registration details | RunGoMX",
+          "description": "Review ticket details and event information for your registration.",
+          "imageAlt": "Registration details"
+        }
+      }
+    },
     "Settings": {
       "metadata": {
         "title": "Settings | RunGoMX",
