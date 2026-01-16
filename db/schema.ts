@@ -565,3 +565,206 @@ export const auditLogs = pgTable('audit_logs', {
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 });
+
+// =============================================================================
+// EVENTS PLATFORM TABLES (Phase 2)
+// =============================================================================
+
+// Add-on type enum: 'merch' for merchandise, 'donation' for optional donations
+export const addOnTypeEnum = pgEnum('add_on_type', ['merch', 'donation']);
+
+// Add-on delivery method enum
+export const addOnDeliveryMethodEnum = pgEnum('add_on_delivery_method', ['pickup', 'shipping', 'none']);
+
+// Registration question type enum
+export const registrationQuestionTypeEnum = pgEnum('registration_question_type', [
+  'text',
+  'single_select',
+  'checkbox',
+]);
+
+export const addOns = pgTable('add_ons', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  distanceId: uuid('distance_id').references(() => eventDistances.id, { onDelete: 'cascade' }), // nullable for edition-wide add-ons
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  type: addOnTypeEnum('type').notNull().default('merch'),
+  deliveryMethod: addOnDeliveryMethodEnum('delivery_method').notNull().default('pickup'),
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const addOnOptions = pgTable('add_on_options', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  addOnId: uuid('add_on_id')
+    .notNull()
+    .references(() => addOns.id, { onDelete: 'cascade' }),
+  label: varchar('label', { length: 100 }).notNull(), // e.g., "Small", "Medium", "Large"
+  priceCents: integer('price_cents').notNull().default(0), // can be 0 for included, or positive for extra cost
+  maxQtyPerOrder: integer('max_qty_per_order').notNull().default(5),
+  optionMeta: jsonb('option_meta').$type<{
+    size?: string;
+    color?: string;
+    [key: string]: unknown;
+  }>(), // structured metadata for variants
+  isActive: boolean('is_active').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const addOnSelections = pgTable(
+  'add_on_selections',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    optionId: uuid('option_id')
+      .notNull()
+      .references(() => addOnOptions.id, { onDelete: 'cascade' }),
+    quantity: integer('quantity').notNull().default(1),
+    lineTotalCents: integer('line_total_cents').notNull(), // priceCents * quantity
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    registrationOptionUnique: uniqueIndex('add_on_selections_registration_option_idx').on(
+      table.registrationId,
+      table.optionId,
+    ),
+  }),
+);
+
+export const discountCodes = pgTable(
+  'discount_codes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    code: varchar('code', { length: 50 }).notNull(), // e.g., "EARLYBIRD20"
+    name: varchar('name', { length: 255 }), // internal name for identification
+    percentOff: integer('percent_off').notNull(), // 0-100
+    maxRedemptions: integer('max_redemptions'), // null = unlimited
+    startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }),
+    endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    editionCodeUnique: uniqueIndex('discount_codes_edition_code_idx').on(table.editionId, table.code),
+  }),
+);
+
+export const discountRedemptions = pgTable(
+  'discount_redemptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    discountCodeId: uuid('discount_code_id')
+      .notNull()
+      .references(() => discountCodes.id, { onDelete: 'cascade' }),
+    discountAmountCents: integer('discount_amount_cents').notNull(), // calculated discount amount
+    redeemedAt: timestamp('redeemed_at', { withTimezone: true, mode: 'date' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    registrationDiscountUnique: uniqueIndex('discount_redemptions_registration_idx').on(
+      table.registrationId,
+      table.discountCodeId,
+    ),
+  }),
+);
+
+export const registrationQuestions = pgTable('registration_questions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  editionId: uuid('edition_id')
+    .notNull()
+    .references(() => eventEditions.id, { onDelete: 'cascade' }),
+  distanceId: uuid('distance_id').references(() => eventDistances.id, { onDelete: 'cascade' }), // nullable for edition-wide questions
+  type: registrationQuestionTypeEnum('type').notNull(),
+  prompt: varchar('prompt', { length: 500 }).notNull(),
+  helpText: varchar('help_text', { length: 500 }),
+  isRequired: boolean('is_required').notNull().default(false),
+  options: jsonb('options').$type<string[]>(), // for single_select type
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
+
+export const registrationAnswers = pgTable(
+  'registration_answers',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    questionId: uuid('question_id')
+      .notNull()
+      .references(() => registrationQuestions.id, { onDelete: 'cascade' }),
+    value: text('value'), // stores the answer; for checkbox, stores 'true' or 'false'
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    registrationQuestionUnique: uniqueIndex('registration_answers_registration_question_idx').on(
+      table.registrationId,
+      table.questionId,
+    ),
+  }),
+);
+
+export const organizationPayoutProfiles = pgTable('organization_payout_profiles', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id')
+    .notNull()
+    .references(() => organizations.id, { onDelete: 'cascade' })
+    .unique(), // one profile per organization
+  legalName: varchar('legal_name', { length: 255 }),
+  rfc: varchar('rfc', { length: 13 }), // Mexican RFC (tax ID)
+  payoutDestinationJson: jsonb('payout_destination_json').$type<{
+    bankName?: string;
+    clabe?: string; // 18-digit Mexican bank account
+    accountHolder?: string;
+    [key: string]: unknown;
+  }>(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+});
