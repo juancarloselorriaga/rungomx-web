@@ -29,6 +29,7 @@ type RegistrationFlowProps = {
     email: string;
   };
   userId: string;
+  showOrganizerSelfRegistrationWarning?: boolean;
 };
 
 export function RegistrationFlow({
@@ -37,6 +38,7 @@ export function RegistrationFlow({
   seriesSlug,
   editionSlug,
   userProfile,
+  showOrganizerSelfRegistrationWarning,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
@@ -54,6 +56,7 @@ export function RegistrationFlow({
   const [step, setStep] = useState<Step>('distance');
   const [registrationId, setRegistrationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showAlreadyRegisteredCta, setShowAlreadyRegisteredCta] = useState(false);
 
   // Distance selection
   const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(null);
@@ -88,9 +91,11 @@ export function RegistrationFlow({
   async function handleDistanceSelect() {
     if (!selectedDistanceId) {
       setError(t('errors.distanceRequired'));
+      setShowAlreadyRegisteredCta(false);
       return;
     }
     setError(null);
+    setShowAlreadyRegisteredCta(false);
 
     startTransition(async () => {
       const result = await startRegistration({
@@ -98,6 +103,22 @@ export function RegistrationFlow({
       });
 
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_CLOSED') {
+          setError(t('errors.registrationClosed'));
+          return;
+        }
+
+        if (result.code === 'SOLD_OUT') {
+          setError(t('errors.soldOut'));
+          return;
+        }
+
+        if (result.code === 'ALREADY_REGISTERED') {
+          setError(t('errors.alreadyRegistered'));
+          setShowAlreadyRegisteredCta(true);
+          return;
+        }
+
         setError(result.error);
         return;
       }
@@ -262,12 +283,19 @@ export function RegistrationFlow({
         </div>
       )}
 
-      {/* Error display */}
-      {error && (
-        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-          {error}
+  {/* Error display */}
+  {error && (
+    <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+      <p>{error}</p>
+      {showAlreadyRegisteredCta ? (
+        <div className="mt-3">
+          <Button asChild variant="secondary" size="sm">
+            <Link href="/dashboard/my-registrations">{t('errors.viewMyRegistrations')}</Link>
+          </Button>
         </div>
-      )}
+      ) : null}
+    </div>
+  )}
 
       {/* Step content */}
       <div className="rounded-lg border bg-card p-6 shadow-sm">
@@ -278,6 +306,17 @@ export function RegistrationFlow({
               <h2 className="text-lg font-semibold">{t('distance.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('distance.description')}</p>
             </div>
+
+            {showOrganizerSelfRegistrationWarning ? (
+              <div className="rounded-lg border bg-muted/40 p-4">
+                <p className="text-sm font-semibold">
+                  {t('warnings.organizerSelfRegistration.title')}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t('warnings.organizerSelfRegistration.description')}
+                </p>
+              </div>
+            ) : null}
 
             {/* Shared capacity info */}
             {event.sharedCapacity &&
