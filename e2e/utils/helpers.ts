@@ -259,10 +259,49 @@ export async function signOut(page: Page) {
  */
 export async function fillPhoneInput(
   page: Page,
-  labelText: string | RegExp,
+  labelTextOrTestId: string | RegExp,
   phoneNumber: string,
 ) {
-  const phoneInput = page.getByRole('textbox', { name: labelText });
+  // For PhoneField components, find the phone input using multiple strategies
+  // The PhoneField wraps a react-phone-number-input which creates an input inside a container
+  let phoneInput;
+
+  // Strategy 1: Try data-testid first (most reliable for PhoneField component)
+  if (typeof labelTextOrTestId === 'string' && !labelTextOrTestId.startsWith('^')) {
+    phoneInput = page.getByTestId(`phone-input-${labelTextOrTestId}`);
+    try {
+      await phoneInput.waitFor({ state: 'visible', timeout: 5000 });
+      await phoneInput.click();
+      await phoneInput.clear();
+      await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
+      return;
+    } catch {
+      // testId not found, try next strategy
+    }
+  }
+
+  // Strategy 2: Find by label text and locate the input within the form field
+  // This works for both old and new phone input implementations
+  const labelToFind = typeof labelTextOrTestId === 'string'
+    ? new RegExp(labelTextOrTestId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+    : labelTextOrTestId;
+
+  // Find the label element and then find the input inside the same form field container
+  const formField = page.locator('label').filter({ hasText: labelToFind }).locator('xpath=ancestor::div[1]');
+  phoneInput = formField.locator('input[type="tel"], input:not([type="hidden"])').first();
+
+  try {
+    await phoneInput.waitFor({ state: 'visible', timeout: 10000 });
+    await phoneInput.click();
+    await phoneInput.clear();
+    await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
+    return;
+  } catch {
+    // Form field approach didn't work, try fallback
+  }
+
+  // Strategy 3: Fallback - try by role/label (for native phone inputs)
+  phoneInput = page.getByRole('textbox', { name: labelTextOrTestId });
   await phoneInput.click();
   await phoneInput.clear();
   await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
@@ -575,17 +614,36 @@ export async function completeRegistrationForm(
   const emergencyName = options?.emergencyName || 'Maria Lopez';
   const emergencyPhone = options?.emergencyPhone || '+523319998888';
 
-  // Fill phone
-  await fillPhoneInput(page, /^phone/i, phone);
+  // Fill phone - use label text that matches the form field
+  // The PhoneField uses "Phone number" or similar label text
+  await fillPhoneInput(page, /phone\s*number/i, phone);
 
-  // Fill date of birth - use getByLabel since date inputs don't have 'textbox' role
-  await page.getByLabel(/date of birth/i).fill(dob);
+  // Fill date of birth - the DatePicker component uses a hidden input with name="dateOfBirth"
+  // If the date is already pre-filled from user profile and matches, skip it
+  // Otherwise, we need to set it via the hidden input or interact with the popover
+  const dobHiddenInput = page.locator('input[name="dateOfBirth"][type="hidden"]');
+  const currentDobValue = await dobHiddenInput.inputValue().catch(() => '');
 
-  // Select gender
+  if (currentDobValue !== dob) {
+    // Try to set the hidden input value via JavaScript (most reliable for DatePicker)
+    await page.evaluate((date) => {
+      const input = document.querySelector('input[name="dateOfBirth"]') as HTMLInputElement;
+      if (input) {
+        input.value = date;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }, dob);
+  }
+  // If the date is already set (from profile), just proceed
+
+  // Select gender (GenderField still uses a select element)
   await page.getByRole('combobox', { name: /gender/i }).selectOption(gender);
 
-  // Fill emergency contact
+  // Fill emergency contact name
   await page.getByRole('textbox', { name: /emergency.*name/i }).fill(emergencyName);
+
+  // Fill emergency phone - use label text that matches the form field
   await fillPhoneInput(page, /emergency.*phone/i, emergencyPhone);
 
   // Continue
