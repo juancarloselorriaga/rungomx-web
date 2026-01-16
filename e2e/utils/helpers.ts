@@ -607,24 +607,26 @@ export async function extractRegistrationId(page: Page): Promise<string> {
   // Wait for confirmation page
   await expect(page.getByText(/registration complete/i)).toBeVisible();
 
-  // Find registration ID - look for element containing "Registration ID" label
-  // and get the adjacent element that contains the actual ID
-  const regIdLabel = page.getByText('Registration ID');
-  await expect(regIdLabel).toBeVisible();
+  // Find ticket code (formerly "Registration ID") and get the adjacent value.
+  const ticketCodeLabel = page.getByText(/ticket code|registration id/i);
+  await expect(ticketCodeLabel).toBeVisible();
 
   // The ID is in a sibling paragraph - get parent container and find the 8-char ID
-  const container = regIdLabel.locator('..').locator('..');
-  const regIdElement = container.locator('p').filter({ hasText: /^[A-Z0-9]{8}$/ }).first();
+  const container = ticketCodeLabel.locator('..').locator('..');
+  const ticketCodeElement = container
+    .locator('p')
+    .filter({ hasText: /^RG-[0-9A-Z]{4}-[0-9A-Z]{4}$/ })
+    .first();
 
-  let regId = await regIdElement.textContent().catch(() => null);
+  let ticketCode = await ticketCodeElement.textContent().catch(() => null);
 
-  // Fallback: look for exact 8-char alphanumeric text in any element
-  if (!regId) {
+  // Fallback: look for ticket code pattern in any element
+  if (!ticketCode) {
     const allText = await page.locator('p, span, div').allTextContents();
-    regId = allText.find(text => /^[A-Z0-9]{8}$/.test(text.trim())) || '';
+    ticketCode = allText.find(text => /^RG-[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(text.trim())) || '';
   }
 
-  return regId?.trim() || '';
+  return ticketCode?.trim() || '';
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   finalizeRegistration,
 } from '@/lib/events/actions';
 import type { PublicEventDetail } from '@/lib/events/queries';
+import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Check, CheckCircle, Loader2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -661,7 +662,9 @@ export function RegistrationFlow({
             {registrationId && (
               <div className="rounded-lg bg-muted/50 p-4 text-sm">
                 <p className="text-muted-foreground">{t('confirmation.registrationId')}</p>
-                <p className="font-mono font-semibold">{registrationId.slice(0, 8).toUpperCase()}</p>
+                <p className="font-mono font-semibold">
+                  {formatRegistrationTicketCode(registrationId)}
+                </p>
               </div>
             )}
 

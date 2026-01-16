@@ -46,6 +46,13 @@ describe('route-based namespace loading', () => {
     expect(components?.themeSwitcher).toBeDefined();
   });
 
+  it('keeps events route payloads under the guardrail', async () => {
+    const messages = await loadRouteMessages('en', '/events');
+    const size = getSize(messages);
+
+    expect(size).toBeLessThan(ROUTE_MESSAGES_BYTE_LIMIT);
+  });
+
   it('supports routes without page-specific namespaces (privacy/terms)', async () => {
     const privacy = await loadRouteMessages('en', '/privacy');
     const terms = await loadRouteMessages('en', '/terms');

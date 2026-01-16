@@ -36,6 +36,8 @@ test.describe('Athlete Registration', () => {
   let eventId: string;
   let seriesSlug: string;
   let editionSlug: string;
+  let seriesName: string;
+  let editionLabel: string;
   let registrationId: string;
 
   test.beforeAll(async ({ browser }) => {
@@ -89,6 +91,8 @@ test.describe('Athlete Registration', () => {
     const eventData = await createEvent(page);
 
     eventId = eventData.eventId;
+    seriesName = eventData.seriesName;
+    editionLabel = eventData.editionLabel;
     seriesSlug = eventData.seriesName.toLowerCase().replace(/\s+/g, '-');
     editionSlug = eventData.editionLabel;
 
@@ -214,9 +218,19 @@ test.describe('Athlete Registration', () => {
     // Should show confirmation
     await expect(page.getByText(/registration complete/i)).toBeVisible();
 
-    // Registration ID should be displayed
+    // Ticket code should be displayed
     registrationId = await extractRegistrationId(page);
-    expect(registrationId).toMatch(/^[A-Z0-9]{8}$/);
+    expect(registrationId).toMatch(/^RG-[0-9A-Z]{4}-[0-9A-Z]{4}$/);
+
+    await page.goto('/en/dashboard/my-registrations');
+    await expect(page.getByText(registrationId)).toBeVisible();
+    await expect(page.getByText(seriesName)).toBeVisible();
+
+    await page.getByRole('link', { name: /view details/i }).first().click();
+    await expect(page.getByText(registrationId)).toBeVisible();
+    await expect(page.getByText(seriesName)).toBeVisible();
+    await expect(page.getByText(editionLabel)).toBeVisible();
+    await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
   });
 
   test('Test 1.8i: Verify registration cannot be duplicated', async ({ page }) => {
