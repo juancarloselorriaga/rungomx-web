@@ -143,7 +143,14 @@
       "distanceRequired": "Please select a distance",
       "soldOut": "This distance is sold out",
       "registrationClosed": "Registration is closed for this event",
-      "alreadyRegistered": "You are already registered for this event"
+      "alreadyRegistered": "You are already registered for this event",
+      "viewMyRegistrations": "View my registrations"
+    },
+    "warnings": {
+      "organizerSelfRegistration": {
+        "title": "You're registering for your own event",
+        "description": "This is allowed, but make sure you're signing up with the correct account."
+      }
     },
     "loginRequired": {
       "title": "Sign in required",
