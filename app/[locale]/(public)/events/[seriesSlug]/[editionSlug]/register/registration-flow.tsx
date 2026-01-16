@@ -14,7 +14,7 @@ import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Check, CheckCircle, Loader2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 
 type Step = 'distance' | 'info' | 'waiver' | 'payment' | 'confirmation';
 
@@ -27,9 +27,15 @@ type RegistrationFlowProps = {
     firstName: string;
     lastName: string;
     email: string;
+    phone: string;
+    dateOfBirth: string;
+    gender: string;
+    emergencyContactName: string;
+    emergencyContactPhone: string;
   };
   userId: string;
   showOrganizerSelfRegistrationWarning?: boolean;
+  preSelectedDistanceId?: string;
 };
 
 export function RegistrationFlow({
@@ -39,6 +45,7 @@ export function RegistrationFlow({
   editionSlug,
   userProfile,
   showOrganizerSelfRegistrationWarning,
+  preSelectedDistanceId,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
@@ -58,19 +65,30 @@ export function RegistrationFlow({
   const [error, setError] = useState<string | null>(null);
   const [showAlreadyRegisteredCta, setShowAlreadyRegisteredCta] = useState(false);
 
+  // Validate that preSelectedDistanceId exists in event.distances and is not sold out
+  const validPreSelectedId =
+    preSelectedDistanceId &&
+    event.distances.some(
+      (d) =>
+        d.id === preSelectedDistanceId &&
+        (d.spotsRemaining === null || d.spotsRemaining > 0),
+    )
+      ? preSelectedDistanceId
+      : null;
+
   // Distance selection
-  const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(null);
+  const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(validPreSelectedId);
   const selectedDistance = event.distances.find((d) => d.id === selectedDistanceId);
 
-  // Participant info
+  // Participant info - prefilled from user profile
   const [firstName, setFirstName] = useState(userProfile.firstName);
   const [lastName, setLastName] = useState(userProfile.lastName);
   const [email, setEmail] = useState(userProfile.email);
-  const [phone, setPhone] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [gender, setGender] = useState('');
-  const [emergencyContact, setEmergencyContact] = useState('');
-  const [emergencyPhone, setEmergencyPhone] = useState('');
+  const [phone, setPhone] = useState(userProfile.phone);
+  const [dateOfBirth, setDateOfBirth] = useState(userProfile.dateOfBirth);
+  const [gender, setGender] = useState(userProfile.gender);
+  const [emergencyContact, setEmergencyContact] = useState(userProfile.emergencyContactName);
+  const [emergencyPhone, setEmergencyPhone] = useState(userProfile.emergencyContactPhone);
   const [teamName, setTeamName] = useState('');
 
   // Waiver tracking - map of waiverId -> accepted status
@@ -127,6 +145,14 @@ export function RegistrationFlow({
       setStep('info');
     });
   }
+
+  // Auto-advance to step 2 if a valid distance was pre-selected
+  useEffect(() => {
+    if (validPreSelectedId && step === 'distance' && !registrationId) {
+      handleDistanceSelect();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   async function handleInfoSubmit() {
     if (!registrationId) return;
