@@ -467,6 +467,7 @@ export type PublicEventDetail = {
   heroImageUrl: string | null;
   seriesName: string;
   sportType: string;
+  organizationId: string;
   organizationName: string;
   sharedCapacity: number | null;
   distances: PublicDistanceInfo[];
@@ -647,6 +648,7 @@ export async function getPublicEventBySlug(
     heroImageUrl: edition.heroImage?.deletedAt ? null : edition.heroImage?.blobUrl ?? null,
     seriesName: series.name,
     sportType: series.sportType,
+    organizationId: series.organizationId,
     organizationName: series.organization?.name ?? '',
     sharedCapacity: sharedCapacity,
     distances: edition.distances.map((d) => {
