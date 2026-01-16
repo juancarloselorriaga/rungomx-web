@@ -13,7 +13,11 @@
       "upcoming": "Próximas",
       "past": "Pasadas",
       "cancelled": "Canceladas/Vencidas",
-      "inProgress": "En progreso"
+      "inProgress": "En progreso",
+      "upcomingShort": "Próximas",
+      "pastShort": "Pasadas",
+      "cancelledShort": "Vencidas",
+      "inProgressShort": "Activas"
     },
     "emptyState": {
       "title": "Sin inscripciones todavía",

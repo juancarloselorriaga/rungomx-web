@@ -13,7 +13,11 @@
       "upcoming": "Upcoming",
       "past": "Past",
       "cancelled": "Cancelled/Expired",
-      "inProgress": "In progress"
+      "inProgress": "In progress",
+      "upcomingShort": "Upcoming",
+      "pastShort": "Past",
+      "cancelledShort": "Expired",
+      "inProgressShort": "Active"
     },
     "emptyState": {
       "title": "No registrations yet",
