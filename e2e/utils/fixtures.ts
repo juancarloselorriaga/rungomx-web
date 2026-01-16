@@ -482,3 +482,36 @@ export async function createTestPricingTier(
 
   return tier;
 }
+
+/**
+ * Delete all registrations for a user
+ * Useful for cleaning up incomplete registrations between tests
+ *
+ * @param db - Database instance from getTestDb()
+ * @param userId - User's ID
+ */
+export async function deleteUserRegistrations(
+  db: ReturnType<typeof getTestDb>,
+  userId: string,
+) {
+  // First delete child records (registrants, waiver_acceptances)
+  // These have cascade delete from registrations, but being explicit
+  const userRegistrations = await db
+    .select({ id: schema.registrations.id })
+    .from(schema.registrations)
+    .where(eq(schema.registrations.buyerUserId, userId));
+
+  for (const reg of userRegistrations) {
+    await db
+      .delete(schema.waiverAcceptances)
+      .where(eq(schema.waiverAcceptances.registrationId, reg.id));
+    await db
+      .delete(schema.registrants)
+      .where(eq(schema.registrants.registrationId, reg.id));
+  }
+
+  // Delete registrations
+  await db
+    .delete(schema.registrations)
+    .where(eq(schema.registrations.buyerUserId, userId));
+}
