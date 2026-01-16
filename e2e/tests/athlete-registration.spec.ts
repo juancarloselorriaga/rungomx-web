@@ -6,6 +6,7 @@ import {
   getUserByEmail,
   createTestProfile,
   assignExternalRole,
+  deleteUserRegistrations,
 } from '../utils/fixtures';
 import {
   signInAsOrganizer,
@@ -179,6 +180,13 @@ test.describe('Athlete Registration', () => {
     const participantHeading = page.getByRole('heading', { name: /participant information/i });
     const paymentHeading = page.getByRole('heading', { name: /payment/i });
     await expect(participantHeading.or(paymentHeading)).toBeVisible();
+
+    // Clean up: Delete the incomplete registration so subsequent tests can start fresh
+    const db = getTestDb();
+    const athlete = await getUserByEmail(db, athleteCreds.email);
+    if (athlete) {
+      await deleteUserRegistrations(db, athlete.id);
+    }
   });
 
   test('Test 1.8f-h: Complete registration flow (combined)', async ({ page }) => {
