@@ -1,8 +1,8 @@
 import { SignUpForm } from '@/components/auth/sign-up-form';
 import { Link } from '@/i18n/navigation';
-import { routing } from '@/i18n/routing';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
+import { isSafeRedirectPath, normalizeCallbackPath } from '@/lib/utils/redirect';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -22,13 +22,23 @@ export default async function SignUpPage({
   searchParams,
 }: LocalePageProps & { searchParams?: Promise<{ callbackURL?: string }> }) {
   await configPageLocale(params, { pathname: '/sign-up' });
+  const { locale } = await params;
   const t = await getTranslations('pages.signUp');
   const authT = await getTranslations('auth');
   const resolvedSearchParams = await searchParams;
-  const callbackURL = resolvedSearchParams?.callbackURL;
-  const isAppPathname = (value: string): value is keyof typeof routing.pathnames =>
-    Object.prototype.hasOwnProperty.call(routing.pathnames, value);
-  const callbackPath = callbackURL && isAppPathname(callbackURL) ? callbackURL : undefined;
+  const callbackPath = (() => {
+    const normalized = normalizeCallbackPath(resolvedSearchParams?.callbackURL);
+    if (!normalized || !isSafeRedirectPath(normalized)) return undefined;
+
+    // Strip locale prefix (our i18n router will re-apply it)
+    const localePrefix = `/${locale}`;
+    if (normalized === localePrefix) return '/';
+    if (normalized.startsWith(`${localePrefix}/`)) {
+      return normalized.slice(localePrefix.length) || '/';
+    }
+
+    return normalized;
+  })();
   const signInHref = callbackPath
     ? ({ pathname: '/sign-in', query: { callbackURL: callbackPath } } as const)
     : '/sign-in';

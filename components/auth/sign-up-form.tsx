@@ -3,9 +3,9 @@
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
-import { StaticPathname } from '@/i18n/routing';
 import { signIn, signUp } from '@/lib/auth/client';
 import { Form, FormError, useForm } from '@/lib/forms';
+import { isSafeRedirectPath } from '@/lib/utils/redirect';
 import { cn } from '@/lib/utils';
 import { Loader2, UserRoundPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,17 +15,15 @@ type SignUpFormProps = {
   callbackPath?: string;
 };
 
+type Router = ReturnType<typeof useRouter>;
+type RouterPushHref = Parameters<Router['push']>[0];
+
 export function SignUpForm({ callbackPath }: SignUpFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  // Static pathnames are routes without dynamic segments (e.g., no [eventId])
-  // We only allow redirecting to static routes after auth
-  // SECURITY: Reject protocol-relative URLs like //evil.com
-  const isStaticPathname = (value: string): value is StaticPathname =>
-    !value.includes('[') && (value === '/' || (value.startsWith('/') && !value.startsWith('//')));
-  const targetPath: StaticPathname =
-    callbackPath && isStaticPathname(callbackPath) ? callbackPath : '/dashboard';
+  const targetPath =
+    callbackPath && isSafeRedirectPath(callbackPath) ? callbackPath : '/dashboard';
 
   const form = useForm<
     { name: string; email: string; password: string },
@@ -100,7 +98,7 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
         }
 
         router.refresh();
-        router.push(targetPath);
+        router.push(targetPath as unknown as RouterPushHref);
       } catch {
         form.setError('password', t('genericError'));
       }
