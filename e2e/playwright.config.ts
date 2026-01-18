@@ -106,9 +106,6 @@ export default defineConfig({
     env: {
       // Force dev server to use test database
       ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
-      ...(process.env.NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM && {
-        NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM: process.env.NEXT_PUBLIC_FEATURE_EVENTS_PLATFORM,
-      }),
       // Mapbox tokens for location search
       ...(process.env.MAPBOX_ACCESS_TOKEN && { MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN }),
       ...(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && {

@@ -1,5 +1,4 @@
 import { getPathname, Link } from '@/i18n/navigation';
-import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getRegistrationsForEdition } from '@/lib/events/registrations';
@@ -51,9 +50,9 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
   const t = await getTranslations('pages.eventsRegistrations');
   const authContext = await getAuthContext();
 
-  // Phase 0 gate
+  // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));

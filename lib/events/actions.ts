@@ -22,7 +22,7 @@ import {
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
-import { isEventsEnabled, isEventsNoPaymentMode } from '@/lib/features/flags';
+import { isEventsNoPaymentMode } from '@/lib/features/flags';
 import type { AppLocale } from '@/i18n/routing';
 import {
   canUserAccessSeries,
@@ -58,8 +58,7 @@ const generatePublicCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 6)
 
 /**
  * Check if the user has permission to access the events platform.
- * Phase 0 gate: external organizers require feature flag + organizer dashboard permission,
- * internal staff bypass via canManageEvents.
+ * External organizers require organizer dashboard permission; internal staff bypass via canManageEvents.
  *
  * @param authContext - The authenticated user context
  * @returns Error object if access denied, null if allowed
@@ -68,14 +67,6 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
   // Internal staff with canManageEvents can always access
   if (authContext.permissions.canManageEvents) {
     return null;
-  }
-
-  // External organizers need the feature flag enabled AND organizer dashboard permission
-  if (!isEventsEnabled()) {
-    return {
-      error: 'Events platform is not enabled',
-      code: 'FEATURE_DISABLED',
-    };
   }
 
   if (!authContext.permissions.canViewOrganizersDashboard) {
@@ -266,7 +257,7 @@ type ConfirmEventMediaUploadData = {
 export const createEventSeries = withAuthenticatedUser<ActionResult<EventSeriesData>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof createEventSeriesSchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };
@@ -361,7 +352,7 @@ export const createEventSeries = withAuthenticatedUser<ActionResult<EventSeriesD
 export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditionData>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof createEventEditionSchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };
@@ -499,7 +490,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
 export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditionData>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof updateEventEditionSchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };
@@ -838,7 +829,7 @@ export const updateEventPolicyConfig = withAuthenticatedUser<ActionResult<EventP
 export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<ConfirmEventMediaUploadData>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof confirmEventMediaUploadSchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };
@@ -943,7 +934,7 @@ export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<Confir
 export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibility: string }>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof updateEventVisibilitySchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };
@@ -1050,7 +1041,7 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
 export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused: boolean }>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof pauseRegistrationSchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };
@@ -1120,7 +1111,7 @@ export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused
 export const checkSlugAvailability = withAuthenticatedUser<ActionResult<{ available: boolean }>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof checkSlugAvailabilitySchema>) => {
-  // Phase 0 gate: check global organizer permission + feature flag
+  // Access gate: check organizer permission.
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
     return { ok: false, ...accessError };

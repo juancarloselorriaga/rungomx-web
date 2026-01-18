@@ -11,7 +11,6 @@ import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
 import type { OrgMembershipRole } from '@/lib/events/constants';
 import { ORG_MEMBERSHIP_ROLES } from '@/lib/events/constants';
-import { isEventsEnabled } from '@/lib/features/flags';
 
 import { getOrgMembership, requireOrgPermission } from './permissions';
 import { lookupUserByEmail as lookupUserByEmailQuery } from './queries';
@@ -86,12 +85,12 @@ type OrganizationData = {
 // =============================================================================
 
 /**
- * Phase 0 gate: Check if user can access events platform functionality.
- * Organizers need feature flag enabled, internal staff with canManageEvents bypass.
+ * Check if user can access events platform functionality.
+ * Organizers need organizer dashboard permission; internal staff with canManageEvents bypass.
  */
 function checkEventsAccess(authContext: AuthContext): { error: string; code: string } | null {
   const canAccess =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
 
   if (!canAccess) {
@@ -112,7 +111,7 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
 export const createOrganization = withAuthenticatedUser<ActionResult<OrganizationData>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof createOrganizationSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: organizers and internal staff only.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -191,7 +190,7 @@ export const createOrganization = withAuthenticatedUser<ActionResult<Organizatio
 export const updateOrganization = withAuthenticatedUser<ActionResult<OrganizationData>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof updateOrganizationSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -281,7 +280,7 @@ export const updateOrganization = withAuthenticatedUser<ActionResult<Organizatio
 export const addOrgMember = withAuthenticatedUser<ActionResult<{ membershipId: string }>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof addOrgMemberSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -358,7 +357,7 @@ export const addOrgMember = withAuthenticatedUser<ActionResult<{ membershipId: s
 export const updateOrgMember = withAuthenticatedUser<ActionResult>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof updateOrgMemberSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -444,7 +443,7 @@ export const updateOrgMember = withAuthenticatedUser<ActionResult>({
 export const removeOrgMember = withAuthenticatedUser<ActionResult>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof removeOrgMemberSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -528,7 +527,7 @@ export const removeOrgMember = withAuthenticatedUser<ActionResult>({
 export const checkOrgSlugAvailability = withAuthenticatedUser<ActionResult<{ available: boolean }>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, slug: string) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -548,7 +547,7 @@ export const lookupUserByEmail = withAuthenticatedUser<
 >({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof lookupUserByEmailSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 
@@ -583,7 +582,7 @@ export const lookupUserByEmail = withAuthenticatedUser<
 export const deleteOrganization = withAuthenticatedUser<ActionResult>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof deleteOrganizationSchema>) => {
-  // Phase 0 gate: require feature flag + organizer permission OR internal staff with canManageEvents
+  // Access gate: require organizer permission or internal staff with canManageEvents.
   const accessError = checkEventsAccess(authContext);
   if (accessError) return { ok: false, ...accessError };
 

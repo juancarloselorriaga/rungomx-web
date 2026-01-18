@@ -1,6 +1,5 @@
 import { getPathname, Link } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
-import { isEventsEnabled } from '@/lib/features/flags';
 import { getOrganizationWithMembers } from '@/lib/organizations/queries';
 import { getOrgMembership, hasOrgPermission } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
@@ -40,9 +39,9 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   const t = await getTranslations('pages.dashboard.organizations');
   const authContext = await getAuthContext();
 
-  // Phase 0 gate: organizers need flag enabled, internal staff with canManageEvents bypass
+  // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));

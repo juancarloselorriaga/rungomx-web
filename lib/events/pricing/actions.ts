@@ -9,7 +9,6 @@ import { eventDistances, pricingTiers } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
-import { isEventsEnabled } from '@/lib/features/flags';
 import {
   canUserAccessEvent,
   requireOrgPermission,
@@ -47,13 +46,6 @@ export type CurrentPricing = {
 function checkEventsAccess(authContext: AuthContext): { error: string; code: string } | null {
   if (authContext.permissions.canManageEvents) {
     return null;
-  }
-
-  if (!isEventsEnabled()) {
-    return {
-      error: 'Events platform is not enabled',
-      code: 'FEATURE_DISABLED',
-    };
   }
 
   if (!authContext.permissions.canViewOrganizersDashboard) {

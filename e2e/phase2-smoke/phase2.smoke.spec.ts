@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import path from 'node:path';
 
 test.describe.configure({ mode: 'serial', timeout: 180_000 });
@@ -26,15 +26,6 @@ const re = {
   registrationsTitle: /Registrations|Inscripciones/i,
   continue: /Continue|Continuar/i,
 };
-
-async function firstVisible(locator: Locator): Promise<Locator> {
-  const count = await locator.count().catch(() => 0);
-  for (let i = 0; i < count; i++) {
-    const candidate = locator.nth(i);
-    if (await candidate.isVisible().catch(() => false)) return candidate;
-  }
-  return locator.first();
-}
 
 // ============================================
 // Organizer Dashboard Tests

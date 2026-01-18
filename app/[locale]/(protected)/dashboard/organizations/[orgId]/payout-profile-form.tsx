@@ -7,7 +7,6 @@ import { AlertCircle, Building2, Info, Loader2, Lock, Wallet } from 'lucide-reac
 import {
   getPayoutProfile,
   updatePayoutProfile,
-  type PayoutProfileData,
 } from '@/lib/organizations/payout/actions';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
