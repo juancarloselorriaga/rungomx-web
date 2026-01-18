@@ -6,6 +6,14 @@
     "description": "Find and register for trail running, triathlon, cycling, and other endurance events in Mexico."
   },
   "detail": {
+    "tabs": {
+      "navigation": "Event sections",
+      "overview": "Overview",
+      "distances": "Distances",
+      "faq": "FAQ",
+      "policies": "Policies",
+      "website": "More Info"
+    },
     "registrationOpen": "Registration open",
     "registrationClosed": "Registration closed",
     "registrationDetails": "Registration details",
@@ -61,6 +69,11 @@
       "title": "Event not found",
       "description": "This event may have been removed or is not available yet.",
       "backToEvents": "Back to events"
+    },
+    "website": {
+      "documents": "Documents",
+      "terrain": "Terrain",
+      "download": "Download"
     }
   },
   "register": {
@@ -68,6 +81,8 @@
     "steps": {
       "distance": "Select distance",
       "info": "Your information",
+      "questions": "Additional questions",
+      "addons": "Add-ons",
       "waiver": "Waiver",
       "payment": "Payment",
       "confirmation": "Confirmation"
@@ -97,6 +112,32 @@
       "teamName": "Team name (optional)",
       "continue": "Continue"
     },
+    "questions": {
+      "title": "Additional questions",
+      "description": "Please answer the following questions from the event organizer.",
+      "required": "Required",
+      "optional": "Optional",
+      "continue": "Continue",
+      "skipIfNone": "No additional questions for this event."
+    },
+    "addons": {
+      "title": "Add-ons",
+      "description": "Enhance your experience with optional add-ons.",
+      "noAddons": "No add-ons available for this event.",
+      "merchandise": "Merchandise",
+      "donation": "Donation",
+      "quantity": "Quantity",
+      "selectOption": "Select an option",
+      "addToOrder": "Add to order",
+      "removeFromOrder": "Remove",
+      "deliveryMethods": {
+        "pickup": "Pickup at event",
+        "shipping": "Shipping"
+      },
+      "subtotal": "Add-ons subtotal",
+      "continue": "Continue",
+      "skip": "Skip add-ons"
+    },
     "waiver": {
       "title": "Waiver agreement",
       "description": "Please read and accept the waiver(s) to continue.",
@@ -119,6 +160,16 @@
       "summary": "Order summary",
       "distance": "Distance",
       "price": "Price",
+      "addons": "Add-ons",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "discountCode": "Discount code",
+      "applyCode": "Apply",
+      "removeCode": "Remove",
+      "codeApplied": "Code applied: {code}",
+      "invalidCode": "Invalid or expired discount code",
+      "fees": "Fees",
+      "tax": "Tax",
       "total": "Total",
       "paymentMethods": "Payment methods",
       "comingSoon": "Online payment coming soon. For now, please contact the organizer to complete your registration.",
@@ -130,6 +181,7 @@
       "description": "You have successfully registered for {eventName}.",
       "registrationId": "Ticket code",
       "distance": "Distance",
+      "documents": "Event Documents",
       "policiesTitle": "Event policies",
       "refundPolicy": "Refund policy",
       "transferPolicy": "Transfer policy",

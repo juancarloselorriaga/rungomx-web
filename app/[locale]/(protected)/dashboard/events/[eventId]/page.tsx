@@ -7,14 +7,8 @@ import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import {
-  ArrowLeft,
   Calendar,
-  ClipboardList,
-  ExternalLink,
-  FileText,
-  HelpCircle,
   MapPin,
-  Settings,
   Ticket,
   Users,
 } from 'lucide-react';
@@ -51,15 +45,6 @@ function formatDate(date: Date | null, locale: string): string {
     dateStyle: 'long',
   }).format(date);
 }
-
-type VisibilityType = 'draft' | 'published' | 'unlisted' | 'archived';
-
-const visibilityStyles: Record<VisibilityType, string> = {
-  draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-  published: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  unlisted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-  archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-};
 
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { locale, eventId } = await params;
@@ -102,162 +87,49 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <Link
-          href="/dashboard/events"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('title')}
-        </Link>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">
-                {event.seriesName} {event.editionLabel}
-              </h1>
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  visibilityStyles[event.visibility as VisibilityType] ||
-                  visibilityStyles.draft
-                }`}
-              >
-                {t(`visibility.${event.visibility as VisibilityType}`)}
-              </span>
-            </div>
-            <p className="text-muted-foreground mt-1">{event.organizationName}</p>
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-sm">
-              <span className="text-muted-foreground">{tDetail('publicCodeLabel')}</span>
-              <span className="font-mono font-semibold">{event.publicCode}</span>
-            </div>
-          </div>
-          <Link
-            href={{ pathname: '/dashboard/events/[eventId]/settings', params: { eventId } }}
-            className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            {tDetail('settings')}
-          </Link>
-        </div>
-      </div>
-
       {/* Stats cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground mb-2">
-            <Calendar className="h-4 w-4" />
-            <span className="text-sm font-medium">{tDetail('eventDate')}</span>
+      <div className="grid gap-3 md:grid-cols-4">
+        <div className="rounded-lg border border-border bg-card/50 p-4">
+          <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
+            <Calendar className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">{tDetail('eventDate')}</span>
           </div>
-          <p className="text-lg font-semibold">
+          <p className="text-base font-semibold">
             {formatDate(event.startsAt, locale)}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground mb-2">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm font-medium">{tDetail('location')}</span>
+        <div className="rounded-lg border border-border bg-card/50 p-4">
+          <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
+            <MapPin className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">{tDetail('location')}</span>
           </div>
-          <p className="text-lg font-semibold">
+          <p className="text-base font-semibold">
             {[event.city, event.state].filter(Boolean).join(', ') || '-'}
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground mb-2">
-            <Ticket className="h-4 w-4" />
-            <span className="text-sm font-medium">{tDetail('distances')}</span>
+        <div className="rounded-lg border border-border bg-card/50 p-4">
+          <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
+            <Ticket className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">{tDetail('distances')}</span>
           </div>
-          <p className="text-lg font-semibold">{event.distances.length}</p>
+          <p className="text-base font-semibold">{event.distances.length}</p>
         </div>
 
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground mb-2">
-            <Users className="h-4 w-4" />
-            <span className="text-sm font-medium">{tDetail('registrations')}</span>
+        <div className="rounded-lg border border-border bg-card/50 p-4">
+          <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
+            <Users className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">{tDetail('registrations')}</span>
           </div>
-          <p className="text-lg font-semibold">{totalRegistrations}</p>
+          <p className="text-base font-semibold">{totalRegistrations}</p>
         </div>
-      </div>
-
-      {/* Quick actions */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Link
-          href={{ pathname: '/dashboard/events/[eventId]/settings', params: { eventId } }}
-          className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
-        >
-          <div className="rounded-full bg-muted p-3">
-            <Settings className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <h3 className="font-semibold">{tDetail('manageEvent')}</h3>
-            <p className="text-sm text-muted-foreground">{tDetail('manageEventDescription')}</p>
-          </div>
-        </Link>
-
-        <Link
-          href={{ pathname: '/dashboard/events/[eventId]/faq', params: { eventId } }}
-          className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
-        >
-          <div className="rounded-full bg-muted p-3">
-            <HelpCircle className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <h3 className="font-semibold">{tDetail('manageFaq')}</h3>
-            <p className="text-sm text-muted-foreground">{tDetail('manageFaqDescription')}</p>
-          </div>
-        </Link>
-
-        <Link
-          href={{ pathname: '/dashboard/events/[eventId]/waivers', params: { eventId } }}
-          className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
-        >
-          <div className="rounded-full bg-muted p-3">
-            <FileText className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <h3 className="font-semibold">{tDetail('manageWaivers')}</h3>
-            <p className="text-sm text-muted-foreground">{tDetail('manageWaiversDescription')}</p>
-          </div>
-        </Link>
-
-        <Link
-          href={{ pathname: '/dashboard/events/[eventId]/policies', params: { eventId } }}
-          className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
-        >
-          <div className="rounded-full bg-muted p-3">
-            <ClipboardList className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <div>
-            <h3 className="font-semibold">{tDetail('managePolicies')}</h3>
-            <p className="text-sm text-muted-foreground">{tDetail('managePoliciesDescription')}</p>
-          </div>
-        </Link>
-
-        {event.visibility === 'published' && (
-          <Link
-            href={{ 
-              pathname: '/events/[seriesSlug]/[editionSlug]', 
-              params: { seriesSlug: event.seriesSlug, editionSlug: event.slug } 
-            }}
-            className="flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
-          >
-            <div className="rounded-full bg-muted p-3">
-              <ExternalLink className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <div>
-              <h3 className="font-semibold">{tDetail('viewPublicPage')}</h3>
-              <p className="text-sm text-muted-foreground">{tDetail('viewPublicPageDescription')}</p>
-            </div>
-          </Link>
-        )}
       </div>
 
       {/* Capacity status */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">{tDetail('capacity.title')}</h2>
+      <div className="rounded-lg border border-border bg-card/50">
+        <div className="border-b border-border px-6 py-3">
+          <h2 className="text-base font-semibold">{tDetail('capacity.title')}</h2>
         </div>
         <div className="px-6 py-4 space-y-3">
           <p className="text-sm text-muted-foreground">
@@ -363,9 +235,9 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       </div>
 
       {/* Distances section */}
-      <div className="rounded-lg border bg-card shadow-sm">
-        <div className="border-b px-6 py-4">
-          <h2 className="text-lg font-semibold">{tDetail('distancesTitle')}</h2>
+      <div className="rounded-lg border border-border bg-card/50">
+        <div className="border-b border-border px-6 py-3">
+          <h2 className="text-base font-semibold">{tDetail('distancesTitle')}</h2>
         </div>
         {event.distances.length === 0 ? (
           <div className="px-6 py-8 text-center text-muted-foreground">
@@ -391,7 +263,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {distance.registrationCount}
-                    {distance.capacity && ` / ${distance.capacity}`} {t('registrations')}
+                    {distance.capacity && ` / ${distance.capacity}`} {t('registrationCount')}
                   </p>
                 </div>
               </div>
@@ -402,12 +274,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
       {/* FAQ preview */}
       {event.faqItems.length > 0 && (
-        <div className="rounded-lg border bg-card shadow-sm">
-          <div className="border-b px-6 py-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{tDetail('faqTitle')}</h2>
+        <div className="rounded-lg border border-border bg-card/50">
+          <div className="border-b border-border px-6 py-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">{tDetail('faqTitle')}</h2>
             <Link
               href={{ pathname: '/dashboard/events/[eventId]/faq', params: { eventId } }}
-              className="text-sm text-primary hover:underline"
+              className="text-xs text-primary hover:underline"
             >
               {tDetail('editFaq')}
             </Link>

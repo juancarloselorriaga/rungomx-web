@@ -526,7 +526,6 @@ export async function getPublicEventBySlug(
           pricingTiers: {
             where: isNull(pricingTiers.deletedAt),
             orderBy: (p, { asc }) => [asc(p.sortOrder)],
-            limit: 1,
           },
         },
       },
@@ -660,6 +659,14 @@ export async function getPublicEventBySlug(
             ? d.capacity - regCount
             : null;
 
+      // Find the currently active pricing tier based on date range
+      const activeTier =
+        d.pricingTiers.find((tier) => {
+          const startsOk = !tier.startsAt || tier.startsAt <= now;
+          const endsOk = !tier.endsAt || tier.endsAt >= now;
+          return startsOk && endsOk;
+        }) ?? d.pricingTiers[0];
+
       return {
         id: d.id,
         label: d.label,
@@ -671,8 +678,8 @@ export async function getPublicEventBySlug(
         capacity: d.capacity,
         spotsRemaining,
         capacityScope: d.capacityScope as 'per_distance' | 'shared_pool',
-        priceCents: d.pricingTiers[0]?.priceCents ?? 0,
-        currency: d.pricingTiers[0]?.currency ?? 'MXN',
+        priceCents: activeTier?.priceCents ?? 0,
+        currency: activeTier?.currency ?? 'MXN',
       };
     }),
     faqItems: edition.faqItems.map((f) => ({

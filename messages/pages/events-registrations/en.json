@@ -1,0 +1,49 @@
+{
+  "title": "Registrations",
+  "description": "View and manage event registrations.",
+  "emptyState": "No registrations found matching your filters.",
+  "stats": {
+    "total": "Total Registrations",
+    "distances": "Distances",
+    "avgPerDistance": "Avg. per Distance"
+  },
+  "filters": {
+    "allDistances": "All distances",
+    "allStatuses": "All statuses",
+    "searchPlaceholder": "Search by name or email...",
+    "search": "Search"
+  },
+  "status": {
+    "started": "Started",
+    "submitted": "Submitted",
+    "payment_pending": "Payment Pending",
+    "confirmed": "Confirmed",
+    "cancelled": "Cancelled",
+    "expired": "Expired"
+  },
+  "table": {
+    "buyer": "Buyer",
+    "registrant": "Registrant",
+    "distance": "Distance",
+    "status": "Status",
+    "total": "Total",
+    "date": "Date"
+  },
+  "pagination": {
+    "showing": "Showing {start}-{end} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {current} of {total}"
+  },
+  "export": {
+    "button": "Export",
+    "exporting": "Exporting...",
+    "registrations": "Registrations CSV",
+    "registrationsDescription": "All registrant data with custom answers",
+    "addOns": "Add-On Sales CSV",
+    "addOnsDescription": "Add-on quantities and revenue summary",
+    "success": "Registrations exported successfully",
+    "successAddOns": "Add-on sales exported successfully",
+    "error": "Failed to export. Please try again."
+  }
+}

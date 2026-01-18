@@ -31,6 +31,7 @@ export const REGISTRATION_STATUS = [
   'payment_pending',
   'confirmed',
   'cancelled',
+  'expired',
 ] as const;
 export type RegistrationStatus = (typeof REGISTRATION_STATUS)[number];
 
@@ -66,6 +67,42 @@ export type MediaKind = (typeof MEDIA_KINDS)[number];
 export const SIGNATURE_TYPES = ['checkbox', 'initials', 'signature'] as const;
 export type SignatureType = (typeof SIGNATURE_TYPES)[number];
 
+// =============================================================================
+// Phase 2 Constants
+// =============================================================================
+
+// Add-on types
+export const ADD_ON_TYPES = ['merch', 'donation'] as const;
+export type AddOnType = (typeof ADD_ON_TYPES)[number];
+
+// Add-on delivery methods
+export const ADD_ON_DELIVERY_METHODS = ['pickup', 'shipping', 'none'] as const;
+export type AddOnDeliveryMethod = (typeof ADD_ON_DELIVERY_METHODS)[number];
+
+// Registration question types
+export const REGISTRATION_QUESTION_TYPES = ['text', 'single_select', 'checkbox'] as const;
+export type RegistrationQuestionType = (typeof REGISTRATION_QUESTION_TYPES)[number];
+
+// Human-readable labels for add-on types
+export const ADD_ON_TYPE_LABELS: Record<AddOnType, { en: string; es: string }> = {
+  merch: { en: 'Merchandise', es: 'Mercancía' },
+  donation: { en: 'Donation', es: 'Donación' },
+};
+
+// Human-readable labels for add-on delivery methods
+export const ADD_ON_DELIVERY_METHOD_LABELS: Record<AddOnDeliveryMethod, { en: string; es: string }> = {
+  pickup: { en: 'Pickup at Event', es: 'Recoger en Evento' },
+  shipping: { en: 'Shipping', es: 'Envío' },
+  none: { en: 'Not Applicable', es: 'No Aplica' },
+};
+
+// Human-readable labels for registration question types
+export const REGISTRATION_QUESTION_TYPE_LABELS: Record<RegistrationQuestionType, { en: string; es: string }> = {
+  text: { en: 'Text', es: 'Texto' },
+  single_select: { en: 'Single Select', es: 'Selección Única' },
+  checkbox: { en: 'Checkbox', es: 'Casilla de Verificación' },
+};
+
 // Human-readable labels for sport types (for UI display)
 export const SPORT_TYPE_LABELS: Record<SportType, { en: string; es: string }> = {
   trail_running: { en: 'Trail Running', es: 'Trail Running' },
@@ -92,6 +129,7 @@ export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, { en: string
   payment_pending: { en: 'Payment Pending', es: 'Pago Pendiente' },
   confirmed: { en: 'Confirmed', es: 'Confirmado' },
   cancelled: { en: 'Cancelled', es: 'Cancelado' },
+  expired: { en: 'Expired', es: 'Vencido' },
 };
 
 // Human-readable labels for org membership roles

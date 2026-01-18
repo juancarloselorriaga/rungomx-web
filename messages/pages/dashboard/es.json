@@ -217,7 +217,7 @@
         "statePlaceholder": "CDMX"
       }
     },
-    "registrations": "inscripciones",
+    "registrationCount": "inscripciones",
     "distance": "distancia",
     "distances": "distancias",
     "visibility": {
@@ -247,6 +247,24 @@
       "location": "Ubicación",
       "distances": "Distancias",
       "registrations": "Inscripciones",
+      "nav": {
+        "overview": "Resumen",
+        "settings": "Configuración",
+        "faq": "FAQ",
+        "waivers": "Deslindes",
+        "policies": "Políticas",
+        "website": "Contenido",
+        "pricing": "Precios",
+        "addOns": "Extras",
+        "coupons": "Cupones",
+        "registrations": "Inscripciones",
+        "sections": {
+          "general": "GENERAL",
+          "content": "CONTENIDO",
+          "pricing": "PRECIOS",
+          "management": "GESTIÓN"
+        }
+      },
       "manageEvent": "Configuración del evento",
       "manageEventDescription": "Editar detalles del evento, fechas y configuración de inscripciones",
       "manageFaq": "FAQ",
@@ -255,6 +273,16 @@
       "manageWaiversDescription": "Crear y ordenar deslindes para participantes",
       "managePolicies": "Políticas",
       "managePoliciesDescription": "Definir políticas de reembolso, transferencia y diferimiento",
+      "manageWebsite": "Contenido del Sitio",
+      "manageWebsiteDescription": "Personaliza las secciones y contenido de tu página",
+      "managePricing": "Precios por Etapa",
+      "managePricingDescription": "Configura precios de preventa y por etapas",
+      "manageAddOns": "Extras",
+      "manageAddOnsDescription": "Configura artículos y donaciones opcionales",
+      "manageCoupons": "Cupones de Descuento",
+      "manageCouponsDescription": "Crea y administra códigos promocionales",
+      "manageRegistrations": "Inscripciones",
+      "manageRegistrationsDescription": "Ver y exportar inscripciones de participantes",
       "publicCodeLabel": "Código público",
       "viewPublicPage": "Ver página pública",
       "viewPublicPageDescription": "Ver cómo aparece tu evento a los participantes",
@@ -439,6 +467,238 @@
         "cancel": "Cancelar",
         "confirmDelete": "¿Estás seguro de que deseas eliminar esta distancia? Esta acción no se puede deshacer."
       }
+    },
+    "website": {
+      "title": "Contenido del Sitio Web",
+      "description": "Personaliza las secciones de contenido que aparecen en tu página pública del evento.",
+      "save": "Guardar cambios",
+      "saving": "Guardando...",
+      "saved": "Contenido guardado exitosamente",
+      "errorSaving": "Error al guardar el contenido",
+      "sections": {
+        "overview": {
+          "title": "Descripción General",
+          "description": "Descripción principal del evento e información del terreno.",
+          "contentLabel": "Descripción del Evento",
+          "contentPlaceholder": "Describe tu evento, qué lo hace especial y qué pueden esperar los participantes...",
+          "terrainLabel": "Descripción del Terreno",
+          "terrainPlaceholder": "Condiciones del sendero, elevación, tipo de superficie..."
+        },
+        "course": {
+          "title": "Información del Recorrido",
+          "description": "Detalles del recorrido, estaciones de abastecimiento y tiempos límite.",
+          "descriptionLabel": "Descripción del Recorrido",
+          "descriptionPlaceholder": "Describe el trazado del recorrido y sus características principales...",
+          "elevationLabel": "Ganancia de Elevación",
+          "elevationPlaceholder": "ej., 1500m o 5000ft",
+          "elevationProfileLabel": "URL del Perfil de Elevación",
+          "elevationProfilePlaceholder": "Enlace a imagen del perfil de elevación",
+          "mapUrlLabel": "URL del Mapa del Recorrido",
+          "mapUrlPlaceholder": "Enlace al mapa del recorrido",
+          "aidStations": {
+            "title": "Estaciones de Abastecimiento",
+            "add": "Agregar estación",
+            "nameLabel": "Nombre",
+            "namePlaceholder": "Estación 1",
+            "distanceLabel": "Distancia (km)",
+            "distancePlaceholder": "10",
+            "cutoffLabel": "Tiempo límite",
+            "cutoffPlaceholder": "10:00 AM",
+            "servicesLabel": "Servicios disponibles",
+            "servicesPlaceholder": "Agua, snacks, primeros auxilios..."
+          }
+        },
+        "schedule": {
+          "title": "Horarios y Logística",
+          "description": "Entrega de kits, estacionamiento e información del día de carrera.",
+          "packetPickupLabel": "Entrega de Kits",
+          "packetPickupPlaceholder": "Cuándo y dónde los participantes pueden recoger sus kits...",
+          "parkingLabel": "Estacionamiento",
+          "parkingPlaceholder": "Disponibilidad de estacionamiento e indicaciones...",
+          "raceDayLabel": "Información del Día de Carrera",
+          "raceDayPlaceholder": "Qué traer, hora de registro, detalles del área de salida...",
+          "startTimes": {
+            "title": "Horarios de Salida",
+            "add": "Agregar horario",
+            "distanceLabel": "Distancia",
+            "distancePlaceholder": "50K",
+            "timeLabel": "Hora",
+            "timePlaceholder": "6:00 AM",
+            "notesLabel": "Notas",
+            "notesPlaceholder": "Notas opcionales..."
+          }
+        },
+        "media": {
+          "title": "Fotos y Documentos",
+          "description": "Galería de fotos y documentos descargables como la convocatoria.",
+          "photos": {
+            "title": "Galería de Fotos",
+            "description": "Agrega fotos para mostrar tu evento.",
+            "add": "Agregar foto",
+            "captionLabel": "Descripción",
+            "captionPlaceholder": "Descripción de la foto...",
+            "comingSoon": "La galería de fotos estará disponible próximamente."
+          },
+          "documents": {
+            "title": "Documentos",
+            "description": "Sube documentos PDF como la convocatoria, mapas del recorrido o reglamento.",
+            "add": "Agregar documento",
+            "empty": "No hay documentos subidos. Agrega tu convocatoria u otros documentos.",
+            "uploaderTitle": "Subir Documento",
+            "labelField": "Nombre del documento",
+            "labelPlaceholder": "Convocatoria, Mapa del Recorrido, Reglamento...",
+            "upload": "Subir",
+            "uploading": "Subiendo...",
+            "cancel": "Cancelar",
+            "selectFile": "Clic o arrastra para seleccionar un archivo PDF",
+            "fileTooLarge": "El archivo debe ser menor a {maxSize}MB.",
+            "invalidType": "Por favor sube un archivo PDF.",
+            "uploadFailed": "Error al subir. Intenta de nuevo.",
+            "maxSize": "Tamaño máximo: {maxSize}MB"
+          }
+        }
+      },
+      "enableSection": "Habilitar sección",
+      "disableSection": "Deshabilitar sección",
+      "sectionEnabled": "Visible en página pública",
+      "sectionDisabled": "Oculto de página pública"
+    },
+    "pricing": {
+      "title": "Precios por Etapa",
+      "description": "Administra los precios por etapa para cada distancia. Configura precios de preventa, regulares y de inscripción tardía.",
+      "selectDistance": "Selecciona una distancia para administrar precios",
+      "noDistances": "No hay distancias disponibles. Agrega distancias en la configuración del evento primero.",
+      "tier": {
+        "add": "Agregar etapa de precio",
+        "edit": "Editar etapa",
+        "delete": "Eliminar etapa",
+        "confirmDelete": "¿Estás seguro de que deseas eliminar esta etapa de precio?",
+        "cannotDeleteLast": "Cada distancia debe tener al menos una etapa de precio.",
+        "labelField": "Nombre de la etapa",
+        "labelPlaceholder": "ej., Preventa, Regular, Tardío",
+        "priceField": "Precio",
+        "pricePlaceholder": "Ingresa el precio",
+        "startsAtField": "Inicia",
+        "endsAtField": "Termina",
+        "noDates": "Siempre activo (sin restricción de fecha)",
+        "currentTier": "Actual",
+        "upcomingTier": "Próximo",
+        "expiredTier": "Expirado",
+        "save": "Guardar etapa",
+        "saving": "Guardando...",
+        "saved": "Etapa de precio guardada",
+        "deleted": "Etapa de precio eliminada",
+        "errorSaving": "Error al guardar etapa de precio",
+        "errorDeleting": "Error al eliminar etapa de precio",
+        "dateOverlap": "El rango de fechas se traslapa con otra etapa"
+      },
+      "currency": {
+        "label": "Moneda",
+        "mxn": "MXN (Peso Mexicano)",
+        "usd": "USD (Dólar Estadounidense)"
+      },
+      "help": {
+        "title": "Cómo funcionan las etapas de precio",
+        "description": "Crea múltiples etapas de precio para ofrecer descuentos de preventa o aumentar precios conforme se acerca la fecha del evento. Solo una etapa puede estar activa a la vez según los rangos de fecha que configures."
+      }
+    },
+    "addOns": {
+      "title": "Extras",
+      "description": "Crea productos adicionales o donaciones que los participantes pueden seleccionar durante la inscripción.",
+      "emptyState": "Aún no hay extras configurados. Crea tu primer extra para ofrecer artículos o aceptar donaciones.",
+      "addOn": {
+        "add": "Agregar extra",
+        "edit": "Editar extra",
+        "delete": "Eliminar extra",
+        "confirmDelete": "¿Estás seguro de que deseas eliminar este extra y todas sus opciones?",
+        "titleField": "Título",
+        "titlePlaceholder": "ej., Playera del Evento, Donación",
+        "descriptionField": "Descripción",
+        "descriptionPlaceholder": "Describe este extra...",
+        "typeField": "Tipo",
+        "deliveryField": "Método de entrega",
+        "distanceField": "Restringir a distancia",
+        "distanceAll": "Disponible para todas las distancias",
+        "activeField": "Activo",
+        "save": "Guardar extra",
+        "saving": "Guardando...",
+        "saved": "Extra guardado",
+        "deleted": "Extra eliminado",
+        "errorSaving": "Error al guardar extra",
+        "errorDeleting": "Error al eliminar extra"
+      },
+      "option": {
+        "title": "Opciones",
+        "add": "Agregar opción",
+        "edit": "Editar opción",
+        "delete": "Eliminar opción",
+        "confirmDelete": "¿Estás seguro de que deseas eliminar esta opción?",
+        "labelField": "Etiqueta",
+        "labelPlaceholder": "ej., Chico, Mediano, Grande",
+        "priceField": "Precio",
+        "pricePlaceholder": "0.00",
+        "maxQtyField": "Cantidad máxima por orden",
+        "activeField": "Activo",
+        "save": "Guardar opción",
+        "saved": "Opción guardada",
+        "deleted": "Opción eliminada",
+        "errorSaving": "Error al guardar opción"
+      },
+      "types": {
+        "merch": "Artículo",
+        "donation": "Donación"
+      },
+      "delivery": {
+        "pickup": "Recoger en Evento",
+        "shipping": "Envío",
+        "none": "No Aplica"
+      },
+      "help": {
+        "title": "Cómo funcionan los extras",
+        "description": "Los extras permiten vender artículos (como playeras) o aceptar donaciones durante la inscripción. Cada extra puede tener múltiples opciones con diferentes precios."
+      }
+    },
+    "coupons": {
+      "title": "Cupones de Descuento",
+      "description": "Crea códigos promocionales que los participantes pueden usar para obtener descuentos en la inscripción.",
+      "emptyState": "Aún no hay cupones configurados",
+      "emptyStateDescription": "Crea tu primer cupón para ofrecer descuentos a los participantes.",
+      "status": {
+        "active": "Activo",
+        "inactive": "Inactivo",
+        "scheduled": "Programado",
+        "expired": "Expirado",
+        "limitReached": "Límite alcanzado"
+      },
+      "coupon": {
+        "add": "Agregar cupón",
+        "edit": "Editar cupón",
+        "delete": "Eliminar cupón",
+        "create": "Crear cupón",
+        "save": "Guardar cambios",
+        "cancel": "Cancelar",
+        "confirmDelete": "¿Estás seguro de que deseas eliminar este cupón? Esta acción no se puede deshacer.",
+        "code": "Código del cupón",
+        "codeCannotChange": "El código no puede cambiarse después de crear el cupón",
+        "name": "Nombre interno",
+        "namePlaceholder": "ej., Promoción madrugadores",
+        "percentOff": "Porcentaje de descuento",
+        "maxRedemptions": "Máximo de canjes",
+        "maxRedemptionsHint": "Dejar vacío para usos ilimitados",
+        "unlimited": "Ilimitado",
+        "startsAt": "Inicia el",
+        "endsAt": "Termina el",
+        "isActive": "Estado",
+        "isActiveLabel": "Cupón activo",
+        "discount": "de descuento",
+        "redemptions": "canjes",
+        "validFrom": "Desde",
+        "validUntil": "Hasta"
+      },
+      "help": {
+        "title": "Cómo funcionan los cupones",
+        "description": "Los cupones te permiten ofrecer descuentos porcentuales a los participantes. Configura fechas de validez opcionales y límites de canjes para controlar cuándo y cuántas veces se puede usar el código."
+      }
     }
   },
   "organizations": {
@@ -590,6 +850,58 @@
       },
       "success": {
         "toast": "La organización \"{name}\" ha sido eliminada"
+      }
+    },
+    "payout": {
+      "title": "Configuración de Pagos",
+      "description": "Configura cómo recibes los pagos de inscripciones a eventos.",
+      "accessRestriction": "Solo los propietarios y administradores de la organización pueden ver y editar la configuración de pagos.",
+      "emptyState": "Aún no hay perfil de pagos configurado. Agrega tu información bancaria para recibir pagos.",
+      "fields": {
+        "legalName": {
+          "label": "Nombre Legal",
+          "placeholder": "Nombre de empresa o persona física",
+          "hint": "El nombre que aparecerá en las transferencias bancarias"
+        },
+        "rfc": {
+          "label": "RFC",
+          "placeholder": "XAXX010101000",
+          "hint": "Registro Federal de Contribuyentes (12-13 caracteres)"
+        },
+        "bankName": {
+          "label": "Nombre del Banco",
+          "placeholder": "BBVA, Santander, Banorte, etc."
+        },
+        "clabe": {
+          "label": "CLABE",
+          "placeholder": "000000000000000000",
+          "hint": "Número de cuenta interbancaria de 18 dígitos"
+        },
+        "accountHolder": {
+          "label": "Titular de la Cuenta",
+          "placeholder": "Nombre como aparece en la cuenta bancaria"
+        }
+      },
+      "sections": {
+        "taxInfo": "Información Fiscal",
+        "bankInfo": "Cuenta Bancaria"
+      },
+      "buttons": {
+        "save": "Guardar Configuración",
+        "saving": "Guardando..."
+      },
+      "success": {
+        "toast": "Configuración de pagos guardada correctamente"
+      },
+      "errors": {
+        "forbidden": "Solo los propietarios y administradores pueden actualizar la configuración de pagos.",
+        "invalidRfc": "Formato de RFC inválido. Por favor ingresa un RFC válido.",
+        "invalidClabe": "La CLABE debe tener exactamente 18 dígitos.",
+        "generic": "Error al guardar la configuración de pagos. Inténtalo de nuevo."
+      },
+      "help": {
+        "title": "¿Por qué necesitamos esto?",
+        "description": "La información de pago es necesaria para transferir las cuotas de inscripción recolectadas de tus eventos. Usamos esto para procesar transferencias bancarias seguras a tu cuenta."
       }
     }
   }

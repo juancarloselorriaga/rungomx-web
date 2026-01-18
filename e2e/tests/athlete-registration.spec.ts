@@ -255,11 +255,13 @@ test.describe('Athlete Registration', () => {
     // Try to register again for the same event
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
 
-    // Select a different distance and attempt to continue.
-    // Policy: users cannot register twice in the same edition (including different distances).
-    await page.getByRole('button', { name: /5K Road Race/i }).click();
-    await page.getByRole('button', { name: /continue/i }).click();
+    // UX: The page proactively shows "already registered" message when user is already registered.
+    // Distance buttons are disabled to prevent duplicate registration attempts.
     await expect(page.getByText(/already registered/i)).toBeVisible();
+
+    // Verify that the distance button is disabled
+    const distanceButton = page.getByRole('button', { name: /5K Road Race/i });
+    await expect(distanceButton).toBeDisabled();
   });
 
   test('Test 1.8j: Capacity decrements after registration', async ({ page }) => {
@@ -271,7 +273,14 @@ test.describe('Athlete Registration', () => {
   });
 
   test('Test 1.8k: Form validation prevents incomplete submission', async ({ page }) => {
-    // Create new athlete account or use test account
+    // Clean up athlete's registrations from previous tests so they can start a new registration
+    const db = getTestDb();
+    const athlete = await getUserByEmail(db, athleteCreds.email);
+    if (athlete) {
+      await deleteUserRegistrations(db, athlete.id);
+    }
+
+    // Sign in as athlete
     await signInAsAthlete(page, athleteCreds);
 
     // Navigate to registration

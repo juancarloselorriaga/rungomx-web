@@ -12,18 +12,29 @@ import {
   acceptWaiver,
   finalizeRegistration,
 } from '@/lib/events/actions';
+import { submitAddOnSelections, type AddOnData } from '@/lib/events/add-ons/actions';
+import { applyDiscountCode, removeDiscountCode, validateDiscountCode } from '@/lib/events/discounts/actions';
+import { submitAnswers, type RegistrationQuestionData } from '@/lib/events/questions/actions';
 import type { ActiveRegistrationInfo, PublicEventDetail } from '@/lib/events/queries';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, Check, CheckCircle, Info, Loader2, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CheckCircle, Download, FileText, Info, Loader2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition, useEffect } from 'react';
+import { useMemo, useState, useTransition, useEffect } from 'react';
 
-type Step = 'distance' | 'info' | 'waiver' | 'payment' | 'confirmation';
+type Step = 'distance' | 'info' | 'questions' | 'addons' | 'waiver' | 'payment' | 'confirmation';
+
+type EventDocument = {
+  label: string;
+  url: string;
+};
 
 type RegistrationFlowProps = {
   locale: string;
   event: PublicEventDetail;
+  questions: RegistrationQuestionData[];
+  addOns: AddOnData[];
+  documents: EventDocument[];
   seriesSlug: string;
   editionSlug: string;
   userProfile: {
@@ -45,6 +56,9 @@ type RegistrationFlowProps = {
 export function RegistrationFlow({
   locale,
   event,
+  questions,
+  addOns,
+  documents,
   seriesSlug,
   editionSlug,
   userProfile,
@@ -70,6 +84,12 @@ export function RegistrationFlow({
   const [registrationId, setRegistrationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showAlreadyRegisteredCta, setShowAlreadyRegisteredCta] = useState(false);
+  const [registrationPricing, setRegistrationPricing] = useState<{
+    basePriceCents: number | null;
+    feesCents: number | null;
+    taxCents: number | null;
+    totalCents: number | null;
+  } | null>(null);
 
   // Validate that preSelectedDistanceId exists in event.distances and is not sold out
   const validPreSelectedId =
@@ -86,6 +106,47 @@ export function RegistrationFlow({
   const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(validPreSelectedId);
   const selectedDistance = event.distances.find((d) => d.id === selectedDistanceId);
 
+  const activeQuestions = useMemo(() => {
+    if (!selectedDistanceId) return [];
+    return questions.filter(
+      (question) =>
+        question.isActive &&
+        (question.distanceId === null || question.distanceId === selectedDistanceId),
+    );
+  }, [questions, selectedDistanceId]);
+
+  const activeAddOns = useMemo(() => {
+    if (!selectedDistanceId) return [];
+    return addOns
+      .filter(
+        (addOn) =>
+          addOn.isActive &&
+          (addOn.distanceId === null || addOn.distanceId === selectedDistanceId),
+      )
+      .map((addOn) => ({
+        ...addOn,
+        options: addOn.options.filter((option) => option.isActive),
+      }))
+      .filter((addOn) => addOn.options.length > 0);
+  }, [addOns, selectedDistanceId]);
+
+  const steps = useMemo(() => {
+    const nextSteps: Step[] = ['distance', 'info'];
+    if (activeQuestions.length > 0) {
+      nextSteps.push('questions');
+    }
+    if (activeAddOns.length > 0) {
+      nextSteps.push('addons');
+    }
+    if (event.waivers.length > 0) {
+      nextSteps.push('waiver');
+    }
+    nextSteps.push('payment', 'confirmation');
+    return nextSteps;
+  }, [activeAddOns.length, activeQuestions.length, event.waivers.length]);
+
+  const progressSteps = steps.filter((s) => s !== 'confirmation');
+
   // Participant info - prefilled from user profile
   const [firstName, setFirstName] = useState(userProfile.firstName);
   const [lastName, setLastName] = useState(userProfile.lastName);
@@ -101,6 +162,74 @@ export function RegistrationFlow({
   // Waiver tracking - map of waiverId -> accepted status
   const [acceptedWaivers, setAcceptedWaivers] = useState<Record<string, boolean>>({});
   const [waiverSignatures, setWaiverSignatures] = useState<Record<string, string>>({});
+
+  // Questions + add-ons
+  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
+  const [addOnSelections, setAddOnSelections] = useState<
+    Record<string, { optionId: string; quantity: number }>
+  >({});
+  const [addOnOptionDrafts, setAddOnOptionDrafts] = useState<Record<string, string>>({});
+  const [addOnQuantityDrafts, setAddOnQuantityDrafts] = useState<Record<string, number>>({});
+
+  // Discount code
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | null>(null);
+  const [discountAmountCents, setDiscountAmountCents] = useState(0);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+
+  const addOnOptionMap = useMemo(() => {
+    const map = new Map<string, { addOnTitle: string; optionLabel: string; priceCents: number }>();
+    for (const addOn of activeAddOns) {
+      for (const option of addOn.options) {
+        map.set(option.id, {
+          addOnTitle: addOn.title,
+          optionLabel: option.label,
+          priceCents: option.priceCents,
+        });
+      }
+    }
+    return map;
+  }, [activeAddOns]);
+
+  const selectedAddOnItems = useMemo(() => {
+    return Object.values(addOnSelections)
+      .map((selection) => {
+        const option = addOnOptionMap.get(selection.optionId);
+        if (!option) return null;
+        return {
+          optionId: selection.optionId,
+          quantity: selection.quantity,
+          addOnTitle: option.addOnTitle,
+          optionLabel: option.optionLabel,
+          priceCents: option.priceCents,
+          lineTotalCents: option.priceCents * selection.quantity,
+        };
+      })
+      .filter(
+        (
+          item,
+        ): item is {
+          optionId: string;
+          quantity: number;
+          addOnTitle: string;
+          optionLabel: string;
+          priceCents: number;
+          lineTotalCents: number;
+        } => item !== null,
+      );
+  }, [addOnOptionMap, addOnSelections]);
+
+  const addOnsSubtotalCents = selectedAddOnItems.reduce(
+    (total, item) => total + item.lineTotalCents,
+    0,
+  );
+
+  const basePriceCents =
+    registrationPricing?.basePriceCents ?? selectedDistance?.priceCents ?? 0;
+  const feesCents = registrationPricing?.feesCents ?? 0;
+  const taxCents = registrationPricing?.taxCents ?? 0;
+  const subtotalCents = basePriceCents + addOnsSubtotalCents;
+  const totalCents = Math.max(0, subtotalCents + feesCents + taxCents - discountAmountCents);
 
   // Format price
   const formatPrice = (cents: number, currency: string) => {
@@ -149,6 +278,12 @@ export function RegistrationFlow({
       }
 
       setRegistrationId(result.data.id);
+      setRegistrationPricing({
+        basePriceCents: result.data.basePriceCents,
+        feesCents: result.data.feesCents,
+        taxCents: result.data.taxCents,
+        totalCents: result.data.totalCents,
+      });
       setStep('info');
     });
   }
@@ -160,6 +295,20 @@ export function RegistrationFlow({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
+
+  useEffect(() => {
+    setQuestionAnswers({});
+    setAddOnSelections({});
+    setAddOnOptionDrafts({});
+    setAddOnQuantityDrafts({});
+    setAppliedDiscountCode(null);
+    setDiscountAmountCents(0);
+    setDiscountError(null);
+  }, [selectedDistanceId]);
+
+  useEffect(() => {
+    setDiscountError(null);
+  }, [discountCode]);
 
   async function handleInfoSubmit() {
     if (!registrationId) return;
@@ -187,12 +336,7 @@ export function RegistrationFlow({
         return;
       }
 
-      // If event has waivers, go to waiver step, otherwise go to payment
-      if (event.waivers.length > 0) {
-        setStep('waiver');
-      } else {
-        setStep('payment');
-      }
+      goToNextStep('info');
     });
   }
 
@@ -229,7 +373,117 @@ export function RegistrationFlow({
         }
       }
 
-      setStep('payment');
+      goToNextStep('waiver');
+    });
+  }
+
+  async function handleQuestionsSubmit() {
+    if (!registrationId) return;
+    setError(null);
+
+    startTransition(async () => {
+      const answers = activeQuestions.map((question) => {
+        if (question.type === 'checkbox') {
+          return {
+            questionId: question.id,
+            value: questionAnswers[question.id] === 'true' ? 'true' : null,
+          };
+        }
+
+        const value = questionAnswers[question.id]?.trim() || null;
+        return { questionId: question.id, value };
+      });
+
+      const result = await submitAnswers({
+        registrationId,
+        answers,
+      });
+
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      goToNextStep('questions');
+    });
+  }
+
+  async function handleAddOnsSubmit() {
+    if (!registrationId) return;
+    setError(null);
+
+    startTransition(async () => {
+      const selections = Object.values(addOnSelections).map((selection) => ({
+        optionId: selection.optionId,
+        quantity: selection.quantity,
+      }));
+
+      const result = await submitAddOnSelections({
+        registrationId,
+        selections,
+      });
+
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
+      goToNextStep('addons');
+    });
+  }
+
+  async function handleApplyDiscountCode() {
+    if (!registrationId || !discountCode.trim()) return;
+    setDiscountError(null);
+
+    startTransition(async () => {
+      const basePriceCents =
+        registrationPricing?.basePriceCents ??
+        selectedDistance?.priceCents ??
+        0;
+
+      const validation = await validateDiscountCode({
+        editionId: event.id,
+        code: discountCode.trim(),
+        basePriceCents,
+      });
+
+      if (!validation.ok || !validation.data.valid) {
+        setDiscountError(validation.ok ? validation.data.error ?? t('payment.invalidCode') : validation.error);
+        return;
+      }
+
+      const result = await applyDiscountCode({
+        registrationId,
+        code: discountCode.trim(),
+      });
+
+      if (!result.ok) {
+        setDiscountError(result.error);
+        return;
+      }
+
+      const normalizedCode = validation.data.discountCode?.code ?? discountCode.trim().toUpperCase();
+      setAppliedDiscountCode(normalizedCode);
+      setDiscountCode(normalizedCode);
+      setDiscountAmountCents(result.data.discountAmountCents);
+    });
+  }
+
+  async function handleRemoveDiscountCode() {
+    if (!registrationId || !appliedDiscountCode) return;
+    setDiscountError(null);
+
+    startTransition(async () => {
+      const result = await removeDiscountCode({ registrationId });
+      if (!result.ok) {
+        setDiscountError(result.error);
+        return;
+      }
+
+      setAppliedDiscountCode(null);
+      setDiscountAmountCents(0);
+      setDiscountCode('');
     });
   }
 
@@ -251,10 +505,23 @@ export function RegistrationFlow({
     });
   }
 
-  // Get step number for progress indicator
   const getStepNumber = (s: Step): number => {
-    const steps: Step[] = ['distance', 'info', 'waiver', 'payment', 'confirmation'];
-    return steps.indexOf(s) + 1;
+    const index = steps.indexOf(s);
+    return index === -1 ? 0 : index + 1;
+  };
+
+  const goToNextStep = (current: Step) => {
+    const index = steps.indexOf(current);
+    if (index >= 0 && index < steps.length - 1) {
+      setStep(steps[index + 1]);
+    }
+  };
+
+  const goToPreviousStep = (current: Step) => {
+    const index = steps.indexOf(current);
+    if (index > 0) {
+      setStep(steps[index - 1]);
+    }
   };
 
   const currentStepNumber = getStepNumber(step);
@@ -311,7 +578,7 @@ export function RegistrationFlow({
       {step !== 'confirmation' && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            {(['distance', 'info', 'waiver', 'payment'] as const).map((s, idx) => (
+            {progressSteps.map((s, idx) => (
               <div key={s} className="flex items-center">
                 <div
                   className={cn(
@@ -329,7 +596,7 @@ export function RegistrationFlow({
                     idx + 1
                   )}
                 </div>
-                {idx < 3 && (
+                {idx < progressSteps.length - 1 && (
                   <div
                     className={cn(
                       'h-1 w-12 sm:w-20 mx-1',
@@ -573,7 +840,7 @@ export function RegistrationFlow({
             </FormField>
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setStep('distance')} disabled={isPending}>
+              <Button variant="ghost" onClick={() => goToPreviousStep('info')} disabled={isPending}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -587,6 +854,268 @@ export function RegistrationFlow({
                   <ArrowRight className="h-4 w-4 mr-2" />
                 )}
                 {t('info.continue')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Questions */}
+        {step === 'questions' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold">{t('questions.title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('questions.description')}</p>
+            </div>
+
+            {activeQuestions.length === 0 ? (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                {t('questions.skipIfNone')}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {activeQuestions.map((question) => (
+                  <div key={question.id} className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium">{question.prompt}</p>
+                      <span className="text-xs text-muted-foreground">
+                        {question.isRequired ? t('questions.required') : t('questions.optional')}
+                      </span>
+                    </div>
+                    {question.helpText && (
+                      <p className="text-sm text-muted-foreground">{question.helpText}</p>
+                    )}
+                    {question.type === 'text' && (
+                      <input
+                        type="text"
+                        value={questionAnswers[question.id] ?? ''}
+                        onChange={(e) =>
+                          setQuestionAnswers((prev) => ({
+                            ...prev,
+                            [question.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        disabled={isPending}
+                      />
+                    )}
+                    {question.type === 'single_select' && (
+                      <select
+                        value={questionAnswers[question.id] ?? ''}
+                        onChange={(e) =>
+                          setQuestionAnswers((prev) => ({
+                            ...prev,
+                            [question.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        disabled={isPending}
+                      >
+                        <option value="">{t('addons.selectOption')}</option>
+                        {question.options?.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {question.type === 'checkbox' && (
+                      <label className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={questionAnswers[question.id] === 'true'}
+                          onChange={(e) =>
+                            setQuestionAnswers((prev) => ({
+                              ...prev,
+                              [question.id]: e.target.checked ? 'true' : '',
+                            }))
+                          }
+                          className="h-4 w-4 rounded border-gray-300"
+                          disabled={isPending}
+                        />
+                        {question.isRequired ? t('questions.required') : t('questions.optional')}
+                      </label>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => goToPreviousStep('questions')} disabled={isPending}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                onClick={handleQuestionsSubmit}
+                disabled={isPending}
+              >
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                )}
+                {t('questions.continue')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Add-ons */}
+        {step === 'addons' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold">{t('addons.title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('addons.description')}</p>
+            </div>
+
+            {activeAddOns.length === 0 ? (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+                {t('addons.noAddons')}
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {activeAddOns.map((addOn) => {
+                  const draftOptionId =
+                    addOnOptionDrafts[addOn.id] ??
+                    addOnSelections[addOn.id]?.optionId ??
+                    '';
+                  const draftQuantity =
+                    addOnQuantityDrafts[addOn.id] ??
+                    addOnSelections[addOn.id]?.quantity ??
+                    1;
+                  const selectedOption = addOn.options.find((opt) => opt.id === draftOptionId);
+                  const currentSelection = addOnSelections[addOn.id];
+                  const isSameSelection =
+                    currentSelection?.optionId === draftOptionId &&
+                    currentSelection?.quantity === draftQuantity;
+
+                  return (
+                    <div key={addOn.id} className="rounded-lg border p-4 space-y-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-medium">{addOn.title}</h3>
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                            {addOn.type === 'donation' ? t('addons.donation') : t('addons.merchandise')}
+                          </span>
+                          {addOn.deliveryMethod !== 'none' && (
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                              {addOn.deliveryMethod === 'shipping'
+                                ? t('addons.deliveryMethods.shipping')
+                                : t('addons.deliveryMethods.pickup')}
+                            </span>
+                          )}
+                        </div>
+                        {addOn.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{addOn.description}</p>
+                        )}
+                      </div>
+
+                      <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto] items-center">
+                        <select
+                          value={draftOptionId}
+                          onChange={(e) =>
+                            setAddOnOptionDrafts((prev) => ({
+                              ...prev,
+                              [addOn.id]: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                          disabled={isPending}
+                        >
+                          <option value="">{t('addons.selectOption')}</option>
+                          {addOn.options.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label} ({formatPrice(option.priceCents, selectedDistance?.currency ?? 'MXN')})
+                            </option>
+                          ))}
+                        </select>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-muted-foreground">{t('addons.quantity')}</span>
+                          <select
+                            value={draftQuantity}
+                            onChange={(e) =>
+                              setAddOnQuantityDrafts((prev) => ({
+                                ...prev,
+                                [addOn.id]: Number(e.target.value),
+                              }))
+                            }
+                            className="rounded-md border bg-background px-2 py-2 text-sm"
+                            disabled={isPending}
+                          >
+                            {Array.from(
+                              { length: selectedOption?.maxQtyPerOrder ?? 5 },
+                              (_, idx) => idx + 1,
+                            ).map((qty) => (
+                              <option key={qty} value={qty}>
+                                {qty}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center justify-end gap-2">
+                          {currentSelection && isSameSelection ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setAddOnSelections((prev) => {
+                                  const next = { ...prev };
+                                  delete next[addOn.id];
+                                  return next;
+                                })
+                              }
+                              disabled={isPending}
+                            >
+                              {t('addons.removeFromOrder')}
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() =>
+                                setAddOnSelections((prev) => ({
+                                  ...prev,
+                                  [addOn.id]: {
+                                    optionId: draftOptionId,
+                                    quantity: draftQuantity,
+                                  },
+                                }))
+                              }
+                              disabled={isPending || !draftOptionId}
+                            >
+                              {t('addons.addToOrder')}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {addOnsSubtotalCents > 0 && (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm flex justify-between">
+                <span className="text-muted-foreground">{t('addons.subtotal')}</span>
+                <span className="font-medium">
+                  {formatPrice(addOnsSubtotalCents, selectedDistance?.currency ?? 'MXN')}
+                </span>
+              </div>
+            )}
+
+            <div className="flex justify-between">
+              <Button variant="ghost" onClick={() => goToPreviousStep('addons')} disabled={isPending}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Button onClick={handleAddOnsSubmit} disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                )}
+                {t('addons.continue')}
               </Button>
             </div>
           </div>
@@ -664,7 +1193,7 @@ export function RegistrationFlow({
             ))}
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setStep('info')} disabled={isPending}>
+              <Button variant="ghost" onClick={() => goToPreviousStep('waiver')} disabled={isPending}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -698,19 +1227,94 @@ export function RegistrationFlow({
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">{t('payment.price')}</span>
                 <span>
-                  {selectedDistance
-                    ? formatPrice(selectedDistance.priceCents, selectedDistance.currency)
-                    : '-'}
+                  {formatPrice(basePriceCents, selectedDistance?.currency ?? 'MXN')}
                 </span>
+              </div>
+              {selectedAddOnItems.length > 0 && (
+                <>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{t('payment.addons')}</span>
+                    <span>{formatPrice(addOnsSubtotalCents, selectedDistance?.currency ?? 'MXN')}</span>
+                  </div>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    {selectedAddOnItems.map((item) => (
+                      <div key={item.optionId} className="flex justify-between">
+                        <span>
+                          {item.addOnTitle} · {item.optionLabel} × {item.quantity}
+                        </span>
+                        <span>
+                          {formatPrice(item.lineTotalCents, selectedDistance?.currency ?? 'MXN')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t('payment.subtotal')}</span>
+                <span>{formatPrice(subtotalCents, selectedDistance?.currency ?? 'MXN')}</span>
+              </div>
+              {discountAmountCents > 0 && (
+                <div className="flex justify-between text-sm text-green-700">
+                  <span>{t('payment.discount')}</span>
+                  <span>-{formatPrice(discountAmountCents, selectedDistance?.currency ?? 'MXN')}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t('payment.fees')}</span>
+                <span>{formatPrice(feesCents, selectedDistance?.currency ?? 'MXN')}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t('payment.tax')}</span>
+                <span>{formatPrice(taxCents, selectedDistance?.currency ?? 'MXN')}</span>
               </div>
               <div className="border-t pt-3 flex justify-between font-semibold">
                 <span>{t('payment.total')}</span>
-                <span>
-                  {selectedDistance
-                    ? formatPrice(selectedDistance.priceCents, selectedDistance.currency)
-                    : '-'}
-                </span>
+                <span>{formatPrice(totalCents, selectedDistance?.currency ?? 'MXN')}</span>
               </div>
+            </div>
+
+            {/* Discount code */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium">{t('payment.discountCode')}</h3>
+                {appliedDiscountCode && (
+                  <span className="text-sm text-green-700">
+                    {t('payment.codeApplied', { code: appliedDiscountCode })}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={discountCode}
+                  onChange={(e) => setDiscountCode(e.target.value)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  placeholder={t('payment.discountCode')}
+                  disabled={isPending || !!appliedDiscountCode}
+                />
+                {appliedDiscountCode ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRemoveDiscountCode}
+                    disabled={isPending}
+                  >
+                    {t('payment.removeCode')}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleApplyDiscountCode}
+                    disabled={isPending || !discountCode.trim()}
+                  >
+                    {t('payment.applyCode')}
+                  </Button>
+                )}
+              </div>
+              {discountError && (
+                <p className="text-sm text-destructive">{discountError}</p>
+              )}
             </div>
 
             {/* Phase 1: Payment placeholder */}
@@ -729,7 +1333,7 @@ export function RegistrationFlow({
             </div>
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => setStep('waiver')} disabled={isPending}>
+              <Button variant="ghost" onClick={() => goToPreviousStep('payment')} disabled={isPending}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -781,6 +1385,31 @@ export function RegistrationFlow({
               <h3 className="font-medium">{t('confirmation.whatNext')}</h3>
               <p className="text-sm text-muted-foreground">{t('confirmation.nextSteps')}</p>
             </div>
+
+            {/* Event Documents */}
+            {documents.length > 0 && (
+              <div className="rounded-lg border bg-muted/40 p-4 text-left space-y-3">
+                <h3 className="font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  {t('confirmation.documents')}
+                </h3>
+                <div className="space-y-2">
+                  {documents.map((doc, index) => (
+                    <a
+                      key={index}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors group"
+                    >
+                      <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                      <span className="text-sm font-medium flex-1">{doc.label}</span>
+                      <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {event.policyConfig && (
               <div className="rounded-lg border bg-muted/40 p-4 text-left space-y-3">

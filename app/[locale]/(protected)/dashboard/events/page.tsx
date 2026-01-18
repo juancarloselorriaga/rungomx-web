@@ -124,7 +124,7 @@ export default async function DashboardEventsPage({ params }: LocalePageProps) {
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       <span>
-                        {event.registrationCount} {t('registrations')}
+                        {event.registrationCount} {t('registrationCount')}
                       </span>
                     </div>
                   </div>
