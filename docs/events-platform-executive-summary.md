@@ -34,7 +34,7 @@ This release covers the first three phases of development, delivering a complete
 - Create events with complete information (dates, location, distances, pricing, capacity)
 - Seven sport type categories: Trail Running, Triathlon, Cycling, MTB, Gravel Bike, Duathlon, Backyard Ultra
 - Four visibility states: Draft (private), Published (fully public), Unlisted (accessible by direct link), Archived (read-only)
-- Automatic web-friendly URL generation and unique event codes (e.g., EVT-ABC123)
+- Automatic web-friendly URL generation and unique public event codes (e.g., ABC123)
 
 **Public Event Discovery**
 
@@ -82,7 +82,7 @@ This release covers the first three phases of development, delivering a complete
 - Create custom content sections for event pages
 - Build rich event pages with course maps, schedules, parking info, sponsor logos
 - Multi-language support (Spanish and English)
-- Secure content storage with script injection prevention
+- Structured content blocks (no raw HTML) to reduce script injection risk
 
 **Date-Based Pricing Tiers**
 
@@ -97,7 +97,7 @@ This release covers the first three phases of development, delivering a complete
 - Multiple options per add-on (sizes, colors) with different prices
 - Can apply to all distances or specific ones
 - Configurable maximum quantity per order
-- Delivery method tracking: Pickup at Event, Shipped, Digital
+- Delivery method tracking: Pickup at Event, Shipping, Not Applicable
 
 **Discount Codes (Coupons)**
 
@@ -143,8 +143,8 @@ This release covers the first three phases of development, delivering a complete
 
 **What's Not Yet Available:**
 
-- **Payment Processing**: Registrations are captured and auto-confirmed without payment collection. This is intentional for this release to allow testing and rollout of all other features. Payment integration will come in a future release.
-- **Email Notifications**: No automated emails for confirmations, reminders, or updates
+- **Payment Processing**: Registrations are captured without payment collection. In no-payment mode they auto-confirm; otherwise they move to a "payment pending" state. Payment integration will come in a future release.
+- **Email Notifications**: Registration emails are implemented when an email service is configured; there are no automated reminders or event update emails yet.
 - **Refund/Transfer Processing**: Policies can be displayed but must be processed manually
 - **Results Upload**: Event codes exist but no results import functionality yet
 - **Waitlist**: No waitlist when events sell out
@@ -193,10 +193,9 @@ To test the platform, you'll need:
 
 ## Technical Notes
 
-- Platform uses feature flags for controlled rollout
-- Internal staff always have access; external organizers can be enabled selectively
+- Access is controlled by roles/permissions for organizers and internal staff
 - All features are available in Spanish and English
-- System tracks all organizer actions through audit logging
+- System tracks key organizer actions through audit logging
 - No-payment mode allows full testing of registration workflow
 
 ---
