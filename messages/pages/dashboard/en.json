@@ -217,7 +217,7 @@
         "statePlaceholder": "CDMX"
       }
     },
-    "registrations": "registrations",
+    "registrationCount": "registrations",
     "distance": "distance",
     "distances": "distances",
     "visibility": {
@@ -247,6 +247,24 @@
       "location": "Location",
       "distances": "Distances",
       "registrations": "Registrations",
+      "nav": {
+        "overview": "Overview",
+        "settings": "Settings",
+        "faq": "FAQ",
+        "waivers": "Waivers",
+        "policies": "Policies",
+        "website": "Website",
+        "pricing": "Pricing",
+        "addOns": "Add-ons",
+        "coupons": "Coupons",
+        "registrations": "Registrations",
+        "sections": {
+          "general": "GENERAL",
+          "content": "CONTENT",
+          "pricing": "PRICING",
+          "management": "MANAGEMENT"
+        }
+      },
       "manageEvent": "Event Settings",
       "manageEventDescription": "Edit event details, dates, and registration settings",
       "manageFaq": "FAQ",
@@ -255,6 +273,16 @@
       "manageWaiversDescription": "Create and order participant waivers",
       "managePolicies": "Policies",
       "managePoliciesDescription": "Set refund, transfer, and deferral placeholders",
+      "manageWebsite": "Website Content",
+      "manageWebsiteDescription": "Customize your event page sections and content",
+      "managePricing": "Pricing Tiers",
+      "managePricingDescription": "Set early bird and tiered pricing schedules",
+      "manageAddOns": "Add-ons",
+      "manageAddOnsDescription": "Configure merchandise and donation options",
+      "manageCoupons": "Discount Coupons",
+      "manageCouponsDescription": "Create and manage promotional codes",
+      "manageRegistrations": "Registrations",
+      "manageRegistrationsDescription": "View and export participant registrations",
       "publicCodeLabel": "Public code",
       "viewPublicPage": "View Public Page",
       "viewPublicPageDescription": "See how your event appears to participants",
@@ -439,6 +467,238 @@
         "cancel": "Cancel",
         "confirmDelete": "Are you sure you want to delete this distance? This action cannot be undone."
       }
+    },
+    "website": {
+      "title": "Website Content",
+      "description": "Customize the content sections that appear on your public event page.",
+      "save": "Save changes",
+      "saving": "Saving...",
+      "saved": "Content saved successfully",
+      "errorSaving": "Failed to save content",
+      "sections": {
+        "overview": {
+          "title": "Overview",
+          "description": "Main event description and terrain information.",
+          "contentLabel": "Event Description",
+          "contentPlaceholder": "Describe your event, what makes it special, and what participants should expect...",
+          "terrainLabel": "Terrain Description",
+          "terrainPlaceholder": "Trail conditions, elevation, surface type..."
+        },
+        "course": {
+          "title": "Course Information",
+          "description": "Course details, aid stations, and cutoff times.",
+          "descriptionLabel": "Course Description",
+          "descriptionPlaceholder": "Describe the course layout and key features...",
+          "elevationLabel": "Elevation Gain",
+          "elevationPlaceholder": "e.g., 1500m or 5000ft",
+          "elevationProfileLabel": "Elevation Profile URL",
+          "elevationProfilePlaceholder": "Link to elevation profile image",
+          "mapUrlLabel": "Course Map URL",
+          "mapUrlPlaceholder": "Link to course map",
+          "aidStations": {
+            "title": "Aid Stations",
+            "add": "Add aid station",
+            "nameLabel": "Name",
+            "namePlaceholder": "Aid Station 1",
+            "distanceLabel": "Distance (km)",
+            "distancePlaceholder": "10",
+            "cutoffLabel": "Cutoff time",
+            "cutoffPlaceholder": "10:00 AM",
+            "servicesLabel": "Services available",
+            "servicesPlaceholder": "Water, snacks, first aid..."
+          }
+        },
+        "schedule": {
+          "title": "Schedule & Logistics",
+          "description": "Packet pickup, parking, and race day information.",
+          "packetPickupLabel": "Packet Pickup",
+          "packetPickupPlaceholder": "When and where participants can pick up their race packets...",
+          "parkingLabel": "Parking",
+          "parkingPlaceholder": "Parking availability and directions...",
+          "raceDayLabel": "Race Day Information",
+          "raceDayPlaceholder": "What to bring, check-in time, start area details...",
+          "startTimes": {
+            "title": "Start Times",
+            "add": "Add start time",
+            "distanceLabel": "Distance",
+            "distancePlaceholder": "50K",
+            "timeLabel": "Time",
+            "timePlaceholder": "6:00 AM",
+            "notesLabel": "Notes",
+            "notesPlaceholder": "Optional notes..."
+          }
+        },
+        "media": {
+          "title": "Photos & Documents",
+          "description": "Photo gallery and downloadable documents like convocatoria.",
+          "photos": {
+            "title": "Photo Gallery",
+            "description": "Add photos to showcase your event.",
+            "add": "Add photo",
+            "captionLabel": "Caption",
+            "captionPlaceholder": "Photo description...",
+            "comingSoon": "Photo gallery will be available in a future update."
+          },
+          "documents": {
+            "title": "Documents",
+            "description": "Upload PDF documents like race convocatoria, course maps, or rules.",
+            "add": "Add document",
+            "empty": "No documents uploaded yet. Add your convocatoria or other documents.",
+            "uploaderTitle": "Upload Document",
+            "labelField": "Document label",
+            "labelPlaceholder": "Convocatoria, Course Map, Rules...",
+            "upload": "Upload",
+            "uploading": "Uploading...",
+            "cancel": "Cancel",
+            "selectFile": "Click or drag to select a PDF file",
+            "fileTooLarge": "File must be smaller than {maxSize}MB.",
+            "invalidType": "Please upload a PDF file.",
+            "uploadFailed": "Upload failed. Please try again.",
+            "maxSize": "Max file size: {maxSize}MB"
+          }
+        }
+      },
+      "enableSection": "Enable section",
+      "disableSection": "Disable section",
+      "sectionEnabled": "Visible on public page",
+      "sectionDisabled": "Hidden from public page"
+    },
+    "pricing": {
+      "title": "Pricing Tiers",
+      "description": "Manage pricing tiers for each distance. Set early bird pricing, regular pricing, and late registration fees.",
+      "selectDistance": "Select a distance to manage pricing",
+      "noDistances": "No distances available. Add distances in event settings first.",
+      "tier": {
+        "add": "Add pricing tier",
+        "edit": "Edit tier",
+        "delete": "Delete tier",
+        "confirmDelete": "Are you sure you want to delete this pricing tier?",
+        "cannotDeleteLast": "Each distance must have at least one pricing tier.",
+        "labelField": "Tier label",
+        "labelPlaceholder": "e.g., Early Bird, Regular, Late",
+        "priceField": "Price",
+        "pricePlaceholder": "Enter price",
+        "startsAtField": "Starts at",
+        "endsAtField": "Ends at",
+        "noDates": "Always active (no date restriction)",
+        "currentTier": "Current",
+        "upcomingTier": "Upcoming",
+        "expiredTier": "Expired",
+        "save": "Save tier",
+        "saving": "Saving...",
+        "saved": "Pricing tier saved",
+        "deleted": "Pricing tier deleted",
+        "errorSaving": "Failed to save pricing tier",
+        "errorDeleting": "Failed to delete pricing tier",
+        "dateOverlap": "Date range overlaps with another tier"
+      },
+      "currency": {
+        "label": "Currency",
+        "mxn": "MXN (Mexican Peso)",
+        "usd": "USD (US Dollar)"
+      },
+      "help": {
+        "title": "How pricing tiers work",
+        "description": "Create multiple pricing tiers to offer early bird discounts or increase prices as the event date approaches. Only one tier can be active at a time based on the date ranges you set."
+      }
+    },
+    "addOns": {
+      "title": "Add-ons",
+      "description": "Create additional products or donations that participants can select during registration.",
+      "emptyState": "No add-ons configured yet. Create your first add-on to offer merchandise or accept donations.",
+      "addOn": {
+        "add": "Add new add-on",
+        "edit": "Edit add-on",
+        "delete": "Delete add-on",
+        "confirmDelete": "Are you sure you want to delete this add-on and all its options?",
+        "titleField": "Title",
+        "titlePlaceholder": "e.g., Event T-Shirt, Donation",
+        "descriptionField": "Description",
+        "descriptionPlaceholder": "Describe this add-on...",
+        "typeField": "Type",
+        "deliveryField": "Delivery method",
+        "distanceField": "Restrict to distance",
+        "distanceAll": "Available for all distances",
+        "activeField": "Active",
+        "save": "Save add-on",
+        "saving": "Saving...",
+        "saved": "Add-on saved",
+        "deleted": "Add-on deleted",
+        "errorSaving": "Failed to save add-on",
+        "errorDeleting": "Failed to delete add-on"
+      },
+      "option": {
+        "title": "Options",
+        "add": "Add option",
+        "edit": "Edit option",
+        "delete": "Delete option",
+        "confirmDelete": "Are you sure you want to delete this option?",
+        "labelField": "Label",
+        "labelPlaceholder": "e.g., Small, Medium, Large",
+        "priceField": "Price",
+        "pricePlaceholder": "0.00",
+        "maxQtyField": "Max quantity per order",
+        "activeField": "Active",
+        "save": "Save option",
+        "saved": "Option saved",
+        "deleted": "Option deleted",
+        "errorSaving": "Failed to save option"
+      },
+      "types": {
+        "merch": "Merchandise",
+        "donation": "Donation"
+      },
+      "delivery": {
+        "pickup": "Pickup at Event",
+        "shipping": "Shipping",
+        "none": "Not Applicable"
+      },
+      "help": {
+        "title": "How add-ons work",
+        "description": "Add-ons allow you to sell merchandise (like t-shirts) or accept donations during registration. Each add-on can have multiple options with different prices."
+      }
+    },
+    "coupons": {
+      "title": "Discount Coupons",
+      "description": "Create promotional codes that participants can use to get discounts on registration.",
+      "emptyState": "No coupons configured yet",
+      "emptyStateDescription": "Create your first coupon to offer discounts to participants.",
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "scheduled": "Scheduled",
+        "expired": "Expired",
+        "limitReached": "Limit reached"
+      },
+      "coupon": {
+        "add": "Add coupon",
+        "edit": "Edit coupon",
+        "delete": "Delete coupon",
+        "create": "Create coupon",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "confirmDelete": "Are you sure you want to delete this coupon? This action cannot be undone.",
+        "code": "Coupon code",
+        "codeCannotChange": "Code cannot be changed after creation",
+        "name": "Internal name",
+        "namePlaceholder": "e.g., Early bird promo",
+        "percentOff": "Discount percentage",
+        "maxRedemptions": "Max redemptions",
+        "maxRedemptionsHint": "Leave empty for unlimited uses",
+        "unlimited": "Unlimited",
+        "startsAt": "Starts at",
+        "endsAt": "Ends at",
+        "isActive": "Status",
+        "isActiveLabel": "Coupon is active",
+        "discount": "off",
+        "redemptions": "redemptions",
+        "validFrom": "From",
+        "validUntil": "Until"
+      },
+      "help": {
+        "title": "How coupons work",
+        "description": "Coupons let you offer percentage discounts to participants. Set optional validity dates and redemption limits to control when and how often the code can be used."
+      }
     }
   },
   "organizations": {
@@ -590,6 +850,58 @@
       },
       "success": {
         "toast": "Organization \"{name}\" has been deleted"
+      }
+    },
+    "payout": {
+      "title": "Payout Settings",
+      "description": "Configure how you receive event registration payments.",
+      "accessRestriction": "Only organization owners and admins can view and edit payout settings.",
+      "emptyState": "No payout profile configured yet. Add your banking information to receive payments.",
+      "fields": {
+        "legalName": {
+          "label": "Legal Name",
+          "placeholder": "Business or Individual Name",
+          "hint": "The name that will appear on bank transfers"
+        },
+        "rfc": {
+          "label": "RFC (Tax ID)",
+          "placeholder": "XAXX010101000",
+          "hint": "Mexican Tax Identification Number (12-13 characters)"
+        },
+        "bankName": {
+          "label": "Bank Name",
+          "placeholder": "BBVA, Santander, Banorte, etc."
+        },
+        "clabe": {
+          "label": "CLABE",
+          "placeholder": "000000000000000000",
+          "hint": "18-digit interbank account number"
+        },
+        "accountHolder": {
+          "label": "Account Holder Name",
+          "placeholder": "Name as it appears on bank account"
+        }
+      },
+      "sections": {
+        "taxInfo": "Tax Information",
+        "bankInfo": "Bank Account"
+      },
+      "buttons": {
+        "save": "Save Payout Settings",
+        "saving": "Saving..."
+      },
+      "success": {
+        "toast": "Payout settings saved successfully"
+      },
+      "errors": {
+        "forbidden": "Only owners and admins can update payout settings.",
+        "invalidRfc": "Invalid RFC format. Please enter a valid Mexican Tax ID.",
+        "invalidClabe": "CLABE must be exactly 18 digits.",
+        "generic": "Failed to save payout settings. Please try again."
+      },
+      "help": {
+        "title": "Why do we need this?",
+        "description": "Payout information is required to transfer registration fees collected from your events. We use this to process secure bank transfers to your account."
       }
     }
   }

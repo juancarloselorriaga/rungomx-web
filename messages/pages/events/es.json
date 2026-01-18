@@ -6,6 +6,14 @@
     "description": "Encuentra e inscríbete en eventos de trail running, triatlón, ciclismo y otros deportes de resistencia en México."
   },
   "detail": {
+    "tabs": {
+      "navigation": "Secciones del evento",
+      "overview": "Resumen",
+      "distances": "Distancias",
+      "faq": "FAQ",
+      "policies": "Políticas",
+      "website": "Más Info"
+    },
     "registrationOpen": "Inscripciones abiertas",
     "registrationClosed": "Inscripciones cerradas",
     "registrationDetails": "Detalles de inscripción",
@@ -61,6 +69,11 @@
       "title": "Evento no encontrado",
       "description": "Este evento puede haber sido eliminado o aún no está disponible.",
       "backToEvents": "Volver a eventos"
+    },
+    "website": {
+      "documents": "Documentos",
+      "terrain": "Terreno",
+      "download": "Descargar"
     }
   },
   "register": {
@@ -68,6 +81,8 @@
     "steps": {
       "distance": "Seleccionar distancia",
       "info": "Tu información",
+      "questions": "Preguntas adicionales",
+      "addons": "Complementos",
       "waiver": "Deslinde",
       "payment": "Pago",
       "confirmation": "Confirmación"
@@ -97,6 +112,32 @@
       "teamName": "Nombre del equipo (opcional)",
       "continue": "Continuar"
     },
+    "questions": {
+      "title": "Preguntas adicionales",
+      "description": "Por favor responde las siguientes preguntas del organizador.",
+      "required": "Requerido",
+      "optional": "Opcional",
+      "continue": "Continuar",
+      "skipIfNone": "No hay preguntas adicionales para este evento."
+    },
+    "addons": {
+      "title": "Complementos",
+      "description": "Mejora tu experiencia con complementos opcionales.",
+      "noAddons": "No hay complementos disponibles para este evento.",
+      "merchandise": "Mercancía",
+      "donation": "Donación",
+      "quantity": "Cantidad",
+      "selectOption": "Seleccionar una opción",
+      "addToOrder": "Agregar al pedido",
+      "removeFromOrder": "Eliminar",
+      "deliveryMethods": {
+        "pickup": "Recoger en el evento",
+        "shipping": "Envío"
+      },
+      "subtotal": "Subtotal de complementos",
+      "continue": "Continuar",
+      "skip": "Omitir complementos"
+    },
     "waiver": {
       "title": "Aceptación de deslinde",
       "description": "Por favor lee y acepta el/los deslinde(s) de responsabilidad para continuar.",
@@ -119,6 +160,16 @@
       "summary": "Resumen del pedido",
       "distance": "Distancia",
       "price": "Precio",
+      "addons": "Complementos",
+      "subtotal": "Subtotal",
+      "discount": "Descuento",
+      "discountCode": "Código de descuento",
+      "applyCode": "Aplicar",
+      "removeCode": "Eliminar",
+      "codeApplied": "Código aplicado: {code}",
+      "invalidCode": "Código de descuento inválido o expirado",
+      "fees": "Comisiones",
+      "tax": "Impuestos",
       "total": "Total",
       "paymentMethods": "Métodos de pago",
       "comingSoon": "Pago en línea próximamente. Por ahora, contacta al organizador para completar tu inscripción.",
@@ -130,6 +181,7 @@
       "description": "Te has inscrito exitosamente a {eventName}.",
       "registrationId": "Código de boleto",
       "distance": "Distancia",
+      "documents": "Documentos del Evento",
       "policiesTitle": "Políticas del evento",
       "refundPolicy": "Política de reembolsos",
       "transferPolicy": "Política de transferencias",

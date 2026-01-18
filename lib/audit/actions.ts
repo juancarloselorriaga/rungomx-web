@@ -66,6 +66,37 @@ export const AUDIT_ACTIONS = {
   'registration.export': 'Registrations exported',
   'registration.update': 'Registration updated',
   'registration.cancel': 'Registration cancelled',
+
+  // Add-ons (Phase 2)
+  'add_on.create': 'Add-on created',
+  'add_on.update': 'Add-on updated',
+  'add_on.delete': 'Add-on deleted',
+  'add_on.reorder': 'Add-ons reordered',
+  'add_on_option.create': 'Add-on option created',
+  'add_on_option.update': 'Add-on option updated',
+  'add_on_option.delete': 'Add-on option deleted',
+
+  // Discount Codes (Phase 2)
+  'discount_code.create': 'Discount code created',
+  'discount_code.update': 'Discount code updated',
+  'discount_code.delete': 'Discount code deleted',
+  'discount_code.apply': 'Discount code applied',
+  'discount_code.remove': 'Discount code removed',
+
+  // Registration Questions (Phase 2)
+  'registration_question.create': 'Registration question created',
+  'registration_question.update': 'Registration question updated',
+  'registration_question.delete': 'Registration question deleted',
+  'registration_question.reorder': 'Registration questions reordered',
+  'registration_answers.submit': 'Registration answers submitted',
+
+  // Payout Profile (Phase 2)
+  'payout_profile.read': 'Payout profile viewed',
+  'payout_profile.create': 'Payout profile created',
+  'payout_profile.update': 'Payout profile updated',
+
+  // Add-on Sales Export (Phase 2)
+  'add_on_sales.export': 'Add-on sales exported',
 } as const;
 
 /**

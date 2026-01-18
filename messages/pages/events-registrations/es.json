@@ -1,0 +1,49 @@
+{
+  "title": "Inscripciones",
+  "description": "Ver y administrar inscripciones del evento.",
+  "emptyState": "No se encontraron inscripciones con los filtros seleccionados.",
+  "stats": {
+    "total": "Total de Inscripciones",
+    "distances": "Distancias",
+    "avgPerDistance": "Prom. por Distancia"
+  },
+  "filters": {
+    "allDistances": "Todas las distancias",
+    "allStatuses": "Todos los estados",
+    "searchPlaceholder": "Buscar por nombre o correo...",
+    "search": "Buscar"
+  },
+  "status": {
+    "started": "Iniciada",
+    "submitted": "Enviada",
+    "payment_pending": "Pago Pendiente",
+    "confirmed": "Confirmada",
+    "cancelled": "Cancelada",
+    "expired": "Vencida"
+  },
+  "table": {
+    "buyer": "Comprador",
+    "registrant": "Participante",
+    "distance": "Distancia",
+    "status": "Estado",
+    "total": "Total",
+    "date": "Fecha"
+  },
+  "pagination": {
+    "showing": "Mostrando {start}-{end} de {total}",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {current} de {total}"
+  },
+  "export": {
+    "button": "Exportar",
+    "exporting": "Exportando...",
+    "registrations": "Inscripciones CSV",
+    "registrationsDescription": "Todos los datos de participantes con respuestas",
+    "addOns": "Ventas de Extras CSV",
+    "addOnsDescription": "Resumen de cantidades e ingresos de extras",
+    "success": "Inscripciones exportadas exitosamente",
+    "successAddOns": "Ventas de extras exportadas exitosamente",
+    "error": "Error al exportar. Inténtalo de nuevo."
+  }
+}

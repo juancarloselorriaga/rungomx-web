@@ -2329,6 +2329,9 @@ type RegistrationData = {
   status: string;
   distanceId: string;
   editionId: string;
+  basePriceCents: number | null;
+  feesCents: number | null;
+  taxCents: number | null;
   totalCents: number | null;
 };
 
@@ -2353,6 +2356,9 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
         status: registration.status,
         distanceId: registration.distanceId,
         editionId: registration.editionId,
+        basePriceCents: registration.basePriceCents,
+        feesCents: registration.feesCents,
+        taxCents: registration.taxCents,
         totalCents: registration.totalCents,
       },
     };
@@ -2458,6 +2464,9 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
         status: updatedRegistration.status,
         distanceId: updatedRegistration.distanceId,
         editionId: updatedRegistration.editionId,
+        basePriceCents: updatedRegistration.basePriceCents,
+        feesCents: updatedRegistration.feesCents,
+        taxCents: updatedRegistration.taxCents,
         totalCents: updatedRegistration.totalCents,
       },
     };
@@ -2593,6 +2602,9 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         status: registration.status,
         distanceId: registration.distanceId,
         editionId: registration.editionId,
+        basePriceCents: registration.basePriceCents,
+        feesCents: registration.feesCents,
+        taxCents: registration.taxCents,
         totalCents: registration.totalCents,
       },
     };

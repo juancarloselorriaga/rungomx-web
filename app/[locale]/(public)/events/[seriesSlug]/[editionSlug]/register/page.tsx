@@ -1,5 +1,8 @@
 import { getAuthContextWithOrgs } from '@/lib/auth/server';
 import { getActiveRegistrationForEdition, getPublicEventBySlug } from '@/lib/events/queries';
+import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
+import { getQuestionsForEdition } from '@/lib/events/questions/queries';
+import { getEventDocuments } from '@/lib/events/website/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
@@ -64,6 +67,12 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
     event.id,
   );
 
+  const [questions, addOns, documents] = await Promise.all([
+    getQuestionsForEdition(event.id),
+    getAddOnsForEdition(event.id),
+    getEventDocuments(event.id, locale),
+  ]);
+
   // Get user profile data to pre-fill form
   const userProfile = {
     firstName: authContext.user!.name?.split(' ')[0] || '',
@@ -86,6 +95,9 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
     <RegistrationFlow
       locale={locale}
       event={event}
+      questions={questions}
+      addOns={addOns}
+      documents={documents}
       seriesSlug={seriesSlug}
       editionSlug={editionSlug}
       userProfile={userProfile}

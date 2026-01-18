@@ -47,6 +47,7 @@ export interface CreateAuditLogResult {
 export const AUDIT_ENTITY_TYPES = [
   'organization',
   'organization_membership',
+  'organization_payout_profile',
   'event_series',
   'event_edition',
   'event_distance',
@@ -58,6 +59,12 @@ export const AUDIT_ENTITY_TYPES = [
   'waiver_acceptance',
   'event_website_content',
   'media',
+  'add_on',
+  'add_on_option',
+  'discount_code',
+  'discount_redemption',
+  'registration_question',
+  'registration_answer',
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

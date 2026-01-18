@@ -101,6 +101,26 @@ export const routing = defineRouting({
       es: '/tablero/eventos/[eventId]/politicas',
       en: '/dashboard/events/[eventId]/policies',
     },
+    '/dashboard/events/[eventId]/website': {
+      es: '/tablero/eventos/[eventId]/sitio-web',
+      en: '/dashboard/events/[eventId]/website',
+    },
+    '/dashboard/events/[eventId]/pricing': {
+      es: '/tablero/eventos/[eventId]/precios',
+      en: '/dashboard/events/[eventId]/pricing',
+    },
+    '/dashboard/events/[eventId]/add-ons': {
+      es: '/tablero/eventos/[eventId]/extras',
+      en: '/dashboard/events/[eventId]/add-ons',
+    },
+    '/dashboard/events/[eventId]/coupons': {
+      es: '/tablero/eventos/[eventId]/cupones',
+      en: '/dashboard/events/[eventId]/coupons',
+    },
+    '/dashboard/events/[eventId]/registrations': {
+      es: '/tablero/eventos/[eventId]/inscripciones',
+      en: '/dashboard/events/[eventId]/registrations',
+    },
     '/dashboard/my-registrations': {
       es: '/tablero/inscripciones',
       en: '/dashboard/my-registrations',

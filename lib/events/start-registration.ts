@@ -9,6 +9,9 @@ export type StartRegistrationResult = {
   status: string;
   distanceId: string;
   editionId: string;
+  basePriceCents: number;
+  feesCents: number;
+  taxCents: number;
   totalCents: number | null;
 };
 
@@ -199,6 +202,9 @@ export async function startRegistrationForUser(
       status: registration.status,
       distanceId: registration.distanceId,
       editionId: registration.editionId,
+      basePriceCents: registration.basePriceCents ?? priceCents,
+      feesCents: registration.feesCents ?? feesCents,
+      taxCents: registration.taxCents ?? 0,
       totalCents: registration.totalCents,
     };
   } catch (error) {
@@ -209,4 +215,3 @@ export async function startRegistrationForUser(
     throw error;
   }
 }
-

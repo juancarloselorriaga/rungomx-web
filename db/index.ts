@@ -2,7 +2,6 @@
 
 import { neonConfig, Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from 'ws';
 
 import * as relations from './relations';
 import * as schema from './schema';
@@ -13,7 +12,11 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
-neonConfig.webSocketConstructor = ws;
+// Prefer Node's built-in WebSocket implementation when available (more stable across Node versions).
+// Fall back to `ws` only when the global WebSocket is not present.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+neonConfig.webSocketConstructor = (globalThis as unknown as { WebSocket?: unknown }).WebSocket
+  ?? require('ws');
 
 const pool = new Pool({ connectionString });
 

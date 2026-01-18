@@ -5,6 +5,7 @@ import {
   getPublicOtherEditionsForSeries,
   type PublicDistanceInfo,
 } from '@/lib/events/queries';
+import { getPublicWebsiteContent, hasWebsiteContent, resolveDocumentUrls } from '@/lib/events/website/queries';
 import type { SportType } from '@/lib/events/constants';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -16,8 +17,12 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
+import { EventTabs, type TabId } from './event-tabs';
+import { WebsiteContentRenderer } from './website-content-renderer';
+
 type EventDetailPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
+  searchParams: Promise<{ tab?: string }>;
 };
 
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
@@ -55,8 +60,9 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
   };
 }
 
-export default async function EventDetailPage({ params }: EventDetailPageProps) {
+export default async function EventDetailPage({ params, searchParams }: EventDetailPageProps) {
   const { locale, seriesSlug, editionSlug } = await params;
+  const { tab } = await searchParams;
   await configPageLocale(params, { pathname: '/events/[seriesSlug]/[editionSlug]' });
 
   const t = await getTranslations({ locale, namespace: 'pages.events' });
@@ -65,6 +71,18 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   if (!event) {
     notFound();
   }
+
+  // Determine which tab to show
+  const hasWebsite = await hasWebsiteContent(event.id);
+  const validTabs: TabId[] = ['overview', 'distances', 'faq', 'policies'];
+  if (hasWebsite) {
+    validTabs.push('website');
+  }
+  const currentTab: TabId = (tab && validTabs.includes(tab as TabId) ? tab : 'overview') as TabId;
+
+  // Load website content if on website tab
+  const websiteContent = currentTab === 'website' ? await getPublicWebsiteContent(event.id, locale) : null;
+  const documentUrls = websiteContent ? await resolveDocumentUrls(websiteContent) : undefined;
 
   const otherEditions = await getPublicOtherEditionsForSeries(event.seriesId, event.id);
 
@@ -253,13 +271,21 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         </div>
       </div>
 
+      {/* Tabs */}
+      <EventTabs
+        seriesSlug={seriesSlug}
+        editionSlug={editionSlug}
+        hasWebsiteContent={hasWebsite}
+        currentTab={currentTab}
+      />
+
       {/* Content */}
       <div className="container mx-auto px-4 py-12 max-w-7xl">
         <div className="grid gap-12 lg:grid-cols-3">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-12">
-            {/* About */}
-            {event.description && (
+            {/* Overview Tab */}
+            {currentTab === 'overview' && event.description && (
               <section>
                 <h2 className="text-2xl font-bold mb-4">{t('detail.about')}</h2>
                 <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -268,8 +294,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </section>
             )}
 
-            {/* Distances */}
-            {event.distances.length > 0 && (
+            {/* Distances Tab */}
+            {currentTab === 'distances' && event.distances.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold mb-6">{t('detail.distances')}</h2>
 
@@ -306,8 +332,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </section>
             )}
 
-            {/* FAQ */}
-            {event.faqItems.length > 0 && (
+            {/* FAQ Tab */}
+            {currentTab === 'faq' && event.faqItems.length > 0 && (
               <section>
                 <h2 className="text-2xl font-bold mb-6">{t('detail.faq')}</h2>
                 <div className="space-y-4">
@@ -331,7 +357,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </section>
             )}
 
-            {policySections.some((policy) => policy.enabled || policy.text || policy.deadline) && (
+            {/* Policies Tab */}
+            {currentTab === 'policies' && policySections.some((policy) => policy.enabled || policy.text || policy.deadline) && (
               <section>
                 <h2 className="text-2xl font-bold mb-6">{t('detail.policies.title')}</h2>
                 <div className="grid gap-4">
@@ -365,6 +392,21 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     );
                   })}
                 </div>
+              </section>
+            )}
+
+            {/* Website Tab */}
+            {currentTab === 'website' && websiteContent && (
+              <section>
+                <WebsiteContentRenderer
+                  blocks={websiteContent}
+                  documentUrls={documentUrls}
+                  labels={{
+                    documents: t('detail.website.documents'),
+                    terrain: t('detail.website.terrain'),
+                    download: t('detail.website.download'),
+                  }}
+                />
               </section>
             )}
           </div>
