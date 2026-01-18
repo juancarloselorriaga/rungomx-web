@@ -1,25 +1,50 @@
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
-import { MapPin, Clock, FileText, Image as ImageIcon, Download, ExternalLink } from 'lucide-react';
+import { MapPin, Clock, FileText, Image as ImageIcon, Download } from 'lucide-react';
+import Image from 'next/image';
 
 type WebsiteContentRendererProps = {
   blocks: WebsiteContentBlocks;
-  documentUrls?: Map<string, string>;
+  mediaUrls?: Map<string, string>;
   labels?: {
     documents?: string;
+    photos?: string;
     terrain?: string;
     download?: string;
   };
 };
 
-export function WebsiteContentRenderer({ blocks, documentUrls, labels }: WebsiteContentRendererProps) {
-  const enabledSections = [
-    blocks.overview?.enabled && blocks.overview,
-    blocks.course?.enabled && blocks.course,
-    blocks.schedule?.enabled && blocks.schedule,
-    blocks.media?.enabled && blocks.media,
-  ].filter(Boolean);
+export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteContentRendererProps) {
+  const overview = blocks.overview;
+  const course = blocks.course;
+  const schedule = blocks.schedule;
+  const media = blocks.media;
 
-  if (enabledSections.length === 0) {
+  const hasOverviewContent =
+    Boolean(overview?.enabled) && Boolean(overview?.content || overview?.terrain);
+  const hasCourseContent =
+    Boolean(course?.enabled) &&
+    Boolean(
+      course?.title ||
+        course?.description ||
+        course?.elevationGain ||
+        course?.elevationProfileUrl ||
+        course?.mapUrl ||
+        (course?.aidStations?.length ?? 0) > 0,
+    );
+  const hasScheduleContent =
+    Boolean(schedule?.enabled) &&
+    Boolean(
+      schedule?.title ||
+        schedule?.packetPickup ||
+        schedule?.parking ||
+        schedule?.raceDay ||
+        (schedule?.startTimes?.length ?? 0) > 0,
+    );
+  const hasMediaContent =
+    Boolean(media?.enabled) &&
+    Boolean((media?.photos?.length ?? 0) > 0 || (media?.documents?.length ?? 0) > 0);
+
+  if (!hasOverviewContent && !hasCourseContent && !hasScheduleContent && !hasMediaContent) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p>No additional content available at this time.</p>
@@ -30,22 +55,24 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
   return (
     <div className="space-y-8">
       {/* Overview Section */}
-      {blocks.overview?.enabled && blocks.overview.content && (
+      {hasOverviewContent && overview && (
         <section>
-          {blocks.overview.title && (
-            <h2 className="text-2xl font-bold mb-4">{blocks.overview.title}</h2>
+          {overview.title && (
+            <h2 className="text-2xl font-bold mb-4">{overview.title}</h2>
           )}
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <p className="whitespace-pre-wrap">{blocks.overview.content}</p>
-          </div>
-          {blocks.overview.terrain && (
+          {overview.content && (
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              <p className="whitespace-pre-wrap">{overview.content}</p>
+            </div>
+          )}
+          {overview.terrain && (
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
               <h3 className="font-semibold mb-2 flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 {labels?.terrain || 'Terrain'}
               </h3>
               <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {blocks.overview.terrain}
+                {overview.terrain}
               </p>
             </div>
           )}
@@ -53,32 +80,32 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
       )}
 
       {/* Course Section */}
-      {blocks.course?.enabled && (
+      {hasCourseContent && course && (
         <section>
-          {blocks.course.title && (
-            <h2 className="text-2xl font-bold mb-4">{blocks.course.title}</h2>
+          {course.title && (
+            <h2 className="text-2xl font-bold mb-4">{course.title}</h2>
           )}
-          {blocks.course.description && (
+          {course.description && (
             <div className="prose prose-sm dark:prose-invert max-w-none mb-6">
-              <p className="whitespace-pre-wrap">{blocks.course.description}</p>
+              <p className="whitespace-pre-wrap">{course.description}</p>
             </div>
           )}
 
           <div className="grid gap-4">
             {/* Elevation */}
-            {blocks.course.elevationGain && (
+            {course.elevationGain && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-2">Elevation Gain</h3>
-                <p className="text-sm text-muted-foreground">{blocks.course.elevationGain}</p>
+                <p className="text-sm text-muted-foreground">{course.elevationGain}</p>
               </div>
             )}
 
             {/* Elevation Profile */}
-            {blocks.course.elevationProfileUrl && (
+            {course.elevationProfileUrl && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-3">Elevation Profile</h3>
                 <a
-                  href={blocks.course.elevationProfileUrl}
+                  href={course.elevationProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline"
@@ -89,11 +116,11 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
             )}
 
             {/* Course Map */}
-            {blocks.course.mapUrl && (
+            {course.mapUrl && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-3">Course Map</h3>
                 <a
-                  href={blocks.course.mapUrl}
+                  href={course.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline"
@@ -104,11 +131,11 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
             )}
 
             {/* Aid Stations */}
-            {blocks.course.aidStations && blocks.course.aidStations.length > 0 && (
+            {course.aidStations && course.aidStations.length > 0 && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-4">Aid Stations</h3>
                 <div className="space-y-3">
-                  {blocks.course.aidStations.map((station, index) => (
+                  {course.aidStations.map((station, index) => (
                     <div key={index} className="border-l-2 border-primary pl-4">
                       <p className="font-medium">{station.name}</p>
                       <div className="text-sm text-muted-foreground space-y-1">
@@ -128,52 +155,52 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
       )}
 
       {/* Schedule Section */}
-      {blocks.schedule?.enabled && (
+      {hasScheduleContent && schedule && (
         <section>
-          {blocks.schedule.title && (
+          {schedule.title && (
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Clock className="h-6 w-6" />
-              {blocks.schedule.title}
+              {schedule.title}
             </h2>
           )}
 
           <div className="grid gap-4">
             {/* Packet Pickup */}
-            {blocks.schedule.packetPickup && (
+            {schedule.packetPickup && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-2">Packet Pickup</h3>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {blocks.schedule.packetPickup}
+                  {schedule.packetPickup}
                 </p>
               </div>
             )}
 
             {/* Parking */}
-            {blocks.schedule.parking && (
+            {schedule.parking && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-2">Parking</h3>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {blocks.schedule.parking}
+                  {schedule.parking}
                 </p>
               </div>
             )}
 
             {/* Race Day */}
-            {blocks.schedule.raceDay && (
+            {schedule.raceDay && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-2">Race Day</h3>
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {blocks.schedule.raceDay}
+                  {schedule.raceDay}
                 </p>
               </div>
             )}
 
             {/* Start Times */}
-            {blocks.schedule.startTimes && blocks.schedule.startTimes.length > 0 && (
+            {schedule.startTimes && schedule.startTimes.length > 0 && (
               <div className="rounded-lg border bg-card p-4">
                 <h3 className="font-semibold mb-3">Start Times</h3>
                 <div className="space-y-2">
-                  {blocks.schedule.startTimes.map((startTime, index) => (
+                  {schedule.startTimes.map((startTime, index) => (
                     <div
                       key={index}
                       className="flex items-center justify-between py-2 border-b last:border-0"
@@ -195,26 +222,26 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
       )}
 
       {/* Media Section */}
-      {blocks.media?.enabled && (blocks.media.photos?.length || blocks.media.documents?.length) && (
+      {hasMediaContent && media && (
         <section>
-          {blocks.media.title && (
+          {media.title && (
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <ImageIcon className="h-6 w-6" />
-              {blocks.media.title}
+              {media.title}
             </h2>
           )}
 
           <div className="grid gap-6">
             {/* Documents */}
-            {blocks.media.documents && blocks.media.documents.length > 0 && (
+            {media.documents && media.documents.length > 0 && (
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <FileText className="h-5 w-5" />
                   {labels?.documents || 'Documents'}
                 </h3>
                 <div className="grid gap-2">
-                  {blocks.media.documents.map((doc, index) => {
-                    const url = documentUrls?.get(doc.mediaId);
+                  {media.documents.map((doc, index) => {
+                    const url = mediaUrls?.get(doc.mediaId);
                     return url ? (
                       <a
                         key={doc.mediaId}
@@ -244,13 +271,60 @@ export function WebsiteContentRenderer({ blocks, documentUrls, labels }: Website
               </div>
             )}
 
-            {/* Photos Note */}
-            {blocks.media.photos && blocks.media.photos.length > 0 && (
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <p className="text-sm text-muted-foreground">
-                  Photo gallery with {blocks.media.photos.length} image
-                  {blocks.media.photos.length !== 1 ? 's' : ''} available.
-                </p>
+            {/* Photos Gallery */}
+            {media.photos && media.photos.length > 0 && (
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <ImageIcon className="h-5 w-5" />
+                  {labels?.photos || 'Photos'}
+                </h3>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {media.photos
+                    .slice()
+                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                    .map((photo) => {
+                      const url = mediaUrls?.get(photo.mediaId);
+                      if (!url) {
+                        return (
+                          <div
+                            key={photo.mediaId}
+                            className="rounded-lg border bg-muted/30 p-4 flex items-center gap-3"
+                          >
+                            <ImageIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                            <p className="text-sm text-muted-foreground truncate">
+                              {photo.caption || 'Photo'}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <figure key={photo.mediaId} className="space-y-2">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group block rounded-lg border overflow-hidden bg-muted/30"
+                          >
+                            <div className="relative aspect-[4/3]">
+                              <Image
+                                src={url}
+                                alt={photo.caption || ''}
+                                fill
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                className="object-cover transition-transform group-hover:scale-[1.02]"
+                              />
+                            </div>
+                          </a>
+                          {photo.caption && (
+                            <figcaption className="text-sm text-muted-foreground">
+                              {photo.caption}
+                            </figcaption>
+                          )}
+                        </figure>
+                      );
+                    })}
+                </div>
               </div>
             )}
           </div>

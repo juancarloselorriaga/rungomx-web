@@ -1,6 +1,5 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Info, ListChecks, MapPin, FileText, Globe } from 'lucide-react';
 
@@ -17,7 +16,6 @@ type EventTabsProps = {
 
 type TabConfig = {
   id: TabId;
-  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
   condition?: boolean;
 };
@@ -31,11 +29,11 @@ export function EventTabs({
   const t = useTranslations('pages.events.detail.tabs');
 
   const tabs: TabConfig[] = [
-    { id: 'overview', labelKey: 'overview', icon: Info },
-    { id: 'distances', labelKey: 'distances', icon: MapPin },
-    { id: 'faq', labelKey: 'faq', icon: ListChecks },
-    { id: 'policies', labelKey: 'policies', icon: FileText },
-    { id: 'website', labelKey: 'website', icon: Globe, condition: hasWebsiteContent },
+    { id: 'overview', icon: Info },
+    { id: 'distances', icon: MapPin },
+    { id: 'faq', icon: ListChecks },
+    { id: 'policies', icon: FileText },
+    { id: 'website', icon: Globe, condition: hasWebsiteContent },
   ];
 
   const visibleTabs = tabs.filter((tab) => tab.condition !== false);
@@ -67,7 +65,7 @@ export function EventTabs({
               aria-current={isActive ? 'page' : undefined}
             >
               <Icon className="h-4 w-4" />
-              {t(tab.labelKey as any)}
+              {t(tab.id)}
             </Link>
           );
         })}

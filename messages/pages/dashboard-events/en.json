@@ -1,0 +1,398 @@
+{
+  "title": "Events",
+  "description": "Manage your events and race registrations.",
+  "metadata": {
+    "title": "Events | RunGoMX",
+    "description": "Manage your events and race registrations on RunGoMX."
+  },
+  "comingSoon": "Events management is coming soon. This feature is currently under development.",
+  "emptyState": {
+    "title": "No events yet",
+    "description": "Create your first event to start managing registrations.",
+    "action": "Create event"
+  },
+  "createEvent": {
+    "title": "Create event",
+    "description": "Set up a new event for your organization.",
+    "button": "Create event",
+    "submit": "Create event",
+    "steps": {
+      "organization": "Organization",
+      "event": "Event details",
+      "continue": "Continue"
+    },
+    "organization": {
+      "title": "Select organization",
+      "description": "Choose the organization that will host this event, or create a new one.",
+      "createNew": "Create new organization",
+      "backToList": "Back to organizations",
+      "nameLabel": "Organization name",
+      "namePlaceholder": "My Race Organization",
+      "slugLabel": "URL slug"
+    },
+    "event": {
+      "title": "Event details",
+      "organizationLabel": "Organization",
+      "seriesLabel": "Event series",
+      "newSeries": "New series",
+      "selectSeries": "Select series or create new...",
+      "searchSeries": "Search series...",
+      "noSeriesFound": "No series found",
+      "seriesNameLabel": "Series name",
+      "seriesNamePlaceholder": "Ultra Trail Mexico",
+      "seriesSlugLabel": "Series URL slug",
+      "sportTypeLabel": "Sport type",
+      "editionDetails": "Edition details",
+      "editionLabelLabel": "Edition label",
+      "editionSlugLabel": "Edition URL slug",
+      "descriptionLabel": "Event description",
+      "descriptionPlaceholder": "Share what makes this event special...",
+      "dateLabel": "Event date",
+      "clearDate": "Clear",
+      "locationLabel": "Event location",
+      "cityLabel": "City",
+      "cityPlaceholder": "Mexico City",
+      "stateLabel": "State",
+      "statePlaceholder": "CDMX"
+    }
+  },
+  "registrationCount": "registrations",
+  "distance": "distance",
+  "distances": "distances",
+  "visibility": {
+    "draft": "Draft",
+    "published": "Published",
+    "unlisted": "Unlisted",
+    "archived": "Archived"
+  },
+  "slugStatus": {
+    "checking": "Checking availability...",
+    "available": "Available",
+    "taken": "Slug is already taken",
+    "error": "Could not verify; will validate on submit"
+  },
+  "sportTypes": {
+    "trail_running": "Trail Running",
+    "triathlon": "Triathlon",
+    "cycling": "Cycling",
+    "mtb": "Mountain Biking",
+    "gravel_bike": "Gravel Bike",
+    "duathlon": "Duathlon",
+    "backyard_ultra": "Backyard Ultra"
+  },
+  "detail": {
+    "settings": "Settings",
+    "eventDate": "Event Date",
+    "location": "Location",
+    "distances": "Distances",
+    "registrations": "Registrations",
+    "nav": {
+      "overview": "Overview",
+      "settings": "Settings",
+      "faq": "FAQ",
+      "waivers": "Waivers",
+      "questions": "Questions",
+      "policies": "Policies",
+      "website": "Website",
+      "pricing": "Pricing",
+      "addOns": "Add-ons",
+      "coupons": "Coupons",
+      "registrations": "Registrations",
+      "sections": {
+        "general": "GENERAL",
+        "content": "CONTENT",
+        "pricing": "PRICING",
+        "management": "MANAGEMENT"
+      }
+    },
+    "manageEvent": "Event Settings",
+    "manageEventDescription": "Edit event details, dates, and registration settings",
+    "manageFaq": "FAQ",
+    "manageFaqDescription": "Add and edit frequently asked questions",
+    "manageWaivers": "Waivers",
+    "manageWaiversDescription": "Create and order participant waivers",
+    "managePolicies": "Policies",
+    "managePoliciesDescription": "Set refund, transfer, and deferral placeholders",
+    "manageWebsite": "Website Content",
+    "manageWebsiteDescription": "Customize your event page sections and content",
+    "managePricing": "Pricing Tiers",
+    "managePricingDescription": "Set early bird and tiered pricing schedules",
+    "manageAddOns": "Add-ons",
+    "manageAddOnsDescription": "Configure merchandise and donation options",
+    "manageCoupons": "Discount Coupons",
+    "manageCouponsDescription": "Create and manage promotional codes",
+    "manageRegistrations": "Registrations",
+    "manageRegistrationsDescription": "View and export participant registrations",
+    "publicCodeLabel": "Public code",
+    "viewPublicPage": "View Public Page",
+    "viewPublicPageDescription": "See how your event appears to participants",
+    "capacity": {
+      "title": "Capacity status",
+      "sharedPool": "Shared pool across all distances",
+      "perDistance": "Capacity set per distance",
+      "totalLabel": "Total capacity",
+      "remainingLabel": "Spots remaining",
+      "unlimited": "Unlimited",
+      "soldOut": "Sold out",
+      "distanceLimit": "{count, number} total spots",
+      "viewAll": "View all {count, number} more distances"
+    },
+    "distancesTitle": "Distances",
+    "noDistances": "No distances added yet. Go to settings to add distances.",
+    "faqTitle": "FAQ",
+    "editFaq": "Edit all",
+    "viewAllFaq": "+{count} more questions"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "description": "Add questions and answers that will be displayed on your event page.",
+    "emptyState": "No FAQ items yet. Add your first question to help participants understand your event.",
+    "addFirst": "Add first question",
+    "addAnother": "Add another question",
+    "questionLabel": "Question",
+    "questionPlaceholder": "What should participants know?",
+    "answerLabel": "Answer",
+    "answerPlaceholder": "Provide a helpful answer...",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "waivers": {
+    "title": "Waivers",
+    "description": "Create waivers that participants must accept before registering.",
+    "emptyState": "No waivers yet. Add your first waiver to collect participant consent.",
+    "addFirst": "Add first waiver",
+    "addAnother": "Add another waiver",
+    "titleLabel": "Waiver title",
+    "titlePlaceholder": "Participant waiver",
+    "bodyLabel": "Waiver text",
+    "bodyPlaceholder": "Enter waiver terms...",
+    "signatureTypeLabel": "Signature type",
+    "signatureTypes": {
+      "checkbox": "Checkbox acknowledgment",
+      "initials": "Initials",
+      "signature": "Full signature"
+    },
+    "add": "Add waiver",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "policies": {
+    "title": "Policies",
+    "description": "Add placeholders for refund, transfer, and deferral policies.",
+    "save": "Save policies",
+    "saved": "Policies saved successfully",
+    "errorSaving": "Failed to save policies",
+    "refund": {
+      "title": "Refund policy",
+      "description": "Explain refund eligibility and deadlines.",
+      "textLabel": "Refund policy text",
+      "deadlineLabel": "Refund deadline"
+    },
+    "transfer": {
+      "title": "Transfer policy",
+      "description": "Explain transfer rules and deadlines.",
+      "textLabel": "Transfer policy text",
+      "deadlineLabel": "Transfer deadline"
+    },
+    "deferral": {
+      "title": "Deferral policy",
+      "description": "Explain deferral or credit rules and deadlines.",
+      "textLabel": "Deferral policy text",
+      "deadlineLabel": "Deferral deadline"
+    }
+  },
+  "questions": {
+    "title": "Registration Questions",
+    "description": "Create custom questions participants answer during registration.",
+    "sectionTitle": "Questions",
+    "sectionDescription": "These questions appear in the registration flow.",
+    "addQuestion": "Add question",
+    "createTitle": "New question",
+    "editQuestion": "Edit question",
+    "deleteQuestion": "Delete question",
+    "confirmDelete": "Are you sure you want to delete this question? This action cannot be undone.",
+    "emptyState": "No questions configured yet",
+    "emptyStateDescription": "Add questions to collect additional information from participants.",
+    "requiredBadge": "Required",
+    "inactiveBadge": "Inactive",
+    "optionsCount": "{count} options",
+    "reorder": {
+      "moveUp": "Move up",
+      "moveDown": "Move down"
+    },
+    "toast": {
+      "created": "Question created",
+      "updated": "Question updated",
+      "deleted": "Question deleted",
+      "reordered": "Questions reordered",
+      "error": "Something went wrong"
+    },
+    "types": {
+      "text": "Text",
+      "single_select": "Single select",
+      "checkbox": "Checkbox"
+    },
+    "form": {
+      "prompt": "Question prompt",
+      "promptPlaceholder": "e.g., What is your shirt size?",
+      "type": "Question type",
+      "typeOptions": {
+        "text": "Text",
+        "single_select": "Single select",
+        "checkbox": "Checkbox"
+      },
+      "distance": "Distance",
+      "distanceAll": "All distances",
+      "helpText": "Help text",
+      "helpTextPlaceholder": "Optional hint shown below the question",
+      "options": "Options",
+      "optionsPlaceholder": "One option per line",
+      "optionsHint": "Single select questions require at least 2 options.",
+      "required": "Required",
+      "requiredLabel": "Answer is required",
+      "active": "Active",
+      "activeLabel": "Question is active",
+      "cancel": "Cancel",
+      "create": "Create question",
+      "save": "Save changes"
+    }
+  },
+  "pricing": {
+    "title": "Pricing Tiers",
+    "description": "Manage pricing tiers for each distance. Set early bird pricing, regular pricing, and late registration fees.",
+    "selectDistance": "Select a distance to manage pricing",
+    "noDistances": "No distances available. Add distances in event settings first.",
+    "tier": {
+      "add": "Add pricing tier",
+      "edit": "Edit tier",
+      "delete": "Delete tier",
+      "confirmDelete": "Are you sure you want to delete this pricing tier?",
+      "cannotDeleteLast": "Each distance must have at least one pricing tier.",
+      "labelField": "Tier label",
+      "labelPlaceholder": "e.g., Early Bird, Regular, Late",
+      "priceField": "Price",
+      "pricePlaceholder": "Enter price",
+      "startsAtField": "Starts at",
+      "endsAtField": "Ends at",
+      "noDates": "Always active (no date restriction)",
+      "currentTier": "Current",
+      "upcomingTier": "Upcoming",
+      "expiredTier": "Expired",
+      "save": "Save tier",
+      "saving": "Saving...",
+      "saved": "Pricing tier saved",
+      "deleted": "Pricing tier deleted",
+      "errorSaving": "Failed to save pricing tier",
+      "errorDeleting": "Failed to delete pricing tier",
+      "dateOverlap": "Date range overlaps with another tier"
+    },
+    "currency": {
+      "label": "Currency",
+      "mxn": "MXN (Mexican Peso)",
+      "usd": "USD (US Dollar)"
+    },
+    "help": {
+      "title": "How pricing tiers work",
+      "description": "Create multiple pricing tiers to offer early bird discounts or increase prices as the event date approaches. Only one tier can be active at a time based on the date ranges you set."
+    }
+  },
+  "addOns": {
+    "title": "Add-ons",
+    "description": "Create additional products or donations that participants can select during registration.",
+    "emptyState": "No add-ons configured yet. Create your first add-on to offer merchandise or accept donations.",
+    "addOn": {
+      "add": "Add new add-on",
+      "edit": "Edit add-on",
+      "delete": "Delete add-on",
+      "confirmDelete": "Are you sure you want to delete this add-on and all its options?",
+      "titleField": "Title",
+      "titlePlaceholder": "e.g., Event T-Shirt, Donation",
+      "descriptionField": "Description",
+      "descriptionPlaceholder": "Describe this add-on...",
+      "typeField": "Type",
+      "deliveryField": "Delivery method",
+      "distanceField": "Restrict to distance",
+      "distanceAll": "Available for all distances",
+      "activeField": "Active",
+      "save": "Save add-on",
+      "saving": "Saving...",
+      "saved": "Add-on saved",
+      "deleted": "Add-on deleted",
+      "errorSaving": "Failed to save add-on",
+      "errorDeleting": "Failed to delete add-on"
+    },
+    "option": {
+      "title": "Options",
+      "add": "Add option",
+      "edit": "Edit option",
+      "delete": "Delete option",
+      "confirmDelete": "Are you sure you want to delete this option?",
+      "labelField": "Label",
+      "labelPlaceholder": "e.g., Small, Medium, Large",
+      "priceField": "Price",
+      "pricePlaceholder": "0.00",
+      "maxQtyField": "Max quantity per order",
+      "activeField": "Active",
+      "save": "Save option",
+      "saved": "Option saved",
+      "deleted": "Option deleted",
+      "errorSaving": "Failed to save option"
+    },
+    "types": {
+      "merch": "Merchandise",
+      "donation": "Donation"
+    },
+    "delivery": {
+      "pickup": "Pickup at Event",
+      "shipping": "Shipping",
+      "none": "Not Applicable"
+    },
+    "help": {
+      "title": "How add-ons work",
+      "description": "Add-ons allow you to sell merchandise (like t-shirts) or accept donations during registration. Each add-on can have multiple options with different prices."
+    }
+  },
+  "coupons": {
+    "title": "Discount Coupons",
+    "description": "Create promotional codes that participants can use to get discounts on registration.",
+    "emptyState": "No coupons configured yet",
+    "emptyStateDescription": "Create your first coupon to offer discounts to participants.",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "scheduled": "Scheduled",
+      "expired": "Expired",
+      "limitReached": "Limit reached"
+    },
+    "coupon": {
+      "add": "Add coupon",
+      "edit": "Edit coupon",
+      "delete": "Delete coupon",
+      "create": "Create coupon",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "confirmDelete": "Are you sure you want to delete this coupon? This action cannot be undone.",
+      "code": "Coupon code",
+      "codeCannotChange": "Code cannot be changed after creation",
+      "name": "Internal name",
+      "namePlaceholder": "e.g., Early bird promo",
+      "percentOff": "Discount percentage",
+      "maxRedemptions": "Max redemptions",
+      "maxRedemptionsHint": "Leave empty for unlimited uses",
+      "unlimited": "Unlimited",
+      "startsAt": "Starts at",
+      "endsAt": "Ends at",
+      "isActive": "Status",
+      "isActiveLabel": "Coupon is active",
+      "discount": "off",
+      "redemptions": "redemptions",
+      "validFrom": "From",
+      "validUntil": "Until"
+    },
+    "help": {
+      "title": "How coupons work",
+      "description": "Coupons let you offer percentage discounts to participants. Set optional validity dates and redemption limits to control when and how often the code can be used."
+    }
+  }
+}

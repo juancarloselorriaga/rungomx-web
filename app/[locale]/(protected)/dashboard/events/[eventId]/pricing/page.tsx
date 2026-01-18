@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PricingPageProps): Promise<Me
 export default async function EventPricingPage({ params }: PricingPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/pricing' });
-  const t = await getTranslations('pages.dashboard.events.pricing');
+  const t = await getTranslations('pages.dashboardEvents.pricing');
   const authContext = await getAuthContext();
 
   // Phase 0 gate

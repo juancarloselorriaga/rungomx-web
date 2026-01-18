@@ -11,12 +11,18 @@ type ExportRegistrationsButtonProps = {
   editionId: string;
   distanceId?: string;
   status?: RegistrationStatus;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export function ExportRegistrationsButton({
   editionId,
   distanceId,
   status,
+  search,
+  dateFrom,
+  dateTo,
 }: ExportRegistrationsButtonProps) {
   const t = useTranslations('pages.eventsRegistrations.export');
   const [isExporting, setIsExporting] = useState(false);
@@ -42,6 +48,9 @@ export function ExportRegistrationsButton({
         editionId,
         distanceId,
         status,
+        search,
+        dateFrom,
+        dateTo,
       });
 
       if (!result.ok) {

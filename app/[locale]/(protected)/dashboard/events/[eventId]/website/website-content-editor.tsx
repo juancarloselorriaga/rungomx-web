@@ -19,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { DocumentUploader, type UploadedDocument } from '@/components/events/document-uploader';
+import { PhotoUploader, type UploadedPhoto } from '@/components/events/photo-uploader';
 import { cn } from '@/lib/utils';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
@@ -34,6 +35,7 @@ import {
 type AidStation = NonNullable<CourseSection['aidStations']>[number];
 type StartTime = NonNullable<ScheduleSection['startTimes']>[number];
 type DocumentRef = NonNullable<MediaSection['documents']>[number];
+type PhotoRef = NonNullable<MediaSection['photos']>[number];
 
 interface WebsiteContentEditorProps {
   editionId: string;
@@ -42,12 +44,14 @@ interface WebsiteContentEditorProps {
 }
 
 export function WebsiteContentEditor({ editionId, locale, organizationId }: WebsiteContentEditorProps) {
-  const t = useTranslations('pages.dashboard.events.website');
+  const t = useTranslations('pages.dashboardEventWebsite');
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
   const [blocks, setBlocks] = useState<WebsiteContentBlocks>(DEFAULT_WEBSITE_BLOCKS);
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
   const [showDocumentUploader, setShowDocumentUploader] = useState(false);
+  const [showPhotoUploader, setShowPhotoUploader] = useState(false);
 
   // Load existing content on mount
   useEffect(() => {
@@ -55,6 +59,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       const result = await getWebsiteContent({ editionId, locale });
       if (result.ok && result.data) {
         setBlocks(result.data.blocks);
+        setMediaUrls(result.data.mediaUrls ?? {});
         // Expand sections that have content
         const sectionsWithContent = new Set<string>();
         if (result.data.blocks.overview?.enabled) sectionsWithContent.add('overview');
@@ -137,7 +142,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
   const updateMedia = (
     field: keyof MediaSection,
-    value: boolean | DocumentRef[] | undefined,
+    value: boolean | DocumentRef[] | PhotoRef[] | undefined,
   ) => {
     setBlocks((prev) => ({
       ...prev,
@@ -168,6 +173,34 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       'documents',
       current.filter((_, i) => i !== index),
     );
+  };
+
+  // Photo helpers
+  const handlePhotoUpload = (photo: UploadedPhoto) => {
+    const current = blocks.media?.photos ?? [];
+    const newPhoto: PhotoRef = {
+      mediaId: photo.mediaId,
+      caption: '',
+      sortOrder: current.length,
+    };
+    updateMedia('photos', [...current, newPhoto]);
+    setMediaUrls((prev) => ({ ...prev, [photo.mediaId]: photo.blobUrl }));
+    setShowPhotoUploader(false);
+  };
+
+  const removePhoto = (index: number) => {
+    const current = blocks.media?.photos ?? [];
+    updateMedia(
+      'photos',
+      current.filter((_, i) => i !== index),
+    );
+  };
+
+  const updatePhoto = (index: number, field: keyof PhotoRef, value: string | number) => {
+    const current = blocks.media?.photos ?? [];
+    const updated = [...current];
+    updated[index] = { ...updated[index], [field]: value } as PhotoRef;
+    updateMedia('photos', updated);
   };
 
   // Aid station helpers
@@ -719,11 +752,96 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                     {t('sections.media.photos.description')}
                   </p>
                 </div>
+                {!showPhotoUploader && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowPhotoUploader(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    {t('sections.media.photos.add')}
+                  </Button>
+                )}
               </div>
-              <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">{t('sections.media.photos.comingSoon')}</p>
-              </div>
+
+              {showPhotoUploader && (
+                <PhotoUploader
+                  organizationId={organizationId}
+                  onUploadComplete={handlePhotoUpload}
+                  onCancel={() => setShowPhotoUploader(false)}
+                  labels={{
+                    title: t('sections.media.photos.uploaderTitle'),
+                    upload: t('sections.media.photos.upload'),
+                    uploading: t('sections.media.photos.uploading'),
+                    cancel: t('sections.media.photos.cancel'),
+                    selectFile: t('sections.media.photos.selectFile'),
+                    fileTooLarge: t('sections.media.photos.fileTooLarge', {
+                      maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
+                    }),
+                    invalidType: t('sections.media.photos.invalidType'),
+                    uploadFailed: t('sections.media.photos.uploadFailed'),
+                    maxSize: t('sections.media.photos.maxSize', {
+                      maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
+                    }),
+                  }}
+                />
+              )}
+
+              {(blocks.media?.photos ?? []).length > 0 ? (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {(blocks.media?.photos ?? []).map((photo, idx) => {
+                    const url = mediaUrls[photo.mediaId];
+
+                    return (
+                      <div key={photo.mediaId} className="rounded-lg border bg-muted/30 overflow-hidden">
+                        <div className="relative aspect-[4/3] bg-muted">
+                          {url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={url}
+                              alt={photo.caption ?? ''}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center">
+                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3 space-y-2">
+                          <FormField label={t('sections.media.photos.captionLabel')}>
+                            <input
+                              type="text"
+                              value={photo.caption ?? ''}
+                              onChange={(e) => updatePhoto(idx, 'caption', e.target.value)}
+                              placeholder={t('sections.media.photos.captionPlaceholder')}
+                              className={inputClassName}
+                              maxLength={200}
+                            />
+                          </FormField>
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => removePhoto(idx)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : !showPhotoUploader ? (
+                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">{t('sections.media.photos.empty')}</p>
+                </div>
+              ) : null}
             </div>
           </div>
         )}

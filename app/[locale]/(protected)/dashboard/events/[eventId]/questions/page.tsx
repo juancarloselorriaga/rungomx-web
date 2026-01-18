@@ -2,6 +2,7 @@ import { getPathname, Link } from '@/i18n/navigation';
 import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
+import { getQuestionsForEdition } from '@/lib/events/questions/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -10,33 +11,33 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
-import { WaiverManager } from './waiver-manager';
+import { QuestionsManager } from './questions-manager';
 
-type WaiverPageProps = LocalePageProps & {
+type QuestionsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
 };
 
-export async function generateMetadata({ params }: WaiverPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: QuestionsPageProps): Promise<Metadata> {
   const { eventId } = await params;
   const event = await getEventEditionDetail(eventId);
 
   if (!event) {
     return {
-      title: 'Waivers | RunGoMX',
+      title: 'Registration Questions | RunGoMX',
       robots: { index: false, follow: false },
     };
   }
 
   return {
-    title: `Waivers - ${event.seriesName} ${event.editionLabel} | RunGoMX`,
+    title: `Registration Questions - ${event.seriesName} ${event.editionLabel} | RunGoMX`,
     robots: { index: false, follow: false },
   };
 }
 
-export default async function WaiverManagementPage({ params }: WaiverPageProps) {
+export default async function EventQuestionsPage({ params }: QuestionsPageProps) {
   const { locale, eventId } = await params;
-  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/waivers' });
-  const t = await getTranslations('pages.dashboardEvents.waivers');
+  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/questions' });
+  const t = await getTranslations('pages.dashboardEvents.questions');
   const authContext = await getAuthContext();
 
   // Phase 0 gate
@@ -59,8 +60,10 @@ export default async function WaiverManagementPage({ params }: WaiverPageProps) 
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
+  const questions = await getQuestionsForEdition(eventId);
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6">
       <div>
         <Link
           href={{ pathname: '/dashboard/events/[eventId]', params: { eventId } }}
@@ -73,10 +76,7 @@ export default async function WaiverManagementPage({ params }: WaiverPageProps) 
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <WaiverManager
-        eventId={eventId}
-        initialWaivers={event.waivers}
-      />
+      <QuestionsManager editionId={eventId} distances={event.distances} initialQuestions={questions} />
     </div>
   );
 }

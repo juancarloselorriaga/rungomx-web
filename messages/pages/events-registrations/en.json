@@ -10,6 +10,9 @@
   "filters": {
     "allDistances": "All distances",
     "allStatuses": "All statuses",
+    "dateFrom": "From",
+    "dateTo": "To",
+    "clearDates": "Clear dates",
     "searchPlaceholder": "Search by name or email...",
     "search": "Search"
   },

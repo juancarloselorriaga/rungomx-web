@@ -54,9 +54,9 @@ function generateSlug(name: string): string {
 }
 
 export function CreateEventForm({ organizations }: CreateEventFormProps) {
-  const t = useTranslations('pages.dashboard.events.createEvent');
-  const tSlug = useTranslations('pages.dashboard.events');
-  const tSport = useTranslations('pages.dashboard.events.sportTypes');
+  const t = useTranslations('pages.dashboardEvents.createEvent');
+  const tSlug = useTranslations('pages.dashboardEvents');
+  const tSport = useTranslations('pages.dashboardEvents.sportTypes');
   const router = useRouter();
   const [step, setStep] = useState<Step>('organization');
 

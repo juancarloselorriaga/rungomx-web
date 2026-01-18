@@ -80,11 +80,11 @@ const visibilityStyles: Record<VisibilityType, string> = {
 };
 
 export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFormProps) {
-  const t = useTranslations('pages.dashboard.events.settings');
-  const tSlug = useTranslations('pages.dashboard.events');
-  const tVis = useTranslations('pages.dashboard.events.visibility');
-  const tDescription = useTranslations('pages.dashboard.events.settings.descriptionField');
-  const tCapacity = useTranslations('pages.dashboard.events.settings.capacity');
+  const t = useTranslations('pages.dashboardEventSettings');
+  const tSlug = useTranslations('pages.dashboardEvents');
+  const tVis = useTranslations('pages.dashboardEvents.visibility');
+  const tDescription = useTranslations('pages.dashboardEventSettings.descriptionField');
+  const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
   const locale = useLocale();
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -105,7 +105,7 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
   const [capacityError, setCapacityError] = useState<string | null>(null);
   const [isUpdatingCapacity, setIsUpdatingCapacity] = useState(false);
   const maxHeroImageSizeMb = Math.floor(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
-  const tHero = useTranslations('pages.dashboard.events.settings.heroImage');
+  const tHero = useTranslations('pages.dashboardEventSettings.heroImage');
 
   // Event details form
   const detailsForm = useForm<{
@@ -943,8 +943,8 @@ function AddDistanceForm({
   onSuccess: (distance: EventDistanceDetail) => void;
   onCancel: () => void;
 }) {
-  const t = useTranslations('pages.dashboard.events.settings.distances');
-  const tCapacity = useTranslations('pages.dashboard.events.settings.capacity');
+  const t = useTranslations('pages.dashboardEventSettings.distances');
+  const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1112,8 +1112,8 @@ function DistanceItem({
   onUpdate: (updated: EventDistanceDetail) => void;
   onDelete: () => void;
 }) {
-  const t = useTranslations('pages.dashboard.events.settings.distances');
-  const tCapacity = useTranslations('pages.dashboard.events.settings.capacity');
+  const t = useTranslations('pages.dashboardEventSettings.distances');
+  const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);

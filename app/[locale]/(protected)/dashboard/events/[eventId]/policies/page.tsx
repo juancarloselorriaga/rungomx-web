@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PoliciesPageProps): Promise<M
 export default async function PoliciesPage({ params }: PoliciesPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/policies' });
-  const t = await getTranslations('pages.dashboard.events.policies');
+  const t = await getTranslations('pages.dashboardEvents.policies');
   const authContext = await getAuthContext();
 
   const canAccessEvents =

@@ -21,6 +21,8 @@ type RegistrationsPageProps = LocalePageProps & {
     distanceId?: string;
     status?: string;
     search?: string;
+    dateFrom?: string;
+    dateTo?: string;
     page?: string;
   }>;
 };
@@ -75,9 +77,20 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
   const distanceId = resolvedSearchParams?.distanceId;
   const status = resolvedSearchParams?.status as RegistrationStatus | undefined;
   const search = resolvedSearchParams?.search;
+  const dateFrom = resolvedSearchParams?.dateFrom;
+  const dateTo = resolvedSearchParams?.dateTo;
   const page = parseInt(resolvedSearchParams?.page || '1', 10);
   const limit = 25;
   const offset = (page - 1) * limit;
+
+  const parseDateBoundary = (value: string | undefined, kind: 'start' | 'end') => {
+    if (!value) return undefined;
+    const date = new Date(`${value}T${kind === 'start' ? '00:00:00.000' : '23:59:59.999'}Z`);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  };
+
+  const createdFrom = parseDateBoundary(dateFrom, 'start');
+  const createdTo = parseDateBoundary(dateTo, 'end');
 
   // Get registrations
   const { items: registrations, total } = await getRegistrationsForEdition({
@@ -85,6 +98,8 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
     distanceId,
     status,
     search,
+    createdFrom,
+    createdTo,
     limit,
     offset,
     sortBy: 'createdAt',
@@ -126,6 +141,9 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
               editionId={eventId}
               distanceId={distanceId}
               status={status}
+              search={search}
+              dateFrom={dateFrom}
+              dateTo={dateTo}
             />
           )}
         </div>
@@ -167,6 +185,8 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
           currentDistanceId={distanceId}
           currentStatus={status}
           currentSearch={search}
+          currentDateFrom={dateFrom}
+          currentDateTo={dateTo}
           currentPage={page}
           totalPages={totalPages}
           total={total}

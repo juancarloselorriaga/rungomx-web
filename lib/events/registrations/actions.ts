@@ -188,6 +188,9 @@ const exportRegistrationsSchema = z.object({
   editionId: z.string().uuid(),
   distanceId: z.string().uuid().optional(),
   status: z.enum(REGISTRATION_STATUS).optional(),
+  search: z.string().max(200).optional(),
+  dateFrom: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  dateTo: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 const exportAddOnSalesSchema = z.object({
@@ -215,7 +218,7 @@ export const exportRegistrationsCSV = withAuthenticatedUser<ActionResult<{ csv: 
     return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
   }
 
-  const { editionId, distanceId, status } = validated.data;
+  const { editionId, distanceId, status, search, dateFrom, dateTo } = validated.data;
 
   // Verify edition and get org info
   const edition = await db.query.eventEditions.findFirst({
@@ -237,8 +240,23 @@ export const exportRegistrationsCSV = withAuthenticatedUser<ActionResult<{ csv: 
     }
   }
 
+  const parseDateBoundary = (value: string | undefined, kind: 'start' | 'end') => {
+    if (!value) return undefined;
+    const date = new Date(`${value}T${kind === 'start' ? '00:00:00.000' : '23:59:59.999'}Z`);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  };
+
+  const createdFrom = parseDateBoundary(dateFrom, 'start');
+  const createdTo = parseDateBoundary(dateTo, 'end');
+
   // Get registrations
-  const registrations = await getRegistrationsForExport(editionId, { distanceId, status });
+  const registrations = await getRegistrationsForExport(editionId, {
+    distanceId,
+    status,
+    search,
+    createdFrom,
+    createdTo,
+  });
 
   // Create audit log for PII disclosure
   const requestContext = await getRequestContext(await headers());
@@ -250,7 +268,7 @@ export const exportRegistrationsCSV = withAuthenticatedUser<ActionResult<{ csv: 
     entityId: editionId,
     after: {
       exportedCount: registrations.length,
-      filters: { distanceId, status },
+      filters: { distanceId, status, search, dateFrom, dateTo },
       exportType: 'csv',
     },
     request: requestContext,

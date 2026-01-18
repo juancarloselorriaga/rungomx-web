@@ -49,8 +49,8 @@ function formatDate(date: Date | null, locale: string): string {
 export default async function EventDetailPage({ params }: EventDetailPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]' });
-  const t = await getTranslations('pages.dashboard.events');
-  const tDetail = await getTranslations('pages.dashboard.events.detail');
+  const t = await getTranslations('pages.dashboardEvents');
+  const tDetail = await getTranslations('pages.dashboardEvents.detail');
   const authContext = await getAuthContext();
 
   // Phase 0 gate: organizers need flag enabled, internal staff with canManageEvents bypass

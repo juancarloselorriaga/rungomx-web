@@ -22,7 +22,7 @@ type FaqManagerProps = {
 };
 
 export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
-  const t = useTranslations('pages.dashboard.events.faq');
+  const t = useTranslations('pages.dashboardEvents.faq');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [faqItems, setFaqItems] = useState(initialFaqItems);

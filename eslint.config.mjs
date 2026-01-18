@@ -14,6 +14,13 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     // Scripts directory (utility scripts, not production code)
     'scripts/**',
+    // Local artifacts
+    'coverage/**',
+    'test-results/**',
+    'playwright-report/**',
+    'e2e/test-results/**',
+    'e2e/playwright-report/**',
+    '.playwright-mcp/**',
   ]),
   // Relax specific rules for test files
   {

@@ -39,7 +39,7 @@ const visibilityStyles: Record<VisibilityType, string> = {
 export default async function DashboardEventsPage({ params }: LocalePageProps) {
   const { locale } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events' });
-  const t = await getTranslations('pages.dashboard.events');
+  const t = await getTranslations('pages.dashboardEvents');
   const authContext = await getAuthContext();
 
   // Phase 0 gate: organizers need flag enabled, internal staff with canManageEvents bypass

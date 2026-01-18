@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: AddOnsPageProps): Promise<Met
 export default async function EventAddOnsPage({ params }: AddOnsPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/add-ons' });
-  const t = await getTranslations('pages.dashboard.events.addOns');
+  const t = await getTranslations('pages.dashboardEvents.addOns');
   const authContext = await getAuthContext();
 
   // Phase 0 gate

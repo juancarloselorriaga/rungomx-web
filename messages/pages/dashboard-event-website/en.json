@@ -1,0 +1,110 @@
+{
+  "title": "Website Content",
+  "description": "Customize the content sections that appear on your public event page.",
+  "preview": {
+    "title": "Preview",
+    "description": "This preview reflects the saved content. Save changes to refresh it.",
+    "empty": "No website content saved yet."
+  },
+  "save": "Save changes",
+  "saving": "Saving...",
+  "saved": "Content saved successfully",
+  "errorSaving": "Failed to save content",
+  "sections": {
+    "overview": {
+      "title": "Overview",
+      "description": "Main event description and terrain information.",
+      "contentLabel": "Event Description",
+      "contentPlaceholder": "Describe your event, what makes it special, and what participants should expect...",
+      "terrainLabel": "Terrain Description",
+      "terrainPlaceholder": "Trail conditions, elevation, surface type..."
+    },
+    "course": {
+      "title": "Course Information",
+      "description": "Course details, aid stations, and cutoff times.",
+      "descriptionLabel": "Course Description",
+      "descriptionPlaceholder": "Describe the course layout and key features...",
+      "elevationLabel": "Elevation Gain",
+      "elevationPlaceholder": "e.g., 1500m or 5000ft",
+      "elevationProfileLabel": "Elevation Profile URL",
+      "elevationProfilePlaceholder": "Link to elevation profile image",
+      "mapUrlLabel": "Course Map URL",
+      "mapUrlPlaceholder": "Link to course map",
+      "aidStations": {
+        "title": "Aid Stations",
+        "add": "Add aid station",
+        "nameLabel": "Name",
+        "namePlaceholder": "Aid Station 1",
+        "distanceLabel": "Distance (km)",
+        "distancePlaceholder": "10",
+        "cutoffLabel": "Cutoff time",
+        "cutoffPlaceholder": "10:00 AM",
+        "servicesLabel": "Services available",
+        "servicesPlaceholder": "Water, snacks, first aid..."
+      }
+    },
+    "schedule": {
+      "title": "Schedule & Logistics",
+      "description": "Packet pickup, parking, and race day information.",
+      "packetPickupLabel": "Packet Pickup",
+      "packetPickupPlaceholder": "When and where participants can pick up their race packets...",
+      "parkingLabel": "Parking",
+      "parkingPlaceholder": "Parking availability and directions...",
+      "raceDayLabel": "Race Day Information",
+      "raceDayPlaceholder": "What to bring, check-in time, start area details...",
+      "startTimes": {
+        "title": "Start Times",
+        "add": "Add start time",
+        "distanceLabel": "Distance",
+        "distancePlaceholder": "50K",
+        "timeLabel": "Time",
+        "timePlaceholder": "6:00 AM",
+        "notesLabel": "Notes",
+        "notesPlaceholder": "Optional notes..."
+      }
+    },
+    "media": {
+      "title": "Photos & Documents",
+      "description": "Photo gallery and downloadable documents like convocatoria.",
+      "photos": {
+        "title": "Photo Gallery",
+        "description": "Add photos to showcase your event.",
+        "add": "Add photo",
+        "captionLabel": "Caption",
+        "captionPlaceholder": "Photo description...",
+        "empty": "No photos uploaded yet. Add photos to showcase your event.",
+        "uploaderTitle": "Upload Photo",
+        "upload": "Upload",
+        "uploading": "Uploading...",
+        "cancel": "Cancel",
+        "selectFile": "Click or drag to select an image",
+        "fileTooLarge": "File must be smaller than {maxSize}MB.",
+        "invalidType": "Please upload an image file (JPG, PNG, WebP, GIF).",
+        "uploadFailed": "Upload failed. Please try again.",
+        "maxSize": "Max file size: {maxSize}MB",
+        "comingSoon": "Photo gallery will be available in a future update."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Upload PDF documents like race convocatoria, course maps, or rules.",
+        "add": "Add document",
+        "empty": "No documents uploaded yet. Add your convocatoria or other documents.",
+        "uploaderTitle": "Upload Document",
+        "labelField": "Document label",
+        "labelPlaceholder": "Convocatoria, Course Map, Rules...",
+        "upload": "Upload",
+        "uploading": "Uploading...",
+        "cancel": "Cancel",
+        "selectFile": "Click or drag to select a PDF file",
+        "fileTooLarge": "File must be smaller than {maxSize}MB.",
+        "invalidType": "Please upload a PDF file.",
+        "uploadFailed": "Upload failed. Please try again.",
+        "maxSize": "Max file size: {maxSize}MB"
+      }
+    }
+  },
+  "enableSection": "Enable section",
+  "disableSection": "Disable section",
+  "sectionEnabled": "Visible on public page",
+  "sectionDisabled": "Hidden from public page"
+}

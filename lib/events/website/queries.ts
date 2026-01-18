@@ -5,9 +5,36 @@ import { eventWebsiteContent, media } from '@/db/schema';
 
 import {
   websiteContentBlocksSchema,
-  DEFAULT_WEBSITE_BLOCKS,
   type WebsiteContentBlocks,
 } from './types';
+
+/**
+ * Resolve media URLs for all referenced website media (documents + photos).
+ * Returns a map of mediaId -> blobUrl
+ */
+export async function resolveWebsiteMediaUrls(
+  blocks: WebsiteContentBlocks | null,
+): Promise<Map<string, string>> {
+  const urlMap = new Map<string, string>();
+
+  const documentIds = blocks?.media?.documents?.map((doc) => doc.mediaId) ?? [];
+  const photoIds = blocks?.media?.photos?.map((photo) => photo.mediaId) ?? [];
+  const mediaIds = Array.from(new Set([...documentIds, ...photoIds]));
+
+  if (mediaIds.length === 0) {
+    return urlMap;
+  }
+
+  const mediaRecords = await db.query.media.findMany({
+    where: and(inArray(media.id, mediaIds), isNull(media.deletedAt)),
+  });
+
+  for (const record of mediaRecords) {
+    urlMap.set(record.id, record.blobUrl);
+  }
+
+  return urlMap;
+}
 
 /**
  * Resolve media URLs for documents in website content blocks.
@@ -16,26 +43,15 @@ import {
 export async function resolveDocumentUrls(
   blocks: WebsiteContentBlocks | null,
 ): Promise<Map<string, string>> {
-  const urlMap = new Map<string, string>();
-
   if (!blocks?.media?.documents || blocks.media.documents.length === 0) {
-    return urlMap;
+    return new Map();
   }
 
-  const mediaIds = blocks.media.documents.map((doc) => doc.mediaId);
-
-  const mediaRecords = await db.query.media.findMany({
-    where: and(
-      inArray(media.id, mediaIds),
-      isNull(media.deletedAt),
-    ),
-  });
-
-  for (const record of mediaRecords) {
-    urlMap.set(record.id, record.blobUrl);
-  }
-
-  return urlMap;
+  const allUrls = await resolveWebsiteMediaUrls(blocks);
+  const documentIds = new Set(blocks.media.documents.map((doc) => doc.mediaId));
+  return new Map(
+    Array.from(allUrls.entries()).filter(([id]) => documentIds.has(id)),
+  );
 }
 
 /**
@@ -51,7 +67,7 @@ export async function getEventDocuments(
     return [];
   }
 
-  const urlMap = await resolveDocumentUrls(content);
+  const urlMap = await resolveWebsiteMediaUrls(content);
 
   return content.media.documents
     .map((doc) => {

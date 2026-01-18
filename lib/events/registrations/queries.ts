@@ -1,16 +1,13 @@
-import { and, asc, desc, eq, ilike, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, ilike, isNull, lte, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
   addOnOptions,
   addOnSelections,
-  discountRedemptions,
   registrants,
-  registrationAnswers,
   registrationQuestions,
   registrations,
   users,
-  waiverAcceptances,
 } from '@/db/schema';
 import type { RegistrationStatus } from '../constants';
 
@@ -46,6 +43,8 @@ export type RegistrationFilters = {
   distanceId?: string;
   status?: RegistrationStatus;
   search?: string;
+  createdFrom?: Date;
+  createdTo?: Date;
   sortBy?: 'createdAt' | 'name' | 'status';
   sortOrder?: 'asc' | 'desc';
   limit?: number;
@@ -105,6 +104,8 @@ export async function getRegistrationsForEdition(
     distanceId,
     status,
     search,
+    createdFrom,
+    createdTo,
     sortBy = 'createdAt',
     sortOrder = 'desc',
     limit = 25,
@@ -123,6 +124,14 @@ export async function getRegistrationsForEdition(
 
   if (status) {
     whereConditions.push(eq(registrations.status, status));
+  }
+
+  if (createdFrom) {
+    whereConditions.push(gte(registrations.createdAt, createdFrom));
+  }
+
+  if (createdTo) {
+    whereConditions.push(lte(registrations.createdAt, createdTo));
   }
 
   // Get total count
@@ -219,7 +228,13 @@ export async function getRegistrationsForEdition(
  */
 export async function getRegistrationsForExport(
   editionId: string,
-  filters?: { distanceId?: string; status?: RegistrationStatus },
+  filters?: {
+    distanceId?: string;
+    status?: RegistrationStatus;
+    search?: string;
+    createdFrom?: Date;
+    createdTo?: Date;
+  },
 ): Promise<RegistrationExportData[]> {
   const whereConditions = [
     eq(registrations.editionId, editionId),
@@ -234,6 +249,14 @@ export async function getRegistrationsForExport(
     whereConditions.push(eq(registrations.status, filters.status));
   }
 
+  if (filters?.createdFrom) {
+    whereConditions.push(gte(registrations.createdAt, filters.createdFrom));
+  }
+
+  if (filters?.createdTo) {
+    whereConditions.push(lte(registrations.createdAt, filters.createdTo));
+  }
+
   // Get all questions for this edition for column headers
   const questions = await db.query.registrationQuestions.findMany({
     where: and(
@@ -244,7 +267,14 @@ export async function getRegistrationsForExport(
   });
 
   const registrationList = await db.query.registrations.findMany({
-    where: and(...whereConditions),
+    where: filters?.search
+      ? and(
+          ...whereConditions,
+          or(
+            sql`EXISTS (SELECT 1 FROM users WHERE users.id = ${registrations.buyerUserId} AND (users.name ILIKE ${`%${filters.search}%`} OR users.email ILIKE ${`%${filters.search}%`}))`,
+          ),
+        )
+      : and(...whereConditions),
     orderBy: [asc(registrations.createdAt)],
     with: {
       buyer: {

@@ -12,7 +12,6 @@ import {
   Tag,
   Trash2,
   Users,
-  X,
 } from 'lucide-react';
 
 import {
@@ -50,7 +49,7 @@ const defaultCouponFormData: CouponFormData = {
 };
 
 function CouponStatusBadge({ coupon }: { coupon: DiscountCodeData }) {
-  const t = useTranslations('pages.dashboard.events.coupons');
+  const t = useTranslations('pages.dashboardEvents.coupons');
   const now = new Date();
 
   if (!coupon.isActive) {
@@ -111,7 +110,7 @@ function CouponForm({
   submitLabel: string;
   isEdit?: boolean;
 }) {
-  const t = useTranslations('pages.dashboard.events.coupons.coupon');
+  const t = useTranslations('pages.dashboardEvents.coupons.coupon');
   const [formData, setFormData] = useState<CouponFormData>(initialData);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -255,7 +254,7 @@ function CouponForm({
 }
 
 export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProps) {
-  const t = useTranslations('pages.dashboard.events.coupons');
+  const t = useTranslations('pages.dashboardEvents.coupons');
   const [coupons, setCoupons] = useState<DiscountCodeData[]>(initialCoupons);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);

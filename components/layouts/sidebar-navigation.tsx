@@ -15,7 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType } from 'react';
 
 const iconMap = {
   addOns: Gift,
@@ -117,7 +117,7 @@ export function SidebarNavigation({
               return (
                 <Link
                   key={item.label}
-                  href={fullPath as any}
+                  href={fullPath as unknown as Parameters<typeof Link>[0]['href']}
                   className={`group flex items-center gap-2 px-3 py-1.5 text-sm transition-all ${
                     isActive
                       ? 'font-medium text-foreground'
@@ -150,7 +150,7 @@ export function SidebarNavigation({
               const FooterIcon = iconMap[footerLink.icon] ?? ExternalLink;
               return (
             <Link
-              href={footerLink.href as any}
+              href={footerLink.href as unknown as Parameters<typeof Link>[0]['href']}
               className="group flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-all"
               target={footerLink.external ? '_blank' : undefined}
             >

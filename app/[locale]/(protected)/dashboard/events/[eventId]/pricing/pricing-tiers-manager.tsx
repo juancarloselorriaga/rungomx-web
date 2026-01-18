@@ -88,7 +88,7 @@ export function PricingTiersManager({
   distances,
   initialPricingData,
 }: PricingTiersManagerProps) {
-  const t = useTranslations('pages.dashboard.events.pricing');
+  const t = useTranslations('pages.dashboardEvents.pricing');
   const [isPending, startTransition] = useTransition();
   const [pricingData, setPricingData] = useState(initialPricingData);
   const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(
@@ -464,7 +464,7 @@ type TierFormProps = {
   onSave: () => void;
   onCancel: () => void;
   isPending: boolean;
-  t: ReturnType<typeof useTranslations<'pages.dashboard.events.pricing'>>;
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.pricing'>>;
 };
 
 function TierForm({ formData, setFormData, onSave, onCancel, isPending, t }: TierFormProps) {

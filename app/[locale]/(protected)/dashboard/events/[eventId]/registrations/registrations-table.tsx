@@ -14,6 +14,8 @@ type RegistrationsTableProps = {
   currentDistanceId?: string;
   currentStatus?: RegistrationStatus;
   currentSearch?: string;
+  currentDateFrom?: string;
+  currentDateTo?: string;
   currentPage: number;
   totalPages: number;
   total: number;
@@ -36,6 +38,8 @@ export function RegistrationsTable({
   currentDistanceId,
   currentStatus,
   currentSearch,
+  currentDateFrom,
+  currentDateTo,
   currentPage,
   totalPages,
   total,
@@ -45,27 +49,30 @@ export function RegistrationsTable({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(currentSearch || '');
+  const [dateFromInput, setDateFromInput] = useState(currentDateFrom || '');
+  const [dateToInput, setDateToInput] = useState(currentDateTo || '');
 
   const updateFilters = useCallback(
     (params: Record<string, string | undefined>) => {
-      // Build query object for URL parameters
       const query: Record<string, string> = {};
 
-      // Carry over existing filters
-      if (currentDistanceId && params.distanceId !== '')
-        query.distanceId = params.distanceId ?? currentDistanceId;
-      else if (params.distanceId && params.distanceId !== '')
-        query.distanceId = params.distanceId;
+      const nextDistanceId =
+        params.distanceId === undefined ? currentDistanceId ?? '' : params.distanceId;
+      if (nextDistanceId) query.distanceId = nextDistanceId;
 
-      if (currentStatus && params.status !== '')
-        query.status = params.status ?? currentStatus;
-      else if (params.status && params.status !== '')
-        query.status = params.status;
+      const nextStatus = params.status === undefined ? currentStatus ?? '' : params.status;
+      if (nextStatus) query.status = nextStatus;
 
-      if (currentSearch && params.search !== '')
-        query.search = params.search ?? currentSearch;
-      else if (params.search && params.search !== '')
-        query.search = params.search;
+      const nextSearch = params.search === undefined ? currentSearch ?? '' : params.search;
+      if (nextSearch) query.search = nextSearch;
+
+      const nextDateFrom =
+        params.dateFrom === undefined ? currentDateFrom ?? '' : params.dateFrom;
+      if (nextDateFrom) query.dateFrom = nextDateFrom;
+
+      const nextDateTo =
+        params.dateTo === undefined ? currentDateTo ?? '' : params.dateTo;
+      if (nextDateTo) query.dateTo = nextDateTo;
 
       // Handle page - reset to 1 when filters change unless explicitly set
       if (params.page) {
@@ -83,27 +90,45 @@ export function RegistrationsTable({
         );
       });
     },
-    [router, eventId, currentDistanceId, currentStatus, currentSearch],
+    [router, eventId, currentDistanceId, currentStatus, currentSearch, currentDateFrom, currentDateTo],
   );
 
   const handleDistanceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    updateFilters({ distanceId: value || undefined, page: '1' });
+    updateFilters({ distanceId: value, page: '1' });
   };
 
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = e.target.value;
-    updateFilters({ status: value || undefined, page: '1' });
+    updateFilters({ status: value, page: '1' });
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    updateFilters({ search: searchInput || undefined, page: '1' });
+    updateFilters({ search: searchInput.trim(), page: '1' });
   };
 
   const clearSearch = () => {
     setSearchInput('');
-    updateFilters({ search: undefined, page: '1' });
+    updateFilters({ search: '', page: '1' });
+  };
+
+  const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDateFromInput(value);
+    updateFilters({ dateFrom: value, page: '1' });
+  };
+
+  const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDateToInput(value);
+    updateFilters({ dateTo: value, page: '1' });
+  };
+
+  const clearDates = () => {
+    setDateFromInput('');
+    setDateToInput('');
+    updateFilters({ dateFrom: '', dateTo: '', page: '1' });
   };
 
   const formatDate = (date: Date) => {
@@ -155,6 +180,45 @@ export function RegistrationsTable({
               <option value="cancelled">{t('status.cancelled')}</option>
               <option value="expired">{t('status.expired')}</option>
             </select>
+
+            {/* Date range filter */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-from" className="text-sm text-muted-foreground">
+                {t('filters.dateFrom')}
+              </label>
+              <input
+                id="date-from"
+                type="date"
+                value={dateFromInput}
+                onChange={handleDateFromChange}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={isPending}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-to" className="text-sm text-muted-foreground">
+                {t('filters.dateTo')}
+              </label>
+              <input
+                id="date-to"
+                type="date"
+                value={dateToInput}
+                onChange={handleDateToChange}
+                min={dateFromInput || undefined}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={isPending}
+              />
+            </div>
+            {(dateFromInput || dateToInput) && (
+              <button
+                type="button"
+                onClick={clearDates}
+                className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isPending}
+              >
+                {t('filters.clearDates')}
+              </button>
+            )}
           </div>
 
           {/* Search */}

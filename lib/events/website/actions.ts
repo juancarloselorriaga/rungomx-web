@@ -1,6 +1,7 @@
 'use server';
 
 import { eq, and, isNull } from 'drizzle-orm';
+import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -17,6 +18,7 @@ import {
   DEFAULT_WEBSITE_BLOCKS,
   type WebsiteContentBlocks,
 } from './types';
+import { resolveWebsiteMediaUrls } from './queries';
 
 // =============================================================================
 // Types
@@ -73,6 +75,7 @@ type WebsiteContentData = {
   editionId: string;
   locale: string;
   blocks: WebsiteContentBlocks;
+  mediaUrls: Record<string, string>;
   createdAt: Date | null;
   updatedAt: Date | null;
 };
@@ -130,6 +133,7 @@ export const getWebsiteContent = withAuthenticatedUser<ActionResult<WebsiteConte
         editionId,
         locale,
         blocks: DEFAULT_WEBSITE_BLOCKS,
+        mediaUrls: {},
         createdAt: null,
         updatedAt: null,
       },
@@ -145,6 +149,8 @@ export const getWebsiteContent = withAuthenticatedUser<ActionResult<WebsiteConte
     blocks = DEFAULT_WEBSITE_BLOCKS;
   }
 
+  const mediaUrls = Object.fromEntries((await resolveWebsiteMediaUrls(blocks)).entries());
+
   return {
     ok: true,
     data: {
@@ -152,6 +158,7 @@ export const getWebsiteContent = withAuthenticatedUser<ActionResult<WebsiteConte
       editionId: content.editionId,
       locale: content.locale,
       blocks,
+      mediaUrls,
       createdAt: content.createdAt,
       updatedAt: content.updatedAt,
     },
@@ -276,6 +283,8 @@ export const updateWebsiteContent = withAuthenticatedUser<ActionResult<{ id: str
 
     contentId = result.id;
   }
+
+  refresh();
 
   return {
     ok: true,

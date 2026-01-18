@@ -1,26 +1,23 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { FileText, Loader2, Upload, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { uploadEventMediaFile } from '@/components/events/event-media-upload';
-import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
+import { EVENT_MEDIA_IMAGE_TYPES, EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
-export interface UploadedDocument {
+export interface UploadedPhoto {
   mediaId: string;
   blobUrl: string;
-  label: string;
 }
 
-interface DocumentUploaderProps {
+interface PhotoUploaderProps {
   organizationId: string;
-  onUploadComplete: (document: UploadedDocument) => void;
+  onUploadComplete: (photo: UploadedPhoto) => void;
   onCancel: () => void;
   labels: {
     title: string;
-    labelField: string;
-    labelPlaceholder: string;
     upload: string;
     uploading: string;
     cancel: string;
@@ -34,54 +31,45 @@ interface DocumentUploaderProps {
   maxFileSizeMb?: number;
 }
 
-const DEFAULT_PDF_TYPES = ['application/pdf'];
-
-export function DocumentUploader({
+export function PhotoUploader({
   organizationId,
   onUploadComplete,
   onCancel,
   labels,
-  acceptedTypes = DEFAULT_PDF_TYPES,
+  acceptedTypes = [...EVENT_MEDIA_IMAGE_TYPES],
   maxFileSizeMb,
-}: DocumentUploaderProps) {
+}: PhotoUploaderProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [label, setLabel] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const maxFileSize = maxFileSizeMb
     ? maxFileSizeMb * 1024 * 1024
     : EVENT_MEDIA_MAX_FILE_SIZE;
-  const maxFileSizeDisplay = maxFileSizeMb ?? Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
+  const maxFileSizeDisplay =
+    maxFileSizeMb ?? Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!acceptedTypes.includes(file.type)) {
       setError(labels.invalidType);
       return;
     }
 
-    // Validate file size
     if (file.size > maxFileSize) {
       setError(labels.fileTooLarge.replace('{maxSize}', String(maxFileSizeDisplay)));
       return;
     }
 
     setSelectedFile(file);
-    // Auto-fill label from filename (without extension)
-    if (!label) {
-      const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-      setLabel(nameWithoutExt);
-    }
   };
 
   const handleUpload = async () => {
-    if (!selectedFile || !label.trim()) return;
+    if (!selectedFile) return;
 
     setIsUploading(true);
     setError(null);
@@ -90,17 +78,16 @@ export function DocumentUploader({
       const result = await uploadEventMediaFile({
         organizationId,
         file: selectedFile,
-        kind: 'pdf',
-        purpose: 'document',
+        kind: 'image',
+        purpose: 'photo',
       });
 
       onUploadComplete({
         mediaId: result.mediaId,
         blobUrl: result.blobUrl,
-        label: label.trim(),
       });
     } catch (err) {
-      console.error('[document-uploader] Upload failed:', err);
+      console.error('[photo-uploader] Upload failed:', err);
       setError(labels.uploadFailed);
     } finally {
       setIsUploading(false);
@@ -115,27 +102,23 @@ export function DocumentUploader({
     }
   };
 
+  const previewUrl = useMemo(() => {
+    if (!selectedFile) return null;
+    return URL.createObjectURL(selectedFile);
+  }, [selectedFile]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   return (
     <div className="space-y-4 rounded-lg border bg-card p-4">
       <h4 className="font-medium">{labels.title}</h4>
 
-      {/* Label input */}
-      <div className="space-y-2">
-        <label htmlFor="doc-label" className="text-sm font-medium">
-          {labels.labelField}
-        </label>
-        <input
-          id="doc-label"
-          type="text"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder={labels.labelPlaceholder}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-          disabled={isUploading}
-        />
-      </div>
-
-      {/* File selection */}
       {!selectedFile ? (
         <div
           className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 cursor-pointer hover:border-primary/50 transition-colors"
@@ -156,8 +139,17 @@ export function DocumentUploader({
           />
         </div>
       ) : (
-        <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-          <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />
+        <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
+          <div className="h-16 w-16 overflow-hidden rounded-md border bg-background flex-shrink-0">
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previewUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center">
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              </div>
+            )}
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{selectedFile.name}</p>
             <p className="text-xs text-muted-foreground">
@@ -177,26 +169,13 @@ export function DocumentUploader({
         </div>
       )}
 
-      {/* Error message */}
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      {/* Actions */}
       <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={isUploading}
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isUploading}>
           {labels.cancel}
         </Button>
-        <Button
-          type="button"
-          onClick={handleUpload}
-          disabled={isUploading || !selectedFile || !label.trim()}
-        >
+        <Button type="button" onClick={handleUpload} disabled={isUploading || !selectedFile}>
           {isUploading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />

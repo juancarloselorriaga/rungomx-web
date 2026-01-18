@@ -70,8 +70,18 @@
       "description": "Este evento puede haber sido eliminado o aún no está disponible.",
       "backToEvents": "Volver a eventos"
     },
+    "pricing": {
+      "nextIncrease": "Siguiente aumento de precio el {date}: {price}",
+      "showSchedule": "Ver calendario de precios",
+      "tier": "Tarifa {number}",
+      "current": "Actual",
+      "from": "Desde {date}",
+      "until": "Hasta {date}",
+      "always": "Siempre"
+    },
     "website": {
       "documents": "Documentos",
+      "photos": "Fotos",
       "terrain": "Terreno",
       "download": "Descargar"
     }

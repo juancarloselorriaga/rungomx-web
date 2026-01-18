@@ -26,7 +26,7 @@ const SIGNATURE_TYPES = ['checkbox', 'initials', 'signature'] as const;
 type SignatureType = (typeof SIGNATURE_TYPES)[number];
 
 export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
-  const t = useTranslations('pages.dashboard.events.waivers');
+  const t = useTranslations('pages.dashboardEvents.waivers');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [waivers, setWaivers] = useState(initialWaivers);

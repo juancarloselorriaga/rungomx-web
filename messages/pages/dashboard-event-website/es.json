@@ -1,0 +1,110 @@
+{
+  "title": "Contenido del Sitio Web",
+  "description": "Personaliza las secciones de contenido que aparecen en tu página pública del evento.",
+  "preview": {
+    "title": "Vista previa",
+    "description": "Esta vista previa refleja el contenido guardado. Guarda los cambios para actualizarla.",
+    "empty": "Aún no hay contenido guardado del sitio."
+  },
+  "save": "Guardar cambios",
+  "saving": "Guardando...",
+  "saved": "Contenido guardado exitosamente",
+  "errorSaving": "Error al guardar el contenido",
+  "sections": {
+    "overview": {
+      "title": "Descripción General",
+      "description": "Descripción principal del evento e información del terreno.",
+      "contentLabel": "Descripción del Evento",
+      "contentPlaceholder": "Describe tu evento, qué lo hace especial y qué pueden esperar los participantes...",
+      "terrainLabel": "Descripción del Terreno",
+      "terrainPlaceholder": "Condiciones del sendero, elevación, tipo de superficie..."
+    },
+    "course": {
+      "title": "Información del Recorrido",
+      "description": "Detalles del recorrido, estaciones de abastecimiento y tiempos límite.",
+      "descriptionLabel": "Descripción del Recorrido",
+      "descriptionPlaceholder": "Describe el trazado del recorrido y sus características principales...",
+      "elevationLabel": "Ganancia de Elevación",
+      "elevationPlaceholder": "ej., 1500m o 5000ft",
+      "elevationProfileLabel": "URL del Perfil de Elevación",
+      "elevationProfilePlaceholder": "Enlace a imagen del perfil de elevación",
+      "mapUrlLabel": "URL del Mapa del Recorrido",
+      "mapUrlPlaceholder": "Enlace al mapa del recorrido",
+      "aidStations": {
+        "title": "Estaciones de Abastecimiento",
+        "add": "Agregar estación",
+        "nameLabel": "Nombre",
+        "namePlaceholder": "Estación 1",
+        "distanceLabel": "Distancia (km)",
+        "distancePlaceholder": "10",
+        "cutoffLabel": "Tiempo límite",
+        "cutoffPlaceholder": "10:00 AM",
+        "servicesLabel": "Servicios disponibles",
+        "servicesPlaceholder": "Agua, snacks, primeros auxilios..."
+      }
+    },
+    "schedule": {
+      "title": "Horarios y Logística",
+      "description": "Entrega de kits, estacionamiento e información del día de carrera.",
+      "packetPickupLabel": "Entrega de Kits",
+      "packetPickupPlaceholder": "Cuándo y dónde los participantes pueden recoger sus kits...",
+      "parkingLabel": "Estacionamiento",
+      "parkingPlaceholder": "Disponibilidad de estacionamiento e indicaciones...",
+      "raceDayLabel": "Información del Día de Carrera",
+      "raceDayPlaceholder": "Qué traer, hora de registro, detalles del área de salida...",
+      "startTimes": {
+        "title": "Horarios de Salida",
+        "add": "Agregar horario",
+        "distanceLabel": "Distancia",
+        "distancePlaceholder": "50K",
+        "timeLabel": "Hora",
+        "timePlaceholder": "6:00 AM",
+        "notesLabel": "Notas",
+        "notesPlaceholder": "Notas opcionales..."
+      }
+    },
+    "media": {
+      "title": "Fotos y Documentos",
+      "description": "Galería de fotos y documentos descargables como la convocatoria.",
+      "photos": {
+        "title": "Galería de Fotos",
+        "description": "Agrega fotos para mostrar tu evento.",
+        "add": "Agregar foto",
+        "captionLabel": "Descripción",
+        "captionPlaceholder": "Descripción de la foto...",
+        "empty": "Aún no hay fotos. Agrega fotos para mostrar tu evento.",
+        "uploaderTitle": "Subir Foto",
+        "upload": "Subir",
+        "uploading": "Subiendo...",
+        "cancel": "Cancelar",
+        "selectFile": "Clic o arrastra para seleccionar una imagen",
+        "fileTooLarge": "El archivo debe ser menor a {maxSize}MB.",
+        "invalidType": "Por favor sube una imagen (JPG, PNG, WebP, GIF).",
+        "uploadFailed": "Error al subir. Intenta de nuevo.",
+        "maxSize": "Tamaño máximo: {maxSize}MB",
+        "comingSoon": "La galería de fotos estará disponible próximamente."
+      },
+      "documents": {
+        "title": "Documentos",
+        "description": "Sube documentos PDF como la convocatoria, mapas del recorrido o reglamento.",
+        "add": "Agregar documento",
+        "empty": "No hay documentos subidos. Agrega tu convocatoria u otros documentos.",
+        "uploaderTitle": "Subir Documento",
+        "labelField": "Nombre del documento",
+        "labelPlaceholder": "Convocatoria, Mapa del Recorrido, Reglamento...",
+        "upload": "Subir",
+        "uploading": "Subiendo...",
+        "cancel": "Cancelar",
+        "selectFile": "Clic o arrastra para seleccionar un archivo PDF",
+        "fileTooLarge": "El archivo debe ser menor a {maxSize}MB.",
+        "invalidType": "Por favor sube un archivo PDF.",
+        "uploadFailed": "Error al subir. Intenta de nuevo.",
+        "maxSize": "Tamaño máximo: {maxSize}MB"
+      }
+    }
+  },
+  "enableSection": "Habilitar sección",
+  "disableSection": "Deshabilitar sección",
+  "sectionEnabled": "Visible en página pública",
+  "sectionDisabled": "Oculto de página pública"
+}

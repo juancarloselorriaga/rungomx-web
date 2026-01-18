@@ -75,6 +75,7 @@ export const AUDIT_ACTIONS = {
   'add_on_option.create': 'Add-on option created',
   'add_on_option.update': 'Add-on option updated',
   'add_on_option.delete': 'Add-on option deleted',
+  'add_on_selections.submit': 'Add-on selections submitted',
 
   // Discount Codes (Phase 2)
   'discount_code.create': 'Discount code created',

@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: FaqPageProps): Promise<Metada
 export default async function FaqManagementPage({ params }: FaqPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/faq' });
-  const t = await getTranslations('pages.dashboard.events.faq');
+  const t = await getTranslations('pages.dashboardEvents.faq');
   const authContext = await getAuthContext();
 
   // Phase 0 gate
