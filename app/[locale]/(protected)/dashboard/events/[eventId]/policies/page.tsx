@@ -1,5 +1,4 @@
 import { getPathname, Link } from '@/i18n/navigation';
-import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
@@ -40,7 +39,7 @@ export default async function PoliciesPage({ params }: PoliciesPageProps) {
   const authContext = await getAuthContext();
 
   const canAccessEvents =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));

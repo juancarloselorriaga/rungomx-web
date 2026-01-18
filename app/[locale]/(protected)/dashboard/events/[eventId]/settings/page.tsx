@@ -1,5 +1,4 @@
 import { getPathname, Link } from '@/i18n/navigation';
-import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
@@ -42,9 +41,9 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   const resolvedSearchParams = await searchParams;
   const wizardMode = resolvedSearchParams?.wizard === '1';
 
-  // Phase 0 gate
+  // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));

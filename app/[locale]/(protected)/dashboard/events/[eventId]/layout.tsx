@@ -1,5 +1,4 @@
 import { getPathname, Link } from '@/i18n/navigation';
-import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import type { EventVisibility } from '@/lib/events/constants';
@@ -59,9 +58,9 @@ export default async function EventDetailLayout({
   const tEvents = await getTranslations('pages.dashboardEvents');
   const authContext = await getAuthContext();
 
-  // Phase 0 gate: organizers need flag enabled, internal staff with canManageEvents bypass
+  // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));

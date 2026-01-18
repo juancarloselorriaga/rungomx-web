@@ -1,5 +1,4 @@
 import { getPathname, Link } from '@/i18n/navigation';
-import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
@@ -40,9 +39,9 @@ export default async function EventAddOnsPage({ params }: AddOnsPageProps) {
   const t = await getTranslations('pages.dashboardEvents.addOns');
   const authContext = await getAuthContext();
 
-  // Phase 0 gate
+  // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    (isEventsEnabled() && authContext.permissions.canViewOrganizersDashboard) ||
+    authContext.permissions.canViewOrganizersDashboard ||
     authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));

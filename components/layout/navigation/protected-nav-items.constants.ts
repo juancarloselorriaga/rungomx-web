@@ -1,11 +1,10 @@
 import type { PermissionSet } from '@/lib/auth/roles';
-import { isEventsEnabled } from '@/lib/features/flags';
 import type { NavItem, NavSection, ProtectedNavIconName } from './types';
 
 /**
- * Build protected nav sections based on user permissions and feature flags.
- * Events link visibility follows Phase 0 gate:
- * - External organizers: only when feature flag is enabled AND have organizer dashboard permission
+ * Build protected nav sections based on user permissions.
+ * Events link visibility:
+ * - External organizers: when they have organizer dashboard permission
  * - Internal staff: always visible if they have admin access (support access per Phase 0 plan)
  */
 export function buildProtectedNavSections(
@@ -33,9 +32,9 @@ export function buildProtectedNavSections(
     },
   ];
 
-  // Phase 0 gate: organizers see Events only when flag enabled, internal staff with admin access always have access
+  // Access gate: organizers and internal staff only.
   const canSeeEvents =
-    (isEventsEnabled() && permissions.canViewOrganizersDashboard) ||
+    permissions.canViewOrganizersDashboard ||
     permissions.canAccessAdminArea;
   if (canSeeEvents) {
     items.push({
