@@ -9,7 +9,7 @@ Key achievements:
 - **Phase 0 (Foundations)**: Organization management with 4 permission levels (Owner, Admin, Editor, Viewer)
 - **Phase 1 (Events MVP)**: Event creation workflow, public event directory with search and filters, event detail pages, and online registration with digital waiver tracking
 - **Phase 2 (Advanced Features)**: Custom website content editor, flexible pricing tiers, add-ons (merchandise/donations), discount coupons, custom registration questions, and CSV export
-- **No-payment mode**: Registrations are captured and confirmed automatically (payment integration will come in a future release)
+- **No-payment mode**: When enabled, registrations are captured and confirmed automatically (payment integration will come in a future release)
 
 ## How to test (quick start prerequisites)
 
@@ -101,18 +101,6 @@ Key achievements:
 
 ---
 
-## Feature Flags
-
-**What it is:** The events platform can be enabled or disabled for external organizers using a system setting.
-
-**Why it matters:** Allows controlled rollout. Internal staff always have access, but external Directors only see the events features when enabled.
-
-**How to test:**
-
-This is controlled by system administrators and doesn't require manual testing by organizers.
-
----
-
 ### Phase 1: Events MVP
 
 ## Event Creation Wizard
@@ -144,7 +132,7 @@ This is controlled by system administrators and doesn't require manual testing b
 **Expected result:**
 
 - Event is created with "Draft" status
-- A unique event code is automatically generated (e.g., "EVT-ABC123")
+- A unique public event code is automatically generated (e.g., "ABC123")
 - Event appears in your events dashboard
 - Event is NOT visible to the public until you publish it
 
@@ -223,7 +211,7 @@ This is controlled by system administrators and doesn't require manual testing b
 
 - Filters work independently and together
 - Results show event name, date, location, sport type, registration status, and starting price
-- Page shows 20 events at a time with pagination
+- Page paginates results (12 events per page)
 - If logged in, "Near me" uses your profile location
 
 **Notes:**
@@ -310,7 +298,7 @@ This is controlled by system administrators and doesn't require manual testing b
 **Expected result:**
 
 - Registration is confirmed
-- Participant receives a unique ticket code (format: EVT-ABC123-001)
+- Participant receives a unique ticket code (format: RG-XXXX-XXXX)
 - Registration appears in participant's "My Registrations" page
 - You (organizer) see the registration in your event's registrations list
 - Waiver acceptance is recorded with timestamp and IP address
@@ -320,7 +308,7 @@ This is controlled by system administrators and doesn't require manual testing b
 
 - Participants cannot register twice for the same event
 - If event is sold out, registration closed, or paused, registration is blocked
-- Currently registrations are auto-confirmed without payment (payment integration coming in future release)
+- Registrations are captured without payment (payment integration coming in a future release). In no-payment mode they auto-confirm; otherwise they move to "payment pending".
 
 ---
 
@@ -408,7 +396,7 @@ This is controlled by system administrators and doesn't require manual testing b
 **Notes:**
 
 - Leave capacity blank for unlimited participants
-- Canceled registrations don't automatically free up spots (you'll need to adjust manually)
+- Expired holds and cancelled registrations free up spots automatically (refund/transfer processing is still manual)
 
 ---
 
@@ -516,7 +504,7 @@ This is controlled by system administrators and doesn't require manual testing b
 
 ## Public Event Code
 
-**What it is:** Each event gets a unique short code (e.g., "EVT-ABC123") automatically generated when you create it.
+**What it is:** Each event gets a unique short code (e.g., "ABC123") automatically generated when you create it.
 
 **Why it matters:** Used for support tickets, registration confirmations, and future features like results upload. Easier to read and communicate than long IDs.
 
@@ -525,7 +513,7 @@ This is controlled by system administrators and doesn't require manual testing b
 1. Create an event
 2. Go to the event dashboard
 3. Look for "Public Code" near the event title
-4. Code should be in format: EVT- followed by 6 characters
+4. Code should be 6 characters long (letters and numbers)
 5. Create another event
 6. Verify it gets a different code
 
@@ -888,8 +876,8 @@ The following features are **NOT included** in this release:
 
 ### Other notable omissions:
 
-- **Payment processing**: Registrations auto-confirm without payment (payment integration coming in future release)
-- **Email notifications**: No automated emails for confirmation, reminders, or updates
+- **Payment processing**: Registrations are captured without payment collection (payment integration coming in a future release). In no-payment mode they auto-confirm; otherwise they move to "payment pending".
+- **Email notifications**: Registration emails are implemented when an email service is configured; no automated reminders or event update emails yet
 - **Refund/transfer/deferral processing**: Can display policies but must process manually
 - **Results upload**: Event code exists but no results import yet
 - **Waitlist**: No waitlist when events are sold out

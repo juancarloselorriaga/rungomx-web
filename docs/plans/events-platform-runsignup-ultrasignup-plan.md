@@ -164,7 +164,7 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
 - Add organization + organizer membership model (org-scoped roles) aligned with our existing global roles/permissions.
 - Add event core entities (EventSeries/EventEdition, Distance, PricingTier skeleton, WebsiteContent skeleton, Registration skeleton).
 - Add audit logging primitives for event configuration changes.
-- Gate everything behind a feature flag (env) or “internal-only” permission until Phase 1 is ready.
+- Gate organizer access behind existing role permissions (internal-only) until Phase 1 is ready.
 
 #### User value
 
@@ -448,7 +448,7 @@ Legend for RunGoMx column: **v1** (must-have), **v2** (next), **v3** (later) —
   - Extend with org-scoped membership checks, but preserve the current `external.organizer` / `canManageEvents` semantics (`lib/auth/roles.ts`).
 - **UI system**: reuse shadcn/Radix components in `components/ui/*`, including `SectionSubnav` (tabs) and `EntityListView` (tables). (`components/ui/section-subnav.tsx`, `components/list-view/entity-list-view.tsx`)
 - **Location/search**: reuse existing location APIs for geocoding and location inputs (`app/api/location/*`, `lib/location/*`) to implement event discovery filters.
-- **Configuration/feature flags**: follow existing env-driven configuration patterns (e.g., `config/url.ts`, other `process.env.*` usage) to gate organizer/event functionality behind an env flag until Phase 1 is ready.
+- **Configuration**: follow existing env-driven configuration patterns (e.g., `config/url.ts`, other `process.env.*` usage) for non-access settings; organizer/event access is controlled by roles/permissions.
 
 ### Organizer permissions model (explicit; public vs organizer separated)
 
