@@ -1,8 +1,8 @@
 import { SignInForm } from '@/components/auth/sign-in-form';
 import { Link } from '@/i18n/navigation';
-import { routing } from '@/i18n/routing';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
+import { isSafeRedirectPath, normalizeCallbackPath } from '@/lib/utils/redirect';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import { CheckCircle } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -23,15 +23,25 @@ export default async function SignInPage({
   searchParams,
 }: LocalePageProps & { searchParams?: Promise<{ reset?: string; callbackURL?: string }> }) {
   await configPageLocale(params, { pathname: '/sign-in' });
+  const { locale } = await params;
   const t = await getTranslations('pages.signIn');
   const authT = await getTranslations('auth');
 
   const resolvedSearchParams = await searchParams;
   const resetSuccess = resolvedSearchParams?.reset === 'success';
-  const callbackURL = resolvedSearchParams?.callbackURL;
-  const isAppPathname = (value: string): value is keyof typeof routing.pathnames =>
-    Object.prototype.hasOwnProperty.call(routing.pathnames, value);
-  const callbackPath = callbackURL && isAppPathname(callbackURL) ? callbackURL : undefined;
+  const callbackPath = (() => {
+    const normalized = normalizeCallbackPath(resolvedSearchParams?.callbackURL);
+    if (!normalized || !isSafeRedirectPath(normalized)) return undefined;
+
+    // Strip locale prefix (our i18n router will re-apply it)
+    const localePrefix = `/${locale}`;
+    if (normalized === localePrefix) return '/';
+    if (normalized.startsWith(`${localePrefix}/`)) {
+      return normalized.slice(localePrefix.length) || '/';
+    }
+
+    return normalized;
+  })();
   const signUpHref = callbackPath
     ? ({ pathname: '/sign-up', query: { callbackURL: callbackPath } } as const)
     : '/sign-up';

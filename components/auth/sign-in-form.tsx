@@ -3,9 +3,9 @@
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Link, useRouter } from '@/i18n/navigation';
-import { StaticPathname } from '@/i18n/routing';
 import { signIn } from '@/lib/auth/client';
 import { Form, FormError, useForm } from '@/lib/forms';
+import { isSafeRedirectPath } from '@/lib/utils/redirect';
 import { cn } from '@/lib/utils';
 import { Loader2, LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,22 +15,20 @@ type SignInFormProps = {
   callbackPath?: string;
 };
 
+type Router = ReturnType<typeof useRouter>;
+type RouterPushHref = Parameters<Router['push']>[0];
+
 export function SignInForm({ callbackPath }: SignInFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  // Static pathnames are routes without dynamic segments (e.g., no [eventId])
-  // We only allow redirecting to static routes after auth
-  // SECURITY: Reject protocol-relative URLs like //evil.com
-  const isStaticPathname = (value: string): value is StaticPathname =>
-    !value.includes('[') && (value === '/' || (value.startsWith('/') && !value.startsWith('//')));
-  const targetPath: StaticPathname =
-    callbackPath && isStaticPathname(callbackPath) ? callbackPath : '/dashboard';
+  const targetPath =
+    callbackPath && isSafeRedirectPath(callbackPath) ? callbackPath : '/dashboard';
 
   const form = useForm<
     { email: string; password: string },
     | { kind: 'signed-in' }
-    | { kind: 'verify-email'; email: string; callbackPath: StaticPathname }
+    | { kind: 'verify-email'; email: string; callbackPath: string }
   >({
     defaultValues: { email: '', password: '' },
     onSubmit: async (values) => {
@@ -71,7 +69,7 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
         return;
       }
 
-      router.push(targetPath);
+      router.push(targetPath as unknown as RouterPushHref);
     },
   });
 
@@ -90,7 +88,7 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
         }
 
         router.refresh();
-        router.push(targetPath);
+        router.push(targetPath as unknown as RouterPushHref);
       } catch {
         form.setError('password', t('genericError'));
       }

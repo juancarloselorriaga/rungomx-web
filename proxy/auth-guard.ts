@@ -10,7 +10,11 @@ export const handleAuthRedirects = async (req: NextRequest, context: RequestCont
 
   if (isProtectedRoute(context.internalPath) && !hasSessionCookie) {
     const redirectUrl = buildRedirectUrl(req, '/sign-in', context.locale);
-    redirectUrl.searchParams.set('callbackURL', context.internalPath);
+    // Preserve the originally requested path (without locale prefix) so the client router can
+    // re-apply the current locale and navigate back correctly after authentication.
+    // Using `internalPath` here would include template segments like `[eventId]`, which breaks
+    // redirects after sign-in and can lead to redirect loops.
+    redirectUrl.searchParams.set('callbackURL', `${context.pathnameWithoutLocale}${req.nextUrl.search}`);
     return NextResponse.redirect(redirectUrl);
   }
 
