@@ -10,6 +10,9 @@
   "filters": {
     "allDistances": "Todas las distancias",
     "allStatuses": "Todos los estados",
+    "dateFrom": "Desde",
+    "dateTo": "Hasta",
+    "clearDates": "Limpiar fechas",
     "searchPlaceholder": "Buscar por nombre o correo...",
     "search": "Buscar"
   },

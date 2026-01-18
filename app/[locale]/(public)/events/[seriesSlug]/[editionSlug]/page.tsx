@@ -5,7 +5,8 @@ import {
   getPublicOtherEditionsForSeries,
   type PublicDistanceInfo,
 } from '@/lib/events/queries';
-import { getPublicWebsiteContent, hasWebsiteContent, resolveDocumentUrls } from '@/lib/events/website/queries';
+import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
+import { getPublicWebsiteContent, hasWebsiteContent, resolveWebsiteMediaUrls } from '@/lib/events/website/queries';
 import type { SportType } from '@/lib/events/constants';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -19,6 +20,8 @@ import { notFound } from 'next/navigation';
 
 import { EventTabs, type TabId } from './event-tabs';
 import { WebsiteContentRenderer } from './website-content-renderer';
+
+type EditionPricingScheduleItem = Awaited<ReturnType<typeof getPricingScheduleForEdition>>[number];
 
 type EventDetailPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
@@ -82,7 +85,13 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 
   // Load website content if on website tab
   const websiteContent = currentTab === 'website' ? await getPublicWebsiteContent(event.id, locale) : null;
-  const documentUrls = websiteContent ? await resolveDocumentUrls(websiteContent) : undefined;
+  const mediaUrls = websiteContent ? await resolveWebsiteMediaUrls(websiteContent) : undefined;
+
+  const pricingSchedule =
+    currentTab === 'distances' ? await getPricingScheduleForEdition(event.id) : null;
+  const pricingScheduleByDistanceId = pricingSchedule
+    ? new Map(pricingSchedule.map((item) => [item.distanceId, item]))
+    : null;
 
   const otherEditions = await getPublicOtherEditionsForSeries(event.seriesId, event.id);
 
@@ -319,6 +328,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                       key={distance.id}
                       distance={distance}
                       locale={locale}
+                      timezone={event.timezone}
                       isRegistrationOpen={event.isRegistrationOpen}
                       registerPath={{
                         pathname: '/events/[seriesSlug]/[editionSlug]/register',
@@ -326,6 +336,7 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                         query: { distanceId: distance.id },
                       }}
                       sharedCapacity={event.sharedCapacity}
+                      pricingSchedule={pricingScheduleByDistanceId?.get(distance.id) ?? null}
                     />
                   ))}
                 </div>
@@ -400,9 +411,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
               <section>
                 <WebsiteContentRenderer
                   blocks={websiteContent}
-                  documentUrls={documentUrls}
+                  mediaUrls={mediaUrls}
                   labels={{
                     documents: t('detail.website.documents'),
+                    photos: t('detail.website.photos'),
                     terrain: t('detail.website.terrain'),
                     download: t('detail.website.download'),
                   }}
@@ -540,15 +552,19 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
 async function DistanceCard({
   distance,
   locale,
+  timezone,
   isRegistrationOpen,
   registerPath,
   sharedCapacity,
+  pricingSchedule,
 }: {
   distance: PublicDistanceInfo;
   locale: string;
+  timezone: string;
   isRegistrationOpen: boolean;
   registerPath: { pathname: '/events/[seriesSlug]/[editionSlug]/register'; params: { seriesSlug: string; editionSlug: string }; query?: { distanceId: string } };
   sharedCapacity: number | null;
+  pricingSchedule: EditionPricingScheduleItem | null;
 }) {
   const t = await getTranslations({ locale: locale as 'es' | 'en', namespace: 'pages.events.detail' });
 
@@ -561,6 +577,13 @@ async function DistanceCard({
     }).format(cents / 100);
   };
 
+  const formatTierDate = (value: Date) =>
+    new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: timezone,
+    }).format(value);
+
   const distanceLabel = distance.distanceValue
     ? `${distance.distanceValue} ${distance.distanceUnit}`
     : distance.label;
@@ -568,65 +591,118 @@ async function DistanceCard({
   const isSoldOut = distance.spotsRemaining !== null && distance.spotsRemaining <= 0;
 
   return (
-    <div className="rounded-lg border bg-card p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-      <div className="flex-1 space-y-1">
-        <h3 className="font-semibold">{distance.label}</h3>
-        <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-          {distance.distanceValue && (
-            <span>{distanceLabel}</span>
-          )}
-          {distance.terrain && (
-            <span>{t(`terrain.${distance.terrain as 'road' | 'trail' | 'mixed' | 'track'}`)}</span>
-          )}
-          {distance.isVirtual && (
-            <span className="text-primary">{t('virtualEvent')}</span>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-3 text-sm items-center">
-          {distance.spotsRemaining !== null ? (
-            isSoldOut ? (
-              <span className="text-destructive flex items-center gap-1">
+    <div className="rounded-lg border bg-card p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex-1 space-y-1">
+          <h3 className="font-semibold">{distance.label}</h3>
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+            {distance.distanceValue && <span>{distanceLabel}</span>}
+            {distance.terrain && (
+              <span>{t(`terrain.${distance.terrain as 'road' | 'trail' | 'mixed' | 'track'}`)}</span>
+            )}
+            {distance.isVirtual && <span className="text-primary">{t('virtualEvent')}</span>}
+          </div>
+          <div className="flex flex-wrap gap-3 text-sm items-center">
+            {distance.spotsRemaining !== null ? (
+              isSoldOut ? (
+                <span className="text-destructive flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {t('soldOut')}
+                </span>
+              ) : (
+                <>
+                  <span className="text-muted-foreground flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {t('spotsRemaining', { count: distance.spotsRemaining ?? 0 })}
+                  </span>
+                  {distance.capacityScope === 'shared_pool' && sharedCapacity && (
+                    <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {t('capacity.sharedPoolLabel')}
+                    </span>
+                  )}
+                </>
+              )
+            ) : (
+              <span className="text-muted-foreground flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                {t('soldOut')}
+                {t('unlimited')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            {distance.priceCents > 0 ? (
+              <span className="text-lg font-semibold">
+                {formatPrice(distance.priceCents, distance.currency)}
               </span>
             ) : (
-              <>
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {t('spotsRemaining', { count: distance.spotsRemaining ?? 0 })}
-                </span>
-                {distance.capacityScope === 'shared_pool' && sharedCapacity && (
-                  <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {t('capacity.sharedPoolLabel')}
-                  </span>
-                )}
-              </>
-            )
-          ) : (
-            <span className="text-muted-foreground flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              {t('unlimited')}
-            </span>
+              <span className="text-lg font-semibold text-green-600">{t('free')}</span>
+            )}
+            {pricingSchedule?.nextPriceIncrease && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t('pricing.nextIncrease', {
+                  date: formatTierDate(pricingSchedule.nextPriceIncrease.date),
+                  price: formatPrice(pricingSchedule.nextPriceIncrease.priceCents, distance.currency),
+                })}
+              </p>
+            )}
+          </div>
+          {isRegistrationOpen && !isSoldOut && (
+            <Button size="sm" asChild>
+              <Link href={registerPath}>{t('selectDistance')}</Link>
+            </Button>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          {distance.priceCents > 0 ? (
-            <span className="text-lg font-semibold">
-              {formatPrice(distance.priceCents, distance.currency)}
-            </span>
-          ) : (
-            <span className="text-lg font-semibold text-green-600">{t('free')}</span>
-          )}
-        </div>
-        {isRegistrationOpen && !isSoldOut && (
-          <Button size="sm" asChild>
-            <Link href={registerPath}>{t('selectDistance')}</Link>
-          </Button>
-        )}
-      </div>
+      {pricingSchedule?.tiers?.length ? (
+        <details className="mt-4 rounded-md border bg-muted/30 p-3">
+          <summary className="cursor-pointer text-sm font-medium text-primary hover:underline">
+            {t('pricing.showSchedule')}
+          </summary>
+          <div className="mt-3 space-y-2">
+            {pricingSchedule.tiers.map((tier, index) => {
+              const now = new Date();
+              const hasStarted = !tier.startsAt || now >= tier.startsAt;
+              const hasNotEnded = !tier.endsAt || now < tier.endsAt;
+              const isCurrentTier = hasStarted && hasNotEnded;
+
+              const rangeText =
+                tier.startsAt && tier.endsAt
+                  ? `${formatTierDate(tier.startsAt)} – ${formatTierDate(tier.endsAt)}`
+                  : tier.startsAt
+                    ? t('pricing.from', { date: formatTierDate(tier.startsAt) })
+                    : tier.endsAt
+                      ? t('pricing.until', { date: formatTierDate(tier.endsAt) })
+                      : t('pricing.always');
+
+              return (
+                <div
+                  key={tier.id}
+                  className="flex items-start justify-between gap-4 rounded-md bg-background/60 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {tier.label || t('pricing.tier', { number: index + 1 })}
+                      {isCurrentTier && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          {t('pricing.current')}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{rangeText}</p>
+                  </div>
+                  <p className="text-sm font-semibold whitespace-nowrap">
+                    {formatPrice(tier.priceCents, tier.currency)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      ) : null}
     </div>
   );
 }

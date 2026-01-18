@@ -3,6 +3,7 @@ import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
+import { getPublicWebsiteContent, resolveWebsiteMediaUrls } from '@/lib/events/website/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { ArrowLeft } from 'lucide-react';
@@ -11,6 +12,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { WebsiteContentEditor } from './website-content-editor';
+import { WebsiteContentRenderer } from '@/app/[locale]/(public)/events/[seriesSlug]/[editionSlug]/website-content-renderer';
 
 type WebsitePageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -36,7 +38,8 @@ export async function generateMetadata({ params }: WebsitePageProps): Promise<Me
 export default async function EventWebsitePage({ params }: WebsitePageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/website' });
-  const t = await getTranslations('pages.dashboard.events.website');
+  const t = await getTranslations('pages.dashboardEventWebsite');
+  const tPublic = await getTranslations({ locale, namespace: 'pages.events' });
   const authContext = await getAuthContext();
 
   // Phase 0 gate
@@ -59,8 +62,11 @@ export default async function EventWebsitePage({ params }: WebsitePageProps) {
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
+  const previewBlocks = await getPublicWebsiteContent(eventId, locale);
+  const previewMediaUrls = previewBlocks ? await resolveWebsiteMediaUrls(previewBlocks) : undefined;
+
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
         <Link
           href={{ pathname: '/dashboard/events/[eventId]', params: { eventId } }}
@@ -73,11 +79,34 @@ export default async function EventWebsitePage({ params }: WebsitePageProps) {
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <WebsiteContentEditor
-        editionId={eventId}
-        locale={locale}
-        organizationId={event.organizationId}
-      />
+      <div className="grid gap-8 lg:grid-cols-2">
+        <div>
+          <WebsiteContentEditor editionId={eventId} locale={locale} organizationId={event.organizationId} />
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-xl font-semibold">{t('preview.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('preview.description')}</p>
+          </div>
+          <div className="rounded-lg border bg-card p-6">
+            {previewBlocks ? (
+              <WebsiteContentRenderer
+                blocks={previewBlocks}
+                mediaUrls={previewMediaUrls}
+                labels={{
+                  documents: tPublic('detail.website.documents'),
+                  photos: tPublic('detail.website.photos'),
+                  terrain: tPublic('detail.website.terrain'),
+                  download: tPublic('detail.website.download'),
+                }}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('preview.empty')}</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

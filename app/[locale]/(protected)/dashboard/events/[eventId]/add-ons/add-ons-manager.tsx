@@ -85,7 +85,7 @@ export function AddOnsManager({
   distances,
   initialAddOns,
 }: AddOnsManagerProps) {
-  const t = useTranslations('pages.dashboard.events.addOns');
+  const t = useTranslations('pages.dashboardEvents.addOns');
   const [isPending, startTransition] = useTransition();
   const [addOns, setAddOns] = useState(initialAddOns);
   const [expandedAddOns, setExpandedAddOns] = useState<Set<string>>(new Set());
@@ -583,7 +583,7 @@ type AddOnFormProps = {
   onSave: () => void;
   onCancel: () => void;
   isPending: boolean;
-  t: ReturnType<typeof useTranslations<'pages.dashboard.events.addOns'>>;
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.addOns'>>;
 };
 
 function AddOnForm({
@@ -712,7 +712,7 @@ type OptionFormProps = {
   onSave: () => void;
   onCancel: () => void;
   isPending: boolean;
-  t: ReturnType<typeof useTranslations<'pages.dashboard.events.addOns'>>;
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.addOns'>>;
 };
 
 function OptionForm({

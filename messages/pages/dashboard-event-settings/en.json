@@ -1,0 +1,106 @@
+{
+  "title": "Event Settings",
+  "description": "Configure your event details, visibility, distances, and registration settings.",
+  "wizard": {
+    "title": "Finish setting up your event",
+    "description": "Add your first distance, then publish when you are ready to share.",
+    "steps": {
+      "distance": "Add at least one distance with pricing.",
+      "publish": "Publish the event to make it visible."
+    }
+  },
+  "visibility": {
+    "title": "Event Visibility",
+    "description": "Control who can see and access your event. Published events appear in the public directory.",
+    "errors": {
+      "missingDistances": "Add at least one distance before publishing.",
+      "missingPrices": "Add at least one price for every distance before publishing.",
+      "generic": "Unable to update visibility. Please try again."
+    }
+  },
+  "registration": {
+    "title": "Registration Status",
+    "description": "Pause or resume registration for this event. Paused events won't accept new registrations.",
+    "active": "Active",
+    "paused": "Paused",
+    "pause": "Pause Registration",
+    "resume": "Resume Registration"
+  },
+  "heroImage": {
+    "title": "Hero image",
+    "description": "Show a wide image on your event page and directory card.",
+    "helper": "Recommended 16:9. Max size {maxSize}MB.",
+    "empty": "No hero image yet",
+    "actions": {
+      "upload": "Upload image",
+      "change": "Change image",
+      "remove": "Remove image",
+      "removing": "Removing..."
+    },
+    "success": {
+      "uploaded": "Hero image updated.",
+      "removed": "Hero image removed."
+    },
+    "errors": {
+      "invalidType": "Please upload a JPG, PNG, WebP, or GIF.",
+      "fileTooLarge": "Image must be smaller than {maxSize}MB.",
+      "uploadFailed": "Upload failed. Please try again.",
+      "saveFailed": "Could not save the hero image."
+    }
+  },
+  "capacity": {
+    "title": "Capacity settings",
+    "description": "Choose whether capacity is per distance or shared across the event.",
+    "toggleLabel": "Share capacity across all distances",
+    "toggleHelp": "When enabled, all distances pull from one shared pool.",
+    "sharedCapacityLabel": "Total capacity",
+    "sharedCapacityPlaceholder": "e.g. 500",
+    "sharedCapacityHelp": "Total registrants allowed across all distances.",
+    "sharedPoolHint": "Shared pool mode enabled.",
+    "sharedPoolTag": "Shared pool",
+    "save": "Save capacity",
+    "success": "Capacity settings updated.",
+    "errors": {
+      "required": "Enter a total capacity to enable shared pool mode.",
+      "saveFailed": "Could not update capacity settings."
+    }
+  },
+  "descriptionField": {
+    "label": "Event description",
+    "help": "Give participants a clear overview of the event."
+  },
+  "details": {
+    "title": "Event Details",
+    "editionLabel": "Edition Label",
+    "slug": "URL Slug",
+    "timezone": "Timezone",
+    "startsAt": "Start Date",
+    "endsAt": "End Date",
+    "locationSection": "Location",
+    "locationLabel": "Event Location",
+    "city": "City",
+    "state": "State",
+    "address": "Address",
+    "registrationWindow": "Registration Window",
+    "registrationOpensAt": "Registration Opens",
+    "registrationClosesAt": "Registration Closes",
+    "clearDate": "Clear",
+    "save": "Save Changes"
+  },
+  "distances": {
+    "title": "Distances",
+    "add": "Add Distance",
+    "empty": "No distances added yet. Add your first distance to enable registration.",
+    "labelField": "Label",
+    "distanceValue": "Distance (km)",
+    "terrain": "Terrain",
+    "price": "Price (MXN)",
+    "capacity": "Capacity",
+    "unlimited": "Unlimited",
+    "registered": "registered",
+    "addDistance": "Add Distance",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirmDelete": "Are you sure you want to delete this distance? This action cannot be undone."
+  }
+}

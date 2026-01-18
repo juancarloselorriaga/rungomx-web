@@ -1,0 +1,106 @@
+{
+  "title": "Configuración del Evento",
+  "description": "Configura los detalles, visibilidad, distancias y ajustes de inscripción de tu evento.",
+  "wizard": {
+    "title": "Termina la configuración de tu evento",
+    "description": "Agrega tu primera distancia y publica cuando estés listo para compartir.",
+    "steps": {
+      "distance": "Agrega al menos una distancia con precio.",
+      "publish": "Publica el evento para que sea visible."
+    }
+  },
+  "visibility": {
+    "title": "Visibilidad del Evento",
+    "description": "Controla quién puede ver y acceder a tu evento. Los eventos publicados aparecen en el directorio público.",
+    "errors": {
+      "missingDistances": "Agrega al menos una distancia antes de publicar.",
+      "missingPrices": "Agrega al menos un precio para cada distancia antes de publicar.",
+      "generic": "No se pudo actualizar la visibilidad. Intenta de nuevo."
+    }
+  },
+  "registration": {
+    "title": "Estado de Inscripciones",
+    "description": "Pausa o reanuda las inscripciones para este evento. Los eventos pausados no aceptarán nuevas inscripciones.",
+    "active": "Activo",
+    "paused": "Pausado",
+    "pause": "Pausar Inscripciones",
+    "resume": "Reanudar Inscripciones"
+  },
+  "heroImage": {
+    "title": "Imagen principal",
+    "description": "Muestra una imagen amplia en la página del evento y en la tarjeta del directorio.",
+    "helper": "Recomendado 16:9. Tamaño máximo {maxSize}MB.",
+    "empty": "Aún no hay imagen principal",
+    "actions": {
+      "upload": "Subir imagen",
+      "change": "Cambiar imagen",
+      "remove": "Quitar imagen",
+      "removing": "Quitando..."
+    },
+    "success": {
+      "uploaded": "Imagen principal actualizada.",
+      "removed": "Imagen principal eliminada."
+    },
+    "errors": {
+      "invalidType": "Sube un JPG, PNG, WebP o GIF.",
+      "fileTooLarge": "La imagen debe pesar menos de {maxSize}MB.",
+      "uploadFailed": "No se pudo subir la imagen. Intenta de nuevo.",
+      "saveFailed": "No se pudo guardar la imagen principal."
+    }
+  },
+  "capacity": {
+    "title": "Configuración de capacidad",
+    "description": "Elige si la capacidad es por distancia o compartida en todo el evento.",
+    "toggleLabel": "Compartir capacidad entre todas las distancias",
+    "toggleHelp": "Cuando está activo, todas las distancias usan el mismo cupo.",
+    "sharedCapacityLabel": "Capacidad total",
+    "sharedCapacityPlaceholder": "ej. 500",
+    "sharedCapacityHelp": "Total de inscritos permitidos entre todas las distancias.",
+    "sharedPoolHint": "Modo de cupo compartido activo.",
+    "sharedPoolTag": "Cupo compartido",
+    "save": "Guardar capacidad",
+    "success": "Configuración de capacidad actualizada.",
+    "errors": {
+      "required": "Ingresa una capacidad total para activar el cupo compartido.",
+      "saveFailed": "No se pudo actualizar la capacidad."
+    }
+  },
+  "descriptionField": {
+    "label": "Descripción del evento",
+    "help": "Da a los participantes una visión clara del evento."
+  },
+  "details": {
+    "title": "Detalles del Evento",
+    "editionLabel": "Etiqueta de Edición",
+    "slug": "Slug de URL",
+    "timezone": "Zona horaria",
+    "startsAt": "Fecha de Inicio",
+    "endsAt": "Fecha de Fin",
+    "locationSection": "Ubicación",
+    "locationLabel": "Ubicación del Evento",
+    "city": "Ciudad",
+    "state": "Estado",
+    "address": "Dirección",
+    "registrationWindow": "Ventana de Inscripción",
+    "registrationOpensAt": "Apertura de Inscripciones",
+    "registrationClosesAt": "Cierre de Inscripciones",
+    "clearDate": "Borrar",
+    "save": "Guardar Cambios"
+  },
+  "distances": {
+    "title": "Distancias",
+    "add": "Agregar Distancia",
+    "empty": "Aún no hay distancias. Agrega tu primera distancia para habilitar inscripciones.",
+    "labelField": "Etiqueta",
+    "distanceValue": "Distancia (km)",
+    "terrain": "Terreno",
+    "price": "Precio (MXN)",
+    "capacity": "Capacidad",
+    "unlimited": "Ilimitado",
+    "registered": "inscritos",
+    "addDistance": "Agregar Distancia",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirmDelete": "¿Estás seguro de que deseas eliminar esta distancia? Esta acción no se puede deshacer."
+  }
+}

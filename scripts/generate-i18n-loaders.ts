@@ -18,6 +18,7 @@ import path from 'path';
 const MESSAGES_DIR = path.join(process.cwd(), 'messages');
 const OUTPUT_FILE = path.join(process.cwd(), 'i18n/loaders.generated.ts');
 const ROUTING_FILE = path.join(process.cwd(), 'i18n/routing.ts');
+const MANUAL_OVERRIDE_CONFIG_FILE = path.join(process.cwd(), 'i18n/manual-route-overrides.json');
 const REFERENCE_LOCALE = 'en';
 const MANUAL_OVERRIDES_START = '// === MANUAL ROUTE OVERRIDES START ===';
 const MANUAL_OVERRIDES_END = '// === MANUAL ROUTE OVERRIDES END ===';
@@ -28,6 +29,13 @@ interface NamespaceInfo {
   path: string; // filesystem path to namespace directory
   type: 'root' | 'component' | 'page';
 }
+
+type ManualOverrideSelection = 'public' | 'protected' | 'auth';
+type ManualOverrideConfigEntry = {
+  selection: ManualOverrideSelection;
+  pages?: string[];
+};
+type ManualOverrideConfig = Record<string, ManualOverrideConfigEntry>;
 
 /**
  * Convert kebab-case to camelCase (e.g., "sign-in" -> "signIn")
@@ -236,6 +244,95 @@ function extractManualOverrides(): string | null {
   return cleaned.length ? cleaned : null;
 }
 
+function loadManualOverrideConfig(): ManualOverrideConfig | null {
+  if (!fs.existsSync(MANUAL_OVERRIDE_CONFIG_FILE)) return null;
+
+  const raw = JSON.parse(fs.readFileSync(MANUAL_OVERRIDE_CONFIG_FILE, 'utf-8')) as unknown;
+
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error(
+      `Invalid manual override config at ${MANUAL_OVERRIDE_CONFIG_FILE}: expected an object.`,
+    );
+  }
+
+  const config: ManualOverrideConfig = {};
+  for (const [route, value] of Object.entries(raw)) {
+    if (typeof route !== 'string' || route.length === 0 || !route.startsWith('/')) {
+      throw new Error(
+        `Invalid manual override config at ${MANUAL_OVERRIDE_CONFIG_FILE}: route keys must start with "/".`,
+      );
+    }
+
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error(
+        `Invalid manual override config at ${MANUAL_OVERRIDE_CONFIG_FILE}: "${route}" must be an object.`,
+      );
+    }
+
+    const selection = (value as ManualOverrideConfigEntry).selection;
+    const pages = (value as ManualOverrideConfigEntry).pages;
+
+    if (selection !== 'public' && selection !== 'protected' && selection !== 'auth') {
+      throw new Error(
+        `Invalid manual override config at ${MANUAL_OVERRIDE_CONFIG_FILE}: "${route}.selection" must be "public", "protected", or "auth".`,
+      );
+    }
+
+    if (pages !== undefined) {
+      if (!Array.isArray(pages) || pages.some((p) => typeof p !== 'string' || p.length === 0)) {
+        throw new Error(
+          `Invalid manual override config at ${MANUAL_OVERRIDE_CONFIG_FILE}: "${route}.pages" must be an array of non-empty strings.`,
+        );
+      }
+    }
+
+    config[route] = { selection, ...(pages ? { pages } : {}) };
+  }
+
+  return config;
+}
+
+function generateManualOverridesFromConfig(
+  config: ManualOverrideConfig,
+  pageNamespaces: readonly string[],
+): string {
+  const unknownPages = new Set<string>();
+
+  for (const entry of Object.values(config)) {
+    (entry.pages ?? []).forEach((page) => {
+      if (!pageNamespaces.includes(page)) unknownPages.add(page);
+    });
+  }
+
+  if (unknownPages.size > 0) {
+    throw new Error(
+      `Invalid manual override config at ${MANUAL_OVERRIDE_CONFIG_FILE}: unknown page namespaces: ${Array.from(unknownPages)
+        .sort()
+        .join(', ')}`,
+    );
+  }
+
+  const entries = Object.entries(config)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([route, entry]) => {
+      const selectionFn =
+        entry.selection === 'auth'
+          ? 'authSelection'
+          : entry.selection === 'protected'
+            ? 'protectedSelection'
+            : 'publicSelection';
+
+      const pages = entry.pages ?? [];
+      const pagesLiteral = pages.length ? `['${pages.join("', '")}']` : '';
+      const selectionCall = pages.length ? `${selectionFn}(${pagesLiteral})` : `${selectionFn}()`;
+      return `  '${route}': ${selectionCall},`;
+    });
+
+  return `export const manualRouteOverrides: Record<string, NamespaceSelection> = {\n${entries.join(
+    '\n',
+  )}\n};`;
+}
+
 /**
  * Generate route namespace map
  */
@@ -345,7 +442,13 @@ export function generateLoaders(): void {
 
   console.log('\n📝 Generating loader objects and route map...');
 
-  const manualOverrides = extractManualOverrides();
+  const manualOverrideConfig = loadManualOverrideConfig();
+  const manualOverrides = manualOverrideConfig
+    ? generateManualOverridesFromConfig(
+        manualOverrideConfig,
+        pages.map((page) => page.camelName),
+      )
+    : extractManualOverrides();
   const lines: string[] = [];
 
   // Header

@@ -43,7 +43,7 @@ function toFormValues(policies: EventPolicyConfig | null): PolicyFormValues {
 }
 
 export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
-  const t = useTranslations('pages.dashboard.events.policies');
+  const t = useTranslations('pages.dashboardEvents.policies');
   const router = useRouter();
 
   const form = useForm<PolicyFormValues, null>({

@@ -31,7 +31,7 @@ export function SeriesCombobox({
   onSelectNewSeries,
   disabled = false,
 }: SeriesComboboxProps) {
-  const t = useTranslations('pages.dashboard.events.createEvent');
+  const t = useTranslations('pages.dashboardEvents.createEvent');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);

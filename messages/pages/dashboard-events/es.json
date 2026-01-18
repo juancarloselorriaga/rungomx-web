@@ -1,0 +1,398 @@
+{
+  "title": "Eventos",
+  "description": "Administra tus eventos e inscripciones.",
+  "metadata": {
+    "title": "Eventos | RunGoMX",
+    "description": "Administra tus eventos e inscripciones en RunGoMX."
+  },
+  "comingSoon": "La gestión de eventos estará disponible pronto. Esta funcionalidad está actualmente en desarrollo.",
+  "emptyState": {
+    "title": "Sin eventos",
+    "description": "Crea tu primer evento para comenzar a gestionar inscripciones.",
+    "action": "Crear evento"
+  },
+  "createEvent": {
+    "title": "Crear evento",
+    "description": "Configura un nuevo evento para tu organización.",
+    "button": "Crear evento",
+    "submit": "Crear evento",
+    "steps": {
+      "organization": "Organización",
+      "event": "Detalles del evento",
+      "continue": "Continuar"
+    },
+    "organization": {
+      "title": "Seleccionar organización",
+      "description": "Elige la organización que hospedará este evento, o crea una nueva.",
+      "createNew": "Crear nueva organización",
+      "backToList": "Volver a organizaciones",
+      "nameLabel": "Nombre de la organización",
+      "namePlaceholder": "Mi Organizadora de Carreras",
+      "slugLabel": "Slug de URL"
+    },
+    "event": {
+      "title": "Detalles del evento",
+      "organizationLabel": "Organización",
+      "seriesLabel": "Serie de eventos",
+      "newSeries": "Nueva serie",
+      "selectSeries": "Seleccionar serie o crear nueva...",
+      "searchSeries": "Buscar serie...",
+      "noSeriesFound": "No se encontraron series",
+      "seriesNameLabel": "Nombre de la serie",
+      "seriesNamePlaceholder": "Ultra Trail México",
+      "seriesSlugLabel": "Slug de URL de la serie",
+      "sportTypeLabel": "Tipo de deporte",
+      "editionDetails": "Detalles de la edición",
+      "editionLabelLabel": "Etiqueta de edición",
+      "editionSlugLabel": "Slug de URL de edición",
+      "descriptionLabel": "Descripción del evento",
+      "descriptionPlaceholder": "Comparte lo más importante de este evento...",
+      "dateLabel": "Fecha del evento",
+      "clearDate": "Borrar",
+      "locationLabel": "Ubicación del evento",
+      "cityLabel": "Ciudad",
+      "cityPlaceholder": "Ciudad de México",
+      "stateLabel": "Estado",
+      "statePlaceholder": "CDMX"
+    }
+  },
+  "registrationCount": "inscripciones",
+  "distance": "distancia",
+  "distances": "distancias",
+  "visibility": {
+    "draft": "Borrador",
+    "published": "Publicado",
+    "unlisted": "No listado",
+    "archived": "Archivado"
+  },
+  "slugStatus": {
+    "checking": "Verificando disponibilidad...",
+    "available": "Disponible",
+    "taken": "El slug ya está en uso",
+    "error": "No se pudo verificar; se validará al enviar"
+  },
+  "sportTypes": {
+    "trail_running": "Trail Running",
+    "triathlon": "Triatlón",
+    "cycling": "Ciclismo",
+    "mtb": "Ciclismo de Montaña",
+    "gravel_bike": "Gravel Bike",
+    "duathlon": "Duatlón",
+    "backyard_ultra": "Backyard Ultra"
+  },
+  "detail": {
+    "settings": "Configuración",
+    "eventDate": "Fecha del evento",
+    "location": "Ubicación",
+    "distances": "Distancias",
+    "registrations": "Inscripciones",
+    "nav": {
+      "overview": "Resumen",
+      "settings": "Configuración",
+      "faq": "FAQ",
+      "waivers": "Deslindes",
+      "questions": "Preguntas",
+      "policies": "Políticas",
+      "website": "Contenido",
+      "pricing": "Precios",
+      "addOns": "Extras",
+      "coupons": "Cupones",
+      "registrations": "Inscripciones",
+      "sections": {
+        "general": "GENERAL",
+        "content": "CONTENIDO",
+        "pricing": "PRECIOS",
+        "management": "GESTIÓN"
+      }
+    },
+    "manageEvent": "Configuración del evento",
+    "manageEventDescription": "Editar detalles del evento, fechas y configuración de inscripciones",
+    "manageFaq": "FAQ",
+    "manageFaqDescription": "Agregar y editar preguntas frecuentes",
+    "manageWaivers": "Deslindes",
+    "manageWaiversDescription": "Crear y ordenar deslindes para participantes",
+    "managePolicies": "Políticas",
+    "managePoliciesDescription": "Definir políticas de reembolso, transferencia y diferimiento",
+    "manageWebsite": "Contenido del Sitio",
+    "manageWebsiteDescription": "Personaliza las secciones y contenido de tu página",
+    "managePricing": "Precios por Etapa",
+    "managePricingDescription": "Configura precios de preventa y por etapas",
+    "manageAddOns": "Extras",
+    "manageAddOnsDescription": "Configura artículos y donaciones opcionales",
+    "manageCoupons": "Cupones de Descuento",
+    "manageCouponsDescription": "Crea y administra códigos promocionales",
+    "manageRegistrations": "Inscripciones",
+    "manageRegistrationsDescription": "Ver y exportar inscripciones de participantes",
+    "publicCodeLabel": "Código público",
+    "viewPublicPage": "Ver página pública",
+    "viewPublicPageDescription": "Ver cómo aparece tu evento a los participantes",
+    "capacity": {
+      "title": "Estado de capacidad",
+      "sharedPool": "Cupo compartido entre todas las distancias",
+      "perDistance": "Capacidad por distancia",
+      "totalLabel": "Capacidad total",
+      "remainingLabel": "Cupos restantes",
+      "unlimited": "Sin límite",
+      "soldOut": "Agotado",
+      "distanceLimit": "{count, number} cupos totales",
+      "viewAll": "Ver {count, number} distancias más"
+    },
+    "distancesTitle": "Distancias",
+    "noDistances": "Aún no hay distancias. Ve a configuración para agregar distancias.",
+    "faqTitle": "Preguntas frecuentes",
+    "editFaq": "Editar todas",
+    "viewAllFaq": "+{count} preguntas más"
+  },
+  "faq": {
+    "title": "Preguntas Frecuentes",
+    "description": "Agrega preguntas y respuestas que se mostrarán en la página de tu evento.",
+    "emptyState": "Aún no hay preguntas. Agrega tu primera pregunta para ayudar a los participantes.",
+    "addFirst": "Agregar primera pregunta",
+    "addAnother": "Agregar otra pregunta",
+    "questionLabel": "Pregunta",
+    "questionPlaceholder": "¿Qué deben saber los participantes?",
+    "answerLabel": "Respuesta",
+    "answerPlaceholder": "Proporciona una respuesta útil...",
+    "add": "Agregar",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  },
+  "waivers": {
+    "title": "Deslindes",
+    "description": "Crea deslindes que los participantes deben aceptar antes de inscribirse.",
+    "emptyState": "Aún no hay deslindes. Agrega tu primer deslinde para obtener el consentimiento.",
+    "addFirst": "Agregar primer deslinde",
+    "addAnother": "Agregar otro deslinde",
+    "titleLabel": "Título del deslinde",
+    "titlePlaceholder": "Deslinde del participante",
+    "bodyLabel": "Texto del deslinde",
+    "bodyPlaceholder": "Escribe los términos del deslinde...",
+    "signatureTypeLabel": "Tipo de firma",
+    "signatureTypes": {
+      "checkbox": "Confirmación con casilla",
+      "initials": "Iniciales",
+      "signature": "Firma completa"
+    },
+    "add": "Agregar deslinde",
+    "save": "Guardar",
+    "cancel": "Cancelar"
+  },
+  "policies": {
+    "title": "Políticas",
+    "description": "Agrega marcadores para políticas de reembolso, transferencia y diferimiento.",
+    "save": "Guardar políticas",
+    "saved": "Políticas guardadas exitosamente",
+    "errorSaving": "Error al guardar las políticas",
+    "refund": {
+      "title": "Política de reembolso",
+      "description": "Explica elegibilidad y fechas límite para reembolsos.",
+      "textLabel": "Texto de la política de reembolso",
+      "deadlineLabel": "Fecha límite de reembolso"
+    },
+    "transfer": {
+      "title": "Política de transferencia",
+      "description": "Explica reglas y fechas límite para transferencias.",
+      "textLabel": "Texto de la política de transferencia",
+      "deadlineLabel": "Fecha límite de transferencia"
+    },
+    "deferral": {
+      "title": "Política de diferimiento",
+      "description": "Explica reglas y fechas límite para diferimientos o créditos.",
+      "textLabel": "Texto de la política de diferimiento",
+      "deadlineLabel": "Fecha límite de diferimiento"
+    }
+  },
+  "questions": {
+    "title": "Preguntas de inscripción",
+    "description": "Crea preguntas personalizadas que los participantes contestan durante la inscripción.",
+    "sectionTitle": "Preguntas",
+    "sectionDescription": "Estas preguntas aparecen en el flujo de inscripción.",
+    "addQuestion": "Agregar pregunta",
+    "createTitle": "Nueva pregunta",
+    "editQuestion": "Editar pregunta",
+    "deleteQuestion": "Eliminar pregunta",
+    "confirmDelete": "¿Seguro que deseas eliminar esta pregunta? Esta acción no se puede deshacer.",
+    "emptyState": "Aún no hay preguntas configuradas",
+    "emptyStateDescription": "Agrega preguntas para recopilar información adicional de los participantes.",
+    "requiredBadge": "Requerida",
+    "inactiveBadge": "Inactiva",
+    "optionsCount": "{count} opciones",
+    "reorder": {
+      "moveUp": "Subir",
+      "moveDown": "Bajar"
+    },
+    "toast": {
+      "created": "Pregunta creada",
+      "updated": "Pregunta actualizada",
+      "deleted": "Pregunta eliminada",
+      "reordered": "Preguntas reordenadas",
+      "error": "Algo salió mal"
+    },
+    "types": {
+      "text": "Texto",
+      "single_select": "Selección única",
+      "checkbox": "Casilla"
+    },
+    "form": {
+      "prompt": "Pregunta",
+      "promptPlaceholder": "Ej., ¿Cuál es tu talla de playera?",
+      "type": "Tipo de pregunta",
+      "typeOptions": {
+        "text": "Texto",
+        "single_select": "Selección única",
+        "checkbox": "Casilla"
+      },
+      "distance": "Distancia",
+      "distanceAll": "Todas las distancias",
+      "helpText": "Texto de ayuda",
+      "helpTextPlaceholder": "Texto opcional que se muestra debajo de la pregunta",
+      "options": "Opciones",
+      "optionsPlaceholder": "Una opción por línea",
+      "optionsHint": "Las preguntas de selección única requieren al menos 2 opciones.",
+      "required": "Requerida",
+      "requiredLabel": "La respuesta es obligatoria",
+      "active": "Activa",
+      "activeLabel": "La pregunta está activa",
+      "cancel": "Cancelar",
+      "create": "Crear pregunta",
+      "save": "Guardar cambios"
+    }
+  },
+  "pricing": {
+    "title": "Precios por Etapa",
+    "description": "Administra los precios por etapa para cada distancia. Configura precios de preventa, regulares y de inscripción tardía.",
+    "selectDistance": "Selecciona una distancia para administrar precios",
+    "noDistances": "No hay distancias disponibles. Agrega distancias en la configuración del evento primero.",
+    "tier": {
+      "add": "Agregar etapa de precio",
+      "edit": "Editar etapa",
+      "delete": "Eliminar etapa",
+      "confirmDelete": "¿Estás seguro de que deseas eliminar esta etapa de precio?",
+      "cannotDeleteLast": "Cada distancia debe tener al menos una etapa de precio.",
+      "labelField": "Nombre de la etapa",
+      "labelPlaceholder": "ej., Preventa, Regular, Tardío",
+      "priceField": "Precio",
+      "pricePlaceholder": "Ingresa el precio",
+      "startsAtField": "Inicia",
+      "endsAtField": "Termina",
+      "noDates": "Siempre activo (sin restricción de fecha)",
+      "currentTier": "Actual",
+      "upcomingTier": "Próximo",
+      "expiredTier": "Expirado",
+      "save": "Guardar etapa",
+      "saving": "Guardando...",
+      "saved": "Etapa de precio guardada",
+      "deleted": "Etapa de precio eliminada",
+      "errorSaving": "Error al guardar etapa de precio",
+      "errorDeleting": "Error al eliminar etapa de precio",
+      "dateOverlap": "El rango de fechas se traslapa con otra etapa"
+    },
+    "currency": {
+      "label": "Moneda",
+      "mxn": "MXN (Peso Mexicano)",
+      "usd": "USD (Dólar Estadounidense)"
+    },
+    "help": {
+      "title": "Cómo funcionan las etapas de precio",
+      "description": "Crea múltiples etapas de precio para ofrecer descuentos de preventa o aumentar precios conforme se acerca la fecha del evento. Solo una etapa puede estar activa a la vez según los rangos de fecha que configures."
+    }
+  },
+  "addOns": {
+    "title": "Extras",
+    "description": "Crea productos adicionales o donaciones que los participantes pueden seleccionar durante la inscripción.",
+    "emptyState": "Aún no hay extras configurados. Crea tu primer extra para ofrecer artículos o aceptar donaciones.",
+    "addOn": {
+      "add": "Agregar extra",
+      "edit": "Editar extra",
+      "delete": "Eliminar extra",
+      "confirmDelete": "¿Estás seguro de que deseas eliminar este extra y todas sus opciones?",
+      "titleField": "Título",
+      "titlePlaceholder": "ej., Playera del Evento, Donación",
+      "descriptionField": "Descripción",
+      "descriptionPlaceholder": "Describe este extra...",
+      "typeField": "Tipo",
+      "deliveryField": "Método de entrega",
+      "distanceField": "Restringir a distancia",
+      "distanceAll": "Disponible para todas las distancias",
+      "activeField": "Activo",
+      "save": "Guardar extra",
+      "saving": "Guardando...",
+      "saved": "Extra guardado",
+      "deleted": "Extra eliminado",
+      "errorSaving": "Error al guardar extra",
+      "errorDeleting": "Error al eliminar extra"
+    },
+    "option": {
+      "title": "Opciones",
+      "add": "Agregar opción",
+      "edit": "Editar opción",
+      "delete": "Eliminar opción",
+      "confirmDelete": "¿Estás seguro de que deseas eliminar esta opción?",
+      "labelField": "Etiqueta",
+      "labelPlaceholder": "ej., Chico, Mediano, Grande",
+      "priceField": "Precio",
+      "pricePlaceholder": "0.00",
+      "maxQtyField": "Cantidad máxima por orden",
+      "activeField": "Activo",
+      "save": "Guardar opción",
+      "saved": "Opción guardada",
+      "deleted": "Opción eliminada",
+      "errorSaving": "Error al guardar opción"
+    },
+    "types": {
+      "merch": "Artículo",
+      "donation": "Donación"
+    },
+    "delivery": {
+      "pickup": "Recoger en Evento",
+      "shipping": "Envío",
+      "none": "No Aplica"
+    },
+    "help": {
+      "title": "Cómo funcionan los extras",
+      "description": "Los extras permiten vender artículos (como playeras) o aceptar donaciones durante la inscripción. Cada extra puede tener múltiples opciones con diferentes precios."
+    }
+  },
+  "coupons": {
+    "title": "Cupones de Descuento",
+    "description": "Crea códigos promocionales que los participantes pueden usar para obtener descuentos en la inscripción.",
+    "emptyState": "Aún no hay cupones configurados",
+    "emptyStateDescription": "Crea tu primer cupón para ofrecer descuentos a los participantes.",
+    "status": {
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "scheduled": "Programado",
+      "expired": "Expirado",
+      "limitReached": "Límite alcanzado"
+    },
+    "coupon": {
+      "add": "Agregar cupón",
+      "edit": "Editar cupón",
+      "delete": "Eliminar cupón",
+      "create": "Crear cupón",
+      "save": "Guardar cambios",
+      "cancel": "Cancelar",
+      "confirmDelete": "¿Estás seguro de que deseas eliminar este cupón? Esta acción no se puede deshacer.",
+      "code": "Código del cupón",
+      "codeCannotChange": "El código no puede cambiarse después de crear el cupón",
+      "name": "Nombre interno",
+      "namePlaceholder": "ej., Promoción madrugadores",
+      "percentOff": "Porcentaje de descuento",
+      "maxRedemptions": "Máximo de canjes",
+      "maxRedemptionsHint": "Dejar vacío para usos ilimitados",
+      "unlimited": "Ilimitado",
+      "startsAt": "Inicia el",
+      "endsAt": "Termina el",
+      "isActive": "Estado",
+      "isActiveLabel": "Cupón activo",
+      "discount": "de descuento",
+      "redemptions": "canjes",
+      "validFrom": "Desde",
+      "validUntil": "Hasta"
+    },
+    "help": {
+      "title": "Cómo funcionan los cupones",
+      "description": "Los cupones te permiten ofrecer descuentos porcentuales a los participantes. Configura fechas de validez opcionales y límites de canjes para controlar cuándo y cuántas veces se puede usar el código."
+    }
+  }
+}

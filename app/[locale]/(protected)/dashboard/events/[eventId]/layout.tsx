@@ -2,6 +2,7 @@ import { getPathname, Link } from '@/i18n/navigation';
 import { isEventsEnabled } from '@/lib/features/flags';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
+import type { EventVisibility } from '@/lib/events/constants';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { getTranslations } from 'next-intl/server';
@@ -29,6 +30,7 @@ const navigationSections: NavigationSection[] = [
     items: [
       { label: 'faq', href: '/faq', icon: 'faq' },
       { label: 'waivers', href: '/waivers', icon: 'waivers' },
+      { label: 'questions', href: '/questions', icon: 'clipboardList' },
       { label: 'policies', href: '/policies', icon: 'policies' },
       { label: 'website', href: '/website', icon: 'website' },
     ],
@@ -52,9 +54,9 @@ export default async function EventDetailLayout({
   children,
 }: EventLayoutProps) {
   const { locale, eventId } = await params;
-  const t = await getTranslations('pages.dashboard.events.detail');
-  const tNav = await getTranslations('pages.dashboard.events.detail.nav');
-  const tEvents = await getTranslations('pages.dashboard.events');
+  const t = await getTranslations('pages.dashboardEvents.detail');
+  const tNav = await getTranslations('pages.dashboardEvents.detail.nav');
+  const tEvents = await getTranslations('pages.dashboardEvents');
   const authContext = await getAuthContext();
 
   // Phase 0 gate: organizers need flag enabled, internal staff with canManageEvents bypass
@@ -83,6 +85,7 @@ export default async function EventDetailLayout({
     settings: tNav('settings'),
     faq: tNav('faq'),
     waivers: tNav('waivers'),
+    questions: tNav('questions'),
     policies: tNav('policies'),
     website: tNav('website'),
     pricing: tNav('pricing'),
@@ -130,7 +133,7 @@ export default async function EventDetailLayout({
                 visibilityStyles.draft
               }`}
             >
-              {tEvents(`visibility.${event.visibility}`)}
+              {tEvents(`visibility.${event.visibility as EventVisibility}`)}
             </span>
           </div>
           <p className="text-sm text-muted-foreground">{event.organizationName}</p>

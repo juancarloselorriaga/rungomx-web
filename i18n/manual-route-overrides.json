@@ -1,0 +1,24 @@
+{
+  "/dashboard/events": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/new": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/faq": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/waivers": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/policies": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/pricing": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/add-ons": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/coupons": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/questions": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/settings": {
+    "selection": "protected",
+    "pages": ["dashboardEvents", "dashboardEventSettings"]
+  },
+  "/dashboard/events/[eventId]/website": {
+    "selection": "protected",
+    "pages": ["dashboardEvents", "dashboardEventWebsite"]
+  },
+  "/dashboard/events/[eventId]/registrations": {
+    "selection": "protected",
+    "pages": ["dashboardEvents", "eventsRegistrations"]
+  }
+}

@@ -16,7 +16,7 @@ describe('discount codes (database)', () => {
   let testSeriesId: string;
   let testEditionId: string;
   let testDistanceId: string;
-  let createdDiscountCodeIds: string[] = [];
+  const createdDiscountCodeIds: string[] = [];
 
   beforeAll(async () => {
     // Create test organization

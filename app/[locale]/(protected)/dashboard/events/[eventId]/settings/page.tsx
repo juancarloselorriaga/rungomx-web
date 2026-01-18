@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: SettingsPageProps): Promise<M
 export default async function EventSettingsPage({ params, searchParams }: SettingsPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/settings' });
-  const t = await getTranslations('pages.dashboard.events.settings');
+  const t = await getTranslations('pages.dashboardEventSettings');
   const authContext = await getAuthContext();
   const resolvedSearchParams = await searchParams;
   const wizardMode = resolvedSearchParams?.wizard === '1';

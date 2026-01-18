@@ -2783,6 +2783,9 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         status: updated.status,
         distanceId: updated.distanceId,
         editionId: updated.editionId,
+        basePriceCents: updated.basePriceCents,
+        feesCents: updated.feesCents,
+        taxCents: updated.taxCents,
         totalCents: updated.totalCents,
       },
     };

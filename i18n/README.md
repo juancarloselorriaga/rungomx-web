@@ -73,7 +73,15 @@ mkdir -p messages/components/user-menu
 
 ### Manual route overrides
 
-Edit the preserved block in `i18n/loaders.generated.ts` to override mappings:
+Prefer editing `i18n/manual-route-overrides.json` to override mappings (it’s committed and affects fresh clones/CI):
+
+```json
+{
+  "/pricing": { "selection": "public", "pages": ["pricing"] }
+}
+```
+
+The generator writes these overrides into the preserved block in `i18n/loaders.generated.ts`:
 
 ```ts
 // === MANUAL ROUTE OVERRIDES START ===

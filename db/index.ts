@@ -15,8 +15,7 @@ if (!connectionString) {
 // Prefer Node's built-in WebSocket implementation when available (more stable across Node versions).
 // Fall back to `ws` only when the global WebSocket is not present.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-neonConfig.webSocketConstructor = (globalThis as unknown as { WebSocket?: unknown }).WebSocket
-  ?? require('ws');
+neonConfig.webSocketConstructor = (globalThis as unknown as { WebSocket?: unknown }).WebSocket ?? require('ws');
 
 const pool = new Pool({ connectionString });
 
