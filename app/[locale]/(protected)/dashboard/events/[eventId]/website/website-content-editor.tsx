@@ -20,7 +20,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
-import { DocumentUploader, type UploadedDocument } from '@/components/events/document-uploader';
+import { BulkDocumentUploader } from '@/components/events/bulk-document-uploader';
+import { SortableDocumentList, type DocumentItem } from '@/components/events/sortable-document-list';
 import { BulkPhotoUploader } from '@/components/events/bulk-photo-uploader';
 import { SortablePhotoGrid, type PhotoItem } from '@/components/events/sortable-photo-grid';
 import {
@@ -189,22 +190,49 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   };
 
   // Document helpers
-  const handleDocumentUpload = (doc: UploadedDocument) => {
+  const handleBulkDocumentUpload = (results: Array<{ mediaId: string; blobUrl: string; label: string }>) => {
     const current = blocks.media?.documents ?? [];
-    const newDoc: DocumentRef = {
-      mediaId: doc.mediaId,
-      label: doc.label,
-      sortOrder: current.length,
-    };
-    updateMedia('documents', [...current, newDoc]);
+    const newDocs: DocumentRef[] = results.map((result, idx) => ({
+      mediaId: result.mediaId,
+      label: result.label,
+      sortOrder: current.length + idx,
+    }));
+
+    updateMedia('documents', [...current, ...newDocs]);
+
+    // Update media URLs
+    const newUrls = results.reduce(
+      (acc, result) => ({ ...acc, [result.mediaId]: result.blobUrl }),
+      {} as Record<string, string>,
+    );
+    setMediaUrls((prev) => ({ ...prev, ...newUrls }));
     setShowDocumentUploader(false);
   };
 
-  const removeDocument = (index: number) => {
+  const handleDocumentReorder = (reorderedDocs: DocumentItem[]) => {
+    updateMedia(
+      'documents',
+      reorderedDocs.map((d) => ({
+        mediaId: d.mediaId,
+        label: d.label,
+        sortOrder: d.sortOrder,
+      })),
+    );
+  };
+
+  const handleDocumentLabelChange = (mediaId: string, label: string) => {
+    const current = blocks.media?.documents ?? [];
+    const updated = current.map((d) =>
+      d.mediaId === mediaId ? { ...d, label } : d,
+    );
+    updateMedia('documents', updated);
+  };
+
+  const removeDocument = (mediaId: string) => {
     const current = blocks.media?.documents ?? [];
     updateMedia(
       'documents',
-      current.filter((_, i) => i !== index),
+      current.filter((d) => d.mediaId !== mediaId),
     );
   };
 
@@ -824,57 +852,61 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
               {/* Document Uploader */}
               {showDocumentUploader && (
-                <DocumentUploader
+                <BulkDocumentUploader
                   organizationId={organizationId}
-                  onUploadComplete={handleDocumentUpload}
+                  existingDocumentsCount={(blocks.media?.documents ?? []).length}
+                  onUploadComplete={handleBulkDocumentUpload}
                   onCancel={() => setShowDocumentUploader(false)}
                   labels={{
                     title: t('sections.media.documents.uploaderTitle'),
-                    labelField: t('sections.media.documents.labelField'),
-                    labelPlaceholder: t('sections.media.documents.labelPlaceholder'),
-                    upload: t('sections.media.documents.upload'),
+                    dropzoneText: t('sections.media.documents.dropzoneText'),
+                    dropzoneHint: t('sections.media.documents.dropzoneHint'),
                     uploading: t('sections.media.documents.uploading'),
+                    upload: t('sections.media.documents.upload'),
                     cancel: t('sections.media.documents.cancel'),
-                    selectFile: t('sections.media.documents.selectFile'),
-                    fileTooLarge: t('sections.media.documents.fileTooLarge', { maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)) }),
+                    retry: t('sections.media.documents.retry'),
+                    retryAll: t('sections.media.documents.retryAll'),
+                    cancelAll: t('sections.media.documents.cancelAll'),
+                    removeFile: t('sections.media.documents.removeFile'),
+                    pending: t('sections.media.documents.pending'),
+                    success: t('sections.media.documents.success'),
+                    error: t('sections.media.documents.error'),
+                    fileTooLarge: t('sections.media.documents.fileTooLarge', {
+                      maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
+                    }),
                     invalidType: t('sections.media.documents.invalidType'),
-                    uploadFailed: t('sections.media.documents.uploadFailed'),
-                    maxSize: t('sections.media.documents.maxSize', { maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)) }),
+                    maxDocsReached: t('sections.media.documents.maxDocsReached'),
+                    filesSelected: t('sections.media.documents.filesSelected'),
+                    completed: t('sections.media.documents.completed'),
+                    failed: t('sections.media.documents.failed'),
+                    labelPlaceholder: t('sections.media.documents.labelPlaceholder'),
                   }}
                 />
               )}
 
-              {/* Existing Documents List */}
-              {(blocks.media?.documents ?? []).length > 0 ? (
-                <div className="space-y-2">
-                  {(blocks.media?.documents ?? []).map((doc, idx) => (
-                    <div
-                      key={doc.mediaId}
-                      className="flex items-center gap-3 p-3 border rounded-lg bg-muted/30"
-                    >
-                      <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      <span className="flex-1 text-sm font-medium truncate">{doc.label}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="flex-shrink-0 text-destructive hover:text-destructive"
-                        onClick={() => removeDocument(idx)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : !showDocumentUploader ? (
-                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">{t('sections.media.documents.empty')}</p>
-                </div>
-              ) : null}
+              {/* Sortable Documents List */}
+              {!showDocumentUploader && (
+                <SortableDocumentList
+                  documents={(blocks.media?.documents ?? []).map((d) => ({
+                    mediaId: d.mediaId,
+                    label: d.label,
+                    sortOrder: d.sortOrder,
+                  }))}
+                  onReorder={handleDocumentReorder}
+                  onLabelChange={handleDocumentLabelChange}
+                  onDelete={removeDocument}
+                  labels={{
+                    labelPlaceholder: t('sections.media.documents.labelPlaceholder'),
+                    deleteDocument: t('sections.media.documents.deleteDocument'),
+                    dragToReorder: t('sections.media.documents.dragToReorder'),
+                    emptyState: t('sections.media.documents.empty'),
+                  }}
+                  inputClassName={inputClassName}
+                />
+              )}
             </div>
 
-            {/* Photos Section - Placeholder for now */}
+            {/* Photos Section */}
             <div className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
@@ -922,7 +954,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                     }),
                     invalidType: t('sections.media.photos.invalidType'),
                     maxPhotosReached: t('sections.media.photos.maxPhotosReached'),
-                    filesSelected: t('sections.media.photos.filesSelected'),
+                    filesSelected: t('sections.media.photos.filesSelected', { count: '{count}' }),
                     completed: t('sections.media.photos.completed'),
                     failed: t('sections.media.photos.failed'),
                   }}

@@ -1,30 +1,30 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
-import { AlertCircle, Check, Loader2, RefreshCw, Upload, X } from 'lucide-react';
+import { AlertCircle, Check, FileText, Loader2, RefreshCw, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
-const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ACCEPTED_DOCUMENT_TYPES = ['application/pdf'];
 const MAX_CONCURRENT_UPLOADS = 3;
-const MAX_PHOTOS = 50;
+const MAX_DOCUMENTS = 10;
 
-export interface UploadFile {
+export interface UploadDocumentFile {
   id: string;
   file: File;
+  label: string;
   status: 'pending' | 'uploading' | 'success' | 'error';
   progress: number;
   error?: string;
   result?: { mediaId: string; blobUrl: string };
-  previewUrl?: string;
 }
 
-export interface BulkPhotoUploaderProps {
+export interface BulkDocumentUploaderProps {
   organizationId: string;
-  existingPhotosCount?: number;
-  onUploadComplete: (results: Array<{ mediaId: string; blobUrl: string }>) => void;
+  existingDocumentsCount?: number;
+  onUploadComplete: (results: Array<{ mediaId: string; blobUrl: string; label: string }>) => void;
   onCancel: () => void;
   labels: {
     title: string;
@@ -42,31 +42,32 @@ export interface BulkPhotoUploaderProps {
     error: string;
     fileTooLarge: string;
     invalidType: string;
-    maxPhotosReached: string;
+    maxDocsReached: string;
     filesSelected: string;
     completed: string;
     failed: string;
+    labelPlaceholder: string;
   };
 }
 
-export function BulkPhotoUploader({
+export function BulkDocumentUploader({
   organizationId,
-  existingPhotosCount = 0,
+  existingDocumentsCount = 0,
   onUploadComplete,
   onCancel,
   labels,
-}: BulkPhotoUploaderProps) {
-  const [files, setFiles] = useState<UploadFile[]>([]);
+}: BulkDocumentUploaderProps) {
+  const [files, setFiles] = useState<UploadDocumentFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
-  const remainingSlots = MAX_PHOTOS - existingPhotosCount;
+  const remainingSlots = MAX_DOCUMENTS - existingDocumentsCount;
 
   const validateFile = useCallback(
     (file: File): string | null => {
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      if (!ACCEPTED_DOCUMENT_TYPES.includes(file.type)) {
         return labels.invalidType;
       }
       if (file.size > EVENT_MEDIA_MAX_FILE_SIZE) {
@@ -88,15 +89,17 @@ export function BulkPhotoUploader({
 
       const filesToAdd = fileArray.slice(0, availableSlots);
 
-      const uploadFiles: UploadFile[] = filesToAdd.map((file) => {
+      const uploadFiles: UploadDocumentFile[] = filesToAdd.map((file) => {
         const error = validateFile(file);
+        // Auto-fill label from filename (without extension)
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
         return {
           id: crypto.randomUUID(),
           file,
+          label: nameWithoutExt,
           status: error ? 'error' : 'pending',
           progress: 0,
           error: error ?? undefined,
-          previewUrl: error ? undefined : URL.createObjectURL(file),
         };
       });
 
@@ -142,12 +145,14 @@ export function BulkPhotoUploader({
     [addFiles],
   );
 
+  const updateLabel = useCallback((fileId: string, label: string) => {
+    setFiles((prev) =>
+      prev.map((f) => (f.id === fileId ? { ...f, label } : f)),
+    );
+  }, []);
+
   const removeFile = useCallback((fileId: string) => {
     setFiles((prev) => {
-      const file = prev.find((f) => f.id === fileId);
-      if (file?.previewUrl) {
-        URL.revokeObjectURL(file.previewUrl);
-      }
       // Cancel ongoing upload if any
       const controller = abortControllersRef.current.get(fileId);
       if (controller) {
@@ -159,7 +164,7 @@ export function BulkPhotoUploader({
   }, []);
 
   const uploadFile = useCallback(
-    async (uploadFile: UploadFile): Promise<{ mediaId: string; blobUrl: string } | null> => {
+    async (uploadFile: UploadDocumentFile): Promise<{ mediaId: string; blobUrl: string; label: string } | null> => {
       const abortController = new AbortController();
       abortControllersRef.current.set(uploadFile.id, abortController);
 
@@ -179,7 +184,7 @@ export function BulkPhotoUploader({
 
           xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
-              const progress = Math.round((e.loaded / e.total) * 90); // 90% for upload, 10% for confirmation
+              const progress = Math.round((e.loaded / e.total) * 90);
               setFiles((prev) =>
                 prev.map((f) => (f.id === uploadFile.id ? { ...f, progress } : f)),
               );
@@ -199,7 +204,7 @@ export function BulkPhotoUploader({
                 const confirmResult = await confirmEventMediaUpload({
                   organizationId,
                   blobUrl: response.url,
-                  kind: 'image',
+                  kind: 'pdf',
                 });
 
                 if (!confirmResult.ok) {
@@ -226,8 +231,8 @@ export function BulkPhotoUploader({
           const formData = new FormData();
           formData.append('file', uploadFile.file);
 
-          // Open connection to our upload handler
-          xhr.open('POST', `/api/events/media/upload?pathname=${encodeURIComponent(pathname)}&organizationId=${encodeURIComponent(organizationId)}`);
+          // Open connection to our upload handler (need to update route to accept PDFs)
+          xhr.open('POST', `/api/events/media/upload/document?pathname=${encodeURIComponent(pathname)}&organizationId=${encodeURIComponent(organizationId)}`);
           xhr.send(formData);
 
           // Handle abort
@@ -242,7 +247,7 @@ export function BulkPhotoUploader({
           ),
         );
 
-        return result;
+        return { ...result, label: uploadFile.label };
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Upload failed';
         setFiles((prev) =>
@@ -262,10 +267,23 @@ export function BulkPhotoUploader({
     const pendingFiles = files.filter((f) => f.status === 'pending' || f.status === 'error');
     if (pendingFiles.length === 0) return;
 
+    // Validate all files have labels
+    const filesWithoutLabels = pendingFiles.filter((f) => !f.label.trim());
+    if (filesWithoutLabels.length > 0) {
+      setFiles((prev) =>
+        prev.map((f) =>
+          filesWithoutLabels.some((fl) => fl.id === f.id)
+            ? { ...f, status: 'error', error: 'Label required' }
+            : f,
+        ),
+      );
+      return;
+    }
+
     setIsUploading(true);
 
     // Upload in batches of MAX_CONCURRENT_UPLOADS
-    const results: Array<{ mediaId: string; blobUrl: string }> = [];
+    const results: Array<{ mediaId: string; blobUrl: string; label: string }> = [];
     const queue = [...pendingFiles];
 
     const processQueue = async () => {
@@ -273,7 +291,7 @@ export function BulkPhotoUploader({
       if (batch.length === 0) return;
 
       const batchResults = await Promise.all(batch.map(uploadFile));
-      results.push(...batchResults.filter((r): r is { mediaId: string; blobUrl: string } => r !== null));
+      results.push(...batchResults.filter((r): r is { mediaId: string; blobUrl: string; label: string } => r !== null));
 
       if (queue.length > 0) {
         await processQueue();
@@ -301,15 +319,8 @@ export function BulkPhotoUploader({
     abortControllersRef.current.forEach((controller) => controller.abort());
     abortControllersRef.current.clear();
 
-    // Clean up preview URLs
-    files.forEach((f) => {
-      if (f.previewUrl) {
-        URL.revokeObjectURL(f.previewUrl);
-      }
-    });
-
     onCancel();
-  }, [files, onCancel]);
+  }, [onCancel]);
 
   const pendingCount = files.filter((f) => f.status === 'pending').length;
   const uploadingCount = files.filter((f) => f.status === 'uploading').length;
@@ -349,7 +360,7 @@ export function BulkPhotoUploader({
             ref={fileInputRef}
             type="file"
             multiple
-            accept={ACCEPTED_IMAGE_TYPES.join(',')}
+            accept={ACCEPTED_DOCUMENT_TYPES.join(',')}
             onChange={handleFileSelect}
             className="sr-only"
           />
@@ -364,7 +375,7 @@ export function BulkPhotoUploader({
       {remainingSlots <= 0 && files.length === 0 && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
           <AlertCircle className="h-5 w-5 text-destructive mx-auto mb-2" />
-          <p className="text-sm text-destructive">{labels.maxPhotosReached}</p>
+          <p className="text-sm text-destructive">{labels.maxDocsReached}</p>
         </div>
       )}
 
@@ -386,77 +397,70 @@ export function BulkPhotoUploader({
             )}
           </div>
 
-          {/* File grid */}
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-[300px] overflow-y-auto">
+          {/* File list */}
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
             {files.map((file) => (
               <div
                 key={file.id}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg border p-2 bg-background',
+                  'flex items-center gap-3 rounded-lg border p-3 bg-background',
                   file.status === 'error' && 'border-destructive/50',
                   file.status === 'success' && 'border-green-500/50',
                 )}
               >
-                {/* Preview */}
-                <div className="relative h-12 w-12 flex-shrink-0 rounded overflow-hidden bg-muted">
-                  {file.previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={file.previewUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  )}
-
+                {/* Icon */}
+                <div className="relative h-10 w-10 flex-shrink-0 rounded bg-muted flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
                   {/* Status overlay */}
                   {file.status === 'uploading' && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center">
                       <Loader2 className="h-4 w-4 animate-spin text-white" />
                     </div>
                   )}
                   {file.status === 'success' && (
-                    <div className="absolute inset-0 bg-green-500/50 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-green-500/50 rounded flex items-center justify-center">
                       <Check className="h-4 w-4 text-white" />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{file.file.name}</p>
-                  <div className="mt-1">
-                    {file.status === 'uploading' && (
-                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-primary transition-all duration-300"
-                          style={{ width: `${file.progress}%` }}
-                        />
-                      </div>
-                    )}
-                    {file.status === 'error' && (
-                      <p className="text-xs text-destructive truncate">{file.error}</p>
-                    )}
-                    {file.status === 'pending' && (
-                      <p className="text-xs text-muted-foreground">{labels.pending}</p>
-                    )}
-                    {file.status === 'success' && (
-                      <p className="text-xs text-green-600">{labels.success}</p>
-                    )}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <input
+                    type="text"
+                    value={file.label}
+                    onChange={(e) => updateLabel(file.id, e.target.value)}
+                    placeholder={labels.labelPlaceholder}
+                    className="w-full text-sm font-medium bg-transparent border-0 border-b border-transparent hover:border-muted-foreground/25 focus:border-primary focus:outline-none px-0 py-0.5"
+                    disabled={file.status === 'uploading' || file.status === 'success'}
+                  />
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground truncate">{file.file.name}</p>
+                    <span className="text-xs text-muted-foreground">
+                      ({(file.file.size / 1024).toFixed(1)} KB)
+                    </span>
                   </div>
+                  {file.status === 'uploading' && (
+                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${file.progress}%` }}
+                      />
+                    </div>
+                  )}
+                  {file.status === 'error' && (
+                    <p className="text-xs text-destructive">{file.error}</p>
+                  )}
                 </div>
 
                 {/* Actions */}
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex items-center gap-1">
                   {file.status === 'error' && (
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
+                      className="h-7 w-7"
                       onClick={() =>
                         setFiles((prev) =>
                           prev.map((f) =>
@@ -466,7 +470,7 @@ export function BulkPhotoUploader({
                       }
                       title={labels.retry}
                     >
-                      <RefreshCw className="h-3 w-3" />
+                      <RefreshCw className="h-3.5 w-3.5" />
                     </Button>
                   )}
                   {(file.status === 'pending' || file.status === 'error') && (
@@ -474,11 +478,11 @@ export function BulkPhotoUploader({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
                       onClick={() => removeFile(file.id)}
                       title={labels.removeFile}
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-3.5 w-3.5" />
                     </Button>
                   )}
                 </div>
