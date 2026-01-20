@@ -12,6 +12,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { WebsiteContentEditor } from './website-content-editor';
 import { WebsiteContentRenderer } from '@/app/[locale]/(public)/events/[seriesSlug]/[editionSlug]/website-content-renderer';
+import { WebsitePreviewSheet } from './website-preview-sheet';
 
 type WebsitePageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -74,38 +75,42 @@ export default async function EventWebsitePage({ params }: WebsitePageProps) {
           <ArrowLeft className="h-4 w-4" />
           {event.seriesName} {event.editionLabel}
         </Link>
-        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
-      <div className="grid gap-8 lg:grid-cols-2">
-        <div>
-          <WebsiteContentEditor editionId={eventId} locale={locale} organizationId={event.organizationId} />
-        </div>
-
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">{t('preview.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('preview.description')}</p>
+            <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+            <p className="text-muted-foreground">{t('description')}</p>
           </div>
-          <div className="rounded-lg border bg-card p-6">
-            {previewBlocks ? (
-              <WebsiteContentRenderer
-                blocks={previewBlocks}
-                mediaUrls={previewMediaUrls}
-                labels={{
-                  documents: tPublic('detail.website.documents'),
-                  photos: tPublic('detail.website.photos'),
-                  terrain: tPublic('detail.website.terrain'),
-                  download: tPublic('detail.website.download'),
-                }}
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">{t('preview.empty')}</p>
-            )}
-          </div>
+
+          <WebsitePreviewSheet
+            triggerLabel={t('preview.title')}
+            title={t('preview.title')}
+            description={t('preview.description')}
+          >
+            <div className="rounded-lg border bg-card p-6">
+              {previewBlocks ? (
+                <WebsiteContentRenderer
+                  blocks={previewBlocks}
+                  mediaUrls={previewMediaUrls}
+                  labels={{
+                    documents: tPublic('detail.website.documents'),
+                    photos: tPublic('detail.website.photos'),
+                    terrain: tPublic('detail.website.terrain'),
+                    download: tPublic('detail.website.download'),
+                  }}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">{t('preview.empty')}</p>
+              )}
+            </div>
+          </WebsitePreviewSheet>
         </div>
       </div>
+
+      <WebsiteContentEditor
+        editionId={eventId}
+        locale={locale}
+        organizationId={event.organizationId}
+      />
     </div>
   );
 }
