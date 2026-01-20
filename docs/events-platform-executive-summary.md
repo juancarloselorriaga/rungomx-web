@@ -70,7 +70,7 @@ This release covers the first three phases of development, delivering a complete
 
 **Event Information Management**
 
-- FAQ items with drag-and-drop ordering
+- FAQ items with manual ordering (move up/down)
 - Policy configuration (refund, transfer, deferral) with deadlines
 - External website linking for official event sites
 - Registration pause functionality for temporary closures
@@ -105,7 +105,7 @@ This release covers the first three phases of development, delivering a complete
 - Usage limits and expiration dates
 - Case-insensitive codes (EARLY20 = early20)
 - Usage tracking and statistics
-- Applies to base price and add-ons
+- Applies to the base price only
 
 **Custom Registration Questions**
 

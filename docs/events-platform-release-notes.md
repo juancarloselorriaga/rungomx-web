@@ -184,7 +184,7 @@ Key achievements:
 
 **Available filters:**
 
-- **Location search**: Enter city name and select search radius (25-500 km)
+- **Location search**: Enter city name and select search radius (10-200 km)
 - **Sport type**: Select one or more sport categories
 - **Date range**: Filter by event dates
 - **Month**: Quick filter for specific months
@@ -690,7 +690,7 @@ Key achievements:
 - Valid coupon reduces total by specified percentage
 - Invalid/expired coupons show error message
 - Max uses enforced (becomes invalid after limit reached)
-- Discount applies to base price and add-ons
+- Discount applies to base price only
 - Usage is tracked per registration
 
 **Notes:**
