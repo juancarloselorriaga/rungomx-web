@@ -12,6 +12,10 @@ type WebsiteContentRendererProps = {
     terrain?: string;
     download?: string;
     sponsors?: string;
+    gallery?: {
+      loadMore?: string;
+      showingOf?: string;
+    };
   };
 };
 
@@ -298,6 +302,9 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
                       mediaId: photo.mediaId,
                     }))}
                   columns={3}
+                  initialCount={12}
+                  loadMoreCount={12}
+                  labels={labels?.gallery}
                 />
               </div>
             )}

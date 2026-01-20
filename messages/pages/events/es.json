@@ -83,7 +83,11 @@
       "documents": "Documentos",
       "photos": "Fotos",
       "terrain": "Terreno",
-      "download": "Descargar"
+      "download": "Descargar",
+      "gallery": {
+        "loadMore": "Cargar más fotos",
+        "showingOf": "Mostrando __visible__ de __total__ fotos"
+      }
     }
   },
   "register": {

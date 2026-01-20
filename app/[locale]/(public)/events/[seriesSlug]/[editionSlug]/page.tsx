@@ -438,6 +438,10 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
                     photos: t('detail.website.photos'),
                     terrain: t('detail.website.terrain'),
                     download: t('detail.website.download'),
+                    gallery: {
+                      loadMore: t('detail.website.gallery.loadMore'),
+                      showingOf: t('detail.website.gallery.showingOf'),
+                    },
                   }}
                 />
               </section>

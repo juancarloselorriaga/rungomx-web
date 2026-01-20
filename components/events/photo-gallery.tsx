@@ -2,12 +2,15 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
+import { ChevronDown } from 'lucide-react';
 import Lightbox from 'yet-another-react-lightbox';
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import Thumbnails from 'yet-another-react-lightbox/plugins/thumbnails';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
 import Counter from 'yet-another-react-lightbox/plugins/counter';
 import Captions from 'yet-another-react-lightbox/plugins/captions';
+
+import { Button } from '@/components/ui/button';
 
 // Import lightbox styles
 import 'yet-another-react-lightbox/styles.css';
@@ -24,10 +27,26 @@ export interface GalleryPhoto {
 export interface PhotoGalleryProps {
   photos: GalleryPhoto[];
   columns?: 1 | 2 | 3 | 4;
+  /** Number of photos to show initially (default: 12) */
+  initialCount?: number;
+  /** Number of photos to load on each "Load more" click (default: 12) */
+  loadMoreCount?: number;
+  /** Labels for i18n. showingOf uses __visible__ and __total__ placeholders. */
+  labels?: {
+    loadMore?: string;
+    showingOf?: string;
+  };
 }
 
-export function PhotoGallery({ photos, columns = 3 }: PhotoGalleryProps) {
+export function PhotoGallery({
+  photos,
+  columns = 3,
+  initialCount = 12,
+  loadMoreCount = 12,
+  labels,
+}: PhotoGalleryProps) {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
+  const [visibleCount, setVisibleCount] = useState(initialCount);
 
   const handleOpen = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -37,13 +56,26 @@ export function PhotoGallery({ photos, columns = 3 }: PhotoGalleryProps) {
     setLightboxIndex(-1);
   }, []);
 
+  const handleLoadMore = useCallback(() => {
+    setVisibleCount((prev) => prev + loadMoreCount);
+  }, [loadMoreCount]);
+
   // Filter out photos without URLs
   const validPhotos = useMemo(
     () => photos.filter((photo) => photo.url),
     [photos],
   );
 
-  // Prepare slides for lightbox
+  // Photos currently visible
+  const visiblePhotos = useMemo(
+    () => validPhotos.slice(0, visibleCount),
+    [validPhotos, visibleCount],
+  );
+
+  const hasMore = visibleCount < validPhotos.length;
+  const remainingCount = validPhotos.length - visibleCount;
+
+  // Prepare slides for lightbox (all photos, not just visible)
   const slides = useMemo(
     () =>
       validPhotos.map((photo) => ({
@@ -75,7 +107,7 @@ export function PhotoGallery({ photos, columns = 3 }: PhotoGalleryProps) {
   return (
     <>
       <div className={`grid gap-4 ${gridClassName}`}>
-        {validPhotos.map((photo, index) => (
+        {visiblePhotos.map((photo, index) => (
           <figure key={photo.mediaId} className="space-y-2">
             <button
               type="button"
@@ -89,6 +121,7 @@ export function PhotoGallery({ photos, columns = 3 }: PhotoGalleryProps) {
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition-transform group-hover:scale-[1.02]"
+                  loading={index < 6 ? 'eager' : 'lazy'}
                 />
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
@@ -119,6 +152,23 @@ export function PhotoGallery({ photos, columns = 3 }: PhotoGalleryProps) {
           </figure>
         ))}
       </div>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="mt-6 text-center">
+          <Button variant="outline" onClick={handleLoadMore} className="gap-2">
+            <ChevronDown className="h-4 w-4" />
+            {labels?.loadMore || 'Load more'} ({remainingCount})
+          </Button>
+          {labels?.showingOf && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {labels.showingOf
+                .replace('__visible__', String(visiblePhotos.length))
+                .replace('__total__', String(validPhotos.length))}
+            </p>
+          )}
+        </div>
+      )}
 
       <Lightbox
         open={lightboxIndex >= 0}

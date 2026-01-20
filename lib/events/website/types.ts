@@ -107,7 +107,7 @@ export const mediaSectionSchema = z.object({
         sortOrder: z.number().int().min(0),
       }),
     )
-    .max(50)
+    .max(200) // Allow up to 200 photos per event
     .optional(),
   documents: z
     .array(
