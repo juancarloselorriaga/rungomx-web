@@ -160,6 +160,7 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     )
     .groupBy(eventDistances.editionId);
 
+  const now = new Date();
   const registrationCounts = await db
     .select({
       editionId: registrations.editionId,
@@ -169,7 +170,17 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     .where(
       and(
         sql`${registrations.editionId} IN ${eventIds}`,
-        eq(registrations.status, 'confirmed'),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+            ),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
         isNull(registrations.deletedAt),
       ),
     )
