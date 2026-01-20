@@ -22,6 +22,7 @@ import {
 } from '@/lib/events/discounts/actions';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 
 type CouponsManagerProps = {
@@ -303,6 +304,7 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
   const [coupons, setCoupons] = useState<DiscountCodeData[]>(initialCoupons);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
+  const [deletingCouponId, setDeletingCouponId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -354,20 +356,18 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
   };
 
   const handleDeleteCoupon = (couponId: string) => {
-    if (!confirm(t('coupon.confirmDelete'))) {
-      return;
-    }
-
     setError(null);
     startTransition(async () => {
       const result = await deleteDiscountCode({ discountCodeId: couponId });
 
       if (!result.ok) {
         setError(result.error);
+        setDeletingCouponId(null);
         return;
       }
 
       setCoupons(coupons.filter((c) => c.id !== couponId));
+      setDeletingCouponId(null);
     });
   };
 
@@ -539,7 +539,7 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteCoupon(coupon.id)}
+                        onClick={() => setDeletingCouponId(coupon.id)}
                         disabled={isPending}
                         className="text-destructive hover:text-destructive"
                       >
@@ -560,6 +560,22 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
         <h3 className="font-medium mb-2">{t('help.title')}</h3>
         <p className="text-sm text-muted-foreground">{t('help.description')}</p>
       </div>
+
+      <DeleteConfirmationDialog
+        open={!!deletingCouponId}
+        onOpenChange={(open) => !open && setDeletingCouponId(null)}
+        title={t('coupon.deleteTitle')}
+        description={t('coupon.confirmDelete')}
+        itemName={coupons.find((c) => c.id === deletingCouponId)?.code}
+        itemDetail={
+          coupons.find((c) => c.id === deletingCouponId)?.name ||
+          `${coupons.find((c) => c.id === deletingCouponId)?.percentOff}% ${t('coupon.discount')}`
+        }
+        onConfirm={() => {
+          if (deletingCouponId) handleDeleteCoupon(deletingCouponId);
+        }}
+        isPending={isPending}
+      />
     </div>
   );
 }

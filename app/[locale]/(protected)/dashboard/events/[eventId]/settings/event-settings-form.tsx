@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from '@/i18n/navigation';
@@ -1116,14 +1117,14 @@ function DistanceItem({
   const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleDelete() {
-    if (!confirm(t('confirmDelete'))) return;
-
     setIsDeleting(true);
     const result = await deleteDistance({ distanceId: distance.id });
     setIsDeleting(false);
+    setShowDeleteDialog(false);
 
     if (result.ok) {
       onDelete();
@@ -1313,7 +1314,7 @@ function DistanceItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteDialog(true)}
             disabled={isDeleting || distance.registrationCount > 0}
           >
             {isDeleting ? (
@@ -1325,6 +1326,19 @@ function DistanceItem({
         </div>
       </div>
       {error && <p className="text-sm text-destructive mt-2">{error}</p>}
+
+      <DeleteConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title={t('deleteTitle')}
+        description={t('confirmDelete')}
+        itemName={distance.label}
+        itemDetail={
+          distance.distanceValue ? `${distance.distanceValue} ${distance.distanceUnit}` : undefined
+        }
+        onConfirm={handleDelete}
+        isPending={isDeleting}
+      />
     </div>
   );
 }

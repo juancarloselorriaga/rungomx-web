@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, Edit2, Loader2, Plus, Trash2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import type { RegistrationQuestionType } from '@/lib/events/constants';
 import {
@@ -235,6 +236,7 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
   );
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
 
   const editingQuestion = useMemo(
     () => (editingId ? questions.find((q) => q.id === editingId) ?? null : null),
@@ -296,16 +298,16 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
   };
 
   const removeQuestion = (questionId: string) => {
-    if (!confirm(t('confirmDelete'))) return;
-
     startTransition(async () => {
       const result = await deleteQuestion({ questionId });
       if (!result.ok) {
         toast.error(t('toast.error'), { description: result.error });
+        setDeletingQuestionId(null);
         return;
       }
 
       setQuestions((prev) => normalizeQuestions(prev.filter((q) => q.id !== questionId)));
+      setDeletingQuestionId(null);
       toast.success(t('toast.deleted'));
     });
   };
@@ -473,7 +475,7 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
                       size="icon"
                       className="text-destructive hover:text-destructive"
                       disabled={isPending}
-                      onClick={() => removeQuestion(question.id)}
+                      onClick={() => setDeletingQuestionId(question.id)}
                       aria-label={t('deleteQuestion')}
                       title={t('deleteQuestion')}
                     >
@@ -499,6 +501,18 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
           })}
         </div>
       )}
+
+      <DeleteConfirmationDialog
+        open={!!deletingQuestionId}
+        onOpenChange={(open) => !open && setDeletingQuestionId(null)}
+        title={t('deleteTitle')}
+        description={t('confirmDelete')}
+        itemName={questions.find((q) => q.id === deletingQuestionId)?.prompt}
+        onConfirm={() => {
+          if (deletingQuestionId) removeQuestion(deletingQuestionId);
+        }}
+        isPending={isPending}
+      />
     </div>
   );
 }

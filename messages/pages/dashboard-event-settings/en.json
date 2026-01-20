@@ -101,6 +101,7 @@
     "addDistance": "Add Distance",
     "save": "Save",
     "cancel": "Cancel",
+    "deleteTitle": "Delete Distance",
     "confirmDelete": "Are you sure you want to delete this distance? This action cannot be undone."
   }
 }

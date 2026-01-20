@@ -101,6 +101,7 @@
     "addDistance": "Agregar Distancia",
     "save": "Guardar",
     "cancel": "Cancelar",
+    "deleteTitle": "Eliminar distancia",
     "confirmDelete": "¿Estás seguro de que deseas eliminar esta distancia? Esta acción no se puede deshacer."
   }
 }
