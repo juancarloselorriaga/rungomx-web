@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   AlertCircle,
   Check,
@@ -21,6 +21,7 @@ import {
   type DiscountCodeData,
 } from '@/lib/events/discounts/actions';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 
 type CouponsManagerProps = {
@@ -102,6 +103,7 @@ function CouponForm({
   isSubmitting,
   submitLabel,
   isEdit = false,
+  locale,
 }: {
   initialData: CouponFormData;
   onSubmit: (data: CouponFormData) => void;
@@ -109,9 +111,20 @@ function CouponForm({
   isSubmitting: boolean;
   submitLabel: string;
   isEdit?: boolean;
+  locale: string;
 }) {
   const t = useTranslations('pages.dashboardEvents.coupons.coupon');
+  const tCommon = useTranslations('common');
   const [formData, setFormData] = useState<CouponFormData>(initialData);
+
+  // Extract date portion from datetime string (YYYY-MM-DDTHH:mm -> YYYY-MM-DD)
+  const getDatePart = (datetime: string) => datetime ? datetime.split('T')[0] : '';
+  // Extract time portion from datetime string (YYYY-MM-DDTHH:mm -> HH:mm)
+  const getTimePart = (datetime: string, defaultTime: string) => {
+    if (!datetime) return defaultTime;
+    const parts = datetime.split('T');
+    return parts[1] || defaultTime;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -199,26 +212,57 @@ function CouponForm({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <FormField label={t('startsAt')}>
-          <input
-            type="datetime-local"
-            value={formData.startsAt}
-            onChange={(e) =>
-              setFormData({ ...formData, startsAt: e.target.value })
-            }
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <DatePicker
+                locale={locale}
+                value={getDatePart(formData.startsAt)}
+                onChangeAction={(value) => {
+                  const timePart = getTimePart(formData.startsAt, '00:00');
+                  setFormData({ ...formData, startsAt: value ? `${value}T${timePart}` : '' });
+                }}
+                clearLabel={tCommon('clear')}
+              />
+            </div>
+            {formData.startsAt && (
+              <input
+                type="time"
+                value={getTimePart(formData.startsAt, '00:00')}
+                onChange={(e) => {
+                  const datePart = getDatePart(formData.startsAt);
+                  setFormData({ ...formData, startsAt: datePart ? `${datePart}T${e.target.value}` : '' });
+                }}
+                className="w-24 px-2 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            )}
+          </div>
         </FormField>
 
         <FormField label={t('endsAt')}>
-          <input
-            type="datetime-local"
-            value={formData.endsAt}
-            onChange={(e) =>
-              setFormData({ ...formData, endsAt: e.target.value })
-            }
-            min={formData.startsAt || undefined}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <DatePicker
+                locale={locale}
+                value={getDatePart(formData.endsAt)}
+                onChangeAction={(value) => {
+                  const timePart = getTimePart(formData.endsAt, '23:59');
+                  setFormData({ ...formData, endsAt: value ? `${value}T${timePart}` : '' });
+                }}
+                clearLabel={tCommon('clear')}
+              />
+            </div>
+            {formData.endsAt && (
+              <input
+                type="time"
+                value={getTimePart(formData.endsAt, '23:59')}
+                onChange={(e) => {
+                  const datePart = getDatePart(formData.endsAt);
+                  setFormData({ ...formData, endsAt: datePart ? `${datePart}T${e.target.value}` : '' });
+                }}
+                className="w-24 px-2 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            )}
+          </div>
         </FormField>
       </div>
 
@@ -255,6 +299,7 @@ function CouponForm({
 
 export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.coupons');
+  const locale = useLocale();
   const [coupons, setCoupons] = useState<DiscountCodeData[]>(initialCoupons);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
@@ -371,6 +416,7 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
             onCancel={() => setShowAddForm(false)}
             isSubmitting={isPending}
             submitLabel={t('coupon.create')}
+            locale={locale}
           />
         </div>
       )}
@@ -411,6 +457,7 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
                     isSubmitting={isPending}
                     submitLabel={t('coupon.save')}
                     isEdit
+                    locale={locale}
                   />
                 </div>
               ) : (
