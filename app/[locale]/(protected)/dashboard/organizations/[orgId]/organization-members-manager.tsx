@@ -211,20 +211,20 @@ export function OrganizationMembersManager({
             {t('detail.membersEmpty')}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="border-b text-muted-foreground">
+          <div className="-mx-6 overflow-x-auto px-6 pb-1">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b text-muted-foreground bg-muted/30">
                 <tr>
-                  <th className="py-2 text-left font-medium">{t('table.member')}</th>
-                  <th className="py-2 text-left font-medium">{t('table.email')}</th>
-                  <th className="py-2 text-left font-medium">{t('table.role')}</th>
-                  <th className="py-2 text-right font-medium">{t('table.actions')}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t('table.member')}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t('table.email')}</th>
+                  <th className="px-4 py-2 text-left font-medium">{t('table.role')}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {members.map((member) => (
                   <tr key={member.userId} className="border-b last:border-b-0">
-                    <td className="py-3">
+                    <td className="px-4 py-3">
                       <div className="font-medium">
                         {member.name}
                         {member.userId === currentUserId && (
@@ -234,8 +234,8 @@ export function OrganizationMembersManager({
                         )}
                       </div>
                     </td>
-                    <td className="py-3 text-muted-foreground">{member.email}</td>
-                    <td className="py-3">
+                    <td className="px-4 py-3 text-muted-foreground">{member.email}</td>
+                    <td className="px-4 py-3">
                       <select
                         value={member.role}
                         onChange={(event) =>
@@ -251,7 +251,7 @@ export function OrganizationMembersManager({
                         ))}
                       </select>
                     </td>
-                    <td className="py-3 text-right">
+                    <td className="px-4 py-3 text-right">
                       <Button
                         variant="ghost"
                         size="sm"

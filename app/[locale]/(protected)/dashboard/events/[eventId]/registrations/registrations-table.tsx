@@ -149,7 +149,7 @@ export function RegistrationsTable({
   return (
     <div>
       {/* Filters */}
-      <div className="border-b px-6 py-4">
+      <div className="border-b px-4 py-4 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-3">
             {/* Distance filter */}
@@ -259,15 +259,15 @@ export function RegistrationsTable({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead>
               <tr className="border-b text-left text-sm text-muted-foreground">
-                <th className="px-6 py-3 font-medium">{t('table.buyer')}</th>
-                <th className="px-6 py-3 font-medium">{t('table.registrant')}</th>
-                <th className="px-6 py-3 font-medium">{t('table.distance')}</th>
-                <th className="px-6 py-3 font-medium">{t('table.status')}</th>
-                <th className="px-6 py-3 font-medium">{t('table.total')}</th>
-                <th className="px-6 py-3 font-medium">{t('table.date')}</th>
+                <th className="px-4 py-3 font-medium sm:px-6">{t('table.buyer')}</th>
+                <th className="px-4 py-3 font-medium sm:px-6">{t('table.registrant')}</th>
+                <th className="px-4 py-3 font-medium sm:px-6">{t('table.distance')}</th>
+                <th className="px-4 py-3 font-medium sm:px-6">{t('table.status')}</th>
+                <th className="px-4 py-3 font-medium sm:px-6">{t('table.total')}</th>
+                <th className="px-4 py-3 font-medium sm:px-6">{t('table.date')}</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -276,7 +276,7 @@ export function RegistrationsTable({
                   key={registration.id}
                   className={`hover:bg-muted/50 transition-colors ${isPending ? 'opacity-50' : ''}`}
                 >
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4 sm:px-6">
                     <div>
                       <p className="font-medium">{registration.buyer.name}</p>
                       <p className="text-sm text-muted-foreground">
@@ -284,7 +284,7 @@ export function RegistrationsTable({
                       </p>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4 sm:px-6">
                     {registration.registrant ? (
                       <div>
                         <p className="font-medium">
@@ -301,10 +301,10 @@ export function RegistrationsTable({
                       <span className="text-muted-foreground">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4 sm:px-6">
                     <span className="text-sm">{registration.distance.label}</span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4 sm:px-6">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                         STATUS_COLORS[registration.status]
@@ -313,12 +313,12 @@ export function RegistrationsTable({
                       {t(`status.${registration.status}`)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4 sm:px-6">
                     <span className="text-sm font-medium">
                       {formatCurrency(registration.totalCents)}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-4 py-4 sm:px-6">
                     <span className="text-sm text-muted-foreground">
                       {formatDate(registration.createdAt)}
                     </span>
@@ -332,7 +332,7 @@ export function RegistrationsTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t px-6 py-4">
+        <div className="flex flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="text-sm text-muted-foreground">
             {t('pagination.showing', {
               start: (currentPage - 1) * 25 + 1,

@@ -212,12 +212,13 @@ export function OrganizationSettingsForm({
         </FormField>
 
         {canEdit && (
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <Button
               type="button"
               variant="destructive"
               size="sm"
               onClick={() => setDeleteDialogOpen(true)}
+              className="w-full min-w-0 h-10 sm:h-8 sm:w-auto"
             >
               <Trash2 className="size-4" />
               {t('settings.buttons.delete')}
@@ -226,6 +227,7 @@ export function OrganizationSettingsForm({
             <Button
               type="submit"
               size="sm"
+              className="w-full min-w-0 h-10 sm:h-8 sm:w-auto"
               disabled={
                 form.isSubmitting ||
                 !hasChanges ||

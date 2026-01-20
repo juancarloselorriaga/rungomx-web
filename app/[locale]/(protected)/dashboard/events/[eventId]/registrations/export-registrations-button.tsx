@@ -88,12 +88,12 @@ export function ExportRegistrationsButton({
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full sm:w-auto">
       <button
         type="button"
         onClick={() => setShowMenu(!showMenu)}
         disabled={isExporting}
-        className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed sm:w-auto"
       >
         <Download className="h-4 w-4" />
         {isExporting ? t('exporting') : t('button')}
