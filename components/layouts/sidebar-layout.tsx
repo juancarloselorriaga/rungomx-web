@@ -50,20 +50,20 @@ export function SidebarLayout({
       {/* Optional Header - spans full width */}
       {header && (
         <div className="border-b border-border bg-background">
-          <div className="px-6 py-4">{header}</div>
+          <div className="px-4 py-4 md:px-6">{header}</div>
         </div>
       )}
 
       {/* Sidebar + Content */}
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-60 flex-shrink-0 border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 h-[calc(100vh-4rem)] overflow-y-auto">
+        <aside className="hidden lg:block w-60 flex-shrink-0 border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 h-[calc(100vh-4rem)] overflow-y-auto">
           {sidebar}
         </aside>
 
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
-          <div className={`${maxWidthClasses[maxWidth]} py-6 px-6`}>{children}</div>
+        <main className="flex-1 min-w-0">
+          <div className={`${maxWidthClasses[maxWidth]} py-6 px-4 md:px-6`}>{children}</div>
         </main>
       </div>
     </div>
