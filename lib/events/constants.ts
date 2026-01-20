@@ -83,63 +83,6 @@ export type AddOnDeliveryMethod = (typeof ADD_ON_DELIVERY_METHODS)[number];
 export const REGISTRATION_QUESTION_TYPES = ['text', 'single_select', 'checkbox'] as const;
 export type RegistrationQuestionType = (typeof REGISTRATION_QUESTION_TYPES)[number];
 
-// Human-readable labels for add-on types
-export const ADD_ON_TYPE_LABELS: Record<AddOnType, { en: string; es: string }> = {
-  merch: { en: 'Merchandise', es: 'Mercancía' },
-  donation: { en: 'Donation', es: 'Donación' },
-};
-
-// Human-readable labels for add-on delivery methods
-export const ADD_ON_DELIVERY_METHOD_LABELS: Record<AddOnDeliveryMethod, { en: string; es: string }> = {
-  pickup: { en: 'Pickup at Event', es: 'Recoger en Evento' },
-  shipping: { en: 'Shipping', es: 'Envío' },
-  none: { en: 'Not Applicable', es: 'No Aplica' },
-};
-
-// Human-readable labels for registration question types
-export const REGISTRATION_QUESTION_TYPE_LABELS: Record<RegistrationQuestionType, { en: string; es: string }> = {
-  text: { en: 'Text', es: 'Texto' },
-  single_select: { en: 'Single Select', es: 'Selección Única' },
-  checkbox: { en: 'Checkbox', es: 'Casilla de Verificación' },
-};
-
-// Human-readable labels for sport types (for UI display)
-export const SPORT_TYPE_LABELS: Record<SportType, { en: string; es: string }> = {
-  trail_running: { en: 'Trail Running', es: 'Trail Running' },
-  triathlon: { en: 'Triathlon', es: 'Triatlón' },
-  cycling: { en: 'Cycling', es: 'Ciclismo' },
-  mtb: { en: 'Mountain Biking', es: 'Ciclismo de Montaña' },
-  gravel_bike: { en: 'Gravel Bike', es: 'Gravel Bike' },
-  duathlon: { en: 'Duathlon', es: 'Duatlón' },
-  backyard_ultra: { en: 'Backyard Ultra', es: 'Backyard Ultra' },
-};
-
-// Human-readable labels for visibility states
-export const EVENT_VISIBILITY_LABELS: Record<EventVisibility, { en: string; es: string }> = {
-  draft: { en: 'Draft', es: 'Borrador' },
-  published: { en: 'Published', es: 'Publicado' },
-  unlisted: { en: 'Unlisted', es: 'No listado' },
-  archived: { en: 'Archived', es: 'Archivado' },
-};
-
-// Human-readable labels for registration statuses
-export const REGISTRATION_STATUS_LABELS: Record<RegistrationStatus, { en: string; es: string }> = {
-  started: { en: 'Started', es: 'Iniciado' },
-  submitted: { en: 'Submitted', es: 'Enviado' },
-  payment_pending: { en: 'Payment Pending', es: 'Pago Pendiente' },
-  confirmed: { en: 'Confirmed', es: 'Confirmado' },
-  cancelled: { en: 'Cancelled', es: 'Cancelado' },
-  expired: { en: 'Expired', es: 'Vencido' },
-};
-
-// Human-readable labels for org membership roles
-export const ORG_MEMBERSHIP_ROLE_LABELS: Record<OrgMembershipRole, { en: string; es: string }> = {
-  owner: { en: 'Owner', es: 'Propietario' },
-  admin: { en: 'Admin', es: 'Administrador' },
-  editor: { en: 'Editor', es: 'Editor' },
-  viewer: { en: 'Viewer', es: 'Visualizador' },
-};
-
 // Role hierarchy for permission checks (lower index = higher privilege)
 export const ORG_ROLE_HIERARCHY: Record<OrgMembershipRole, number> = {
   owner: 0,
