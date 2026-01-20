@@ -9,6 +9,7 @@ import { notFound, redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 import { SidebarLayout } from '@/components/layouts/sidebar-layout';
 import { SidebarNavigation, NavigationSection } from '@/components/layouts/sidebar-navigation';
+import { SidebarNavigationMobile } from '@/components/layouts/sidebar-navigation-mobile';
 import { ChevronLeft } from 'lucide-react';
 
 type EventLayoutProps = LocalePageProps & {
@@ -141,6 +142,19 @@ export default async function EventDetailLayout({
     </>
   );
 
+  const footerLink =
+    event.visibility === 'published'
+      ? {
+          label: t('viewPublicPage'),
+          href: {
+            pathname: '/events/[seriesSlug]/[editionSlug]',
+            params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
+          },
+          icon: 'externalLink' as const,
+          external: true,
+        }
+      : undefined;
+
   return (
     <SidebarLayout
       header={header}
@@ -150,23 +164,19 @@ export default async function EventDetailLayout({
           sectionTitles={sectionTitles}
           itemLabels={navTranslations}
           basePath={`/dashboard/events/${eventId}`}
-          footerLink={
-            event.visibility === 'published'
-              ? {
-                  label: t('viewPublicPage'),
-                  href: {
-                    pathname: '/events/[seriesSlug]/[editionSlug]',
-                    params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
-                  },
-                  icon: 'externalLink',
-                  external: true,
-                }
-              : undefined
-          }
+          footerLink={footerLink}
         />
       }
       maxWidth="5xl"
     >
+      <SidebarNavigationMobile
+        sections={navigationSections}
+        sectionTitles={sectionTitles}
+        itemLabels={navTranslations}
+        basePath={`/dashboard/events/${eventId}`}
+        footerLink={footerLink}
+        menuLabel={tNav('menu')}
+      />
       {children}
     </SidebarLayout>
   );
