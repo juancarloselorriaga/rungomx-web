@@ -17,5 +17,12 @@
   "brandName": "RunGoMX",
   "goHome": "Go Home",
   "goBack": "Go Back",
-  "tryAgain": "Try Again"
+  "tryAgain": "Try Again",
+  "deleteDialog": {
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "deleting": "Deleting...",
+    "warningTitle": "Warning",
+    "warningDescription": "This action cannot be undone."
+  }
 }

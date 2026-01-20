@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import { cn } from '@/lib/utils';
 
@@ -95,6 +96,11 @@ export function AddOnsManager({
   const [optionFormData, setOptionFormData] = useState<OptionFormData>(EMPTY_OPTION);
   const [isAddingAddOn, setIsAddingAddOn] = useState(false);
   const [addingOptionToAddOn, setAddingOptionToAddOn] = useState<string | null>(null);
+  const [deletingAddOnId, setDeletingAddOnId] = useState<string | null>(null);
+  const [deletingOptionInfo, setDeletingOptionInfo] = useState<{
+    addOnId: string;
+    optionId: string;
+  } | null>(null);
 
   const toggleAddOnExpanded = (addOnId: string) => {
     setExpandedAddOns((prev) => {
@@ -210,19 +216,20 @@ export function AddOnsManager({
   };
 
   const handleDeleteAddOn = (addOnId: string) => {
-    if (!confirm(t('addOn.confirmDelete'))) return;
-
     startTransition(async () => {
       try {
         const result = await deleteAddOn({ addOnId });
 
         if (result.ok) {
           setAddOns((prev) => prev.filter((a) => a.id !== addOnId));
+          setDeletingAddOnId(null);
           toast.success(t('addOn.deleted'));
         } else {
+          setDeletingAddOnId(null);
           toast.error(t('addOn.errorDeleting'));
         }
       } catch {
+        setDeletingAddOnId(null);
         toast.error(t('addOn.errorDeleting'));
       }
     });
@@ -291,8 +298,6 @@ export function AddOnsManager({
   };
 
   const handleDeleteOption = (addOnId: string, optionId: string) => {
-    if (!confirm(t('option.confirmDelete'))) return;
-
     startTransition(async () => {
       try {
         const result = await deleteAddOnOption({ optionId });
@@ -305,11 +310,14 @@ export function AddOnsManager({
                 : a,
             ),
           );
+          setDeletingOptionInfo(null);
           toast.success(t('option.deleted'));
         } else {
+          setDeletingOptionInfo(null);
           toast.error(t('option.errorSaving'));
         }
       } catch {
+        setDeletingOptionInfo(null);
         toast.error(t('option.errorSaving'));
       }
     });
@@ -459,7 +467,7 @@ export function AddOnsManager({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteAddOn(addOn.id)}
+                            onClick={() => setDeletingAddOnId(addOn.id)}
                             disabled={isPending}
                             className="text-destructive hover:text-destructive"
                           >
@@ -549,7 +557,10 @@ export function AddOnsManager({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() =>
-                                          handleDeleteOption(addOn.id, option.id)
+                                          setDeletingOptionInfo({
+                                            addOnId: addOn.id,
+                                            optionId: option.id,
+                                          })
                                         }
                                         disabled={isPending}
                                         className="text-destructive hover:text-destructive"
@@ -572,6 +583,48 @@ export function AddOnsManager({
           })}
         </div>
       </div>
+
+      <DeleteConfirmationDialog
+        open={!!deletingAddOnId}
+        onOpenChange={(open) => !open && setDeletingAddOnId(null)}
+        title={t('addOn.deleteTitle')}
+        description={t('addOn.confirmDelete')}
+        itemName={addOns.find((a) => a.id === deletingAddOnId)?.title}
+        onConfirm={() => {
+          if (deletingAddOnId) handleDeleteAddOn(deletingAddOnId);
+        }}
+        isPending={isPending}
+      />
+
+      <DeleteConfirmationDialog
+        open={!!deletingOptionInfo}
+        onOpenChange={(open) => !open && setDeletingOptionInfo(null)}
+        title={t('option.deleteTitle')}
+        description={t('option.confirmDelete')}
+        itemName={
+          deletingOptionInfo
+            ? addOns
+                .find((a) => a.id === deletingOptionInfo.addOnId)
+                ?.options.find((o) => o.id === deletingOptionInfo.optionId)?.label
+            : undefined
+        }
+        itemDetail={
+          deletingOptionInfo
+            ? formatPrice(
+                addOns
+                  .find((a) => a.id === deletingOptionInfo.addOnId)
+                  ?.options.find((o) => o.id === deletingOptionInfo.optionId)?.priceCents ?? 0,
+                'es-MX',
+              )
+            : undefined
+        }
+        onConfirm={() => {
+          if (deletingOptionInfo) {
+            handleDeleteOption(deletingOptionInfo.addOnId, deletingOptionInfo.optionId);
+          }
+        }}
+        isPending={isPending}
+      />
     </div>
   );
 }

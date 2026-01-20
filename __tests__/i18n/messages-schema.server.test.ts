@@ -28,7 +28,7 @@ describe('messages schema validation', () => {
       ...enMessages,
       common: { ...enMessages.common },
     };
-    delete (invalid.common as Record<string, string>).loading;
+    delete (invalid.common as Record<string, unknown>).loading;
 
     expect(() => validateMessages('en', invalid)).toThrow(/common\.loading/);
   });

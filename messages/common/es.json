@@ -17,5 +17,12 @@
   "brandName": "RunGoMX",
   "goHome": "Volver al inicio",
   "goBack": "Volver",
-  "tryAgain": "Intentar de nuevo"
+  "tryAgain": "Intentar de nuevo",
+  "deleteDialog": {
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "deleting": "Eliminando...",
+    "warningTitle": "Advertencia",
+    "warningDescription": "Esta acción no se puede deshacer."
+  }
 }

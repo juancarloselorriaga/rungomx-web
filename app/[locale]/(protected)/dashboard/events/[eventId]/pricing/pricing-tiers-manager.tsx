@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import { cn } from '@/lib/utils';
 
@@ -96,6 +97,7 @@ export function PricingTiersManager({
   );
   const [expandedTiers, setExpandedTiers] = useState<Set<string>>(new Set());
   const [editingTier, setEditingTier] = useState<string | null>(null);
+  const [deletingTierId, setDeletingTierId] = useState<string | null>(null);
   const [tierFormData, setTierFormData] = useState<TierFormData>(EMPTY_TIER);
   const [isAddingNew, setIsAddingNew] = useState(false);
 
@@ -216,8 +218,6 @@ export function PricingTiersManager({
   };
 
   const handleDeleteTier = (tierId: string) => {
-    if (!confirm(t('tier.confirmDelete'))) return;
-
     startTransition(async () => {
       try {
         const result = await deletePricingTier({ tierId });
@@ -231,13 +231,17 @@ export function PricingTiersManager({
                 : p,
             ),
           );
+          setDeletingTierId(null);
           toast.success(t('tier.deleted'));
         } else if (result.code === 'CANNOT_DELETE_LAST_TIER') {
+          setDeletingTierId(null);
           toast.error(t('tier.cannotDeleteLast'));
         } else {
+          setDeletingTierId(null);
           toast.error(t('tier.errorDeleting'));
         }
       } catch {
+        setDeletingTierId(null);
         toast.error(t('tier.errorDeleting'));
       }
     });
@@ -436,7 +440,7 @@ export function PricingTiersManager({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteTier(tier.id)}
+                              onClick={() => setDeletingTierId(tier.id)}
                               disabled={isPending}
                               className="text-destructive hover:text-destructive"
                             >
@@ -454,6 +458,27 @@ export function PricingTiersManager({
           </div>
         </div>
       )}
+
+      <DeleteConfirmationDialog
+        open={!!deletingTierId}
+        onOpenChange={(open) => !open && setDeletingTierId(null)}
+        title={t('tier.deleteTitle')}
+        description={t('tier.confirmDelete')}
+        itemName={tiers.find((tier) => tier.id === deletingTierId)?.label ?? undefined}
+        itemDetail={
+          tiers.find((tier) => tier.id === deletingTierId)
+            ? formatPrice(
+                tiers.find((tier) => tier.id === deletingTierId)!.priceCents,
+                tiers.find((tier) => tier.id === deletingTierId)!.currency,
+                'es-MX',
+              )
+            : undefined
+        }
+        onConfirm={() => {
+          if (deletingTierId) handleDeleteTier(deletingTierId);
+        }}
+        isPending={isPending}
+      />
     </div>
   );
 }
