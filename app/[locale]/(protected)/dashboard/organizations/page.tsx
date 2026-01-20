@@ -37,7 +37,7 @@ export default async function DashboardOrganizationsPage({ params }: LocalePageP
     redirect(getPathname({ href: '/dashboard', locale }));
   }
 
-  const isSupportUser = authContext.permissions.canManageEvents;
+  const isSupportUser = authContext.permissions.canViewStaffTools;
   const organizations = isSupportUser
     ? (await getAllOrganizations()).map((org) => ({ ...org, role: 'support' as const }))
     : await getUserOrganizations(authContext.user!.id);
