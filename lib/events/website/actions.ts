@@ -1,5 +1,6 @@
 'use server';
 
+import { del } from '@vercel/blob';
 import { eq, and, isNull } from 'drizzle-orm';
 import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
@@ -285,4 +286,70 @@ export const updateWebsiteContent = withAuthenticatedUser<ActionResult<{ id: str
     ok: true,
     data: { id: contentId },
   };
+});
+
+// =============================================================================
+// Delete Event Media Blob
+// =============================================================================
+
+const deleteEventMediaSchema = z.object({
+  editionId: z.string().uuid(),
+  blobUrl: z.string().url(),
+});
+
+/**
+ * Delete an event media blob from Vercel Blob storage.
+ * Used when photos, documents, or sponsor logos are removed from an event.
+ */
+export const deleteEventMedia = withAuthenticatedUser<ActionResult<void>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof deleteEventMediaSchema>) => {
+  // Check events access
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) {
+    return { ok: false, ...accessError };
+  }
+
+  // Validate input
+  const parsed = deleteEventMediaSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId, blobUrl } = parsed.data;
+
+  // Get edition with series info to verify access
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  // Check permission
+  if (!authContext.permissions.canManageEvents) {
+    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    try {
+      requireOrgPermission(membership, 'canEditEventConfig');
+    } catch {
+      return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  // Verify URL looks like a valid Vercel Blob URL
+  if (!blobUrl.includes('vercel-storage.com') && !blobUrl.includes('blob.vercel-storage.com')) {
+    return { ok: false, error: 'Invalid blob URL', code: 'VALIDATION_ERROR' };
+  }
+
+  // Delete from Vercel Blob
+  try {
+    await del(blobUrl);
+  } catch (error) {
+    // Log but don't fail - the blob might already be deleted
+    console.warn('[event-media] Failed to delete blob:', error);
+  }
+
+  return { ok: true, data: undefined };
 });
