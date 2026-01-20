@@ -19,6 +19,7 @@ export const WEBSITE_SECTION_TYPES = [
   'course', // Course info, elevation, aid stations, cutoffs
   'schedule', // Packet pickup, parking, start times
   'media', // Photo gallery + PDF attachments
+  'sponsors', // Sponsor logos organized by tier
 ] as const;
 
 export type WebsiteSectionType = (typeof WEBSITE_SECTION_TYPES)[number];
@@ -122,6 +123,52 @@ export const mediaSectionSchema = z.object({
 
 export type MediaSection = z.infer<typeof mediaSectionSchema>;
 
+/**
+ * Display size options for sponsor tiers
+ * Determines logo width and grid layout responsiveness
+ */
+export const SPONSOR_DISPLAY_SIZES = ['xl', 'lg', 'md', 'sm'] as const;
+export type SponsorDisplaySize = (typeof SPONSOR_DISPLAY_SIZES)[number];
+
+/**
+ * Individual sponsor within a tier
+ */
+export const sponsorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().max(100),
+  logoMediaId: z.string().uuid(),
+  websiteUrl: z.string().url().optional(),
+  sortOrder: z.number().int().min(0),
+});
+
+export type Sponsor = z.infer<typeof sponsorSchema>;
+
+/**
+ * Sponsor tier with display settings
+ */
+export const sponsorTierSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().max(50),
+  displaySize: z.enum(SPONSOR_DISPLAY_SIZES).default('md'),
+  sponsors: z.array(sponsorSchema).max(30).default([]),
+  sortOrder: z.number().int().min(0),
+});
+
+export type SponsorTier = z.infer<typeof sponsorTierSchema>;
+
+/**
+ * Sponsors section - tiered sponsor logos
+ */
+export const sponsorsSectionSchema = z.object({
+  type: z.literal('sponsors'),
+  enabled: z.boolean().default(false),
+  title: z.string().max(255).optional(),
+  subtitle: z.string().max(500).optional(),
+  tiers: z.array(sponsorTierSchema).max(10).default([]),
+});
+
+export type SponsorsSection = z.infer<typeof sponsorsSectionSchema>;
+
 // =============================================================================
 // Combined Content Schema
 // =============================================================================
@@ -134,6 +181,7 @@ export const websiteContentBlocksSchema = z.object({
   course: courseSectionSchema.optional(),
   schedule: scheduleSectionSchema.optional(),
   media: mediaSectionSchema.optional(),
+  sponsors: sponsorsSectionSchema.optional(),
 });
 
 export type WebsiteContentBlocks = z.infer<typeof websiteContentBlocksSchema>;
@@ -158,6 +206,11 @@ export const DEFAULT_WEBSITE_BLOCKS: WebsiteContentBlocks = {
   media: {
     type: 'media',
     enabled: false,
+  },
+  sponsors: {
+    type: 'sponsors',
+    enabled: false,
+    tiers: [],
   },
 };
 
