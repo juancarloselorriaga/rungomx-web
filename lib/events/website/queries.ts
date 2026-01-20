@@ -6,10 +6,11 @@ import { eventWebsiteContent, media } from '@/db/schema';
 import {
   websiteContentBlocksSchema,
   type WebsiteContentBlocks,
+  type SponsorsSection,
 } from './types';
 
 /**
- * Resolve media URLs for all referenced website media (documents + photos).
+ * Resolve media URLs for all referenced website media (documents, photos, and sponsor logos).
  * Returns a map of mediaId -> blobUrl
  */
 export async function resolveWebsiteMediaUrls(
@@ -19,7 +20,20 @@ export async function resolveWebsiteMediaUrls(
 
   const documentIds = blocks?.media?.documents?.map((doc) => doc.mediaId) ?? [];
   const photoIds = blocks?.media?.photos?.map((photo) => photo.mediaId) ?? [];
-  const mediaIds = Array.from(new Set([...documentIds, ...photoIds]));
+
+  // Collect sponsor logo media IDs from all tiers
+  const sponsorLogoIds: string[] = [];
+  if (blocks?.sponsors?.tiers) {
+    for (const tier of blocks.sponsors.tiers) {
+      for (const sponsor of tier.sponsors ?? []) {
+        sponsorLogoIds.push(sponsor.logoMediaId);
+      }
+    }
+  }
+
+  const mediaIds = Array.from(
+    new Set([...documentIds, ...photoIds, ...sponsorLogoIds]),
+  );
 
   if (mediaIds.length === 0) {
     return urlMap;
@@ -119,4 +133,63 @@ export async function hasWebsiteContent(editionId: string): Promise<boolean> {
   });
 
   return Boolean(content);
+}
+
+/**
+ * Get event sponsors section for an event edition.
+ * Returns null if no sponsors are configured or section is disabled.
+ */
+export async function getEventSponsors(
+  editionId: string,
+  locale: string,
+): Promise<SponsorsSection | null> {
+  const content = await getPublicWebsiteContent(editionId, locale);
+
+  if (!content?.sponsors?.enabled) {
+    return null;
+  }
+
+  // Only return if there are actual sponsors
+  const hasTiersWithSponsors = content.sponsors.tiers.some(
+    (tier) => tier.sponsors && tier.sponsors.length > 0,
+  );
+
+  if (!hasTiersWithSponsors) {
+    return null;
+  }
+
+  return content.sponsors;
+}
+
+/**
+ * Resolve media URLs for sponsor logos.
+ * Returns a map of mediaId -> blobUrl
+ */
+export async function resolveSponsorMediaUrls(
+  sponsors: SponsorsSection,
+): Promise<Map<string, string>> {
+  const urlMap = new Map<string, string>();
+
+  const logoMediaIds: string[] = [];
+  for (const tier of sponsors.tiers) {
+    for (const sponsor of tier.sponsors ?? []) {
+      logoMediaIds.push(sponsor.logoMediaId);
+    }
+  }
+
+  if (logoMediaIds.length === 0) {
+    return urlMap;
+  }
+
+  const uniqueIds = Array.from(new Set(logoMediaIds));
+
+  const mediaRecords = await db.query.media.findMany({
+    where: and(inArray(media.id, uniqueIds), isNull(media.deletedAt)),
+  });
+
+  for (const record of mediaRecords) {
+    urlMap.set(record.id, record.blobUrl);
+  }
+
+  return urlMap;
 }

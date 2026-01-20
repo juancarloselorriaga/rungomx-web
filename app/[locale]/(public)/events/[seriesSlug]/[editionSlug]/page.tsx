@@ -6,7 +6,13 @@ import {
   type PublicDistanceInfo,
 } from '@/lib/events/queries';
 import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
-import { getPublicWebsiteContent, hasWebsiteContent, resolveWebsiteMediaUrls } from '@/lib/events/website/queries';
+import {
+  getPublicWebsiteContent,
+  hasWebsiteContent,
+  resolveWebsiteMediaUrls,
+  getEventSponsors,
+  resolveSponsorMediaUrls,
+} from '@/lib/events/website/queries';
 import type { SportType } from '@/lib/events/constants';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -20,6 +26,7 @@ import { notFound } from 'next/navigation';
 
 import { EventTabs, type TabId } from './event-tabs';
 import { WebsiteContentRenderer } from './website-content-renderer';
+import { SponsorBanner } from '@/components/events/sponsor-banner';
 
 type EditionPricingScheduleItem = Awaited<ReturnType<typeof getPricingScheduleForEdition>>[number];
 
@@ -94,6 +101,12 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
     : null;
 
   const otherEditions = await getPublicOtherEditionsForSeries(event.seriesId, event.id);
+
+  // Load sponsor data unconditionally for banner display
+  const sponsorsData = await getEventSponsors(event.id, locale);
+  const sponsorMediaUrls = sponsorsData
+    ? await resolveSponsorMediaUrls(sponsorsData)
+    : undefined;
 
   // Format dates
   const eventDate = event.startsAt
@@ -279,6 +292,14 @@ export default async function EventDetailPage({ params, searchParams }: EventDet
           </div>
         </div>
       </div>
+
+      {/* Sponsor Banner - between hero and tabs */}
+      {sponsorsData && sponsorMediaUrls && (
+        <SponsorBanner
+          sponsors={sponsorsData}
+          mediaUrls={sponsorMediaUrls}
+        />
+      )}
 
       {/* Tabs */}
       <EventTabs

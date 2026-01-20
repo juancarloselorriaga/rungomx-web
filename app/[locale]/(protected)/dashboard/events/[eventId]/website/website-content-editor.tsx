@@ -3,7 +3,9 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import {
+  Award,
   ChevronDown,
   ChevronUp,
   FileText,
@@ -19,17 +21,27 @@ import {
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { DocumentUploader, type UploadedDocument } from '@/components/events/document-uploader';
-import { PhotoUploader, type UploadedPhoto } from '@/components/events/photo-uploader';
+import { BulkPhotoUploader } from '@/components/events/bulk-photo-uploader';
+import { SortablePhotoGrid, type PhotoItem } from '@/components/events/sortable-photo-grid';
+import {
+  SponsorLogoUploader,
+  type UploadedSponsorLogo,
+} from '@/components/events/sponsor-logo-uploader';
 import { cn } from '@/lib/utils';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
 import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
 import {
   DEFAULT_WEBSITE_BLOCKS,
+  SPONSOR_DISPLAY_SIZES,
   type WebsiteContentBlocks,
   type CourseSection,
   type ScheduleSection,
   type MediaSection,
+  type SponsorsSection,
+  type SponsorTier,
+  type Sponsor,
+  type SponsorDisplaySize,
 } from '@/lib/events/website/types';
 
 type AidStation = NonNullable<CourseSection['aidStations']>[number];
@@ -45,6 +57,7 @@ interface WebsiteContentEditorProps {
 
 export function WebsiteContentEditor({ editionId, locale, organizationId }: WebsiteContentEditorProps) {
   const t = useTranslations('pages.dashboardEventWebsite');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
   const [blocks, setBlocks] = useState<WebsiteContentBlocks>(DEFAULT_WEBSITE_BLOCKS);
@@ -52,6 +65,8 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
   const [showDocumentUploader, setShowDocumentUploader] = useState(false);
   const [showPhotoUploader, setShowPhotoUploader] = useState(false);
+  // Track which tier is showing the sponsor uploader (by tier id)
+  const [showSponsorUploader, setShowSponsorUploader] = useState<string | null>(null);
 
   // Load existing content on mount
   useEffect(() => {
@@ -66,6 +81,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         if (result.data.blocks.course?.enabled) sectionsWithContent.add('course');
         if (result.data.blocks.schedule?.enabled) sectionsWithContent.add('schedule');
         if (result.data.blocks.media?.enabled) sectionsWithContent.add('media');
+        if (result.data.blocks.sponsors?.enabled) sectionsWithContent.add('sponsors');
         if (sectionsWithContent.size === 0) sectionsWithContent.add('overview');
         setExpandedSections(sectionsWithContent);
       }
@@ -91,6 +107,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       const result = await updateWebsiteContent({ editionId, locale, blocks });
       if (result.ok) {
         toast.success(t('saved'));
+        router.refresh();
       } else {
         toast.error(t('errorSaving'));
       }
@@ -155,6 +172,22 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     }));
   };
 
+  const updateSponsors = (
+    field: keyof SponsorsSection,
+    value: boolean | string | SponsorTier[] | undefined,
+  ) => {
+    setBlocks((prev) => ({
+      ...prev,
+      sponsors: {
+        ...prev.sponsors,
+        type: 'sponsors' as const,
+        enabled: prev.sponsors?.enabled ?? false,
+        tiers: prev.sponsors?.tiers ?? [],
+        [field]: value,
+      },
+    }));
+  };
+
   // Document helpers
   const handleDocumentUpload = (doc: UploadedDocument) => {
     const current = blocks.media?.documents ?? [];
@@ -176,31 +209,50 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   };
 
   // Photo helpers
-  const handlePhotoUpload = (photo: UploadedPhoto) => {
+  const handleBulkPhotoUpload = (results: Array<{ mediaId: string; blobUrl: string }>) => {
     const current = blocks.media?.photos ?? [];
-    const newPhoto: PhotoRef = {
-      mediaId: photo.mediaId,
+    const newPhotos: PhotoRef[] = results.map((result, idx) => ({
+      mediaId: result.mediaId,
       caption: '',
-      sortOrder: current.length,
-    };
-    updateMedia('photos', [...current, newPhoto]);
-    setMediaUrls((prev) => ({ ...prev, [photo.mediaId]: photo.blobUrl }));
+      sortOrder: current.length + idx,
+    }));
+
+    updateMedia('photos', [...current, ...newPhotos]);
+
+    // Update media URLs
+    const newUrls = results.reduce(
+      (acc, result) => ({ ...acc, [result.mediaId]: result.blobUrl }),
+      {} as Record<string, string>,
+    );
+    setMediaUrls((prev) => ({ ...prev, ...newUrls }));
     setShowPhotoUploader(false);
   };
 
-  const removePhoto = (index: number) => {
-    const current = blocks.media?.photos ?? [];
+  const handlePhotoReorder = (reorderedPhotos: PhotoItem[]) => {
     updateMedia(
       'photos',
-      current.filter((_, i) => i !== index),
+      reorderedPhotos.map((p) => ({
+        mediaId: p.mediaId,
+        caption: p.caption ?? '',
+        sortOrder: p.sortOrder,
+      })),
     );
   };
 
-  const updatePhoto = (index: number, field: keyof PhotoRef, value: string | number) => {
+  const handlePhotoCaptionChange = (mediaId: string, caption: string) => {
     const current = blocks.media?.photos ?? [];
-    const updated = [...current];
-    updated[index] = { ...updated[index], [field]: value } as PhotoRef;
+    const updated = current.map((p) =>
+      p.mediaId === mediaId ? { ...p, caption } : p,
+    );
     updateMedia('photos', updated);
+  };
+
+  const removePhoto = (mediaId: string) => {
+    const current = blocks.media?.photos ?? [];
+    updateMedia(
+      'photos',
+      current.filter((p) => p.mediaId !== mediaId),
+    );
   };
 
   // Aid station helpers
@@ -248,6 +300,68 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     updateSchedule('startTimes', updated);
   };
 
+  // Sponsor tier helpers
+  const addTier = () => {
+    const current = blocks.sponsors?.tiers ?? [];
+    const newTier: SponsorTier = {
+      id: crypto.randomUUID(),
+      name: '',
+      displaySize: 'md',
+      sponsors: [],
+      sortOrder: current.length,
+    };
+    updateSponsors('tiers', [...current, newTier]);
+  };
+
+  const removeTier = (tierId: string) => {
+    const current = blocks.sponsors?.tiers ?? [];
+    updateSponsors(
+      'tiers',
+      current.filter((tier) => tier.id !== tierId),
+    );
+  };
+
+  const updateTier = (
+    tierId: string,
+    field: keyof SponsorTier,
+    value: string | SponsorDisplaySize | Sponsor[] | number,
+  ) => {
+    const current = blocks.sponsors?.tiers ?? [];
+    const updated = current.map((tier) =>
+      tier.id === tierId ? { ...tier, [field]: value } : tier,
+    );
+    updateSponsors('tiers', updated);
+  };
+
+  // Sponsor helpers within a tier
+  const handleSponsorUpload = (tierId: string, logo: UploadedSponsorLogo) => {
+    const current = blocks.sponsors?.tiers ?? [];
+    const tier = current.find((t) => t.id === tierId);
+    if (!tier) return;
+
+    const newSponsor: Sponsor = {
+      id: crypto.randomUUID(),
+      name: logo.name,
+      logoMediaId: logo.mediaId,
+      websiteUrl: logo.websiteUrl,
+      sortOrder: (tier.sponsors ?? []).length,
+    };
+
+    const updatedSponsors = [...(tier.sponsors ?? []), newSponsor];
+    updateTier(tierId, 'sponsors', updatedSponsors);
+    setMediaUrls((prev) => ({ ...prev, [logo.mediaId]: logo.blobUrl }));
+    setShowSponsorUploader(null);
+  };
+
+  const removeSponsor = (tierId: string, sponsorId: string) => {
+    const current = blocks.sponsors?.tiers ?? [];
+    const tier = current.find((t) => t.id === tierId);
+    if (!tier) return;
+
+    const updatedSponsors = (tier.sponsors ?? []).filter((s) => s.id !== sponsorId);
+    updateTier(tierId, 'sponsors', updatedSponsors);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -269,9 +383,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         <button
           type="button"
           onClick={() => toggleSection('overview')}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+          className="w-full px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-start sm:items-center gap-3">
             <Info className="h-5 w-5 text-muted-foreground" />
             <div>
               <h3 className="font-semibold">{t('sections.overview.title')}</h3>
@@ -280,7 +394,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <span className="text-xs text-muted-foreground">
+              <span className="hidden sm:inline text-xs text-muted-foreground">
                 {blocks.overview?.enabled ? t('sectionEnabled') : t('sectionDisabled')}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -288,6 +402,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.overview?.enabled ?? true}
                   onChange={(e) => updateOverview('enabled', e.target.checked)}
+                  aria-label={(blocks.overview?.enabled ?? true) ? t('disableSection') : t('enableSection')}
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -301,7 +416,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
         </button>
         {expandedSections.has('overview') && (
-          <div className="px-6 pb-6 space-y-4 border-t">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
             <FormField label={t('sections.overview.contentLabel')}>
               <textarea
@@ -333,9 +448,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         <button
           type="button"
           onClick={() => toggleSection('course')}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+          className="w-full px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-start sm:items-center gap-3">
             <Map className="h-5 w-5 text-muted-foreground" />
             <div>
               <h3 className="font-semibold">{t('sections.course.title')}</h3>
@@ -344,7 +459,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <span className="text-xs text-muted-foreground">
+              <span className="hidden sm:inline text-xs text-muted-foreground">
                 {blocks.course?.enabled ? t('sectionEnabled') : t('sectionDisabled')}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -352,6 +467,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.course?.enabled ?? false}
                   onChange={(e) => updateCourse('enabled', e.target.checked)}
+                  aria-label={(blocks.course?.enabled ?? false) ? t('disableSection') : t('enableSection')}
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -365,7 +481,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
         </button>
         {expandedSections.has('course') && (
-          <div className="px-6 pb-6 space-y-4 border-t">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
             <FormField label={t('sections.course.descriptionLabel')}>
               <textarea
@@ -408,9 +524,15 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
             {/* Aid Stations */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm font-medium">{t('sections.course.aidStations.title')}</span>
-                <Button type="button" variant="outline" size="sm" onClick={addAidStation}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addAidStation}
+                  className="w-full min-w-0 sm:w-auto"
+                >
                   <Plus className="h-4 w-4 mr-1" />
                   {t('sections.course.aidStations.add')}
                 </Button>
@@ -496,9 +618,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         <button
           type="button"
           onClick={() => toggleSection('schedule')}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+          className="w-full px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-start sm:items-center gap-3">
             <FileText className="h-5 w-5 text-muted-foreground" />
             <div>
               <h3 className="font-semibold">{t('sections.schedule.title')}</h3>
@@ -507,7 +629,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <span className="text-xs text-muted-foreground">
+              <span className="hidden sm:inline text-xs text-muted-foreground">
                 {blocks.schedule?.enabled ? t('sectionEnabled') : t('sectionDisabled')}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -515,6 +637,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.schedule?.enabled ?? false}
                   onChange={(e) => updateSchedule('enabled', e.target.checked)}
+                  aria-label={(blocks.schedule?.enabled ?? false) ? t('disableSection') : t('enableSection')}
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -528,7 +651,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
         </button>
         {expandedSections.has('schedule') && (
-          <div className="px-6 pb-6 space-y-4 border-t">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
             <FormField label={t('sections.schedule.packetPickupLabel')}>
               <textarea
@@ -560,9 +683,15 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
             {/* Start Times */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="text-sm font-medium">{t('sections.schedule.startTimes.title')}</span>
-                <Button type="button" variant="outline" size="sm" onClick={addStartTime}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addStartTime}
+                  className="w-full min-w-0 sm:w-auto"
+                >
                   <Plus className="h-4 w-4 mr-1" />
                   {t('sections.schedule.startTimes.add')}
                 </Button>
@@ -634,9 +763,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         <button
           type="button"
           onClick={() => toggleSection('media')}
-          className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+          className="w-full px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-start sm:items-center gap-3">
             <ImageIcon className="h-5 w-5 text-muted-foreground" />
             <div>
               <h3 className="font-semibold">{t('sections.media.title')}</h3>
@@ -645,7 +774,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-              <span className="text-xs text-muted-foreground">
+              <span className="hidden sm:inline text-xs text-muted-foreground">
                 {blocks.media?.enabled ? t('sectionEnabled') : t('sectionDisabled')}
               </span>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -653,6 +782,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.media?.enabled ?? false}
                   onChange={(e) => updateMedia('enabled', e.target.checked)}
+                  aria-label={(blocks.media?.enabled ?? false) ? t('disableSection') : t('enableSection')}
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -666,13 +796,13 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
           </div>
         </button>
         {expandedSections.has('media') && (
-          <div className="px-6 pb-6 space-y-6 border-t">
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-6 border-t">
             <div className="pt-4" />
 
             {/* Documents Section */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                   <span className="text-sm font-medium">{t('sections.media.documents.title')}</span>
                   <p className="text-xs text-muted-foreground">
                     {t('sections.media.documents.description')}
@@ -684,6 +814,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                     variant="outline"
                     size="sm"
                     onClick={() => setShowDocumentUploader(true)}
+                    className="w-full min-w-0 sm:w-auto"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     {t('sections.media.documents.add')}
@@ -745,8 +876,8 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
             {/* Photos Section - Placeholder for now */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                   <span className="text-sm font-medium">{t('sections.media.photos.title')}</span>
                   <p className="text-xs text-muted-foreground">
                     {t('sections.media.photos.description')}
@@ -758,6 +889,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                     variant="outline"
                     size="sm"
                     onClick={() => setShowPhotoUploader(true)}
+                    className="w-full min-w-0 sm:w-auto"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     {t('sections.media.photos.add')}
@@ -766,82 +898,323 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
               </div>
 
               {showPhotoUploader && (
-                <PhotoUploader
+                <BulkPhotoUploader
                   organizationId={organizationId}
-                  onUploadComplete={handlePhotoUpload}
+                  existingPhotosCount={(blocks.media?.photos ?? []).length}
+                  onUploadComplete={handleBulkPhotoUpload}
                   onCancel={() => setShowPhotoUploader(false)}
                   labels={{
                     title: t('sections.media.photos.uploaderTitle'),
-                    upload: t('sections.media.photos.upload'),
+                    dropzoneText: t('sections.media.photos.dropzoneText'),
+                    dropzoneHint: t('sections.media.photos.dropzoneHint'),
                     uploading: t('sections.media.photos.uploading'),
+                    upload: t('sections.media.photos.upload'),
                     cancel: t('sections.media.photos.cancel'),
-                    selectFile: t('sections.media.photos.selectFile'),
+                    retry: t('sections.media.photos.retry'),
+                    retryAll: t('sections.media.photos.retryAll'),
+                    cancelAll: t('sections.media.photos.cancelAll'),
+                    removeFile: t('sections.media.photos.removeFile'),
+                    pending: t('sections.media.photos.pending'),
+                    success: t('sections.media.photos.success'),
+                    error: t('sections.media.photos.error'),
                     fileTooLarge: t('sections.media.photos.fileTooLarge', {
                       maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
                     }),
                     invalidType: t('sections.media.photos.invalidType'),
-                    uploadFailed: t('sections.media.photos.uploadFailed'),
-                    maxSize: t('sections.media.photos.maxSize', {
-                      maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
-                    }),
+                    maxPhotosReached: t('sections.media.photos.maxPhotosReached'),
+                    filesSelected: t('sections.media.photos.filesSelected'),
+                    completed: t('sections.media.photos.completed'),
+                    failed: t('sections.media.photos.failed'),
                   }}
                 />
               )}
 
-              {(blocks.media?.photos ?? []).length > 0 ? (
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {(blocks.media?.photos ?? []).map((photo, idx) => {
-                    const url = mediaUrls[photo.mediaId];
+              {!showPhotoUploader && (
+                <SortablePhotoGrid
+                  photos={(blocks.media?.photos ?? []).map((p) => ({
+                    mediaId: p.mediaId,
+                    caption: p.caption,
+                    sortOrder: p.sortOrder,
+                  }))}
+                  mediaUrls={mediaUrls}
+                  onReorder={handlePhotoReorder}
+                  onCaptionChange={handlePhotoCaptionChange}
+                  onDelete={removePhoto}
+                  labels={{
+                    captionLabel: t('sections.media.photos.captionLabel'),
+                    captionPlaceholder: t('sections.media.photos.captionPlaceholder'),
+                    deletePhoto: t('sections.media.photos.deletePhoto'),
+                    dragToReorder: t('sections.media.photos.dragToReorder'),
+                    emptyState: t('sections.media.photos.empty'),
+                  }}
+                  inputClassName={inputClassName}
+                />
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
-                    return (
-                      <div key={photo.mediaId} className="rounded-lg border bg-muted/30 overflow-hidden">
-                        <div className="relative aspect-[4/3] bg-muted">
-                          {url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={url}
-                              alt={photo.caption ?? ''}
-                              className="h-full w-full object-cover"
+      {/* Sponsors Section */}
+      <div className={cn(
+        "rounded-lg border bg-card shadow-sm transition-all",
+        blocks.sponsors?.enabled && "ring-1 ring-primary/20"
+      )}>
+        <button
+          type="button"
+          onClick={() => toggleSection('sponsors')}
+          className="w-full px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-start sm:items-center gap-3">
+            <Award className="h-5 w-5 text-muted-foreground" />
+            <div>
+              <h3 className="font-semibold">{t('sections.sponsors.title')}</h3>
+              <p className="text-sm text-muted-foreground">{t('sections.sponsors.description')}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+              <span className="hidden sm:inline text-xs text-muted-foreground">
+                {blocks.sponsors?.enabled ? t('sectionEnabled') : t('sectionDisabled')}
+              </span>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={blocks.sponsors?.enabled ?? false}
+                  onChange={(e) => updateSponsors('enabled', e.target.checked)}
+                  aria-label={(blocks.sponsors?.enabled ?? false) ? t('disableSection') : t('enableSection')}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              </label>
+            </div>
+            {expandedSections.has('sponsors') ? (
+              <ChevronUp className="h-5 w-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-muted-foreground" />
+            )}
+          </div>
+        </button>
+        {expandedSections.has('sponsors') && (
+          <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-6 border-t">
+            <div className="pt-4" />
+
+            {/* Section Title and Subtitle */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField label={t('sections.sponsors.titleLabel')}>
+                <input
+                  type="text"
+                  placeholder={t('sections.sponsors.titlePlaceholder')}
+                  value={blocks.sponsors?.title ?? ''}
+                  onChange={(e) => updateSponsors('title', e.target.value)}
+                  className={inputClassName}
+                  maxLength={255}
+                />
+              </FormField>
+              <FormField label={t('sections.sponsors.subtitleLabel')}>
+                <input
+                  type="text"
+                  placeholder={t('sections.sponsors.subtitlePlaceholder')}
+                  value={blocks.sponsors?.subtitle ?? ''}
+                  onChange={(e) => updateSponsors('subtitle', e.target.value)}
+                  className={inputClassName}
+                  maxLength={500}
+                />
+              </FormField>
+            </div>
+
+            {/* Tiers */}
+            <div className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <span className="text-sm font-medium">{t('sections.sponsors.tiers.title')}</span>
+                  <p className="text-xs text-muted-foreground">
+                    {t('sections.sponsors.tiers.description')}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addTier}
+                  className="w-full min-w-0 sm:w-auto"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t('sections.sponsors.tiers.add')}
+                </Button>
+              </div>
+
+              {(blocks.sponsors?.tiers ?? []).length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
+                  <Award className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">{t('sections.sponsors.tiers.empty')}</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {(blocks.sponsors?.tiers ?? [])
+                    .slice()
+                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                    .map((tier) => (
+                      <div
+                        key={tier.id}
+                        className="rounded-lg border bg-muted/30 overflow-hidden"
+                      >
+                        {/* Tier Header */}
+                        <div className="p-4 bg-muted/50 border-b">
+                          <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium">
+                                {t('sections.sponsors.tiers.nameLabel')}
+                              </label>
+                              <input
+                                type="text"
+                                placeholder={t('sections.sponsors.tiers.namePlaceholder')}
+                                value={tier.name}
+                                onChange={(e) => updateTier(tier.id, 'name', e.target.value)}
+                                className={inputClassName}
+                                maxLength={50}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-xs font-medium">
+                                {t('sections.sponsors.tiers.sizeLabel')}
+                              </label>
+                              <select
+                                value={tier.displaySize}
+                                onChange={(e) =>
+                                  updateTier(tier.id, 'displaySize', e.target.value as SponsorDisplaySize)
+                                }
+                                className={inputClassName}
+                              >
+                                {SPONSOR_DISPLAY_SIZES.map((size) => (
+                                  <option key={size} value={size}>
+                                    {t(`sections.sponsors.tiers.sizes.${size}`)}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex items-end justify-end">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive"
+                                onClick={() => removeTier(tier.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Sponsors in Tier */}
+                        <div className="p-4 space-y-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <span className="text-sm font-medium">
+                              {t('sections.sponsors.sponsors.title')}
+                            </span>
+                            {showSponsorUploader !== tier.id && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowSponsorUploader(tier.id)}
+                                className="w-full min-w-0 sm:w-auto"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                {t('sections.sponsors.sponsors.add')}
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Sponsor Uploader */}
+                          {showSponsorUploader === tier.id && (
+                            <SponsorLogoUploader
+                              organizationId={organizationId}
+                              onUploadComplete={(logo) => handleSponsorUpload(tier.id, logo)}
+                              onCancel={() => setShowSponsorUploader(null)}
+                              labels={{
+                                title: t('sections.sponsors.sponsors.uploaderTitle'),
+                                nameLabel: t('sections.sponsors.sponsors.nameLabel'),
+                                namePlaceholder: t('sections.sponsors.sponsors.namePlaceholder'),
+                                websiteLabel: t('sections.sponsors.sponsors.websiteLabel'),
+                                websitePlaceholder: t('sections.sponsors.sponsors.websitePlaceholder'),
+                                upload: t('sections.sponsors.sponsors.upload'),
+                                uploading: t('sections.sponsors.sponsors.uploading'),
+                                cancel: t('sections.sponsors.sponsors.cancel'),
+                                selectFile: t('sections.sponsors.sponsors.selectFile'),
+                                fileTooLarge: t('sections.sponsors.sponsors.fileTooLarge', {
+                                  maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
+                                }),
+                                invalidType: t('sections.sponsors.sponsors.invalidType'),
+                                uploadFailed: t('sections.sponsors.sponsors.uploadFailed'),
+                                maxSize: t('sections.sponsors.sponsors.maxSize', {
+                                  maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
+                                }),
+                              }}
                             />
+                          )}
+
+                          {/* Sponsors List */}
+                          {(tier.sponsors ?? []).length === 0 && showSponsorUploader !== tier.id ? (
+                            <div className="text-center py-4 text-muted-foreground border-2 border-dashed rounded-lg">
+                              <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">{t('sections.sponsors.sponsors.empty')}</p>
+                            </div>
                           ) : (
-                            <div className="h-full w-full flex items-center justify-center">
-                              <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                              {(tier.sponsors ?? [])
+                                .slice()
+                                .sort((a, b) => a.sortOrder - b.sortOrder)
+                                .map((sponsor) => {
+                                  const logoUrl = mediaUrls[sponsor.logoMediaId];
+
+                                  return (
+                                    <div
+                                      key={sponsor.id}
+                                      className="rounded-lg border bg-card overflow-hidden"
+                                    >
+                                      <div className="relative h-20 bg-white flex items-center justify-center p-2">
+                                        {logoUrl ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img
+                                            src={logoUrl}
+                                            alt={sponsor.name}
+                                            className="h-full w-full object-contain"
+                                          />
+                                        ) : (
+                                          <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                                        )}
+                                      </div>
+                                      <div className="p-3 space-y-2 border-t">
+                                        <p className="text-sm font-medium truncate">{sponsor.name}</p>
+                                        {sponsor.websiteUrl && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            {sponsor.websiteUrl}
+                                          </p>
+                                        )}
+                                        <div className="flex justify-end">
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="text-destructive hover:text-destructive h-7 w-7"
+                                            onClick={() => removeSponsor(tier.id, sponsor.id)}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           )}
                         </div>
-                        <div className="p-3 space-y-2">
-                          <FormField label={t('sections.media.photos.captionLabel')}>
-                            <input
-                              type="text"
-                              value={photo.caption ?? ''}
-                              onChange={(e) => updatePhoto(idx, 'caption', e.target.value)}
-                              placeholder={t('sections.media.photos.captionPlaceholder')}
-                              className={inputClassName}
-                              maxLength={200}
-                            />
-                          </FormField>
-                          <div className="flex justify-end">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => removePhoto(idx)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
                       </div>
-                    );
-                  })}
+                    ))}
                 </div>
-              ) : !showPhotoUploader ? (
-                <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg">
-                  <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">{t('sections.media.photos.empty')}</p>
-                </div>
-              ) : null}
+              )}
             </div>
           </div>
         )}

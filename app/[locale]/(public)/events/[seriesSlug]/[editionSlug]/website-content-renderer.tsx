@@ -1,6 +1,7 @@
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
-import { MapPin, Clock, FileText, Image as ImageIcon, Download } from 'lucide-react';
-import Image from 'next/image';
+import { MapPin, Clock, FileText, Image as ImageIcon, Download, Award } from 'lucide-react';
+import { SponsorTierDisplay } from '@/components/events/sponsor-tier-display';
+import { PhotoGallery } from '@/components/events/photo-gallery';
 
 type WebsiteContentRendererProps = {
   blocks: WebsiteContentBlocks;
@@ -10,6 +11,7 @@ type WebsiteContentRendererProps = {
     photos?: string;
     terrain?: string;
     download?: string;
+    sponsors?: string;
   };
 };
 
@@ -18,6 +20,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
   const course = blocks.course;
   const schedule = blocks.schedule;
   const media = blocks.media;
+  const sponsors = blocks.sponsors;
 
   const hasOverviewContent =
     Boolean(overview?.enabled) && Boolean(overview?.content || overview?.terrain);
@@ -44,7 +47,14 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
     Boolean(media?.enabled) &&
     Boolean((media?.photos?.length ?? 0) > 0 || (media?.documents?.length ?? 0) > 0);
 
-  if (!hasOverviewContent && !hasCourseContent && !hasScheduleContent && !hasMediaContent) {
+  // Check if any tier has at least one sponsor
+  const hasSponsorsContent =
+    Boolean(sponsors?.enabled) &&
+    Boolean(
+      sponsors?.tiers?.some((tier) => (tier.sponsors?.length ?? 0) > 0),
+    );
+
+  if (!hasOverviewContent && !hasCourseContent && !hasScheduleContent && !hasMediaContent && !hasSponsorsContent) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p>No additional content available at this time.</p>
@@ -278,55 +288,42 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
                   <ImageIcon className="h-5 w-5" />
                   {labels?.photos || 'Photos'}
                 </h3>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {media.photos
+                <PhotoGallery
+                  photos={media.photos
                     .slice()
                     .sort((a, b) => a.sortOrder - b.sortOrder)
-                    .map((photo) => {
-                      const url = mediaUrls?.get(photo.mediaId);
-                      if (!url) {
-                        return (
-                          <div
-                            key={photo.mediaId}
-                            className="rounded-lg border bg-muted/30 p-4 flex items-center gap-3"
-                          >
-                            <ImageIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                            <p className="text-sm text-muted-foreground truncate">
-                              {photo.caption || 'Photo'}
-                            </p>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <figure key={photo.mediaId} className="space-y-2">
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group block rounded-lg border overflow-hidden bg-muted/30"
-                          >
-                            <div className="relative aspect-[4/3]">
-                              <Image
-                                src={url}
-                                alt={photo.caption || ''}
-                                fill
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                className="object-cover transition-transform group-hover:scale-[1.02]"
-                              />
-                            </div>
-                          </a>
-                          {photo.caption && (
-                            <figcaption className="text-sm text-muted-foreground">
-                              {photo.caption}
-                            </figcaption>
-                          )}
-                        </figure>
-                      );
-                    })}
-                </div>
+                    .map((photo) => ({
+                      url: mediaUrls?.get(photo.mediaId) || '',
+                      caption: photo.caption,
+                      mediaId: photo.mediaId,
+                    }))}
+                  columns={3}
+                />
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* Sponsors Section */}
+      {hasSponsorsContent && sponsors && (
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Award className="h-6 w-6" />
+            <h2 className="text-2xl font-bold">
+              {sponsors.title || labels?.sponsors || 'Sponsors'}
+            </h2>
+          </div>
+          {sponsors.subtitle && (
+            <p className="text-muted-foreground mb-6">{sponsors.subtitle}</p>
+          )}
+          <div className="space-y-8">
+            {sponsors.tiers
+              ?.slice()
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((tier) => (
+                <SponsorTierDisplay key={tier.id} tier={tier} mediaUrls={mediaUrls} />
+              ))}
           </div>
         </section>
       )}

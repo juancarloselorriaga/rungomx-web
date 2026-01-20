@@ -39,7 +39,7 @@ export function EventTabs({
   const visibleTabs = tabs.filter((tab) => tab.condition !== false);
 
   return (
-    <div className="border-b border-border bg-card">
+    <div className="border-b border-border bg-card rounded-t-2xl">
       <nav className="flex gap-1 overflow-x-auto" aria-label={t('navigation')}>
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
