@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -18,6 +18,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { GripVertical, Image as ImageIcon, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -109,6 +110,7 @@ function SortablePhotoItem({
             alt={photo.caption ?? ''}
             className="h-full w-full object-cover"
             draggable={false}
+            loading="lazy"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center">
@@ -150,6 +152,12 @@ function SortablePhotoItem({
   );
 }
 
+// Threshold for using virtualization (number of photos)
+const VIRTUALIZATION_THRESHOLD = 30;
+
+// Estimated item height for virtualization (aspect-ratio 4/3 image + caption area)
+const ESTIMATED_ROW_HEIGHT = 280;
+
 export function SortablePhotoGrid({
   photos,
   mediaUrls,
@@ -159,6 +167,8 @@ export function SortablePhotoGrid({
   labels,
   inputClassName,
 }: SortablePhotoGridProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -176,24 +186,47 @@ export function SortablePhotoGrid({
     [photos],
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      const oldIndex = sortedPhotos.findIndex((p) => p.mediaId === active.id);
-      const newIndex = sortedPhotos.findIndex((p) => p.mediaId === over.id);
-
-      const reordered = arrayMove(sortedPhotos, oldIndex, newIndex);
-
-      // Update sortOrder values
-      const updatedPhotos = reordered.map((photo, index) => ({
-        ...photo,
-        sortOrder: index,
-      }));
-
-      onReorder(updatedPhotos);
+  // Group photos into rows of 3 for virtualization
+  const rows = useMemo(() => {
+    const result: PhotoItem[][] = [];
+    for (let i = 0; i < sortedPhotos.length; i += 3) {
+      result.push(sortedPhotos.slice(i, i + 3));
     }
-  };
+    return result;
+  }, [sortedPhotos]);
+
+  // Use virtualization only for large photo sets
+  const useVirtualization = sortedPhotos.length > VIRTUALIZATION_THRESHOLD;
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    overscan: 2, // Render 2 extra rows above/below viewport
+    enabled: useVirtualization,
+  });
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (over && active.id !== over.id) {
+        const oldIndex = sortedPhotos.findIndex((p) => p.mediaId === active.id);
+        const newIndex = sortedPhotos.findIndex((p) => p.mediaId === over.id);
+
+        const reordered = arrayMove(sortedPhotos, oldIndex, newIndex);
+
+        // Update sortOrder values
+        const updatedPhotos = reordered.map((photo, index) => ({
+          ...photo,
+          sortOrder: index,
+        }));
+
+        onReorder(updatedPhotos);
+      }
+    },
+    [sortedPhotos, onReorder],
+  );
 
   if (sortedPhotos.length === 0) {
     return (
@@ -203,6 +236,39 @@ export function SortablePhotoGrid({
       </div>
     );
   }
+
+  // Non-virtualized rendering for smaller sets
+  if (!useVirtualization) {
+    return (
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={sortedPhotos.map((p) => p.mediaId)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {sortedPhotos.map((photo) => (
+              <SortablePhotoItem
+                key={photo.mediaId}
+                photo={photo}
+                url={mediaUrls[photo.mediaId]}
+                onCaptionChange={onCaptionChange}
+                onDelete={onDelete}
+                labels={labels}
+                inputClassName={inputClassName}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+    );
+  }
+
+  // Virtualized rendering for larger sets
+  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <DndContext
@@ -214,18 +280,43 @@ export function SortablePhotoGrid({
         items={sortedPhotos.map((p) => p.mediaId)}
         strategy={rectSortingStrategy}
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {sortedPhotos.map((photo) => (
-            <SortablePhotoItem
-              key={photo.mediaId}
-              photo={photo}
-              url={mediaUrls[photo.mediaId]}
-              onCaptionChange={onCaptionChange}
-              onDelete={onDelete}
-              labels={labels}
-              inputClassName={inputClassName}
-            />
-          ))}
+        <div
+          ref={parentRef}
+          className="h-[600px] overflow-auto"
+          style={{ contain: 'strict' }}
+        >
+          <div
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
+          >
+            {virtualItems.map((virtualRow) => {
+              const rowPhotos = rows[virtualRow.index];
+              return (
+                <div
+                  key={virtualRow.key}
+                  className="absolute top-0 left-0 w-full"
+                  style={{
+                    height: virtualRow.size,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 pb-4">
+                    {rowPhotos.map((photo) => (
+                      <SortablePhotoItem
+                        key={photo.mediaId}
+                        photo={photo}
+                        url={mediaUrls[photo.mediaId]}
+                        onCaptionChange={onCaptionChange}
+                        onDelete={onDelete}
+                        labels={labels}
+                        inputClassName={inputClassName}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </SortableContext>
     </DndContext>
