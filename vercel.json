@@ -15,6 +15,10 @@
     {
       "path": "/api/cron/cleanup-expired-event-registrations",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-media",
+      "schedule": "0 4 * * *"
     }
   ]
 }
