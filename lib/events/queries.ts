@@ -71,6 +71,8 @@ export type OrganizerEventSummary = {
   registrationOpensAt: Date | null;
   registrationClosesAt: Date | null;
   isRegistrationPaused: boolean;
+  heroImageMediaId: string | null;
+  heroImageUrl: string | null;
   distanceCount: number;
   registrationCount: number;
   createdAt: Date;
@@ -113,6 +115,8 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
       registrationOpensAt: eventEditions.registrationOpensAt,
       registrationClosesAt: eventEditions.registrationClosesAt,
       isRegistrationPaused: eventEditions.isRegistrationPaused,
+      heroImageMediaId: eventEditions.heroImageMediaId,
+      heroImageUrl: media.blobUrl,
       createdAt: eventEditions.createdAt,
       seriesName: eventSeries.name,
       seriesSlug: eventSeries.slug,
@@ -122,6 +126,10 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     .from(eventEditions)
     .innerJoin(eventSeries, eq(eventEditions.seriesId, eventSeries.id))
     .innerJoin(organizations, eq(eventSeries.organizationId, organizations.id))
+    .leftJoin(
+      media,
+      and(eq(eventEditions.heroImageMediaId, media.id), isNull(media.deletedAt)),
+    )
     .where(
       and(
         sql`${eventSeries.organizationId} IN ${orgIds}`,
@@ -174,28 +182,30 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     registrationCounts.map((r) => [r.editionId, Number(r.count)]),
   );
 
-  return events.map((event) => ({
-    id: event.id,
-    publicCode: event.publicCode,
-    slug: event.slug,
-    editionLabel: event.editionLabel,
-    seriesName: event.seriesName,
-    seriesSlug: event.seriesSlug,
-    organizationId: event.organizationId,
-    organizationName: event.organizationName,
-    visibility: event.visibility,
-    startsAt: event.startsAt,
-    endsAt: event.endsAt,
-    locationDisplay: event.locationDisplay,
-    city: event.city,
-    state: event.state,
-    registrationOpensAt: event.registrationOpensAt,
-    registrationClosesAt: event.registrationClosesAt,
-    isRegistrationPaused: event.isRegistrationPaused,
-    distanceCount: distanceCountMap.get(event.id) ?? 0,
-    registrationCount: registrationCountMap.get(event.id) ?? 0,
-    createdAt: event.createdAt,
-  }));
+    return events.map((event) => ({
+      id: event.id,
+      publicCode: event.publicCode,
+      slug: event.slug,
+      editionLabel: event.editionLabel,
+      seriesName: event.seriesName,
+      seriesSlug: event.seriesSlug,
+      organizationId: event.organizationId,
+      organizationName: event.organizationName,
+      visibility: event.visibility,
+      startsAt: event.startsAt,
+      endsAt: event.endsAt,
+      locationDisplay: event.locationDisplay,
+      city: event.city,
+      state: event.state,
+      registrationOpensAt: event.registrationOpensAt,
+      registrationClosesAt: event.registrationClosesAt,
+      isRegistrationPaused: event.isRegistrationPaused,
+      heroImageMediaId: event.heroImageMediaId,
+      heroImageUrl: event.heroImageUrl ?? null,
+      distanceCount: distanceCountMap.get(event.id) ?? 0,
+      registrationCount: registrationCountMap.get(event.id) ?? 0,
+      createdAt: event.createdAt,
+    }));
 }
 
 /**

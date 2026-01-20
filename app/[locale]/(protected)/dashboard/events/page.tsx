@@ -4,8 +4,11 @@ import { getUserEvents } from '@/lib/events/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Calendar, ChevronRight, MapPin, Plus, Users } from 'lucide-react';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -54,18 +57,17 @@ export default async function DashboardEventsPage({ params }: LocalePageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
           <p className="text-muted-foreground">{t('description')}</p>
         </div>
-        <Link
-          href="/dashboard/events/new"
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          {t('createEvent.button')}
-        </Link>
+        <Button asChild className="w-full min-w-0 sm:w-auto">
+          <Link href="/dashboard/events/new">
+            <Plus className="h-4 w-4" />
+            {t('createEvent.button')}
+          </Link>
+        </Button>
       </div>
 
       {events.length === 0 ? (
@@ -78,13 +80,12 @@ export default async function DashboardEventsPage({ params }: LocalePageProps) {
               <h2 className="text-xl font-semibold">{t('emptyState.title')}</h2>
               <p className="text-muted-foreground max-w-md">{t('emptyState.description')}</p>
             </div>
-            <Link
-              href="/dashboard/events/new"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              {t('emptyState.action')}
-            </Link>
+            <Button asChild className="w-full min-w-0 sm:w-auto">
+              <Link href="/dashboard/events/new">
+                <Plus className="h-4 w-4" />
+                {t('emptyState.action')}
+              </Link>
+            </Button>
           </div>
         </div>
       ) : (
@@ -93,46 +94,72 @@ export default async function DashboardEventsPage({ params }: LocalePageProps) {
             <Link
               key={event.id}
               href={{ pathname: '/dashboard/events/[eventId]', params: { eventId: event.id } }}
-              className="block rounded-lg border bg-card p-6 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
+              className="group block overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
             >
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold">
-                      {event.seriesName} {event.editionLabel}
-                    </h3>
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${visibilityStyles[event.visibility as VisibilityType] || visibilityStyles.draft}`}>
-                      {t(`visibility.${event.visibility as VisibilityType}`)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {event.startsAt && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDate(event.startsAt, locale)}</span>
-                      </div>
-                    )}
-                    {(event.city || event.state) && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>
-                          {[event.city, event.state].filter(Boolean).join(', ')}
-                        </span>
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <Users className="h-4 w-4" />
-                      <span>
-                        {event.registrationCount} {t('registrationCount')}
+              <div className="flex flex-col sm:flex-row">
+                <div className="relative aspect-[16/9] w-full bg-muted sm:aspect-auto sm:h-28 sm:w-44">
+                  {event.heroImageUrl ? (
+                    <Image
+                      src={event.heroImageUrl}
+                      alt={`${event.seriesName} ${event.editionLabel}`}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 176px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-muted to-background" />
+                  )}
+                  <div className="absolute inset-0 ring-1 ring-inset ring-black/5" />
+                </div>
+
+                <div className="flex min-w-0 flex-1 items-start justify-between gap-4 p-4 sm:p-5">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <h3 className="min-w-0 flex-1 truncate text-base font-semibold sm:text-lg">
+                        {event.seriesName} {event.editionLabel}
+                      </h3>
+                      <span
+                        className={cn(
+                          'shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                          visibilityStyles[event.visibility as VisibilityType] ||
+                            visibilityStyles.draft,
+                        )}
+                      >
+                        {t(`visibility.${event.visibility as VisibilityType}`)}
                       </span>
                     </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      {event.startsAt ? (
+                        <div className="flex items-center gap-1 whitespace-nowrap">
+                          <Calendar className="h-4 w-4" />
+                          <span>{formatDate(event.startsAt, locale)}</span>
+                        </div>
+                      ) : null}
+                      {event.city || event.state ? (
+                        <div className="flex items-center gap-1 min-w-0">
+                          <MapPin className="h-4 w-4 shrink-0" />
+                          <span className="truncate">
+                            {[event.city, event.state].filter(Boolean).join(', ')}
+                          </span>
+                        </div>
+                      ) : null}
+                      <div className="flex items-center gap-1 whitespace-nowrap">
+                        <Users className="h-4 w-4" />
+                        <span>
+                          {event.registrationCount} {t('registrationCount')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      {event.organizationName} &bull; {event.distanceCount}{' '}
+                      {event.distanceCount === 1 ? t('distance') : t('distances')}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {event.organizationName} &bull; {event.distanceCount}{' '}
-                    {event.distanceCount === 1 ? t('distance') : t('distances')}
-                  </p>
+
+                  <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               </div>
             </Link>
           ))}

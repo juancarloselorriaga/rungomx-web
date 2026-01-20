@@ -17,12 +17,12 @@ export function OrganizationsPageHeader({ title, description }: OrganizationsPag
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0">
         <h1 className="text-3xl font-bold mb-2">{title}</h1>
         <p className="text-muted-foreground">{description}</p>
       </div>
-      <Button onClick={() => setDialogOpen(true)}>
+      <Button onClick={() => setDialogOpen(true)} className="w-full min-w-0 sm:w-auto">
         <Plus className="size-4" />
         {t('createButton')}
       </Button>
