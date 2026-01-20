@@ -31,7 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
-import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
+import { getWebsiteContent, updateWebsiteContent, deleteEventMedia } from '@/lib/events/website/actions';
 import {
   DEFAULT_WEBSITE_BLOCKS,
   SPONSOR_DISPLAY_SIZES,
@@ -113,6 +113,16 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         toast.error(t('errorSaving'));
       }
     });
+  };
+
+  // Auto-save helper for media operations (upload, reorder, delete)
+  const autoSaveBlocks = async (newBlocks: WebsiteContentBlocks) => {
+    const result = await updateWebsiteContent({ editionId, locale, blocks: newBlocks });
+    if (result.ok) {
+      toast.success(t('saved'));
+    } else {
+      toast.error(t('errorSaving'));
+    }
   };
 
   const updateOverview = (field: 'content' | 'terrain' | 'enabled', value: string | boolean) => {
@@ -198,7 +208,16 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       sortOrder: current.length + idx,
     }));
 
-    updateMedia('documents', [...current, ...newDocs]);
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      media: {
+        ...blocks.media,
+        type: 'media' as const,
+        enabled: blocks.media?.enabled ?? true,
+        documents: [...current, ...newDocs],
+      },
+    };
+    setBlocks(newBlocks);
 
     // Update media URLs
     const newUrls = results.reduce(
@@ -207,17 +226,30 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     );
     setMediaUrls((prev) => ({ ...prev, ...newUrls }));
     setShowDocumentUploader(false);
+
+    // Auto-save after upload
+    autoSaveBlocks(newBlocks);
   };
 
   const handleDocumentReorder = (reorderedDocs: DocumentItem[]) => {
-    updateMedia(
-      'documents',
-      reorderedDocs.map((d) => ({
-        mediaId: d.mediaId,
-        label: d.label,
-        sortOrder: d.sortOrder,
-      })),
-    );
+    const newDocuments = reorderedDocs.map((d) => ({
+      mediaId: d.mediaId,
+      label: d.label,
+      sortOrder: d.sortOrder,
+    }));
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      media: {
+        ...blocks.media,
+        type: 'media' as const,
+        enabled: blocks.media?.enabled ?? true,
+        documents: newDocuments,
+      },
+    };
+    setBlocks(newBlocks);
+
+    // Auto-save after reorder
+    autoSaveBlocks(newBlocks);
   };
 
   const handleDocumentLabelChange = (mediaId: string, label: string) => {
@@ -229,11 +261,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   };
 
   const removeDocument = (mediaId: string) => {
+    const blobUrl = mediaUrls[mediaId];
     const current = blocks.media?.documents ?? [];
-    updateMedia(
-      'documents',
-      current.filter((d) => d.mediaId !== mediaId),
-    );
+    const newDocuments = current.filter((d) => d.mediaId !== mediaId);
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      media: {
+        ...blocks.media,
+        type: 'media' as const,
+        enabled: blocks.media?.enabled ?? true,
+        documents: newDocuments,
+      },
+    };
+    setBlocks(newBlocks);
+
+    // Auto-save after delete
+    autoSaveBlocks(newBlocks);
+
+    // Delete blob from storage (fire and forget)
+    if (blobUrl) {
+      deleteEventMedia({ editionId, blobUrl }).catch(console.warn);
+    }
   };
 
   // Photo helpers
@@ -245,7 +293,16 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       sortOrder: current.length + idx,
     }));
 
-    updateMedia('photos', [...current, ...newPhotos]);
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      media: {
+        ...blocks.media,
+        type: 'media' as const,
+        enabled: blocks.media?.enabled ?? true,
+        photos: [...current, ...newPhotos],
+      },
+    };
+    setBlocks(newBlocks);
 
     // Update media URLs
     const newUrls = results.reduce(
@@ -254,17 +311,30 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     );
     setMediaUrls((prev) => ({ ...prev, ...newUrls }));
     setShowPhotoUploader(false);
+
+    // Auto-save after upload
+    autoSaveBlocks(newBlocks);
   };
 
   const handlePhotoReorder = (reorderedPhotos: PhotoItem[]) => {
-    updateMedia(
-      'photos',
-      reorderedPhotos.map((p) => ({
-        mediaId: p.mediaId,
-        caption: p.caption ?? '',
-        sortOrder: p.sortOrder,
-      })),
-    );
+    const newPhotos = reorderedPhotos.map((p) => ({
+      mediaId: p.mediaId,
+      caption: p.caption ?? '',
+      sortOrder: p.sortOrder,
+    }));
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      media: {
+        ...blocks.media,
+        type: 'media' as const,
+        enabled: blocks.media?.enabled ?? true,
+        photos: newPhotos,
+      },
+    };
+    setBlocks(newBlocks);
+
+    // Auto-save after reorder
+    autoSaveBlocks(newBlocks);
   };
 
   const handlePhotoCaptionChange = (mediaId: string, caption: string) => {
@@ -276,11 +346,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   };
 
   const removePhoto = (mediaId: string) => {
+    const blobUrl = mediaUrls[mediaId];
     const current = blocks.media?.photos ?? [];
-    updateMedia(
-      'photos',
-      current.filter((p) => p.mediaId !== mediaId),
-    );
+    const newPhotos = current.filter((p) => p.mediaId !== mediaId);
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      media: {
+        ...blocks.media,
+        type: 'media' as const,
+        enabled: blocks.media?.enabled ?? true,
+        photos: newPhotos,
+      },
+    };
+    setBlocks(newBlocks);
+
+    // Auto-save after delete
+    autoSaveBlocks(newBlocks);
+
+    // Delete blob from storage (fire and forget)
+    if (blobUrl) {
+      deleteEventMedia({ editionId, blobUrl }).catch(console.warn);
+    }
   };
 
   // Aid station helpers
@@ -363,8 +449,8 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
   // Sponsor helpers within a tier
   const handleSponsorUpload = (tierId: string, logo: UploadedSponsorLogo) => {
-    const current = blocks.sponsors?.tiers ?? [];
-    const tier = current.find((t) => t.id === tierId);
+    const currentTiers = blocks.sponsors?.tiers ?? [];
+    const tier = currentTiers.find((t) => t.id === tierId);
     if (!tier) return;
 
     const newSponsor: Sponsor = {
@@ -375,19 +461,58 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       sortOrder: (tier.sponsors ?? []).length,
     };
 
-    const updatedSponsors = [...(tier.sponsors ?? []), newSponsor];
-    updateTier(tierId, 'sponsors', updatedSponsors);
+    const updatedTiers = currentTiers.map((t) =>
+      t.id === tierId ? { ...t, sponsors: [...(t.sponsors ?? []), newSponsor] } : t,
+    );
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      sponsors: {
+        ...blocks.sponsors,
+        type: 'sponsors' as const,
+        enabled: blocks.sponsors?.enabled ?? true,
+        tiers: updatedTiers,
+      },
+    };
+    setBlocks(newBlocks);
     setMediaUrls((prev) => ({ ...prev, [logo.mediaId]: logo.blobUrl }));
     setShowSponsorUploader(null);
+
+    // Auto-save after upload
+    autoSaveBlocks(newBlocks);
   };
 
   const removeSponsor = (tierId: string, sponsorId: string) => {
-    const current = blocks.sponsors?.tiers ?? [];
-    const tier = current.find((t) => t.id === tierId);
+    const currentTiers = blocks.sponsors?.tiers ?? [];
+    const tier = currentTiers.find((t) => t.id === tierId);
     if (!tier) return;
 
-    const updatedSponsors = (tier.sponsors ?? []).filter((s) => s.id !== sponsorId);
-    updateTier(tierId, 'sponsors', updatedSponsors);
+    // Find the sponsor to get the logo URL before removing
+    const sponsor = (tier.sponsors ?? []).find((s) => s.id === sponsorId);
+    const blobUrl = sponsor?.logoMediaId ? mediaUrls[sponsor.logoMediaId] : undefined;
+
+    const updatedTiers = currentTiers.map((t) =>
+      t.id === tierId
+        ? { ...t, sponsors: (t.sponsors ?? []).filter((s) => s.id !== sponsorId) }
+        : t,
+    );
+    const newBlocks: WebsiteContentBlocks = {
+      ...blocks,
+      sponsors: {
+        ...blocks.sponsors,
+        type: 'sponsors' as const,
+        enabled: blocks.sponsors?.enabled ?? true,
+        tiers: updatedTiers,
+      },
+    };
+    setBlocks(newBlocks);
+
+    // Auto-save after delete
+    autoSaveBlocks(newBlocks);
+
+    // Delete blob from storage (fire and forget)
+    if (blobUrl) {
+      deleteEventMedia({ editionId, blobUrl }).catch(console.warn);
+    }
   };
 
   if (isLoading) {
