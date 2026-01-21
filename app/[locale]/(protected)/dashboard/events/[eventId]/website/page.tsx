@@ -91,11 +91,13 @@ export default async function EventWebsitePage({ params }: WebsitePageProps) {
                 <WebsiteContentRenderer
                   blocks={previewBlocks}
                   mediaUrls={previewMediaUrls}
+                  showSponsors={true}
                   labels={{
                     documents: tPublic('detail.website.documents'),
                     photos: tPublic('detail.website.photos'),
                     terrain: tPublic('detail.website.terrain'),
                     download: tPublic('detail.website.download'),
+                    sponsors: tPublic('detail.website.sponsors'),
                   }}
                 />
               ) : (

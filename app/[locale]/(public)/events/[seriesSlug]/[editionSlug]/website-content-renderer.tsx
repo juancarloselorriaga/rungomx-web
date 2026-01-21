@@ -1,10 +1,13 @@
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
-import { MapPin, Clock, FileText, Image as ImageIcon, Download } from 'lucide-react';
+import { MapPin, Clock, FileText, Image as ImageIcon, Download, Award } from 'lucide-react';
 import { PhotoGallery } from '@/components/events/photo-gallery';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
+import { SponsorTierDisplay } from '@/components/events/sponsor-tier-display';
 
 type WebsiteContentRendererProps = {
   blocks: WebsiteContentBlocks;
   mediaUrls?: Map<string, string>;
+  showSponsors?: boolean;
   labels?: {
     documents?: string;
     photos?: string;
@@ -18,7 +21,7 @@ type WebsiteContentRendererProps = {
   };
 };
 
-export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteContentRendererProps) {
+export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false, labels }: WebsiteContentRendererProps) {
   const overview = blocks.overview;
   const course = blocks.course;
   const schedule = blocks.schedule;
@@ -50,8 +53,9 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
     Boolean(media?.enabled) &&
     Boolean((media?.photos?.length ?? 0) > 0 || (media?.documents?.length ?? 0) > 0);
 
-  // Check if any tier has at least one sponsor
+  // Check if any tier has at least one sponsor (only when showSponsors is enabled)
   const hasSponsorsContent =
+    showSponsors &&
     Boolean(sponsors?.enabled) &&
     Boolean(sponsors?.tiers?.some((tier) => (tier.sponsors?.length ?? 0) > 0));
 
@@ -72,37 +76,34 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
   return (
     <div className="space-y-8">
       {/* Overview Section */}
-      {hasOverviewContent && overview && (
-        <section>
-          {overview.title && <h2 className="text-2xl font-bold mb-4">{overview.title}</h2>}
-          {overview.content && (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <p className="whitespace-pre-wrap">{overview.content}</p>
-            </div>
-          )}
-          {overview.terrain && (
-            <div className="mt-4 rounded-lg border bg-muted/30 p-4">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {labels?.terrain || 'Terrain'}
-              </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {overview.terrain}
-              </p>
-            </div>
-          )}
-        </section>
-      )}
+	    {hasOverviewContent && overview && (
+	        <section>
+	          {overview.title && <h2 className="text-2xl font-bold mb-4">{overview.title}</h2>}
+	          {overview.content && <MarkdownContent content={overview.content} />}
+	          {overview.terrain && (
+	            <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+	              <h3 className="font-semibold mb-2 flex items-center gap-2">
+	                <MapPin className="h-4 w-4" />
+	                {labels?.terrain || 'Terrain'}
+	              </h3>
+	              <MarkdownContent
+	                content={overview.terrain}
+	                className="text-sm text-muted-foreground"
+	              />
+	            </div>
+	          )}
+	        </section>
+	      )}
 
       {/* Course Section */}
-      {hasCourseContent && course && (
-        <section>
-          {course.title && <h2 className="text-2xl font-bold mb-4">{course.title}</h2>}
-          {course.description && (
-            <div className="prose prose-sm dark:prose-invert max-w-none mb-6">
-              <p className="whitespace-pre-wrap">{course.description}</p>
-            </div>
-          )}
+	      {hasCourseContent && course && (
+	        <section>
+	          {course.title && <h2 className="text-2xl font-bold mb-4">{course.title}</h2>}
+	          {course.description && (
+	            <div className="mb-6">
+	              <MarkdownContent content={course.description} />
+	            </div>
+	          )}
 
           <div className="grid gap-4">
             {/* Elevation */}
@@ -179,34 +180,37 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
 
           <div className="grid gap-4">
             {/* Packet Pickup */}
-            {schedule.packetPickup && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-2">Packet Pickup</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {schedule.packetPickup}
-                </p>
-              </div>
-            )}
+	            {schedule.packetPickup && (
+	              <div className="rounded-lg border bg-card p-4">
+	                <h3 className="font-semibold mb-2">Packet Pickup</h3>
+	                <MarkdownContent
+	                  content={schedule.packetPickup}
+	                  className="text-sm text-muted-foreground"
+	                />
+	              </div>
+	            )}
 
             {/* Parking */}
-            {schedule.parking && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-2">Parking</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {schedule.parking}
-                </p>
-              </div>
-            )}
+	            {schedule.parking && (
+	              <div className="rounded-lg border bg-card p-4">
+	                <h3 className="font-semibold mb-2">Parking</h3>
+	                <MarkdownContent
+	                  content={schedule.parking}
+	                  className="text-sm text-muted-foreground"
+	                />
+	              </div>
+	            )}
 
             {/* Race Day */}
-            {schedule.raceDay && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-2">Race Day</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {schedule.raceDay}
-                </p>
-              </div>
-            )}
+	            {schedule.raceDay && (
+	              <div className="rounded-lg border bg-card p-4">
+	                <h3 className="font-semibold mb-2">Race Day</h3>
+	                <MarkdownContent
+	                  content={schedule.raceDay}
+	                  className="text-sm text-muted-foreground"
+	                />
+	              </div>
+	            )}
 
             {/* Start Times */}
             {schedule.startTimes && schedule.startTimes.length > 0 && (
@@ -309,6 +313,29 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
                 />
               </div>
             )}
+          </div>
+        </section>
+      )}
+
+      {/* Sponsors Section */}
+      {hasSponsorsContent && sponsors && (
+        <section>
+          {sponsors.title && (
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Award className="h-6 w-6" />
+              {sponsors.title}
+            </h2>
+          )}
+          {sponsors.subtitle && (
+            <p className="text-muted-foreground mb-6">{sponsors.subtitle}</p>
+          )}
+          <div className="space-y-6">
+            {sponsors.tiers
+              ?.slice()
+              .sort((a, b) => a.sortOrder - b.sortOrder)
+              .map((tier) => (
+                <SponsorTierDisplay key={tier.id} tier={tier} mediaUrls={mediaUrls} />
+              ))}
           </div>
         </section>
       )}

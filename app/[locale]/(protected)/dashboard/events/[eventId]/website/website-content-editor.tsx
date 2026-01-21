@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { BulkDocumentUploader } from '@/components/events/bulk-document-uploader';
 import { SortableDocumentList, type DocumentItem } from '@/components/events/sortable-document-list';
 import { BulkPhotoUploader } from '@/components/events/bulk-photo-uploader';
@@ -69,6 +70,18 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   const [showPhotoUploader, setShowPhotoUploader] = useState(false);
   // Track which tier is showing the sponsor uploader (by tier id)
   const [showSponsorUploader, setShowSponsorUploader] = useState<string | null>(null);
+  const [markdownPreviews, setMarkdownPreviews] = useState({
+    overviewContent: false,
+    overviewTerrain: false,
+    courseDescription: false,
+    schedulePacketPickup: false,
+    scheduleParking: false,
+    scheduleRaceDay: false,
+  });
+
+  const toggleMarkdownPreview = (key: keyof typeof markdownPreviews) => {
+    setMarkdownPreviews((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   // Load existing content on mount
   useEffect(() => {
@@ -546,7 +559,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   }
 
   const inputClassName = "w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30";
-  const textareaClassName = cn(inputClassName, "resize-none");
+  const textareaClassName = cn(inputClassName, "resize-y");
 
   return (
     <div className="space-y-6">
@@ -593,23 +606,73 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         {expandedSections.has('overview') && (
           <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
-            <FormField label={t('sections.overview.contentLabel')}>
-              <textarea
-                placeholder={t('sections.overview.contentPlaceholder')}
-                value={blocks.overview?.content ?? ''}
-                onChange={(e) => updateOverview('content', e.target.value)}
-                rows={6}
-                className={textareaClassName}
-              />
+            <FormField
+              label={t('sections.overview.contentLabel')}
+              labelActions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0 h-7 px-2 text-xs"
+                  onClick={() => toggleMarkdownPreview('overviewContent')}
+                >
+                  {markdownPreviews.overviewContent ? t('markdown.hidePreview') : t('markdown.preview')}
+                </Button>
+              }
+            >
+              <div
+                className={cn(
+                  'grid gap-3',
+                  markdownPreviews.overviewContent && 'lg:grid-cols-2 lg:items-start',
+                )}
+              >
+                <textarea
+                  placeholder={t('sections.overview.contentPlaceholder')}
+                  value={blocks.overview?.content ?? ''}
+                  onChange={(e) => updateOverview('content', e.target.value)}
+                  rows={6}
+                  className={textareaClassName}
+                />
+                {markdownPreviews.overviewContent ? (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <MarkdownContent content={blocks.overview?.content ?? ''} className="text-sm" />
+                  </div>
+                ) : null}
+              </div>
             </FormField>
-            <FormField label={t('sections.overview.terrainLabel')}>
-              <textarea
-                placeholder={t('sections.overview.terrainPlaceholder')}
-                value={blocks.overview?.terrain ?? ''}
-                onChange={(e) => updateOverview('terrain', e.target.value)}
-                rows={3}
-                className={textareaClassName}
-              />
+            <FormField
+              label={t('sections.overview.terrainLabel')}
+              labelActions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0 h-7 px-2 text-xs"
+                  onClick={() => toggleMarkdownPreview('overviewTerrain')}
+                >
+                  {markdownPreviews.overviewTerrain ? t('markdown.hidePreview') : t('markdown.preview')}
+                </Button>
+              }
+            >
+              <div
+                className={cn(
+                  'grid gap-3',
+                  markdownPreviews.overviewTerrain && 'lg:grid-cols-2 lg:items-start',
+                )}
+              >
+                <textarea
+                  placeholder={t('sections.overview.terrainPlaceholder')}
+                  value={blocks.overview?.terrain ?? ''}
+                  onChange={(e) => updateOverview('terrain', e.target.value)}
+                  rows={3}
+                  className={textareaClassName}
+                />
+                {markdownPreviews.overviewTerrain ? (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <MarkdownContent content={blocks.overview?.terrain ?? ''} className="text-sm" />
+                  </div>
+                ) : null}
+              </div>
             </FormField>
           </div>
         )}
@@ -658,14 +721,39 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         {expandedSections.has('course') && (
           <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
-            <FormField label={t('sections.course.descriptionLabel')}>
-              <textarea
-                placeholder={t('sections.course.descriptionPlaceholder')}
-                value={blocks.course?.description ?? ''}
-                onChange={(e) => updateCourse('description', e.target.value)}
-                rows={4}
-                className={textareaClassName}
-              />
+            <FormField
+              label={t('sections.course.descriptionLabel')}
+              labelActions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0 h-7 px-2 text-xs"
+                  onClick={() => toggleMarkdownPreview('courseDescription')}
+                >
+                  {markdownPreviews.courseDescription ? t('markdown.hidePreview') : t('markdown.preview')}
+                </Button>
+              }
+            >
+              <div
+                className={cn(
+                  'grid gap-3',
+                  markdownPreviews.courseDescription && 'lg:grid-cols-2 lg:items-start',
+                )}
+              >
+                <textarea
+                  placeholder={t('sections.course.descriptionPlaceholder')}
+                  value={blocks.course?.description ?? ''}
+                  onChange={(e) => updateCourse('description', e.target.value)}
+                  rows={4}
+                  className={textareaClassName}
+                />
+                {markdownPreviews.courseDescription ? (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <MarkdownContent content={blocks.course?.description ?? ''} className="text-sm" />
+                  </div>
+                ) : null}
+              </div>
             </FormField>
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label={t('sections.course.elevationLabel')}>
@@ -828,32 +916,107 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         {expandedSections.has('schedule') && (
           <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
-            <FormField label={t('sections.schedule.packetPickupLabel')}>
-              <textarea
-                placeholder={t('sections.schedule.packetPickupPlaceholder')}
-                value={blocks.schedule?.packetPickup ?? ''}
-                onChange={(e) => updateSchedule('packetPickup', e.target.value)}
-                rows={3}
-                className={textareaClassName}
-              />
+            <FormField
+              label={t('sections.schedule.packetPickupLabel')}
+              labelActions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0 h-7 px-2 text-xs"
+                  onClick={() => toggleMarkdownPreview('schedulePacketPickup')}
+                >
+                  {markdownPreviews.schedulePacketPickup ? t('markdown.hidePreview') : t('markdown.preview')}
+                </Button>
+              }
+            >
+              <div
+                className={cn(
+                  'grid gap-3',
+                  markdownPreviews.schedulePacketPickup && 'lg:grid-cols-2 lg:items-start',
+                )}
+              >
+                <textarea
+                  placeholder={t('sections.schedule.packetPickupPlaceholder')}
+                  value={blocks.schedule?.packetPickup ?? ''}
+                  onChange={(e) => updateSchedule('packetPickup', e.target.value)}
+                  rows={3}
+                  className={textareaClassName}
+                />
+                {markdownPreviews.schedulePacketPickup ? (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <MarkdownContent content={blocks.schedule?.packetPickup ?? ''} className="text-sm" />
+                  </div>
+                ) : null}
+              </div>
             </FormField>
-            <FormField label={t('sections.schedule.parkingLabel')}>
-              <textarea
-                placeholder={t('sections.schedule.parkingPlaceholder')}
-                value={blocks.schedule?.parking ?? ''}
-                onChange={(e) => updateSchedule('parking', e.target.value)}
-                rows={3}
-                className={textareaClassName}
-              />
+            <FormField
+              label={t('sections.schedule.parkingLabel')}
+              labelActions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0 h-7 px-2 text-xs"
+                  onClick={() => toggleMarkdownPreview('scheduleParking')}
+                >
+                  {markdownPreviews.scheduleParking ? t('markdown.hidePreview') : t('markdown.preview')}
+                </Button>
+              }
+            >
+              <div
+                className={cn(
+                  'grid gap-3',
+                  markdownPreviews.scheduleParking && 'lg:grid-cols-2 lg:items-start',
+                )}
+              >
+                <textarea
+                  placeholder={t('sections.schedule.parkingPlaceholder')}
+                  value={blocks.schedule?.parking ?? ''}
+                  onChange={(e) => updateSchedule('parking', e.target.value)}
+                  rows={3}
+                  className={textareaClassName}
+                />
+                {markdownPreviews.scheduleParking ? (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <MarkdownContent content={blocks.schedule?.parking ?? ''} className="text-sm" />
+                  </div>
+                ) : null}
+              </div>
             </FormField>
-            <FormField label={t('sections.schedule.raceDayLabel')}>
-              <textarea
-                placeholder={t('sections.schedule.raceDayPlaceholder')}
-                value={blocks.schedule?.raceDay ?? ''}
-                onChange={(e) => updateSchedule('raceDay', e.target.value)}
-                rows={3}
-                className={textareaClassName}
-              />
+            <FormField
+              label={t('sections.schedule.raceDayLabel')}
+              labelActions={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-w-0 h-7 px-2 text-xs"
+                  onClick={() => toggleMarkdownPreview('scheduleRaceDay')}
+                >
+                  {markdownPreviews.scheduleRaceDay ? t('markdown.hidePreview') : t('markdown.preview')}
+                </Button>
+              }
+            >
+              <div
+                className={cn(
+                  'grid gap-3',
+                  markdownPreviews.scheduleRaceDay && 'lg:grid-cols-2 lg:items-start',
+                )}
+              >
+                <textarea
+                  placeholder={t('sections.schedule.raceDayPlaceholder')}
+                  value={blocks.schedule?.raceDay ?? ''}
+                  onChange={(e) => updateSchedule('raceDay', e.target.value)}
+                  rows={3}
+                  className={textareaClassName}
+                />
+                {markdownPreviews.scheduleRaceDay ? (
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <MarkdownContent content={blocks.schedule?.raceDay ?? ''} className="text-sm" />
+                  </div>
+                ) : null}
+              </div>
             </FormField>
 
             {/* Start Times */}

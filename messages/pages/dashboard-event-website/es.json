@@ -6,6 +6,10 @@
     "description": "Esta vista previa refleja el contenido guardado. Guarda los cambios para actualizarla.",
     "empty": "Aún no hay contenido guardado del sitio."
   },
+  "markdown": {
+    "preview": "Vista previa",
+    "hidePreview": "Ocultar vista previa"
+  },
   "save": "Guardar cambios",
   "saving": "Guardando...",
   "saved": "Contenido guardado exitosamente",

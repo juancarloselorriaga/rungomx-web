@@ -6,6 +6,10 @@
     "description": "This preview reflects the saved content. Save changes to refresh it.",
     "empty": "No website content saved yet."
   },
+  "markdown": {
+    "preview": "Preview",
+    "hidePreview": "Hide preview"
+  },
   "save": "Save changes",
   "saving": "Saving...",
   "saved": "Content saved successfully",
