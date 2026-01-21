@@ -385,7 +385,8 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
   const formatDateForInput = (date: Date | null) => {
     if (!date) return '';
     const d = new Date(date);
-    return d.toISOString().slice(0, 16);
+    const pad = (value: number) => value.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   return (

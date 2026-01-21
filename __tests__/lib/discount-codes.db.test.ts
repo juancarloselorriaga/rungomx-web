@@ -7,9 +7,13 @@ import {
   eventSeries,
   organizations,
   pricingTiers,
+  registrations,
+  users,
 } from '@/db/schema';
-import { eq, and, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
+
+import { getDiscountCodesForEdition } from '@/lib/events/discounts/queries';
 
 describe('discount codes (database)', () => {
   let testOrgId: string;
@@ -17,6 +21,8 @@ describe('discount codes (database)', () => {
   let testEditionId: string;
   let testDistanceId: string;
   const createdDiscountCodeIds: string[] = [];
+  const createdRegistrationIds: string[] = [];
+  const createdUserIds: string[] = [];
 
   beforeAll(async () => {
     // Create test organization
@@ -89,6 +95,14 @@ describe('discount codes (database)', () => {
     for (const id of createdDiscountCodeIds) {
       await db.delete(discountRedemptions).where(eq(discountRedemptions.discountCodeId, id));
       await db.delete(discountCodes).where(eq(discountCodes.id, id));
+    }
+
+    if (createdRegistrationIds.length > 0) {
+      await db.delete(registrations).where(inArray(registrations.id, createdRegistrationIds));
+    }
+
+    if (createdUserIds.length > 0) {
+      await db.delete(users).where(inArray(users.id, createdUserIds));
     }
 
     // Clean up in reverse order of creation
@@ -251,6 +265,256 @@ describe('discount codes (database)', () => {
         fetched.maxRedemptions === null || currentCount < fetched.maxRedemptions;
 
       expect(canRedeem).toBe(true);
+    });
+  });
+
+  describe('active redemption counting', () => {
+    it('should count only confirmed and unexpired holds', async () => {
+      const code = `COUNT${Date.now()}`.slice(0, 50);
+
+      const [discountCode] = await db
+        .insert(discountCodes)
+        .values({
+          id: randomUUID(),
+          editionId: testEditionId,
+          code,
+          percentOff: 10,
+          maxRedemptions: null,
+          isActive: true,
+        })
+        .returning();
+
+      createdDiscountCodeIds.push(discountCode.id);
+
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: randomUUID(),
+          name: 'Test Athlete',
+          email: `test-athlete-${Date.now()}@example.com`,
+          emailVerified: true,
+        })
+        .returning();
+
+      createdUserIds.push(user.id);
+
+      const now = new Date();
+      const past = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const future = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      const registrationRows = await db
+        .insert(registrations)
+        .values([
+          {
+            id: randomUUID(),
+            editionId: testEditionId,
+            distanceId: testDistanceId,
+            buyerUserId: user.id,
+            status: 'confirmed',
+            expiresAt: null,
+            basePriceCents: 50000,
+            feesCents: 0,
+            taxCents: 0,
+            totalCents: 45000,
+          },
+          {
+            id: randomUUID(),
+            editionId: testEditionId,
+            distanceId: testDistanceId,
+            buyerUserId: user.id,
+            status: 'started',
+            expiresAt: past,
+            basePriceCents: 50000,
+            feesCents: 0,
+            taxCents: 0,
+            totalCents: 45000,
+          },
+          {
+            id: randomUUID(),
+            editionId: testEditionId,
+            distanceId: testDistanceId,
+            buyerUserId: user.id,
+            status: 'submitted',
+            expiresAt: future,
+            basePriceCents: 50000,
+            feesCents: 0,
+            taxCents: 0,
+            totalCents: 45000,
+          },
+          {
+            id: randomUUID(),
+            editionId: testEditionId,
+            distanceId: testDistanceId,
+            buyerUserId: user.id,
+            status: 'payment_pending',
+            expiresAt: future,
+            basePriceCents: 50000,
+            feesCents: 0,
+            taxCents: 0,
+            totalCents: 45000,
+          },
+          {
+            id: randomUUID(),
+            editionId: testEditionId,
+            distanceId: testDistanceId,
+            buyerUserId: user.id,
+            status: 'cancelled',
+            expiresAt: null,
+            basePriceCents: 50000,
+            feesCents: 0,
+            taxCents: 0,
+            totalCents: 45000,
+          },
+        ])
+        .returning();
+
+      createdRegistrationIds.push(...registrationRows.map((r) => r.id));
+
+      await db.insert(discountRedemptions).values(
+        registrationRows.map((r) => ({
+          id: randomUUID(),
+          registrationId: r.id,
+          discountCodeId: discountCode.id,
+          discountAmountCents: 5000,
+          redeemedAt: now,
+        })),
+      );
+
+      const codes = await getDiscountCodesForEdition(testEditionId);
+      const fetched = codes.find((c) => c.id === discountCode.id);
+
+      expect(fetched?.currentRedemptions).toBe(3);
+    });
+  });
+
+  describe('soft delete + code reuse', () => {
+    it('should allow re-creating the same code after soft delete', async () => {
+      const code = `REUSE${Date.now()}`.slice(0, 50);
+
+      const [first] = await db
+        .insert(discountCodes)
+        .values({
+          id: randomUUID(),
+          editionId: testEditionId,
+          code,
+          percentOff: 10,
+          maxRedemptions: null,
+          isActive: true,
+        })
+        .returning();
+
+      createdDiscountCodeIds.push(first.id);
+
+      await db
+        .update(discountCodes)
+        .set({ deletedAt: new Date() })
+        .where(eq(discountCodes.id, first.id));
+
+      const [second] = await db
+        .insert(discountCodes)
+        .values({
+          id: randomUUID(),
+          editionId: testEditionId,
+          code,
+          percentOff: 15,
+          maxRedemptions: null,
+          isActive: true,
+        })
+        .returning();
+
+      createdDiscountCodeIds.push(second.id);
+
+      expect(second.code).toBe(code);
+    });
+  });
+
+  describe('one coupon per registration constraint', () => {
+    it('should prevent multiple discount redemptions for the same registration', async () => {
+      const codeA = `ONEA${Date.now()}`.slice(0, 50);
+      const codeB = `ONEB${Date.now()}`.slice(0, 50);
+
+      const [discountCodeA] = await db
+        .insert(discountCodes)
+        .values({
+          id: randomUUID(),
+          editionId: testEditionId,
+          code: codeA,
+          percentOff: 10,
+          maxRedemptions: null,
+          isActive: true,
+        })
+        .returning();
+
+      const [discountCodeB] = await db
+        .insert(discountCodes)
+        .values({
+          id: randomUUID(),
+          editionId: testEditionId,
+          code: codeB,
+          percentOff: 10,
+          maxRedemptions: null,
+          isActive: true,
+        })
+        .returning();
+
+      createdDiscountCodeIds.push(discountCodeA.id, discountCodeB.id);
+
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: randomUUID(),
+          name: 'Test Athlete 2',
+          email: `test-athlete2-${Date.now()}@example.com`,
+          emailVerified: true,
+        })
+        .returning();
+
+      createdUserIds.push(user.id);
+
+      const [registration] = await db
+        .insert(registrations)
+        .values({
+          id: randomUUID(),
+          editionId: testEditionId,
+          distanceId: testDistanceId,
+          buyerUserId: user.id,
+          status: 'confirmed',
+          expiresAt: null,
+          basePriceCents: 50000,
+          feesCents: 0,
+          taxCents: 0,
+          totalCents: 45000,
+        })
+        .returning();
+
+      createdRegistrationIds.push(registration.id);
+
+      const now = new Date();
+
+      await db.insert(discountRedemptions).values({
+        id: randomUUID(),
+        registrationId: registration.id,
+        discountCodeId: discountCodeA.id,
+        discountAmountCents: 5000,
+        redeemedAt: now,
+      });
+
+      await expect(
+        db.insert(discountRedemptions).values({
+          id: randomUUID(),
+          registrationId: registration.id,
+          discountCodeId: discountCodeB.id,
+          discountAmountCents: 5000,
+          redeemedAt: now,
+        }),
+      ).rejects.toThrow();
+
+      const redemptions = await db
+        .select()
+        .from(discountRedemptions)
+        .where(eq(discountRedemptions.registrationId, registration.id));
+
+      expect(redemptions).toHaveLength(1);
     });
   });
 });
