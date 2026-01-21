@@ -14,6 +14,17 @@
       "policies": "Políticas",
       "website": "Más Info"
     },
+    "sections": {
+      "overview": "Acerca del evento",
+      "photos": "Fotos",
+      "distances": "Distancias y Precios",
+      "course": "Detalles del Recorrido",
+      "schedule": "Horarios",
+      "faq": "Preguntas Frecuentes",
+      "documents": "Documentos",
+      "sponsors": "Patrocinadores",
+      "policies": "Políticas"
+    },
     "registrationOpen": "Inscripciones abiertas",
     "registrationClosed": "Inscripciones cerradas",
     "registrationDetails": "Detalles de inscripción",

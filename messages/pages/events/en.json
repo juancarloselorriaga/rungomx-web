@@ -14,6 +14,17 @@
       "policies": "Policies",
       "website": "More Info"
     },
+    "sections": {
+      "overview": "About",
+      "photos": "Photos",
+      "distances": "Distances & Pricing",
+      "course": "Course Details",
+      "schedule": "Schedule",
+      "faq": "FAQ",
+      "documents": "Documents",
+      "sponsors": "Sponsors",
+      "policies": "Policies"
+    },
     "registrationOpen": "Registration open",
     "registrationClosed": "Registration closed",
     "registrationDetails": "Registration details",
