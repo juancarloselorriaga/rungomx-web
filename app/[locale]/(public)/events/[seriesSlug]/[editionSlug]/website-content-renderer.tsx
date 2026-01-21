@@ -1,6 +1,5 @@
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
-import { MapPin, Clock, FileText, Image as ImageIcon, Download, Award } from 'lucide-react';
-import { SponsorTierDisplay } from '@/components/events/sponsor-tier-display';
+import { MapPin, Clock, FileText, Image as ImageIcon, Download } from 'lucide-react';
 import { PhotoGallery } from '@/components/events/photo-gallery';
 
 type WebsiteContentRendererProps = {
@@ -32,20 +31,20 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
     Boolean(course?.enabled) &&
     Boolean(
       course?.title ||
-        course?.description ||
-        course?.elevationGain ||
-        course?.elevationProfileUrl ||
-        course?.mapUrl ||
-        (course?.aidStations?.length ?? 0) > 0,
+      course?.description ||
+      course?.elevationGain ||
+      course?.elevationProfileUrl ||
+      course?.mapUrl ||
+      (course?.aidStations?.length ?? 0) > 0,
     );
   const hasScheduleContent =
     Boolean(schedule?.enabled) &&
     Boolean(
       schedule?.title ||
-        schedule?.packetPickup ||
-        schedule?.parking ||
-        schedule?.raceDay ||
-        (schedule?.startTimes?.length ?? 0) > 0,
+      schedule?.packetPickup ||
+      schedule?.parking ||
+      schedule?.raceDay ||
+      (schedule?.startTimes?.length ?? 0) > 0,
     );
   const hasMediaContent =
     Boolean(media?.enabled) &&
@@ -54,11 +53,15 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
   // Check if any tier has at least one sponsor
   const hasSponsorsContent =
     Boolean(sponsors?.enabled) &&
-    Boolean(
-      sponsors?.tiers?.some((tier) => (tier.sponsors?.length ?? 0) > 0),
-    );
+    Boolean(sponsors?.tiers?.some((tier) => (tier.sponsors?.length ?? 0) > 0));
 
-  if (!hasOverviewContent && !hasCourseContent && !hasScheduleContent && !hasMediaContent && !hasSponsorsContent) {
+  if (
+    !hasOverviewContent &&
+    !hasCourseContent &&
+    !hasScheduleContent &&
+    !hasMediaContent &&
+    !hasSponsorsContent
+  ) {
     return (
       <div className="text-center py-12 text-muted-foreground">
         <p>No additional content available at this time.</p>
@@ -71,9 +74,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
       {/* Overview Section */}
       {hasOverviewContent && overview && (
         <section>
-          {overview.title && (
-            <h2 className="text-2xl font-bold mb-4">{overview.title}</h2>
-          )}
+          {overview.title && <h2 className="text-2xl font-bold mb-4">{overview.title}</h2>}
           {overview.content && (
             <div className="prose prose-sm dark:prose-invert max-w-none">
               <p className="whitespace-pre-wrap">{overview.content}</p>
@@ -96,9 +97,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
       {/* Course Section */}
       {hasCourseContent && course && (
         <section>
-          {course.title && (
-            <h2 className="text-2xl font-bold mb-4">{course.title}</h2>
-          )}
+          {course.title && <h2 className="text-2xl font-bold mb-4">{course.title}</h2>}
           {course.description && (
             <div className="prose prose-sm dark:prose-invert max-w-none mb-6">
               <p className="whitespace-pre-wrap">{course.description}</p>
@@ -264,10 +263,12 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
                         rel="noopener noreferrer"
                         className="rounded-lg border bg-card p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors group"
                       >
-                        <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                        <FileText className="h-5 w-5 text-primary shrink-0" />
                         <span className="text-sm font-medium flex-1">{doc.label}</span>
                         <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
-                          <span className="text-xs hidden sm:inline">{labels?.download || 'Download'}</span>
+                          <span className="text-xs hidden sm:inline">
+                            {labels?.download || 'Download'}
+                          </span>
                           <Download className="h-4 w-4" />
                         </div>
                       </a>
@@ -276,7 +277,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
                         key={doc.mediaId || index}
                         className="rounded-lg border bg-card p-3 flex items-center gap-3"
                       >
-                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                         <span className="text-sm font-medium">{doc.label}</span>
                       </div>
                     );
@@ -308,29 +309,6 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, labels }: WebsiteCon
                 />
               </div>
             )}
-          </div>
-        </section>
-      )}
-
-      {/* Sponsors Section */}
-      {hasSponsorsContent && sponsors && (
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Award className="h-6 w-6" />
-            <h2 className="text-2xl font-bold">
-              {sponsors.title || labels?.sponsors || 'Sponsors'}
-            </h2>
-          </div>
-          {sponsors.subtitle && (
-            <p className="text-muted-foreground mb-6">{sponsors.subtitle}</p>
-          )}
-          <div className="space-y-8">
-            {sponsors.tiers
-              ?.slice()
-              .sort((a, b) => a.sortOrder - b.sortOrder)
-              .map((tier) => (
-                <SponsorTierDisplay key={tier.id} tier={tier} mediaUrls={mediaUrls} />
-              ))}
           </div>
         </section>
       )}
