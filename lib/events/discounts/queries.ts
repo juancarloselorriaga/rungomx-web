@@ -1,7 +1,7 @@
-import { and, desc, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { discountCodes, discountRedemptions } from '@/db/schema';
+import { discountCodes, discountRedemptions, registrations } from '@/db/schema';
 import type { DiscountCodeData } from './actions';
 
 /**
@@ -15,6 +15,8 @@ export async function getDiscountCodesForEdition(editionId: string): Promise<Dis
 
   if (codes.length === 0) return [];
 
+  const now = new Date();
+
   // Get redemption counts for all codes
   const redemptionCounts = await db
     .select({
@@ -22,11 +24,22 @@ export async function getDiscountCodesForEdition(editionId: string): Promise<Dis
       count: sql<number>`count(*)::int`,
     })
     .from(discountRedemptions)
+    .innerJoin(registrations, eq(discountRedemptions.registrationId, registrations.id))
     .where(
-      sql`${discountRedemptions.discountCodeId} IN (${sql.join(
-        codes.map((c) => sql`${c.id}`),
-        sql`, `,
-      )})`,
+      and(
+        sql`${discountRedemptions.discountCodeId} IN (${sql.join(
+          codes.map((c) => sql`${c.id}`),
+          sql`, `,
+        )})`,
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
     )
     .groupBy(discountRedemptions.discountCodeId);
 
@@ -56,10 +69,25 @@ export async function getDiscountCodeById(discountCodeId: string): Promise<Disco
 
   if (!code) return null;
 
+  const now = new Date();
+
   const redemptionCount = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(discountRedemptions)
-    .where(eq(discountRedemptions.discountCodeId, discountCodeId));
+    .innerJoin(registrations, eq(discountRedemptions.registrationId, registrations.id))
+    .where(
+      and(
+        eq(discountRedemptions.discountCodeId, discountCodeId),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
+    );
 
   return {
     id: code.id,

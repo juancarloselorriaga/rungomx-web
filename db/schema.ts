@@ -675,7 +675,9 @@ export const discountCodes = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => ({
-    editionCodeUnique: uniqueIndex('discount_codes_edition_code_idx').on(table.editionId, table.code),
+    editionCodeUnique: uniqueIndex('discount_codes_edition_code_active_idx')
+      .on(table.editionId, table.code)
+      .where(sql`${table.deletedAt} is null`),
   }),
 );
 
@@ -694,10 +696,8 @@ export const discountRedemptions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   },
   (table) => ({
-    registrationDiscountUnique: uniqueIndex('discount_redemptions_registration_idx').on(
-      table.registrationId,
-      table.discountCodeId,
-    ),
+    registrationUnique: uniqueIndex('discount_redemptions_registration_unique_idx').on(table.registrationId),
+    discountCodeIdIdx: index('discount_redemptions_discount_code_id_idx').on(table.discountCodeId),
   }),
 );
 

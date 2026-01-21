@@ -1,6 +1,6 @@
 'use server';
 
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -9,6 +9,7 @@ import { addOnSelections, discountCodes, discountRedemptions, eventEditions, reg
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
+import { isExpiredHold } from '@/lib/events/registration-holds';
 import {
   canUserAccessEvent,
   requireOrgPermission,
@@ -59,6 +60,16 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
   }
 
   return null;
+}
+
+function isPostgresUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof (error as { code?: unknown }).code === 'string' &&
+    (error as { code: string }).code === '23505'
+  );
 }
 
 // =============================================================================
@@ -168,52 +179,59 @@ export const createDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
 
   const requestContext = await getRequestContext(await headers());
 
-  const discountCode = await db.transaction(async (tx) => {
-    const [newCode] = await tx
-      .insert(discountCodes)
-      .values({
-        editionId,
-        code,
-        name: name || null,
-        percentOff,
-        maxRedemptions: maxRedemptions ?? null,
-        startsAt: startsAt ? new Date(startsAt) : null,
-        endsAt: endsAt ? new Date(endsAt) : null,
-        isActive,
-      })
-      .returning();
+  try {
+    const discountCode = await db.transaction(async (tx) => {
+      const [newCode] = await tx
+        .insert(discountCodes)
+        .values({
+          editionId,
+          code,
+          name: name || null,
+          percentOff,
+          maxRedemptions: maxRedemptions ?? null,
+          startsAt: startsAt ? new Date(startsAt) : null,
+          endsAt: endsAt ? new Date(endsAt) : null,
+          isActive,
+        })
+        .returning();
 
-    await createAuditLog(
-      {
-        organizationId: edition.series.organizationId,
-        actorUserId: authContext.user.id,
-        action: 'discount_code.create',
-        entityType: 'discount_code',
-        entityId: newCode.id,
-        after: { code, percentOff, maxRedemptions },
-        request: requestContext,
+      await createAuditLog(
+        {
+          organizationId: edition.series.organizationId,
+          actorUserId: authContext.user.id,
+          action: 'discount_code.create',
+          entityType: 'discount_code',
+          entityId: newCode.id,
+          after: { code, percentOff, maxRedemptions },
+          request: requestContext,
+        },
+        tx,
+      );
+
+      return newCode;
+    });
+
+    return {
+      ok: true,
+      data: {
+        id: discountCode.id,
+        editionId: discountCode.editionId,
+        code: discountCode.code,
+        name: discountCode.name,
+        percentOff: discountCode.percentOff,
+        maxRedemptions: discountCode.maxRedemptions,
+        currentRedemptions: 0,
+        startsAt: discountCode.startsAt,
+        endsAt: discountCode.endsAt,
+        isActive: discountCode.isActive,
       },
-      tx,
-    );
-
-    return newCode;
-  });
-
-  return {
-    ok: true,
-    data: {
-      id: discountCode.id,
-      editionId: discountCode.editionId,
-      code: discountCode.code,
-      name: discountCode.name,
-      percentOff: discountCode.percentOff,
-      maxRedemptions: discountCode.maxRedemptions,
-      currentRedemptions: 0,
-      startsAt: discountCode.startsAt,
-      endsAt: discountCode.endsAt,
-      isActive: discountCode.isActive,
-    },
-  };
+    };
+  } catch (error) {
+    if (isPostgresUniqueViolation(error)) {
+      return { ok: false, error: 'A discount code with this code already exists', code: 'CODE_EXISTS' };
+    }
+    throw error;
+  }
 });
 
 /**
@@ -254,11 +272,26 @@ export const updateDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
 
   const requestContext = await getRequestContext(await headers());
 
-  // Count current redemptions
-  const redemptionCount = await db
+  const now = new Date();
+
+  // Count current redemptions (confirmed + unexpired holds only)
+  const [{ count: activeRedemptionCount }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(discountRedemptions)
-    .where(eq(discountRedemptions.discountCodeId, discountCodeId));
+    .innerJoin(registrations, eq(discountRedemptions.registrationId, registrations.id))
+    .where(
+      and(
+        eq(discountRedemptions.discountCodeId, discountCodeId),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
+    );
 
   const updatedCode = await db.transaction(async (tx) => {
     const updateValues: Record<string, unknown> = { updatedAt: new Date() };
@@ -310,7 +343,7 @@ export const updateDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
       name: updatedCode.name,
       percentOff: updatedCode.percentOff,
       maxRedemptions: updatedCode.maxRedemptions,
-      currentRedemptions: redemptionCount[0].count,
+      currentRedemptions: activeRedemptionCount,
       startsAt: updatedCode.startsAt,
       endsAt: updatedCode.endsAt,
       isActive: updatedCode.isActive,
@@ -436,14 +469,27 @@ export const validateDiscountCode = withAuthenticatedUser<ActionResult<DiscountV
     };
   }
 
+  const [{ count: activeRedemptionCount }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(discountRedemptions)
+    .innerJoin(registrations, eq(discountRedemptions.registrationId, registrations.id))
+    .where(
+      and(
+        eq(discountRedemptions.discountCodeId, discountCode.id),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
+    );
+
   // Check redemption limit
   if (discountCode.maxRedemptions !== null) {
-    const redemptionCount = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(discountRedemptions)
-      .where(eq(discountRedemptions.discountCodeId, discountCode.id));
-
-    if (redemptionCount[0].count >= discountCode.maxRedemptions) {
+    if (activeRedemptionCount >= discountCode.maxRedemptions) {
       return {
         ok: true,
         data: { valid: false, error: 'This discount code has reached its maximum uses' },
@@ -453,12 +499,6 @@ export const validateDiscountCode = withAuthenticatedUser<ActionResult<DiscountV
 
   // Calculate discount
   const discountAmountCents = Math.round((basePriceCents * discountCode.percentOff) / 100);
-
-  // Count current redemptions
-  const redemptionCount = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(discountRedemptions)
-    .where(eq(discountRedemptions.discountCodeId, discountCode.id));
 
   return {
     ok: true,
@@ -471,7 +511,7 @@ export const validateDiscountCode = withAuthenticatedUser<ActionResult<DiscountV
         name: discountCode.name,
         percentOff: discountCode.percentOff,
         maxRedemptions: discountCode.maxRedemptions,
-        currentRedemptions: redemptionCount[0].count,
+        currentRedemptions: activeRedemptionCount,
         startsAt: discountCode.startsAt,
         endsAt: discountCode.endsAt,
         isActive: discountCode.isActive,
@@ -511,13 +551,21 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
     return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
   }
 
-  // Check if a discount is already applied
-  const existingRedemption = await db.query.discountRedemptions.findFirst({
-    where: eq(discountRedemptions.registrationId, registrationId),
-  });
+  const now = new Date();
+  if (isExpiredHold(registration.status, registration.expiresAt, now)) {
+    return {
+      ok: false,
+      error: 'Registration expired. Please start again.',
+      code: 'REGISTRATION_EXPIRED',
+    };
+  }
 
-  if (existingRedemption) {
-    return { ok: false, error: 'A discount code is already applied to this registration', code: 'DISCOUNT_ALREADY_APPLIED' };
+  if (registration.status !== 'started' && registration.status !== 'submitted') {
+    return {
+      ok: false,
+      error: 'Registration cannot accept a discount code at this stage',
+      code: 'INVALID_STATE',
+    };
   }
 
   // Find and validate the discount code
@@ -534,7 +582,6 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
   }
 
   // Check date validity
-  const now = new Date();
   if (discountCode.startsAt && now < discountCode.startsAt) {
     return { ok: false, error: 'This discount code is not yet valid', code: 'CODE_NOT_STARTED' };
   }
@@ -546,15 +593,45 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
   const requestContext = await getRequestContext(await headers());
 
   const result = await db.transaction(async (tx) => {
-    // Lock and count redemptions
-    const redemptionCount = await tx
+    // Serialize application of the same discount code (maxRedemptions correctness).
+    await tx.execute(sql`SELECT id FROM ${discountCodes} WHERE id = ${discountCode.id} FOR UPDATE`);
+
+    // Serialize changes to this registration (one coupon per registration correctness).
+    await tx.execute(sql`SELECT id FROM ${registrations} WHERE id = ${registrationId} FOR UPDATE`);
+
+    const existingRedemption = await tx.query.discountRedemptions.findFirst({
+      where: eq(discountRedemptions.registrationId, registrationId),
+    });
+
+    if (existingRedemption) {
+      return {
+        ok: false as const,
+        error: 'A discount code is already applied to this registration',
+        code: 'DISCOUNT_ALREADY_APPLIED',
+      };
+    }
+
+    const [{ count: activeRedemptionCount }] = await tx
       .select({ count: sql<number>`count(*)::int` })
       .from(discountRedemptions)
-      .where(eq(discountRedemptions.discountCodeId, discountCode.id));
+      .innerJoin(registrations, eq(discountRedemptions.registrationId, registrations.id))
+      .where(
+        and(
+          eq(discountRedemptions.discountCodeId, discountCode.id),
+          isNull(registrations.deletedAt),
+          or(
+            eq(registrations.status, 'confirmed'),
+            and(
+              inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+              gt(registrations.expiresAt, now),
+            ),
+          ),
+        ),
+      );
 
     if (
       discountCode.maxRedemptions !== null &&
-      redemptionCount[0].count >= discountCode.maxRedemptions
+      activeRedemptionCount >= discountCode.maxRedemptions
     ) {
       return { ok: false as const, error: 'This discount code has reached its maximum uses', code: 'MAX_REDEMPTIONS' };
     }
@@ -577,12 +654,23 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
     const discountAmountCents = Math.round((basePriceCents * discountCode.percentOff) / 100);
 
     // Create redemption
-    await tx.insert(discountRedemptions).values({
-      registrationId,
-      discountCodeId: discountCode.id,
-      discountAmountCents,
-      redeemedAt: now,
-    });
+    try {
+      await tx.insert(discountRedemptions).values({
+        registrationId,
+        discountCodeId: discountCode.id,
+        discountAmountCents,
+        redeemedAt: now,
+      });
+    } catch (error) {
+      if (isPostgresUniqueViolation(error)) {
+        return {
+          ok: false as const,
+          error: 'A discount code is already applied to this registration',
+          code: 'DISCOUNT_ALREADY_APPLIED',
+        };
+      }
+      throw error;
+    }
 
     // Update registration total
     const newTotal = Math.max(
@@ -642,6 +730,23 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
     return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
   }
 
+  const now = new Date();
+  if (isExpiredHold(registration.status, registration.expiresAt, now)) {
+    return {
+      ok: false,
+      error: 'Registration expired. Please start again.',
+      code: 'REGISTRATION_EXPIRED',
+    };
+  }
+
+  if (registration.status !== 'started' && registration.status !== 'submitted') {
+    return {
+      ok: false,
+      error: 'Registration cannot remove a discount code at this stage',
+      code: 'INVALID_STATE',
+    };
+  }
+
   const redemption = await db.query.discountRedemptions.findFirst({
     where: eq(discountRedemptions.registrationId, registrationId),
     with: { discountCode: true },
@@ -654,6 +759,9 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
   const requestContext = await getRequestContext(await headers());
 
   await db.transaction(async (tx) => {
+    // Serialize changes to this registration (one coupon per registration correctness).
+    await tx.execute(sql`SELECT id FROM ${registrations} WHERE id = ${registrationId} FOR UPDATE`);
+
     // Delete redemption
     await tx
       .delete(discountRedemptions)
@@ -679,7 +787,7 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
       .update(registrations)
       .set({
         totalCents: newTotal,
-        updatedAt: new Date(),
+        updatedAt: now,
       })
       .where(eq(registrations.id, registrationId));
 
