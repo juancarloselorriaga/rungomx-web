@@ -698,6 +698,10 @@ Key achievements:
 - Coupons are case-insensitive (EARLY20 = early20)
 - One coupon per registration
 - Coupons only work for the specific event they're created for
+- Max uses count only active registrations (confirmed + unexpired holds). Expired/cancelled holds don’t consume uses.
+- Coupons can be applied/removed only before finalizing registration (started/submitted). Once a registration is payment pending, totals are locked.
+- Deleting a coupon is a soft delete; the same code can be re-created later for the same event edition.
+- Coupon start/end date-times are treated as local time in the organizer UI (no time-shift on edit/save).
 
 ---
 

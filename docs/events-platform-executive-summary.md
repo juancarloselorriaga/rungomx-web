@@ -106,6 +106,8 @@ This release covers the first three phases of development, delivering a complete
 - Case-insensitive codes (EARLY20 = early20)
 - Usage tracking and statistics
 - Applies to the base price only
+- Max uses count only active registrations (confirmed + unexpired holds)
+- Coupons can be retired (soft-deleted) and the same code re-used later for the same event edition
 
 **Custom Registration Questions**
 
