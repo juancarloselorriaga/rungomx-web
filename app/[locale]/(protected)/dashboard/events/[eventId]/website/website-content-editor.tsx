@@ -20,6 +20,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BulkDocumentUploader } from '@/components/events/bulk-document-uploader';
 import { SortableDocumentList, type DocumentItem } from '@/components/events/sortable-document-list';
 import { BulkPhotoUploader } from '@/components/events/bulk-photo-uploader';
@@ -517,8 +518,29 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        {/* Skeleton for collapsible sections */}
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="rounded-lg border bg-card shadow-sm">
+            <div className="px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1">
+                <Skeleton className="h-5 w-5 rounded" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-5 w-32" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-5 w-9 rounded-full" />
+                <Skeleton className="h-5 w-5 rounded" />
+              </div>
+            </div>
+          </div>
+        ))}
+        {/* Skeleton for save button */}
+        <div className="flex justify-end">
+          <Skeleton className="h-10 w-24" />
+        </div>
       </div>
     );
   }
