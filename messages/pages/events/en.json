@@ -84,6 +84,7 @@
       "photos": "Photos",
       "terrain": "Terrain",
       "download": "Download",
+      "sponsors": "Sponsors",
       "gallery": {
         "loadMore": "Load more photos",
         "showingOf": "Showing __visible__ of __total__ photos"

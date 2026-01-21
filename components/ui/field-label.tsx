@@ -4,9 +4,10 @@ interface FieldLabelProps {
   children: React.ReactNode;
   required?: boolean;
   error?: boolean;
+  actions?: React.ReactNode;
 }
 
-export function FieldLabel({ children, required, error }: FieldLabelProps) {
+export function FieldLabel({ children, required, error, actions }: FieldLabelProps) {
   return (
     <div className="flex items-center justify-between gap-2">
       <span
@@ -25,6 +26,7 @@ export function FieldLabel({ children, required, error }: FieldLabelProps) {
           </span>
         ) : null}
       </span>
+      {actions ? <span className="shrink-0">{actions}</span> : null}
     </div>
   );
 }
