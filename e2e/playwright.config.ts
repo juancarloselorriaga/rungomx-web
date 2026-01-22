@@ -10,6 +10,27 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Tests Phase 0 (Foundations) and Phase 1 (Event Management) features
  */
+const testBaseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001';
+const testOrigin = (() => {
+  try {
+    return new URL(testBaseURL).origin;
+  } catch {
+    return 'http://localhost:3001';
+  }
+})();
+const testPort = (() => {
+  try {
+    const url = new URL(testOrigin);
+    if (url.port) {
+      const parsed = Number.parseInt(url.port, 10);
+      if (Number.isFinite(parsed) && parsed > 0) return parsed;
+    }
+    return url.protocol === 'https:' ? 443 : 80;
+  } catch {
+    return 3001;
+  }
+})();
+
 export default defineConfig({
   testDir: './tests',
 
@@ -47,7 +68,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL for tests (use port 3001 to avoid conflicts with dev server)
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001',
+    baseURL: testOrigin,
 
     // Collect trace on failure
     trace: 'on-first-retry',
@@ -97,13 +118,17 @@ export default defineConfig({
 
   // Run local dev server before tests on port 3001 to avoid conflicts
   webServer: {
-    command: 'NODE_ENV=test PORT=3001 pnpm dev',
-    url: 'http://localhost:3001',
-    reuseExistingServer: !process.env.CI,
+    command: `NODE_ENV=test PORT=${testPort} pnpm dev`,
+    url: testOrigin,
+    // Always start a fresh server for E2E to guarantee env + DB isolation.
+    // Reusing an existing server can point tests at the wrong DATABASE_URL.
+    reuseExistingServer: false,
     stdout: 'ignore',
     stderr: 'pipe',
     timeout: 120 * 1000, // 2 minutes to start
     env: {
+      // Ensure auth + redirects use the same origin as the test server.
+      NEXT_PUBLIC_SITE_URL: testOrigin,
       // Force dev server to use test database
       ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
       // Mapbox tokens for location search

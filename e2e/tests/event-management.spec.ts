@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { and, eq, isNull } from 'drizzle-orm';
+import { eventEditions } from '@/db/schema';
 import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
@@ -68,8 +70,13 @@ test.describe('Event Management', () => {
     const eventData = await createEvent(page);
 
     eventId = eventData.eventId;
-    seriesSlug = eventData.seriesName.toLowerCase().replace(/\s+/g, '-');
-    editionSlug = eventData.editionLabel;
+    // Derive slugs from the DB to avoid mismatches with any server-side slug normalization.
+    const edition = await db.query.eventEditions.findFirst({
+      where: and(eq(eventEditions.id, eventId), isNull(eventEditions.deletedAt)),
+      with: { series: true },
+    });
+    seriesSlug = edition?.series?.slug ?? eventData.seriesName.toLowerCase().replace(/\s+/g, '-');
+    editionSlug = edition?.slug ?? eventData.editionLabel.toLowerCase();
 
     await context.close();
   });
@@ -148,12 +155,12 @@ test.describe('Event Management', () => {
 
   test('Test 1.5c: Public event page is accessible', async ({ page }) => {
     // Navigate to public event page
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
+    await page.goto(`/en/events/${seriesSlug}/${editionSlug}?tab=distances`);
 
     // Event details should be visible
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     // Location appears in multiple places - just check any is visible
-    await expect(page.getByText(/Monterrey, Nuevo León/i).first()).toBeVisible();
+    await expect(page.getByText(/Monterrey, Nuevo Le[oó]n/i).first()).toBeVisible();
 
     // Distances should be visible
     await expect(page.getByText('10K Trail Run')).toBeVisible();

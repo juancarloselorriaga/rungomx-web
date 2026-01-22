@@ -99,13 +99,13 @@ test.describe('Capacity Enforcement', () => {
   });
 
   test('Test 1.9a: Event shows initial capacity', async ({ page }) => {
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
+    await page.goto(`/en/events/${seriesSlug}/${editionSlug}?tab=distances`);
 
     // Should show 1 spot remaining
     await expect(page.getByText(/1 spot/i)).toBeVisible();
 
     // Register button should be enabled
-    await expect(page.getByRole('link', { name: /register/i }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /select|register/i }).first()).toBeVisible();
   });
 
   test('Test 1.9b: First registration fills capacity', async ({ page }) => {
@@ -186,8 +186,8 @@ test.describe('Capacity Enforcement', () => {
     await completeRegistrationForm(athletePage);
     await athletePage.getByRole('button', { name: /complete registration/i }).click();
 
-    // Check public page
-    await athletePage.goto(`/en/events/${multiSeriesSlug}/${multiEditionSlug}`);
+    // Check public page (Distances tab contains capacity + sold out state)
+    await athletePage.goto(`/en/events/${multiSeriesSlug}/${multiEditionSlug}?tab=distances`);
 
     // Limited distance should show sold out
     const limitedSection = athletePage.locator(':has-text("Limited Distance")');

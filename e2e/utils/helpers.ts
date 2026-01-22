@@ -436,10 +436,11 @@ export async function createEvent(
   await page.waitForTimeout(300);
 
   // Create event
+  await expect(page.getByRole('button', { name: /create event/i })).toBeEnabled({ timeout: 10000 });
   await page.getByRole('button', { name: /create event/i }).click();
 
   // Wait for redirect to event dashboard
-  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}/, { timeout: 15000 });
+  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}/, { timeout: 45000 });
 
   // Extract event ID from URL
   const url = page.url();

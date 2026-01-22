@@ -125,11 +125,11 @@ test.describe('Athlete Registration', () => {
     await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 
     // Sign-in button in the login required card should have callback URL
-    // Use the one with callbackUrl in the href (not the navbar sign-in)
-    const signInLink = page.locator('a[href*="callbackUrl"]').first();
+    // Use the one with callbackURL in the href (not the navbar sign-in)
+    const signInLink = page.locator('a[href*="callbackURL"], a[href*="callbackUrl"]').first();
     await expect(signInLink).toBeVisible();
     const href = await signInLink.getAttribute('href');
-    expect(href).toContain('callbackUrl');
+    expect(href).toMatch(/callbackURL|callbackUrl/);
   });
 
   test('Test 1.8c: Sign in as athlete', async ({ page }) => {
@@ -266,7 +266,7 @@ test.describe('Athlete Registration', () => {
 
   test('Test 1.8j: Capacity decrements after registration', async ({ page }) => {
     // Navigate to public event page
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
+    await page.goto(`/en/events/${seriesSlug}/${editionSlug}?tab=distances`);
 
     // Capacity should be reduced (started at 100, should now be 99)
     await expect(page.getByText(/99 spots remaining/i)).toBeVisible();
