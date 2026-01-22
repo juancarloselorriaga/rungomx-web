@@ -1,13 +1,19 @@
 import { and, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { discountCodes, discountRedemptions, registrations } from '@/db/schema';
+import { eventEditionCouponsTag } from '../cache-tags';
 import type { DiscountCodeData } from './actions';
 
 /**
  * Get all discount codes for an event edition with redemption counts.
  */
 export async function getDiscountCodesForEdition(editionId: string): Promise<DiscountCodeData[]> {
+  'use cache: remote';
+  cacheTag(eventEditionCouponsTag(editionId));
+  cacheLife({ expire: 300 });
+
   const codes = await db.query.discountCodes.findMany({
     where: and(eq(discountCodes.editionId, editionId), isNull(discountCodes.deletedAt)),
     orderBy: [desc(discountCodes.createdAt)],

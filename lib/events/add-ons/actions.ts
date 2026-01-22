@@ -1,6 +1,7 @@
 'use server';
 
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -22,6 +23,7 @@ import {
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
 import { ADD_ON_DELIVERY_METHODS, ADD_ON_TYPES } from '../constants';
+import { eventEditionAddOnsTag, eventEditionRegistrationsTag } from '../cache-tags';
 
 // =============================================================================
 // Types
@@ -235,6 +237,8 @@ export const createAddOn = withAuthenticatedUser<ActionResult<AddOnData>>({
     return newAddOn;
   });
 
+  revalidateTag(eventEditionAddOnsTag(editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -342,6 +346,8 @@ export const updateAddOn = withAuthenticatedUser<ActionResult<AddOnData>>({
     return updated;
   });
 
+  revalidateTag(eventEditionAddOnsTag(existingAddOn.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -433,6 +439,8 @@ export const deleteAddOn = withAuthenticatedUser<ActionResult>({
     );
   });
 
+  revalidateTag(eventEditionAddOnsTag(existingAddOn.editionId), { expire: 0 });
+
   return { ok: true, data: undefined };
 });
 
@@ -508,6 +516,8 @@ export const createAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
 
     return newOption;
   });
+
+  revalidateTag(eventEditionAddOnsTag(existingAddOn.editionId), { expire: 0 });
 
   return {
     ok: true,
@@ -600,6 +610,8 @@ export const updateAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
     return updated;
   });
 
+  revalidateTag(eventEditionAddOnsTag(existingOption.addOn.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -680,6 +692,8 @@ export const deleteAddOnOption = withAuthenticatedUser<ActionResult>({
     );
   });
 
+  revalidateTag(eventEditionAddOnsTag(existingOption.addOn.editionId), { expire: 0 });
+
   return { ok: true, data: undefined };
 });
 
@@ -719,6 +733,8 @@ export const reorderAddOns = withAuthenticatedUser<ActionResult>({
         .where(and(eq(addOns.id, addOnIds[i]), eq(addOns.editionId, editionId)));
     }
   });
+
+  revalidateTag(eventEditionAddOnsTag(editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -896,6 +912,8 @@ export const submitAddOnSelections = withAuthenticatedUser<ActionResult>({
       tx,
     );
   });
+
+  revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });

@@ -1,13 +1,19 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { addOnOptions, addOns, addOnSelections } from '@/db/schema';
+import { eventEditionAddOnsTag } from '../cache-tags';
 import type { AddOnData } from './actions';
 
 /**
  * Get all add-ons for an event edition with their options.
  */
 export async function getAddOnsForEdition(editionId: string): Promise<AddOnData[]> {
+  'use cache: remote';
+  cacheTag(eventEditionAddOnsTag(editionId));
+  cacheLife({ expire: 300 });
+
   const result = await db.query.addOns.findMany({
     where: and(eq(addOns.editionId, editionId), isNull(addOns.deletedAt)),
     orderBy: [asc(addOns.sortOrder)],
@@ -49,6 +55,10 @@ export async function getAddOnsForDistance(
   editionId: string,
   distanceId: string,
 ): Promise<AddOnData[]> {
+  'use cache: remote';
+  cacheTag(eventEditionAddOnsTag(editionId));
+  cacheLife({ expire: 300 });
+
   const result = await db.query.addOns.findMany({
     where: and(
       eq(addOns.editionId, editionId),

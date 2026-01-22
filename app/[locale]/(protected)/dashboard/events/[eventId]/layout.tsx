@@ -4,6 +4,7 @@ import { getEventEditionDetail } from '@/lib/events/queries';
 import type { EventVisibility } from '@/lib/events/constants';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
+import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import { ReactNode } from 'react';
@@ -54,6 +55,7 @@ export default async function EventDetailLayout({
   children,
 }: EventLayoutProps) {
   const { locale, eventId } = await params;
+  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]' });
   const t = await getTranslations('pages.dashboardEvents.detail');
   const tNav = await getTranslations('pages.dashboardEvents.detail.nav');
   const tEvents = await getTranslations('pages.dashboardEvents');

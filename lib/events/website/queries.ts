@@ -1,7 +1,9 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { eventWebsiteContent, media } from '@/db/schema';
+import { eventEditionWebsiteTag } from '../cache-tags';
 
 import {
   websiteContentBlocksSchema,
@@ -76,6 +78,10 @@ export async function getEventDocuments(
   editionId: string,
   locale: string = 'es',
 ): Promise<Array<{ label: string; url: string }>> {
+  'use cache: remote';
+  cacheTag(eventEditionWebsiteTag(editionId));
+  cacheLife({ expire: 300 });
+
   const content = await getPublicWebsiteContent(editionId, locale);
   if (!content?.media?.documents || content.media.documents.length === 0) {
     return [];
@@ -99,6 +105,10 @@ export async function getPublicWebsiteContent(
   editionId: string,
   locale: string,
 ): Promise<WebsiteContentBlocks | null> {
+  'use cache: remote';
+  cacheTag(eventEditionWebsiteTag(editionId));
+  cacheLife({ expire: 300 });
+
   const content = await db.query.eventWebsiteContent.findFirst({
     where: and(
       eq(eventWebsiteContent.editionId, editionId),
@@ -125,6 +135,10 @@ export async function getPublicWebsiteContent(
  * Useful for determining whether to show the "Website" tab.
  */
 export async function hasWebsiteContent(editionId: string): Promise<boolean> {
+  'use cache: remote';
+  cacheTag(eventEditionWebsiteTag(editionId));
+  cacheLife({ expire: 300 });
+
   const content = await db.query.eventWebsiteContent.findFirst({
     where: and(
       eq(eventWebsiteContent.editionId, editionId),

@@ -363,6 +363,12 @@
     "description": "Create promotional codes that participants can use to get discounts on registration.",
     "emptyState": "No coupons configured yet",
     "emptyStateDescription": "Create your first coupon to offer discounts to participants.",
+    "toast": {
+      "created": "Coupon created",
+      "updated": "Coupon updated",
+      "deleted": "Coupon deleted",
+      "error": "Something went wrong"
+    },
     "status": {
       "active": "Active",
       "inactive": "Inactive",

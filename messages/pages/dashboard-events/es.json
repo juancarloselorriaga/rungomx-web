@@ -363,6 +363,12 @@
     "description": "Crea códigos promocionales que los participantes pueden usar para obtener descuentos en la inscripción.",
     "emptyState": "Aún no hay cupones configurados",
     "emptyStateDescription": "Crea tu primer cupón para ofrecer descuentos a los participantes.",
+    "toast": {
+      "created": "Cupón creado",
+      "updated": "Cupón actualizado",
+      "deleted": "Cupón eliminado",
+      "error": "Ocurrió un error"
+    },
     "status": {
       "active": "Activo",
       "inactive": "Inactivo",

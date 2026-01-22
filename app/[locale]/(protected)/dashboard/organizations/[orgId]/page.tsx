@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation';
 import { OrganizationMembersManager } from './organization-members-manager';
 import { OrganizationSettingsForm } from './organization-settings-form';
 import { PayoutProfileForm } from './payout-profile-form';
+import { getPayoutProfile } from '@/lib/organizations/payout/actions';
 
 type OrganizationDetailPageProps = LocalePageProps & {
   params: Promise<{ locale: string; orgId: string }>;
@@ -64,6 +65,10 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   const isAdmin = membership?.role === 'admin';
   const canEditPayout = isSupportUser || isOwner || isAdmin;
 
+  const payoutProfileResult = canEditPayout
+    ? await getPayoutProfile({ organizationId: organization.id })
+    : { ok: true as const, data: null };
+
   return (
     <div className="space-y-6">
       <div>
@@ -98,6 +103,8 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
       <PayoutProfileForm
         organizationId={organization.id}
         canEdit={canEditPayout}
+        initialProfile={payoutProfileResult.ok ? payoutProfileResult.data : null}
+        initialError={payoutProfileResult.ok ? null : payoutProfileResult.error}
       />
     </div>
   );

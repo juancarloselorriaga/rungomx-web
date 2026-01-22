@@ -2,6 +2,7 @@
 
 import { customAlphabet } from 'nanoid';
 import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -36,6 +37,7 @@ import {
   startRegistrationForUser,
 } from '@/lib/events/start-registration';
 
+import { eventEditionDetailTag, eventEditionPricingTag, eventEditionRegistrationsTag } from './cache-tags';
 import {
   CAPACITY_SCOPES,
   DISTANCE_KINDS,
@@ -619,6 +621,8 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     return updatedEdition;
   });
 
+  revalidateTag(eventEditionDetailTag(updated.id), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -715,6 +719,8 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
     }
   });
 
+  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+
   return { ok: true, data: { capacityScope, sharedCapacity: nextSharedCapacity } };
 });
 
@@ -805,6 +811,8 @@ export const updateEventPolicyConfig = withAuthenticatedUser<ActionResult<EventP
 
     return record;
   });
+
+  revalidateTag(eventEditionDetailTag(data.editionId), { expire: 0 });
 
   return {
     ok: true,
@@ -1031,6 +1039,8 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
     }
   });
 
+  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+
   return { ok: true, data: { visibility } };
 });
 
@@ -1101,6 +1111,8 @@ export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused
       throw new Error('Failed to create audit log');
     }
   });
+
+  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
 
   return { ok: true, data: { paused } };
 });
@@ -1310,6 +1322,9 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
     return newDistance;
   });
 
+  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+  revalidateTag(eventEditionPricingTag(editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -1417,6 +1432,9 @@ export const updateDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
     return updatedDistance;
   });
 
+  revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
+  revalidateTag(eventEditionPricingTag(updated.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -1501,6 +1519,9 @@ export const deleteDistance = withAuthenticatedUser<ActionResult>({
     }
   });
 
+  revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
+  revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
+
   return { ok: true, data: undefined };
 });
 
@@ -1581,6 +1602,9 @@ export const updateDistancePrice = withAuthenticatedUser<ActionResult>({
       throw new Error(`Failed to create audit log: ${auditResult.error}`);
     }
   });
+
+  revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
+  revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -1692,6 +1716,8 @@ export const createFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
     return newItem;
   });
 
+  revalidateTag(eventEditionDetailTag(faqItem.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -1784,6 +1810,8 @@ export const updateFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
     return updatedItem;
   });
 
+  revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -1854,6 +1882,8 @@ export const deleteFaqItem = withAuthenticatedUser<ActionResult>({
       throw new Error(`Failed to create audit log: ${auditResult.error}`);
     }
   });
+
+  revalidateTag(eventEditionDetailTag(faqItem.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -1942,6 +1972,8 @@ export const reorderFaqItems = withAuthenticatedUser<ActionResult>({
         throw new Error(`Failed to create audit log: ${auditResult.error}`);
       }
     });
+
+    revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
 
     return { ok: true, data: undefined };
   } catch (error) {
@@ -2072,6 +2104,8 @@ export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
     return newWaiver;
   });
 
+  revalidateTag(eventEditionDetailTag(waiver.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -2170,6 +2204,8 @@ export const updateWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
     return updatedWaiver;
   });
 
+  revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -2259,6 +2295,8 @@ export const reorderWaivers = withAuthenticatedUser<ActionResult>({
     }
   });
 
+  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+
   return { ok: true, data: undefined };
 });
 
@@ -2340,6 +2378,10 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
   const { distanceId } = validated.data;
   try {
     const registration = await startRegistrationForUser(authContext.user.id, distanceId);
+
+    revalidateTag(eventEditionDetailTag(registration.editionId), { expire: 0 });
+    revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
+
     return {
       ok: true,
       data: {
@@ -2448,6 +2490,9 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
       return updated;
     });
 
+    revalidateTag(eventEditionDetailTag(updatedRegistration.editionId), { expire: 0 });
+    revalidateTag(eventEditionRegistrationsTag(updatedRegistration.editionId), { expire: 0 });
+
     return {
       ok: true,
       data: {
@@ -2547,6 +2592,8 @@ export const acceptWaiver = withAuthenticatedUser<ActionResult>({
     signatureType,
     signatureValue: normalizedSignatureValue,
   });
+
+  revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -2751,6 +2798,9 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
 
       return updatedReg;
     });
+
+    revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
+    revalidateTag(eventEditionRegistrationsTag(updated.editionId), { expire: 0 });
 
     try {
       if (updated.status === 'confirmed' || updated.status === 'payment_pending') {

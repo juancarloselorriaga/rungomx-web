@@ -6,6 +6,7 @@ import { FormField } from '@/components/ui/form-field';
 import { GenderField } from '@/components/settings/fields/gender-field';
 import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Link } from '@/i18n/navigation';
+import { Form, FormError, useForm } from '@/lib/forms';
 import {
   startRegistration,
   submitRegistrantInfo,
@@ -13,14 +14,28 @@ import {
   finalizeRegistration,
 } from '@/lib/events/actions';
 import { submitAddOnSelections, type AddOnData } from '@/lib/events/add-ons/actions';
-import { applyDiscountCode, removeDiscountCode, validateDiscountCode } from '@/lib/events/discounts/actions';
+import {
+  applyDiscountCode,
+  removeDiscountCode,
+  validateDiscountCode,
+} from '@/lib/events/discounts/actions';
 import { submitAnswers, type RegistrationQuestionData } from '@/lib/events/questions/actions';
 import type { ActiveRegistrationInfo, PublicEventDetail } from '@/lib/events/queries';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, Check, CheckCircle, Download, FileText, Info, Loader2, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  CheckCircle,
+  Download,
+  FileText,
+  Info,
+  Loader2,
+  Users,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition, useEffect } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 
 type Step = 'distance' | 'info' | 'questions' | 'addons' | 'waiver' | 'payment' | 'confirmation';
 
@@ -82,7 +97,7 @@ export function RegistrationFlow({
   // Flow state
   const [step, setStep] = useState<Step>('distance');
   const [registrationId, setRegistrationId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [distanceError, setDistanceError] = useState<string | null>(null);
   const [showAlreadyRegisteredCta, setShowAlreadyRegisteredCta] = useState(false);
   const [registrationPricing, setRegistrationPricing] = useState<{
     basePriceCents: number | null;
@@ -147,35 +162,201 @@ export function RegistrationFlow({
 
   const progressSteps = steps.filter((s) => s !== 'confirmation');
 
-  // Participant info - prefilled from user profile
-  const [firstName, setFirstName] = useState(userProfile.firstName);
-  const [lastName, setLastName] = useState(userProfile.lastName);
-  const [email, setEmail] = useState(userProfile.email);
-  const [phone, setPhone] = useState(userProfile.phone);
-  const [dateOfBirth, setDateOfBirth] = useState(userProfile.dateOfBirth);
-  const [gender, setGender] = useState(userProfile.gender);
-  const [genderDescription, setGenderDescription] = useState('');
-  const [emergencyContact, setEmergencyContact] = useState(userProfile.emergencyContactName);
-  const [emergencyPhone, setEmergencyPhone] = useState(userProfile.emergencyContactPhone);
-  const [teamName, setTeamName] = useState('');
+  type InfoFormValues = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    dateOfBirth: string;
+    gender: string;
+    genderDescription: string;
+    emergencyContact: string;
+    emergencyPhone: string;
+    teamName: string;
+  };
 
-  // Waiver tracking - map of waiverId -> accepted status
-  const [acceptedWaivers, setAcceptedWaivers] = useState<Record<string, boolean>>({});
-  const [waiverSignatures, setWaiverSignatures] = useState<Record<string, string>>({});
+  const infoForm = useForm<InfoFormValues, void>({
+    defaultValues: {
+      firstName: userProfile.firstName,
+      lastName: userProfile.lastName,
+      email: userProfile.email,
+      phone: userProfile.phone,
+      dateOfBirth: userProfile.dateOfBirth,
+      gender: userProfile.gender,
+      genderDescription: '',
+      emergencyContact: userProfile.emergencyContactName,
+      emergencyPhone: userProfile.emergencyContactPhone,
+      teamName: '',
+    },
+    onSubmit: async (values) => {
+      if (!registrationId) {
+        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+      }
 
-  // Questions + add-ons
-  const [questionAnswers, setQuestionAnswers] = useState<Record<string, string>>({});
-  const [addOnSelections, setAddOnSelections] = useState<
-    Record<string, { optionId: string; quantity: number }>
-  >({});
+      const result = await submitRegistrantInfo({
+        registrationId,
+        profileSnapshot: {
+          firstName: values.firstName.trim(),
+          lastName: values.lastName.trim(),
+          email: values.email.trim(),
+          dateOfBirth: values.dateOfBirth || new Date().toISOString().split('T')[0],
+          gender: values.gender || undefined,
+          genderDescription:
+            values.gender === 'self_described' ? values.genderDescription.trim() : undefined,
+          phone: values.phone.trim() || undefined,
+          emergencyContactName: values.emergencyContact.trim() || undefined,
+          emergencyContactPhone: values.emergencyPhone.trim() || undefined,
+        },
+        division: values.teamName.trim() || undefined,
+      });
+
+      if (!result.ok) {
+        return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true, data: undefined };
+    },
+    onSuccess: () => {
+      goToNextStep('info');
+    },
+  });
+
+  const questionsDefaultValues = useMemo<Record<string, string>>(() => {
+    const values: Record<string, string> = {};
+    for (const question of questions) {
+      values[question.id] = '';
+    }
+    return values;
+  }, [questions]);
+
+  const questionsForm = useForm<Record<string, string>, void>({
+    defaultValues: questionsDefaultValues,
+    onSubmit: async (values) => {
+      if (!registrationId) {
+        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+      }
+
+      const answers = activeQuestions.map((question) => {
+        if (question.type === 'checkbox') {
+          return {
+            questionId: question.id,
+            value: values[question.id] === 'true' ? 'true' : null,
+          };
+        }
+
+        const value = values[question.id]?.trim() || null;
+        return { questionId: question.id, value };
+      });
+
+      const result = await submitAnswers({ registrationId, answers });
+      if (!result.ok) {
+        return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true, data: undefined };
+    },
+    onSuccess: () => {
+      goToNextStep('questions');
+    },
+  });
+
+  const waiverDefaultValues = useMemo<Record<string, string>>(() => {
+    const values: Record<string, string> = {};
+    for (const waiver of event.waivers) {
+      values[waiver.id] = '';
+    }
+    return values;
+  }, [event.waivers]);
+
+  const waiverForm = useForm<Record<string, string>, void>({
+    defaultValues: waiverDefaultValues,
+    onSubmit: async (values) => {
+      if (!registrationId) {
+        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+      }
+
+      for (const waiver of event.waivers) {
+        const signatureValue =
+          waiver.signatureType === 'checkbox' ? undefined : values[waiver.id]?.trim() || undefined;
+
+        const result = await acceptWaiver({
+          registrationId,
+          waiverId: waiver.id,
+          signatureType: waiver.signatureType as 'checkbox' | 'initials' | 'signature',
+          signatureValue,
+        });
+
+        if (!result.ok) {
+          return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
+        }
+      }
+
+      return { ok: true, data: undefined };
+    },
+    onSuccess: () => {
+      goToNextStep('waiver');
+    },
+  });
+
+  type AddOnSelection = { optionId: string; quantity: number };
+  const addOnsDefaultValues = useMemo<Record<string, AddOnSelection | null>>(() => {
+    const values: Record<string, AddOnSelection | null> = {};
+    for (const addOn of addOns) {
+      values[addOn.id] = null;
+    }
+    return values;
+  }, [addOns]);
+
+  const addOnsForm = useForm<Record<string, AddOnSelection | null>, void>({
+    defaultValues: addOnsDefaultValues,
+    onSubmit: async (values) => {
+      if (!registrationId) {
+        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+      }
+
+      const selections = Object.values(values)
+        .filter((selection): selection is AddOnSelection => selection !== null)
+        .map((selection) => ({ optionId: selection.optionId, quantity: selection.quantity }));
+
+      const result = await submitAddOnSelections({ registrationId, selections });
+      if (!result.ok) {
+        return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true, data: undefined };
+    },
+    onSuccess: () => {
+      goToNextStep('addons');
+    },
+  });
+
   const [addOnOptionDrafts, setAddOnOptionDrafts] = useState<Record<string, string>>({});
   const [addOnQuantityDrafts, setAddOnQuantityDrafts] = useState<Record<string, number>>({});
 
   // Discount code
-  const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | null>(null);
   const [discountAmountCents, setDiscountAmountCents] = useState(0);
   const [discountError, setDiscountError] = useState<string | null>(null);
+
+  type PaymentFormValues = { discountCode: string };
+  const paymentForm = useForm<PaymentFormValues, void>({
+    defaultValues: { discountCode: '' },
+    onSubmit: async () => {
+      if (!registrationId) {
+        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+      }
+
+      const result = await finalizeRegistration({ registrationId });
+      if (!result.ok) {
+        return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true, data: undefined };
+    },
+    onSuccess: () => {
+      setStep('confirmation');
+    },
+  });
 
   const addOnOptionMap = useMemo(() => {
     const map = new Map<string, { addOnTitle: string; optionLabel: string; priceCents: number }>();
@@ -192,7 +373,8 @@ export function RegistrationFlow({
   }, [activeAddOns]);
 
   const selectedAddOnItems = useMemo(() => {
-    return Object.values(addOnSelections)
+    return Object.values(addOnsForm.values)
+      .filter((selection): selection is AddOnSelection => selection !== null)
       .map((selection) => {
         const option = addOnOptionMap.get(selection.optionId);
         if (!option) return null;
@@ -217,7 +399,7 @@ export function RegistrationFlow({
           lineTotalCents: number;
         } => item !== null,
       );
-  }, [addOnOptionMap, addOnSelections]);
+  }, [addOnOptionMap, addOnsForm.values]);
 
   const addOnsSubtotalCents = selectedAddOnItems.reduce(
     (total, item) => total + item.lineTotalCents,
@@ -244,11 +426,11 @@ export function RegistrationFlow({
   // Step handlers
   async function handleDistanceSelect() {
     if (!selectedDistanceId) {
-      setError(t('errors.distanceRequired'));
+      setDistanceError(t('errors.distanceRequired'));
       setShowAlreadyRegisteredCta(false);
       return;
     }
-    setError(null);
+    setDistanceError(null);
     setShowAlreadyRegisteredCta(false);
 
     startTransition(async () => {
@@ -258,22 +440,22 @@ export function RegistrationFlow({
 
       if (!result.ok) {
         if (result.code === 'REGISTRATION_CLOSED') {
-          setError(t('errors.registrationClosed'));
+          setDistanceError(t('errors.registrationClosed'));
           return;
         }
 
         if (result.code === 'SOLD_OUT') {
-          setError(t('errors.soldOut'));
+          setDistanceError(t('errors.soldOut'));
           return;
         }
 
         if (result.code === 'ALREADY_REGISTERED') {
-          setError(t('errors.alreadyRegistered'));
+          setDistanceError(t('errors.alreadyRegistered'));
           setShowAlreadyRegisteredCta(true);
           return;
         }
 
-        setError(result.error);
+        setDistanceError(result.error);
         return;
       }
 
@@ -297,143 +479,40 @@ export function RegistrationFlow({
   }, []); // Run only once on mount
 
   useEffect(() => {
-    setQuestionAnswers({});
-    setAddOnSelections({});
+    for (const question of questions) {
+      questionsForm.setFieldValue(question.id, '');
+    }
+    for (const addOn of addOns) {
+      addOnsForm.setFieldValue(addOn.id, null);
+    }
+    for (const waiver of event.waivers) {
+      waiverForm.setFieldValue(waiver.id, '');
+    }
     setAddOnOptionDrafts({});
     setAddOnQuantityDrafts({});
     setAppliedDiscountCode(null);
     setDiscountAmountCents(0);
     setDiscountError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDistanceId]);
 
   useEffect(() => {
     setDiscountError(null);
-  }, [discountCode]);
-
-  async function handleInfoSubmit() {
-    if (!registrationId) return;
-    setError(null);
-
-    startTransition(async () => {
-      const result = await submitRegistrantInfo({
-        registrationId,
-        profileSnapshot: {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-          dateOfBirth: dateOfBirth || new Date().toISOString().split('T')[0], // Required field
-          gender: gender || undefined,
-          genderDescription: gender === 'self_described' ? genderDescription.trim() : undefined,
-          phone: phone.trim() || undefined,
-          emergencyContactName: emergencyContact.trim() || undefined,
-          emergencyContactPhone: emergencyPhone.trim() || undefined,
-        },
-        division: teamName.trim() || undefined,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      goToNextStep('info');
-    });
-  }
+  }, [paymentForm.values.discountCode]);
 
   // Check if all waivers are accepted
   const allWaiversAccepted =
     event.waivers.length > 0 &&
     event.waivers.every((waiver) => {
       if (waiver.signatureType === 'checkbox') {
-        return acceptedWaivers[waiver.id];
+        return waiverForm.values[waiver.id] === 'true';
       }
-      return Boolean(waiverSignatures[waiver.id]?.trim());
+      return Boolean(waiverForm.values[waiver.id]?.trim());
     });
-
-  async function handleWaiverAccept() {
-    if (!registrationId || !allWaiversAccepted) return;
-    setError(null);
-
-    startTransition(async () => {
-      // Accept each waiver sequentially
-      for (const waiver of event.waivers) {
-        const result = await acceptWaiver({
-          registrationId,
-          waiverId: waiver.id,
-          signatureType: waiver.signatureType as 'checkbox' | 'initials' | 'signature',
-          signatureValue:
-            waiver.signatureType === 'checkbox'
-              ? undefined
-              : waiverSignatures[waiver.id]?.trim() || undefined,
-        });
-
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-      }
-
-      goToNextStep('waiver');
-    });
-  }
-
-  async function handleQuestionsSubmit() {
-    if (!registrationId) return;
-    setError(null);
-
-    startTransition(async () => {
-      const answers = activeQuestions.map((question) => {
-        if (question.type === 'checkbox') {
-          return {
-            questionId: question.id,
-            value: questionAnswers[question.id] === 'true' ? 'true' : null,
-          };
-        }
-
-        const value = questionAnswers[question.id]?.trim() || null;
-        return { questionId: question.id, value };
-      });
-
-      const result = await submitAnswers({
-        registrationId,
-        answers,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      goToNextStep('questions');
-    });
-  }
-
-  async function handleAddOnsSubmit() {
-    if (!registrationId) return;
-    setError(null);
-
-    startTransition(async () => {
-      const selections = Object.values(addOnSelections).map((selection) => ({
-        optionId: selection.optionId,
-        quantity: selection.quantity,
-      }));
-
-      const result = await submitAddOnSelections({
-        registrationId,
-        selections,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      goToNextStep('addons');
-    });
-  }
 
   async function handleApplyDiscountCode() {
-    if (!registrationId || !discountCode.trim()) return;
+    const code = paymentForm.values.discountCode.trim();
+    if (!registrationId || !code) return;
     setDiscountError(null);
 
     startTransition(async () => {
@@ -444,7 +523,7 @@ export function RegistrationFlow({
 
       const validation = await validateDiscountCode({
         editionId: event.id,
-        code: discountCode.trim(),
+        code,
         basePriceCents,
       });
 
@@ -455,7 +534,7 @@ export function RegistrationFlow({
 
       const result = await applyDiscountCode({
         registrationId,
-        code: discountCode.trim(),
+        code,
       });
 
       if (!result.ok) {
@@ -463,9 +542,9 @@ export function RegistrationFlow({
         return;
       }
 
-      const normalizedCode = validation.data.discountCode?.code ?? discountCode.trim().toUpperCase();
+      const normalizedCode = validation.data.discountCode?.code ?? code.toUpperCase();
       setAppliedDiscountCode(normalizedCode);
-      setDiscountCode(normalizedCode);
+      paymentForm.setFieldValue('discountCode', normalizedCode);
       setDiscountAmountCents(result.data.discountAmountCents);
     });
   }
@@ -483,25 +562,7 @@ export function RegistrationFlow({
 
       setAppliedDiscountCode(null);
       setDiscountAmountCents(0);
-      setDiscountCode('');
-    });
-  }
-
-  async function handlePaymentComplete() {
-    if (!registrationId) return;
-    setError(null);
-
-    startTransition(async () => {
-      const result = await finalizeRegistration({
-        registrationId,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      setStep('confirmation');
+      paymentForm.setFieldValue('discountCode', '');
     });
   }
 
@@ -613,19 +674,19 @@ export function RegistrationFlow({
         </div>
       )}
 
-  {/* Error display */}
-  {error && (
-    <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-      <p>{error}</p>
-      {showAlreadyRegisteredCta ? (
-        <div className="mt-3">
-          <Button asChild variant="secondary" size="sm">
-            <Link href="/dashboard/my-registrations">{t('errors.viewMyRegistrations')}</Link>
-          </Button>
+      {/* Error display (distance step only) */}
+      {step === 'distance' && distanceError && (
+        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          <p>{distanceError}</p>
+          {showAlreadyRegisteredCta ? (
+            <div className="mt-3">
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/dashboard/my-registrations">{t('errors.viewMyRegistrations')}</Link>
+              </Button>
+            </div>
+          ) : null}
         </div>
-      ) : null}
-    </div>
-  )}
+      )}
 
       {/* Step content */}
       <div className="rounded-lg border bg-card p-6 shadow-sm">
@@ -745,56 +806,58 @@ export function RegistrationFlow({
 
         {/* Participant info */}
         {step === 'info' && (
-          <div className="space-y-6">
+          <Form form={infoForm} className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold">{t('info.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('info.description')}</p>
             </div>
 
+            <FormError />
+
             <div className="grid gap-4 sm:grid-cols-2">
-              <FormField label={t('info.firstName')} required>
+              <FormField label={t('info.firstName')} required error={infoForm.errors.firstName}>
                 <input
                   type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  value={infoForm.values.firstName}
+                  onChange={(e) => infoForm.setFieldValue('firstName', e.target.value)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
+                  disabled={isPending || infoForm.isSubmitting}
                 />
               </FormField>
 
-              <FormField label={t('info.lastName')} required>
+              <FormField label={t('info.lastName')} required error={infoForm.errors.lastName}>
                 <input
                   type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  value={infoForm.values.lastName}
+                  onChange={(e) => infoForm.setFieldValue('lastName', e.target.value)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
+                  disabled={isPending || infoForm.isSubmitting}
                 />
               </FormField>
 
-              <FormField label={t('info.email')} required>
+              <FormField label={t('info.email')} required error={infoForm.errors.email}>
                 <input
                   type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={infoForm.values.email}
+                  onChange={(e) => infoForm.setFieldValue('email', e.target.value)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
+                  disabled={isPending || infoForm.isSubmitting}
                 />
               </FormField>
 
               <PhoneField
                 label={t('info.phone')}
                 name="phone"
-                value={phone}
-                onChangeAction={setPhone}
-                disabled={isPending}
+                value={infoForm.values.phone}
+                onChangeAction={(value) => infoForm.setFieldValue('phone', value)}
+                disabled={isPending || infoForm.isSubmitting}
               />
 
               <FormField label={t('info.dateOfBirth')}>
                 <DatePicker
                   locale={locale}
-                  value={dateOfBirth}
-                  onChangeAction={setDateOfBirth}
+                  value={infoForm.values.dateOfBirth}
+                  onChangeAction={(value) => infoForm.setFieldValue('dateOfBirth', value)}
                   clearLabel={tCommon('clear')}
                   name="dateOfBirth"
                 />
@@ -802,40 +865,40 @@ export function RegistrationFlow({
 
               <GenderField
                 label={t('info.gender')}
-                value={gender}
-                description={genderDescription}
-                onChangeAction={setGender}
-                onDescriptionChangeAction={setGenderDescription}
+                value={infoForm.values.gender}
+                description={infoForm.values.genderDescription}
+                onChangeAction={(value) => infoForm.setFieldValue('gender', value)}
+                onDescriptionChangeAction={(value) => infoForm.setFieldValue('genderDescription', value)}
                 options={['female', 'male', 'non_binary', 'prefer_not_to_say', 'self_described']}
-                disabled={isPending}
+                disabled={isPending || infoForm.isSubmitting}
               />
 
               <FormField label={t('info.emergencyContact')}>
                 <input
                   type="text"
-                  value={emergencyContact}
-                  onChange={(e) => setEmergencyContact(e.target.value)}
+                  value={infoForm.values.emergencyContact}
+                  onChange={(e) => infoForm.setFieldValue('emergencyContact', e.target.value)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  disabled={isPending}
+                  disabled={isPending || infoForm.isSubmitting}
                 />
               </FormField>
 
               <PhoneField
                 label={t('info.emergencyPhone')}
                 name="emergencyPhone"
-                value={emergencyPhone}
-                onChangeAction={setEmergencyPhone}
-                disabled={isPending}
+                value={infoForm.values.emergencyPhone}
+                onChangeAction={(value) => infoForm.setFieldValue('emergencyPhone', value)}
+                disabled={isPending || infoForm.isSubmitting}
               />
             </div>
 
             <FormField label={t('info.teamName')}>
               <input
                 type="text"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
+                value={infoForm.values.teamName}
+                onChange={(e) => infoForm.setFieldValue('teamName', e.target.value)}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                disabled={isPending}
+                disabled={isPending || infoForm.isSubmitting}
               />
             </FormField>
 
@@ -845,10 +908,16 @@ export function RegistrationFlow({
                 Back
               </Button>
               <Button
-                onClick={handleInfoSubmit}
-                disabled={!firstName.trim() || !lastName.trim() || !email.trim() || isPending}
+                type="submit"
+                disabled={
+                  !infoForm.values.firstName.trim() ||
+                  !infoForm.values.lastName.trim() ||
+                  !infoForm.values.email.trim() ||
+                  isPending ||
+                  infoForm.isSubmitting
+                }
               >
-                {isPending ? (
+                {isPending || infoForm.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <ArrowRight className="h-4 w-4 mr-2" />
@@ -856,16 +925,18 @@ export function RegistrationFlow({
                 {t('info.continue')}
               </Button>
             </div>
-          </div>
+          </Form>
         )}
 
         {/* Questions */}
         {step === 'questions' && (
-          <div className="space-y-6">
+          <Form form={questionsForm} className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold">{t('questions.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('questions.description')}</p>
             </div>
+
+            <FormError />
 
             {activeQuestions.length === 0 ? (
               <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
@@ -887,28 +958,18 @@ export function RegistrationFlow({
                     {question.type === 'text' && (
                       <input
                         type="text"
-                        value={questionAnswers[question.id] ?? ''}
-                        onChange={(e) =>
-                          setQuestionAnswers((prev) => ({
-                            ...prev,
-                            [question.id]: e.target.value,
-                          }))
-                        }
+                        value={questionsForm.values[question.id] ?? ''}
+                        onChange={(e) => questionsForm.setFieldValue(question.id, e.target.value)}
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        disabled={isPending}
+                        disabled={isPending || questionsForm.isSubmitting}
                       />
                     )}
                     {question.type === 'single_select' && (
                       <select
-                        value={questionAnswers[question.id] ?? ''}
-                        onChange={(e) =>
-                          setQuestionAnswers((prev) => ({
-                            ...prev,
-                            [question.id]: e.target.value,
-                          }))
-                        }
+                        value={questionsForm.values[question.id] ?? ''}
+                        onChange={(e) => questionsForm.setFieldValue(question.id, e.target.value)}
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        disabled={isPending}
+                        disabled={isPending || questionsForm.isSubmitting}
                       >
                         <option value="">{t('addons.selectOption')}</option>
                         {question.options?.map((option) => (
@@ -922,15 +983,12 @@ export function RegistrationFlow({
                       <label className="flex items-center gap-2 text-sm">
                         <input
                           type="checkbox"
-                          checked={questionAnswers[question.id] === 'true'}
+                          checked={questionsForm.values[question.id] === 'true'}
                           onChange={(e) =>
-                            setQuestionAnswers((prev) => ({
-                              ...prev,
-                              [question.id]: e.target.checked ? 'true' : '',
-                            }))
+                            questionsForm.setFieldValue(question.id, e.target.checked ? 'true' : '')
                           }
                           className="h-4 w-4 rounded border-gray-300"
-                          disabled={isPending}
+                          disabled={isPending || questionsForm.isSubmitting}
                         />
                         {question.isRequired ? t('questions.required') : t('questions.optional')}
                       </label>
@@ -941,15 +999,20 @@ export function RegistrationFlow({
             )}
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => goToPreviousStep('questions')} disabled={isPending}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => goToPreviousStep('questions')}
+                disabled={isPending || questionsForm.isSubmitting}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <Button
-                onClick={handleQuestionsSubmit}
-                disabled={isPending}
+                type="submit"
+                disabled={isPending || questionsForm.isSubmitting}
               >
-                {isPending ? (
+                {isPending || questionsForm.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <ArrowRight className="h-4 w-4 mr-2" />
@@ -957,16 +1020,18 @@ export function RegistrationFlow({
                 {t('questions.continue')}
               </Button>
             </div>
-          </div>
+          </Form>
         )}
 
         {/* Add-ons */}
         {step === 'addons' && (
-          <div className="space-y-6">
+          <Form form={addOnsForm} className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold">{t('addons.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('addons.description')}</p>
             </div>
+
+            <FormError />
 
             {activeAddOns.length === 0 ? (
               <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
@@ -975,16 +1040,16 @@ export function RegistrationFlow({
             ) : (
               <div className="space-y-5">
                 {activeAddOns.map((addOn) => {
+                  const currentSelection = addOnsForm.values[addOn.id];
                   const draftOptionId =
                     addOnOptionDrafts[addOn.id] ??
-                    addOnSelections[addOn.id]?.optionId ??
+                    currentSelection?.optionId ??
                     '';
                   const draftQuantity =
                     addOnQuantityDrafts[addOn.id] ??
-                    addOnSelections[addOn.id]?.quantity ??
+                    currentSelection?.quantity ??
                     1;
                   const selectedOption = addOn.options.find((opt) => opt.id === draftOptionId);
-                  const currentSelection = addOnSelections[addOn.id];
                   const isSameSelection =
                     currentSelection?.optionId === draftOptionId &&
                     currentSelection?.quantity === draftQuantity;
@@ -1020,7 +1085,7 @@ export function RegistrationFlow({
                             }))
                           }
                           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                          disabled={isPending}
+                          disabled={isPending || addOnsForm.isSubmitting}
                         >
                           <option value="">{t('addons.selectOption')}</option>
                           {addOn.options.map((option) => (
@@ -1040,7 +1105,7 @@ export function RegistrationFlow({
                               }))
                             }
                             className="rounded-md border bg-background px-2 py-2 text-sm"
-                            disabled={isPending}
+                            disabled={isPending || addOnsForm.isSubmitting}
                           >
                             {Array.from(
                               { length: selectedOption?.maxQtyPerOrder ?? 5 },
@@ -1058,14 +1123,8 @@ export function RegistrationFlow({
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() =>
-                                setAddOnSelections((prev) => {
-                                  const next = { ...prev };
-                                  delete next[addOn.id];
-                                  return next;
-                                })
-                              }
-                              disabled={isPending}
+                              onClick={() => addOnsForm.setFieldValue(addOn.id, null)}
+                              disabled={isPending || addOnsForm.isSubmitting}
                             >
                               {t('addons.removeFromOrder')}
                             </Button>
@@ -1074,15 +1133,12 @@ export function RegistrationFlow({
                               type="button"
                               size="sm"
                               onClick={() =>
-                                setAddOnSelections((prev) => ({
-                                  ...prev,
-                                  [addOn.id]: {
-                                    optionId: draftOptionId,
-                                    quantity: draftQuantity,
-                                  },
-                                }))
+                                addOnsForm.setFieldValue(addOn.id, {
+                                  optionId: draftOptionId,
+                                  quantity: draftQuantity,
+                                })
                               }
-                              disabled={isPending || !draftOptionId}
+                              disabled={isPending || addOnsForm.isSubmitting || !draftOptionId}
                             >
                               {t('addons.addToOrder')}
                             </Button>
@@ -1105,12 +1161,17 @@ export function RegistrationFlow({
             )}
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => goToPreviousStep('addons')} disabled={isPending}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => goToPreviousStep('addons')}
+                disabled={isPending || addOnsForm.isSubmitting}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <Button onClick={handleAddOnsSubmit} disabled={isPending}>
-                {isPending ? (
+              <Button type="submit" disabled={isPending || addOnsForm.isSubmitting}>
+                {isPending || addOnsForm.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <ArrowRight className="h-4 w-4 mr-2" />
@@ -1118,16 +1179,18 @@ export function RegistrationFlow({
                 {t('addons.continue')}
               </Button>
             </div>
-          </div>
+          </Form>
         )}
 
         {/* Waiver */}
         {step === 'waiver' && (
-          <div className="space-y-6">
+          <Form form={waiverForm} className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold">{t('waiver.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('waiver.description')}</p>
             </div>
+
+            <FormError />
 
             {/* Render each waiver */}
             {event.waivers.map((waiver, index) => (
@@ -1146,15 +1209,12 @@ export function RegistrationFlow({
                     <>
                       <input
                         type="checkbox"
-                        checked={acceptedWaivers[waiver.id] ?? false}
+                        checked={waiverForm.values[waiver.id] === 'true'}
                         onChange={(e) =>
-                          setAcceptedWaivers((prev) => ({
-                            ...prev,
-                            [waiver.id]: e.target.checked,
-                          }))
+                          waiverForm.setFieldValue(waiver.id, e.target.checked ? 'true' : '')
                         }
                         className="mt-1 h-4 w-4 rounded border-gray-300"
-                        disabled={isPending}
+                        disabled={isPending || waiverForm.isSubmitting}
                       />
                       <span className="text-sm">
                         {t('waiver.acceptThis', { title: waiver.title })}
@@ -1171,20 +1231,15 @@ export function RegistrationFlow({
                       </span>
                       <input
                         type="text"
-                        value={waiverSignatures[waiver.id] ?? ''}
-                        onChange={(e) =>
-                          setWaiverSignatures((prev) => ({
-                            ...prev,
-                            [waiver.id]: e.target.value,
-                          }))
-                        }
+                        value={waiverForm.values[waiver.id] ?? ''}
+                        onChange={(e) => waiverForm.setFieldValue(waiver.id, e.target.value)}
                         placeholder={
                           waiverSignaturePlaceholders[
                             waiver.signatureType as keyof typeof waiverSignaturePlaceholders
                           ]
                         }
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-                        disabled={isPending}
+                        disabled={isPending || waiverForm.isSubmitting}
                       />
                     </div>
                   )}
@@ -1193,12 +1248,20 @@ export function RegistrationFlow({
             ))}
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => goToPreviousStep('waiver')} disabled={isPending}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => goToPreviousStep('waiver')}
+                disabled={isPending || waiverForm.isSubmitting}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <Button onClick={handleWaiverAccept} disabled={!allWaiversAccepted || isPending}>
-                {isPending ? (
+              <Button
+                type="submit"
+                disabled={!allWaiversAccepted || isPending || waiverForm.isSubmitting}
+              >
+                {isPending || waiverForm.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <ArrowRight className="h-4 w-4 mr-2" />
@@ -1206,16 +1269,18 @@ export function RegistrationFlow({
                 {t('waiver.continue')}
               </Button>
             </div>
-          </div>
+          </Form>
         )}
 
         {/* Payment */}
         {step === 'payment' && (
-          <div className="space-y-6">
+          <Form form={paymentForm} className="space-y-6">
             <div>
               <h2 className="text-lg font-semibold">{t('payment.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('payment.description')}</p>
             </div>
+
+            <FormError />
 
             {/* Order summary */}
             <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
@@ -1287,18 +1352,18 @@ export function RegistrationFlow({
               <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
-                  value={discountCode}
-                  onChange={(e) => setDiscountCode(e.target.value)}
+                  value={paymentForm.values.discountCode}
+                  onChange={(e) => paymentForm.setFieldValue('discountCode', e.target.value)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   placeholder={t('payment.discountCode')}
-                  disabled={isPending || !!appliedDiscountCode}
+                  disabled={isPending || paymentForm.isSubmitting || !!appliedDiscountCode}
                 />
                 {appliedDiscountCode ? (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={handleRemoveDiscountCode}
-                    disabled={isPending}
+                    disabled={isPending || paymentForm.isSubmitting}
                   >
                     {t('payment.removeCode')}
                   </Button>
@@ -1306,7 +1371,7 @@ export function RegistrationFlow({
                   <Button
                     type="button"
                     onClick={handleApplyDiscountCode}
-                    disabled={isPending || !discountCode.trim()}
+                    disabled={isPending || paymentForm.isSubmitting || !paymentForm.values.discountCode.trim()}
                   >
                     {t('payment.applyCode')}
                   </Button>
@@ -1333,12 +1398,17 @@ export function RegistrationFlow({
             </div>
 
             <div className="flex justify-between">
-              <Button variant="ghost" onClick={() => goToPreviousStep('payment')} disabled={isPending}>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => goToPreviousStep('payment')}
+                disabled={isPending || paymentForm.isSubmitting}
+              >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
-              <Button onClick={handlePaymentComplete} disabled={isPending}>
-                {isPending ? (
+              <Button type="submit" disabled={isPending || paymentForm.isSubmitting}>
+                {isPending || paymentForm.isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <Check className="h-4 w-4 mr-2" />
@@ -1346,7 +1416,7 @@ export function RegistrationFlow({
                 {t('payment.complete')}
               </Button>
             </div>
-          </div>
+          </Form>
         )}
 
         {/* Confirmation */}

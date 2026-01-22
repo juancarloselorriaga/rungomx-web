@@ -1,6 +1,7 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -19,6 +20,7 @@ import {
   canUserAccessEvent,
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
+import { eventEditionQuestionsTag, eventEditionRegistrationsTag } from '../cache-tags';
 import { REGISTRATION_QUESTION_TYPES } from '../constants';
 
 // =============================================================================
@@ -223,6 +225,8 @@ export const createQuestion = withAuthenticatedUser<ActionResult<RegistrationQue
     return newQuestion;
   });
 
+  revalidateTag(eventEditionQuestionsTag(editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -324,6 +328,8 @@ export const updateQuestion = withAuthenticatedUser<ActionResult<RegistrationQue
     return updated;
   });
 
+  revalidateTag(eventEditionQuestionsTag(existingQuestion.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -399,6 +405,8 @@ export const deleteQuestion = withAuthenticatedUser<ActionResult>({
     );
   });
 
+  revalidateTag(eventEditionQuestionsTag(existingQuestion.editionId), { expire: 0 });
+
   return { ok: true, data: undefined };
 });
 
@@ -442,6 +450,8 @@ export const reorderQuestions = withAuthenticatedUser<ActionResult>({
         );
     }
   });
+
+  revalidateTag(eventEditionQuestionsTag(editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -557,6 +567,8 @@ export const submitAnswers = withAuthenticatedUser<ActionResult>({
       tx,
     );
   });
+
+  revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });

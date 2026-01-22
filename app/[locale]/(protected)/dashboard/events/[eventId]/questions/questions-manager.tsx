@@ -8,6 +8,7 @@ import { ArrowDown, ArrowUp, Edit2, Loader2, Plus, Trash2, X } from 'lucide-reac
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { Form, FormError, useForm } from '@/lib/forms';
 import type { RegistrationQuestionType } from '@/lib/events/constants';
 import {
   createQuestion,
@@ -87,58 +88,122 @@ function QuestionTypeBadge({ type }: { type: RegistrationQuestionType }) {
 }
 
 function QuestionForm({
+  editionId,
+  questionId,
   distances,
   initialData,
-  submitLabel,
-  isSubmitting,
   onCancel,
-  onSubmit,
+  onSaved,
+  nextSortOrder,
 }: {
+  editionId: string;
+  questionId?: string;
   distances: Array<{ id: string; label: string }>;
   initialData: QuestionFormData;
-  submitLabel: string;
-  isSubmitting: boolean;
   onCancel: () => void;
-  onSubmit: (data: QuestionFormData) => void;
+  onSaved: (question: RegistrationQuestionData) => void;
+  nextSortOrder?: number;
 }) {
   const t = useTranslations('pages.dashboardEvents.questions.form');
-  const [formData, setFormData] = useState<QuestionFormData>(initialData);
+  const tQuestions = useTranslations('pages.dashboardEvents.questions');
 
-  const showOptions = formData.type === 'single_select';
+  const form = useForm<QuestionFormData, RegistrationQuestionData>({
+    defaultValues: initialData,
+    onSubmit: async (values) => {
+      const options = parseOptions(values.type, values.optionsText);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+      if (values.type === 'single_select' && (!options || options.length < 2)) {
+        return {
+          ok: false,
+          error: 'INVALID_INPUT',
+          message: t('optionsHint'),
+          fieldErrors: { optionsText: [t('optionsHint')] },
+        };
+      }
+
+      if (questionId) {
+        const result = await updateQuestion({
+          questionId,
+          prompt: values.prompt.trim(),
+          helpText: values.helpText.trim() || null,
+          isRequired: values.isRequired,
+          isActive: values.isActive,
+          distanceId: values.distanceId || null,
+          options,
+        });
+
+        if (!result.ok) {
+          if (result.code === 'VALIDATION_ERROR') {
+            return { ok: false, error: 'INVALID_INPUT', message: result.error };
+          }
+          return { ok: false, error: 'SERVER_ERROR', message: result.error };
+        }
+
+        return { ok: true, data: result.data };
+      }
+
+      const result = await createQuestion({
+        editionId,
+        distanceId: values.distanceId || null,
+        type: values.type,
+        prompt: values.prompt.trim(),
+        helpText: values.helpText.trim() || null,
+        isRequired: values.isRequired,
+        isActive: values.isActive,
+        options,
+        sortOrder: nextSortOrder ?? 0,
+      });
+
+      if (!result.ok) {
+        if (result.code === 'VALIDATION_ERROR') {
+          return { ok: false, error: 'INVALID_INPUT', message: result.error };
+        }
+        return { ok: false, error: 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true, data: result.data };
+    },
+    onSuccess: (question) => {
+      toast.success(questionId ? tQuestions('toast.updated') : tQuestions('toast.created'));
+      onSaved(question);
+    },
+    onError: (message) => {
+      toast.error(tQuestions('toast.error'), { description: message });
+    },
+  });
+
+  const showOptions = form.values.type === 'single_select';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <FormField label={t('prompt')} required>
+    <Form form={form} className="space-y-4">
+      <FormError />
+
+      <FormField label={t('prompt')} required error={form.errors.prompt}>
         <input
           type="text"
-          value={formData.prompt}
-          onChange={(e) => setFormData((prev) => ({ ...prev, prompt: e.target.value }))}
+          value={form.values.prompt}
+          onChange={(e) => form.setFieldValue('prompt', e.target.value)}
           placeholder={t('promptPlaceholder')}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           maxLength={500}
           required
-          disabled={isSubmitting}
+          disabled={form.isSubmitting}
         />
       </FormField>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <FormField label={t('type')} required>
+        <FormField label={t('type')} required error={form.errors.type}>
           <select
-            value={formData.type}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                type: e.target.value as RegistrationQuestionType,
-                optionsText: e.target.value === 'single_select' ? prev.optionsText : '',
-              }))
-            }
+            value={form.values.type}
+            onChange={(e) => {
+              const nextType = e.target.value as RegistrationQuestionType;
+              form.setFieldValue('type', nextType);
+              if (nextType !== 'single_select') {
+                form.setFieldValue('optionsText', '');
+              }
+            }}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            disabled={isSubmitting}
+            disabled={form.isSubmitting}
           >
             <option value="text">{t('typeOptions.text')}</option>
             <option value="single_select">{t('typeOptions.single_select')}</option>
@@ -146,12 +211,12 @@ function QuestionForm({
           </select>
         </FormField>
 
-        <FormField label={t('distance')}>
+        <FormField label={t('distance')} error={form.errors.distanceId}>
           <select
-            value={formData.distanceId}
-            onChange={(e) => setFormData((prev) => ({ ...prev, distanceId: e.target.value }))}
+            value={form.values.distanceId}
+            onChange={(e) => form.setFieldValue('distanceId', e.target.value)}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            disabled={isSubmitting}
+            disabled={form.isSubmitting}
           >
             <option value="">{t('distanceAll')}</option>
             {distances.map((distance) => (
@@ -163,51 +228,51 @@ function QuestionForm({
         </FormField>
       </div>
 
-      <FormField label={t('helpText')}>
+      <FormField label={t('helpText')} error={form.errors.helpText}>
         <input
           type="text"
-          value={formData.helpText}
-          onChange={(e) => setFormData((prev) => ({ ...prev, helpText: e.target.value }))}
+          value={form.values.helpText}
+          onChange={(e) => form.setFieldValue('helpText', e.target.value)}
           placeholder={t('helpTextPlaceholder')}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
           maxLength={500}
-          disabled={isSubmitting}
+          disabled={form.isSubmitting}
         />
       </FormField>
 
       {showOptions && (
-        <FormField label={t('options')} required>
+        <FormField label={t('options')} required error={form.errors.optionsText}>
           <textarea
-            value={formData.optionsText}
-            onChange={(e) => setFormData((prev) => ({ ...prev, optionsText: e.target.value }))}
+            value={form.values.optionsText}
+            onChange={(e) => form.setFieldValue('optionsText', e.target.value)}
             placeholder={t('optionsPlaceholder')}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm min-h-28"
-            disabled={isSubmitting}
+            disabled={form.isSubmitting}
           />
           <p className="text-xs text-muted-foreground">{t('optionsHint')}</p>
         </FormField>
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <FormField label={t('required')}>
+        <FormField label={t('required')} error={form.errors.isRequired}>
           <label className="inline-flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={formData.isRequired}
-              onChange={(e) => setFormData((prev) => ({ ...prev, isRequired: e.target.checked }))}
-              disabled={isSubmitting}
+              checked={form.values.isRequired}
+              onChange={(e) => form.setFieldValue('isRequired', e.target.checked)}
+              disabled={form.isSubmitting}
             />
             {t('requiredLabel')}
           </label>
         </FormField>
 
-        <FormField label={t('active')}>
+        <FormField label={t('active')} error={form.errors.isActive}>
           <label className="inline-flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
-              disabled={isSubmitting}
+              checked={form.values.isActive}
+              onChange={(e) => form.setFieldValue('isActive', e.target.checked)}
+              disabled={form.isSubmitting}
             />
             {t('activeLabel')}
           </label>
@@ -215,15 +280,15 @@ function QuestionForm({
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={form.isSubmitting}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {submitLabel}
+        <Button type="submit" disabled={form.isSubmitting}>
+          {form.isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {questionId ? t('save') : t('create')}
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }
 
@@ -242,60 +307,6 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
     () => (editingId ? questions.find((q) => q.id === editingId) ?? null : null),
     [editingId, questions],
   );
-
-  const createNewQuestion = (data: QuestionFormData) => {
-    startTransition(async () => {
-      const options = parseOptions(data.type, data.optionsText);
-
-      const result = await createQuestion({
-        editionId,
-        distanceId: data.distanceId || null,
-        type: data.type,
-        prompt: data.prompt.trim(),
-        helpText: data.helpText.trim() || null,
-        isRequired: data.isRequired,
-        isActive: data.isActive,
-        options,
-        sortOrder: questions.length,
-      });
-
-      if (!result.ok) {
-        toast.error(t('toast.error'), { description: result.error });
-        return;
-      }
-
-      setQuestions((prev) => normalizeQuestions([...prev, result.data]));
-      setShowAddForm(false);
-      toast.success(t('toast.created'));
-    });
-  };
-
-  const saveQuestion = (questionId: string, data: QuestionFormData) => {
-    startTransition(async () => {
-      const options = parseOptions(data.type, data.optionsText);
-
-      const result = await updateQuestion({
-        questionId,
-        prompt: data.prompt.trim(),
-        helpText: data.helpText.trim() || null,
-        isRequired: data.isRequired,
-        isActive: data.isActive,
-        distanceId: data.distanceId || null,
-        options,
-      });
-
-      if (!result.ok) {
-        toast.error(t('toast.error'), { description: result.error });
-        return;
-      }
-
-      setQuestions((prev) =>
-        normalizeQuestions(prev.map((q) => (q.id === questionId ? result.data : q))),
-      );
-      setEditingId(null);
-      toast.success(t('toast.updated'));
-    });
-  };
 
   const removeQuestion = (questionId: string) => {
     startTransition(async () => {
@@ -375,12 +386,15 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
             </Button>
           </div>
           <QuestionForm
+            editionId={editionId}
             distances={distances}
             initialData={DEFAULT_FORM_DATA}
-            submitLabel={tForm('create')}
-            isSubmitting={isPending}
+            nextSortOrder={questions.length}
             onCancel={() => setShowAddForm(false)}
-            onSubmit={createNewQuestion}
+            onSaved={(question) => {
+              setQuestions((prev) => normalizeQuestions([...prev, question]));
+              setShowAddForm(false);
+            }}
           />
         </div>
       )}
@@ -487,12 +501,19 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
                 {isEditing && editingQuestion && (
                   <div className="mt-4 border-t pt-4">
                     <QuestionForm
+                      editionId={editionId}
+                      questionId={question.id}
                       distances={distances}
                       initialData={getFormDataFromQuestion(editingQuestion)}
-                      submitLabel={tForm('save')}
-                      isSubmitting={isPending}
                       onCancel={() => setEditingId(null)}
-                      onSubmit={(data) => saveQuestion(question.id, data)}
+                      onSaved={(nextQuestion) => {
+                        setQuestions((prev) =>
+                          normalizeQuestions(
+                            prev.map((q) => (q.id === question.id ? nextQuestion : q)),
+                          ),
+                        );
+                        setEditingId(null);
+                      }}
                     />
                   </div>
                 )}

@@ -1,6 +1,7 @@
 'use server';
 
 import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -14,6 +15,7 @@ import {
   canUserAccessEvent,
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
+import { eventEditionCouponsTag, eventEditionRegistrationsTag } from '../cache-tags';
 
 // =============================================================================
 // Types
@@ -211,6 +213,8 @@ export const createDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
       return newCode;
     });
 
+    revalidateTag(eventEditionCouponsTag(editionId), { expire: 0 });
+
     return {
       ok: true,
       data: {
@@ -334,6 +338,8 @@ export const updateDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
     return updated;
   });
 
+  revalidateTag(eventEditionCouponsTag(existingCode.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -408,6 +414,8 @@ export const deleteDiscountCode = withAuthenticatedUser<ActionResult>({
       tx,
     );
   });
+
+  revalidateTag(eventEditionCouponsTag(existingCode.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -701,6 +709,11 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
     return { ok: true as const, data: { discountAmountCents } };
   });
 
+  if (result.ok) {
+    revalidateTag(eventEditionCouponsTag(registration.editionId), { expire: 0 });
+    revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
+  }
+
   return result;
 });
 
@@ -807,6 +820,9 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
       tx,
     );
   });
+
+  revalidateTag(eventEditionCouponsTag(registration.editionId), { expire: 0 });
+  revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });

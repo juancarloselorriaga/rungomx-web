@@ -1,18 +1,9 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useTranslations, useLocale } from 'next-intl';
-import {
-  AlertCircle,
-  Check,
-  Edit2,
-  Loader2,
-  Percent,
-  Plus,
-  Tag,
-  Trash2,
-  Users,
-} from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Check, Edit2, Loader2, Percent, Plus, Tag, Trash2, Users } from 'lucide-react';
 
 import {
   createDiscountCode,
@@ -24,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { Form, FormError, useForm } from '@/lib/forms';
 
 type CouponsManagerProps = {
   editionId: string;
@@ -78,10 +70,7 @@ function CouponStatusBadge({ coupon }: { coupon: DiscountCodeData }) {
     );
   }
 
-  if (
-    coupon.maxRedemptions !== null &&
-    coupon.currentRedemptions >= coupon.maxRedemptions
-  ) {
+  if (coupon.maxRedemptions !== null && coupon.currentRedemptions >= coupon.maxRedemptions) {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
         {t('status.limitReached')}
@@ -98,28 +87,25 @@ function CouponStatusBadge({ coupon }: { coupon: DiscountCodeData }) {
 }
 
 function CouponForm({
+  editionId,
+  discountCodeId,
   initialData,
-  onSubmit,
   onCancel,
-  isSubmitting,
-  submitLabel,
-  isEdit = false,
-  locale,
+  onSaved,
 }: {
+  editionId: string;
+  discountCodeId?: string;
   initialData: CouponFormData;
-  onSubmit: (data: CouponFormData) => void;
   onCancel: () => void;
-  isSubmitting: boolean;
-  submitLabel: string;
-  isEdit?: boolean;
-  locale: string;
+  onSaved: (coupon: DiscountCodeData) => void;
 }) {
   const t = useTranslations('pages.dashboardEvents.coupons.coupon');
   const tCommon = useTranslations('common');
-  const [formData, setFormData] = useState<CouponFormData>(initialData);
+  const tToast = useTranslations('pages.dashboardEvents.coupons.toast');
+  const locale = useLocale();
 
   // Extract date portion from datetime string (YYYY-MM-DDTHH:mm -> YYYY-MM-DD)
-  const getDatePart = (datetime: string) => datetime ? datetime.split('T')[0] : '';
+  const getDatePart = (datetime: string) => (datetime ? datetime.split('T')[0] : '');
   // Extract time portion from datetime string (YYYY-MM-DDTHH:mm -> HH:mm)
   const getTimePart = (datetime: string, defaultTime: string) => {
     if (!datetime) return defaultTime;
@@ -127,156 +113,198 @@ function CouponForm({
     return parts[1] || defaultTime;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  const form = useForm<CouponFormData, DiscountCodeData>({
+    defaultValues: initialData,
+    onSubmit: async (values) => {
+      if (discountCodeId) {
+        const result = await updateDiscountCode({
+          discountCodeId,
+          name: values.name || null,
+          percentOff: values.percentOff,
+          maxRedemptions: values.maxRedemptions,
+          startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : null,
+          endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+          isActive: values.isActive,
+        });
+
+        if (!result.ok) {
+          if (result.code === 'VALIDATION_ERROR') {
+            return { ok: false, error: 'INVALID_INPUT', message: result.error };
+          }
+          return { ok: false, error: 'SERVER_ERROR', message: result.error };
+        }
+
+        return { ok: true, data: result.data };
+      }
+
+      const result = await createDiscountCode({
+        editionId,
+        code: values.code,
+        name: values.name || null,
+        percentOff: values.percentOff,
+        maxRedemptions: values.maxRedemptions,
+        startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : null,
+        endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+        isActive: values.isActive,
+      });
+
+      if (!result.ok) {
+        if (result.code === 'CODE_EXISTS') {
+          return {
+            ok: false,
+            error: 'INVALID_INPUT',
+            message: result.error,
+            fieldErrors: { code: [result.error] },
+          };
+        }
+
+        if (result.code === 'VALIDATION_ERROR') {
+          return { ok: false, error: 'INVALID_INPUT', message: result.error };
+        }
+
+        return { ok: false, error: 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true, data: result.data };
+    },
+    onSuccess: (coupon) => {
+      toast.success(discountCodeId ? tToast('updated') : tToast('created'));
+      onSaved(coupon);
+    },
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <Form form={form} className="space-y-4">
+      <FormError />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label={t('code')} required>
+        <FormField label={t('code')} required error={form.errors.code}>
           <input
             type="text"
-            value={formData.code}
-            onChange={(e) =>
-              setFormData({ ...formData, code: e.target.value.toUpperCase() })
-            }
+            value={form.values.code}
+            onChange={(e) => form.setFieldValue('code', e.target.value.toUpperCase())}
             placeholder="EARLYBIRD20"
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             pattern="[-A-Z0-9_]+"
             maxLength={50}
-            disabled={isEdit}
+            disabled={Boolean(discountCodeId) || form.isSubmitting}
             required
           />
-          {isEdit && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t('codeCannotChange')}
-            </p>
-          )}
+          {discountCodeId && <p className="mt-1 text-xs text-muted-foreground">{t('codeCannotChange')}</p>}
         </FormField>
 
-        <FormField label={t('name')}>
+        <FormField label={t('name')} error={form.errors.name}>
           <input
             type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            value={form.values.name}
+            onChange={(e) => form.setFieldValue('name', e.target.value)}
             placeholder={t('namePlaceholder')}
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             maxLength={255}
+            disabled={form.isSubmitting}
           />
         </FormField>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label={t('percentOff')} required>
+        <FormField label={t('percentOff')} required error={form.errors.percentOff}>
           <div className="relative">
             <input
               type="number"
-              value={formData.percentOff}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  percentOff: parseInt(e.target.value, 10) || 0,
-                })
-              }
+              value={form.values.percentOff}
+              onChange={(e) => form.setFieldValue('percentOff', parseInt(e.target.value, 10) || 0)}
               min={1}
               max={100}
               className="w-full px-3 py-2 pr-8 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               required
+              disabled={form.isSubmitting}
             />
             <Percent className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           </div>
         </FormField>
 
-        <FormField label={t('maxRedemptions')}>
+        <FormField label={t('maxRedemptions')} error={form.errors.maxRedemptions}>
           <input
             type="number"
-            value={formData.maxRedemptions || ''}
+            value={form.values.maxRedemptions || ''}
             onChange={(e) =>
-              setFormData({
-                ...formData,
-                maxRedemptions: e.target.value
-                  ? parseInt(e.target.value, 10)
-                  : null,
-              })
+              form.setFieldValue('maxRedemptions', e.target.value ? parseInt(e.target.value, 10) : null)
             }
             min={1}
             placeholder={t('unlimited')}
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            disabled={form.isSubmitting}
           />
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t('maxRedemptionsHint')}
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{t('maxRedemptionsHint')}</p>
         </FormField>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label={t('startsAt')}>
+        <FormField label={t('startsAt')} error={form.errors.startsAt}>
           <div className="flex gap-2">
             <div className="flex-1">
               <DatePicker
                 locale={locale}
-                value={getDatePart(formData.startsAt)}
+                value={getDatePart(form.values.startsAt)}
                 onChangeAction={(value) => {
-                  const timePart = getTimePart(formData.startsAt, '00:00');
-                  setFormData({ ...formData, startsAt: value ? `${value}T${timePart}` : '' });
+                  const timePart = getTimePart(form.values.startsAt, '00:00');
+                  form.setFieldValue('startsAt', value ? `${value}T${timePart}` : '');
                 }}
                 clearLabel={tCommon('clear')}
               />
             </div>
-            {formData.startsAt && (
+            {form.values.startsAt && (
               <input
                 type="time"
-                value={getTimePart(formData.startsAt, '00:00')}
+                value={getTimePart(form.values.startsAt, '00:00')}
                 onChange={(e) => {
-                  const datePart = getDatePart(formData.startsAt);
-                  setFormData({ ...formData, startsAt: datePart ? `${datePart}T${e.target.value}` : '' });
+                  const datePart = getDatePart(form.values.startsAt);
+                  form.setFieldValue('startsAt', datePart ? `${datePart}T${e.target.value}` : '');
                 }}
                 className="w-24 px-2 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={form.isSubmitting}
               />
             )}
           </div>
         </FormField>
 
-        <FormField label={t('endsAt')}>
+        <FormField label={t('endsAt')} error={form.errors.endsAt}>
           <div className="flex gap-2">
             <div className="flex-1">
               <DatePicker
                 locale={locale}
-                value={getDatePart(formData.endsAt)}
+                value={getDatePart(form.values.endsAt)}
                 onChangeAction={(value) => {
-                  const timePart = getTimePart(formData.endsAt, '23:59');
-                  setFormData({ ...formData, endsAt: value ? `${value}T${timePart}` : '' });
+                  const timePart = getTimePart(form.values.endsAt, '23:59');
+                  form.setFieldValue('endsAt', value ? `${value}T${timePart}` : '');
                 }}
                 clearLabel={tCommon('clear')}
               />
             </div>
-            {formData.endsAt && (
+            {form.values.endsAt && (
               <input
                 type="time"
-                value={getTimePart(formData.endsAt, '23:59')}
+                value={getTimePart(form.values.endsAt, '23:59')}
                 onChange={(e) => {
-                  const datePart = getDatePart(formData.endsAt);
-                  setFormData({ ...formData, endsAt: datePart ? `${datePart}T${e.target.value}` : '' });
+                  const datePart = getDatePart(form.values.endsAt);
+                  form.setFieldValue('endsAt', datePart ? `${datePart}T${e.target.value}` : '');
                 }}
                 className="w-24 px-2 py-2 border border-border rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={form.isSubmitting}
               />
             )}
           </div>
         </FormField>
       </div>
 
-      <FormField label={t('isActive')}>
+      <FormField label={t('isActive')} error={form.errors.isActive}>
         <label className="flex items-center gap-2 cursor-pointer">
           <div className="relative">
             <input
               type="checkbox"
-              checked={formData.isActive}
-              onChange={(e) =>
-                setFormData({ ...formData, isActive: e.target.checked })
-              }
+              checked={form.values.isActive}
+              onChange={(e) => form.setFieldValue('isActive', e.target.checked)}
               className="sr-only peer"
+              disabled={form.isSubmitting}
             />
             <div className="w-10 h-6 bg-muted rounded-full peer-checked:bg-primary transition-colors" />
             <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow peer-checked:translate-x-4 transition-transform" />
@@ -289,84 +317,37 @@ function CouponForm({
         <Button type="button" variant="outline" onClick={onCancel}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {submitLabel}
+        <Button type="submit" disabled={form.isSubmitting}>
+          {form.isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {discountCodeId ? t('save') : t('create')}
         </Button>
       </div>
-    </form>
+    </Form>
   );
 }
 
 export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.coupons');
-  const locale = useLocale();
+  const tToast = useTranslations('pages.dashboardEvents.coupons.toast');
+
   const [coupons, setCoupons] = useState<DiscountCodeData[]>(initialCoupons);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
   const [deletingCouponId, setDeletingCouponId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const handleAddCoupon = (data: CouponFormData) => {
-    setError(null);
-    startTransition(async () => {
-      const result = await createDiscountCode({
-        editionId,
-        code: data.code,
-        name: data.name || null,
-        percentOff: data.percentOff,
-        maxRedemptions: data.maxRedemptions,
-        startsAt: data.startsAt ? new Date(data.startsAt).toISOString() : null,
-        endsAt: data.endsAt ? new Date(data.endsAt).toISOString() : null,
-        isActive: data.isActive,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      setCoupons([result.data, ...coupons]);
-      setShowAddForm(false);
-    });
-  };
-
-  const handleUpdateCoupon = (couponId: string, data: CouponFormData) => {
-    setError(null);
-    startTransition(async () => {
-      const result = await updateDiscountCode({
-        discountCodeId: couponId,
-        name: data.name || null,
-        percentOff: data.percentOff,
-        maxRedemptions: data.maxRedemptions,
-        startsAt: data.startsAt ? new Date(data.startsAt).toISOString() : null,
-        endsAt: data.endsAt ? new Date(data.endsAt).toISOString() : null,
-        isActive: data.isActive,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      setCoupons(coupons.map((c) => (c.id === couponId ? result.data : c)));
-      setEditingCouponId(null);
-    });
-  };
-
   const handleDeleteCoupon = (couponId: string) => {
-    setError(null);
     startTransition(async () => {
       const result = await deleteDiscountCode({ discountCodeId: couponId });
 
       if (!result.ok) {
-        setError(result.error);
+        toast.error(tToast('error'), { description: result.error });
         setDeletingCouponId(null);
         return;
       }
 
-      setCoupons(coupons.filter((c) => c.id !== couponId));
+      toast.success(tToast('deleted'));
+      setCoupons((prev) => prev.filter((c) => c.id !== couponId));
       setDeletingCouponId(null);
     });
   };
@@ -391,20 +372,9 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
 
   return (
     <div className="space-y-6">
-      {error && (
-        <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-start gap-2">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
-          <p>{error}</p>
-        </div>
-      )}
-
       {/* Add coupon button / form */}
       {!showAddForm ? (
-        <Button
-          type="button"
-          onClick={() => setShowAddForm(true)}
-          className="w-full sm:w-auto"
-        >
+        <Button type="button" onClick={() => setShowAddForm(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
           {t('coupon.add')}
         </Button>
@@ -412,12 +382,13 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
         <div className="border border-border rounded-lg p-6 bg-card">
           <h3 className="text-lg font-semibold mb-4">{t('coupon.add')}</h3>
           <CouponForm
+            editionId={editionId}
             initialData={defaultCouponFormData}
-            onSubmit={handleAddCoupon}
+            onSaved={(coupon) => {
+              setCoupons((prev) => [coupon, ...prev]);
+              setShowAddForm(false);
+            }}
             onCancel={() => setShowAddForm(false)}
-            isSubmitting={isPending}
-            submitLabel={t('coupon.create')}
-            locale={locale}
           />
         </div>
       )}
@@ -427,23 +398,18 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
         <div className="text-center py-12 bg-muted/50 rounded-lg">
           <Tag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium mb-2">{t('emptyState')}</h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            {t('emptyStateDescription')}
-          </p>
+          <p className="text-muted-foreground max-w-md mx-auto">{t('emptyStateDescription')}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {coupons.map((coupon) => (
-            <div
-              key={coupon.id}
-              className="border border-border rounded-lg bg-card overflow-hidden"
-            >
+            <div key={coupon.id} className="border border-border rounded-lg bg-card overflow-hidden">
               {editingCouponId === coupon.id ? (
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">
-                    {t('coupon.edit')}
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-4">{t('coupon.edit')}</h3>
                   <CouponForm
+                    editionId={editionId}
+                    discountCodeId={coupon.id}
                     initialData={{
                       code: coupon.code,
                       name: coupon.name || '',
@@ -453,12 +419,11 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
                       endsAt: formatDateForInput(coupon.endsAt),
                       isActive: coupon.isActive,
                     }}
-                    onSubmit={(data) => handleUpdateCoupon(coupon.id, data)}
+                    onSaved={(nextCoupon) => {
+                      setCoupons((prev) => prev.map((c) => (c.id === coupon.id ? nextCoupon : c)));
+                      setEditingCouponId(null);
+                    }}
                     onCancel={() => setEditingCouponId(null)}
-                    isSubmitting={isPending}
-                    submitLabel={t('coupon.save')}
-                    isEdit
-                    locale={locale}
                   />
                 </div>
               ) : (
@@ -466,27 +431,17 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="font-mono text-lg font-bold bg-muted px-2 py-1 rounded">
-                          {coupon.code}
-                        </span>
+                        <span className="font-mono text-lg font-bold bg-muted px-2 py-1 rounded">{coupon.code}</span>
                         <CouponStatusBadge coupon={coupon} />
                       </div>
 
-                      {coupon.name && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {coupon.name}
-                        </p>
-                      )}
+                      {coupon.name && <p className="text-sm text-muted-foreground mb-2">{coupon.name}</p>}
 
                       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                         <div className="flex items-center gap-1.5">
                           <Percent className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-semibold">
-                            {coupon.percentOff}%
-                          </span>
-                          <span className="text-muted-foreground">
-                            {t('coupon.discount')}
-                          </span>
+                          <span className="font-semibold">{coupon.percentOff}%</span>
+                          <span className="text-muted-foreground">{t('coupon.discount')}</span>
                         </div>
 
                         <div className="flex items-center gap-1.5">
@@ -494,15 +449,10 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
                           <span>
                             {coupon.currentRedemptions}
                             {coupon.maxRedemptions !== null && (
-                              <span className="text-muted-foreground">
-                                {' '}
-                                / {coupon.maxRedemptions}
-                              </span>
+                              <span className="text-muted-foreground"> / {coupon.maxRedemptions}</span>
                             )}
                           </span>
-                          <span className="text-muted-foreground">
-                            {t('coupon.redemptions')}
-                          </span>
+                          <span className="text-muted-foreground">{t('coupon.redemptions')}</span>
                         </div>
                       </div>
 
@@ -513,9 +463,7 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
                               {t('coupon.validFrom')}: {formatDate(coupon.startsAt)}
                             </span>
                           )}
-                          {coupon.startsAt && coupon.endsAt && (
-                            <span className="mx-2">|</span>
-                          )}
+                          {coupon.startsAt && coupon.endsAt && <span className="mx-2">|</span>}
                           {coupon.endsAt && (
                             <span>
                               {t('coupon.validUntil')}: {formatDate(coupon.endsAt)}
@@ -580,3 +528,4 @@ export function CouponsManager({ editionId, initialCoupons }: CouponsManagerProp
     </div>
   );
 }
+

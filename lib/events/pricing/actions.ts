@@ -1,6 +1,7 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -13,6 +14,7 @@ import {
   canUserAccessEvent,
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
+import { eventEditionDetailTag, eventEditionPricingTag } from '../cache-tags';
 
 // =============================================================================
 // Types
@@ -224,6 +226,9 @@ export const createPricingTier = withAuthenticatedUser<ActionResult<PricingTierD
     return newTier;
   });
 
+  revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
+  revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -350,6 +355,9 @@ export const updatePricingTier = withAuthenticatedUser<ActionResult<PricingTierD
     return updated;
   });
 
+  revalidateTag(eventEditionPricingTag(existingTier.distance.editionId), { expire: 0 });
+  revalidateTag(eventEditionDetailTag(existingTier.distance.editionId), { expire: 0 });
+
   return {
     ok: true,
     data: {
@@ -443,6 +451,9 @@ export const deletePricingTier = withAuthenticatedUser<ActionResult>({
     );
   });
 
+  revalidateTag(eventEditionPricingTag(existingTier.distance.editionId), { expire: 0 });
+  revalidateTag(eventEditionDetailTag(existingTier.distance.editionId), { expire: 0 });
+
   return { ok: true, data: undefined };
 });
 
@@ -490,6 +501,9 @@ export const reorderPricingTiers = withAuthenticatedUser<ActionResult>({
         .where(and(eq(pricingTiers.id, tierIds[i]), eq(pricingTiers.distanceId, distanceId)));
     }
   });
+
+  revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
+  revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
 
   return { ok: true, data: undefined };
 });

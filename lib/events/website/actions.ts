@@ -2,7 +2,7 @@
 
 import { del } from '@vercel/blob';
 import { eq, and, isNull } from 'drizzle-orm';
-import { refresh } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -12,6 +12,7 @@ import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { canUserAccessSeries, getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 import type { AuthenticatedContext } from '@/lib/auth/guards';
+import { eventEditionWebsiteTag } from '../cache-tags';
 
 import {
   websiteContentBlocksSchema,
@@ -280,7 +281,7 @@ export const updateWebsiteContent = withAuthenticatedUser<ActionResult<{ id: str
     contentId = result.id;
   }
 
-  refresh();
+  revalidateTag(eventEditionWebsiteTag(editionId), { expire: 0 });
 
   return {
     ok: true,
