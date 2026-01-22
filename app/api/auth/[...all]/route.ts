@@ -76,9 +76,18 @@ const withErrorHandling = (fn: (request: Request) => Promise<Response>) => {
         }
 
         // Avoid user enumeration: collapse 404 from auth endpoints into a generic 401.
-        const rawStatus =
-          typeof error.status === 'string' ? Number.parseInt(error.status, 10) : error.status;
-        const normalizedStatus = rawStatus === 404 ? 401 : (rawStatus ?? 401);
+        const statusCode = (() => {
+          const value = (error as unknown as { statusCode?: unknown }).statusCode;
+          if (typeof value === 'number' && Number.isFinite(value)) return value;
+          if (typeof error.status === 'number' && Number.isFinite(error.status)) return error.status;
+          if (typeof error.status === 'string') {
+            const parsed = Number.parseInt(error.status, 10);
+            return Number.isFinite(parsed) ? parsed : undefined;
+          }
+          return undefined;
+        })();
+
+        const normalizedStatus = statusCode === 404 ? 401 : (statusCode ?? 401);
         const status = Number.isFinite(normalizedStatus) ? normalizedStatus : 401;
         const message =
           status === 401 ? 'Invalid email or password' : (error.message ?? 'Authentication failed');

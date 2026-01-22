@@ -181,7 +181,19 @@ export const auth = betterAuth({
 
     // Always trust the current host serving the request (covers aliases and previews)
     const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host');
-    const protocol = request.headers.get('x-forwarded-proto') ?? 'https';
+    const forwardedProto = request.headers
+      .get('x-forwarded-proto')
+      ?.split(',')
+      .map((value) => value.trim())
+      .filter(Boolean)[0];
+    const protocolFromUrl = (() => {
+      try {
+        return new URL(request.url).protocol.replace(':', '');
+      } catch {
+        return undefined;
+      }
+    })();
+    const protocol = forwardedProto ?? protocolFromUrl ?? 'https';
     if (host) {
       origins.add(`${protocol}://${host}`);
     }
