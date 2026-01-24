@@ -1137,25 +1137,26 @@ export function EventsDirectory({
 
       {/* Pagination */}
       {!isPending && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between border-t pt-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t pt-4">
+          <p className="text-sm text-muted-foreground text-center sm:text-left">
             {t('pagination.showing', {
               start: (pagination.page - 1) * pagination.limit + 1,
               end: Math.min(pagination.page * pagination.limit, pagination.total),
               total: pagination.total,
             })}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
               disabled={pagination.page <= 1}
+              className="px-2 sm:px-3"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              {t('pagination.previous')}
+              <ChevronLeft className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">{t('pagination.previous')}</span>
             </Button>
-            <span className="text-sm text-muted-foreground px-2">
+            <span className="text-sm text-muted-foreground px-1 sm:px-2 whitespace-nowrap">
               {t('pagination.page', { current: pagination.page, total: pagination.totalPages })}
             </span>
             <Button
@@ -1163,9 +1164,10 @@ export function EventsDirectory({
               size="sm"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={!pagination.hasMore}
+              className="px-2 sm:px-3"
             >
-              {t('pagination.next')}
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">{t('pagination.next')}</span>
+              <ChevronRight className="h-4 w-4 sm:ml-1" />
             </Button>
           </div>
         </div>

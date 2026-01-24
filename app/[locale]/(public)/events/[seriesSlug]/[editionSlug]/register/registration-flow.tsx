@@ -588,9 +588,9 @@ export function RegistrationFlow({
   const currentStepNumber = getStepNumber(step);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
+    <div className="container mx-auto px-4 py-4 sm:py-8 max-w-2xl">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-8">
         <Link
           href={{
             pathname: '/events/[seriesSlug]/[editionSlug]',
@@ -637,7 +637,7 @@ export function RegistrationFlow({
 
       {/* Progress indicator */}
       {step !== 'confirmation' && (
-        <div className="mb-8">
+        <div className="mb-4 sm:mb-8">
           <div className="flex items-center justify-between mb-2">
             {progressSteps.map((s, idx) => (
               <div key={s} className="flex items-center">
@@ -689,7 +689,7 @@ export function RegistrationFlow({
       )}
 
       {/* Step content */}
-      <div className="rounded-lg border bg-card p-6 shadow-sm">
+      <div className="rounded-lg border bg-card p-4 sm:p-6 shadow-sm">
         {/* Distance selection */}
         {step === 'distance' && (
           <div className="space-y-6">
