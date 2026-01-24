@@ -119,8 +119,17 @@ export async function signInAsUser(
   await emailInput.fill(credentials.email);
   await page.getByLabel(/password/i).fill(credentials.password);
   await page.getByRole('button', { name: /sign in/i }).click();
+
+  // Wait for Next.js compilation/rendering to complete if it's running
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build after sign-in...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(1000);
+  }
+
   // Wait for successful sign in (may go to dashboard or settings)
-  await page.waitForURL(/\/(dashboard|settings)/);
+  await page.waitForURL(/\/(dashboard|settings)/, { timeout: 45000 });
 
   // Handle role selection modal for new users (may take time to appear)
   await page.waitForTimeout(500); // Give modal time to appear
@@ -432,11 +441,21 @@ export async function createEvent(
     await dateInput.fill('2026-06-15');
   }
 
-  // Wait for form to be ready
+  // Wait for Next.js compilation/rendering to complete if it's running
+  // Look for "Compiling" or "Rendering" text in the dev tools indicator
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build to complete...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    // Extra wait after build completes for the page to stabilize
+    await page.waitForTimeout(1000);
+  }
+
+  // Wait for form to be ready and button to be enabled
   await page.waitForTimeout(300);
 
-  // Create event
-  await expect(page.getByRole('button', { name: /create event/i })).toBeEnabled({ timeout: 10000 });
+  // Create event - increased timeout to 30s to handle slow compilation
+  await expect(page.getByRole('button', { name: /create event/i })).toBeEnabled({ timeout: 30000 });
   await page.getByRole('button', { name: /create event/i }).click();
 
   // Wait for redirect to event dashboard
@@ -454,7 +473,16 @@ export async function createEvent(
  */
 export async function navigateToEventSettings(page: Page, eventId: string) {
   await page.goto(`/en/dashboard/events/${eventId}/settings`);
-  await expect(page).toHaveURL(/\/settings$/);
+
+  // Wait for Next.js compilation/rendering to complete
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build on settings page...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(1000);
+  }
+
+  await expect(page).toHaveURL(/\/settings$/, { timeout: 30000 });
 }
 
 /**
@@ -472,8 +500,12 @@ export async function addDistance(
 ) {
   const { label, distance, terrain, price, capacity } = options;
 
+  // Wait for the Distances heading to be visible before scrolling
+  const distancesHeading = page.getByRole('heading', { name: 'Distances' });
+  await expect(distancesHeading).toBeVisible({ timeout: 15000 });
+
   // Scroll to the Distances section and wait for page to settle
-  await page.getByRole('heading', { name: 'Distances' }).scrollIntoViewIfNeeded();
+  await distancesHeading.scrollIntoViewIfNeeded();
   await page.waitForLoadState('networkidle');
 
   // Check if form is already visible using the form's input name attribute
