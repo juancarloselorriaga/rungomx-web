@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { registrationAnswers, registrationQuestions } from '@/db/schema';
 import { eventEditionQuestionsTag } from '../cache-tags';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 import type { RegistrationAnswerData, RegistrationQuestionData } from './actions';
 
 /**
@@ -11,8 +11,8 @@ import type { RegistrationAnswerData, RegistrationQuestionData } from './actions
  */
 export async function getQuestionsForEdition(editionId: string): Promise<RegistrationQuestionData[]> {
   'use cache: remote';
-  cacheTag(eventEditionQuestionsTag(editionId));
-  cacheLife({ expire: 300 });
+  safeCacheTag(eventEditionQuestionsTag(editionId));
+  safeCacheLife({ expire: 300 });
 
   const questions = await db.query.registrationQuestions.findMany({
     where: and(eq(registrationQuestions.editionId, editionId), isNull(registrationQuestions.deletedAt)),
@@ -41,8 +41,8 @@ export async function getQuestionsForDistance(
   distanceId: string,
 ): Promise<RegistrationQuestionData[]> {
   'use cache: remote';
-  cacheTag(eventEditionQuestionsTag(editionId));
-  cacheLife({ expire: 300 });
+  safeCacheTag(eventEditionQuestionsTag(editionId));
+  safeCacheLife({ expire: 300 });
 
   const questions = await db.query.registrationQuestions.findMany({
     where: and(

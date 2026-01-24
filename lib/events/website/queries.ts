@@ -1,9 +1,9 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { eventWebsiteContent, media } from '@/db/schema';
 import { eventEditionWebsiteTag } from '../cache-tags';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 
 import {
   websiteContentBlocksSchema,
@@ -79,8 +79,8 @@ export async function getEventDocuments(
   locale: string = 'es',
 ): Promise<Array<{ label: string; url: string }>> {
   'use cache: remote';
-  cacheTag(eventEditionWebsiteTag(editionId));
-  cacheLife({ expire: 300 });
+  safeCacheTag(eventEditionWebsiteTag(editionId));
+  safeCacheLife({ expire: 300 });
 
   const content = await getPublicWebsiteContent(editionId, locale);
   if (!content?.media?.documents || content.media.documents.length === 0) {
@@ -106,8 +106,8 @@ export async function getPublicWebsiteContent(
   locale: string,
 ): Promise<WebsiteContentBlocks | null> {
   'use cache: remote';
-  cacheTag(eventEditionWebsiteTag(editionId));
-  cacheLife({ expire: 300 });
+  safeCacheTag(eventEditionWebsiteTag(editionId));
+  safeCacheLife({ expire: 300 });
 
   const content = await db.query.eventWebsiteContent.findFirst({
     where: and(
@@ -136,8 +136,8 @@ export async function getPublicWebsiteContent(
  */
 export async function hasWebsiteContent(editionId: string): Promise<boolean> {
   'use cache: remote';
-  cacheTag(eventEditionWebsiteTag(editionId));
-  cacheLife({ expire: 300 });
+  safeCacheTag(eventEditionWebsiteTag(editionId));
+  safeCacheLife({ expire: 300 });
 
   const content = await db.query.eventWebsiteContent.findFirst({
     where: and(

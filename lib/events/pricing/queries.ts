@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
-import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { eventDistances, pricingTiers } from '@/db/schema';
 import { eventEditionPricingTag } from '../cache-tags';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 import type { CurrentPricing, PricingTierData } from './actions';
 
 /**
@@ -146,8 +146,8 @@ export async function getPricingScheduleForEdition(
   }>
 > {
   'use cache: remote';
-  cacheTag(eventEditionPricingTag(editionId));
-  cacheLife({ expire: 60 });
+  safeCacheTag(eventEditionPricingTag(editionId));
+  safeCacheLife({ expire: 60 });
 
   // Get all distances for this edition with their pricing tiers
   const distances = await db.query.eventDistances.findMany({

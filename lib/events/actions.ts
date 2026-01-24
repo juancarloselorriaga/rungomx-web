@@ -37,7 +37,12 @@ import {
   startRegistrationForUser,
 } from '@/lib/events/start-registration';
 
-import { eventEditionDetailTag, eventEditionPricingTag, eventEditionRegistrationsTag } from './cache-tags';
+import {
+  eventEditionDetailTag,
+  eventEditionPricingTag,
+  eventEditionRegistrationsTag,
+  publicEventBySlugTag,
+} from './cache-tags';
 import {
   CAPACITY_SCOPES,
   DISTANCE_KINDS,
@@ -79,6 +84,17 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
   }
 
   return null;
+}
+
+async function revalidatePublicEventByEditionId(editionId: string) {
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    columns: { slug: true },
+    with: { series: { columns: { slug: true } } },
+  });
+
+  if (!edition?.series?.slug) return;
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 }
 
 // =============================================================================
@@ -622,6 +638,10 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   });
 
   revalidateTag(eventEditionDetailTag(updated.id), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  if (updated.slug !== edition.slug) {
+    revalidateTag(publicEventBySlugTag(edition.series.slug, updated.slug), { expire: 0 });
+  }
 
   return {
     ok: true,
@@ -720,6 +740,7 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
   });
 
   revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return { ok: true, data: { capacityScope, sharedCapacity: nextSharedCapacity } };
 });
@@ -813,6 +834,7 @@ export const updateEventPolicyConfig = withAuthenticatedUser<ActionResult<EventP
   });
 
   revalidateTag(eventEditionDetailTag(data.editionId), { expire: 0 });
+  await revalidatePublicEventByEditionId(data.editionId);
 
   return {
     ok: true,
@@ -1040,6 +1062,7 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
   });
 
   revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return { ok: true, data: { visibility } };
 });
@@ -1113,6 +1136,7 @@ export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused
   });
 
   revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return { ok: true, data: { paused } };
 });
@@ -1324,6 +1348,7 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
 
   revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
   revalidateTag(eventEditionPricingTag(editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -1434,6 +1459,7 @@ export const updateDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
 
   revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
   revalidateTag(eventEditionPricingTag(updated.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -1521,6 +1547,7 @@ export const deleteDistance = withAuthenticatedUser<ActionResult>({
 
   revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
   revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -1605,6 +1632,7 @@ export const updateDistancePrice = withAuthenticatedUser<ActionResult>({
 
   revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
   revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -1717,6 +1745,7 @@ export const createFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
   });
 
   revalidateTag(eventEditionDetailTag(faqItem.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -1811,6 +1840,7 @@ export const updateFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
   });
 
   revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(faqItem.edition.series.slug, faqItem.edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -1884,6 +1914,7 @@ export const deleteFaqItem = withAuthenticatedUser<ActionResult>({
   });
 
   revalidateTag(eventEditionDetailTag(faqItem.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(faqItem.edition.series.slug, faqItem.edition.slug), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -1974,6 +2005,7 @@ export const reorderFaqItems = withAuthenticatedUser<ActionResult>({
     });
 
     revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+    revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
     return { ok: true, data: undefined };
   } catch (error) {
@@ -2105,6 +2137,7 @@ export const createWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
   });
 
   revalidateTag(eventEditionDetailTag(waiver.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -2205,6 +2238,7 @@ export const updateWaiver = withAuthenticatedUser<ActionResult<WaiverData>>({
   });
 
   revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(waiver.edition.series.slug, waiver.edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -2296,6 +2330,7 @@ export const reorderWaivers = withAuthenticatedUser<ActionResult>({
   });
 
   revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
@@ -2381,6 +2416,7 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
 
     revalidateTag(eventEditionDetailTag(registration.editionId), { expire: 0 });
     revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
+    await revalidatePublicEventByEditionId(registration.editionId);
 
     return {
       ok: true,
@@ -2492,6 +2528,7 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
 
     revalidateTag(eventEditionDetailTag(updatedRegistration.editionId), { expire: 0 });
     revalidateTag(eventEditionRegistrationsTag(updatedRegistration.editionId), { expire: 0 });
+    await revalidatePublicEventByEditionId(updatedRegistration.editionId);
 
     return {
       ok: true,
@@ -2801,6 +2838,7 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
 
     revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
     revalidateTag(eventEditionRegistrationsTag(updated.editionId), { expire: 0 });
+    await revalidatePublicEventByEditionId(updated.editionId);
 
     try {
       if (updated.status === 'confirmed' || updated.status === 'payment_pending') {

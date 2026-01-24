@@ -26,3 +26,6 @@ export function eventEditionRegistrationsTag(editionId: string) {
   return `event-edition:${editionId}:registrations`;
 }
 
+export function publicEventBySlugTag(seriesSlug: string, editionSlug: string) {
+  return `public-event:${seriesSlug}:${editionSlug}`;
+}

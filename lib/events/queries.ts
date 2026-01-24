@@ -1,5 +1,4 @@
 import { and, asc, desc, eq, gt, gte, isNull, lt, ne, or, sql } from 'drizzle-orm';
-import { cacheLife, cacheTag } from 'next/cache';
 import { connection } from 'next/server';
 
 import { db } from '@/db';
@@ -16,8 +15,15 @@ import {
   waiverAcceptances,
   waivers,
 } from '@/db/schema';
-import { eventEditionDetailTag } from '@/lib/events/cache-tags';
+import {
+  eventEditionDetailTag,
+  eventEditionPricingTag,
+  eventEditionRegistrationsTag,
+  eventEditionWebsiteTag,
+  publicEventBySlugTag,
+} from '@/lib/events/cache-tags';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 
 /**
  * Get event series for an organization.
@@ -317,8 +323,8 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
 
 async function getEventEditionDetailCached(eventId: string): Promise<EventEditionDetail | null> {
   'use cache: remote';
-  cacheTag(eventEditionDetailTag(eventId));
-  cacheLife({ expire: 60 });
+  safeCacheTag(eventEditionDetailTag(eventId));
+  safeCacheLife({ expire: 60 });
 
   const edition = await db.query.eventEditions.findFirst({
     where: and(eq(eventEditions.id, eventId), isNull(eventEditions.deletedAt)),
@@ -530,6 +536,10 @@ export async function getPublicEventBySlug(
   seriesSlug: string,
   editionSlug: string,
 ): Promise<PublicEventDetail | null> {
+  'use cache: remote';
+  safeCacheLife({ expire: 60 });
+  safeCacheTag(publicEventBySlugTag(seriesSlug, editionSlug));
+
   const series = await db.query.eventSeries.findFirst({
     where: and(eq(eventSeries.slug, seriesSlug), isNull(eventSeries.deletedAt)),
     with: {
@@ -578,6 +588,13 @@ export async function getPublicEventBySlug(
   if (!edition) {
     return null;
   }
+
+  safeCacheTag(
+    eventEditionDetailTag(edition.id),
+    eventEditionPricingTag(edition.id),
+    eventEditionRegistrationsTag(edition.id),
+    eventEditionWebsiteTag(edition.id),
+  );
 
   const now = new Date();
 

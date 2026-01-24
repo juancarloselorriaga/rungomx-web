@@ -14,7 +14,7 @@ import {
   canUserAccessEvent,
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
-import { eventEditionDetailTag, eventEditionPricingTag } from '../cache-tags';
+import { eventEditionDetailTag, eventEditionPricingTag, publicEventBySlugTag } from '../cache-tags';
 
 // =============================================================================
 // Types
@@ -228,6 +228,7 @@ export const createPricingTier = withAuthenticatedUser<ActionResult<PricingTierD
 
   revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
   revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
 
   return {
     ok: true,
@@ -357,6 +358,10 @@ export const updatePricingTier = withAuthenticatedUser<ActionResult<PricingTierD
 
   revalidateTag(eventEditionPricingTag(existingTier.distance.editionId), { expire: 0 });
   revalidateTag(eventEditionDetailTag(existingTier.distance.editionId), { expire: 0 });
+  revalidateTag(
+    publicEventBySlugTag(existingTier.distance.edition.series.slug, existingTier.distance.edition.slug),
+    { expire: 0 },
+  );
 
   return {
     ok: true,
@@ -453,6 +458,10 @@ export const deletePricingTier = withAuthenticatedUser<ActionResult>({
 
   revalidateTag(eventEditionPricingTag(existingTier.distance.editionId), { expire: 0 });
   revalidateTag(eventEditionDetailTag(existingTier.distance.editionId), { expire: 0 });
+  revalidateTag(
+    publicEventBySlugTag(existingTier.distance.edition.series.slug, existingTier.distance.edition.slug),
+    { expire: 0 },
+  );
 
   return { ok: true, data: undefined };
 });
@@ -504,6 +513,7 @@ export const reorderPricingTiers = withAuthenticatedUser<ActionResult>({
 
   revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
   revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
+  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
 
   return { ok: true, data: undefined };
 });
