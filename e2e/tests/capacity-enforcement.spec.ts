@@ -123,10 +123,13 @@ test.describe('Capacity Enforcement', () => {
   });
 
   test('Test 1.9c: Event shows sold out after capacity reached', async ({ page }) => {
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
+    await page.goto(`/en/events/${seriesSlug}/${editionSlug}?tab=distances`);
+
+    // Ensure the page has rendered before checking state.
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Should show sold out indicator on the distance card
-    const soldOut = page.getByText(/sold out/i);
+    const soldOut = page.getByText(/sold out/i).first();
     await expect(soldOut).toBeVisible();
 
     // Verify the distance no longer shows available spots

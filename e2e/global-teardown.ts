@@ -5,12 +5,22 @@
  */
 
 import { getTestDb, cleanDatabase } from './utils/db';
+import { releaseE2eRunLock } from './utils/run-lock';
 
 export default async function globalTeardown() {
-  console.log('🧹 Final cleanup after E2E tests...');
+  try {
+    if (process.env.E2E_SKIP_DB_CLEANUP === '1') {
+      console.log('⚠️ Skipping E2E database cleanup (E2E_SKIP_DB_CLEANUP=1)');
+      return;
+    }
 
-  const db = getTestDb();
-  await cleanDatabase(db);
+    console.log('🧹 Final cleanup after E2E tests...');
 
-  console.log('✅ Cleanup complete - test database cleaned');
+    const db = getTestDb();
+    await cleanDatabase(db);
+
+    console.log('✅ Cleanup complete - test database cleaned');
+  } finally {
+    await releaseE2eRunLock();
+  }
 }

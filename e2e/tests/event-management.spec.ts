@@ -141,8 +141,8 @@ test.describe('Event Management', () => {
     // Navigate to public events directory
     await page.goto('/en/events');
 
-    // Wait for page to fully load
-    await page.waitForLoadState('networkidle');
+    // Ensure page has rendered before asserting results
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Look for event cards (implemented as links with event data)
     // Events are rendered as links containing the event name
@@ -184,11 +184,9 @@ test.describe('Event Management', () => {
   });
 
   test('Test 1.6b: Paused registration shows on public page', async ({ page }) => {
-    // Navigate to public event page with cache bypass
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}`, { waitUntil: 'networkidle' });
-
-    // Force reload to get fresh data (bypass Next.js cache)
-    await page.reload({ waitUntil: 'networkidle' });
+    // Navigate to public event page
+    await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Should show registration closed message
     await expect(page.getByText(/registration closed/i)).toBeVisible();
@@ -261,11 +259,24 @@ test.describe('Event Management', () => {
     // Save changes
     await page.getByRole('button', { name: /save changes/i }).click();
 
-    // Wait for success message or confirmation
-    await page.waitForTimeout(1000);
+    // Ensure the update has been committed before checking the public page.
+    const db = getTestDb();
+    await expect
+      .poll(
+        async () => {
+          const edition = await db.query.eventEditions.findFirst({
+            where: and(eq(eventEditions.id, eventId), isNull(eventEditions.deletedAt)),
+            columns: { locationDisplay: true },
+          });
+          return edition?.locationDisplay ?? null;
+        },
+        { timeout: 20000 },
+      )
+      .toMatch(/Guadalajara/i);
 
     // Verify public page reflects change
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText(/Guadalajara/i).first()).toBeVisible();
   });
 });

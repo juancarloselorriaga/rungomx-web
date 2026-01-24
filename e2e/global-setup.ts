@@ -4,13 +4,14 @@
  * Cleans test database to ensure fresh state
  */
 
-import { setupTestDb, cleanDatabase } from './utils/db';
+import { setupTestDb } from './utils/db';
+import { acquireE2eRunLock } from './utils/run-lock';
 
 export default async function globalSetup() {
+  await acquireE2eRunLock();
   console.log('🧹 Cleaning test database before E2E tests...');
 
-  const db = await setupTestDb();
-  await cleanDatabase(db);
+  await setupTestDb();
 
   console.log('✅ Test database ready - all tables cleaned');
 }

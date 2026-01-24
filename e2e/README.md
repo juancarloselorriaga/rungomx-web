@@ -1,22 +1,23 @@
 # RunGoMX E2E Tests
 
-End-to-end regression tests for Phase 0 (Foundations) and Phase 1 (Event Management) features using Playwright.
+End-to-end regression tests for the RunGoMX event platform (Phase 0–2) using Playwright.
 
 ## Prerequisites
 
-1. **Install Playwright:**
+1. **Install dependencies**
    ```bash
-   pnpm add -D @playwright/test
+   pnpm install
+   ```
+
+2. **Install Playwright browser(s):**
+   ```bash
    pnpm exec playwright install chromium
    ```
 
-2. **Test Accounts:**
-   - Organizer: jetsam-elector92@icloud.com / rungomxpassword
-   - Athlete: hiss-cheek9l@icloud.com / rungomxpassword
-
-3. **Database:**
-   - Neon PostgreSQL dev branch: `br-solitary-mud-a4da2uaw`
-   - Ensure test accounts exist in database
+3. **Database**
+   - E2E runs against the **Neon test branch** via `DATABASE_URL` in `.env.test`.
+   - The suite **wipes the test database before and after** the run (see `e2e/global-setup.ts` and `e2e/global-teardown.ts`).
+   - Tests create their own users via signup flows; no pre-seeded accounts are required.
 
 ## Running Tests
 
@@ -25,13 +26,19 @@ End-to-end regression tests for Phase 0 (Foundations) and Phase 1 (Event Managem
 pnpm test:e2e
 ```
 
-### Run specific test file
+### Run isolated (unique artifacts + random port)
 ```bash
-pnpm test:e2e phase-0-auth
-pnpm test:e2e phase-1-event-creation
-pnpm test:e2e phase-1-event-management
-pnpm test:e2e phase-1-registration
-pnpm test:e2e phase-1-capacity
+pnpm test:e2e:isolated
+```
+
+### Run a single test file
+```bash
+pnpm test:e2e e2e/tests/auth.spec.ts
+pnpm test:e2e e2e/tests/event-creation.spec.ts
+pnpm test:e2e e2e/tests/event-management.spec.ts
+pnpm test:e2e e2e/tests/athlete-registration.spec.ts
+pnpm test:e2e e2e/tests/capacity-enforcement.spec.ts
+pnpm test:e2e e2e/tests/events-location-filter.spec.ts
 ```
 
 ### Run tests in UI mode (interactive)
@@ -46,7 +53,7 @@ pnpm test:e2e --headed
 
 ### Debug specific test
 ```bash
-pnpm test:e2e --debug phase-0-auth
+pnpm test:e2e --debug e2e/tests/auth.spec.ts
 ```
 
 ## Test Organization
@@ -55,71 +62,39 @@ pnpm test:e2e --debug phase-0-auth
 e2e/
 ├── playwright.config.ts          # Playwright configuration
 ├── tests/
-│   ├── phase-0-auth.spec.ts      # Authentication & access control
-│   ├── phase-1-event-creation.spec.ts    # Event creation flow
-│   ├── phase-1-event-management.spec.ts  # Settings, distances, publication
-│   ├── phase-1-registration.spec.ts      # Athlete registration
-│   └── phase-1-capacity.spec.ts          # Capacity enforcement & race conditions
+│   ├── auth.spec.ts                     # Authentication & access control
+│   ├── event-creation.spec.ts           # Organization + event setup
+│   ├── event-management.spec.ts         # Settings, distances, publication
+│   ├── athlete-registration.spec.ts     # Athlete registration flow
+│   ├── capacity-enforcement.spec.ts     # Capacity enforcement & race conditions
+│   └── events-location-filter.spec.ts   # Location/map-based discovery
 ├── fixtures/
 │   └── test-data.ts              # Test data constants
 └── utils/
     └── helpers.ts                # Shared test utilities
 ```
 
-## Test Suites
-
-### Phase 0: Foundations (5 tests)
-- Non-authenticated access control
-- Organizer authentication
-- Profile completion enforcement
-- Public page access
-- Invalid credential handling
-
-### Phase 1: Event Creation (5 tests)
-- Organization creation
-- Event creation with details
-- Event appears in organizer list
-- Draft events hidden from public
-- Unique slug generation
-
-### Phase 1: Event Management (11 tests)
-- Settings page access
-- Distance management (add single, add multiple)
-- Event publication
-- Public directory visibility
-- Public event page access
-- Registration pause/unpause
-- Public page reflects registration status
-- Event detail editing
-
-### Phase 1: Registration (11 tests)
-- Non-authenticated user flow
-- Sign-in redirect with callback
-- Distance selection
-- Participant information form
-- Order summary display
-- Registration completion
-- Duplicate prevention
-- Capacity decrement
-- Form validation
-
-### Phase 1: Capacity Enforcement (7 tests)
-- Initial capacity display
-- Capacity fill
-- Sold out display
-- Direct URL blocking
-- Concurrent registration (race condition)
-- Multiple distances with different capacities
-- Partial capacity handling
-
-**Total: 39 automated tests**
+**Total:** 39 automated tests
 
 ## Test Features
 
 ### Idempotency
 - Tests use unique timestamps in entity names
+
+### Database cleanup controls
+- Default: DB is cleaned **before and after** the suite.
+- Debugging: set `E2E_SKIP_DB_CLEANUP=1` to preserve data after the run:
+  ```bash
+  E2E_SKIP_DB_CLEANUP=1 pnpm test:e2e e2e/tests/event-management.spec.ts
+  ```
+- The suite also uses a run lock (per `DATABASE_URL` host) to prevent concurrent runs from clobbering the same test DB.
 - Can run multiple times without conflicts
 - Example: `E2E Test Event ${Date.now()}`
+
+### Avoiding local clashes
+- **Port isolation:** default server is `127.0.0.1:43137`. Override with `PLAYWRIGHT_PORT=3005` (or `PLAYWRIGHT_BASE_URL=...`).
+- **Artifact isolation:** set `E2E_RUN_ID=...` to write results to per-run folders, or run `pnpm test:e2e:isolated`.
+- **Parallel runs:** require isolated configs (different `DATABASE_URL` + different `PLAYWRIGHT_BASE_URL`).
 
 ### Isolation
 - Each test suite is independent
@@ -134,26 +109,14 @@ e2e/
 
 ## Test Data
 
-All test data is defined in `fixtures/test-data.ts`:
-- Account credentials
-- Profile information
-- Event configurations
-- Distance presets
-- Registration data
+Deterministic data presets live in `e2e/fixtures/test-data.ts` (event + distance + registration defaults).
+
+Test users/roles are created directly in the DB for speed and isolation:
+- `e2e/utils/fixtures.ts` (Better Auth-compatible credentials + profile helpers)
 
 ## Helpers
 
-Common operations extracted to `utils/helpers.ts`:
-- `signInAsOrganizer(page)` - Authenticate as organizer
-- `signInAsAthlete(page)` - Authenticate as athlete
-- `createOrganization(page, name?)` - Create unique organization
-- `createEvent(page, options?)` - Create event with defaults
-- `addDistance(page, options)` - Add distance to event
-- `publishEvent(page)` - Change visibility to Published
-- `pauseRegistration(page)` - Pause event registration
-- `resumeRegistration(page)` - Resume event registration
-- `completeRegistrationForm(page, options?)` - Fill athlete registration
-- `fillPhoneInput(page, label, phone)` - Handle phone input validation
+Shared UI flows live in `e2e/utils/helpers.ts` (sign-in, event creation/management, registration helpers).
 
 ## Debugging
 
@@ -162,13 +125,18 @@ Common operations extracted to `utils/helpers.ts`:
 pnpm exec playwright show-report
 ```
 
+For isolated runs (`pnpm test:e2e:isolated`), the report is written to `playwright-report/<runId>/`:
+```bash
+pnpm exec playwright show-report playwright-report/<runId>
+```
+
 ### Trace viewer (after failed test)
 ```bash
 pnpm exec playwright show-trace <trace-file>
 ```
 
 ### Screenshots and videos
-Located in `test-results/` directory after test run
+Located in `test-results/` after the run (or `test-results/<runId>/` for isolated runs).
 
 ### Browser console logs
 Available in test output when tests fail
@@ -307,5 +275,3 @@ Not covered (Phase 2+):
 ## Resources
 
 - [Playwright Documentation](https://playwright.dev)
-- [Test Plan](../docs/testing/phase-0-1-test-plan.md)
-- [Previous Test Results](../docs/testing/phase-0-1-automated-smoke-test-results.md)

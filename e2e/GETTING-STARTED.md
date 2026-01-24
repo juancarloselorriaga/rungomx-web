@@ -2,55 +2,44 @@
 
 Quick start guide for running RunGoMX regression tests.
 
-## 1. Install Playwright
+## 1. Install dependencies
 
 ```bash
-# Install Playwright as dev dependency
-pnpm add -D @playwright/test
+pnpm install
 
-# Install Chromium browser
+# Install Chromium browser (Playwright)
 pnpm exec playwright install chromium
 ```
 
-## 2. Verify Test Accounts
+## 2. Configure test database
 
-Ensure these test accounts exist in your database:
+E2E tests run against the database specified in `.env.test` (`DATABASE_URL`).
 
-**Organizer:**
-- Email: `jetsam-elector92@icloud.com`
-- Password: `rungomxpassword`
+The suite wipes the test database **before and after** the run. Tests create their own users via signup flows.
 
-**Athlete:**
-- Email: `hiss-cheek9l@icloud.com`
-- Password: `rungomxpassword`
+## 3. Run tests
 
-## 3. Start Development Server
-
-In one terminal:
-```bash
-pnpm dev
-```
-
-Wait for server to start on `http://localhost:3000`
-
-## 4. Run Tests
-
-In another terminal:
+Playwright starts a dedicated Next.js dev server automatically (defaults to `http://127.0.0.1:43137`).
 
 ### Run all tests (headless)
 ```bash
 pnpm test:e2e
 ```
 
+### Run isolated (unique artifacts + random port)
+```bash
+pnpm test:e2e:isolated
+```
+
 ### Run with visible browser
 ```bash
-pnpm test:e2e --headed
+pnpm test:e2e:headed
 ```
 
 ### Run specific test file
 ```bash
-pnpm test:e2e phase-0-auth
-pnpm test:e2e phase-1-registration
+pnpm test:e2e e2e/tests/auth.spec.ts
+pnpm test:e2e e2e/tests/athlete-registration.spec.ts
 ```
 
 ### Interactive mode (recommended for first run)
@@ -58,7 +47,7 @@ pnpm test:e2e phase-1-registration
 pnpm test:e2e:ui
 ```
 
-## 5. View Results
+## 4. View Results
 
 After test completion:
 
@@ -67,10 +56,17 @@ After test completion:
 pnpm exec playwright show-report
 ```
 
+For isolated runs (`pnpm test:e2e:isolated`), the report is written to `playwright-report/<runId>/`:
+```bash
+pnpm exec playwright show-report playwright-report/<runId>
+```
+
 ### Check test-results directory
 ```bash
 ls test-results/
 ```
+
+For isolated runs, artifacts are written to `test-results/<runId>/`.
 
 Contains:
 - Screenshots (on failure)
@@ -91,11 +87,12 @@ Contains:
 
 ```
 e2e/tests/
-├── phase-0-auth.spec.ts              # 5 tests - Authentication & access
-├── phase-1-event-creation.spec.ts    # 5 tests - Organization & event setup
-├── phase-1-event-management.spec.ts  # 11 tests - Settings & publication
-├── phase-1-registration.spec.ts      # 11 tests - Athlete registration
-└── phase-1-capacity.spec.ts          # 7 tests - Capacity enforcement
+├── auth.spec.ts                     # Authentication & access
+├── event-creation.spec.ts           # Organization & event setup
+├── event-management.spec.ts         # Settings & publication
+├── athlete-registration.spec.ts     # Athlete registration
+├── capacity-enforcement.spec.ts     # Capacity enforcement
+└── events-location-filter.spec.ts   # Location/map-based discovery
 ```
 
 **Total: 39 automated tests**
@@ -127,6 +124,16 @@ e2e/tests/
 
 ## Troubleshooting
 
+### Keep the test DB data after a run
+```bash
+E2E_SKIP_DB_CLEANUP=1 pnpm test:e2e
+```
+
+### Avoid overwriting previous artifacts/reports
+```bash
+pnpm test:e2e:isolated
+```
+
 ### "Test timeout exceeded"
 ```bash
 # Increase timeout in playwright.config.ts
@@ -140,15 +147,18 @@ pnpm exec playwright install chromium
 
 ### "Connection refused"
 ```bash
-# Make sure dev server is running
-pnpm dev
+# Make sure the Playwright dev server can start
+# - free the default port (43137), or
+# - set a custom base URL
+PLAYWRIGHT_PORT=3005 pnpm test:e2e
 ```
 
-### "Test accounts not found"
-```bash
-# Create test accounts in database
-# Or update TEST_ACCOUNTS in e2e/fixtures/test-data.ts
-```
+### "Another E2E run appears to be active"
+The suite uses a local run lock to prevent concurrent runs from clobbering the same test DB.
+
+- Wait for the other run to finish, or
+- Use isolated configs (different `DATABASE_URL` and `PLAYWRIGHT_BASE_URL`), or
+- Bypass the lock (not recommended): `E2E_SKIP_RUN_LOCK=1 pnpm test:e2e`
 
 ### Tests fail with "Element not found"
 ```bash
@@ -186,13 +196,10 @@ pnpm test:e2e:ui
 
 ## Next Steps
 
-1. ✅ Install Playwright
-2. ✅ Verify test accounts exist
-3. ✅ Start dev server
-4. ✅ Run `pnpm test:e2e:ui` for first run
-5. ✅ Review test results
-6. ✅ Add to CI/CD pipeline
+1. ✅ Install Playwright browsers
+2. ✅ Set `DATABASE_URL` in `.env.test`
+3. ✅ Run `pnpm test:e2e:ui` for the first run
+4. ✅ Review test results
+5. ✅ Add to CI/CD pipeline
 
 For detailed documentation, see [README.md](./README.md)
-
-For test specifications, see [Test Plan](../docs/testing/phase-0-1-test-plan.md)

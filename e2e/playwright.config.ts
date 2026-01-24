@@ -8,31 +8,48 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright Configuration for RunGoMX E2E Tests
  *
- * Tests Phase 0 (Foundations) and Phase 1 (Event Management) features
+ * Tests Phase 0–2 (Foundations → Event Platform) features
  */
-const testBaseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3001';
-const testOrigin = (() => {
+const DEFAULT_E2E_PORT = 43137;
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL ||
+  `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || DEFAULT_E2E_PORT}`;
+const origin = (() => {
   try {
-    return new URL(testBaseURL).origin;
+    return new URL(baseURL).origin;
   } catch {
-    return 'http://localhost:3001';
+    return baseURL;
   }
 })();
-const testPort = (() => {
+const port = (() => {
   try {
-    const url = new URL(testOrigin);
+    const url = new URL(origin);
     if (url.port) {
       const parsed = Number.parseInt(url.port, 10);
       if (Number.isFinite(parsed) && parsed > 0) return parsed;
     }
-    return url.protocol === 'https:' ? 443 : 80;
   } catch {
-    return 3001;
+    // ignore
   }
+  return DEFAULT_E2E_PORT;
 })();
+
+function getRunId() {
+  const raw = process.env.E2E_RUN_ID?.trim();
+  if (!raw) return null;
+  return raw.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+const runId = getRunId();
+const repoRoot = resolve(__dirname, '..');
+const outputDir = runId ? resolve(repoRoot, 'test-results', runId) : resolve(repoRoot, 'test-results');
+const reportDir = runId ? resolve(repoRoot, 'playwright-report', runId) : resolve(repoRoot, 'playwright-report');
+const jsonResultsFile = resolve(outputDir, 'results.json');
 
 export default defineConfig({
   testDir: './tests',
+  // Folder for test artifacts such as screenshots, videos, traces, etc.
+  outputDir,
 
   // Global setup/teardown for database cleanup
   globalSetup: require.resolve('./global-setup'),
@@ -60,15 +77,15 @@ export default defineConfig({
 
   // Reporter configuration
   reporter: [
-    ['html', { outputFolder: 'playwright-report', open: 'never' }],
-    ['json', { outputFile: 'test-results/results.json' }],
+    ['html', { outputFolder: reportDir, open: 'never' }],
+    ['json', { outputFile: jsonResultsFile }],
     ['list'],
   ],
 
   // Shared settings for all projects
   use: {
-    // Base URL for tests (use port 3001 to avoid conflicts with dev server)
-    baseURL: testOrigin,
+    // Base URL for tests (defaults to 127.0.0.1:43137 unless overridden)
+    baseURL: origin,
 
     // Collect trace on failure
     trace: 'on-first-retry',
@@ -116,10 +133,11 @@ export default defineConfig({
     // },
   ],
 
-  // Run local dev server before tests on port 3001 to avoid conflicts
+  // Run a dedicated Next.js dev server before tests
   webServer: {
-    command: `NODE_ENV=test PORT=${testPort} pnpm dev`,
-    url: testOrigin,
+    // Avoid file watchers (EMFILE) and bind to localhost for E2E stability.
+    command: `NODE_ENV=test pnpm exec next dev -H 127.0.0.1 -p ${port}`,
+    url: origin,
     // Always start a fresh server for E2E to guarantee env + DB isolation.
     // Reusing an existing server can point tests at the wrong DATABASE_URL.
     reuseExistingServer: false,
@@ -128,7 +146,7 @@ export default defineConfig({
     timeout: 120 * 1000, // 2 minutes to start
     env: {
       // Ensure auth + redirects use the same origin as the test server.
-      NEXT_PUBLIC_SITE_URL: testOrigin,
+      NEXT_PUBLIC_SITE_URL: origin,
       // Force dev server to use test database
       ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
       // Mapbox tokens for location search

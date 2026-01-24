@@ -18,7 +18,7 @@ import { eq } from 'drizzle-orm';
  * - At 50km radius: event should NOT appear (85km > 50km)
  *
  * IMPORTANT: These tests require:
- * 1. No other `next dev` server running (tests start their own on port 3001)
+ * 1. No other process listening on the Playwright server port (defaults to 43137)
  * 2. .env.test configured with test database credentials
  */
 
