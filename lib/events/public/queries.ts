@@ -5,6 +5,7 @@ import {
   eventDistances,
   eventEditions,
   eventSeries,
+  groupDiscountRules,
   pricingTiers,
   registrations,
 } from '@/db/schema';
@@ -80,6 +81,10 @@ export type PublicEventDetail = {
     deferralPolicyText: string | null;
     deferralDeadline: Date | null;
   } | null;
+  groupDiscountRules: {
+    minParticipants: number;
+    percentOff: number;
+  }[];
 };
 
 export type PublicDistanceInfo = {
@@ -259,6 +264,15 @@ export async function getPublicEventBySlug(
     isRegistrationOpen = hasOpened && hasNotClosed;
   }
 
+  // Fetch active group discount rules
+  const activeGroupDiscounts = await db.query.groupDiscountRules.findMany({
+    where: and(
+      eq(groupDiscountRules.editionId, edition.id),
+      eq(groupDiscountRules.isActive, true),
+    ),
+    orderBy: (r, { asc }) => [asc(r.minParticipants)],
+  });
+
   return {
     id: edition.id,
     publicCode: edition.publicCode,
@@ -348,6 +362,10 @@ export async function getPublicEventBySlug(
           deferralDeadline: edition.policyConfig.deferralDeadline,
         }
       : null,
+    groupDiscountRules: activeGroupDiscounts.map((r) => ({
+      minParticipants: r.minParticipants,
+      percentOff: r.percentOff,
+    })),
   };
 }
 

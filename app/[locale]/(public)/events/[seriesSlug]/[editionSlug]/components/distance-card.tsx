@@ -7,6 +7,11 @@ import { getTranslations } from 'next-intl/server';
 
 type EditionPricingScheduleItem = Awaited<ReturnType<typeof getPricingScheduleForEdition>>[number];
 
+type GroupDiscountRule = {
+  minParticipants: number;
+  percentOff: number;
+};
+
 type DistanceCardProps = {
   distance: PublicDistanceInfo;
   locale: string;
@@ -19,6 +24,7 @@ type DistanceCardProps = {
   };
   sharedCapacity: number | null;
   pricingSchedule: EditionPricingScheduleItem | null;
+  bestGroupDiscount?: GroupDiscountRule;
 };
 
 export async function DistanceCard({
@@ -29,6 +35,7 @@ export async function DistanceCard({
   registerPath,
   sharedCapacity,
   pricingSchedule,
+  bestGroupDiscount,
 }: DistanceCardProps) {
   const t = await getTranslations({ locale: locale as 'es' | 'en', namespace: 'pages.events.detail' });
 
@@ -103,6 +110,11 @@ export async function DistanceCard({
               </span>
             ) : (
               <span className="text-lg font-semibold text-green-600">{t('free')}</span>
+            )}
+            {bestGroupDiscount && distance.priceCents > 0 && (
+              <p className="mt-0.5 text-xs font-medium text-green-600 dark:text-green-400">
+                {t('groupDiscount.savePercent', { percent: bestGroupDiscount.percentOff })}
+              </p>
             )}
             {pricingSchedule?.nextPriceIncrease && (
               <p className="mt-1 text-xs text-muted-foreground">

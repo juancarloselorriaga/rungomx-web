@@ -355,32 +355,34 @@ export function GroupRegistrationsManager({
           {discountRules.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t('discountRule.empty')}</p>
           ) : (
-            <div className="rounded-md border bg-background/30">
-              <div className="grid grid-cols-3 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b">
-                <div>{t('discountRule.table.minParticipants')}</div>
-                <div>{t('discountRule.table.percentOff')}</div>
-                <div>{t('discountRule.table.status')}</div>
-              </div>
-              <div className="divide-y">
-                {discountRules.map((rule) => (
-                  <div key={rule.id} className="grid grid-cols-3 gap-3 px-4 py-3 text-sm">
-                    <div>{rule.minParticipants}</div>
-                    <div>{rule.percentOff}%</div>
-                    <div>
-                      {rule.isActive ? (
-                        <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-300">
-                          <CheckCircle2 className="h-4 w-4" />
-                          {t('discountRule.active')}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-muted-foreground">
-                          <AlertCircle className="h-4 w-4" />
-                          {t('discountRule.inactive')}
-                        </span>
-                      )}
+            <div className="overflow-x-auto -mx-6 px-6">
+              <div className="rounded-md border bg-background/30 min-w-[400px]">
+                <div className="grid grid-cols-3 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b">
+                  <div>{t('discountRule.table.minParticipants')}</div>
+                  <div>{t('discountRule.table.percentOff')}</div>
+                  <div>{t('discountRule.table.status')}</div>
+                </div>
+                <div className="divide-y">
+                  {discountRules.map((rule) => (
+                    <div key={rule.id} className="grid grid-cols-3 gap-3 px-4 py-3 text-sm">
+                      <div>{rule.minParticipants}</div>
+                      <div>{rule.percentOff}%</div>
+                      <div>
+                        {rule.isActive ? (
+                          <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-300">
+                            <CheckCircle2 className="h-4 w-4" />
+                            {t('discountRule.active')}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-muted-foreground">
+                            <AlertCircle className="h-4 w-4" />
+                            {t('discountRule.inactive')}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -584,47 +586,49 @@ export function GroupRegistrationsManager({
                   </div>
                 )}
 
-                <div className="rounded-md border overflow-hidden">
-                  <div className="grid grid-cols-5 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b bg-muted/20">
-                    <div>{t('batch.table.row')}</div>
-                    <div>{t('batch.table.name')}</div>
-                    <div>{t('batch.table.email')}</div>
-                    <div>{t('batch.table.distance')}</div>
-                    <div>{t('batch.table.errors')}</div>
-                  </div>
-                  <div className="divide-y">
-                    {selectedBatch.rows.slice(0, 50).map((row) => (
-                      <div key={row.id} className="grid grid-cols-5 gap-3 px-4 py-3 text-sm">
-                        <div className="font-mono text-xs text-muted-foreground">{row.rowIndex}</div>
-                        <div className="min-w-0">
-                          <p className="truncate">
-                            {String(row.rawJson.firstName ?? '')} {String(row.rawJson.lastName ?? '')}
-                          </p>
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <div className="rounded-md border overflow-hidden min-w-[600px]">
+                    <div className="grid grid-cols-5 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b bg-muted/20">
+                      <div>{t('batch.table.row')}</div>
+                      <div>{t('batch.table.name')}</div>
+                      <div>{t('batch.table.email')}</div>
+                      <div>{t('batch.table.distance')}</div>
+                      <div>{t('batch.table.errors')}</div>
+                    </div>
+                    <div className="divide-y">
+                      {selectedBatch.rows.slice(0, 50).map((row) => (
+                        <div key={row.id} className="grid grid-cols-5 gap-3 px-4 py-3 text-sm">
+                          <div className="font-mono text-xs text-muted-foreground">{row.rowIndex}</div>
+                          <div className="min-w-0">
+                            <p className="truncate">
+                              {String(row.rawJson.firstName ?? '')} {String(row.rawJson.lastName ?? '')}
+                            </p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate">{String(row.rawJson.email ?? '')}</p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate">
+                              {String(row.rawJson.distanceLabel ?? row.rawJson.distanceId ?? '')}
+                            </p>
+                          </div>
+                          <div className="min-w-0">
+                            {row.validationErrors.length > 0 ? (
+                              <ul className="list-disc pl-4 space-y-1 text-xs text-red-700 dark:text-red-300">
+                                {row.validationErrors.slice(0, 3).map((e) => (
+                                  <li key={e}>{e}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-300 text-xs">
+                                <CheckCircle2 className="h-4 w-4" />
+                                {t('batch.table.ok')}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <p className="truncate">{String(row.rawJson.email ?? '')}</p>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate">
-                            {String(row.rawJson.distanceLabel ?? row.rawJson.distanceId ?? '')}
-                          </p>
-                        </div>
-                        <div className="min-w-0">
-                          {row.validationErrors.length > 0 ? (
-                            <ul className="list-disc pl-4 space-y-1 text-xs text-red-700 dark:text-red-300">
-                              {row.validationErrors.slice(0, 3).map((e) => (
-                                <li key={e}>{e}</li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-300 text-xs">
-                              <CheckCircle2 className="h-4 w-4" />
-                              {t('batch.table.ok')}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
 
