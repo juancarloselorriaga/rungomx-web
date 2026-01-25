@@ -96,25 +96,28 @@ export const GROUP_REGISTRATION_TEMPLATE_HEADERS = [
 
 export type GroupRegistrationTemplateHeader = (typeof GROUP_REGISTRATION_TEMPLATE_HEADERS)[number];
 
+export const GROUP_REGISTRATION_TEMPLATE_EXAMPLE_ROW = [
+  'Ana',
+  'Perez',
+  'ana.perez@example.com',
+  '1990-01-15',
+  '',
+  '',
+  '',
+  '',
+  '',
+  'MX',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+] as const;
+
 export function generateGroupRegistrationTemplateCsv(): string {
   const headerLine = GROUP_REGISTRATION_TEMPLATE_HEADERS.join(',');
-  const exampleLine = [
-    'Ana',
-    'Perez',
-    'ana.perez@example.com',
-    '1990-01-15',
-    '',
-    '',
-    '',
-    '',
-    '',
-    'MX',
-    '',
-    '',
-    '',
-    '',
-    '',
-  ].join(',');
+  const exampleLine = GROUP_REGISTRATION_TEMPLATE_EXAMPLE_ROW.join(',');
 
   return `${headerLine}\n${exampleLine}\n`;
 }

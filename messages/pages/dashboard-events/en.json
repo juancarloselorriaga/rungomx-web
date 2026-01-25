@@ -473,8 +473,9 @@
     },
     "template": {
       "title": "Template",
-      "description": "Download the CSV template and fill it with participant data.",
-      "download": "Download template",
+      "description": "Download the Excel (.xlsx) template (or CSV) and fill it with participant data.",
+      "downloadXlsx": "Download Excel template",
+      "downloadCsv": "Download CSV template",
       "downloading": "Downloading...",
       "viewPublic": "View registration page",
       "success": "Template downloaded",
@@ -486,6 +487,13 @@
       "empty": "No group discount rules configured.",
       "active": "Active",
       "inactive": "Inactive",
+      "actions": {
+        "edit": "Edit",
+        "save": "Save",
+        "cancel": "Cancel",
+        "activate": "Activate",
+        "deactivate": "Deactivate"
+      },
       "save": "Save rule",
       "saving": "Saving...",
       "success": "Rule saved",
@@ -497,7 +505,8 @@
       "table": {
         "minParticipants": "Min participants",
         "percentOff": "% off",
-        "status": "Status"
+        "status": "Status",
+        "actions": "Actions"
       },
       "form": {
         "minParticipants": "Min participants",
@@ -533,6 +542,7 @@
       "selectToView": "Select a batch to view details.",
       "hasErrors": "This batch has validation errors and cannot be processed.",
       "validated": "This batch is validated and ready to process.",
+      "failedProcessing": "This batch failed to process. Review capacity and try again.",
       "error": "Failed to load batch",
       "table": {
         "row": "Row",

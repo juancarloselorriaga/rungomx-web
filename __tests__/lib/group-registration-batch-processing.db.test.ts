@@ -390,8 +390,8 @@ describe('processGroupBatch - Database Integration', () => {
       columns: { status: true, processedAt: true },
     });
 
-    expect(unchangedBatch?.status).toBe('validated');
-    expect(unchangedBatch?.processedAt).toBeNull();
+    expect(unchangedBatch?.status).toBe('failed');
+    expect(unchangedBatch?.processedAt).not.toBeNull();
 
     const linkedRows = await db
       .select({
