@@ -109,6 +109,7 @@
       "info": "Tu información",
       "questions": "Preguntas adicionales",
       "addons": "Complementos",
+      "policies": "Políticas",
       "waiver": "Deslinde",
       "payment": "Pago",
       "confirmation": "Confirmación"
@@ -163,6 +164,12 @@
       "subtotal": "Subtotal de complementos",
       "continue": "Continuar",
       "skip": "Omitir complementos"
+    },
+    "policies": {
+      "title": "Políticas",
+      "description": "Revisa las políticas del evento antes de continuar.",
+      "acknowledge": "He leído y entiendo las políticas de reembolso, transferencia y diferimiento de este evento.",
+      "continue": "Continuar"
     },
     "waiver": {
       "title": "Aceptación de deslinde",

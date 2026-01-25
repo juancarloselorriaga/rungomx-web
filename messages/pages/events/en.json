@@ -109,6 +109,7 @@
       "info": "Your information",
       "questions": "Additional questions",
       "addons": "Add-ons",
+      "policies": "Policies",
       "waiver": "Waiver",
       "payment": "Payment",
       "confirmation": "Confirmation"
@@ -163,6 +164,12 @@
       "subtotal": "Add-ons subtotal",
       "continue": "Continue",
       "skip": "Skip add-ons"
+    },
+    "policies": {
+      "title": "Policies",
+      "description": "Review the event policies before continuing.",
+      "acknowledge": "I have read and understand the refund, transfer, and deferral policies for this event.",
+      "continue": "Continue"
     },
     "waiver": {
       "title": "Waiver agreement",

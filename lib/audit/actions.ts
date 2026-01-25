@@ -20,6 +20,7 @@ export const AUDIT_ACTIONS = {
 
   // Event Editions
   'event.create': 'Event edition created',
+  'event.clone': 'Event edition cloned',
   'event.update': 'Event edition updated',
   'event.publish': 'Event edition published',
   'event.unpublish': 'Event edition unpublished',
@@ -62,10 +63,16 @@ export const AUDIT_ACTIONS = {
   'media.delete': 'Media deleted',
 
   // Registrations (access events - for sensitive data access logging)
+  'registration.create': 'Registration created',
   'registration.view': 'Registration viewed',
   'registration.export': 'Registrations exported',
   'registration.update': 'Registration updated',
   'registration.cancel': 'Registration cancelled',
+
+  // Group Registrations (Phase 3)
+  'group_registrations.upload': 'Group registrations batch uploaded',
+  'group_registrations.process': 'Group registrations batch processed',
+  'group_registrations.discount_rule.upsert': 'Group discount rule created or updated',
 
   // Add-ons (Phase 2)
   'add_on.create': 'Add-on created',

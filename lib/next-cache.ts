@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from 'next/cache';
+import { cacheLife, cacheTag, revalidateTag } from 'next/cache';
 
 type CacheLifeConfig = {
   stale?: number;
@@ -26,6 +26,15 @@ export function safeCacheLife(profile: string | CacheLifeConfig) {
     } else {
       cacheLife(profile);
     }
+  } catch (error) {
+    if (shouldSuppressCacheError()) return;
+    throw error;
+  }
+}
+
+export function safeRevalidateTag(tag: string, profile?: string | CacheLifeConfig) {
+  try {
+    revalidateTag(tag, profile ?? 'max');
   } catch (error) {
     if (shouldSuppressCacheError()) return;
     throw error;

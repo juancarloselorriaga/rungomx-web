@@ -85,6 +85,10 @@ export const routing = defineRouting({
       es: '/tablero/eventos/[eventId]',
       en: '/dashboard/events/[eventId]',
     },
+    '/dashboard/events/[eventId]/editions': {
+      es: '/tablero/eventos/[eventId]/ediciones',
+      en: '/dashboard/events/[eventId]/editions',
+    },
     '/dashboard/events/[eventId]/settings': {
       es: '/tablero/eventos/[eventId]/configuracion',
       en: '/dashboard/events/[eventId]/settings',
@@ -120,6 +124,10 @@ export const routing = defineRouting({
     '/dashboard/events/[eventId]/registrations': {
       es: '/tablero/eventos/[eventId]/inscripciones',
       en: '/dashboard/events/[eventId]/registrations',
+    },
+    '/dashboard/events/[eventId]/group-registrations': {
+      es: '/tablero/eventos/[eventId]/inscripciones-grupales',
+      en: '/dashboard/events/[eventId]/group-registrations',
     },
     '/dashboard/my-registrations': {
       es: '/tablero/inscripciones',

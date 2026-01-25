@@ -23,6 +23,7 @@ const navigationSections: NavigationSection[] = [
     titleKey: 'general',
     items: [
       { label: 'overview', href: '', icon: 'overview' },
+      { label: 'editions', href: '/editions', icon: 'editions' },
       { label: 'settings', href: '/settings', icon: 'settings' },
     ],
   },
@@ -46,7 +47,10 @@ const navigationSections: NavigationSection[] = [
   },
   {
     titleKey: 'management',
-    items: [{ label: 'registrations', href: '/registrations', icon: 'registrations' }],
+    items: [
+      { label: 'groupRegistrations', href: '/group-registrations', icon: 'groupRegistrations' },
+      { label: 'registrations', href: '/registrations', icon: 'registrations' },
+    ],
   },
 ];
 
@@ -84,6 +88,7 @@ export default async function EventDetailLayout({
   // Prepare translations for the navigation
   const navTranslations = {
     overview: tNav('overview'),
+    editions: tNav('editions'),
     settings: tNav('settings'),
     faq: tNav('faq'),
     waivers: tNav('waivers'),
@@ -93,6 +98,7 @@ export default async function EventDetailLayout({
     pricing: tNav('pricing'),
     addOns: tNav('addOns'),
     coupons: tNav('coupons'),
+    groupRegistrations: tNav('groupRegistrations'),
     registrations: tNav('registrations'),
   };
 

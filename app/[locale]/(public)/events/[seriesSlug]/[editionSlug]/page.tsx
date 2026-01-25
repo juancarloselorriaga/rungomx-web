@@ -3,6 +3,7 @@ import {
   getPublicEventBySlug,
   getPublicOtherEditionsForSeries,
 } from '@/lib/events/queries';
+import { resolveEventSlugRedirect } from '@/lib/events/slug-redirects';
 import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
 import {
   getPublicWebsiteContent,
@@ -11,13 +12,14 @@ import {
   resolveSponsorMediaUrls,
 } from '@/lib/events/website/queries';
 import type { SportType } from '@/lib/events/constants';
+import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { generateAlternateMetadata } from '@/utils/seo';
 import { Info, Image as ImageIcon, FileText } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 import {
   SectionWrapper,
@@ -79,6 +81,21 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const event = await getPublicEventBySlug(seriesSlug, editionSlug);
 
   if (!event) {
+    const redirectTarget = await resolveEventSlugRedirect(seriesSlug, editionSlug);
+    if (redirectTarget) {
+      permanentRedirect(
+        getPathname({
+          href: {
+            pathname: '/events/[seriesSlug]/[editionSlug]',
+            params: {
+              seriesSlug: redirectTarget.seriesSlug,
+              editionSlug: redirectTarget.editionSlug,
+            },
+          },
+          locale,
+        }),
+      );
+    }
     notFound();
   }
 

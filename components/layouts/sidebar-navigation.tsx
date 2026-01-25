@@ -5,9 +5,11 @@ import { useMobileNavSheet } from '@/components/ui/mobile-nav-sheet';
 import { cn } from '@/lib/utils';
 import {
   BarChart3,
+  CalendarDays,
   ClipboardList,
   DollarSign,
   ExternalLink,
+  FileSpreadsheet,
   FileText,
   Gift,
   Globe,
@@ -25,8 +27,10 @@ const iconMap = {
   clipboardList: ClipboardList,
   coupons: Tag,
   dollarSign: DollarSign,
+  editions: CalendarDays,
   externalLink: ExternalLink,
   faq: HelpCircle,
+  groupRegistrations: FileSpreadsheet,
   fileText: FileText,
   gift: Gift,
   globe: Globe,

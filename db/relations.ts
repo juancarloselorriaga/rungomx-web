@@ -14,7 +14,11 @@ import {
   eventFaqItems,
   eventPolicyConfigs,
   eventSeries,
+  eventSlugRedirects,
   eventWebsiteContent,
+  groupDiscountRules,
+  groupRegistrationBatchRows,
+  groupRegistrationBatches,
   media,
   organizationMemberships,
   organizationPayoutProfiles,
@@ -46,6 +50,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   organizationMemberships: many(organizationMemberships),
   registrations: many(registrations),
   registrants: many(registrants),
+  groupRegistrationBatches: many(groupRegistrationBatches),
   auditLogs: many(auditLogs),
 }));
 
@@ -138,6 +143,22 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
     fields: [eventEditions.seriesId],
     references: [eventSeries.id],
   }),
+  previousEdition: one(eventEditions, {
+    fields: [eventEditions.previousEditionId],
+    references: [eventEditions.id],
+    relationName: 'previousEdition',
+  }),
+  nextEditions: many(eventEditions, {
+    relationName: 'previousEdition',
+  }),
+  clonedFromEdition: one(eventEditions, {
+    fields: [eventEditions.clonedFromEditionId],
+    references: [eventEditions.id],
+    relationName: 'clonedFromEdition',
+  }),
+  clonedEditions: many(eventEditions, {
+    relationName: 'clonedFromEdition',
+  }),
   heroImage: one(media, {
     fields: [eventEditions.heroImageMediaId],
     references: [media.id],
@@ -151,6 +172,8 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   waivers: many(waivers),
   websiteContent: many(eventWebsiteContent),
   faqItems: many(eventFaqItems),
+  groupRegistrationBatches: many(groupRegistrationBatches),
+  groupDiscountRules: many(groupDiscountRules),
   // Phase 2 relations
   addOns: many(addOns),
   discountCodes: many(discountCodes),
@@ -191,6 +214,7 @@ export const registrationsRelations = relations(registrations, ({ one, many }) =
   }),
   registrants: many(registrants),
   waiverAcceptances: many(waiverAcceptances),
+  groupRegistrationBatchRows: many(groupRegistrationBatchRows),
   // Phase 2 relations
   addOnSelections: many(addOnSelections),
   discountRedemptions: many(discountRedemptions),
@@ -245,6 +269,42 @@ export const mediaRelations = relations(media, ({ one }) => ({
   organization: one(organizations, {
     fields: [media.organizationId],
     references: [organizations.id],
+  }),
+}));
+
+export const eventSlugRedirectsRelations = relations(eventSlugRedirects, () => ({}));
+
+export const groupRegistrationBatchesRelations = relations(groupRegistrationBatches, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [groupRegistrationBatches.editionId],
+    references: [eventEditions.id],
+  }),
+  createdByUser: one(users, {
+    fields: [groupRegistrationBatches.createdByUserId],
+    references: [users.id],
+  }),
+  sourceFile: one(media, {
+    fields: [groupRegistrationBatches.sourceFileMediaId],
+    references: [media.id],
+  }),
+  rows: many(groupRegistrationBatchRows),
+}));
+
+export const groupRegistrationBatchRowsRelations = relations(groupRegistrationBatchRows, ({ one }) => ({
+  batch: one(groupRegistrationBatches, {
+    fields: [groupRegistrationBatchRows.batchId],
+    references: [groupRegistrationBatches.id],
+  }),
+  createdRegistration: one(registrations, {
+    fields: [groupRegistrationBatchRows.createdRegistrationId],
+    references: [registrations.id],
+  }),
+}));
+
+export const groupDiscountRulesRelations = relations(groupDiscountRules, ({ one }) => ({
+  edition: one(eventEditions, {
+    fields: [groupDiscountRules.editionId],
+    references: [eventEditions.id],
   }),
 }));
 

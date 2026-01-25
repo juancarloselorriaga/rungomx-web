@@ -37,7 +37,15 @@ import {
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 
-type Step = 'distance' | 'info' | 'questions' | 'addons' | 'waiver' | 'payment' | 'confirmation';
+type Step =
+  | 'distance'
+  | 'info'
+  | 'questions'
+  | 'addons'
+  | 'policies'
+  | 'waiver'
+  | 'payment'
+  | 'confirmation';
 
 type EventDocument = {
   label: string;
@@ -105,6 +113,7 @@ export function RegistrationFlow({
     taxCents: number | null;
     totalCents: number | null;
   } | null>(null);
+  const [policiesAcknowledged, setPoliciesAcknowledged] = useState(false);
 
   // Validate that preSelectedDistanceId exists in event.distances and is not sold out
   const validPreSelectedId =
@@ -145,6 +154,22 @@ export function RegistrationFlow({
       .filter((addOn) => addOn.options.length > 0);
   }, [addOns, selectedDistanceId]);
 
+  const hasPoliciesStep = useMemo(() => {
+    const policy = event.policyConfig;
+    if (!policy) return false;
+    return (
+      policy.refundsAllowed ||
+      Boolean(policy.refundPolicyText) ||
+      Boolean(policy.refundDeadline) ||
+      policy.transfersAllowed ||
+      Boolean(policy.transferPolicyText) ||
+      Boolean(policy.transferDeadline) ||
+      policy.deferralsAllowed ||
+      Boolean(policy.deferralPolicyText) ||
+      Boolean(policy.deferralDeadline)
+    );
+  }, [event.policyConfig]);
+
   const steps = useMemo(() => {
     const nextSteps: Step[] = ['distance', 'info'];
     if (activeQuestions.length > 0) {
@@ -153,12 +178,15 @@ export function RegistrationFlow({
     if (activeAddOns.length > 0) {
       nextSteps.push('addons');
     }
+    if (hasPoliciesStep) {
+      nextSteps.push('policies');
+    }
     if (event.waivers.length > 0) {
       nextSteps.push('waiver');
     }
     nextSteps.push('payment', 'confirmation');
     return nextSteps;
-  }, [activeAddOns.length, activeQuestions.length, event.waivers.length]);
+  }, [activeAddOns.length, activeQuestions.length, event.waivers.length, hasPoliciesStep]);
 
   const progressSteps = steps.filter((s) => s !== 'confirmation');
 
@@ -1180,6 +1208,74 @@ export function RegistrationFlow({
               </Button>
             </div>
           </Form>
+        )}
+
+        {/* Policies */}
+        {step === 'policies' && event.policyConfig && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-lg font-semibold">{t('policies.title')}</h2>
+              <p className="text-sm text-muted-foreground">{t('policies.description')}</p>
+            </div>
+
+            <div className="rounded-lg border bg-muted/40 p-4 text-left space-y-3">
+              <PolicySummary
+                locale={locale}
+                timezone={event.timezone}
+                label={t('confirmation.refundPolicy')}
+                enabled={event.policyConfig.refundsAllowed}
+                text={event.policyConfig.refundPolicyText}
+                deadline={event.policyConfig.refundDeadline}
+              />
+              <PolicySummary
+                locale={locale}
+                timezone={event.timezone}
+                label={t('confirmation.transferPolicy')}
+                enabled={event.policyConfig.transfersAllowed}
+                text={event.policyConfig.transferPolicyText}
+                deadline={event.policyConfig.transferDeadline}
+              />
+              <PolicySummary
+                locale={locale}
+                timezone={event.timezone}
+                label={t('confirmation.deferralPolicy')}
+                enabled={event.policyConfig.deferralsAllowed}
+                text={event.policyConfig.deferralPolicyText}
+                deadline={event.policyConfig.deferralDeadline}
+              />
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={policiesAcknowledged}
+                onChange={(e) => setPoliciesAcknowledged(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-gray-300"
+                disabled={isPending}
+              />
+              <span className="text-sm">{t('policies.acknowledge')}</span>
+            </label>
+
+            <div className="flex justify-between">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => goToPreviousStep('policies')}
+                disabled={isPending}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Button
+                type="button"
+                onClick={() => goToNextStep('policies')}
+                disabled={!policiesAcknowledged || isPending}
+              >
+                <ArrowRight className="h-4 w-4 mr-2" />
+                {t('policies.continue')}
+              </Button>
+            </div>
+          </div>
         )}
 
         {/* Waiver */}
