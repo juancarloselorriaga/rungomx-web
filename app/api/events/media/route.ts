@@ -8,7 +8,13 @@ import { getAuthContext } from '@/lib/auth/server';
 import { db } from '@/db';
 import { media, organizations } from '@/db/schema';
 import type { MediaKind } from '@/lib/events/constants';
-import { EVENT_MEDIA_ALLOWED_TYPES, EVENT_MEDIA_BLOB_PREFIX, EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
+import {
+  EVENT_MEDIA_ALLOWED_TYPES,
+  EVENT_MEDIA_BLOB_PREFIX,
+  EVENT_MEDIA_GROUP_REGISTRATION_MAX_FILE_SIZE,
+  EVENT_MEDIA_GROUP_REGISTRATION_TYPES,
+  EVENT_MEDIA_MAX_FILE_SIZE,
+} from '@/lib/events/media/constants';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
 type UploadTokenPayload = {
@@ -72,8 +78,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         pendingMediaId = mediaId;
 
         return {
-          allowedContentTypes: [...EVENT_MEDIA_ALLOWED_TYPES],
-          maximumSizeInBytes: EVENT_MEDIA_MAX_FILE_SIZE,
+          allowedContentTypes:
+            purpose === 'group-registration-batch'
+              ? [...EVENT_MEDIA_GROUP_REGISTRATION_TYPES]
+              : [...EVENT_MEDIA_ALLOWED_TYPES],
+          maximumSizeInBytes:
+            purpose === 'group-registration-batch'
+              ? EVENT_MEDIA_GROUP_REGISTRATION_MAX_FILE_SIZE
+              : EVENT_MEDIA_MAX_FILE_SIZE,
           tokenPayload: JSON.stringify({
             userId: authContext.user!.id,
             organizationId,

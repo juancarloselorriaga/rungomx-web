@@ -1,13 +1,15 @@
 import { getAuthContextWithOrgs } from '@/lib/auth/server';
 import { getActiveRegistrationForEdition, getPublicEventBySlug } from '@/lib/events/queries';
+import { resolveEventSlugRedirect } from '@/lib/events/slug-redirects';
 import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
 import { getQuestionsForEdition } from '@/lib/events/questions/queries';
 import { getEventDocuments } from '@/lib/events/website/queries';
+import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 
 import { RegistrationFlow } from './registration-flow';
 import { LoginRequired } from './login-required';
@@ -43,6 +45,21 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
   const event = await getPublicEventBySlug(seriesSlug, editionSlug);
 
   if (!event) {
+    const redirectTarget = await resolveEventSlugRedirect(seriesSlug, editionSlug);
+    if (redirectTarget) {
+      permanentRedirect(
+        getPathname({
+          href: {
+            pathname: '/events/[seriesSlug]/[editionSlug]/register',
+            params: {
+              seriesSlug: redirectTarget.seriesSlug,
+              editionSlug: redirectTarget.editionSlug,
+            },
+          },
+          locale,
+        }),
+      );
+    }
     notFound();
   }
 

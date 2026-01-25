@@ -88,6 +88,7 @@
     "registrations": "Registrations",
     "nav": {
       "overview": "Overview",
+      "editions": "Editions",
       "settings": "Settings",
       "faq": "FAQ",
       "waivers": "Waivers",
@@ -97,6 +98,7 @@
       "pricing": "Pricing",
       "addOns": "Add-ons",
       "coupons": "Coupons",
+      "groupRegistrations": "Group registrations",
       "registrations": "Registrations",
       "menu": "Sections",
       "sections": {
@@ -405,6 +407,149 @@
     "help": {
       "title": "How coupons work",
       "description": "Coupons let you offer percentage discounts to participants. Set optional validity dates and redemption limits to control when and how often the code can be used."
+    }
+  },
+  "editions": {
+    "title": "Editions",
+    "description": "Manage editions for this event series and clone a new year.",
+    "seriesSlug": {
+      "title": "Series URL slug",
+      "description": "Changing the series slug creates permanent redirects for all editions.",
+      "fields": {
+        "slug": "Slug",
+        "slugPlaceholder": "my-event-series"
+      },
+      "save": "Save",
+      "saving": "Saving...",
+      "success": "Series slug updated",
+      "error": "Failed to update series slug",
+      "errors": {
+        "missing": "Slug is required",
+        "slugTaken": "Slug is already taken",
+        "generic": "Something went wrong"
+      }
+    },
+    "listTitle": "Editions for {seriesName}",
+    "listDescription": "Clone an existing edition into a new year.",
+    "empty": "No editions found.",
+    "current": "Current",
+    "view": "Open",
+    "registrations": "{count, number} registrations",
+    "previousEdition": "Previous: {editionLabel}",
+    "clonedFrom": "Cloned from: {editionLabel}",
+    "clone": {
+      "button": "Clone",
+      "title": "Clone {editionLabel}",
+      "description": "Creates a new draft edition and copies distances, pricing, content, and policies.",
+      "fields": {
+        "editionLabel": "Edition label",
+        "editionLabelPlaceholder": "2027",
+        "slug": "Edition slug",
+        "slugPlaceholder": "my-event-2027",
+        "slugHint": "Lowercase letters, numbers, and hyphens only."
+      },
+      "cancel": "Cancel",
+      "confirm": "Clone edition",
+      "cloning": "Cloning...",
+      "success": "Edition cloned",
+      "error": "Failed to clone edition",
+      "errors": {
+        "missingLabel": "Edition label is required",
+        "missingSlug": "Slug is required",
+        "slugTaken": "Slug is already taken",
+        "labelTaken": "Edition label is already used",
+        "generic": "Something went wrong"
+      }
+    }
+  },
+  "groupRegistrations": {
+    "title": "Group registrations",
+    "description": "Upload a CSV or Excel (.xlsx) file to create multiple registrations at once.",
+    "status": {
+      "uploaded": "Uploaded",
+      "validated": "Validated",
+      "processed": "Processed",
+      "failed": "Failed"
+    },
+    "template": {
+      "title": "Template",
+      "description": "Download the CSV template and fill it with participant data.",
+      "download": "Download template",
+      "downloading": "Downloading...",
+      "viewPublic": "View registration page",
+      "success": "Template downloaded",
+      "error": "Failed to download template"
+    },
+    "discountRule": {
+      "title": "Group discounts",
+      "description": "Configure automatic discounts based on number of participants in the batch.",
+      "empty": "No group discount rules configured.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "save": "Save rule",
+      "saving": "Saving...",
+      "success": "Rule saved",
+      "error": "Failed to save rule",
+      "errors": {
+        "minParticipants": "Minimum participants must be a positive number",
+        "percentOff": "Percent off must be between 1 and 100"
+      },
+      "table": {
+        "minParticipants": "Min participants",
+        "percentOff": "% off",
+        "status": "Status"
+      },
+      "form": {
+        "minParticipants": "Min participants",
+        "percentOff": "Percent off"
+      }
+    },
+    "upload": {
+      "title": "Upload",
+      "description": "Upload a CSV or Excel (.xlsx) file and validate all rows before processing.",
+      "upload": "Upload and validate",
+      "uploading": "Uploading...",
+      "success": "Upload validated",
+      "completedWithErrors": "Upload completed with errors",
+      "error": "Upload failed",
+      "errors": {
+        "noFile": "Select a CSV or Excel (.xlsx) file to upload"
+      }
+    },
+    "batches": {
+      "title": "Batches",
+      "description": "Select a batch to review validation and processing results.",
+      "empty": "No batches yet.",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "batch": "Batch",
+      "meta": "Created {createdAt} • Processed {processedAt}",
+      "rows": "{count, number} rows",
+      "errors": "{count, number} errors"
+    },
+    "batch": {
+      "title": "Batch details",
+      "description": "Status: {status} • Created {createdAt}",
+      "selectToView": "Select a batch to view details.",
+      "hasErrors": "This batch has validation errors and cannot be processed.",
+      "validated": "This batch is validated and ready to process.",
+      "error": "Failed to load batch",
+      "table": {
+        "row": "Row",
+        "name": "Name",
+        "email": "Email",
+        "distance": "Distance",
+        "errors": "Errors",
+        "ok": "OK",
+        "showing": "Showing {count, number} of {total, number} rows"
+      }
+    },
+    "process": {
+      "process": "Process batch",
+      "processing": "Processing...",
+      "success": "Batch processed",
+      "successWithDiscount": "Batch processed ({percentOff, number}% group discount)",
+      "error": "Failed to process batch"
     }
   }
 }

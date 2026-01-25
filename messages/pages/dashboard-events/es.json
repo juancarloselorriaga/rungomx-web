@@ -88,6 +88,7 @@
     "registrations": "Inscripciones",
     "nav": {
       "overview": "Resumen",
+      "editions": "Ediciones",
       "settings": "Configuración",
       "faq": "FAQ",
       "waivers": "Deslindes",
@@ -97,6 +98,7 @@
       "pricing": "Precios",
       "addOns": "Extras",
       "coupons": "Cupones",
+      "groupRegistrations": "Inscripciones grupales",
       "registrations": "Inscripciones",
       "menu": "Secciones",
       "sections": {
@@ -405,6 +407,149 @@
     "help": {
       "title": "Cómo funcionan los cupones",
       "description": "Los cupones te permiten ofrecer descuentos porcentuales a los participantes. Configura fechas de validez opcionales y límites de canjes para controlar cuándo y cuántas veces se puede usar el código."
+    }
+  },
+  "editions": {
+    "title": "Ediciones",
+    "description": "Administra las ediciones de esta serie y clona un nuevo año.",
+    "seriesSlug": {
+      "title": "Slug de la serie",
+      "description": "Cambiar el slug de la serie crea redirecciones permanentes para todas las ediciones.",
+      "fields": {
+        "slug": "Slug",
+        "slugPlaceholder": "mi-serie-de-evento"
+      },
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "success": "Slug de la serie actualizado",
+      "error": "No se pudo actualizar el slug de la serie",
+      "errors": {
+        "missing": "El slug es obligatorio",
+        "slugTaken": "El slug ya está en uso",
+        "generic": "Ocurrió un error"
+      }
+    },
+    "listTitle": "Ediciones de {seriesName}",
+    "listDescription": "Clona una edición existente a un nuevo año.",
+    "empty": "No hay ediciones.",
+    "current": "Actual",
+    "view": "Abrir",
+    "registrations": "{count, number} inscripciones",
+    "previousEdition": "Anterior: {editionLabel}",
+    "clonedFrom": "Clonada de: {editionLabel}",
+    "clone": {
+      "button": "Clonar",
+      "title": "Clonar {editionLabel}",
+      "description": "Crea una nueva edición en borrador y copia distancias, precios, contenido y políticas.",
+      "fields": {
+        "editionLabel": "Etiqueta de la edición",
+        "editionLabelPlaceholder": "2027",
+        "slug": "Slug de la edición",
+        "slugPlaceholder": "mi-evento-2027",
+        "slugHint": "Solo letras minúsculas, números y guiones."
+      },
+      "cancel": "Cancelar",
+      "confirm": "Clonar edición",
+      "cloning": "Clonando...",
+      "success": "Edición clonada",
+      "error": "No se pudo clonar la edición",
+      "errors": {
+        "missingLabel": "La etiqueta de la edición es obligatoria",
+        "missingSlug": "El slug es obligatorio",
+        "slugTaken": "El slug ya está en uso",
+        "labelTaken": "La etiqueta ya está en uso",
+        "generic": "Ocurrió un error"
+      }
+    }
+  },
+  "groupRegistrations": {
+    "title": "Inscripciones grupales",
+    "description": "Carga un archivo CSV o Excel (.xlsx) para crear múltiples inscripciones a la vez.",
+    "status": {
+      "uploaded": "Cargado",
+      "validated": "Validado",
+      "processed": "Procesado",
+      "failed": "Fallido"
+    },
+    "template": {
+      "title": "Plantilla",
+      "description": "Descarga la plantilla CSV y llénala con los datos de participantes.",
+      "download": "Descargar plantilla",
+      "downloading": "Descargando...",
+      "viewPublic": "Ver página de inscripción",
+      "success": "Plantilla descargada",
+      "error": "No se pudo descargar la plantilla"
+    },
+    "discountRule": {
+      "title": "Descuentos por grupo",
+      "description": "Configura descuentos automáticos según el número de participantes en el lote.",
+      "empty": "No hay reglas de descuento configuradas.",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "save": "Guardar regla",
+      "saving": "Guardando...",
+      "success": "Regla guardada",
+      "error": "No se pudo guardar la regla",
+      "errors": {
+        "minParticipants": "El mínimo de participantes debe ser un número positivo",
+        "percentOff": "El porcentaje debe estar entre 1 y 100"
+      },
+      "table": {
+        "minParticipants": "Mín. participantes",
+        "percentOff": "% descuento",
+        "status": "Estado"
+      },
+      "form": {
+        "minParticipants": "Mín. participantes",
+        "percentOff": "Porcentaje"
+      }
+    },
+    "upload": {
+      "title": "Carga",
+      "description": "Carga un CSV o Excel (.xlsx) y valida todas las filas antes de procesar.",
+      "upload": "Cargar y validar",
+      "uploading": "Cargando...",
+      "success": "Carga validada",
+      "completedWithErrors": "Carga completada con errores",
+      "error": "La carga falló",
+      "errors": {
+        "noFile": "Selecciona un archivo CSV o Excel (.xlsx) para cargar"
+      }
+    },
+    "batches": {
+      "title": "Lotes",
+      "description": "Selecciona un lote para revisar validación y resultados.",
+      "empty": "Aún no hay lotes.",
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando...",
+      "batch": "Lote",
+      "meta": "Creado {createdAt} • Procesado {processedAt}",
+      "rows": "{count, number} filas",
+      "errors": "{count, number} errores"
+    },
+    "batch": {
+      "title": "Detalle del lote",
+      "description": "Estado: {status} • Creado {createdAt}",
+      "selectToView": "Selecciona un lote para ver el detalle.",
+      "hasErrors": "Este lote tiene errores de validación y no se puede procesar.",
+      "validated": "Este lote está validado y listo para procesar.",
+      "error": "No se pudo cargar el lote",
+      "table": {
+        "row": "Fila",
+        "name": "Nombre",
+        "email": "Email",
+        "distance": "Distancia",
+        "errors": "Errores",
+        "ok": "OK",
+        "showing": "Mostrando {count, number} de {total, number} filas"
+      }
+    },
+    "process": {
+      "process": "Procesar lote",
+      "processing": "Procesando...",
+      "success": "Lote procesado",
+      "successWithDiscount": "Lote procesado ({percentOff, number}% descuento por grupo)",
+      "error": "No se pudo procesar el lote"
     }
   }
 }

@@ -301,6 +301,8 @@ export const eventEditions = pgTable(
     editionLabel: varchar('edition_label', { length: 50 }).notNull(), // e.g., "2026"
     publicCode: varchar('public_code', { length: 20 }).notNull().unique(), // short stable ID
     slug: varchar('slug', { length: 100 }).notNull(),
+    previousEditionId: uuid('previous_edition_id'),
+    clonedFromEditionId: uuid('cloned_from_edition_id'),
     visibility: varchar('visibility', { length: 20 }).notNull().default('draft'), // 'draft' | 'published' | 'unlisted' | 'archived'
     startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }),
     endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }),
@@ -326,10 +328,22 @@ export const eventEditions = pgTable(
       .$onUpdate(() => new Date()),
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
   },
-  (table) => ({
-    publicCodeIdx: uniqueIndex('event_editions_public_code_idx').on(table.publicCode),
-    seriesSlugUnique: uniqueIndex('event_editions_series_slug_idx').on(table.seriesId, table.slug),
-  }),
+  (table) => [
+    foreignKey({
+      name: 'event_editions_previous_edition_fk',
+      columns: [table.previousEditionId],
+      foreignColumns: [table.id],
+    }).onDelete('set null'),
+    foreignKey({
+      name: 'event_editions_cloned_from_edition_fk',
+      columns: [table.clonedFromEditionId],
+      foreignColumns: [table.id],
+    }).onDelete('set null'),
+    uniqueIndex('event_editions_public_code_idx').on(table.publicCode),
+    uniqueIndex('event_editions_series_slug_idx').on(table.seriesId, table.slug),
+    index('event_editions_previous_edition_idx').on(table.previousEditionId),
+    index('event_editions_cloned_from_edition_idx').on(table.clonedFromEditionId),
+  ],
 );
 
 export const eventDistances = pgTable('event_distances', {
@@ -529,6 +543,117 @@ export const eventPolicyConfigs = pgTable('event_policy_configs', {
     .notNull()
     .$onUpdate(() => new Date()),
 });
+
+// =============================================================================
+// EVENTS PLATFORM TABLES (Phase 3)
+// =============================================================================
+
+export const eventSlugRedirects = pgTable(
+  'event_slug_redirects',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    fromSeriesSlug: varchar('from_series_slug', { length: 100 }).notNull(),
+    fromEditionSlug: varchar('from_edition_slug', { length: 100 }).notNull(),
+    toSeriesSlug: varchar('to_series_slug', { length: 100 }).notNull(),
+    toEditionSlug: varchar('to_edition_slug', { length: 100 }).notNull(),
+    reason: varchar('reason', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    fromUnique: uniqueIndex('event_slug_redirects_from_unique_idx').on(
+      table.fromSeriesSlug,
+      table.fromEditionSlug,
+    ),
+    toIdx: index('event_slug_redirects_to_idx').on(table.toSeriesSlug, table.toEditionSlug),
+  }),
+);
+
+export const groupRegistrationBatchStatusEnum = pgEnum('group_registration_batch_status', [
+  'uploaded',
+  'validated',
+  'processed',
+  'failed',
+]);
+
+export const groupRegistrationBatches = pgTable(
+  'group_registration_batches',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    status: groupRegistrationBatchStatusEnum('status').notNull().default('uploaded'),
+    sourceFileMediaId: uuid('source_file_media_id').references(() => media.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    processedAt: timestamp('processed_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    editionCreatedAtIdx: index('group_registration_batches_edition_created_at_idx').on(
+      table.editionId,
+      table.createdAt,
+    ),
+    statusIdx: index('group_registration_batches_status_idx').on(table.status),
+  }),
+);
+
+export const groupRegistrationBatchRows = pgTable(
+  'group_registration_batch_rows',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    batchId: uuid('batch_id')
+      .notNull()
+      .references(() => groupRegistrationBatches.id, { onDelete: 'cascade' }),
+    rowIndex: integer('row_index').notNull(),
+    rawJson: jsonb('raw_json').$type<Record<string, unknown>>().notNull().default({}),
+    validationErrorsJson: jsonb('validation_errors_json')
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    createdRegistrationId: uuid('created_registration_id').references(() => registrations.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    batchRowIndexUnique: uniqueIndex('group_registration_batch_rows_batch_row_idx').on(
+      table.batchId,
+      table.rowIndex,
+    ),
+    createdRegistrationIdx: index('group_registration_batch_rows_created_registration_idx').on(
+      table.createdRegistrationId,
+    ),
+  }),
+);
+
+export const groupDiscountRules = pgTable(
+  'group_discount_rules',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    minParticipants: integer('min_participants').notNull(),
+    percentOff: integer('percent_off').notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    editionThresholdUnique: uniqueIndex('group_discount_rules_edition_threshold_idx').on(
+      table.editionId,
+      table.minParticipants,
+    ),
+    isActiveIdx: index('group_discount_rules_is_active_idx').on(table.isActive),
+  }),
+);
 
 export const media = pgTable('media', {
   id: uuid('id').defaultRandom().primaryKey(),
