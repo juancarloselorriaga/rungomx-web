@@ -68,6 +68,10 @@
     },
     "fromPrice": "From {price}",
     "free": "Free",
+    "groupDiscount": {
+      "badge": "Groups of {minParticipants}+ save {percent}%",
+      "savePercent": "Groups save {percent}%"
+    },
     "virtualEvent": "Virtual event",
     "timeLimit": "{hours}h time limit",
     "terrain": {

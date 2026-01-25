@@ -1,8 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, Calendar, MapPin } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, Users } from 'lucide-react';
 import Image from 'next/image';
+
+type GroupDiscountRule = {
+  minParticipants: number;
+  percentOff: number;
+};
 
 type EventHeroSectionProps = {
   seriesSlug: string;
@@ -15,6 +20,7 @@ type EventHeroSectionProps = {
   location: string | null;
   isRegistrationOpen: boolean;
   formattedMinPrice: string | null;
+  groupDiscountRules?: GroupDiscountRule[];
   labels: {
     backToEvents: string;
     registrationOpen: string;
@@ -22,6 +28,7 @@ type EventHeroSectionProps = {
     fromPrice: string;
     free: string;
     registerNow: string;
+    groupDiscountBadge?: string;
   };
 };
 
@@ -36,8 +43,10 @@ export function EventHeroSection({
   location,
   isRegistrationOpen,
   formattedMinPrice,
+  groupDiscountRules = [],
   labels,
 }: EventHeroSectionProps) {
+  const bestDiscount = groupDiscountRules[0];
   return (
     <div className="relative bg-muted rounded-2xl">
       <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -64,9 +73,17 @@ export function EventHeroSection({
 
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div className="space-y-4">
-            <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-              {sportTypeLabel}
-            </span>
+            <div className="flex flex-wrap gap-2">
+              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                {sportTypeLabel}
+              </span>
+              {bestDiscount && labels.groupDiscountBadge && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <Users className="h-4 w-4" />
+                  {labels.groupDiscountBadge}
+                </span>
+              )}
+            </div>
 
             <h1 className="text-4xl font-bold tracking-tight">{seriesName}</h1>
             <p className="text-xl text-muted-foreground">{editionLabel}</p>

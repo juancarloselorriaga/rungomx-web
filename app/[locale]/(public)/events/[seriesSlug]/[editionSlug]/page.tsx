@@ -240,6 +240,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         location={location}
         isRegistrationOpen={event.isRegistrationOpen}
         formattedMinPrice={formattedMinPrice}
+        groupDiscountRules={event.groupDiscountRules}
         labels={{
           backToEvents: t('title'),
           registrationOpen: t('detail.registrationOpen'),
@@ -247,6 +248,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           fromPrice: formattedMinPrice ? t('detail.fromPrice', { price: formattedMinPrice }) : '',
           free: t('detail.free'),
           registerNow: t('detail.registerNow'),
+          groupDiscountBadge: event.groupDiscountRules[0]
+            ? t('detail.groupDiscount.badge', {
+                minParticipants: event.groupDiscountRules[0].minParticipants,
+                percent: event.groupDiscountRules[0].percentOff,
+              })
+            : undefined,
         }}
       />
 
@@ -314,6 +321,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       }}
                       sharedCapacity={event.sharedCapacity}
                       pricingSchedule={pricingScheduleByDistanceId?.get(distance.id) ?? null}
+                      bestGroupDiscount={event.groupDiscountRules[0]}
                     />
                   ))}
                 </div>
