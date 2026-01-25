@@ -3,7 +3,6 @@
 import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
-import { read, utils } from 'xlsx';
 
 import { db } from '@/db';
 import {
@@ -32,7 +31,12 @@ import { computeExpiresAt } from '@/lib/events/registration-holds';
 import { eventEditionDetailTag, eventEditionRegistrationsTag, publicEventBySlugTag } from '@/lib/events/cache-tags';
 import { safeRevalidateTag } from '@/lib/next-cache';
 
-import { generateGroupRegistrationTemplateCsv, parseCsv } from './csv';
+import {
+  GROUP_REGISTRATION_TEMPLATE_EXAMPLE_ROW,
+  GROUP_REGISTRATION_TEMPLATE_HEADERS,
+  generateGroupRegistrationTemplateCsv,
+  parseCsv,
+} from './csv';
 
 type ActionResult<T = void> =
   | { ok: true; data: T }
@@ -150,6 +154,66 @@ export const downloadGroupTemplate = withAuthenticatedUser<
   const filename = `group-registration-template-${edition.series.slug}-${edition.slug}.csv`;
 
   return { ok: true, data: { csv, filename } };
+});
+
+export const downloadGroupTemplateXlsx = withAuthenticatedUser<
+  ActionResult<{ xlsxBase64: string; filename: string; mimeType: string }>
+>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof groupTemplateDownloadSchema>) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) {
+    return { ok: false, ...accessError };
+  }
+
+  const validated = groupTemplateDownloadSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const { editionId } = validated.data;
+
+  const membership = await canUserAccessEvent(authContext.user.id, editionId);
+  try {
+    requireOrgPermission(membership, 'canEditRegistrationSettings');
+  } catch {
+    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  }
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    columns: { slug: true },
+    with: { series: { columns: { slug: true } } },
+  });
+
+  if (!edition?.series?.slug) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  const rows = [
+    Array.from(GROUP_REGISTRATION_TEMPLATE_HEADERS),
+    Array.from(GROUP_REGISTRATION_TEMPLATE_EXAMPLE_ROW),
+  ];
+
+  const { utils, write } = await import('xlsx');
+
+  const ws = utils.aoa_to_sheet(rows);
+  const wb = utils.book_new();
+  utils.book_append_sheet(wb, ws, 'Template');
+
+  const buffer = write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  const xlsxBase64 = buffer.toString('base64');
+
+  const filename = `group-registration-template-${edition.series.slug}-${edition.slug}.xlsx`;
+
+  return {
+    ok: true,
+    data: {
+      xlsxBase64,
+      filename,
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    },
+  };
 });
 
 const uploadGroupBatchSchema = z
@@ -310,6 +374,7 @@ export const uploadGroupBatch = withAuthenticatedUser<ActionResult<UploadGroupBa
     if (validated.data.csvText) {
       parsed = parseCsv(validated.data.csvText);
     } else {
+      const { read, utils } = await import('xlsx');
       const buffer = Buffer.from(validated.data.xlsxBase64 ?? '', 'base64');
       const workbook = read(buffer, { type: 'buffer' });
       const firstSheetName = workbook.SheetNames[0];
@@ -842,7 +907,7 @@ export const processGroupBatch = withAuthenticatedUser<ActionResult<ProcessGroup
     };
   }
 
-  if (batch.status !== 'validated') {
+  if (batch.status !== 'validated' && batch.status !== 'failed') {
     return { ok: false, error: 'Batch is not validated', code: 'INVALID_STATE' };
   }
 
@@ -1236,18 +1301,78 @@ export const processGroupBatch = withAuthenticatedUser<ActionResult<ProcessGroup
       },
     };
   } catch (error) {
-    if (error instanceof Error) {
+    const failure = (() => {
+      if (!(error instanceof Error)) return null;
       if (error.message === 'INSUFFICIENT_CAPACITY') {
-        return { ok: false, error: 'Insufficient capacity to process this batch', code: 'INSUFFICIENT_CAPACITY' };
+        return {
+          response: { ok: false as const, error: 'Insufficient capacity to process this batch', code: 'INSUFFICIENT_CAPACITY' },
+          audit: { reason: 'INSUFFICIENT_CAPACITY' as const, message: error.message },
+        };
       }
       if (error.message === 'EDITION_NOT_FOUND') {
-        return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+        return {
+          response: { ok: false as const, error: 'Event edition not found', code: 'NOT_FOUND' },
+          audit: { reason: 'EDITION_NOT_FOUND' as const, message: error.message },
+        };
       }
       if (error.message === 'INVALID_ROW') {
-        return { ok: false, error: 'Batch contains invalid row data', code: 'VALIDATION_ERROR' };
+        return {
+          response: { ok: false as const, error: 'Batch contains invalid row data', code: 'VALIDATION_ERROR' },
+          audit: { reason: 'INVALID_ROW' as const, message: error.message },
+        };
       }
+      return null;
+    })();
+
+    if (!failure) {
+      throw error;
     }
-    throw error;
+
+    const failedAt = new Date();
+    await db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(groupRegistrationBatches)
+        .set({ status: 'failed', processedAt: failedAt })
+        .where(
+          and(
+            eq(groupRegistrationBatches.id, batch.id),
+            or(
+              eq(groupRegistrationBatches.status, 'validated'),
+              eq(groupRegistrationBatches.status, 'failed'),
+            ),
+          ),
+        )
+        .returning({ id: groupRegistrationBatches.id });
+
+      if (!updated) {
+        return;
+      }
+
+      const auditResult = await createAuditLog(
+        {
+          organizationId: batch.edition.series.organizationId,
+          actorUserId: authContext.user.id,
+          action: 'group_registrations.process_failed',
+          entityType: 'group_registration_batch',
+          entityId: batch.id,
+          before: { status: batch.status },
+          after: {
+            status: 'failed',
+            reason: failure.audit.reason,
+            message: failure.audit.message,
+            percentOff,
+          },
+          request: requestContext,
+        },
+        tx,
+      );
+
+      if (!auditResult.ok) {
+        throw new Error('Failed to create audit log');
+      }
+    });
+
+    return failure.response;
   }
 });
 

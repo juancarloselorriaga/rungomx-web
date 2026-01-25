@@ -473,8 +473,9 @@
     },
     "template": {
       "title": "Plantilla",
-      "description": "Descarga la plantilla CSV y llénala con los datos de participantes.",
-      "download": "Descargar plantilla",
+      "description": "Descarga la plantilla Excel (.xlsx) (o CSV) y llénala con los datos de participantes.",
+      "downloadXlsx": "Descargar plantilla Excel",
+      "downloadCsv": "Descargar plantilla CSV",
       "downloading": "Descargando...",
       "viewPublic": "Ver página de inscripción",
       "success": "Plantilla descargada",
@@ -486,6 +487,13 @@
       "empty": "No hay reglas de descuento configuradas.",
       "active": "Activo",
       "inactive": "Inactivo",
+      "actions": {
+        "edit": "Editar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "activate": "Activar",
+        "deactivate": "Desactivar"
+      },
       "save": "Guardar regla",
       "saving": "Guardando...",
       "success": "Regla guardada",
@@ -497,7 +505,8 @@
       "table": {
         "minParticipants": "Mín. participantes",
         "percentOff": "% descuento",
-        "status": "Estado"
+        "status": "Estado",
+        "actions": "Acciones"
       },
       "form": {
         "minParticipants": "Mín. participantes",
@@ -533,6 +542,7 @@
       "selectToView": "Selecciona un lote para ver el detalle.",
       "hasErrors": "Este lote tiene errores de validación y no se puede procesar.",
       "validated": "Este lote está validado y listo para procesar.",
+      "failedProcessing": "Este lote falló al procesarse. Revisa la capacidad e intenta de nuevo.",
       "error": "No se pudo cargar el lote",
       "table": {
         "row": "Fila",

@@ -72,6 +72,7 @@ export const AUDIT_ACTIONS = {
   // Group Registrations (Phase 3)
   'group_registrations.upload': 'Group registrations batch uploaded',
   'group_registrations.process': 'Group registrations batch processed',
+  'group_registrations.process_failed': 'Group registrations batch processing failed',
   'group_registrations.discount_rule.upsert': 'Group discount rule created or updated',
 
   // Add-ons (Phase 2)

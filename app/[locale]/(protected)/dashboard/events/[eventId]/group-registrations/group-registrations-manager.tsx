@@ -6,6 +6,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import {
   createGroupDiscountRule,
   downloadGroupTemplate,
+  downloadGroupTemplateXlsx,
   getGroupBatchStatus,
   processGroupBatch,
   uploadGroupBatch,
@@ -88,6 +89,24 @@ function downloadCsv(csv: string, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+function downloadBase64File(base64: string, filename: string, mimeType: string) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const blob = new Blob([bytes], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 async function readFileAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -154,7 +173,12 @@ export function GroupRegistrationsManager({
     [batches, selectedBatchId],
   );
 
-  const [isDownloading, setIsDownloading] = useState(false);
+  const canProcessSelectedBatch =
+    selectedBatchListItem?.status === 'validated' ||
+    (selectedBatchListItem?.status === 'failed' && selectedBatchListItem.errorCount === 0);
+
+  const [isDownloadingCsv, setIsDownloadingCsv] = useState(false);
+  const [isDownloadingXlsx, setIsDownloadingXlsx] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -163,6 +187,9 @@ export function GroupRegistrationsManager({
   const [minParticipants, setMinParticipants] = useState('');
   const [percentOff, setPercentOff] = useState('');
   const [isSavingRule, setIsSavingRule] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [editingPercentOff, setEditingPercentOff] = useState('');
+  const [isUpdatingRuleId, setIsUpdatingRuleId] = useState<string | null>(null);
 
   async function refreshSelectedBatch(batchId: string) {
     setIsRefreshing(true);
@@ -178,8 +205,8 @@ export function GroupRegistrationsManager({
     }
   }
 
-  async function handleDownloadTemplate() {
-    setIsDownloading(true);
+  async function handleDownloadTemplateCsv() {
+    setIsDownloadingCsv(true);
     try {
       const result = await downloadGroupTemplate({ editionId });
       if (!result.ok) {
@@ -191,7 +218,24 @@ export function GroupRegistrationsManager({
     } catch {
       toast.error(t('template.error'));
     } finally {
-      setIsDownloading(false);
+      setIsDownloadingCsv(false);
+    }
+  }
+
+  async function handleDownloadTemplateXlsx() {
+    setIsDownloadingXlsx(true);
+    try {
+      const result = await downloadGroupTemplateXlsx({ editionId });
+      if (!result.ok) {
+        toast.error(t('template.error'), { description: result.error });
+        return;
+      }
+      downloadBase64File(result.data.xlsxBase64, result.data.filename, result.data.mimeType);
+      toast.success(t('template.success'));
+    } catch {
+      toast.error(t('template.error'));
+    } finally {
+      setIsDownloadingXlsx(false);
     }
   }
 
@@ -256,6 +300,8 @@ export function GroupRegistrationsManager({
       const result = await processGroupBatch({ batchId: selectedBatchId });
       if (!result.ok) {
         toast.error(t('process.error'), { description: result.error });
+        router.refresh();
+        await refreshSelectedBatch(selectedBatchId);
         return;
       }
 
@@ -310,6 +356,62 @@ export function GroupRegistrationsManager({
     }
   }
 
+  async function handleToggleRule(rule: DiscountRuleItem) {
+    setIsUpdatingRuleId(rule.id);
+    try {
+      const result = await createGroupDiscountRule({
+        editionId,
+        minParticipants: rule.minParticipants,
+        percentOff: rule.percentOff,
+        isActive: !rule.isActive,
+      });
+
+      if (!result.ok) {
+        toast.error(t('discountRule.error'), { description: result.error });
+        return;
+      }
+
+      toast.success(t('discountRule.success'));
+      router.refresh();
+    } catch {
+      toast.error(t('discountRule.error'));
+    } finally {
+      setIsUpdatingRuleId(null);
+    }
+  }
+
+  async function handleSaveEditedRule(rule: DiscountRuleItem) {
+    const pct = Number.parseInt(editingPercentOff, 10);
+    if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
+      toast.error(t('discountRule.error'), { description: t('discountRule.errors.percentOff') });
+      return;
+    }
+
+    setIsUpdatingRuleId(rule.id);
+    try {
+      const result = await createGroupDiscountRule({
+        editionId,
+        minParticipants: rule.minParticipants,
+        percentOff: pct,
+        isActive: rule.isActive,
+      });
+
+      if (!result.ok) {
+        toast.error(t('discountRule.error'), { description: result.error });
+        return;
+      }
+
+      toast.success(t('discountRule.success'));
+      setEditingRuleId(null);
+      setEditingPercentOff('');
+      router.refresh();
+    } catch {
+      toast.error(t('discountRule.error'));
+    } finally {
+      setIsUpdatingRuleId(null);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border bg-card/50">
@@ -318,19 +420,43 @@ export function GroupRegistrationsManager({
           <p className="text-sm text-muted-foreground">{t('template.description')}</p>
         </div>
         <div className="px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button type="button" onClick={handleDownloadTemplate} disabled={isDownloading}>
-            {isDownloading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                {t('template.downloading')}
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                {t('template.download')}
-              </>
-            )}
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              type="button"
+              onClick={handleDownloadTemplateXlsx}
+              disabled={isDownloadingXlsx || isDownloadingCsv}
+            >
+              {isDownloadingXlsx ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('template.downloading')}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  {t('template.downloadXlsx')}
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDownloadTemplateCsv}
+              disabled={isDownloadingXlsx || isDownloadingCsv}
+            >
+              {isDownloadingCsv ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('template.downloading')}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  {t('template.downloadCsv')}
+                </>
+              )}
+            </Button>
+          </div>
           <Button asChild variant="outline">
             <Link
               href={{
@@ -356,17 +482,30 @@ export function GroupRegistrationsManager({
             <p className="text-sm text-muted-foreground">{t('discountRule.empty')}</p>
           ) : (
             <div className="overflow-x-auto -mx-6 px-6">
-              <div className="rounded-md border bg-background/30 min-w-[400px]">
-                <div className="grid grid-cols-3 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b">
+              <div className="rounded-md border bg-background/30 min-w-[520px]">
+                <div className="grid grid-cols-4 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b">
                   <div>{t('discountRule.table.minParticipants')}</div>
                   <div>{t('discountRule.table.percentOff')}</div>
                   <div>{t('discountRule.table.status')}</div>
+                  <div>{t('discountRule.table.actions')}</div>
                 </div>
                 <div className="divide-y">
                   {discountRules.map((rule) => (
-                    <div key={rule.id} className="grid grid-cols-3 gap-3 px-4 py-3 text-sm">
+                    <div key={rule.id} className="grid grid-cols-4 gap-3 px-4 py-3 text-sm">
                       <div>{rule.minParticipants}</div>
-                      <div>{rule.percentOff}%</div>
+                      <div>
+                        {editingRuleId === rule.id ? (
+                          <input
+                            value={editingPercentOff}
+                            onChange={(e) => setEditingPercentOff(e.target.value)}
+                            className="w-20 rounded-md border bg-background px-2 py-1 text-sm"
+                            inputMode="numeric"
+                            disabled={isUpdatingRuleId === rule.id}
+                          />
+                        ) : (
+                          <span>{rule.percentOff}%</span>
+                        )}
+                      </div>
                       <div>
                         {rule.isActive ? (
                           <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-300">
@@ -378,6 +517,58 @@ export function GroupRegistrationsManager({
                             <AlertCircle className="h-4 w-4" />
                             {t('discountRule.inactive')}
                           </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {editingRuleId === rule.id ? (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleSaveEditedRule(rule)}
+                              disabled={isUpdatingRuleId === rule.id}
+                            >
+                              {t('discountRule.actions.save')}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingRuleId(null);
+                                setEditingPercentOff('');
+                              }}
+                              disabled={isUpdatingRuleId === rule.id}
+                            >
+                              {t('discountRule.actions.cancel')}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingRuleId(rule.id);
+                                setEditingPercentOff(String(rule.percentOff));
+                              }}
+                              disabled={isUpdatingRuleId === rule.id}
+                            >
+                              {t('discountRule.actions.edit')}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleToggleRule(rule)}
+                              disabled={isUpdatingRuleId === rule.id}
+                            >
+                              {rule.isActive
+                                ? t('discountRule.actions.deactivate')
+                                : t('discountRule.actions.activate')}
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -552,8 +743,7 @@ export function GroupRegistrationsManager({
                 onClick={handleProcess}
                 disabled={
                   isProcessing ||
-                  selectedBatchListItem.status !== 'validated' ||
-                  selectedBatchListItem.errorCount > 0
+                  !canProcessSelectedBatch
                 }
               >
                 {isProcessing ? (
@@ -579,6 +769,10 @@ export function GroupRegistrationsManager({
                 {selectedBatch.rows.some((r) => r.validationErrors.length > 0) ? (
                   <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
                     {t('batch.hasErrors')}
+                  </div>
+                ) : selectedBatch.status === 'failed' ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+                    {t('batch.failedProcessing')}
                   </div>
                 ) : (
                   <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800 dark:border-green-900 dark:bg-green-950/40 dark:text-green-200">
