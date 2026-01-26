@@ -77,10 +77,10 @@ export default async function EventDetailLayout({
     >
       {/* Header - Breadcrumb and Title */}
       <div className="mb-6">
-        {/* Breadcrumb */}
+        {/* Breadcrumb - hidden on mobile where drawer provides navigation */}
         <Link
           href="/dashboard/events"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+          className="hidden md:inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
         >
           <ChevronLeft className="h-4 w-4" />
           {tEvents('title')}
