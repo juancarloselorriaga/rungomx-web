@@ -1,11 +1,11 @@
-import { getPathname, Link } from '@/i18n/navigation';
+import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getRegistrationsForEdition } from '@/lib/events/registrations';
 import { canUserAccessEvent, requireOrgPermission } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
-import { ArrowLeft, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
@@ -122,30 +122,21 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Link
-          href={{ pathname: '/dashboard/events/[eventId]', params: { eventId } }}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {event.seriesName} {event.editionLabel}
-        </Link>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold">{t('title')}</h1>
-            <p className="text-muted-foreground mt-1">{t('description')}</p>
-          </div>
-          {canExport && (
-            <ExportRegistrationsButton
-              editionId={eventId}
-              distanceId={distanceId}
-              status={status}
-              search={search}
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-            />
-          )}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
+          <p className="text-muted-foreground mt-1">{t('description')}</p>
         </div>
+        {canExport && (
+          <ExportRegistrationsButton
+            editionId={eventId}
+            distanceId={distanceId}
+            status={status}
+            search={search}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+          />
+        )}
       </div>
 
       {/* Stats */}

@@ -20,6 +20,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownHint } from '@/components/ui/markdown-hint';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { BulkDocumentUploader } from '@/components/events/bulk-document-uploader';
@@ -620,24 +621,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                 </Button>
               }
             >
-              <div
-                className={cn(
-                  'grid gap-3',
-                  markdownPreviews.overviewContent && 'lg:grid-cols-2 lg:items-start',
-                )}
-              >
-                <textarea
-                  placeholder={t('sections.overview.contentPlaceholder')}
-                  value={blocks.overview?.content ?? ''}
-                  onChange={(e) => updateOverview('content', e.target.value)}
-                  rows={6}
-                  className={textareaClassName}
-                />
-                {markdownPreviews.overviewContent ? (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <MarkdownContent content={blocks.overview?.content ?? ''} className="text-sm" />
-                  </div>
-                ) : null}
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    'grid gap-3',
+                    markdownPreviews.overviewContent && 'lg:grid-cols-2 lg:items-start',
+                  )}
+                >
+                  <textarea
+                    placeholder={t('sections.overview.contentPlaceholder')}
+                    value={blocks.overview?.content ?? ''}
+                    onChange={(e) => updateOverview('content', e.target.value)}
+                    rows={6}
+                    className={textareaClassName}
+                  />
+                  {markdownPreviews.overviewContent ? (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <MarkdownContent content={blocks.overview?.content ?? ''} className="text-sm" />
+                    </div>
+                  ) : null}
+                </div>
+                <MarkdownHint />
               </div>
             </FormField>
             <FormField
@@ -654,24 +658,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                 </Button>
               }
             >
-              <div
-                className={cn(
-                  'grid gap-3',
-                  markdownPreviews.overviewTerrain && 'lg:grid-cols-2 lg:items-start',
-                )}
-              >
-                <textarea
-                  placeholder={t('sections.overview.terrainPlaceholder')}
-                  value={blocks.overview?.terrain ?? ''}
-                  onChange={(e) => updateOverview('terrain', e.target.value)}
-                  rows={3}
-                  className={textareaClassName}
-                />
-                {markdownPreviews.overviewTerrain ? (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <MarkdownContent content={blocks.overview?.terrain ?? ''} className="text-sm" />
-                  </div>
-                ) : null}
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    'grid gap-3',
+                    markdownPreviews.overviewTerrain && 'lg:grid-cols-2 lg:items-start',
+                  )}
+                >
+                  <textarea
+                    placeholder={t('sections.overview.terrainPlaceholder')}
+                    value={blocks.overview?.terrain ?? ''}
+                    onChange={(e) => updateOverview('terrain', e.target.value)}
+                    rows={3}
+                    className={textareaClassName}
+                  />
+                  {markdownPreviews.overviewTerrain ? (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <MarkdownContent content={blocks.overview?.terrain ?? ''} className="text-sm" />
+                    </div>
+                  ) : null}
+                </div>
+                <MarkdownHint />
               </div>
             </FormField>
           </div>
@@ -735,24 +742,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                 </Button>
               }
             >
-              <div
-                className={cn(
-                  'grid gap-3',
-                  markdownPreviews.courseDescription && 'lg:grid-cols-2 lg:items-start',
-                )}
-              >
-                <textarea
-                  placeholder={t('sections.course.descriptionPlaceholder')}
-                  value={blocks.course?.description ?? ''}
-                  onChange={(e) => updateCourse('description', e.target.value)}
-                  rows={4}
-                  className={textareaClassName}
-                />
-                {markdownPreviews.courseDescription ? (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <MarkdownContent content={blocks.course?.description ?? ''} className="text-sm" />
-                  </div>
-                ) : null}
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    'grid gap-3',
+                    markdownPreviews.courseDescription && 'lg:grid-cols-2 lg:items-start',
+                  )}
+                >
+                  <textarea
+                    placeholder={t('sections.course.descriptionPlaceholder')}
+                    value={blocks.course?.description ?? ''}
+                    onChange={(e) => updateCourse('description', e.target.value)}
+                    rows={4}
+                    className={textareaClassName}
+                  />
+                  {markdownPreviews.courseDescription ? (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <MarkdownContent content={blocks.course?.description ?? ''} className="text-sm" />
+                    </div>
+                  ) : null}
+                </div>
+                <MarkdownHint />
               </div>
             </FormField>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -930,24 +940,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                 </Button>
               }
             >
-              <div
-                className={cn(
-                  'grid gap-3',
-                  markdownPreviews.schedulePacketPickup && 'lg:grid-cols-2 lg:items-start',
-                )}
-              >
-                <textarea
-                  placeholder={t('sections.schedule.packetPickupPlaceholder')}
-                  value={blocks.schedule?.packetPickup ?? ''}
-                  onChange={(e) => updateSchedule('packetPickup', e.target.value)}
-                  rows={3}
-                  className={textareaClassName}
-                />
-                {markdownPreviews.schedulePacketPickup ? (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <MarkdownContent content={blocks.schedule?.packetPickup ?? ''} className="text-sm" />
-                  </div>
-                ) : null}
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    'grid gap-3',
+                    markdownPreviews.schedulePacketPickup && 'lg:grid-cols-2 lg:items-start',
+                  )}
+                >
+                  <textarea
+                    placeholder={t('sections.schedule.packetPickupPlaceholder')}
+                    value={blocks.schedule?.packetPickup ?? ''}
+                    onChange={(e) => updateSchedule('packetPickup', e.target.value)}
+                    rows={3}
+                    className={textareaClassName}
+                  />
+                  {markdownPreviews.schedulePacketPickup ? (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <MarkdownContent content={blocks.schedule?.packetPickup ?? ''} className="text-sm" />
+                    </div>
+                  ) : null}
+                </div>
+                <MarkdownHint />
               </div>
             </FormField>
             <FormField
@@ -964,24 +977,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                 </Button>
               }
             >
-              <div
-                className={cn(
-                  'grid gap-3',
-                  markdownPreviews.scheduleParking && 'lg:grid-cols-2 lg:items-start',
-                )}
-              >
-                <textarea
-                  placeholder={t('sections.schedule.parkingPlaceholder')}
-                  value={blocks.schedule?.parking ?? ''}
-                  onChange={(e) => updateSchedule('parking', e.target.value)}
-                  rows={3}
-                  className={textareaClassName}
-                />
-                {markdownPreviews.scheduleParking ? (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <MarkdownContent content={blocks.schedule?.parking ?? ''} className="text-sm" />
-                  </div>
-                ) : null}
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    'grid gap-3',
+                    markdownPreviews.scheduleParking && 'lg:grid-cols-2 lg:items-start',
+                  )}
+                >
+                  <textarea
+                    placeholder={t('sections.schedule.parkingPlaceholder')}
+                    value={blocks.schedule?.parking ?? ''}
+                    onChange={(e) => updateSchedule('parking', e.target.value)}
+                    rows={3}
+                    className={textareaClassName}
+                  />
+                  {markdownPreviews.scheduleParking ? (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <MarkdownContent content={blocks.schedule?.parking ?? ''} className="text-sm" />
+                    </div>
+                  ) : null}
+                </div>
+                <MarkdownHint />
               </div>
             </FormField>
             <FormField
@@ -998,24 +1014,27 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                 </Button>
               }
             >
-              <div
-                className={cn(
-                  'grid gap-3',
-                  markdownPreviews.scheduleRaceDay && 'lg:grid-cols-2 lg:items-start',
-                )}
-              >
-                <textarea
-                  placeholder={t('sections.schedule.raceDayPlaceholder')}
-                  value={blocks.schedule?.raceDay ?? ''}
-                  onChange={(e) => updateSchedule('raceDay', e.target.value)}
-                  rows={3}
-                  className={textareaClassName}
-                />
-                {markdownPreviews.scheduleRaceDay ? (
-                  <div className="rounded-md border bg-muted/30 p-3">
-                    <MarkdownContent content={blocks.schedule?.raceDay ?? ''} className="text-sm" />
-                  </div>
-                ) : null}
+              <div className="space-y-2">
+                <div
+                  className={cn(
+                    'grid gap-3',
+                    markdownPreviews.scheduleRaceDay && 'lg:grid-cols-2 lg:items-start',
+                  )}
+                >
+                  <textarea
+                    placeholder={t('sections.schedule.raceDayPlaceholder')}
+                    value={blocks.schedule?.raceDay ?? ''}
+                    onChange={(e) => updateSchedule('raceDay', e.target.value)}
+                    rows={3}
+                    className={textareaClassName}
+                  />
+                  {markdownPreviews.scheduleRaceDay ? (
+                    <div className="rounded-md border bg-muted/30 p-3">
+                      <MarkdownContent content={blocks.schedule?.raceDay ?? ''} className="text-sm" />
+                    </div>
+                  ) : null}
+                </div>
+                <MarkdownHint />
               </div>
             </FormField>
 

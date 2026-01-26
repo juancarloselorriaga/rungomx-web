@@ -1,11 +1,10 @@
-import { getPathname, Link } from '@/i18n/navigation';
+import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getDiscountCodesForEdition } from '@/lib/events/discounts/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
-import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
@@ -63,20 +62,15 @@ export default async function EventCouponsPage({ params }: CouponsPageProps) {
   const discountCodes = await getDiscountCodesForEdition(eventId);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div>
-        <Link
-          href={{ pathname: '/dashboard/events/[eventId]', params: { eventId } }}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {event.seriesName} {event.editionLabel}
-        </Link>
-        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+        <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <CouponsManager editionId={eventId} initialCoupons={discountCodes} />
+      <div className="max-w-4xl">
+        <CouponsManager editionId={eventId} initialCoupons={discountCodes} />
+      </div>
     </div>
   );
 }
