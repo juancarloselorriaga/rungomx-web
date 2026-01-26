@@ -24,5 +24,10 @@
     "deleting": "Deleting...",
     "warningTitle": "Warning",
     "warningDescription": "This action cannot be undone."
+  },
+  "markdownHint": {
+    "label": "Markdown supported",
+    "tooltip": "You can use formatting like **bold**, *italic*, [links](url), and lists. Click 'Learn more' to see all options.",
+    "learnMore": "Learn more"
   }
 }

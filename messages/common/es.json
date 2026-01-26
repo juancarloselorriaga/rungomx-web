@@ -24,5 +24,10 @@
     "deleting": "Eliminando...",
     "warningTitle": "Advertencia",
     "warningDescription": "Esta acción no se puede deshacer."
+  },
+  "markdownHint": {
+    "label": "Soporta Markdown",
+    "tooltip": "Puedes usar formato como **negritas**, *cursivas*, [enlaces](url) y listas. Haz clic en 'Más información' para ver todas las opciones.",
+    "learnMore": "Más información"
   }
 }
