@@ -15,12 +15,16 @@ jest.mock(
       return <div>NavBar</div>;
     },
 );
+jest.mock('@/components/layout/navigation/sliding-nav-context', () => ({
+  SlidingNavProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+}));
 jest.mock(
-  '@/components/layout/navigation/sidebar',
-  () =>
-    function MockSidebar() {
-      return <div>Sidebar</div>;
+  '@/components/layout/navigation/sliding-sidebar',
+  () => ({
+    SlidingSidebar: function MockSlidingSidebar() {
+      return <div>SlidingSidebar</div>;
     },
+  }),
 );
 jest.mock('@/components/layout/navigation/nav-drawer-context', () => ({
   NavDrawerProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
