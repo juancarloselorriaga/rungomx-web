@@ -592,6 +592,7 @@
         "name": "Etiqueta (opcional)",
         "namePlaceholder": "Carga equipo primavera",
         "paymentResponsibility": "Responsable de pago",
+        "paymentResponsibilityHelp": "Aún no se cobran pagos en la app; esto define el comportamiento de confirmación y el flujo de pago futuro.",
         "startsAt": "Inicia (opcional)",
         "endsAt": "Termina (opcional)",
         "maxBatches": "Máx. lotes",

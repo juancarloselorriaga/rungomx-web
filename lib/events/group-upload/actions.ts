@@ -1127,6 +1127,7 @@ export const sendInvitesForBatch = withAuthenticatedUser<
       batchId: validated.data.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
 
     const edition = await db.query.eventEditions.findFirst({
@@ -1288,6 +1289,7 @@ export const resendInvite = withAuthenticatedUser<ActionResult>({
       batchId: invite.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
   } catch (error) {
     if (error instanceof BatchAccessError) {
@@ -1371,6 +1373,7 @@ export const rotateInviteToken = withAuthenticatedUser<ActionResult>({
       batchId: invite.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
   } catch (error) {
     if (error instanceof BatchAccessError) {
@@ -1467,6 +1470,7 @@ export const updateInviteEmail = withAuthenticatedUser<ActionResult>({
       batchId: invite.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
   } catch (error) {
     if (error instanceof BatchAccessError) {
@@ -1610,6 +1614,7 @@ export const cancelInvite = withAuthenticatedUser<ActionResult>({
       batchId: invite.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
   } catch (error) {
     if (error instanceof BatchAccessError) {
@@ -1676,6 +1681,7 @@ export const cancelBatch = withAuthenticatedUser<ActionResult>({
       batchId: validated.data.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
 
     const edition = await db.query.eventEditions.findFirst({

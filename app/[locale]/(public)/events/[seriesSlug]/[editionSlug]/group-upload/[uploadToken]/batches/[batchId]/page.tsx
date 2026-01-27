@@ -70,6 +70,7 @@ export default async function GroupUploadBatchPage({ params }: GroupUploadBatchP
       batchId,
       uploadToken,
       authContext,
+      requireActiveLink: false,
     });
   } catch (error) {
     if (error instanceof BatchAccessError) {

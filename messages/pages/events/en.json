@@ -289,8 +289,8 @@
     },
     "errors": {
       "dobRequired": "Please enter your date of birth to claim.",
-      "EMAIL_MISMATCH": "This invite was sent to a different email address.",
-      "DOB_MISMATCH": "The date of birth does not match the invite.",
+      "EMAIL_MISMATCH": "This invite was sent to a different email address. Sign in with the invited email to claim it.",
+      "DOB_MISMATCH": "The date of birth doesn't match this invite. Ask the coordinator to resend your invite or contact the organizer.",
       "DOB_REQUIRED": "Date of birth is required to claim this invite.",
       "INVITE_EXPIRED": "This invite has expired.",
       "INVITE_INVALID": "This invite is no longer active.",

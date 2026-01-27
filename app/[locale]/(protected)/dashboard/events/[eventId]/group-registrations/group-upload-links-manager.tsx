@@ -1,6 +1,17 @@
 'use client';
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -118,11 +129,13 @@ export function GroupUploadLinksManager({
   initialLinks,
 }: GroupUploadLinksManagerProps) {
   const t = useTranslations('pages.dashboardEvents.groupRegistrations.uploadLinks');
+  const tCommon = useTranslations('common');
   const locale = useLocale();
   const [links, setLinks] = useState<UploadLinkItem[]>(initialLinks.map(normalizeLink));
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [createdLink, setCreatedLink] = useState<{ token: string; tokenPrefix: string } | null>(null);
+  const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
 
   const refreshLinks = async () => {
     const result = await listUploadLinksForEdition({ editionId });
@@ -174,7 +187,13 @@ export function GroupUploadLinksManager({
   }, [createdLink, editionSlug, locale, seriesSlug]);
 
   const handleRevoke = (linkId: string) => {
-    if (!confirm(t('confirmRevoke'))) return;
+    setRevokeTarget(linkId);
+  };
+
+  const confirmRevoke = () => {
+    if (!revokeTarget) return;
+    const linkId = revokeTarget;
+    setRevokeTarget(null);
 
     startTransition(async () => {
       const result = await revokeUploadLink({ uploadLinkId: linkId });
@@ -224,27 +243,64 @@ export function GroupUploadLinksManager({
             />
           </FormField>
           <FormField label={t('fields.paymentResponsibility')} error={form.errors.paymentResponsibility}>
-            <select
-              {...form.register('paymentResponsibility')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="self_pay">{t('payment.selfPay')}</option>
-              <option value="central_pay">{t('payment.centralPay')}</option>
-            </select>
+            <>
+              <select
+                {...form.register('paymentResponsibility')}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              >
+                <option value="self_pay">{t('payment.selfPay')}</option>
+                <option value="central_pay">{t('payment.centralPay')}</option>
+              </select>
+              <p className="text-xs text-muted-foreground">{t('fields.paymentResponsibilityHelp')}</p>
+            </>
           </FormField>
           <FormField label={t('fields.startsAt')} error={form.errors.startsAt}>
-            <input
-              type="datetime-local"
-              {...form.register('startsAt')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
+            <div className="flex gap-2">
+              <DatePicker
+                locale={locale}
+                value={form.values.startsAt?.split('T')[0] || ''}
+                onChangeAction={(date) => {
+                  const time = form.values.startsAt?.split('T')[1] || '00:00';
+                  form.setFieldValue('startsAt', date ? `${date}T${time}` : '');
+                }}
+                clearLabel={tCommon('clear')}
+                className="flex-1"
+              />
+              <TimeSelect
+                value={form.values.startsAt?.split('T')[1] || ''}
+                onChange={(time) => {
+                  const date = form.values.startsAt?.split('T')[0] || '';
+                  if (date) {
+                    form.setFieldValue('startsAt', `${date}T${time}`);
+                  }
+                }}
+                disabled={!form.values.startsAt?.split('T')[0]}
+              />
+            </div>
           </FormField>
           <FormField label={t('fields.endsAt')} error={form.errors.endsAt}>
-            <input
-              type="datetime-local"
-              {...form.register('endsAt')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
+            <div className="flex gap-2">
+              <DatePicker
+                locale={locale}
+                value={form.values.endsAt?.split('T')[0] || ''}
+                onChangeAction={(date) => {
+                  const time = form.values.endsAt?.split('T')[1] || '00:00';
+                  form.setFieldValue('endsAt', date ? `${date}T${time}` : '');
+                }}
+                clearLabel={tCommon('clear')}
+                className="flex-1"
+              />
+              <TimeSelect
+                value={form.values.endsAt?.split('T')[1] || ''}
+                onChange={(time) => {
+                  const date = form.values.endsAt?.split('T')[0] || '';
+                  if (date) {
+                    form.setFieldValue('endsAt', `${date}T${time}`);
+                  }
+                }}
+                disabled={!form.values.endsAt?.split('T')[0]}
+              />
+            </div>
           </FormField>
           <FormField label={t('fields.maxBatches')} error={form.errors.maxBatches}>
             <input
@@ -313,6 +369,21 @@ export function GroupUploadLinksManager({
         </table>
       </div>
 
+      <AlertDialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('revoke')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('confirmRevoke')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRevoke} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {t('revoke')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -333,7 +404,7 @@ export function GroupUploadLinksManager({
             ) : null}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-end">
             {createdLink?.token ? (
               <Button variant="outline" onClick={() => handleCopy(createdLink.token)}>
                 <Copy className="h-4 w-4 mr-2" />
@@ -349,6 +420,47 @@ export function GroupUploadLinksManager({
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const MINUTES = Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0'));
+
+function TimeSelect({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (time: string) => void;
+  disabled?: boolean;
+}) {
+  const [h, m] = value ? value.split(':') : ['00', '00'];
+
+  return (
+    <div className="flex items-center gap-0.5">
+      <select
+        value={h || '00'}
+        onChange={(e) => onChange(`${e.target.value}:${m || '00'}`)}
+        disabled={disabled}
+        className="w-14 rounded-md border bg-background px-1 py-2 text-sm text-center appearance-none"
+      >
+        {HOURS.map((hour) => (
+          <option key={hour} value={hour}>{hour}</option>
+        ))}
+      </select>
+      <span className="text-sm text-muted-foreground">:</span>
+      <select
+        value={m || '00'}
+        onChange={(e) => onChange(`${h || '00'}:${e.target.value}`)}
+        disabled={disabled}
+        className="w-14 rounded-md border bg-background px-1 py-2 text-sm text-center appearance-none"
+      >
+        {MINUTES.map((min) => (
+          <option key={min} value={min}>{min}</option>
+        ))}
+      </select>
     </div>
   );
 }

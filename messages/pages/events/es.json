@@ -289,8 +289,8 @@
     },
     "errors": {
       "dobRequired": "Ingresa tu fecha de nacimiento para reclamar.",
-      "EMAIL_MISMATCH": "Esta invitación fue enviada a otro correo.",
-      "DOB_MISMATCH": "La fecha de nacimiento no coincide con la invitación.",
+      "EMAIL_MISMATCH": "Esta invitación fue enviada a otro correo. Inicia sesión con el correo invitado para reclamarla.",
+      "DOB_MISMATCH": "La fecha de nacimiento no coincide con la invitación. Pide al coordinador que reenvíe tu invitación o contacta al organizador.",
       "DOB_REQUIRED": "La fecha de nacimiento es obligatoria para reclamar.",
       "INVITE_EXPIRED": "Esta invitación ha expirado.",
       "INVITE_INVALID": "Esta invitación ya no está activa.",

@@ -27,9 +27,19 @@ export async function getBatchForCoordinatorOrThrow(params: {
   uploadToken: string;
   authContext: AuthContext;
   now?: Date;
+  requireActiveLink?: boolean;
 }) : Promise<BatchAccessResult> {
   const linkResult = await getUploadLinkByToken({ token: params.uploadToken, now: params.now });
-  if (!linkResult.link || linkResult.status !== 'ACTIVE') {
+  const requireActiveLink = params.requireActiveLink ?? true;
+  if (!linkResult.link) {
+    throw new BatchAccessError('LINK_INVALID', 'Upload link is not active');
+  }
+
+  if (requireActiveLink && linkResult.status !== 'ACTIVE') {
+    throw new BatchAccessError('LINK_INVALID', 'Upload link is not active');
+  }
+
+  if (!requireActiveLink && !['ACTIVE', 'EXPIRED', 'MAXED_OUT'].includes(linkResult.status)) {
     throw new BatchAccessError('LINK_INVALID', 'Upload link is not active');
   }
 

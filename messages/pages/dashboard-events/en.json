@@ -592,6 +592,7 @@
         "name": "Label (optional)",
         "namePlaceholder": "Spring team upload",
         "paymentResponsibility": "Payment responsibility",
+        "paymentResponsibilityHelp": "Payments aren’t collected in-app yet; this controls confirmation behavior and future payment flow.",
         "startsAt": "Starts at (optional)",
         "endsAt": "Ends at (optional)",
         "maxBatches": "Max batches",
