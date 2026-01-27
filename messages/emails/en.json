@@ -76,5 +76,14 @@
     "qrAlt": "Ticket QR code",
     "reminder": "Keep this email handy for check-in.",
     "footer": "© {year} RungoMX. All rights reserved."
+  },
+  "registrationInvite": {
+    "subject": "You have a reserved spot — {eventName}",
+    "title": "You're invited",
+    "greeting": "Hi {userName},",
+    "message": "A spot has been reserved for you in {eventName}. Claim your invite to complete registration.",
+    "expiresLabel": "Reservation expires",
+    "ctaLabel": "Claim my spot",
+    "footer": "© {year} RungoMX. All rights reserved."
   }
 }

@@ -1,5 +1,7 @@
 import {
+  AnyPgColumn,
   boolean,
+  check,
   date,
   decimal,
   foreignKey,
@@ -21,6 +23,10 @@ import { sql } from 'drizzle-orm';
 // =============================================================================
 
 export const organizationRoleEnum = pgEnum('organization_role', ['owner', 'admin', 'editor', 'viewer']);
+export const paymentResponsibilityEnum = pgEnum('payment_responsibility', [
+  'self_pay',
+  'central_pay',
+]);
 
 // =============================================================================
 // USER & AUTH TABLES
@@ -279,6 +285,7 @@ export const eventSeries = pgTable(
     name: varchar('name', { length: 255 }).notNull(),
     sportType: varchar('sport_type', { length: 50 }).notNull(), // from SPORT_TYPES constant
     status: varchar('status', { length: 20 }).notNull().default('active'), // 'active' | 'archived'
+    primaryLocale: varchar('primary_locale', { length: 10 }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -311,6 +318,7 @@ export const eventEditions = pgTable(
     registrationClosesAt: timestamp('registration_closes_at', { withTimezone: true, mode: 'date' }),
     isRegistrationPaused: boolean('is_registration_paused').notNull().default(false),
     sharedCapacity: integer('shared_capacity'),
+    primaryLocale: varchar('primary_locale', { length: 10 }),
     locationDisplay: varchar('location_display', { length: 255 }),
     address: varchar('address', { length: 500 }),
     city: varchar('city', { length: 100 }),
@@ -400,8 +408,10 @@ export const registrations = pgTable(
       .notNull()
       .references(() => eventDistances.id, { onDelete: 'cascade' }),
     buyerUserId: uuid('buyer_user_id')
-      .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    paymentResponsibility: paymentResponsibilityEnum('payment_responsibility')
+      .notNull()
+      .default('self_pay'),
     status: varchar('status', { length: 20 }).notNull().default('started'), // 'started' | 'submitted' | 'payment_pending' | 'confirmed' | 'cancelled'
     basePriceCents: integer('base_price_cents'),
     feesCents: integer('fees_cents'),
@@ -568,6 +578,47 @@ export const eventSlugRedirects = pgTable(
   }),
 );
 
+export const groupUploadLinks = pgTable(
+  'group_upload_links',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull(),
+    tokenPrefix: varchar('token_prefix', { length: 12 }).notNull(),
+    name: varchar('name', { length: 255 }),
+    paymentResponsibility: paymentResponsibilityEnum('payment_responsibility')
+      .notNull()
+      .default('self_pay'),
+    startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }),
+    endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }),
+    isActive: boolean('is_active').notNull().default(true),
+    maxBatches: integer('max_batches'),
+    maxInvites: integer('max_invites'),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true, mode: 'date' }),
+    revokedByUserId: uuid('revoked_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('group_upload_links_token_hash_idx').on(table.tokenHash),
+    index('group_upload_links_edition_created_at_idx').on(table.editionId, table.createdAt),
+    check(
+      'group_upload_links_starts_ends_check',
+      sql`${table.startsAt} is null or ${table.endsAt} is null or ${table.startsAt} <= ${table.endsAt}`,
+    ),
+  ],
+);
+
 export const groupRegistrationBatchStatusEnum = pgEnum('group_registration_batch_status', [
   'uploaded',
   'validated',
@@ -585,6 +636,15 @@ export const groupRegistrationBatches = pgTable(
     createdByUserId: uuid('created_by_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
+    uploadLinkId: uuid('upload_link_id').references(() => groupUploadLinks.id, {
+      onDelete: 'set null',
+    }),
+    paymentResponsibility: paymentResponsibilityEnum('payment_responsibility')
+      .notNull()
+      .default('self_pay'),
+    distanceId: uuid('distance_id').references(() => eventDistances.id, {
+      onDelete: 'set null',
+    }),
     status: groupRegistrationBatchStatusEnum('status').notNull().default('uploaded'),
     sourceFileMediaId: uuid('source_file_media_id').references(() => media.id, {
       onDelete: 'set null',
@@ -597,7 +657,19 @@ export const groupRegistrationBatches = pgTable(
       table.editionId,
       table.createdAt,
     ),
+    uploadLinkCreatedAtIdx: index('group_registration_batches_upload_link_created_at_idx').on(
+      table.uploadLinkId,
+      table.createdAt,
+    ),
+    distanceCreatedAtIdx: index('group_registration_batches_distance_created_at_idx').on(
+      table.distanceId,
+      table.createdAt,
+    ),
     statusIdx: index('group_registration_batches_status_idx').on(table.status),
+    uploadLinkDistanceCheck: check(
+      'group_registration_batches_upload_link_distance_check',
+      sql`${table.uploadLinkId} is null or ${table.distanceId} is not null`,
+    ),
   }),
 );
 
@@ -627,6 +699,77 @@ export const groupRegistrationBatchRows = pgTable(
     createdRegistrationIdx: index('group_registration_batch_rows_created_registration_idx').on(
       table.createdRegistrationId,
     ),
+  }),
+);
+
+export const registrationInviteStatusEnum = pgEnum('registration_invite_status', [
+  'draft',
+  'sent',
+  'claimed',
+  'cancelled',
+  'expired',
+  'superseded',
+]);
+
+export const registrationInvites = pgTable(
+  'registration_invites',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    uploadLinkId: uuid('upload_link_id')
+      .notNull()
+      .references(() => groupUploadLinks.id, { onDelete: 'cascade' }),
+    batchId: uuid('batch_id')
+      .notNull()
+      .references(() => groupRegistrationBatches.id, { onDelete: 'cascade' }),
+    batchRowId: uuid('batch_row_id')
+      .notNull()
+      .references(() => groupRegistrationBatchRows.id, { onDelete: 'cascade' }),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    supersedesInviteId: uuid('supersedes_invite_id').references((): AnyPgColumn => registrationInvites.id, {
+      onDelete: 'set null',
+    }),
+    isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    email: varchar('email', { length: 255 }).notNull(),
+    emailNormalized: varchar('email_normalized', { length: 255 }).notNull(),
+    dateOfBirth: date('date_of_birth', { mode: 'date' }).notNull(),
+    inviteLocale: varchar('invite_locale', { length: 10 }).notNull(),
+    tokenHash: text('token_hash').notNull(),
+    tokenPrefix: varchar('token_prefix', { length: 12 }).notNull(),
+    status: registrationInviteStatusEnum('status').notNull().default('draft'),
+    expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }).notNull(),
+    sendCount: integer('send_count').notNull().default(0),
+    lastSentAt: timestamp('last_sent_at', { withTimezone: true, mode: 'date' }),
+    claimedAt: timestamp('claimed_at', { withTimezone: true, mode: 'date' }),
+    claimedByUserId: uuid('claimed_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    tokenHashUnique: uniqueIndex('registration_invites_token_hash_idx').on(table.tokenHash),
+    batchRowCurrentUnique: uniqueIndex('registration_invites_batch_row_current_idx')
+      .on(table.batchRowId)
+      .where(sql`${table.isCurrent} = true`),
+    registrationCurrentUnique: uniqueIndex('registration_invites_registration_current_idx')
+      .on(table.registrationId)
+      .where(sql`${table.isCurrent} = true`),
+    editionEmailCurrentUnique: uniqueIndex('registration_invites_edition_email_current_idx')
+      .on(table.editionId, table.emailNormalized)
+      .where(
+        sql`${table.isCurrent} = true and ${table.status} in ('draft', 'sent')`,
+      ),
   }),
 );
 

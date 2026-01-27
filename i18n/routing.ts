@@ -145,6 +145,22 @@ export const routing = defineRouting({
       es: '/eventos/[seriesSlug]/[editionSlug]/inscripcion',
       en: '/events/[seriesSlug]/[editionSlug]/register',
     },
+    '/events/[seriesSlug]/[editionSlug]/register/complete/[registrationId]': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/inscripcion/completar/[registrationId]',
+      en: '/events/[seriesSlug]/[editionSlug]/register/complete/[registrationId]',
+    },
+    '/events/[seriesSlug]/[editionSlug]/claim/[inviteToken]': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/reclamar/[inviteToken]',
+      en: '/events/[seriesSlug]/[editionSlug]/claim/[inviteToken]',
+    },
+    '/events/[seriesSlug]/[editionSlug]/group-upload/[uploadToken]': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/carga-grupal/[uploadToken]',
+      en: '/events/[seriesSlug]/[editionSlug]/group-upload/[uploadToken]',
+    },
+    '/events/[seriesSlug]/[editionSlug]/group-upload/[uploadToken]/batches/[batchId]': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/carga-grupal/[uploadToken]/lotes/[batchId]',
+      en: '/events/[seriesSlug]/[editionSlug]/group-upload/[uploadToken]/batches/[batchId]',
+    },
     '/settings': {
       es: '/configuracion',
       en: '/settings',

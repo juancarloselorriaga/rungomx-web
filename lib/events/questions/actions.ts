@@ -11,7 +11,6 @@ import {
   eventEditions,
   registrationAnswers,
   registrationQuestions,
-  registrations,
 } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
@@ -22,6 +21,8 @@ import {
 } from '@/lib/organizations/permissions';
 import { eventEditionQuestionsTag, eventEditionRegistrationsTag } from '../cache-tags';
 import { REGISTRATION_QUESTION_TYPES } from '../constants';
+import { findMissingRequiredQuestion, getApplicableRegistrationQuestions } from './required';
+import { RegistrationOwnershipError, getRegistrationForOwnerOrThrow } from '../registrations/ownership';
 
 // =============================================================================
 // Types
@@ -473,51 +474,47 @@ export const submitAnswers = withAuthenticatedUser<ActionResult>({
 
   const { registrationId, answers } = validated.data;
 
-  // Find the registration
-  const registration = await db.query.registrations.findFirst({
-    where: and(eq(registrations.id, registrationId), isNull(registrations.deletedAt)),
-    with: { edition: { with: { series: true } } },
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
+  }
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, registration.editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
   });
 
-  if (!registration) {
+  if (!edition?.series) {
     return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
-  // Verify ownership
-  if (registration.buyerUserId !== authContext.user.id) {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
-  }
-
-  // Validate required questions have answers
-  const questions = await db.query.registrationQuestions.findMany({
-    where: and(
-      eq(registrationQuestions.editionId, registration.editionId),
-      isNull(registrationQuestions.deletedAt),
-      eq(registrationQuestions.isActive, true),
-    ),
+  const applicableQuestions = await getApplicableRegistrationQuestions({
+    editionId: registration.editionId,
+    distanceId: registration.distanceId,
   });
-
-  // Filter questions applicable to this registration's distance
-  const applicableQuestions = questions.filter(
-    (q) => q.distanceId === null || q.distanceId === registration.distanceId,
-  );
-
-  const requiredQuestionIds = new Set(
-    applicableQuestions.filter((q) => q.isRequired).map((q) => q.id),
-  );
 
   const answerMap = new Map(answers.map((a) => [a.questionId, a.value]));
 
-  for (const requiredId of requiredQuestionIds) {
-    const answer = answerMap.get(requiredId);
-    if (answer === null || answer === undefined || answer.trim() === '') {
-      const question = applicableQuestions.find((q) => q.id === requiredId);
-      return {
-        ok: false,
-        error: `Please answer the required question: ${question?.prompt}`,
-        code: 'MISSING_REQUIRED_ANSWER',
-      };
-    }
+  const missingQuestion = findMissingRequiredQuestion(applicableQuestions, answerMap);
+
+  if (missingQuestion) {
+    return {
+      ok: false,
+      error: `Please answer the required question: ${missingQuestion.prompt}`,
+      code: 'MISSING_REQUIRED_ANSWER',
+    };
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -556,7 +553,7 @@ export const submitAnswers = withAuthenticatedUser<ActionResult>({
 
     await createAuditLog(
       {
-        organizationId: registration.edition.series.organizationId,
+        organizationId: edition.series.organizationId,
         actorUserId: authContext.user.id,
         action: 'registration_answers.submit',
         entityType: 'registration',

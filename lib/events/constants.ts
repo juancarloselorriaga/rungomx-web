@@ -35,6 +35,9 @@ export const REGISTRATION_STATUS = [
 ] as const;
 export type RegistrationStatus = (typeof REGISTRATION_STATUS)[number];
 
+export const PAYMENT_RESPONSIBILITIES = ['self_pay', 'central_pay'] as const;
+export type PaymentResponsibility = (typeof PAYMENT_RESPONSIBILITIES)[number];
+
 // Organization membership roles (ordered by privilege level)
 export const ORG_MEMBERSHIP_ROLES = ['owner', 'admin', 'editor', 'viewer'] as const;
 export type OrgMembershipRole = (typeof ORG_MEMBERSHIP_ROLES)[number];

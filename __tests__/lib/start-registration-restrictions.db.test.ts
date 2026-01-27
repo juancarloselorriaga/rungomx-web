@@ -13,6 +13,10 @@ import { createTestUser } from '@/tests/helpers/fixtures';
 import { eq } from 'drizzle-orm';
 
 async function cleanupEvents(db: ReturnType<typeof getTestDb>) {
+  await db.delete(schema.registrationInvites);
+  await db.delete(schema.groupRegistrationBatchRows);
+  await db.delete(schema.groupRegistrationBatches);
+  await db.delete(schema.groupUploadLinks);
   await db.delete(schema.waiverAcceptances);
   await db.delete(schema.registrants);
   await db.delete(schema.registrations);
@@ -185,6 +189,77 @@ describe('startRegistration policy - Database Integration', () => {
 
     await expect(startRegistrationForUser(user.id, distanceAId, { now })).rejects.toEqual(
       expect.objectContaining({ code: 'SOLD_OUT' }),
+    );
+  });
+
+  it('blocks registration when an active invite exists for the email', async () => {
+    const { editionId, distanceAId } = await seedEventWithTwoDistances();
+    const user = await createTestUser(db, { email: `user-${Date.now()}@example.com` });
+
+    const [uploadLink] = await db
+      .insert(schema.groupUploadLinks)
+      .values({
+        editionId,
+        tokenHash: `hash-${Date.now()}`,
+        tokenPrefix: 'prefix',
+        paymentResponsibility: 'self_pay',
+        createdByUserId: user.id,
+      })
+      .returning({ id: schema.groupUploadLinks.id });
+
+    const [batch] = await db
+      .insert(schema.groupRegistrationBatches)
+      .values({
+        editionId,
+        uploadLinkId: uploadLink.id,
+        paymentResponsibility: 'self_pay',
+        distanceId: distanceAId,
+        createdByUserId: user.id,
+        status: 'validated',
+      })
+      .returning({ id: schema.groupRegistrationBatches.id });
+
+    const [row] = await db
+      .insert(schema.groupRegistrationBatchRows)
+      .values({
+        batchId: batch.id,
+        rowIndex: 1,
+        rawJson: { email: user.email, emailNormalized: user.email.toLowerCase(), dateOfBirth: '1990-01-01' },
+        validationErrorsJson: [],
+      })
+      .returning({ id: schema.groupRegistrationBatchRows.id });
+
+    const [registration] = await db
+      .insert(schema.registrations)
+      .values({
+        editionId,
+        distanceId: distanceAId,
+        buyerUserId: null,
+        status: 'started',
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        paymentResponsibility: 'self_pay',
+      })
+      .returning({ id: schema.registrations.id });
+
+    await db.insert(schema.registrationInvites).values({
+      editionId,
+      uploadLinkId: uploadLink.id,
+      batchId: batch.id,
+      batchRowId: row.id,
+      registrationId: registration.id,
+      createdByUserId: user.id,
+      email: user.email,
+      emailNormalized: user.email.toLowerCase(),
+      dateOfBirth: new Date('1990-01-01T00:00:00.000Z'),
+      inviteLocale: 'en',
+      tokenHash: `invite-hash-${Date.now()}`,
+      tokenPrefix: 'invite',
+      status: 'sent',
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000),
+    });
+
+    await expect(startRegistrationForUser(user.id, distanceAId)).rejects.toEqual(
+      expect.objectContaining({ code: 'HAS_ACTIVE_INVITE' }),
     );
   });
 });

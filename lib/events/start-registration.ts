@@ -1,8 +1,11 @@
 import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { eventDistances, eventEditions, pricingTiers, registrations } from '@/db/schema';
+import { eventDistances, eventEditions, pricingTiers, registrations, users } from '@/db/schema';
+import { normalizeEmail } from '@/lib/events/shared/identity';
+import { getCurrentInviteForEmail } from '@/lib/events/invite-claim/queries';
 import { computeExpiresAt } from '@/lib/events/registration-holds';
+import { reserveHold, ReserveHoldError } from '@/lib/events/registrations/reserve-hold';
 
 export type StartRegistrationResult = {
   id: string;
@@ -22,7 +25,8 @@ export type StartRegistrationErrorCode =
   | 'REGISTRATION_NOT_OPEN'
   | 'REGISTRATION_CLOSED'
   | 'SOLD_OUT'
-  | 'ALREADY_REGISTERED';
+  | 'ALREADY_REGISTERED'
+  | 'HAS_ACTIVE_INVITE';
 
 export class StartRegistrationError extends Error {
   public readonly code: StartRegistrationErrorCode;
@@ -35,6 +39,7 @@ export class StartRegistrationError extends Error {
 
 type StartRegistrationDeps = {
   now?: Date;
+  emailNormalized?: string | null;
 };
 
 /**
@@ -88,15 +93,26 @@ export async function startRegistrationForUser(
   const priceCents = activeTier?.priceCents ?? 0;
   const feesCents = Math.round(priceCents * 0.05);
   const totalCents = priceCents + feesCents;
+  let emailNormalized = deps.emailNormalized ?? null;
+
+  if (!emailNormalized) {
+    const user = await db.query.users.findFirst({
+      where: and(eq(users.id, userId), isNull(users.deletedAt)),
+      columns: { email: true },
+    });
+    if (!user?.email) {
+      throw new StartRegistrationError('NOT_FOUND', 'User not found');
+    }
+    emailNormalized = normalizeEmail(user.email);
+  } else {
+    emailNormalized = normalizeEmail(emailNormalized);
+  }
 
   try {
     const registration = await db.transaction(async (tx) => {
       // Serialize across the whole edition to enforce "one registration per edition"
       // even when attempting different distances concurrently.
       await tx.execute(sql`SELECT id FROM ${eventEditions} WHERE id = ${edition.id} FOR UPDATE`);
-
-      // Lock the distance row to serialize capacity checks per distance.
-      await tx.execute(sql`SELECT id FROM ${eventDistances} WHERE id = ${distanceId} FOR UPDATE`);
 
       const existingRegistrationInEdition = await tx.query.registrations.findFirst({
         where: and(
@@ -132,69 +148,46 @@ export async function startRegistrationForUser(
         );
       }
 
-      // Capacity checks (shared pool or per distance)
-      if (distance.capacityScope === 'shared_pool' && distance.edition.sharedCapacity) {
-        const reservedCount = await tx.query.registrations.findMany({
-          where: and(
-            eq(registrations.editionId, edition.id),
-            or(
-              eq(registrations.status, 'confirmed'),
-              and(
-                or(
-                  eq(registrations.status, 'started'),
-                  eq(registrations.status, 'submitted'),
-                  eq(registrations.status, 'payment_pending'),
-                ),
-                gt(registrations.expiresAt, now),
-              ),
-            ),
-            isNull(registrations.deletedAt),
-          ),
-        });
+      const activeInvite = await getCurrentInviteForEmail({
+        editionId: edition.id,
+        emailNormalized,
+        now,
+        tx,
+      });
 
-        if (reservedCount.length >= distance.edition.sharedCapacity) {
-          throw new StartRegistrationError('SOLD_OUT', 'Distance is sold out');
-        }
-      } else if (distance.capacity) {
-        const reservedCount = await tx.query.registrations.findMany({
-          where: and(
-            eq(registrations.distanceId, distanceId),
-            or(
-              eq(registrations.status, 'confirmed'),
-              and(
-                or(
-                  eq(registrations.status, 'started'),
-                  eq(registrations.status, 'submitted'),
-                  eq(registrations.status, 'payment_pending'),
-                ),
-                gt(registrations.expiresAt, now),
-              ),
-            ),
-            isNull(registrations.deletedAt),
-          ),
-        });
-
-        if (reservedCount.length >= distance.capacity) {
-          throw new StartRegistrationError('SOLD_OUT', 'Distance is sold out');
-        }
+      if (activeInvite) {
+        throw new StartRegistrationError(
+          'HAS_ACTIVE_INVITE',
+          'You already have a reserved spot via an invite',
+        );
       }
 
-      const [newReg] = await tx
-        .insert(registrations)
-        .values({
+      try {
+        return await reserveHold({
+          tx,
           editionId: edition.id,
           distanceId,
+          capacityScope: distance.capacityScope as 'shared_pool' | 'per_distance',
+          editionSharedCapacity: edition.sharedCapacity ?? null,
+          distanceCapacity: distance.capacity ?? null,
           buyerUserId: userId,
           status: 'started',
-          basePriceCents: priceCents,
-          feesCents,
-          taxCents: 0,
-          totalCents,
           expiresAt: computeExpiresAt(now, 'started'),
-        })
-        .returning();
-
-      return newReg;
+          paymentResponsibility: 'self_pay',
+          pricing: {
+            basePriceCents: priceCents,
+            feesCents,
+            taxCents: 0,
+            totalCents,
+          },
+          now,
+        });
+      } catch (error) {
+        if (error instanceof ReserveHoldError) {
+          throw new StartRegistrationError('SOLD_OUT', error.message);
+        }
+        throw error;
+      }
     });
 
     return {

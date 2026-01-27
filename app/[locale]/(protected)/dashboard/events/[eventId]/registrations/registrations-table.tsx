@@ -278,10 +278,14 @@ export function RegistrationsTable({
                 >
                   <td className="px-4 py-4 sm:px-6">
                     <div>
-                      <p className="font-medium">{registration.buyer.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {registration.buyer.email}
+                      <p className="font-medium">
+                        {registration.buyer.id ? registration.buyer.name : t('table.unclaimed')}
                       </p>
+                      {registration.buyer.id && registration.buyer.email ? (
+                        <p className="text-sm text-muted-foreground">
+                          {registration.buyer.email}
+                        </p>
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-4 py-4 sm:px-6">

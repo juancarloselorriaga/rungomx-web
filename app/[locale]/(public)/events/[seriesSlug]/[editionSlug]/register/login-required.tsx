@@ -8,6 +8,8 @@ type LoginRequiredProps = {
   seriesSlug: string;
   editionSlug: string;
   eventName: string;
+  /** Override the default callback path (e.g. to return to a specific registration page) */
+  callbackPathOverride?: string;
 };
 
 export async function LoginRequired({
@@ -15,6 +17,7 @@ export async function LoginRequired({
   seriesSlug,
   editionSlug,
   eventName,
+  callbackPathOverride,
 }: LoginRequiredProps) {
   const t = await getTranslations({
     locale: locale as 'es' | 'en',
@@ -23,7 +26,7 @@ export async function LoginRequired({
 
   // Create callback URL for redirect after login
   // Build the localized path for the register page
-  const registerPath = getPathname({
+  const registerPath = callbackPathOverride ?? getPathname({
     href: {
       pathname: '/events/[seriesSlug]/[editionSlug]/register',
       params: { seriesSlug, editionSlug },

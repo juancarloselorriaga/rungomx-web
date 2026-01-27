@@ -10,6 +10,7 @@ import {
   eventDistances,
   eventEditions,
   registrants,
+  registrationAnswers,
   registrations,
   waiverAcceptances,
   waivers,
@@ -24,6 +25,8 @@ import {
 import { SIGNATURE_TYPES } from '@/lib/events/constants';
 import { sendRegistrationCompletionEmail } from '@/lib/events/registration-email';
 import { computeExpiresAt, isExpiredHold } from '@/lib/events/registration-holds';
+import { RegistrationOwnershipError, getRegistrationForOwnerOrThrow } from '@/lib/events/registrations/ownership';
+import { findMissingRequiredQuestion, getApplicableRegistrationQuestions } from '@/lib/events/questions/required';
 import {
   StartRegistrationError,
   startRegistrationForUser,
@@ -115,7 +118,9 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
 
   const { distanceId } = validated.data;
   try {
-    const registration = await startRegistrationForUser(authContext.user.id, distanceId);
+    const registration = await startRegistrationForUser(authContext.user.id, distanceId, {
+      emailNormalized: authContext.user.email ?? null,
+    });
 
     revalidateTag(eventEditionDetailTag(registration.editionId), { expire: 0 });
     revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
@@ -156,16 +161,21 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
 
   const { registrationId, profileSnapshot, division, genderIdentity } = validated.data;
 
-  const registration = await db.query.registrations.findFirst({
-    where: and(
-      eq(registrations.id, registrationId),
-      eq(registrations.buyerUserId, authContext.user.id),
-      isNull(registrations.deletedAt),
-    ),
-  });
-
-  if (!registration) {
-    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
   }
 
   const now = new Date();
@@ -267,16 +277,21 @@ export const acceptWaiver = withAuthenticatedUser<ActionResult>({
 
   const { registrationId, waiverId, signatureType, signatureValue } = validated.data;
 
-  const registration = await db.query.registrations.findFirst({
-    where: and(
-      eq(registrations.id, registrationId),
-      eq(registrations.buyerUserId, authContext.user.id),
-      isNull(registrations.deletedAt),
-    ),
-  });
-
-  if (!registration) {
-    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
   }
 
   const now = new Date();
@@ -351,16 +366,21 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
 
   const { registrationId } = validated.data;
 
-  const registration = await db.query.registrations.findFirst({
-    where: and(
-      eq(registrations.id, registrationId),
-      eq(registrations.buyerUserId, authContext.user.id),
-      isNull(registrations.deletedAt),
-    ),
-  });
-
-  if (!registration) {
-    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
   }
 
   const now = new Date();
@@ -388,7 +408,7 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
     };
   }
 
-  const [registrationRegistrants, registrationWaivers, editionWaivers] = await Promise.all([
+  const [registrationRegistrants, registrationWaivers, editionWaivers, registrationAnswersList] = await Promise.all([
     db.query.registrants.findMany({
       where: eq(registrants.registrationId, registrationId),
     }),
@@ -400,6 +420,9 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         eq(waivers.editionId, registration.editionId),
         isNull(waivers.deletedAt),
       ),
+    }),
+    db.query.registrationAnswers.findMany({
+      where: eq(registrationAnswers.registrationId, registrationId),
     }),
   ]);
 
@@ -423,6 +446,24 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
 
   if (missingWaivers.length > 0) {
     return { ok: false, error: 'All waivers must be accepted', code: 'MISSING_WAIVER' };
+  }
+
+  const applicableQuestions = await getApplicableRegistrationQuestions({
+    editionId: registration.editionId,
+    distanceId: registration.distanceId,
+  });
+
+  const answerMap = new Map(
+    registrationAnswersList.map((answer) => [answer.questionId, answer.value]),
+  );
+  const missingQuestion = findMissingRequiredQuestion(applicableQuestions, answerMap);
+
+  if (missingQuestion) {
+    return {
+      ok: false,
+      error: `Please answer the required question: ${missingQuestion.prompt}`,
+      code: 'MISSING_REQUIRED_ANSWER',
+    };
   }
 
   // Re-validate event state and capacity before confirming
@@ -515,7 +556,10 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         }
       }
 
-      const nextStatus = isEventsNoPaymentMode() ? 'confirmed' : 'payment_pending';
+      const nextStatus =
+        isEventsNoPaymentMode() || registration.paymentResponsibility === 'central_pay'
+          ? 'confirmed'
+          : 'payment_pending';
       const nextExpiresAt =
         nextStatus === 'confirmed' ? null : computeExpiresAt(now, 'payment_pending');
 

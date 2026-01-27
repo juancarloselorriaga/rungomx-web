@@ -76,5 +76,14 @@
     "qrAlt": "Código QR del boleto",
     "reminder": "Conserva este correo para el check-in.",
     "footer": "© {year} RungoMX. Todos los derechos reservados."
+  },
+  "registrationInvite": {
+    "subject": "Tienes un cupo reservado — {eventName}",
+    "title": "Estás invitado",
+    "greeting": "Hola {userName},",
+    "message": "Se reservó un lugar para ti en {eventName}. Reclama tu invitación para completar la inscripción.",
+    "expiresLabel": "La reserva vence",
+    "ctaLabel": "Reclamar mi lugar",
+    "footer": "© {year} RungoMX. Todos los derechos reservados."
   }
 }

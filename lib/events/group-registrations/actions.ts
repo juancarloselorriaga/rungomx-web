@@ -30,6 +30,7 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { computeExpiresAt } from '@/lib/events/registration-holds';
 import { eventEditionDetailTag, eventEditionRegistrationsTag, publicEventBySlugTag } from '@/lib/events/cache-tags';
 import { safeRevalidateTag } from '@/lib/next-cache';
+import { normalizeEmail, parseIsoDate } from '@/lib/events/shared/identity';
 
 import {
   GROUP_REGISTRATION_TEMPLATE_EXAMPLE_ROW,
@@ -98,18 +99,6 @@ async function getOrCreateSystemBuyerUserId(tx: DbLike): Promise<string> {
     .returning({ id: users.id });
 
   return created.id;
-}
-
-function normalizeEmail(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-function parseIsoDate(value: string): string | null {
-  const trimmed = value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return null;
-  const date = new Date(`${trimmed}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) return null;
-  return trimmed;
 }
 
 const groupTemplateDownloadSchema = z.object({

@@ -30,6 +30,31 @@ const DEFAULT_PERMISSIONS: PermissionSet = {
   canViewAthleteDashboard: false,
 };
 
+const PUBLIC_INVITE_PATH_PATTERNS = [
+  /^\/events\/[^/]+\/[^/]+\/group-upload(\/|$)/,
+  /^\/events\/[^/]+\/[^/]+\/claim\/[^/]+/,
+  /^\/events\/[^/]+\/[^/]+\/register\/complete\/[^/]+/,
+];
+
+function stripLocalePrefix(pathname: string): string {
+  const sanitized = pathname.split('?')[0]?.split('#')[0] ?? '';
+  const segments = sanitized.split('/').filter(Boolean);
+
+  if (segments.length) {
+    const first = segments[0];
+    if (routing.locales.includes(first as (typeof routing.locales)[number])) {
+      segments.shift();
+    }
+  }
+
+  return `/${segments.join('/')}`;
+}
+
+function isPublicInvitePath(pathname: string): boolean {
+  const normalized = stripLocalePrefix(pathname);
+  return PUBLIC_INVITE_PATH_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 function toLocalizedPath(pathname: string, locale: string) {
   const mapping = (
     routing.pathnames as Record<string, string | Record<string, string> | undefined>
@@ -47,6 +72,7 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
   const t = useTranslations('components.profile');
   const [isSubmitting, startTransition] = useTransition();
   const user = data?.user ?? null;
+  const isPublicInviteRoute = isPublicInvitePath(pathname);
   const permissions: PermissionSet = (data?.permissions ??
     (user as { permissions?: PermissionSet } | null)?.permissions ??
     DEFAULT_PERMISSIONS) as PermissionSet;
@@ -107,12 +133,13 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
   useEffect(() => {
     if (!isInternal) return;
     if (!permissions.canAccessAdminArea) return;
+    if (isPublicInviteRoute) return;
 
     const adminPath = toLocalizedPath('/admin', locale);
     if (!pathname.startsWith(adminPath)) {
       router.replace({ pathname: '/admin' }, { locale });
     }
-  }, [isInternal, permissions.canAccessAdminArea, pathname, router, locale]);
+  }, [isInternal, permissions.canAccessAdminArea, isPublicInviteRoute, pathname, router, locale]);
 
   const toggleRole = (role: CanonicalRole) => {
     setSelectedRoles((prev) =>
@@ -163,7 +190,7 @@ export default function RoleEnforcementBoundary({ children }: { children: ReactN
     });
   };
 
-  const shouldEnforce = !isInternal && needsRoleAssignment;
+  const shouldEnforce = !isPublicInviteRoute && !isInternal && needsRoleAssignment;
 
   return (
     <>

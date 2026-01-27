@@ -74,6 +74,15 @@ type RegistrationFlowProps = {
   showOrganizerSelfRegistrationWarning?: boolean;
   preSelectedDistanceId?: string;
   existingRegistration?: ActiveRegistrationInfo | null;
+  activeInviteExists?: boolean;
+  resumeRegistrationId?: string;
+  resumeDistanceId?: string;
+  resumePricing?: {
+    basePriceCents: number | null;
+    feesCents: number | null;
+    taxCents: number | null;
+    totalCents: number | null;
+  } | null;
 };
 
 export function RegistrationFlow({
@@ -88,6 +97,10 @@ export function RegistrationFlow({
   showOrganizerSelfRegistrationWarning,
   preSelectedDistanceId,
   existingRegistration,
+  activeInviteExists,
+  resumeRegistrationId,
+  resumeDistanceId,
+  resumePricing,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
@@ -103,8 +116,8 @@ export function RegistrationFlow({
   const [isPending, startTransition] = useTransition();
 
   // Flow state
-  const [step, setStep] = useState<Step>('distance');
-  const [registrationId, setRegistrationId] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>(resumeRegistrationId ? 'info' : 'distance');
+  const [registrationId, setRegistrationId] = useState<string | null>(resumeRegistrationId ?? null);
   const [distanceError, setDistanceError] = useState<string | null>(null);
   const [showAlreadyRegisteredCta, setShowAlreadyRegisteredCta] = useState(false);
   const [registrationPricing, setRegistrationPricing] = useState<{
@@ -112,7 +125,7 @@ export function RegistrationFlow({
     feesCents: number | null;
     taxCents: number | null;
     totalCents: number | null;
-  } | null>(null);
+  } | null>(resumePricing ?? null);
   const [policiesAcknowledged, setPoliciesAcknowledged] = useState(false);
 
   // Validate that preSelectedDistanceId exists in event.distances and is not sold out
@@ -127,7 +140,9 @@ export function RegistrationFlow({
       : null;
 
   // Distance selection
-  const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(validPreSelectedId);
+  const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(
+    resumeDistanceId ?? validPreSelectedId,
+  );
   const selectedDistance = event.distances.find((d) => d.id === selectedDistanceId);
 
   const activeQuestions = useMemo(() => {
@@ -171,7 +186,7 @@ export function RegistrationFlow({
   }, [event.policyConfig]);
 
   const steps = useMemo(() => {
-    const nextSteps: Step[] = ['distance', 'info'];
+    const nextSteps: Step[] = resumeRegistrationId ? ['info'] : ['distance', 'info'];
     if (activeQuestions.length > 0) {
       nextSteps.push('questions');
     }
@@ -186,7 +201,7 @@ export function RegistrationFlow({
     }
     nextSteps.push('payment', 'confirmation');
     return nextSteps;
-  }, [activeAddOns.length, activeQuestions.length, event.waivers.length, hasPoliciesStep]);
+  }, [activeAddOns.length, activeQuestions.length, event.waivers.length, hasPoliciesStep, resumeRegistrationId]);
 
   const progressSteps = steps.filter((s) => s !== 'confirmation');
 
@@ -461,6 +476,11 @@ export function RegistrationFlow({
     setDistanceError(null);
     setShowAlreadyRegisteredCta(false);
 
+    if (activeInviteExists) {
+      setDistanceError(t('errors.activeInvite'));
+      return;
+    }
+
     startTransition(async () => {
       const result = await startRegistration({
         distanceId: selectedDistanceId,
@@ -483,6 +503,11 @@ export function RegistrationFlow({
           return;
         }
 
+        if (result.code === 'HAS_ACTIVE_INVITE') {
+          setDistanceError(t('errors.activeInvite'));
+          return;
+        }
+
         setDistanceError(result.error);
         return;
       }
@@ -500,6 +525,7 @@ export function RegistrationFlow({
 
   // Auto-advance to step 2 if a valid distance was pre-selected
   useEffect(() => {
+    if (resumeRegistrationId) return;
     if (validPreSelectedId && step === 'distance' && !registrationId) {
       handleDistanceSelect();
     }
@@ -663,6 +689,18 @@ export function RegistrationFlow({
         </div>
       )}
 
+      {activeInviteExists && step === 'distance' && !existingRegistration && (
+        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          <div className="flex items-start gap-3">
+            <Users className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 text-amber-700 dark:text-amber-200">
+              <p className="font-semibold">{t('errors.activeInviteTitle')}</p>
+              <p className="mt-1">{t('errors.activeInvite')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Progress indicator */}
       {step !== 'confirmation' && (
         <div className="mb-4 sm:mb-8">
@@ -819,7 +857,12 @@ export function RegistrationFlow({
             <div className="flex justify-end">
               <Button
                 onClick={handleDistanceSelect}
-                disabled={!selectedDistanceId || isPending || !!existingRegistration}
+                disabled={
+                  !selectedDistanceId ||
+                  isPending ||
+                  !!existingRegistration ||
+                  activeInviteExists
+                }
               >
                 {isPending ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />

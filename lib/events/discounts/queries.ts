@@ -158,8 +158,8 @@ export async function getDiscountCodeRedemptions(discountCodeId: string) {
     redeemedAt: r.redeemedAt,
     registration: {
       id: r.registration.id,
-      buyerName: r.registration.buyer.name,
-      buyerEmail: r.registration.buyer.email,
+      buyerName: r.registration.buyer?.name ?? 'Unclaimed',
+      buyerEmail: r.registration.buyer?.email ?? '',
     },
   }));
 }

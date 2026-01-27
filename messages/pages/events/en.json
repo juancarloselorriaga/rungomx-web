@@ -240,6 +240,8 @@
       "soldOut": "This distance is sold out",
       "registrationClosed": "Registration is closed for this event",
       "alreadyRegistered": "You are already registered for this event",
+      "activeInviteTitle": "You already have an invite reservation",
+      "activeInvite": "Check your email for the invite link before starting a new registration.",
       "viewMyRegistrations": "View my registrations"
     },
     "warnings": {
@@ -251,6 +253,204 @@
     "loginRequired": {
       "title": "Sign in required",
       "description": "You need to be signed in to register for this event.",
+      "signIn": "Sign in",
+      "signUp": "Create account"
+    }
+  },
+  "claim": {
+    "title": "Claim your registration",
+    "description": "Confirm your reserved spot and continue registration.",
+    "claimAction": "Claim and continue",
+    "dobLabel": "Confirm your date of birth",
+    "loginRequired": {
+      "title": "Sign in required",
+      "description": "You need to be signed in to claim this invite.",
+      "signIn": "Sign in",
+      "signUp": "Create account"
+    },
+    "status": {
+      "CLAIMED": {
+        "title": "Invite already claimed",
+        "description": "This invite has already been claimed."
+      },
+      "EXPIRED": {
+        "title": "Invite expired",
+        "description": "This reservation has expired. Contact the organizer for a new invite."
+      },
+      "CANCELLED": {
+        "title": "Invite cancelled",
+        "description": "This invite was cancelled by the coordinator."
+      },
+      "INVALID": {
+        "title": "Invite invalid",
+        "description": "This invite link is no longer valid."
+      }
+    },
+    "errors": {
+      "dobRequired": "Please enter your date of birth to claim.",
+      "EMAIL_MISMATCH": "This invite was sent to a different email address.",
+      "DOB_MISMATCH": "The date of birth does not match the invite.",
+      "DOB_REQUIRED": "Date of birth is required to claim this invite.",
+      "INVITE_EXPIRED": "This invite has expired.",
+      "INVITE_INVALID": "This invite is no longer active.",
+      "INVITE_CANCELLED": "This invite was cancelled by the coordinator.",
+      "ALREADY_CLAIMED": "This invite has already been claimed.",
+      "ALREADY_REGISTERED": "You already have a registration for this event.",
+      "RATE_LIMITED": "Too many attempts. Please try again later.",
+      "EMAIL_NOT_VERIFIED": "Please verify your email before claiming.",
+      "UNAUTHENTICATED": "Please sign in to claim this invite."
+    }
+  },
+  "groupUpload": {
+    "title": "Group upload",
+    "description": "Upload a roster and send invite links to participants.",
+    "usage": "Batches: {batches} · Invites: {invites}",
+    "status": {
+      "ACTIVE": "Active",
+      "NOT_STARTED": "Not started",
+      "EXPIRED": "Expired",
+      "REVOKED": "Revoked",
+      "DISABLED": "Disabled",
+      "MAXED_OUT": "Limit reached",
+      "NOT_FOUND": "Unavailable"
+    },
+    "statusHelp": {
+      "NOT_STARTED": "This link isn't active yet.",
+      "EXPIRED": "This link has expired.",
+      "REVOKED": "This link has been revoked.",
+      "DISABLED": "This link is disabled.",
+      "MAXED_OUT": "This link has reached its limits.",
+      "generic": "This link is not currently available."
+    },
+    "template": {
+      "title": "Roster template",
+      "description": "Download the CSV template and fill it with participant data.",
+      "download": "Download template",
+      "downloaded": "Template downloaded"
+    },
+    "create": {
+      "title": "Start a new batch",
+      "description": "Select a distance and create a batch to upload your roster.",
+      "distanceLabel": "Select distance",
+      "spotsRemaining": "{count} spots remaining",
+      "selected": "Selected",
+      "action": "Create batch"
+    },
+    "batch": {
+      "title": "Batch details",
+      "status": {
+        "uploaded": "Uploaded",
+        "validated": "Validated",
+        "processed": "Processed",
+        "failed": "Failed"
+      },
+      "summary": {
+        "total": "Total rows",
+        "reserved": "Reserved",
+        "sent": "Invites sent"
+      }
+    },
+    "upload": {
+      "title": "Upload roster",
+      "description": "Upload a CSV or Excel file to validate all rows.",
+      "action": "Upload and validate",
+      "success": "Roster uploaded",
+      "rowsLoaded": "{count} rows loaded",
+      "alreadyUploaded": "A roster has already been uploaded for this batch."
+    },
+    "reserve": {
+      "title": "Reserve invites",
+      "description": "Reserve capacity for valid rows (partial success allowed).",
+      "action": "Reserve invites",
+      "success": "Invites reserved",
+      "summary": "Processed {processed}, reserved {succeeded}, failed {failed}, remaining {remaining}",
+      "pending": "{count} rows ready to reserve"
+    },
+    "sendInvites": {
+      "action": "Send invites",
+      "success": "Invites sent",
+      "summary": "Sent {sent}, skipped {skipped}",
+      "pending": "{count} draft invites ready to send"
+    },
+    "rows": {
+      "title": "Roster rows",
+      "description": "Track each participant and manage invite status.",
+      "headers": {
+        "name": "Participant",
+        "email": "Email",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "reserved": "Reserved",
+        "draft": "Draft",
+        "sent": "Sent",
+        "claimed": "Claimed",
+        "cancelled": "Cancelled",
+        "expired": "Expired",
+        "invalid": "Invalid"
+      },
+      "inviteDetails": "Sent {count} times · Last sent {lastSent}"
+    },
+    "resend": {
+      "action": "Resend",
+      "success": "Invite resent"
+    },
+    "rotate": {
+      "action": "Rotate link",
+      "success": "Invite link rotated"
+    },
+    "updateEmail": {
+      "action": "Edit email",
+      "success": "Email updated"
+    },
+    "cancelInvite": {
+      "action": "Cancel invite",
+      "confirm": "Cancel this invite and release the spot?",
+      "success": "Invite cancelled"
+    },
+    "cancelBatch": {
+      "action": "Cancel batch",
+      "confirm": "Cancel all unclaimed invites in this batch?",
+      "success": "Batch cancelled"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "distanceRequired": "Please select a distance",
+      "createBatch": "Unable to create batch",
+      "noFile": "Please select a file to upload",
+      "upload": "Upload failed",
+      "reserve": "Failed to reserve invites",
+      "sendInvites": "Failed to send invites",
+      "resend": "Failed to resend invite",
+      "rotate": "Failed to rotate invite",
+      "emailRequired": "Email is required",
+      "updateEmail": "Failed to update email",
+      "cancelInvite": "Failed to cancel invite",
+      "cancelBatch": "Failed to cancel batch",
+      "linkInvalidTitle": "Upload link not active",
+      "linkInvalid": "This upload link is no longer active.",
+      "row": {
+        "MISSING_FIRST_NAME": "First name required",
+        "MISSING_LAST_NAME": "Last name required",
+        "MISSING_EMAIL": "Email required",
+        "INVALID_EMAIL": "Invalid email",
+        "INVALID_DOB": "Invalid date of birth",
+        "DUPLICATE_EMAIL_IN_FILE": "Duplicate email in file",
+        "DOB_MISMATCH": "Date of birth mismatch",
+        "INVALID_ROW": "Invalid row data",
+        "EXISTING_ACTIVE_INVITE": "Active invite already exists",
+        "ALREADY_REGISTERED": "Already registered",
+        "SOLD_OUT": "Sold out"
+      }
+    },
+    "loginRequired": {
+      "title": "Sign in required",
+      "description": "You need to be signed in to manage this group upload.",
       "signIn": "Sign in",
       "signUp": "Create account"
     }

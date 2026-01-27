@@ -22,7 +22,7 @@ export type RegistrationListItem = {
   basePriceCents: number | null;
   totalCents: number | null;
   buyer: {
-    id: string;
+    id: string | null;
     name: string;
     email: string;
   };
@@ -138,7 +138,7 @@ export async function getRegistrationsForEdition(
   const countResult = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(registrations)
-    .innerJoin(users, eq(registrations.buyerUserId, users.id))
+    .leftJoin(users, eq(registrations.buyerUserId, users.id))
     .where(
       search
         ? and(
@@ -157,8 +157,8 @@ export async function getRegistrationsForEdition(
   const orderByClause =
     sortBy === 'name'
       ? sortOrder === 'asc'
-        ? asc(users.name)
-        : desc(users.name)
+        ? asc(sql`coalesce(${users.name}, '')`)
+        : desc(sql`coalesce(${users.name}, '')`)
       : sortBy === 'status'
         ? sortOrder === 'asc'
           ? asc(registrations.status)
@@ -201,11 +201,17 @@ export async function getRegistrationsForEdition(
       createdAt: r.createdAt,
       basePriceCents: r.basePriceCents,
       totalCents: r.totalCents,
-      buyer: {
-        id: r.buyer.id,
-        name: r.buyer.name,
-        email: r.buyer.email,
-      },
+      buyer: r.buyer
+        ? {
+            id: r.buyer.id,
+            name: r.buyer.name,
+            email: r.buyer.email,
+          }
+        : {
+            id: null,
+            name: 'Unclaimed',
+            email: '',
+          },
       distance: {
         id: r.distance.id,
         label: r.distance.label,
@@ -335,8 +341,8 @@ export async function getRegistrationsForExport(
       totalCents: r.totalCents,
       discountAmountCents: discount?.discountAmountCents ?? null,
       discountCode: discount?.discountCode.code ?? null,
-      buyerName: r.buyer.name,
-      buyerEmail: r.buyer.email,
+      buyerName: r.buyer?.name ?? 'Unclaimed',
+      buyerEmail: r.buyer?.email ?? '',
       distanceLabel: r.distance.label,
       registrantFirstName: profile?.firstName ?? null,
       registrantLastName: profile?.lastName ?? null,

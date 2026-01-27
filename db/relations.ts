@@ -19,6 +19,7 @@ import {
   groupDiscountRules,
   groupRegistrationBatchRows,
   groupRegistrationBatches,
+  groupUploadLinks,
   media,
   organizationMemberships,
   organizationPayoutProfiles,
@@ -28,6 +29,7 @@ import {
   rateLimits,
   registrants,
   registrationAnswers,
+  registrationInvites,
   registrationQuestions,
   registrations,
   roles,
@@ -51,6 +53,14 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   registrations: many(registrations),
   registrants: many(registrants),
   groupRegistrationBatches: many(groupRegistrationBatches),
+  groupUploadLinksCreated: many(groupUploadLinks, { relationName: 'groupUploadLinksCreatedBy' }),
+  groupUploadLinksRevoked: many(groupUploadLinks, { relationName: 'groupUploadLinksRevokedBy' }),
+  registrationInvitesCreated: many(registrationInvites, {
+    relationName: 'registrationInvitesCreatedBy',
+  }),
+  registrationInvitesClaimed: many(registrationInvites, {
+    relationName: 'registrationInvitesClaimedBy',
+  }),
   auditLogs: many(auditLogs),
 }));
 
@@ -173,6 +183,8 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   websiteContent: many(eventWebsiteContent),
   faqItems: many(eventFaqItems),
   groupRegistrationBatches: many(groupRegistrationBatches),
+  groupUploadLinks: many(groupUploadLinks),
+  registrationInvites: many(registrationInvites),
   groupDiscountRules: many(groupDiscountRules),
   // Phase 2 relations
   addOns: many(addOns),
@@ -187,6 +199,7 @@ export const eventDistancesRelations = relations(eventDistances, ({ one, many })
   }),
   pricingTiers: many(pricingTiers),
   registrations: many(registrations),
+  groupRegistrationBatches: many(groupRegistrationBatches),
   // Phase 2 relations (distance-scoped)
   addOns: many(addOns),
   registrationQuestions: many(registrationQuestions),
@@ -215,6 +228,7 @@ export const registrationsRelations = relations(registrations, ({ one, many }) =
   registrants: many(registrants),
   waiverAcceptances: many(waiverAcceptances),
   groupRegistrationBatchRows: many(groupRegistrationBatchRows),
+  registrationInvites: many(registrationInvites),
   // Phase 2 relations
   addOnSelections: many(addOnSelections),
   discountRedemptions: many(discountRedemptions),
@@ -283,14 +297,23 @@ export const groupRegistrationBatchesRelations = relations(groupRegistrationBatc
     fields: [groupRegistrationBatches.createdByUserId],
     references: [users.id],
   }),
+  uploadLink: one(groupUploadLinks, {
+    fields: [groupRegistrationBatches.uploadLinkId],
+    references: [groupUploadLinks.id],
+  }),
+  distance: one(eventDistances, {
+    fields: [groupRegistrationBatches.distanceId],
+    references: [eventDistances.id],
+  }),
   sourceFile: one(media, {
     fields: [groupRegistrationBatches.sourceFileMediaId],
     references: [media.id],
   }),
   rows: many(groupRegistrationBatchRows),
+  invites: many(registrationInvites),
 }));
 
-export const groupRegistrationBatchRowsRelations = relations(groupRegistrationBatchRows, ({ one }) => ({
+export const groupRegistrationBatchRowsRelations = relations(groupRegistrationBatchRows, ({ one, many }) => ({
   batch: one(groupRegistrationBatches, {
     fields: [groupRegistrationBatchRows.batchId],
     references: [groupRegistrationBatches.id],
@@ -298,6 +321,67 @@ export const groupRegistrationBatchRowsRelations = relations(groupRegistrationBa
   createdRegistration: one(registrations, {
     fields: [groupRegistrationBatchRows.createdRegistrationId],
     references: [registrations.id],
+  }),
+  invites: many(registrationInvites),
+}));
+
+export const groupUploadLinksRelations = relations(groupUploadLinks, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [groupUploadLinks.editionId],
+    references: [eventEditions.id],
+  }),
+  createdBy: one(users, {
+    fields: [groupUploadLinks.createdByUserId],
+    references: [users.id],
+    relationName: 'groupUploadLinksCreatedBy',
+  }),
+  revokedBy: one(users, {
+    fields: [groupUploadLinks.revokedByUserId],
+    references: [users.id],
+    relationName: 'groupUploadLinksRevokedBy',
+  }),
+  batches: many(groupRegistrationBatches),
+  invites: many(registrationInvites),
+}));
+
+export const registrationInvitesRelations = relations(registrationInvites, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [registrationInvites.editionId],
+    references: [eventEditions.id],
+  }),
+  uploadLink: one(groupUploadLinks, {
+    fields: [registrationInvites.uploadLinkId],
+    references: [groupUploadLinks.id],
+  }),
+  batch: one(groupRegistrationBatches, {
+    fields: [registrationInvites.batchId],
+    references: [groupRegistrationBatches.id],
+  }),
+  batchRow: one(groupRegistrationBatchRows, {
+    fields: [registrationInvites.batchRowId],
+    references: [groupRegistrationBatchRows.id],
+  }),
+  registration: one(registrations, {
+    fields: [registrationInvites.registrationId],
+    references: [registrations.id],
+  }),
+  supersedesInvite: one(registrationInvites, {
+    fields: [registrationInvites.supersedesInviteId],
+    references: [registrationInvites.id],
+    relationName: 'registrationInvitesSupersedes',
+  }),
+  supersededBy: many(registrationInvites, {
+    relationName: 'registrationInvitesSupersedes',
+  }),
+  createdByUser: one(users, {
+    fields: [registrationInvites.createdByUserId],
+    references: [users.id],
+    relationName: 'registrationInvitesCreatedBy',
+  }),
+  claimedByUser: one(users, {
+    fields: [registrationInvites.claimedByUserId],
+    references: [users.id],
+    relationName: 'registrationInvitesClaimedBy',
   }),
 }));
 

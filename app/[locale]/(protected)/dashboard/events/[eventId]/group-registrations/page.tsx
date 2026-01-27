@@ -5,6 +5,7 @@ import {
   getGroupDiscountRulesForEdition,
   getGroupRegistrationBatchesForEdition,
 } from '@/lib/events/group-registrations/queries';
+import { listUploadLinksForEdition } from '@/lib/events/group-upload/actions';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -14,6 +15,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { GroupRegistrationsManager } from './group-registrations-manager';
+import { GroupUploadLinksManager } from './group-upload-links-manager';
 
 type GroupRegistrationsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -59,9 +61,10 @@ export default async function EventGroupRegistrationsPage({ params }: GroupRegis
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
-  const [batches, discountRules] = await Promise.all([
+  const [batches, discountRules, uploadLinksResult] = await Promise.all([
     getGroupRegistrationBatchesForEdition(eventId),
     getGroupDiscountRulesForEdition(eventId),
+    listUploadLinksForEdition({ editionId: eventId }),
   ]);
 
   return (
@@ -101,6 +104,21 @@ export default async function EventGroupRegistrationsPage({ params }: GroupRegis
           updatedAt: r.updatedAt.toISOString(),
         }))}
       />
+
+      {uploadLinksResult.ok ? (
+        <GroupUploadLinksManager
+          editionId={eventId}
+          seriesSlug={event.seriesSlug}
+          editionSlug={event.slug}
+          initialLinks={uploadLinksResult.data.map((link) => ({
+            ...link,
+            startsAt: link.startsAt ? link.startsAt.toISOString() : null,
+            endsAt: link.endsAt ? link.endsAt.toISOString() : null,
+            createdAt: link.createdAt.toISOString(),
+            revokedAt: link.revokedAt ? link.revokedAt.toISOString() : null,
+          }))}
+        />
+      ) : null}
     </div>
   );
 }

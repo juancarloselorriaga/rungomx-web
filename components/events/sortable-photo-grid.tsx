@@ -167,6 +167,7 @@ export function SortablePhotoGrid({
   labels,
   inputClassName,
 }: SortablePhotoGridProps) {
+  "use no memo";
   const parentRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(

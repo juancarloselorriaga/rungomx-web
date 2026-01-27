@@ -18,6 +18,7 @@ import {
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
+import { RegistrationOwnershipError, getRegistrationForOwnerOrThrow } from '@/lib/events/registrations/ownership';
 import {
   canUserAccessEvent,
   requireOrgPermission,
@@ -756,18 +757,29 @@ export const submitAddOnSelections = withAuthenticatedUser<ActionResult>({
 
   const { registrationId, selections } = validated.data;
 
-  const registration = await db.query.registrations.findFirst({
-    where: and(
-      eq(registrations.id, registrationId),
-      eq(registrations.buyerUserId, authContext.user.id),
-      isNull(registrations.deletedAt),
-    ),
-    with: {
-      edition: { with: { series: true } },
-    },
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
+  }
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, registration.editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
   });
 
-  if (!registration?.edition?.series) {
+  if (!edition?.series) {
     return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
@@ -901,7 +913,7 @@ export const submitAddOnSelections = withAuthenticatedUser<ActionResult>({
 
     await createAuditLog(
       {
-        organizationId: registration.edition.series.organizationId,
+        organizationId: edition.series.organizationId,
         actorUserId: authContext.user.id,
         action: 'add_on_selections.submit',
         entityType: 'registration',

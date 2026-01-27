@@ -240,6 +240,8 @@
       "soldOut": "Esta distancia está agotada",
       "registrationClosed": "Las inscripciones están cerradas para este evento",
       "alreadyRegistered": "Ya estás inscrito en este evento",
+      "activeInviteTitle": "Ya tienes una invitación reservada",
+      "activeInvite": "Revisa tu correo para reclamar tu lugar antes de iniciar otra inscripción.",
       "viewMyRegistrations": "Ver mis inscripciones"
     },
     "warnings": {
@@ -251,6 +253,204 @@
     "loginRequired": {
       "title": "Inicio de sesión requerido",
       "description": "Necesitas iniciar sesión para inscribirte en este evento.",
+      "signIn": "Iniciar sesión",
+      "signUp": "Crear cuenta"
+    }
+  },
+  "claim": {
+    "title": "Reclama tu inscripción",
+    "description": "Confirma tu lugar reservado y continúa la inscripción.",
+    "claimAction": "Reclamar y continuar",
+    "dobLabel": "Confirma tu fecha de nacimiento",
+    "loginRequired": {
+      "title": "Inicio de sesión requerido",
+      "description": "Necesitas iniciar sesión para reclamar esta invitación.",
+      "signIn": "Iniciar sesión",
+      "signUp": "Crear cuenta"
+    },
+    "status": {
+      "CLAIMED": {
+        "title": "Invitación ya reclamada",
+        "description": "Esta invitación ya fue reclamada."
+      },
+      "EXPIRED": {
+        "title": "Invitación expirada",
+        "description": "Esta reserva expiró. Contacta al organizador para una nueva invitación."
+      },
+      "CANCELLED": {
+        "title": "Invitación cancelada",
+        "description": "Esta invitación fue cancelada por el coordinador."
+      },
+      "INVALID": {
+        "title": "Invitación inválida",
+        "description": "Este enlace ya no es válido."
+      }
+    },
+    "errors": {
+      "dobRequired": "Ingresa tu fecha de nacimiento para reclamar.",
+      "EMAIL_MISMATCH": "Esta invitación fue enviada a otro correo.",
+      "DOB_MISMATCH": "La fecha de nacimiento no coincide con la invitación.",
+      "DOB_REQUIRED": "La fecha de nacimiento es obligatoria para reclamar.",
+      "INVITE_EXPIRED": "Esta invitación ha expirado.",
+      "INVITE_INVALID": "Esta invitación ya no está activa.",
+      "INVITE_CANCELLED": "Esta invitación fue cancelada por el coordinador.",
+      "ALREADY_CLAIMED": "Esta invitación ya fue reclamada.",
+      "ALREADY_REGISTERED": "Ya tienes una inscripción para este evento.",
+      "RATE_LIMITED": "Demasiados intentos. Inténtalo más tarde.",
+      "EMAIL_NOT_VERIFIED": "Verifica tu correo antes de reclamar.",
+      "UNAUTHENTICATED": "Inicia sesión para reclamar esta invitación."
+    }
+  },
+  "groupUpload": {
+    "title": "Carga grupal",
+    "description": "Carga un listado y envía enlaces de invitación a los participantes.",
+    "usage": "Lotes: {batches} · Invitaciones: {invites}",
+    "status": {
+      "ACTIVE": "Activa",
+      "NOT_STARTED": "No iniciada",
+      "EXPIRED": "Expirada",
+      "REVOKED": "Revocada",
+      "DISABLED": "Deshabilitada",
+      "MAXED_OUT": "Límite alcanzado",
+      "NOT_FOUND": "No disponible"
+    },
+    "statusHelp": {
+      "NOT_STARTED": "Este enlace aún no está activo.",
+      "EXPIRED": "Este enlace ha expirado.",
+      "REVOKED": "Este enlace fue revocado.",
+      "DISABLED": "Este enlace está deshabilitado.",
+      "MAXED_OUT": "Este enlace alcanzó sus límites.",
+      "generic": "Este enlace no está disponible."
+    },
+    "template": {
+      "title": "Plantilla de listado",
+      "description": "Descarga la plantilla CSV y completa los datos de participantes.",
+      "download": "Descargar plantilla",
+      "downloaded": "Plantilla descargada"
+    },
+    "create": {
+      "title": "Crear nuevo lote",
+      "description": "Selecciona una distancia y crea un lote para cargar tu listado.",
+      "distanceLabel": "Selecciona distancia",
+      "spotsRemaining": "{count} lugares disponibles",
+      "selected": "Seleccionado",
+      "action": "Crear lote"
+    },
+    "batch": {
+      "title": "Detalle del lote",
+      "status": {
+        "uploaded": "Cargado",
+        "validated": "Validado",
+        "processed": "Procesado",
+        "failed": "Fallido"
+      },
+      "summary": {
+        "total": "Filas totales",
+        "reserved": "Reservas",
+        "sent": "Invitaciones enviadas"
+      }
+    },
+    "upload": {
+      "title": "Cargar listado",
+      "description": "Carga un archivo CSV o Excel para validar las filas.",
+      "action": "Cargar y validar",
+      "success": "Listado cargado",
+      "rowsLoaded": "{count} filas cargadas",
+      "alreadyUploaded": "Este lote ya tiene un archivo cargado."
+    },
+    "reserve": {
+      "title": "Reservar invitaciones",
+      "description": "Reserva lugares para filas válidas (éxito parcial permitido).",
+      "action": "Reservar invitaciones",
+      "success": "Invitaciones reservadas",
+      "summary": "Procesadas {processed}, reservadas {succeeded}, fallidas {failed}, restantes {remaining}",
+      "pending": "{count} filas listas para reservar"
+    },
+    "sendInvites": {
+      "action": "Enviar invitaciones",
+      "success": "Invitaciones enviadas",
+      "summary": "Enviadas {sent}, omitidas {skipped}",
+      "pending": "{count} invitaciones listas para enviar"
+    },
+    "rows": {
+      "title": "Filas del listado",
+      "description": "Sigue cada participante y gestiona el estado de la invitación.",
+      "headers": {
+        "name": "Participante",
+        "email": "Correo",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "status": {
+        "pending": "Pendiente",
+        "reserved": "Reservado",
+        "draft": "Borrador",
+        "sent": "Enviado",
+        "claimed": "Reclamado",
+        "cancelled": "Cancelado",
+        "expired": "Expirado",
+        "invalid": "Inválido"
+      },
+      "inviteDetails": "Enviado {count} veces · Último envío {lastSent}"
+    },
+    "resend": {
+      "action": "Reenviar",
+      "success": "Invitación reenviada"
+    },
+    "rotate": {
+      "action": "Rotar enlace",
+      "success": "Enlace actualizado"
+    },
+    "updateEmail": {
+      "action": "Editar correo",
+      "success": "Correo actualizado"
+    },
+    "cancelInvite": {
+      "action": "Cancelar invitación",
+      "confirm": "¿Cancelar esta invitación y liberar el lugar?",
+      "success": "Invitación cancelada"
+    },
+    "cancelBatch": {
+      "action": "Cancelar lote",
+      "confirm": "¿Cancelar todas las invitaciones no reclamadas?",
+      "success": "Lote cancelado"
+    },
+    "actions": {
+      "refresh": "Actualizar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "distanceRequired": "Selecciona una distancia",
+      "createBatch": "No se pudo crear el lote",
+      "noFile": "Selecciona un archivo para cargar",
+      "upload": "Error al cargar",
+      "reserve": "Error al reservar invitaciones",
+      "sendInvites": "Error al enviar invitaciones",
+      "resend": "Error al reenviar",
+      "rotate": "Error al rotar enlace",
+      "emailRequired": "El correo es obligatorio",
+      "updateEmail": "Error al actualizar correo",
+      "cancelInvite": "Error al cancelar invitación",
+      "cancelBatch": "Error al cancelar lote",
+      "linkInvalidTitle": "El enlace ya no está activo",
+      "linkInvalid": "Este enlace de carga ya no está activo.",
+      "row": {
+        "MISSING_FIRST_NAME": "Nombre requerido",
+        "MISSING_LAST_NAME": "Apellido requerido",
+        "MISSING_EMAIL": "Correo requerido",
+        "INVALID_EMAIL": "Correo inválido",
+        "INVALID_DOB": "Fecha de nacimiento inválida",
+        "DUPLICATE_EMAIL_IN_FILE": "Correo duplicado en el archivo",
+        "DOB_MISMATCH": "Fecha de nacimiento no coincide",
+        "INVALID_ROW": "Fila inválida",
+        "EXISTING_ACTIVE_INVITE": "Ya existe una invitación activa",
+        "ALREADY_REGISTERED": "Ya está inscrito",
+        "SOLD_OUT": "Cupo agotado"
+      }
+    },
+    "loginRequired": {
+      "title": "Inicio de sesión requerido",
+      "description": "Necesitas iniciar sesión para gestionar esta carga grupal.",
       "signIn": "Iniciar sesión",
       "signUp": "Crear cuenta"
     }

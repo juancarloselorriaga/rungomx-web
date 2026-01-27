@@ -30,7 +30,8 @@
     "distance": "Distancia",
     "status": "Estado",
     "total": "Total",
-    "date": "Fecha"
+    "date": "Fecha",
+    "unclaimed": "Sin reclamar"
   },
   "pagination": {
     "showing": "Mostrando {start}-{end} de {total}",

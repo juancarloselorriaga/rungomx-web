@@ -17,6 +17,7 @@ export const FEATURE_FLAGS = {
    * Keep false in production until payment integrations are live.
    */
   EVENTS_NO_PAYMENT_MODE: process.env.NEXT_PUBLIC_FEATURE_EVENTS_NO_PAYMENT_MODE === 'true',
+
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;

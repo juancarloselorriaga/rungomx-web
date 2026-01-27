@@ -560,6 +560,56 @@
       "success": "Lote procesado",
       "successWithDiscount": "Lote procesado ({percentOff, number}% descuento por grupo)",
       "error": "No se pudo procesar el lote"
+    },
+    "uploadLinks": {
+      "title": "Enlaces de carga grupal",
+      "description": "Crea y administra enlaces externos para coordinadores.",
+      "create": "Crear enlace",
+      "createdTitle": "Enlace creado",
+      "createdDescription": "Copia el enlace y compártelo con el coordinador. Este token se muestra solo una vez.",
+      "tokenLabel": "Token de carga",
+      "linkLabel": "Enlace para compartir",
+      "copyToken": "Copiar token",
+      "copyLink": "Copiar enlace",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar",
+      "revoke": "Revocar",
+      "revokeSuccess": "Enlace revocado",
+      "confirmRevoke": "¿Revocar este enlace?",
+      "status": {
+        "ACTIVE": "Activo",
+        "NOT_STARTED": "No iniciado",
+        "EXPIRED": "Expirado",
+        "REVOKED": "Revocado",
+        "DISABLED": "Deshabilitado",
+        "MAXED_OUT": "Límite alcanzado"
+      },
+      "payment": {
+        "selfPay": "Pago individual",
+        "centralPay": "Pago central"
+      },
+      "fields": {
+        "name": "Etiqueta (opcional)",
+        "namePlaceholder": "Carga equipo primavera",
+        "paymentResponsibility": "Responsable de pago",
+        "startsAt": "Inicia (opcional)",
+        "endsAt": "Termina (opcional)",
+        "maxBatches": "Máx. lotes",
+        "maxInvites": "Máx. invitaciones"
+      },
+      "table": {
+        "name": "Nombre",
+        "status": "Estado",
+        "usage": "Uso",
+        "token": "Token",
+        "actions": "Acciones",
+        "usageCounts": "{batches} lotes · {invites} invitaciones",
+        "unnamed": "Sin nombre"
+      },
+      "errors": {
+        "create": "No se pudo crear el enlace",
+        "revoke": "No se pudo revocar el enlace"
+      }
     }
   }
 }

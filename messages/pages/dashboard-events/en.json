@@ -560,6 +560,56 @@
       "success": "Batch processed",
       "successWithDiscount": "Batch processed ({percentOff, number}% group discount)",
       "error": "Failed to process batch"
+    },
+    "uploadLinks": {
+      "title": "Group upload links",
+      "description": "Create and manage external upload links for coordinators.",
+      "create": "Create link",
+      "createdTitle": "Upload link created",
+      "createdDescription": "Copy the link and share it with the coordinator. This token is only shown once.",
+      "tokenLabel": "Upload token",
+      "linkLabel": "Shareable link",
+      "copyToken": "Copy token",
+      "copyLink": "Copy link",
+      "copied": "Copied",
+      "copyFailed": "Copy failed",
+      "revoke": "Revoke",
+      "revokeSuccess": "Upload link revoked",
+      "confirmRevoke": "Revoke this upload link?",
+      "status": {
+        "ACTIVE": "Active",
+        "NOT_STARTED": "Not started",
+        "EXPIRED": "Expired",
+        "REVOKED": "Revoked",
+        "DISABLED": "Disabled",
+        "MAXED_OUT": "Limit reached"
+      },
+      "payment": {
+        "selfPay": "Self pay",
+        "centralPay": "Central pay"
+      },
+      "fields": {
+        "name": "Label (optional)",
+        "namePlaceholder": "Spring team upload",
+        "paymentResponsibility": "Payment responsibility",
+        "startsAt": "Starts at (optional)",
+        "endsAt": "Ends at (optional)",
+        "maxBatches": "Max batches",
+        "maxInvites": "Max invites"
+      },
+      "table": {
+        "name": "Name",
+        "status": "Status",
+        "usage": "Usage",
+        "token": "Token",
+        "actions": "Actions",
+        "usageCounts": "{batches} batches · {invites} invites",
+        "unnamed": "Untitled"
+      },
+      "errors": {
+        "create": "Unable to create link",
+        "revoke": "Unable to revoke link"
+      }
     }
   }
 }

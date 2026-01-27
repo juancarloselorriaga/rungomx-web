@@ -22,6 +22,11 @@ import { useEffect, useState } from 'react';
 
 const DEFAULT_STATUS: ProfileStatus = EMPTY_PROFILE_STATUS;
 const FALLBACK_METADATA = buildProfileMetadata(buildProfileRequirementSummary([]));
+const PUBLIC_INVITE_PATH_PATTERNS = [
+  /^\/events\/[^/]+\/[^/]+\/group-upload(\/|$)/,
+  /^\/events\/[^/]+\/[^/]+\/claim\/[^/]+/,
+  /^\/events\/[^/]+\/[^/]+\/register\/complete\/[^/]+/,
+];
 
 function toInternalPath(pathname: string) {
   const withoutQuery = pathname.split('?')[0]?.split('#')[0] ?? '';
@@ -62,6 +67,11 @@ function toLocalizedPath(pathname: string, locale: string) {
   if (!mapping) return pathname;
   if (typeof mapping === 'string') return mapping;
   return mapping[locale as keyof typeof mapping] ?? mapping[routing.defaultLocale] ?? pathname;
+}
+
+function isPublicInvitePath(pathname: string): boolean {
+  const internalPath = toInternalPath(pathname);
+  return PUBLIC_INVITE_PATH_PATTERNS.some((pattern) => pattern.test(internalPath));
 }
 
 type ProfileCompletionModalProps = {
@@ -151,6 +161,7 @@ type ProfileEnforcementBoundaryProps = {
 export default function ProfileEnforcementBoundary({ children }: ProfileEnforcementBoundaryProps) {
   const { data } = useSession();
   const pathname = usePathname();
+  const isPublicInviteRoute = isPublicInvitePath(pathname);
   const [overrideStatus, setOverrideStatus] = useState<ProfileStatus | null>(null);
   const [profileOverride, setProfileOverride] = useState<ProfileRecord | null>(null);
   const [capturedRoute, setCapturedRoute] = useState<string | null>(null);
@@ -173,7 +184,10 @@ export default function ProfileEnforcementBoundary({ children }: ProfileEnforcem
   const profile = profileOverride ?? profileFromSession;
   const effectiveNeedsRoleAssignment = needsRoleAssignmentOverride ?? needsRoleAssignment;
   const shouldEnforce =
-    !isInternal && !effectiveNeedsRoleAssignment && profileStatus.mustCompleteProfile;
+    !isPublicInviteRoute &&
+    !isInternal &&
+    !effectiveNeedsRoleAssignment &&
+    profileStatus.mustCompleteProfile;
   const intendedRoute = capturedRoute ?? (shouldEnforce ? toInternalPath(pathname) : null);
 
   // Capture the first intended route when enforcement activates and keep it stable for the session.

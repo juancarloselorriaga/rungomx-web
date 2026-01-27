@@ -1,7 +1,7 @@
 'use server';
 
 import { del } from '@vercel/blob';
-import { eq, and, isNull, notInArray, sql, lt } from 'drizzle-orm';
+import { eq, and, isNull, lt } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { media, eventWebsiteContent, eventEditions } from '@/db/schema';

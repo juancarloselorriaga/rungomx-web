@@ -1,5 +1,7 @@
 import { getAuthContextWithOrgs } from '@/lib/auth/server';
 import { getActiveRegistrationForEdition, getPublicEventBySlug } from '@/lib/events/queries';
+import { getCurrentInviteForEmail } from '@/lib/events/invite-claim/queries';
+import { normalizeEmail } from '@/lib/events/shared/identity';
 import { resolveEventSlugRedirect } from '@/lib/events/slug-redirects';
 import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
 import { getQuestionsForEdition } from '@/lib/events/questions/queries';
@@ -84,10 +86,16 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
     event.id,
   );
 
-  const [questions, addOns, documents] = await Promise.all([
+  const [questions, addOns, documents, activeInvite] = await Promise.all([
     getQuestionsForEdition(event.id),
     getAddOnsForEdition(event.id),
     getEventDocuments(event.id, locale),
+    authContext.user?.email
+      ? getCurrentInviteForEmail({
+          editionId: event.id,
+          emailNormalized: normalizeEmail(authContext.user.email),
+        })
+      : Promise.resolve(null),
   ]);
 
   // Get user profile data to pre-fill form
@@ -122,6 +130,7 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
       showOrganizerSelfRegistrationWarning={isOrganizerForEvent}
       preSelectedDistanceId={preSelectedDistanceId}
       existingRegistration={existingRegistration}
+      activeInviteExists={Boolean(activeInvite)}
     />
   );
 }

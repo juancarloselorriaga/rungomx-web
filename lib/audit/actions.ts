@@ -74,6 +74,14 @@ export const AUDIT_ACTIONS = {
   'group_registrations.process': 'Group registrations batch processed',
   'group_registrations.process_failed': 'Group registrations batch processing failed',
   'group_registrations.discount_rule.upsert': 'Group discount rule created or updated',
+  // Group Upload Links (Invite/Claim)
+  'group_upload_link.create': 'Group upload link created',
+  'group_upload_link.revoke': 'Group upload link revoked',
+  'group_upload_batch.create': 'Group upload batch created',
+  'group_upload_invites.send': 'Group upload invites sent',
+  'group_upload_invite.cancel': 'Group upload invite cancelled',
+  'group_upload_batch.cancel': 'Group upload batch cancelled',
+  'registration_invite.claim': 'Registration invite claimed',
 
   // Add-ons (Phase 2)
   'add_on.create': 'Add-on created',

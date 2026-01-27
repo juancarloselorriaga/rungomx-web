@@ -11,6 +11,7 @@ import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
 import { isExpiredHold } from '@/lib/events/registration-holds';
+import { RegistrationOwnershipError, getRegistrationForOwnerOrThrow } from '@/lib/events/registrations/ownership';
 import {
   canUserAccessEvent,
   requireOrgPermission,
@@ -544,19 +545,30 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
   const { registrationId, code } = validated.data;
   const upperCode = code.toUpperCase();
 
-  // Find the registration
-  const registration = await db.query.registrations.findFirst({
-    where: and(eq(registrations.id, registrationId), isNull(registrations.deletedAt)),
-    with: { edition: { with: { series: true } } },
-  });
-
-  if (!registration) {
-    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
   }
 
-  // Verify ownership
-  if (registration.buyerUserId !== authContext.user.id) {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, registration.editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
   const now = new Date();
@@ -695,7 +707,7 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
 
     await createAuditLog(
       {
-        organizationId: registration.edition.series.organizationId,
+        organizationId: edition.series.organizationId,
         actorUserId: authContext.user.id,
         action: 'discount_code.apply',
         entityType: 'registration',
@@ -730,17 +742,21 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
 
   const { registrationId } = validated.data;
 
-  const registration = await db.query.registrations.findFirst({
-    where: and(eq(registrations.id, registrationId), isNull(registrations.deletedAt)),
-    with: { edition: { with: { series: true } } },
-  });
-
-  if (!registration) {
-    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
-  }
-
-  if (registration.buyerUserId !== authContext.user.id) {
-    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  let registration;
+  try {
+    registration = await getRegistrationForOwnerOrThrow({
+      registrationId,
+      userId: authContext.user.id,
+    });
+  } catch (error) {
+    if (error instanceof RegistrationOwnershipError) {
+      return {
+        ok: false,
+        error: error.code === 'NOT_FOUND' ? 'Registration not found' : 'Permission denied',
+        code: error.code,
+      };
+    }
+    throw error;
   }
 
   const now = new Date();
@@ -767,6 +783,15 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
 
   if (!redemption) {
     return { ok: false, error: 'No discount code applied', code: 'NO_DISCOUNT' };
+  }
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, registration.editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Registration not found', code: 'NOT_FOUND' };
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -806,7 +831,7 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
 
     await createAuditLog(
       {
-        organizationId: registration.edition.series.organizationId,
+        organizationId: edition.series.organizationId,
         actorUserId: authContext.user.id,
         action: 'discount_code.remove',
         entityType: 'registration',

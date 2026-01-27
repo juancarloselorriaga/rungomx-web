@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { getAuthContext } from '@/lib/auth/server';
 import { db } from '@/db';
-import { media, organizations } from '@/db/schema';
+import { eventEditions, groupRegistrationBatches, media, organizations } from '@/db/schema';
 import type { MediaKind } from '@/lib/events/constants';
 import {
   EVENT_MEDIA_ALLOWED_TYPES,
@@ -16,12 +16,15 @@ import {
   EVENT_MEDIA_MAX_FILE_SIZE,
 } from '@/lib/events/media/constants';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
+import { getUploadLinkByToken } from '@/lib/events/group-upload/queries';
 
 type UploadTokenPayload = {
   userId: string;
   organizationId: string;
   purpose?: string;
   mediaId: string;
+  uploadToken?: string;
+  batchId?: string;
 };
 
 function resolveMediaKind(contentType?: string | null): MediaKind {
@@ -53,6 +56,59 @@ export async function POST(request: Request): Promise<NextResponse> {
         const payload = clientPayload ? JSON.parse(clientPayload) : {};
         const organizationId = payload.organizationId as string | undefined;
         const purpose = payload.purpose as string | undefined;
+
+        if (purpose === 'group-upload-batch') {
+          const uploadToken = payload.uploadToken as string | undefined;
+          const batchId = payload.batchId as string | undefined;
+
+          if (!uploadToken || !batchId) {
+            throw new Error('Missing upload token or batch id');
+          }
+
+          const linkResult = await getUploadLinkByToken({ token: uploadToken });
+          if (!linkResult.link || linkResult.status !== 'ACTIVE') {
+            throw new Error('Invalid upload link');
+          }
+
+          const batch = await db.query.groupRegistrationBatches.findFirst({
+            where: eq(groupRegistrationBatches.id, batchId),
+          });
+
+          if (!batch || batch.uploadLinkId !== linkResult.link.id) {
+            throw new Error('Invalid batch');
+          }
+
+          if (batch.createdByUserId !== authContext.user!.id) {
+            throw new Error('Permission denied');
+          }
+
+          const edition = await db.query.eventEditions.findFirst({
+            where: and(eq(eventEditions.id, linkResult.link.editionId), isNull(eventEditions.deletedAt)),
+            with: { series: true },
+          });
+
+          if (!edition?.series) {
+            throw new Error('Event edition not found');
+          }
+
+          const derivedOrganizationId = edition.series.organizationId;
+
+          const mediaId = crypto.randomUUID();
+          pendingMediaId = mediaId;
+
+          return {
+            allowedContentTypes: [...EVENT_MEDIA_GROUP_REGISTRATION_TYPES],
+            maximumSizeInBytes: EVENT_MEDIA_GROUP_REGISTRATION_MAX_FILE_SIZE,
+            tokenPayload: JSON.stringify({
+              userId: authContext.user!.id,
+              organizationId: derivedOrganizationId,
+              purpose,
+              mediaId,
+              uploadToken,
+              batchId,
+            } satisfies UploadTokenPayload),
+          };
+        }
 
         if (!organizationId) {
           throw new Error('Missing organization');

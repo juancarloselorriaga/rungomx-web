@@ -30,7 +30,8 @@
     "distance": "Distance",
     "status": "Status",
     "total": "Total",
-    "date": "Date"
+    "date": "Date",
+    "unclaimed": "Unclaimed"
   },
   "pagination": {
     "showing": "Showing {start}-{end} of {total}",
