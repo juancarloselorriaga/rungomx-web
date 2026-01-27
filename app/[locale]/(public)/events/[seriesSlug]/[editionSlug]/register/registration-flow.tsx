@@ -492,6 +492,11 @@ export function RegistrationFlow({
           return;
         }
 
+        if (result.code === 'REGISTRATION_NOT_OPEN') {
+          setDistanceError(t('errors.registrationNotOpen'));
+          return;
+        }
+
         if (result.code === 'SOLD_OUT') {
           setDistanceError(t('errors.soldOut'));
           return;

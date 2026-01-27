@@ -240,6 +240,7 @@
       "soldOut": "This distance is sold out",
       "registrationClosed": "Registration is closed for this event",
       "alreadyRegistered": "You are already registered for this event",
+      "registrationNotOpen": "Registration has not opened yet for this event",
       "activeInviteTitle": "You already have an invite reservation",
       "activeInvite": "Check your email for the invite link before starting a new registration.",
       "viewMyRegistrations": "View my registrations"

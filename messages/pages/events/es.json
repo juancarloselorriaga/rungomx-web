@@ -240,6 +240,7 @@
       "soldOut": "Esta distancia está agotada",
       "registrationClosed": "Las inscripciones están cerradas para este evento",
       "alreadyRegistered": "Ya estás inscrito en este evento",
+      "registrationNotOpen": "Las inscripciones aún no han abierto para este evento",
       "activeInviteTitle": "Ya tienes una invitación reservada",
       "activeInvite": "Revisa tu correo para reclamar tu lugar antes de iniciar otra inscripción.",
       "viewMyRegistrations": "Ver mis inscripciones"
