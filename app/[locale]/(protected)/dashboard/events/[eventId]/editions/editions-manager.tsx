@@ -11,12 +11,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Link, useRouter } from '@/i18n/navigation';
-import { cloneEdition } from '@/lib/events/editions/actions';
+import { cloneEdition, checkSlugAvailability } from '@/lib/events/actions';
 import { renameEventSeriesSlug } from '@/lib/events/series/actions';
 import { cn } from '@/lib/utils';
 import { Calendar, Copy, ExternalLink, Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type EditionsManagerEdition = {
@@ -36,10 +36,12 @@ type EditionsManagerProps = {
   seriesId: string;
   seriesName: string;
   seriesSlug: string;
+  organizationId: string;
   editions: EditionsManagerEdition[];
 };
 
 type VisibilityType = 'draft' | 'published' | 'unlisted' | 'archived';
+type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error';
 
 const visibilityStyles: Record<VisibilityType, string> = {
   draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
@@ -93,9 +95,11 @@ export function EditionsManager({
   seriesId,
   seriesName,
   seriesSlug,
+  organizationId,
   editions,
 }: EditionsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.editions');
+  const tSlug = useTranslations('pages.dashboardEvents');
   const tVisibility = useTranslations('pages.dashboardEvents.visibility');
   const locale = useLocale();
   const router = useRouter();
@@ -104,6 +108,9 @@ export function EditionsManager({
 
   const [seriesSlugValue, setSeriesSlugValue] = useState(seriesSlug);
   const [isRenamingSeries, setIsRenamingSeries] = useState(false);
+  const [seriesSlugStatus, setSeriesSlugStatus] = useState<SlugStatus>('idle');
+  const seriesSlugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seriesSlugRequestIdRef = useRef(0);
   const [showSeriesSlugConfirm, setShowSeriesSlugConfirm] = useState(false);
   const [pendingSeriesSlug, setPendingSeriesSlug] = useState<string | null>(null);
 
@@ -123,6 +130,37 @@ export function EditionsManager({
     setNewSlug(label ? buildSuggestedSlug(edition.slug, edition.editionLabel, label) : slugify(`${edition.slug}-new`));
     setFormError(null);
     setOpenForEditionId(edition.id);
+  }
+
+  function handleSeriesSlugChange(nextValue: string) {
+    const trimmed = nextValue.trim();
+    if (!organizationId || trimmed.length < 2 || trimmed === seriesSlug) {
+      setSeriesSlugStatus('idle');
+      return;
+    }
+
+    if (seriesSlugTimeoutRef.current) {
+      clearTimeout(seriesSlugTimeoutRef.current);
+    }
+
+    setSeriesSlugStatus('checking');
+    const requestId = ++seriesSlugRequestIdRef.current;
+
+    seriesSlugTimeoutRef.current = setTimeout(async () => {
+      const result = await checkSlugAvailability({
+        organizationId,
+        slug: trimmed,
+      });
+
+      if (seriesSlugRequestIdRef.current !== requestId) return;
+
+      if (!result.ok) {
+        setSeriesSlugStatus('error');
+        return;
+      }
+
+      setSeriesSlugStatus(result.data.available ? 'available' : 'taken');
+    }, 400);
   }
 
   async function handleRenameSeriesSlug(nextSlugOverride?: string) {
@@ -172,6 +210,37 @@ export function EditionsManager({
     setPendingSeriesSlug(null);
     await handleRenameSeriesSlug(nextSlug);
   }
+
+  const isSeriesSlugTaken =
+    seriesSlugValue.trim().length >= 2 &&
+    seriesSlugValue.trim() !== seriesSlug &&
+    seriesSlugStatus === 'taken';
+  const slugStatusClass = (status: SlugStatus) =>
+    status === 'available'
+      ? 'text-emerald-600'
+      : status === 'taken'
+        ? 'text-destructive'
+        : 'text-muted-foreground';
+
+  const slugStatusLabel = (status: SlugStatus) => {
+    switch (status) {
+      case 'checking':
+        return tSlug('slugStatus.checking');
+      case 'available':
+        return tSlug('slugStatus.available');
+      case 'taken':
+        return tSlug('slugStatus.taken');
+      case 'error':
+        return tSlug('slugStatus.error');
+      default:
+        return null;
+    }
+  };
+  const showSeriesSlugStatus =
+    seriesSlugValue.trim().length >= 2 &&
+    seriesSlugValue.trim() !== seriesSlug &&
+    seriesSlugStatus !== 'idle';
+  const seriesSlugStatusLabel = slugStatusLabel(seriesSlugStatus);
 
   async function handleClone() {
     if (!openEdition) return;
@@ -226,18 +295,25 @@ export function EditionsManager({
           <h2 className="text-base font-semibold">{t('seriesSlug.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('seriesSlug.description')}</p>
         </div>
-        <div className="px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <label className="block flex-1 space-y-2 text-sm">
+        <div className="px-6 py-4 grid gap-1 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-4">
+          <label className="block space-y-2 text-sm">
             <span className="font-medium">{t('seriesSlug.fields.slug')}</span>
             <input
               value={seriesSlugValue}
-              onChange={(e) => setSeriesSlugValue(e.target.value)}
+              onChange={(e) => {
+                setSeriesSlugValue(e.target.value);
+                handleSeriesSlugChange(e.target.value);
+              }}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono"
               placeholder={t('seriesSlug.fields.slugPlaceholder')}
               disabled={isRenamingSeries}
             />
           </label>
-          <Button type="button" onClick={requestSeriesSlugRename} disabled={isRenamingSeries}>
+          <Button
+            type="button"
+            onClick={requestSeriesSlugRename}
+            disabled={isRenamingSeries || isSeriesSlugTaken}
+          >
             {isRenamingSeries ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -247,6 +323,17 @@ export function EditionsManager({
               t('seriesSlug.save')
             )}
           </Button>
+          <p
+            className={cn(
+              'text-xs min-h-[1rem] sm:col-start-1 -mt-1',
+              showSeriesSlugStatus
+                ? slugStatusClass(seriesSlugStatus)
+                : 'text-transparent',
+            )}
+            aria-hidden={!showSeriesSlugStatus}
+          >
+            {showSeriesSlugStatus ? seriesSlugStatusLabel : '\u00A0'}
+          </p>
         </div>
       </div>
 

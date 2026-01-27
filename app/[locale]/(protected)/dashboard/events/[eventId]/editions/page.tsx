@@ -68,6 +68,7 @@ export default async function EventEditionsPage({ params }: EditionsPageProps) {
         seriesId={event.seriesId}
         seriesName={event.seriesName}
         seriesSlug={event.seriesSlug}
+        organizationId={event.organizationId}
         editions={editions.map((e) => ({
           id: e.id,
           slug: e.slug,
