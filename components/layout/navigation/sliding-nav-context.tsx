@@ -100,12 +100,18 @@ export function SlidingNavProvider({
 
   const setSubmenuContext = useCallback(
     (ctx: SubmenuContext | null) => {
-      setSubmenuContextInternal(ctx);
-      if (ctx === null || (submenuContext && ctx.id !== submenuContext.id)) {
-        setManualRootOverride(false);
-      }
+      setSubmenuContextInternal((prev) => {
+        const prevId = prev?.id ?? null;
+        const nextId = ctx?.id ?? null;
+
+        if (prevId !== nextId) {
+          setManualRootOverride(false);
+        }
+
+        return ctx;
+      });
     },
-    [submenuContext],
+    [],
   );
 
   // Compute current display level
