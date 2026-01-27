@@ -3,6 +3,14 @@
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from '@/i18n/navigation';
@@ -92,6 +100,7 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
   const [editionSlugStatus, setEditionSlugStatus] = useState<SlugStatus>('idle');
   const editionSlugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const editionSlugRequestIdRef = useRef(0);
+  const [showSlugConfirm, setShowSlugConfirm] = useState(false);
   const heroImageInputRef = useRef<HTMLInputElement>(null);
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(event.heroImageUrl ?? null);
   const [heroPreviewUrl, setHeroPreviewUrl] = useState<string | null>(null);
@@ -177,6 +186,24 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
       router.refresh();
     },
   });
+
+  const isEditionSlugChanged = detailsForm.values.slug.trim() !== event.slug;
+
+  const handleDetailsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (isEditionSlugChanged) {
+      setShowSlugConfirm(true);
+      return;
+    }
+
+    detailsForm.handleSubmit(event);
+  };
+
+  const confirmSlugChange = () => {
+    setShowSlugConfirm(false);
+    detailsForm.handleSubmit({ preventDefault() {} } as React.FormEvent<HTMLFormElement>);
+  };
 
   // Visibility state
   const [visibility, setVisibility] = useState<VisibilityType>(event.visibility as VisibilityType);
@@ -623,7 +650,7 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
           <h2 className="text-lg font-semibold">{t('details.title')}</h2>
         </div>
 
-        <Form form={detailsForm} className="space-y-6">
+        <Form form={detailsForm} className="space-y-6" onSubmit={handleDetailsSubmit}>
           <FormError />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -919,6 +946,32 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
           </div>
         )}
       </section>
+
+      <Dialog open={showSlugConfirm} onOpenChange={setShowSlugConfirm}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t('details.slugConfirm.title')}</DialogTitle>
+            <DialogDescription>{t('details.slugConfirm.description')}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2 sm:justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowSlugConfirm(false)}
+              disabled={detailsForm.isSubmitting}
+            >
+              {t('details.slugConfirm.cancel')}
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmSlugChange}
+              disabled={detailsForm.isSubmitting}
+            >
+              {t('details.slugConfirm.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

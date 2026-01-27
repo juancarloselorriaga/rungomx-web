@@ -72,7 +72,14 @@
   "details": {
     "title": "Detalles del Evento",
     "editionLabel": "Etiqueta de Edición",
-    "slug": "Slug de URL",
+    "slug": "Slug de URL de la edición",
+    "slugRedirectInfo": "Los enlaces anteriores de la edición se redirigen automáticamente a la nueva URL.",
+    "slugConfirm": {
+      "title": "¿Actualizar URL de la edición?",
+      "description": "Redirigiremos automáticamente los enlaces anteriores a la nueva URL, así que tus compartidos y campañas seguirán funcionando.",
+      "cancel": "Seguir editando",
+      "confirm": "Actualizar slug"
+    },
     "timezone": "Zona horaria",
     "startsAt": "Fecha de Inicio",
     "endsAt": "Fecha de Fin",

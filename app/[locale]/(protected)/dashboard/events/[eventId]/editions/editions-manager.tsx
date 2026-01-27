@@ -104,6 +104,8 @@ export function EditionsManager({
 
   const [seriesSlugValue, setSeriesSlugValue] = useState(seriesSlug);
   const [isRenamingSeries, setIsRenamingSeries] = useState(false);
+  const [showSeriesSlugConfirm, setShowSeriesSlugConfirm] = useState(false);
+  const [pendingSeriesSlug, setPendingSeriesSlug] = useState<string | null>(null);
 
   const [openForEditionId, setOpenForEditionId] = useState<string | null>(null);
   const [newEditionLabel, setNewEditionLabel] = useState('');
@@ -123,8 +125,8 @@ export function EditionsManager({
     setOpenForEditionId(edition.id);
   }
 
-  async function handleRenameSeriesSlug() {
-    const nextSlug = slugify(seriesSlugValue);
+  async function handleRenameSeriesSlug(nextSlugOverride?: string) {
+    const nextSlug = nextSlugOverride ?? slugify(seriesSlugValue);
     if (!nextSlug || nextSlug.length < 2) {
       toast.error(t('seriesSlug.error'), { description: t('seriesSlug.errors.missing') });
       return;
@@ -146,6 +148,29 @@ export function EditionsManager({
     } finally {
       setIsRenamingSeries(false);
     }
+  }
+
+  function requestSeriesSlugRename() {
+    const nextSlug = slugify(seriesSlugValue);
+    if (!nextSlug || nextSlug.length < 2) {
+      toast.error(t('seriesSlug.error'), { description: t('seriesSlug.errors.missing') });
+      return;
+    }
+
+    if (nextSlug === seriesSlug) {
+      handleRenameSeriesSlug(nextSlug);
+      return;
+    }
+
+    setPendingSeriesSlug(nextSlug);
+    setShowSeriesSlugConfirm(true);
+  }
+
+  async function confirmSeriesSlugRename() {
+    const nextSlug = pendingSeriesSlug ?? slugify(seriesSlugValue);
+    setShowSeriesSlugConfirm(false);
+    setPendingSeriesSlug(null);
+    await handleRenameSeriesSlug(nextSlug);
   }
 
   async function handleClone() {
@@ -212,7 +237,7 @@ export function EditionsManager({
               disabled={isRenamingSeries}
             />
           </label>
-          <Button type="button" onClick={handleRenameSeriesSlug} disabled={isRenamingSeries}>
+          <Button type="button" onClick={requestSeriesSlugRename} disabled={isRenamingSeries}>
             {isRenamingSeries ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -371,7 +396,29 @@ export function EditionsManager({
           ))
         )}
       </div>
-      </div>
     </div>
+
+    <Dialog open={showSeriesSlugConfirm} onOpenChange={setShowSeriesSlugConfirm}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{t('seriesSlug.confirm.title')}</DialogTitle>
+          <DialogDescription>{t('seriesSlug.confirm.description')}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex justify-end gap-2 sm:justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setShowSeriesSlugConfirm(false)}
+            disabled={isRenamingSeries}
+          >
+            {t('seriesSlug.confirm.cancel')}
+          </Button>
+          <Button type="button" onClick={confirmSeriesSlugRename} disabled={isRenamingSeries}>
+            {t('seriesSlug.confirm.confirm')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </div>
   );
 }

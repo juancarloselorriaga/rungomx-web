@@ -415,6 +415,13 @@
     "seriesSlug": {
       "title": "Slug de la serie",
       "description": "Cambiar el slug de la serie crea redirecciones permanentes para todas las ediciones.",
+      "redirectInfo": "Todos los enlaces antiguos de ediciones se redirigen automáticamente a las nuevas URLs.",
+      "confirm": {
+        "title": "¿Actualizar URL de la serie?",
+        "description": "Redirigiremos automáticamente los enlaces de ediciones anteriores a las nuevas URLs para que tus compartidos y campañas sigan funcionando.",
+        "cancel": "Seguir editando",
+        "confirm": "Actualizar slug"
+      },
       "fields": {
         "slug": "Slug",
         "slugPlaceholder": "mi-serie-de-evento"

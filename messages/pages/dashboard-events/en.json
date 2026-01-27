@@ -415,6 +415,13 @@
     "seriesSlug": {
       "title": "Series URL slug",
       "description": "Changing the series slug creates permanent redirects for all editions.",
+      "redirectInfo": "All old edition links are automatically forwarded to the new URLs.",
+      "confirm": {
+        "title": "Update series URL?",
+        "description": "We’ll automatically forward all old edition links to the new URLs, so existing shares and marketing keep working.",
+        "cancel": "Keep editing",
+        "confirm": "Update slug"
+      },
       "fields": {
         "slug": "Slug",
         "slugPlaceholder": "my-event-series"

@@ -72,7 +72,14 @@
   "details": {
     "title": "Event Details",
     "editionLabel": "Edition Label",
-    "slug": "URL Slug",
+    "slug": "Edition URL slug",
+    "slugRedirectInfo": "Old edition links are automatically forwarded to the new URL.",
+    "slugConfirm": {
+      "title": "Update edition URL?",
+      "description": "We’ll automatically forward your old edition links to the new URL, so existing shares and marketing keep working.",
+      "cancel": "Keep editing",
+      "confirm": "Update slug"
+    },
     "timezone": "Timezone",
     "startsAt": "Start Date",
     "endsAt": "End Date",
