@@ -1,4 +1,5 @@
 import { Page, expect } from '@playwright/test';
+import type { Locator } from '@playwright/test';
 
 /**
  * Test helper utilities for RunGoMX E2E tests
@@ -439,6 +440,17 @@ export async function createEvent(
   const dateInput = page.locator('input[type="date"]');
   if (await dateInput.isVisible().catch(() => false)) {
     await dateInput.fill('2026-06-15');
+  } else {
+    // Standard UI is `DatePicker` (popover + calendar), not native input[type="date"].
+    const eventDateField = page
+      .locator('label')
+      .filter({ hasText: /event date|fecha del evento/i })
+      .first();
+    const trigger = eventDateField.locator('button').first();
+    if (await trigger.isVisible().catch(() => false)) {
+      const localeFromUrl = new URL(page.url()).pathname.split('/')[1] || 'en';
+      await setDatePickerValue(page, trigger, '2026-06-15', localeFromUrl);
+    }
   }
 
   // Wait for Next.js compilation/rendering to complete if it's running
@@ -466,6 +478,59 @@ export async function createEvent(
   const eventId = url.match(/\/events\/([a-f0-9-]{36})/)?.[1] || '';
 
   return { seriesName, editionLabel, eventId };
+}
+
+async function setDatePickerValue(page: Page, trigger: Locator, isoDate: string, locale: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDate);
+  if (!match) throw new Error(`Invalid isoDate (expected YYYY-MM-DD): ${isoDate}`);
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const day = Number(match[3]);
+  const monthLabel = new Date(year, monthIndex, 1).toLocaleString(locale, { month: 'long' });
+
+  await trigger.click();
+
+  const popover = page
+    .locator('[data-slot="popover-content"]')
+    .filter({ has: page.locator('[data-slot="calendar"]') })
+    .last();
+  await expect(popover).toBeVisible();
+
+  const calendar = popover.locator('[data-slot="calendar"]');
+  await expect(calendar).toBeVisible();
+
+  const selects = calendar.locator('select');
+  const selectCount = await selects.count();
+
+  const trySelectByLabel = async (label: string) => {
+    for (let index = 0; index < selectCount; index += 1) {
+      const select = selects.nth(index);
+      if ((await select.locator('option', { hasText: label }).count()) > 0) {
+        await select.selectOption({ label });
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Set year/month via DayPicker dropdowns (captionLayout="dropdown").
+  await trySelectByLabel(String(year));
+  await trySelectByLabel(monthLabel);
+
+  const dayRegex = new RegExp(`^${day}$`);
+  const dayButtonInMonth = calendar
+    .locator('td:not([data-outside]) button', { hasText: dayRegex })
+    .first();
+  const fallbackDayButton = calendar.locator('button', { hasText: dayRegex }).first();
+
+  if (await dayButtonInMonth.isVisible().catch(() => false)) {
+    await dayButtonInMonth.click();
+  } else {
+    await fallbackDayButton.click();
+  }
+
+  await expect(popover).toBeHidden();
 }
 
 /**

@@ -32,6 +32,17 @@ compliance.
     - `GenderField` (`components/settings/fields/gender-field.tsx`).
     - `MeasurementField` (`components/settings/fields/measurement-field.tsx`).
     - `DatePicker` (`components/ui/date-picker.tsx`) for date-only fields.
+      - **Always** use this instead of native `<input type="date">` (browser support/UX differs and
+        it breaks consistency).
+      - Accepts/emits `YYYY-MM-DD` strings (local date, no timezone conversion).
+      - Wiring patterns:
+        - `useForm` field: `const field = form.register('myDate')` then pass
+          `value={field.value}`, `onChangeAction={(v) => field.onChange(v)}`, and
+          `name={field.name as string}`.
+        - Non-form filters: keep local state + call your filter updater in `onChangeAction`.
+      - Use `useLocale()` to pass `locale`, and use `useTranslations('common')('clear')` (or the
+        local equivalent) for `clearLabel`.
+      - If a date range needs validation/constraints, use `min` / `max` props.
     - `DateTimePicker` (`components/ui/date-time-picker.tsx`) for datetime fields.
       Composes `DatePicker` + `TimeSelect`. Accepts/emits ISO `YYYY-MM-DDTHH:mm` strings.
       Use instead of native `<input type="datetime-local">` or manual DatePicker + time combos.
@@ -271,8 +282,8 @@ When reviewing or generating a form, verify:
 
 - **Reusability**
   - [ ] Shared components (phone, country, gender, measurement, date picker, datetime picker) are
-        used where appropriate. Use `DateTimePicker` for datetime fields instead of
-        `<input type="datetime-local">` or manual DatePicker + time combos.
+        used where appropriate. Use `DatePicker` / `DateTimePicker` instead of native
+        `<input type="date">` / `<input type="datetime-local">`.
   - [ ] Dynamic imports with `FormFieldSkeleton` are used for heavy inputs.
   - [ ] Profile forms reuse `lib/profiles/profile-form-utils.ts` where applicable.
 

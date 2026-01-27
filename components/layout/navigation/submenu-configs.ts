@@ -1,6 +1,7 @@
 import type { SubmenuConfig, SubmenuIconMap, SubmenuNavigationSection } from './submenu-types';
 import {
   BarChart3,
+  CalendarDays,
   ClipboardList,
   DollarSign,
   ExternalLink,
@@ -48,6 +49,7 @@ export const eventNavigationSections: SubmenuNavigationSection[] = [
     titleKey: 'general',
     items: [
       { label: 'overview', href: '', icon: 'overview' },
+      { label: 'editions', href: '/editions', icon: 'editions' },
       { label: 'settings', href: '/settings', icon: 'settings' },
     ],
   },
@@ -71,7 +73,10 @@ export const eventNavigationSections: SubmenuNavigationSection[] = [
   },
   {
     titleKey: 'management',
-    items: [{ label: 'registrations', href: '/registrations', icon: 'registrations' }],
+    items: [
+      { label: 'groupRegistrations', href: '/group-registrations', icon: 'groupRegistrations' },
+      { label: 'registrations', href: '/registrations', icon: 'registrations' },
+    ],
   },
 ];
 
@@ -82,6 +87,7 @@ export const eventNavigationSections: SubmenuNavigationSection[] = [
 export const eventIconMap: SubmenuIconMap = {
   addOns: Gift,
   barChart3: BarChart3,
+  editions: CalendarDays,
   clipboardList: ClipboardList,
   coupons: Tag,
   dollarSign: DollarSign,
@@ -94,6 +100,7 @@ export const eventIconMap: SubmenuIconMap = {
   overview: BarChart3,
   policies: ClipboardList,
   pricing: DollarSign,
+  groupRegistrations: Users,
   registrations: Users,
   settings: Settings,
   tag: Tag,

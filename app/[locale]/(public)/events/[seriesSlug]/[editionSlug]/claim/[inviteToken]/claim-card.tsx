@@ -1,13 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { claimInvite } from '@/lib/events/invite-claim/actions';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Loader2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 
 type ClaimCardProps = {
@@ -30,6 +31,8 @@ type ClaimResult = { registrationId: string };
 
 export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps) {
   const t = useTranslations('pages.events.claim');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   const router = useRouter();
 
   const errorMap: Record<string, string> = {
@@ -85,6 +88,8 @@ export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps
     },
   });
 
+  const dateOfBirthField = form.register('dateOfBirth');
+
   return (
     <div className="container mx-auto px-4 py-16 max-w-lg">
       <Form form={form} className="rounded-lg border bg-card p-8 shadow-sm text-center space-y-4">
@@ -105,13 +110,13 @@ export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps
         {needsDob ? (
           <div className="text-left">
             <FormField label={t('dobLabel')} required error={form.errors.dateOfBirth}>
-              <input
-                type="date"
-                className={cn(
-                  'w-full rounded-md border bg-background px-3 py-2 text-sm',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                )}
-                {...form.register('dateOfBirth')}
+              <DatePicker
+                locale={locale}
+                value={dateOfBirthField.value}
+                onChangeAction={(value) => dateOfBirthField.onChange(value)}
+                clearLabel={tCommon('clear')}
+                name={dateOfBirthField.name as string}
+                className={cn('w-full')}
                 disabled={form.isSubmitting}
               />
             </FormField>

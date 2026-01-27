@@ -55,6 +55,7 @@ function EventSubmenuNavigation({
 
   const itemLabels = {
     overview: tNav('overview'),
+    editions: tNav('editions'),
     settings: tNav('settings'),
     faq: tNav('faq'),
     waivers: tNav('waivers'),
@@ -64,6 +65,7 @@ function EventSubmenuNavigation({
     pricing: tNav('pricing'),
     addOns: tNav('addOns'),
     coupons: tNav('coupons'),
+    groupRegistrations: tNav('groupRegistrations'),
     registrations: tNav('registrations'),
   };
 
