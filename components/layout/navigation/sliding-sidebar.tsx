@@ -121,6 +121,7 @@ export function SlidingSidebar({ items, sections }: SlidingSidebarProps) {
               <SidebarBackHeader
                 title={submenuContext.title}
                 subtitle={submenuContext.subtitle}
+                metaBadge={submenuContext.metaBadge}
                 onClick={goToRoot}
               />
               <nav className="sliding-nav-panel-nav">

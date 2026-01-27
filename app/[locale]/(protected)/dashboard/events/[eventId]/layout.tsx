@@ -1,4 +1,4 @@
-import { getPathname, Link } from '@/i18n/navigation';
+import { getPathname } from '@/i18n/navigation';
 import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
@@ -9,7 +9,6 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import { ReactNode } from 'react';
-import { ChevronLeft } from 'lucide-react';
 
 type EventLayoutProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -71,22 +70,16 @@ export default async function EventDetailLayout({
       submenuId="event-detail"
       title={`${event.seriesName} ${event.editionLabel}`}
       subtitle={event.organizationName}
+      metaBadge={{
+        label: tEvents(`visibility.${event.visibility as EventVisibility}`),
+        tone: (event.visibility as EventVisibility) ?? 'draft',
+      }}
       params={{ eventId }}
       basePath={`/dashboard/events/${eventId}`}
       footerLink={footerLink}
     >
-      {/* Header - Breadcrumb and Title */}
-      <div className="mb-6">
-        {/* Breadcrumb - hidden on mobile where drawer provides navigation */}
-        <Link
-          href="/dashboard/events"
-          className="hidden md:inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          {tEvents('title')}
-        </Link>
-
-        {/* Event Title */}
+      {/* Header: shown on mobile where sidebar is collapsed; hidden on desktop to avoid duplicate title */}
+      <div className="mb-6 md:hidden">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3">

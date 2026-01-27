@@ -77,7 +77,15 @@ const defaultSubmenuConfigs: SubmenuConfig[] = [
       return match ? { eventId: match[1] } : null;
     },
   },
-  // Future: Add organization settings, etc.
+  {
+    id: 'org-detail',
+    parentItemHref: '/dashboard/organizations',
+    urlPattern: /^\/dashboard\/organizations\/([^/]+)/,
+    extractParams: (pathname) => {
+      const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)/);
+      return match ? { orgId: match[1] } : null;
+    },
+  },
 ];
 
 export function SlidingNavProvider({

@@ -11,6 +11,11 @@ type SubmenuContextProviderProps = {
   title: string;
   /** Optional subtitle (e.g., organization name) */
   subtitle?: string;
+  /** Optional badge displayed under the title (e.g., visibility status) */
+  metaBadge?: {
+    label: string;
+    tone: 'draft' | 'published' | 'unlisted' | 'archived';
+  } | null;
   /** Route params extracted from URL */
   params: Record<string, string>;
   /** Base path for resolving submenu item links */
@@ -45,6 +50,7 @@ export function SubmenuContextProvider({
   submenuId,
   title,
   subtitle,
+  metaBadge = null,
   params,
   basePath,
   footerLink,
@@ -56,6 +62,7 @@ export function SubmenuContextProvider({
   // Serialize objects to stable strings for dependency comparison
   const paramsKey = JSON.stringify(params);
   const footerLinkKey = JSON.stringify(footerLink);
+  const metaBadgeKey = JSON.stringify(metaBadge);
 
   useEffect(() => {
     if (!setSubmenuContext) return;
@@ -64,6 +71,7 @@ export function SubmenuContextProvider({
       id: submenuId,
       title,
       subtitle,
+      metaBadge: metaBadgeKey ? JSON.parse(metaBadgeKey) : null,
       params: JSON.parse(paramsKey),
       basePath,
       footerLink: footerLinkKey ? JSON.parse(footerLinkKey) : null,
@@ -75,7 +83,7 @@ export function SubmenuContextProvider({
     return () => {
       setSubmenuContext(null);
     };
-  }, [setSubmenuContext, submenuId, title, subtitle, paramsKey, basePath, footerLinkKey]);
+  }, [setSubmenuContext, submenuId, title, subtitle, metaBadgeKey, paramsKey, basePath, footerLinkKey]);
 
   return <>{children}</>;
 }

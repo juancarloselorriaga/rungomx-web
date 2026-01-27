@@ -27,7 +27,8 @@ export function SubmenuNavigation({ submenuId, ...props }: SubmenuNavigationProp
   switch (submenuId) {
     case 'event-detail':
       return <EventSubmenuNavigation {...props} />;
-    // Future: case 'org-settings': return <OrgSubmenuNavigation {...props} />;
+    case 'org-detail':
+      return <OrgSubmenuNavigation {...props} />;
     default:
       return null;
   }
@@ -81,6 +82,15 @@ function EventSubmenuNavigation({
       pathname={pathname}
     />
   );
+}
+
+/**
+ * Organization detail submenu navigation.
+ * Organizations currently have no internal sections, so we render nothing.
+ * The sidebar still shows the back header with organization name via context.
+ */
+function OrgSubmenuNavigation() {
+  return null;
 }
 
 /**

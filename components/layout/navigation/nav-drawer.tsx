@@ -81,6 +81,7 @@ export function NavigationDrawerContent({
                   <SidebarBackHeader
                     title={submenuContext.title}
                     subtitle={submenuContext.subtitle}
+                    metaBadge={submenuContext.metaBadge}
                     onClick={goToRoot}
                     variant="drawer"
                   />

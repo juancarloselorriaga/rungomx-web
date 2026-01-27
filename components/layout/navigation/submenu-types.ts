@@ -58,6 +58,11 @@ export type SubmenuContext = {
   title: string;
   /** Optional subtitle (e.g., organization name) */
   subtitle?: string;
+  /** Optional badge displayed under the title (e.g., visibility status) */
+  metaBadge?: {
+    label: string;
+    tone: 'draft' | 'published' | 'unlisted' | 'archived';
+  } | null;
   /** Route params extracted from URL */
   params: Record<string, string>;
   /** Base path for resolving submenu item links */

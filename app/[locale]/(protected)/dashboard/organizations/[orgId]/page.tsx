@@ -1,11 +1,11 @@
-import { getPathname, Link } from '@/i18n/navigation';
+import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
+import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getOrganizationWithMembers } from '@/lib/organizations/queries';
 import { getOrgMembership, hasOrgPermission } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -70,42 +70,44 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
     : { ok: true as const, data: null };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link
-          href="/dashboard/organizations"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('detail.backToList')}
-        </Link>
-        <h1 className="text-3xl font-bold mb-2">{organization.name}</h1>
-        <p className="text-muted-foreground">
-          {t('detail.slugLabel')}: {organization.slug}
-        </p>
+    <SubmenuContextProvider
+      submenuId="org-detail"
+      title={organization.name}
+      subtitle={undefined}
+      params={{ orgId }}
+      basePath={`/dashboard/organizations/${orgId}`}
+      footerLink={null}
+    >
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">{organization.name}</h1>
+          <p className="text-muted-foreground">
+            {t('detail.slugLabel')}: {organization.slug}
+          </p>
+        </div>
+
+        <OrganizationSettingsForm
+          organizationId={organization.id}
+          name={organization.name}
+          slug={organization.slug}
+          canEdit={isOwner}
+        />
+
+        <OrganizationMembersManager
+          organizationId={organization.id}
+          members={organization.members}
+          canManageMembers={canManageMembers}
+          currentUserId={authContext.user!.id}
+          isSupportUser={isSupportUser}
+        />
+
+        <PayoutProfileForm
+          organizationId={organization.id}
+          canEdit={canEditPayout}
+          initialProfile={payoutProfileResult.ok ? payoutProfileResult.data : null}
+          initialError={payoutProfileResult.ok ? null : payoutProfileResult.error}
+        />
       </div>
-
-      <OrganizationSettingsForm
-        organizationId={organization.id}
-        name={organization.name}
-        slug={organization.slug}
-        canEdit={isOwner}
-      />
-
-      <OrganizationMembersManager
-        organizationId={organization.id}
-        members={organization.members}
-        canManageMembers={canManageMembers}
-        currentUserId={authContext.user!.id}
-        isSupportUser={isSupportUser}
-      />
-
-      <PayoutProfileForm
-        organizationId={organization.id}
-        canEdit={canEditPayout}
-        initialProfile={payoutProfileResult.ok ? payoutProfileResult.data : null}
-        initialError={payoutProfileResult.ok ? null : payoutProfileResult.error}
-      />
-    </div>
+    </SubmenuContextProvider>
   );
 }

@@ -28,16 +28,15 @@ export const submenuConfigs: SubmenuConfig[] = [
       return match ? { eventId: match[1] } : null;
     },
   },
-  // Future: Add organization settings, etc.
-  // {
-  //   id: 'org-settings',
-  //   parentItemHref: '/dashboard/organizations',
-  //   urlPattern: /^\/dashboard\/organizations\/([^/]+)\/settings/,
-  //   extractParams: (pathname) => {
-  //     const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)\/settings/);
-  //     return match ? { orgId: match[1] } : null;
-  //   },
-  // },
+  {
+    id: 'org-detail',
+    parentItemHref: '/dashboard/organizations',
+    urlPattern: /^\/dashboard\/organizations\/([^/]+)/,
+    extractParams: (pathname) => {
+      const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)/);
+      return match ? { orgId: match[1] } : null;
+    },
+  },
 ];
 
 /**

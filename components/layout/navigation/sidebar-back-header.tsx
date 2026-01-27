@@ -9,6 +9,11 @@ type SidebarBackHeaderProps = {
   title: string;
   /** Optional subtitle (e.g., organization name) */
   subtitle?: string;
+  /** Optional badge displayed under the title (e.g., visibility status) */
+  metaBadge?: {
+    label: string;
+    tone: 'draft' | 'published' | 'unlisted' | 'archived';
+  } | null;
   /** Click handler for back navigation (does not navigate, just changes display) */
   onClick: () => void;
   /** Optional className for the container */
@@ -25,10 +30,21 @@ type SidebarBackHeaderProps = {
 export function SidebarBackHeader({
   title,
   subtitle,
+  metaBadge,
   onClick,
   className,
   variant = 'sidebar',
 }: SidebarBackHeaderProps) {
+  const badgeToneClasses: Record<
+    NonNullable<SidebarBackHeaderProps['metaBadge']>['tone'],
+    string
+  > = {
+    draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
+    published: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+    unlisted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+    archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  };
+
   return (
     <div
       className={cn(
@@ -53,6 +69,18 @@ export function SidebarBackHeader({
           {subtitle && (
             <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
           )}
+          {metaBadge ? (
+            <div className="mt-1">
+              <span
+                className={cn(
+                  'inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold',
+                  badgeToneClasses[metaBadge.tone],
+                )}
+              >
+                {metaBadge.label}
+              </span>
+            </div>
+          ) : null}
         </div>
       </Button>
     </div>
