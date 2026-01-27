@@ -3,6 +3,7 @@
 import { useRouter } from '@/i18n/navigation';
 import type { RegistrationListItem } from '@/lib/events/registrations';
 import type { RegistrationStatus } from '@/lib/events/constants';
+import { DatePicker } from '@/components/ui/date-picker';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState, useTransition } from 'react';
@@ -46,6 +47,7 @@ export function RegistrationsTable({
   locale,
 }: RegistrationsTableProps) {
   const t = useTranslations('pages.eventsRegistrations');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [searchInput, setSearchInput] = useState(currentSearch || '');
@@ -113,16 +115,22 @@ export function RegistrationsTable({
     updateFilters({ search: '', page: '1' });
   };
 
-  const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleDateFromChange = (value: string) => {
     setDateFromInput(value);
-    updateFilters({ dateFrom: value, page: '1' });
+
+    const nextDateTo = dateToInput && value && dateToInput < value ? '' : dateToInput;
+    if (nextDateTo !== dateToInput) setDateToInput(nextDateTo);
+
+    updateFilters({ dateFrom: value, dateTo: nextDateTo, page: '1' });
   };
 
-  const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleDateToChange = (value: string) => {
     setDateToInput(value);
-    updateFilters({ dateTo: value, page: '1' });
+
+    const nextDateFrom = dateFromInput && value && value < dateFromInput ? '' : dateFromInput;
+    if (nextDateFrom !== dateFromInput) setDateFromInput(nextDateFrom);
+
+    updateFilters({ dateFrom: nextDateFrom, dateTo: value, page: '1' });
   };
 
   const clearDates = () => {
@@ -183,30 +191,31 @@ export function RegistrationsTable({
 
             {/* Date range filter */}
             <div className="flex items-center gap-2">
-              <label htmlFor="date-from" className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {t('filters.dateFrom')}
-              </label>
-              <input
-                id="date-from"
-                type="date"
+              </span>
+              <DatePicker
+                locale={locale}
                 value={dateFromInput}
-                onChange={handleDateFromChange}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                onChangeAction={handleDateFromChange}
+                clearLabel={tCommon('clear')}
                 disabled={isPending}
+                max={dateToInput || undefined}
+                className="w-[170px]"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label htmlFor="date-to" className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {t('filters.dateTo')}
-              </label>
-              <input
-                id="date-to"
-                type="date"
+              </span>
+              <DatePicker
+                locale={locale}
                 value={dateToInput}
-                onChange={handleDateToChange}
-                min={dateFromInput || undefined}
-                className="rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                onChangeAction={handleDateToChange}
+                clearLabel={tCommon('clear')}
                 disabled={isPending}
+                min={dateFromInput || undefined}
+                className="w-[170px]"
               />
             </div>
             {(dateFromInput || dateToInput) && (

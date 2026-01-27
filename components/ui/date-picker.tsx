@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import * as React from 'react';
+import type { Matcher } from 'react-day-picker';
 
 type DatePickerProps = {
   value?: string | null;
@@ -15,6 +16,9 @@ type DatePickerProps = {
   clearLabel?: string;
   name?: string;
   className?: string;
+  disabled?: boolean;
+  min?: string;
+  max?: string;
 };
 
 function formatDateForInput(date: Date) {
@@ -76,11 +80,19 @@ export function DatePicker({
   clearLabel = 'Clear',
   name,
   className,
+  disabled = false,
+  min,
+  max,
 }: DatePickerProps) {
   const selectedDate = parseLocalDate(value);
   const [open, setOpen] = React.useState(false);
   const [month, setMonth] = React.useState<Date | undefined>(selectedDate ?? new Date());
   const weekStartsOn = locale.startsWith('es') ? 1 : 0;
+
+  React.useEffect(() => {
+    if (!disabled) return;
+    setOpen(false);
+  }, [disabled]);
 
   React.useEffect(() => {
     if (!value) return;
@@ -89,6 +101,15 @@ export function DatePicker({
       setMonth(parsed);
     }
   }, [value]);
+
+  const disabledDays = React.useMemo(() => {
+    const matchers: Matcher[] = [];
+    const minDate = parseLocalDate(min);
+    const maxDate = parseLocalDate(max);
+    if (minDate) matchers.push({ before: minDate });
+    if (maxDate) matchers.push({ after: maxDate });
+    return matchers.length ? matchers : undefined;
+  }, [min, max]);
 
   const formatted = formatDisplayDate(value, locale);
   const resolvedPlaceholder = placeholder ?? formatDatePlaceholder(locale);
@@ -115,6 +136,7 @@ export function DatePicker({
             type="button"
             variant="outline"
             data-empty={!selectedDate}
+            disabled={disabled}
             className="flex h-auto w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition font-normal data-[empty=true]:text-muted-foreground hover:bg-background hover:text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-background dark:hover:bg-background"
           >
             <span className="truncate">{formatted || resolvedPlaceholder}</span>
@@ -132,6 +154,7 @@ export function DatePicker({
             formatters={formatters}
             weekStartsOn={weekStartsOn}
             className="min-w-[300px]"
+            disabled={disabledDays}
             onSelect={(date) => {
               if (!date) {
                 onChangeAction?.('');
