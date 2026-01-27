@@ -1,16 +1,12 @@
-import { and, asc, eq, isNull } from 'drizzle-orm';
-
-import { db } from '@/db';
-import {
-  eventDistances,
-  eventEditions,
-  groupRegistrationBatchRows,
-  registrationInvites,
-} from '@/db/schema';
 import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { BatchAccessError, getBatchForCoordinatorOrThrow } from '@/lib/events/group-upload/access';
-import { getUploadLinkContext } from '@/lib/events/group-upload/queries';
+import {
+  getBatchDistance,
+  getBatchEditionWithSeries,
+  getBatchRowsWithInvites,
+  getUploadLinkContext,
+} from '@/lib/events/group-upload/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
@@ -91,10 +87,7 @@ export default async function GroupUploadBatchPage({ params }: GroupUploadBatchP
     throw error;
   }
 
-  const edition = await db.query.eventEditions.findFirst({
-    where: and(eq(eventEditions.id, access.batch.editionId), isNull(eventEditions.deletedAt)),
-    with: { series: true },
-  });
+  const edition = await getBatchEditionWithSeries(access.batch.editionId);
 
   if (!edition?.series) {
     notFound();
@@ -117,64 +110,14 @@ export default async function GroupUploadBatchPage({ params }: GroupUploadBatchP
   }
 
   const distance = access.batch.distanceId
-    ? await db.query.eventDistances.findFirst({
-        where: and(eq(eventDistances.id, access.batch.distanceId), isNull(eventDistances.deletedAt)),
-      })
+    ? await getBatchDistance(access.batch.distanceId)
     : null;
 
   if (!distance) {
     notFound();
   }
 
-  const rows = await db
-    .select({
-      rowId: groupRegistrationBatchRows.id,
-      rowIndex: groupRegistrationBatchRows.rowIndex,
-      rawJson: groupRegistrationBatchRows.rawJson,
-      validationErrors: groupRegistrationBatchRows.validationErrorsJson,
-      createdRegistrationId: groupRegistrationBatchRows.createdRegistrationId,
-      inviteId: registrationInvites.id,
-      inviteStatus: registrationInvites.status,
-      inviteEmail: registrationInvites.email,
-      inviteSendCount: registrationInvites.sendCount,
-      inviteLastSentAt: registrationInvites.lastSentAt,
-      inviteExpiresAt: registrationInvites.expiresAt,
-    })
-    .from(groupRegistrationBatchRows)
-    .leftJoin(
-      registrationInvites,
-      and(
-        eq(registrationInvites.batchRowId, groupRegistrationBatchRows.id),
-        eq(registrationInvites.isCurrent, true),
-      ),
-    )
-    .where(eq(groupRegistrationBatchRows.batchId, access.batch.id))
-    .orderBy(asc(groupRegistrationBatchRows.rowIndex));
-
-  const mappedRows = rows.map((row) => {
-    const raw = (row.rawJson ?? {}) as Record<string, unknown>;
-
-    return {
-      id: row.rowId,
-      rowIndex: row.rowIndex,
-      firstName: typeof raw.firstName === 'string' ? raw.firstName : '',
-      lastName: typeof raw.lastName === 'string' ? raw.lastName : '',
-      email: typeof raw.email === 'string' ? raw.email : '',
-      dateOfBirth: typeof raw.dateOfBirth === 'string' ? raw.dateOfBirth : null,
-      validationErrors: row.validationErrors ?? [],
-      createdRegistrationId: row.createdRegistrationId ?? null,
-      invite: row.inviteId
-        ? {
-            id: row.inviteId,
-            status: row.inviteStatus ?? 'draft',
-            sendCount: row.inviteSendCount ?? 0,
-            lastSentAt: row.inviteLastSentAt ? row.inviteLastSentAt.toISOString() : null,
-            expiresAt: row.inviteExpiresAt ? row.inviteExpiresAt.toISOString() : null,
-            email: row.inviteEmail ?? '',
-          }
-        : null,
-    };
-  });
+  const mappedRows = await getBatchRowsWithInvites(access.batch.id);
 
   return (
     <GroupUploadBatchManager

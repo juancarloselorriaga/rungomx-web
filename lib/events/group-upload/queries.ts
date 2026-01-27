@@ -1,9 +1,10 @@
-import { and, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
   eventDistances,
   eventEditions,
+  groupRegistrationBatchRows,
   groupRegistrationBatches,
   groupUploadLinks,
   registrationInvites,
@@ -239,4 +240,90 @@ export async function getUploadLinkContext(params: {
       inviteCount: linkResult.inviteCount,
     },
   };
+}
+
+type InviteStatus = 'draft' | 'sent' | 'claimed' | 'cancelled' | 'expired' | 'superseded';
+
+export type BatchRowWithInvite = {
+  id: string;
+  rowIndex: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  dateOfBirth: string | null;
+  validationErrors: string[];
+  createdRegistrationId: string | null;
+  invite: {
+    id: string;
+    status: InviteStatus;
+    sendCount: number;
+    lastSentAt: string | null;
+    expiresAt: string | null;
+    email: string;
+  } | null;
+};
+
+export async function getBatchRowsWithInvites(batchId: string): Promise<BatchRowWithInvite[]> {
+  const rows = await db
+    .select({
+      rowId: groupRegistrationBatchRows.id,
+      rowIndex: groupRegistrationBatchRows.rowIndex,
+      rawJson: groupRegistrationBatchRows.rawJson,
+      validationErrors: groupRegistrationBatchRows.validationErrorsJson,
+      createdRegistrationId: groupRegistrationBatchRows.createdRegistrationId,
+      inviteId: registrationInvites.id,
+      inviteStatus: registrationInvites.status,
+      inviteEmail: registrationInvites.email,
+      inviteSendCount: registrationInvites.sendCount,
+      inviteLastSentAt: registrationInvites.lastSentAt,
+      inviteExpiresAt: registrationInvites.expiresAt,
+    })
+    .from(groupRegistrationBatchRows)
+    .leftJoin(
+      registrationInvites,
+      and(
+        eq(registrationInvites.batchRowId, groupRegistrationBatchRows.id),
+        eq(registrationInvites.isCurrent, true),
+      ),
+    )
+    .where(eq(groupRegistrationBatchRows.batchId, batchId))
+    .orderBy(asc(groupRegistrationBatchRows.rowIndex));
+
+  return rows.map((row) => {
+    const raw = (row.rawJson ?? {}) as Record<string, unknown>;
+
+    return {
+      id: row.rowId,
+      rowIndex: row.rowIndex,
+      firstName: typeof raw.firstName === 'string' ? raw.firstName : '',
+      lastName: typeof raw.lastName === 'string' ? raw.lastName : '',
+      email: typeof raw.email === 'string' ? raw.email : '',
+      dateOfBirth: typeof raw.dateOfBirth === 'string' ? raw.dateOfBirth : null,
+      validationErrors: row.validationErrors ?? [],
+      createdRegistrationId: row.createdRegistrationId ?? null,
+      invite: row.inviteId
+        ? {
+            id: row.inviteId,
+            status: (row.inviteStatus ?? 'draft') as InviteStatus,
+            sendCount: row.inviteSendCount ?? 0,
+            lastSentAt: row.inviteLastSentAt ? row.inviteLastSentAt.toISOString() : null,
+            expiresAt: row.inviteExpiresAt ? row.inviteExpiresAt.toISOString() : null,
+            email: row.inviteEmail ?? '',
+          }
+        : null,
+    };
+  });
+}
+
+export async function getBatchEditionWithSeries(editionId: string) {
+  return db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+}
+
+export async function getBatchDistance(distanceId: string) {
+  return db.query.eventDistances.findFirst({
+    where: and(eq(eventDistances.id, distanceId), isNull(eventDistances.deletedAt)),
+  });
 }
