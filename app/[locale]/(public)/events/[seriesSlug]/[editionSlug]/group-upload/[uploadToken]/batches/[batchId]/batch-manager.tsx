@@ -3,6 +3,7 @@
 import { upload } from '@vercel/blob/client';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
 import {
   cancelBatch,
@@ -465,12 +466,14 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                         <div className="flex flex-col gap-2">
                           {isEditing ? (
                             <div className="flex flex-col gap-2">
-                              <input
-                                type="email"
-                                className="w-full rounded-md border bg-background px-3 py-2 text-xs"
-                                value={editedEmail}
-                                onChange={(event) => setEditedEmail(event.target.value)}
-                              />
+                              <FormField label={t('rows.headers.email')} error={null}>
+                                <input
+                                  type="email"
+                                  className="w-full rounded-md border bg-background px-3 py-2 text-xs"
+                                  value={editedEmail}
+                                  onChange={(event) => setEditedEmail(event.target.value)}
+                                />
+                              </FormField>
                               <div className="flex gap-2">
                                 <Button size="sm" onClick={() => handleUpdateEmail(row.invite!.id)} disabled={isPending}>
                                   {t('updateEmail.action')}

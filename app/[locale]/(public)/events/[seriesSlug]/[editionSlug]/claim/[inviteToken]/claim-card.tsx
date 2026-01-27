@@ -1,12 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { claimInvite } from '@/lib/events/invite-claim/actions';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
 type ClaimCardProps = {
@@ -21,12 +22,17 @@ type ClaimCardProps = {
   needsDob: boolean;
 };
 
+type ClaimFormValues = {
+  dateOfBirth: string;
+};
+
+type ClaimResult = { registrationId: string };
+
 export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps) {
   const t = useTranslations('pages.events.claim');
   const router = useRouter();
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [isPending, startTransition] = useTransition();
-  const errorMap = {
+
+  const errorMap: Record<string, string> = {
     EMAIL_MISMATCH: t('errors.EMAIL_MISMATCH'),
     DOB_MISMATCH: t('errors.DOB_MISMATCH'),
     DOB_REQUIRED: t('errors.DOB_REQUIRED'),
@@ -38,40 +44,50 @@ export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps
     RATE_LIMITED: t('errors.RATE_LIMITED'),
     EMAIL_NOT_VERIFIED: t('errors.EMAIL_NOT_VERIFIED'),
     UNAUTHENTICATED: t('errors.UNAUTHENTICATED'),
-  } as const;
+  };
 
-  const handleClaim = () => {
-    if (needsDob && !dateOfBirth) {
-      toast.error(t('errors.dobRequired'));
-      return;
-    }
+  const form = useForm<ClaimFormValues, ClaimResult>({
+    defaultValues: { dateOfBirth: '' },
+    onSubmit: async (values) => {
+      if (needsDob && !values.dateOfBirth) {
+        return {
+          ok: false as const,
+          error: 'INVALID_INPUT' as const,
+          fieldErrors: { dateOfBirth: [t('errors.dobRequired')] },
+          message: t('errors.dobRequired'),
+        };
+      }
 
-    startTransition(async () => {
       const result = await claimInvite({
         inviteToken,
-        dateOfBirth: needsDob ? dateOfBirth : undefined,
+        dateOfBirth: needsDob ? values.dateOfBirth : undefined,
       });
 
       if (!result.ok) {
-        const message = errorMap[result.code as keyof typeof errorMap] ?? result.error;
-        toast.error(message);
-        return;
+        const message = errorMap[result.code] ?? result.error;
+        return { ok: false as const, error: result.code ?? 'SERVER_ERROR', message };
       }
 
+      return { ok: true as const, data: { registrationId: result.data.registrationId } };
+    },
+    onSuccess: (data) => {
       router.push({
         pathname: '/events/[seriesSlug]/[editionSlug]/register/complete/[registrationId]',
         params: {
           seriesSlug: event.seriesSlug,
           editionSlug: event.editionSlug,
-          registrationId: result.data.registrationId,
+          registrationId: data.registrationId,
         },
       });
-    });
-  };
+    },
+    onError: (message) => {
+      toast.error(message);
+    },
+  });
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-lg">
-      <div className="rounded-lg border bg-card p-8 shadow-sm text-center space-y-4">
+      <Form form={form} className="rounded-lg border bg-card p-8 shadow-sm text-center space-y-4">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
           <CheckCircle2 className="h-8 w-8 text-primary" />
         </div>
@@ -84,27 +100,29 @@ export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps
           </p>
         </div>
 
+        <FormError />
+
         {needsDob ? (
-          <div className="space-y-2 text-left">
-            <label className="text-sm font-medium">{t('dobLabel')}</label>
-            <input
-              type="date"
-              className={cn(
-                'w-full rounded-md border bg-background px-3 py-2 text-sm',
-                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              )}
-              value={dateOfBirth}
-              onChange={(event) => setDateOfBirth(event.target.value)}
-              disabled={isPending}
-            />
+          <div className="text-left">
+            <FormField label={t('dobLabel')} required error={form.errors.dateOfBirth}>
+              <input
+                type="date"
+                className={cn(
+                  'w-full rounded-md border bg-background px-3 py-2 text-sm',
+                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                )}
+                {...form.register('dateOfBirth')}
+                disabled={form.isSubmitting}
+              />
+            </FormField>
           </div>
         ) : null}
 
-        <Button onClick={handleClaim} disabled={isPending} className="w-full">
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+        <Button type="submit" disabled={form.isSubmitting} className="w-full">
+          {form.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           {t('claimAction')}
         </Button>
-      </div>
+      </Form>
     </div>
   );
 }

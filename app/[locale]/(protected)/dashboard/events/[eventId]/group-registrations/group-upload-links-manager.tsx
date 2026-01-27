@@ -8,7 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { FormField } from '@/components/ui/form-field';
 import { getPathname } from '@/i18n/navigation';
+import { Form, FormError, useForm } from '@/lib/forms';
 import { createUploadLink, listUploadLinksForEdition, revokeUploadLink } from '@/lib/events/group-upload/actions';
 import { PAYMENT_RESPONSIBILITIES } from '@/lib/events/constants';
 import { siteUrl } from '@/config/url';
@@ -89,6 +91,26 @@ function normalizeLink(link: UploadLinkPayload): UploadLinkItem {
   };
 }
 
+type CreateLinkFormValues = {
+  name: string;
+  paymentResponsibility: string;
+  startsAt: string;
+  endsAt: string;
+  maxBatches: string;
+  maxInvites: string;
+};
+
+type CreateLinkResult = { token: string; tokenPrefix: string };
+
+const CREATE_LINK_DEFAULTS: CreateLinkFormValues = {
+  name: '',
+  paymentResponsibility: 'self_pay',
+  startsAt: '',
+  endsAt: '',
+  maxBatches: '',
+  maxInvites: '',
+};
+
 export function GroupUploadLinksManager({
   editionId,
   seriesSlug,
@@ -102,19 +124,42 @@ export function GroupUploadLinksManager({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [createdLink, setCreatedLink] = useState<{ token: string; tokenPrefix: string } | null>(null);
 
-  const [name, setName] = useState('');
-  const [paymentResponsibility, setPaymentResponsibility] = useState<typeof PAYMENT_RESPONSIBILITIES[number]>('self_pay');
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
-  const [maxBatches, setMaxBatches] = useState('');
-  const [maxInvites, setMaxInvites] = useState('');
-
   const refreshLinks = async () => {
     const result = await listUploadLinksForEdition({ editionId });
     if (result.ok) {
       setLinks(result.data.map(normalizeLink));
     }
   };
+
+  const form = useForm<CreateLinkFormValues, CreateLinkResult>({
+    defaultValues: CREATE_LINK_DEFAULTS,
+    onSubmit: async (values) => {
+      const result = await createUploadLink({
+        editionId,
+        name: values.name.trim() || undefined,
+        paymentResponsibility: values.paymentResponsibility as typeof PAYMENT_RESPONSIBILITIES[number],
+        startsAt: toIsoString(values.startsAt),
+        endsAt: toIsoString(values.endsAt),
+        maxBatches: values.maxBatches ? Number.parseInt(values.maxBatches, 10) : undefined,
+        maxInvites: values.maxInvites ? Number.parseInt(values.maxInvites, 10) : undefined,
+      });
+
+      if (!result.ok) {
+        return { ok: false as const, error: result.code ?? 'SERVER_ERROR', message: result.error };
+      }
+
+      return { ok: true as const, data: { token: result.data.token, tokenPrefix: result.data.tokenPrefix } };
+    },
+    onSuccess: async (data) => {
+      setCreatedLink({ token: data.token, tokenPrefix: data.tokenPrefix });
+      setIsDialogOpen(true);
+      form.reset();
+      await refreshLinks();
+    },
+    onError: (message) => {
+      toast.error(t('errors.create'), { description: message });
+    },
+  });
 
   const linkUrl = useMemo(() => {
     if (!createdLink) return null;
@@ -127,34 +172,6 @@ export function GroupUploadLinksManager({
     });
     return `${siteUrl}${path === '/' ? '' : path}`;
   }, [createdLink, editionSlug, locale, seriesSlug]);
-
-  const handleCreate = () => {
-    startTransition(async () => {
-      const result = await createUploadLink({
-        editionId,
-        name: name.trim() || undefined,
-        paymentResponsibility,
-        startsAt: toIsoString(startsAt),
-        endsAt: toIsoString(endsAt),
-        maxBatches: maxBatches ? Number.parseInt(maxBatches, 10) : undefined,
-        maxInvites: maxInvites ? Number.parseInt(maxInvites, 10) : undefined,
-      });
-
-      if (!result.ok) {
-        toast.error(t('errors.create'), { description: result.error });
-        return;
-      }
-
-      setCreatedLink({ token: result.data.token, tokenPrefix: result.data.tokenPrefix });
-      setIsDialogOpen(true);
-      setName('');
-      setStartsAt('');
-      setEndsAt('');
-      setMaxBatches('');
-      setMaxInvites('');
-      await refreshLinks();
-    });
-  };
 
   const handleRevoke = (linkId: string) => {
     if (!confirm(t('confirmRevoke'))) return;
@@ -195,74 +212,63 @@ export function GroupUploadLinksManager({
         <p className="text-sm text-muted-foreground">{t('description')}</p>
       </div>
 
-      <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
+      <Form form={form} className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
+        <FormError />
         <div className="grid gap-4 md:grid-cols-2">
-          <label className="space-y-2 text-sm">
-            <span className="font-medium">{t('fields.name')}</span>
+          <FormField label={t('fields.name')} error={form.errors.name}>
             <input
               type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
+              {...form.register('name')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               placeholder={t('fields.namePlaceholder')}
             />
-          </label>
-          <label className="space-y-2 text-sm">
-            <span className="font-medium">{t('fields.paymentResponsibility')}</span>
+          </FormField>
+          <FormField label={t('fields.paymentResponsibility')} error={form.errors.paymentResponsibility}>
             <select
-              value={paymentResponsibility}
-              onChange={(event) => setPaymentResponsibility(event.target.value as typeof PAYMENT_RESPONSIBILITIES[number])}
+              {...form.register('paymentResponsibility')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
               <option value="self_pay">{t('payment.selfPay')}</option>
               <option value="central_pay">{t('payment.centralPay')}</option>
             </select>
-          </label>
-          <label className="space-y-2 text-sm">
-            <span className="font-medium">{t('fields.startsAt')}</span>
+          </FormField>
+          <FormField label={t('fields.startsAt')} error={form.errors.startsAt}>
             <input
               type="datetime-local"
-              value={startsAt}
-              onChange={(event) => setStartsAt(event.target.value)}
+              {...form.register('startsAt')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
-          </label>
-          <label className="space-y-2 text-sm">
-            <span className="font-medium">{t('fields.endsAt')}</span>
+          </FormField>
+          <FormField label={t('fields.endsAt')} error={form.errors.endsAt}>
             <input
               type="datetime-local"
-              value={endsAt}
-              onChange={(event) => setEndsAt(event.target.value)}
+              {...form.register('endsAt')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
-          </label>
-          <label className="space-y-2 text-sm">
-            <span className="font-medium">{t('fields.maxBatches')}</span>
+          </FormField>
+          <FormField label={t('fields.maxBatches')} error={form.errors.maxBatches}>
             <input
               type="number"
               min={1}
-              value={maxBatches}
-              onChange={(event) => setMaxBatches(event.target.value)}
+              {...form.register('maxBatches')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
-          </label>
-          <label className="space-y-2 text-sm">
-            <span className="font-medium">{t('fields.maxInvites')}</span>
+          </FormField>
+          <FormField label={t('fields.maxInvites')} error={form.errors.maxInvites}>
             <input
               type="number"
               min={1}
-              value={maxInvites}
-              onChange={(event) => setMaxInvites(event.target.value)}
+              {...form.register('maxInvites')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
-          </label>
+          </FormField>
         </div>
 
-        <Button onClick={handleCreate} disabled={isPending}>
-          {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+        <Button type="submit" disabled={form.isSubmitting}>
+          {form.isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
           {t('create')}
         </Button>
-      </div>
+      </Form>
 
       <div className="rounded-lg border bg-card p-4 shadow-sm overflow-hidden">
         <table className="min-w-full text-sm">
