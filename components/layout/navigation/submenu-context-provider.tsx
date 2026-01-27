@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useSlidingNavOptional } from './sliding-nav-context';
 import type { SubmenuContext, SubmenuFooterLink } from './submenu-types';
 
@@ -51,17 +51,13 @@ export function SubmenuContextProvider({
   children,
 }: SubmenuContextProviderProps) {
   const slidingNav = useSlidingNavOptional();
-
-  // Store setSubmenuContext in a ref to avoid dependency issues
-  const setSubmenuContextRef = useRef(slidingNav?.setSubmenuContext);
-  setSubmenuContextRef.current = slidingNav?.setSubmenuContext;
+  const setSubmenuContext = slidingNav?.setSubmenuContext;
 
   // Serialize objects to stable strings for dependency comparison
   const paramsKey = JSON.stringify(params);
   const footerLinkKey = JSON.stringify(footerLink);
 
   useEffect(() => {
-    const setSubmenuContext = setSubmenuContextRef.current;
     if (!setSubmenuContext) return;
 
     const context: SubmenuContext = {
@@ -77,9 +73,9 @@ export function SubmenuContextProvider({
 
     // Clear context when unmounting
     return () => {
-      setSubmenuContextRef.current?.(null);
+      setSubmenuContext(null);
     };
-  }, [submenuId, title, subtitle, paramsKey, basePath, footerLinkKey]);
+  }, [setSubmenuContext, submenuId, title, subtitle, paramsKey, basePath, footerLinkKey]);
 
   return <>{children}</>;
 }

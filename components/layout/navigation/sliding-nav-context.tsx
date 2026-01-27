@@ -5,7 +5,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -87,7 +86,7 @@ export function SlidingNavProvider({
 }: SlidingNavProviderProps) {
   const pathname = usePathname(); // Already locale-stripped
   const [manualRootOverride, setManualRootOverride] = useState(false);
-  const [submenuContext, setSubmenuContext] = useState<SubmenuContext | null>(null);
+  const [submenuContext, setSubmenuContextInternal] = useState<SubmenuContext | null>(null);
 
   // Detect which submenu (if any) matches the current URL
   const detectedSubmenuId = useMemo(() => {
@@ -99,6 +98,16 @@ export function SlidingNavProvider({
     return null;
   }, [pathname, configs]);
 
+  const setSubmenuContext = useCallback(
+    (ctx: SubmenuContext | null) => {
+      setSubmenuContextInternal(ctx);
+      if (ctx === null || (submenuContext && ctx.id !== submenuContext.id)) {
+        setManualRootOverride(false);
+      }
+    },
+    [submenuContext],
+  );
+
   // Compute current display level
   // If manual override is active, show root even when URL matches a submenu
   const displayLevel: DisplayLevel = useMemo(() => {
@@ -107,29 +116,10 @@ export function SlidingNavProvider({
     return 'root';
   }, [manualRootOverride, detectedSubmenuId]);
 
-  // Clear manual override when URL changes to a non-submenu route
-  // This ensures navigating away from an event naturally shows root menu
-  useEffect(() => {
-    if (!detectedSubmenuId) {
-      setManualRootOverride(false);
-    }
-  }, [detectedSubmenuId]);
-
-  // Also clear override when navigating to a different submenu
-  const [lastSubmenuId, setLastSubmenuId] = useState<string | null>(null);
-  useEffect(() => {
-    if (detectedSubmenuId !== lastSubmenuId) {
-      setLastSubmenuId(detectedSubmenuId);
-      // If we navigated to a new submenu, clear the override
-      if (detectedSubmenuId && lastSubmenuId !== null && lastSubmenuId !== detectedSubmenuId) {
-        setManualRootOverride(false);
-      }
-    }
-  }, [detectedSubmenuId, lastSubmenuId]);
-
   const goToRoot = useCallback(() => {
+    if (!detectedSubmenuId) return;
     setManualRootOverride(true);
-  }, []);
+  }, [detectedSubmenuId]);
 
   const enterSubmenu = useCallback(() => {
     setManualRootOverride(false);
@@ -162,6 +152,7 @@ export function SlidingNavProvider({
       submenuContext,
       goToRoot,
       enterSubmenu,
+      setSubmenuContext,
       getSubmenuForHref,
       configs,
     ],
