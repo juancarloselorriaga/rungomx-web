@@ -31,7 +31,10 @@ compliance.
       `components/settings/fields/country-select-field-lazy.tsx`).
     - `GenderField` (`components/settings/fields/gender-field.tsx`).
     - `MeasurementField` (`components/settings/fields/measurement-field.tsx`).
-    - `DatePicker` (`components/ui/date-picker.tsx`) for date fields.
+    - `DatePicker` (`components/ui/date-picker.tsx`) for date-only fields.
+    - `DateTimePicker` (`components/ui/date-time-picker.tsx`) for datetime fields.
+      Composes `DatePicker` + `TimeSelect`. Accepts/emits ISO `YYYY-MM-DDTHH:mm` strings.
+      Use instead of native `<input type="datetime-local">` or manual DatePicker + time combos.
 
 - **Dynamic / heavy inputs**
   - Heavy, client-only inputs **must** be loaded via `next/dynamic`:
@@ -267,8 +270,9 @@ When reviewing or generating a form, verify:
         `router.refresh()`.
 
 - **Reusability**
-  - [ ] Shared components (phone, country, gender, measurement, date picker) are used where
-        appropriate.
+  - [ ] Shared components (phone, country, gender, measurement, date picker, datetime picker) are
+        used where appropriate. Use `DateTimePicker` for datetime fields instead of
+        `<input type="datetime-local">` or manual DatePicker + time combos.
   - [ ] Dynamic imports with `FormFieldSkeleton` are used for heavy inputs.
   - [ ] Profile forms reuse `lib/profiles/profile-form-utils.ts` where applicable.
 

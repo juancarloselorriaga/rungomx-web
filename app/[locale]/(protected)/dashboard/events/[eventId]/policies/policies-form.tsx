@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Switch } from '@/components/ui/switch';
 import { updateEventPolicyConfig } from '@/lib/events/actions';
@@ -179,12 +180,11 @@ function PolicySection({
       </FormField>
 
       <FormField label={deadlineLabel} error={form.errors[deadlineKey]}>
-        <input
-          type="datetime-local"
+        <DateTimePicker
           value={deadlineValue}
-          onChange={(event) => form.setFieldValue(deadlineKey, event.target.value as never)}
-          className="w-full max-w-xs rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+          onChangeAction={(v) => form.setFieldValue(deadlineKey, v as never)}
           disabled={!enabled || form.isSubmitting}
+          className="max-w-xs"
         />
       </FormField>
     </section>

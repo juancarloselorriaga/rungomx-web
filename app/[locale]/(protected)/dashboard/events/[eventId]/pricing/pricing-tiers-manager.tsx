@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import { cn } from '@/lib/utils';
@@ -533,11 +534,9 @@ function TierForm({ formData, setFormData, onSave, onCancel, isPending, t }: Tie
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <FormField label={t('tier.startsAtField')}>
-            <input
-              type="datetime-local"
+            <DateTimePicker
               value={formData.startsAt}
-              onChange={(e) => setFormData((prev) => ({ ...prev, startsAt: e.target.value }))}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onChangeAction={(v) => setFormData((prev) => ({ ...prev, startsAt: v }))}
             />
           </FormField>
           <p className="text-xs text-muted-foreground">Leave empty for no start date restriction</p>
@@ -545,11 +544,9 @@ function TierForm({ formData, setFormData, onSave, onCancel, isPending, t }: Tie
 
         <div className="space-y-2">
           <FormField label={t('tier.endsAtField')}>
-            <input
-              type="datetime-local"
+            <DateTimePicker
               value={formData.endsAt}
-              onChange={(e) => setFormData((prev) => ({ ...prev, endsAt: e.target.value }))}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              onChangeAction={(v) => setFormData((prev) => ({ ...prev, endsAt: v }))}
             />
           </FormField>
           <p className="text-xs text-muted-foreground">Leave empty for no end date restriction</p>
