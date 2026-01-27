@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
+import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { getPathname } from '@/i18n/navigation';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { createUploadLink, listUploadLinksForEdition, revokeUploadLink } from '@/lib/events/group-upload/actions';
@@ -323,18 +324,24 @@ export function GroupUploadLinksManager({
                   {t('table.usageCounts', { batches: link.batchCount, invites: link.inviteCount })}
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{link.tokenPrefix}…</td>
-                <td className="px-3 py-2">
-                  <div className="flex flex-wrap gap-2">
-                    {link.status === 'ACTIVE' ? (
-                      <Button size="sm" variant="outline" onClick={() => handleRevoke(link.id)} disabled={isPending}>
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        {t('revoke')}
-                      </Button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap gap-2">
+                      {link.status === 'ACTIVE' ? (
+                        <IconTooltipButton
+                          variant="ghost"
+                          size="icon"
+                          label={t('revoke')}
+                          onClick={() => handleRevoke(link.id)}
+                          disabled={isPending}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </IconTooltipButton>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
@@ -393,4 +400,3 @@ export function GroupUploadLinksManager({
     </div>
   );
 }
-

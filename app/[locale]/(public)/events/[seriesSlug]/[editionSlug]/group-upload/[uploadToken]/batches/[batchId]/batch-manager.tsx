@@ -4,6 +4,7 @@ import { upload } from '@vercel/blob/client';
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { useRouter } from '@/i18n/navigation';
 import {
   cancelBatch,
@@ -22,6 +23,7 @@ import {
   FileUp,
   Loader2,
   Mail,
+  Pencil,
   RefreshCw,
   RotateCw,
   Send,
@@ -483,34 +485,59 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                                 </Button>
                               </div>
                             </div>
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {row.invite.status === 'sent' ? (
-                                <Button size="sm" variant="outline" onClick={() => handleResendInvite(row.invite!.id)} disabled={isPending}>
-                                  <Mail className="h-3 w-3 mr-1" />
-                                  {t('resend.action')}
-                                </Button>
-                              ) : null}
-                              {['draft', 'sent'].includes(row.invite.status) ? (
-                                <Button size="sm" variant="outline" onClick={() => handleRotateInvite(row.invite!.id)} disabled={isPending}>
-                                  <RotateCw className="h-3 w-3 mr-1" />
-                                  {t('rotate.action')}
-                                </Button>
-                              ) : null}
-                              {['draft', 'sent'].includes(row.invite.status) ? (
-                                <Button size="sm" variant="outline" onClick={() => { setEditingInviteId(row.invite!.id); setEditedEmail(row.invite!.email); }} disabled={isPending}>
-                                  {t('updateEmail.action')}
-                                </Button>
-                              ) : null}
-                              {['draft', 'sent'].includes(row.invite.status) ? (
-                                <Button size="sm" variant="destructive" onClick={() => handleCancelInvite(row.invite!.id)} disabled={isPending}>
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  {t('cancelInvite.action')}
-                                </Button>
-                              ) : null}
-                            </div>
-                          )}
-                        </div>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {row.invite.status === 'sent' ? (
+                                  <IconTooltipButton
+                                    variant="ghost"
+                                    size="icon"
+                                    label={t('resend.action')}
+                                    onClick={() => handleResendInvite(row.invite!.id)}
+                                    disabled={isPending}
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                  </IconTooltipButton>
+                                ) : null}
+                                {['draft', 'sent'].includes(row.invite.status) ? (
+                                  <IconTooltipButton
+                                    variant="ghost"
+                                    size="icon"
+                                    label={t('rotate.action')}
+                                    onClick={() => handleRotateInvite(row.invite!.id)}
+                                    disabled={isPending}
+                                  >
+                                    <RotateCw className="h-4 w-4" />
+                                  </IconTooltipButton>
+                                ) : null}
+                                {['draft', 'sent'].includes(row.invite.status) ? (
+                                  <IconTooltipButton
+                                    variant="ghost"
+                                    size="icon"
+                                    label={t('updateEmail.action')}
+                                    onClick={() => {
+                                      setEditingInviteId(row.invite!.id);
+                                      setEditedEmail(row.invite!.email);
+                                    }}
+                                    disabled={isPending}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </IconTooltipButton>
+                                ) : null}
+                                {['draft', 'sent'].includes(row.invite.status) ? (
+                                  <IconTooltipButton
+                                    variant="ghost"
+                                    size="icon"
+                                    label={t('cancelInvite.action')}
+                                    onClick={() => handleCancelInvite(row.invite!.id)}
+                                    disabled={isPending}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </IconTooltipButton>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}

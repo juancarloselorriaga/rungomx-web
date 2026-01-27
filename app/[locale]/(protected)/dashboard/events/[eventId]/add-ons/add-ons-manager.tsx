@@ -10,6 +10,7 @@ import {
   Heart,
   Info,
   Loader2,
+  Pencil,
   Plus,
   Save,
   Trash2,
@@ -18,6 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { cn } from '@/lib/utils';
 
 import {
@@ -455,26 +457,27 @@ export function AddOnsManager({
                         t={t}
                       />
                     ) : (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEditAddOn(addOn)}
-                          >
-                            {t('addOn.edit')}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setDeletingAddOnId(addOn.id)}
-                            disabled={isPending}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            {t('addOn.delete')}
-                          </Button>
-                        </div>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <IconTooltipButton
+                              variant="ghost"
+                              size="icon"
+                              label={t('addOn.edit')}
+                              onClick={() => startEditAddOn(addOn)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </IconTooltipButton>
+                            <IconTooltipButton
+                              variant="ghost"
+                              size="icon"
+                              label={t('addOn.delete')}
+                              onClick={() => setDeletingAddOnId(addOn.id)}
+                              disabled={isPending}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </IconTooltipButton>
+                          </div>
 
                         {/* Options section */}
                         <div className="mt-4 pt-4 border-t">
@@ -544,19 +547,20 @@ export function AddOnsManager({
                                           (inactive)
                                         </span>
                                       )}
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => startEditOption(option)}
-                                      >
-                                        {t('option.edit')}
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() =>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <IconTooltipButton
+                                          variant="ghost"
+                                          size="icon"
+                                          label={t('option.edit')}
+                                          onClick={() => startEditOption(option)}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() =>
                                           setDeletingOptionInfo({
                                             addOnId: addOn.id,
                                             optionId: option.id,
