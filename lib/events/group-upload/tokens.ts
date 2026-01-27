@@ -16,7 +16,8 @@ function resolveInviteTokenSecret(): string {
   const secret =
     process.env.EVENTS_INVITE_TOKEN_SECRET ??
     process.env.AUTH_SECRET ??
-    process.env.NEXTAUTH_SECRET;
+    process.env.NEXTAUTH_SECRET ??
+    process.env.BETTER_AUTH_SECRET;
 
   if (!secret) {
     throw new Error('Missing invite token secret');
