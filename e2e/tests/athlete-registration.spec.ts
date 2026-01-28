@@ -245,7 +245,9 @@ test.describe('Athlete Registration', () => {
     await page.getByRole('link', { name: /view details/i }).first().click();
     await expect(page.getByText(registrationId)).toBeVisible();
     await expect(page.getByText(seriesName)).toBeVisible();
-    await expect(page.getByText(editionLabel)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: `${seriesName} ${editionLabel}` }),
+    ).toBeVisible();
     await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
   });
 

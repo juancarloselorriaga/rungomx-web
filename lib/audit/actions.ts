@@ -68,6 +68,7 @@ export const AUDIT_ACTIONS = {
   'registration.export': 'Registrations exported',
   'registration.update': 'Registration updated',
   'registration.cancel': 'Registration cancelled',
+  'registration.demo_pay': 'Registration demo payment completed',
 
   // Group Registrations (Phase 3)
   'group_registrations.upload': 'Group registrations batch uploaded',
@@ -78,6 +79,7 @@ export const AUDIT_ACTIONS = {
   'group_upload_link.create': 'Group upload link created',
   'group_upload_link.revoke': 'Group upload link revoked',
   'group_upload_batch.create': 'Group upload batch created',
+  'group_upload_batch.discount_apply': 'Group upload batch discount applied',
   'group_upload_invites.send': 'Group upload invites sent',
   'group_upload_invite.cancel': 'Group upload invite cancelled',
   'group_upload_batch.cancel': 'Group upload batch cancelled',

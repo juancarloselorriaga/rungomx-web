@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/badge';
+import { DemoPayButton } from '@/components/dashboard/demo-pay-button';
 import { PrintButton } from '@/components/dashboard/print-button';
 import { Button } from '@/components/ui/button';
 import { getPathname, Link } from '@/i18n/navigation';
@@ -54,6 +55,15 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
   await configPageLocale(params, { pathname: '/dashboard/my-registrations/[registrationId]' });
   const t = await getTranslations('pages.dashboard.myRegistrations');
   const authContext = await getAuthContext();
+  const vercelEnv = process.env.VERCEL_ENV;
+  const isVercelProduction = vercelEnv ? vercelEnv === 'production' : false;
+  const isNonVercelProduction = !vercelEnv && process.env.NODE_ENV === 'production';
+  const isProduction = isVercelProduction || isNonVercelProduction;
+  const allowDemoPaymentsInProduction =
+    process.env.EVENTS_DEMO_PAYMENTS_ALLOW_PRODUCTION === 'true';
+  const demoPaymentsEnabled =
+    process.env.NEXT_PUBLIC_FEATURE_EVENTS_DEMO_PAYMENTS === 'true' &&
+    (!isProduction || allowDemoPaymentsInProduction);
 
   if (!authContext.permissions.canAccessUserArea) {
     redirect(getPathname({ href: '/dashboard', locale }));
@@ -150,14 +160,23 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
             </div>
             <p className="text-sm text-muted-foreground">{t('detail.ticketNote')}</p>
             {registration.status === 'payment_pending' ? (
-              <p className="text-sm text-muted-foreground">{t('detail.paymentPendingNote')}</p>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">{t('detail.paymentPendingNote')}</p>
+                {demoPaymentsEnabled ? (
+                  <p className="text-xs text-muted-foreground">{t('detail.demoPayNote')}</p>
+                ) : null}
+              </div>
             ) : null}
             <div className="flex flex-wrap gap-3">
               <PrintButton label={t('actions.print')} />
               {registration.status === 'payment_pending' ? (
-                <Button type="button" disabled>
-                  {t('actions.payNow')}
-                </Button>
+                demoPaymentsEnabled ? (
+                  <DemoPayButton registrationId={registration.id} />
+                ) : (
+                  <Button type="button" disabled>
+                    {t('actions.payNow')}
+                  </Button>
+                )
               ) : null}
             </div>
           </div>

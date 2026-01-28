@@ -37,7 +37,8 @@
       "viewDetails": "View details",
       "viewEvent": "View event page",
       "print": "Print",
-      "payNow": "Pay now"
+      "payNow": "Pay now",
+      "payNowDemo": "Pay (demo)"
     },
     "labels": {
       "ticket": "Ticket",
@@ -76,6 +77,9 @@
     "detail": {
       "ticketNote": "Show this code or QR at check-in.",
       "paymentPendingNote": "Payment is pending. You can complete payment once the feature is available.",
+      "demoPayNote": "Demo mode: no real charge will be made.",
+      "demoPaySuccess": "Payment completed",
+      "demoPayError": "Payment could not be completed",
       "noWaivers": "No waivers on file.",
       "waiverAccepted": "Accepted",
       "waiverSignature": "Signature",

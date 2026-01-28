@@ -3,7 +3,10 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
+const distDir = process.env.RUNGOMX_NEXT_DIST_DIR?.trim();
+
 const nextConfig: NextConfig = {
+  ...(distDir ? { distDir } : {}),
   cacheComponents: true,
   images: {
     remotePatterns: [

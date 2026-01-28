@@ -147,7 +147,7 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
 
   const canUpload = !hasRows;
   const canReserve = pendingRows.length > 0;
-  const canSendInvites = draftInvites.length > 0;
+  const canSendInvites = batch.status === 'processed' && draftInvites.length > 0;
 
   const handleUpload = () => {
     if (!file) {
@@ -215,6 +215,10 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
         }),
       });
 
+      if (result.data.groupDiscountPercentOff) {
+        toast.success(t('reserve.discountApplied', { percentOff: result.data.groupDiscountPercentOff }));
+      }
+
       router.refresh();
     });
   };
@@ -227,7 +231,12 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
       });
 
       if (!result.ok) {
-        toast.error(t('errors.sendInvites'), { description: result.error });
+        toast.error(t('errors.sendInvites'), {
+          description:
+            result.code === 'BATCH_NOT_PROCESSED'
+              ? t('sendInvites.errors.batchNotProcessed')
+              : result.error,
+        });
         return;
       }
 
@@ -403,6 +412,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
         <div className="text-sm text-muted-foreground">
           {t('reserve.pending', { count: pendingRows.length })} · {t('sendInvites.pending', { count: draftInvites.length })}
         </div>
+        {!canSendInvites && draftInvites.length > 0 && batch.status !== 'processed' ? (
+          <div className="text-xs text-muted-foreground">{t('sendInvites.requiresProcessed')}</div>
+        ) : null}
       </div>
 
       <div className="rounded-lg border bg-card p-5 shadow-sm overflow-hidden">

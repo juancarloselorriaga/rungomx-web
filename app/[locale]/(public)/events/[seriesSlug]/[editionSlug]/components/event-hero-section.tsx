@@ -46,7 +46,7 @@ export function EventHeroSection({
   groupDiscountRules = [],
   labels,
 }: EventHeroSectionProps) {
-  const bestDiscount = groupDiscountRules[0];
+  const hasGroupDiscount = groupDiscountRules.length > 0;
   return (
     <div className="relative bg-muted rounded-2xl">
       <div className="container mx-auto px-4 py-12 max-w-7xl">
@@ -77,7 +77,7 @@ export function EventHeroSection({
               <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
                 {sportTypeLabel}
               </span>
-              {bestDiscount && labels.groupDiscountBadge && (
+              {hasGroupDiscount && labels.groupDiscountBadge && (
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
                   <Users className="h-4 w-4" />
                   {labels.groupDiscountBadge}

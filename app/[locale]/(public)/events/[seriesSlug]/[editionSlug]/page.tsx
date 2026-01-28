@@ -183,15 +183,22 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(cents / 100);
   const formattedMinPrice = minPrice > 0 ? formatPrice(minPrice, event.distances[0]?.currency ?? 'MXN') : null;
 
+  const bestGroupDiscount = event.groupDiscountRules.reduce<
+    (typeof event.groupDiscountRules)[number] | null
+  >((best, rule) => {
+    if (!best) return rule;
+    if (rule.percentOff > best.percentOff) return rule;
+    if (rule.percentOff === best.percentOff && rule.minParticipants < best.minParticipants) {
+      return rule;
+    }
+    return best;
+  }, null);
+
   // Content availability checks
   const hasSharedPool = event.sharedCapacity !== null && event.distances.some((d) => d.capacityScope === 'shared_pool');
   const hasDescription = Boolean(event.description);
   const hasDistances = event.distances.length > 0;
   const hasGroupDiscounts = event.groupDiscountRules.length > 0;
-  const minGroupParticipants = hasGroupDiscounts ? event.groupDiscountRules[0].minParticipants : 0;
-  const maxGroupDiscountPercent = hasGroupDiscounts
-    ? Math.max(...event.groupDiscountRules.map((rule) => rule.percentOff))
-    : 0;
   const hasFaq = event.faqItems.length > 0;
   const hasPolicies = policySections.some((p) => p.enabled || p.text || p.deadline);
 
@@ -266,10 +273,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           fromPrice: formattedMinPrice ? t('detail.fromPrice', { price: formattedMinPrice }) : '',
           free: t('detail.free'),
           registerNow: t('detail.registerNow'),
-          groupDiscountBadge: event.groupDiscountRules[0]
+          groupDiscountBadge: bestGroupDiscount
             ? t('detail.groupDiscount.badge', {
-                minParticipants: event.groupDiscountRules[0].minParticipants,
-                percent: event.groupDiscountRules[0].percentOff,
+                minParticipants: bestGroupDiscount.minParticipants,
+                percent: bestGroupDiscount.percentOff,
               })
             : undefined,
         }}
@@ -322,24 +329,35 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     </div>
                   </div>
                 )}
-                {hasGroupDiscounts && (
-                  <div className="rounded-lg border bg-emerald-50/60 dark:bg-emerald-900/20 p-4 mb-4">
+                {hasGroupDiscounts && bestGroupDiscount ? (
+                  <div className="rounded-lg border bg-emerald-500/5 p-4 mb-4">
                     <div className="flex items-start gap-3">
-                      <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
-                          {t('detail.groupDiscount.calloutTitle')}
-                        </p>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-200">
-                          {t('detail.groupDiscount.calloutDescription', {
-                            minParticipants: minGroupParticipants,
-                            percent: maxGroupDiscountPercent,
-                          })}
-                        </p>
+                      <Users className="h-5 w-5 text-emerald-700 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-sm font-semibold">{t('detail.groupDiscount.title')}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t('detail.groupDiscount.description', { percent: bestGroupDiscount.percentOff })}
+                          </p>
+                        </div>
+                        <ul className="space-y-1 text-sm text-muted-foreground">
+                          {event.groupDiscountRules.map((rule) => (
+                            <li key={rule.minParticipants}>
+                              {t('detail.groupDiscount.tierLine', {
+                                minParticipants: rule.minParticipants,
+                                percent: rule.percentOff,
+                              })}
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">{t('detail.groupDiscount.howTo')}</p>
+                          <p className="text-xs text-muted-foreground">{t('detail.groupDiscount.lockNote')}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
                 <div className="grid gap-4">
                   {event.distances.map((distance) => (
                     <DistanceCard
@@ -355,7 +373,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       }}
                       sharedCapacity={event.sharedCapacity}
                       pricingSchedule={pricingScheduleByDistanceId?.get(distance.id) ?? null}
-                      bestGroupDiscount={event.groupDiscountRules[0]}
+                      bestGroupDiscount={bestGroupDiscount ?? undefined}
                     />
                   ))}
                 </div>

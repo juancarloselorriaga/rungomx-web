@@ -37,7 +37,8 @@
       "viewDetails": "Ver detalles",
       "viewEvent": "Ver página del evento",
       "print": "Imprimir",
-      "payNow": "Pagar ahora"
+      "payNow": "Pagar ahora",
+      "payNowDemo": "Pagar (demo)"
     },
     "labels": {
       "ticket": "Boleto",
@@ -76,6 +77,9 @@
     "detail": {
       "ticketNote": "Muestra este código o QR en el check-in.",
       "paymentPendingNote": "El pago está pendiente. Podrás completar el pago cuando la función esté disponible.",
+      "demoPayNote": "Modo demo: no se realizará ningún cobro real.",
+      "demoPaySuccess": "Pago completado",
+      "demoPayError": "No se pudo completar el pago",
       "noWaivers": "No hay deslindes registrados.",
       "waiverAccepted": "Aceptado",
       "waiverSignature": "Firma",

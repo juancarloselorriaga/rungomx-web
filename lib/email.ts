@@ -26,6 +26,8 @@ interface SendEmailOptions {
   toName?: string;
 }
 
+type SendEmailResult = Awaited<ReturnType<typeof emailApi.sendTransacEmail>>;
+
 function normalizeRecipients(
   recipients: SendEmailOptions['to'],
   fallbackName?: string,
@@ -70,21 +72,34 @@ export async function sendEmail({
   htmlContent,
   textContent,
   toName,
-}: SendEmailOptions) {
-  const senderEmail = process.env.BREVO_SENDER_EMAIL;
-  const senderName = process.env.BREVO_SENDER_NAME || 'RungoMX';
-
-  if (!senderEmail) {
-    throw new Error('BREVO_SENDER_EMAIL environment variable is not set');
-  }
-
-  if (!process.env.BREVO_API_KEY) {
-    throw new Error('BREVO_API_KEY environment variable is not set');
-  }
-
+}: SendEmailOptions): Promise<SendEmailResult> {
   const recipients = normalizeRecipients(to, toName);
   if (recipients.length === 0) {
     throw new Error('No email recipients provided');
+  }
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const deliveryDisabled = process.env.EMAIL_DELIVERY_DISABLED === 'true';
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  const senderName = process.env.BREVO_SENDER_NAME || 'RungoMX';
+
+  const hasBrevoConfig = Boolean(senderEmail && process.env.BREVO_API_KEY);
+
+  if (deliveryDisabled || !hasBrevoConfig) {
+    if (isProduction && !deliveryDisabled) {
+      if (!senderEmail) {
+        throw new Error('BREVO_SENDER_EMAIL environment variable is not set');
+      }
+      throw new Error('BREVO_API_KEY environment variable is not set');
+    }
+
+    console.warn('[email] Delivery skipped (non-production or disabled)', {
+      to: recipients.map((r) => r.email),
+      subject,
+      reason: deliveryDisabled ? 'EMAIL_DELIVERY_DISABLED' : 'BREVO_CONFIG_MISSING',
+    });
+
+    return { body: { messageId: 'skipped' } } as unknown as SendEmailResult;
   }
 
   try {

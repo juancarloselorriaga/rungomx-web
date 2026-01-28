@@ -192,6 +192,7 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
 
   const handleDetailsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    event.stopPropagation();
 
     if (isEditionSlugChanged) {
       setShowSlugConfirm(true);
@@ -651,7 +652,7 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
           <h2 className="text-lg font-semibold">{t('details.title')}</h2>
         </div>
 
-        <Form form={detailsForm} className="space-y-6" onSubmit={handleDetailsSubmit}>
+        <Form form={detailsForm} className="space-y-6" onSubmitCapture={handleDetailsSubmit}>
           <FormError />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

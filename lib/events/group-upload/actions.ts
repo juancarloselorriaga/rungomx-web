@@ -12,6 +12,7 @@ import {
   media,
   pricingTiers,
   profiles,
+  groupDiscountRules,
   registrationInvites,
   registrations,
   users,
@@ -198,7 +199,23 @@ async function resolveMediaRecordByUrl(params: { blobUrl: string; organizationId
     }
   }
 
-  return record;
+  if (record) return record;
+
+  try {
+    const [created] = await db
+      .insert(media)
+      .values({
+        organizationId,
+        blobUrl,
+        kind: 'document',
+      })
+      .returning();
+
+    return created ?? null;
+  } catch (error) {
+    console.warn('[group-upload] Failed to persist media record for uploaded roster:', error);
+    return null;
+  }
 }
 
 // =============================================================================
@@ -803,7 +820,7 @@ export const uploadBatchViaLink = withAuthenticatedUser<
 });
 
 export const reserveInvitesForBatch = withAuthenticatedUser<
-  ActionResult<{ processed: number; succeeded: number; failed: number; remaining: number }>
+  ActionResult<{ processed: number; succeeded: number; failed: number; remaining: number; groupDiscountPercentOff: number | null }>
 >({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof reserveInvitesSchema>) => {
@@ -1084,11 +1101,110 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
         ),
       );
 
+    let groupDiscountPercentOff: number | null = null;
     if ((remaining ?? 0) <= 0) {
-      await db
-        .update(groupRegistrationBatches)
-        .set({ status: 'processed', processedAt: now })
-        .where(eq(groupRegistrationBatches.id, access.batch.id));
+      try {
+        groupDiscountPercentOff = await db.transaction(async (tx) => {
+          // Mark processed only once (idempotent) to avoid double-applying discounts.
+          const [processedBatch] = await tx
+            .update(groupRegistrationBatches)
+            .set({ status: 'processed', processedAt: now })
+            .where(
+              and(
+                eq(groupRegistrationBatches.id, access.batch.id),
+                ne(groupRegistrationBatches.status, 'processed'),
+              ),
+            )
+            .returning({ id: groupRegistrationBatches.id });
+
+          if (!processedBatch) {
+            return null;
+          }
+
+          const reservedRows = await tx
+            .select({ registrationId: groupRegistrationBatchRows.createdRegistrationId })
+            .from(groupRegistrationBatchRows)
+            .where(
+              and(
+                eq(groupRegistrationBatchRows.batchId, access.batch.id),
+                isNotNull(groupRegistrationBatchRows.createdRegistrationId),
+              ),
+            );
+
+          const reservedRegistrationIds = reservedRows
+            .map((row) => row.registrationId)
+            .filter((id): id is string => typeof id === 'string');
+
+          if (reservedRegistrationIds.length === 0) {
+            return null;
+          }
+
+          const discountRules = await tx.query.groupDiscountRules.findMany({
+            where: and(
+              eq(groupDiscountRules.editionId, access.batch.editionId),
+              eq(groupDiscountRules.isActive, true),
+            ),
+            orderBy: (r, { desc }) => [desc(r.minParticipants)],
+          });
+
+          const applicableRule =
+            discountRules.find((rule) => reservedRegistrationIds.length >= rule.minParticipants) ??
+            null;
+          const percentOff = applicableRule?.percentOff ?? null;
+
+          if (!percentOff) {
+            return null;
+          }
+
+          const registrationsToDiscount = await tx.query.registrations.findMany({
+            where: and(
+              inArray(registrations.id, reservedRegistrationIds),
+              isNull(registrations.deletedAt),
+              ne(registrations.status, 'cancelled'),
+            ),
+            columns: { id: true, basePriceCents: true, totalCents: true },
+          });
+
+          for (const registration of registrationsToDiscount) {
+            const basePriceCents = registration.basePriceCents ?? 0;
+            const discountAmountCents = Math.round((basePriceCents * percentOff) / 100);
+            if (discountAmountCents <= 0) continue;
+
+            const totalBefore = registration.totalCents ?? basePriceCents;
+
+            await tx
+              .update(registrations)
+              .set({
+                basePriceCents: Math.max(basePriceCents - discountAmountCents, 0),
+                totalCents: Math.max(totalBefore - discountAmountCents, 0),
+                updatedAt: now,
+              })
+              .where(eq(registrations.id, registration.id));
+          }
+
+          try {
+            const requestContext = await getRequestContext(await headers());
+            await createAuditLog(
+              {
+                organizationId: edition.series.organizationId,
+                actorUserId: authContext.user.id,
+                action: 'group_upload_batch.discount_apply',
+                entityType: 'group_registration_batch',
+                entityId: access.batch.id,
+                after: { percentOff, reservedCount: reservedRegistrationIds.length },
+                request: requestContext,
+              },
+              tx,
+            );
+          } catch (error) {
+            console.warn('[group-upload] Failed to create audit log for group discount:', error);
+          }
+
+          return percentOff;
+        });
+      } catch (error) {
+        console.error('[group-upload] Failed to apply group discount:', error);
+      }
     }
 
     return {
@@ -1098,6 +1214,7 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
         succeeded,
         failed,
         remaining: Math.max(remaining ?? 0, 0),
+        groupDiscountPercentOff,
       },
     };
   } catch (error) {
@@ -1129,6 +1246,14 @@ export const sendInvitesForBatch = withAuthenticatedUser<
       authContext,
       requireActiveLink: false,
     });
+
+    if (access.batch.status !== 'processed') {
+      return {
+        ok: false,
+        error: 'Batch must be processed before sending invites',
+        code: 'BATCH_NOT_PROCESSED',
+      };
+    }
 
     const edition = await db.query.eventEditions.findFirst({
       where: and(eq(eventEditions.id, access.batch.editionId), isNull(eventEditions.deletedAt)),

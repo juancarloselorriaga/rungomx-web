@@ -150,6 +150,9 @@ export default defineConfig({
       // Ensure auth + redirects use the same origin as the test server.
       NEXT_PUBLIC_SITE_URL: origin,
       PORT: String(port),
+      // Avoid conflicts with a developer Next.js instance that may be running in the repo.
+      // Next.js uses a lock file under `${distDir}/dev/lock`.
+      RUNGOMX_NEXT_DIST_DIR: process.env.RUNGOMX_NEXT_DIST_DIR || '.next-e2e',
       // Force dev server to use test database
       ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
       // Mapbox tokens for location search

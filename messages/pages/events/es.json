@@ -71,8 +71,11 @@
     "groupDiscount": {
       "badge": "Grupos de {minParticipants}+ ahorran {percent}%",
       "savePercent": "Grupos ahorran {percent}%",
-      "calloutTitle": "Descuentos para grupos disponibles",
-      "calloutDescription": "Ahorra hasta {percent}% al registrar {minParticipants}+ participantes."
+      "title": "Descuentos para grupos",
+      "description": "Ahorra hasta {percent}% al inscribirte en grupo.",
+      "tierLine": "{minParticipants}+ participantes: {percent}% de descuento",
+      "howTo": "Para obtener el descuento, regístrate mediante un enlace de invitación del organizador.",
+      "lockNote": "El descuento se fija cuando se reservan los lugares del grupo."
     },
     "virtualEvent": "Evento virtual",
     "timeLimit": "{hours}h límite de tiempo",
@@ -366,6 +369,7 @@
       "description": "Reserva lugares para filas válidas (éxito parcial permitido).",
       "action": "Reservar invitaciones",
       "success": "Invitaciones reservadas",
+      "discountApplied": "Descuento grupal aplicado: {percentOff}% de descuento",
       "summary": "Procesadas {processed}, reservadas {succeeded}, fallidas {failed}, restantes {remaining}",
       "pending": "{count} filas listas para reservar"
     },
@@ -373,7 +377,11 @@
       "action": "Enviar invitaciones",
       "success": "Invitaciones enviadas",
       "summary": "Enviadas {sent}, omitidas {skipped}",
-      "pending": "{count} invitaciones listas para enviar"
+      "pending": "{count} invitaciones listas para enviar",
+      "requiresProcessed": "Termina de reservar todas las invitaciones antes de enviar. Esto fija cualquier descuento grupal.",
+      "errors": {
+        "batchNotProcessed": "Primero reserva todas las filas válidas. Cuando el lote esté procesado, podrás enviar invitaciones."
+      }
     },
     "rows": {
       "title": "Filas del listado",

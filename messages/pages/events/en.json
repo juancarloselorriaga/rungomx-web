@@ -71,8 +71,11 @@
     "groupDiscount": {
       "badge": "Groups of {minParticipants}+ save {percent}%",
       "savePercent": "Groups save {percent}%",
-      "calloutTitle": "Group discounts available",
-      "calloutDescription": "Save up to {percent}% when registering {minParticipants}+ participants."
+      "title": "Group discounts",
+      "description": "Save up to {percent}% when registering as a group.",
+      "tierLine": "{minParticipants}+ participants: {percent}% off",
+      "howTo": "To use a group discount, register through a group invitation link from the organizer.",
+      "lockNote": "Discount is locked when group spots are reserved together."
     },
     "virtualEvent": "Virtual event",
     "timeLimit": "{hours}h time limit",
@@ -366,6 +369,7 @@
       "description": "Reserve capacity for valid rows (partial success allowed).",
       "action": "Reserve invites",
       "success": "Invites reserved",
+      "discountApplied": "Group discount applied: {percentOff}% off",
       "summary": "Processed {processed}, reserved {succeeded}, failed {failed}, remaining {remaining}",
       "pending": "{count} rows ready to reserve"
     },
@@ -373,7 +377,11 @@
       "action": "Send invites",
       "success": "Invites sent",
       "summary": "Sent {sent}, skipped {skipped}",
-      "pending": "{count} draft invites ready to send"
+      "pending": "{count} draft invites ready to send",
+      "requiresProcessed": "Finish reserving all invites before sending. This locks any group discount.",
+      "errors": {
+        "batchNotProcessed": "Please reserve all valid rows first. Once the batch is processed, you can send invites."
+      }
     },
     "rows": {
       "title": "Roster rows",
