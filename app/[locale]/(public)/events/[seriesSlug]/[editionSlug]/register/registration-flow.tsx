@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { GenderField } from '@/components/settings/fields/gender-field';
 import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Link } from '@/i18n/navigation';
@@ -1147,7 +1148,12 @@ export function RegistrationFlow({
                           )}
                         </div>
                         {addOn.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{addOn.description}</p>
+                          <div className="mt-1">
+                            <MarkdownContent
+                              content={addOn.description}
+                              className="text-sm text-muted-foreground [&_p]:m-0"
+                            />
+                          </div>
                         )}
                       </div>
 
@@ -1346,7 +1352,7 @@ export function RegistrationFlow({
                 )}
                 <h4 className="font-medium">{waiver.title}</h4>
                 <div className="rounded-lg border bg-muted/50 p-4 max-h-64 overflow-y-auto">
-                  <p className="text-sm whitespace-pre-wrap">{waiver.body}</p>
+                  <MarkdownContent content={waiver.body} className="text-sm [&_p]:m-0" />
                 </div>
                 <label className="flex items-start gap-3 cursor-pointer">
                   {waiver.signatureType === 'checkbox' ? (
@@ -1707,7 +1713,9 @@ function PolicySummary({
   return (
     <div className="text-sm text-muted-foreground space-y-1">
       <p className="font-medium text-foreground">{label}</p>
-      {text && <p className="whitespace-pre-wrap">{text}</p>}
+      {text ? (
+        <MarkdownContent content={text} className="text-sm text-muted-foreground [&_p]:m-0" />
+      ) : null}
       {deadlineText && <p>{deadlineText}</p>}
     </div>
   );

@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownField } from '@/components/ui/markdown-field';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createFaqItem, updateFaqItem, deleteFaqItem, reorderFaqItems } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
 import { GripVertical, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
@@ -218,15 +220,15 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                     disabled={isPending}
                   />
                 </FormField>
-                <FormField label={t('answerLabel')} required>
-                  <textarea
-                    value={formAnswer}
-                    onChange={(e) => setFormAnswer(e.target.value)}
-                    rows={3}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-                    disabled={isPending}
-                  />
-                </FormField>
+                <MarkdownField
+                  label={t('answerLabel')}
+                  required
+                  value={formAnswer}
+                  onChange={setFormAnswer}
+                  disabled={isPending}
+                  textareaClassName="resize-none"
+                  textareaProps={{ rows: 3 }}
+                />
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={isPending}>
                     <X className="h-4 w-4 mr-1" />
@@ -266,9 +268,12 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium">{item.question}</h3>
-                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-                      {item.answer}
-                    </p>
+                    <div className="mt-1">
+                      <MarkdownContent
+                        content={item.answer}
+                        className="text-sm text-muted-foreground [&_p]:m-0"
+                      />
+                    </div>
                   </div>
                   <div className="flex items-start gap-1">
                     <Button
@@ -309,16 +314,18 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
               disabled={isPending}
             />
           </FormField>
-          <FormField label={t('answerLabel')} required>
-            <textarea
-              value={formAnswer}
-              onChange={(e) => setFormAnswer(e.target.value)}
-              placeholder={t('answerPlaceholder')}
-              rows={3}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-              disabled={isPending}
-            />
-          </FormField>
+          <MarkdownField
+            label={t('answerLabel')}
+            required
+            value={formAnswer}
+            onChange={setFormAnswer}
+            disabled={isPending}
+            textareaClassName="resize-none"
+            textareaProps={{
+              placeholder: t('answerPlaceholder'),
+              rows: 3,
+            }}
+          />
           <div className="flex justify-end gap-2">
             <Button
               variant="ghost"

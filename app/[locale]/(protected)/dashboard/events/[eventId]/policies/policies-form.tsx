@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownField } from '@/components/ui/markdown-field';
 import { Switch } from '@/components/ui/switch';
 import { updateEventPolicyConfig } from '@/lib/events/actions';
 import type { EventPolicyConfig } from '@/lib/events/queries';
@@ -169,15 +170,15 @@ function PolicySection({
         />
       </div>
 
-      <FormField label={policyLabel} error={form.errors[policyKey]}>
-        <textarea
-          value={policyValue}
-          onChange={(event) => form.setFieldValue(policyKey, event.target.value as never)}
-          rows={3}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-          disabled={!enabled || form.isSubmitting}
-        />
-      </FormField>
+      <MarkdownField
+        label={policyLabel}
+        value={policyValue}
+        onChange={(value) => form.setFieldValue(policyKey, value as never)}
+        error={form.errors[policyKey]}
+        disabled={!enabled || form.isSubmitting}
+        textareaClassName="resize-none"
+        textareaProps={{ rows: 3 }}
+      />
 
       <FormField label={deadlineLabel} error={form.errors[deadlineKey]}>
         <DateTimePicker

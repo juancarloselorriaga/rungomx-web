@@ -16,7 +16,7 @@ import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { generateAlternateMetadata } from '@/utils/seo';
-import { Info, Image as ImageIcon, FileText } from 'lucide-react';
+import { FileText, Image as ImageIcon, Info, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -32,11 +32,20 @@ import {
 import { WebsiteContentRenderer } from './website-content-renderer';
 import { SponsorBanner } from '@/components/events/sponsor-banner';
 import { PhotoGallery } from '@/components/events/photo-gallery';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
 
 type EventDetailPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
   searchParams: Promise<{ tab?: string }>;
 };
+
+const stripMarkdown = (value: string) =>
+  value
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    .replace(/[`*_>#]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { locale, seriesSlug, editionSlug } = await params;
@@ -56,13 +65,17 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
     { seriesSlug, editionSlug },
   );
 
+  const descriptionText = event.description?.trim()
+    ? stripMarkdown(event.description)
+    : `${event.seriesName} - ${location}`;
+
   return {
     title: `${event.seriesName} ${event.editionLabel} | RunGoMX`,
-    description: event.description || `${event.seriesName} - ${location}`,
+    description: descriptionText,
     alternates: { canonical, languages },
     openGraph: {
       title: `${event.seriesName} ${event.editionLabel}`,
-      description: event.description || `${event.seriesName} - ${location}`,
+      description: descriptionText,
       type: 'website',
       url: canonical,
       locale: openGraphLocale,
@@ -174,6 +187,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const hasSharedPool = event.sharedCapacity !== null && event.distances.some((d) => d.capacityScope === 'shared_pool');
   const hasDescription = Boolean(event.description);
   const hasDistances = event.distances.length > 0;
+  const hasGroupDiscounts = event.groupDiscountRules.length > 0;
+  const minGroupParticipants = hasGroupDiscounts ? event.groupDiscountRules[0].minParticipants : 0;
+  const maxGroupDiscountPercent = hasGroupDiscounts
+    ? Math.max(...event.groupDiscountRules.map((rule) => rule.percentOff))
+    : 0;
   const hasFaq = event.faqItems.length > 0;
   const hasPolicies = policySections.some((p) => p.enabled || p.text || p.deadline);
 
@@ -270,9 +288,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             {/* Overview */}
             {hasDescription && (
               <SectionWrapper id="overview" title={t('detail.sections.overview')}>
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  <p className="whitespace-pre-wrap">{event.description}</p>
-                </div>
+                <MarkdownContent content={event.description ?? ''} className="text-sm" />
               </SectionWrapper>
             )}
 
@@ -303,6 +319,24 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       <p className="text-sm font-medium">
                         {t('detail.capacity.sharedPoolBanner', { total: event.sharedCapacity })}
                       </p>
+                    </div>
+                  </div>
+                )}
+                {hasGroupDiscounts && (
+                  <div className="rounded-lg border bg-emerald-50/60 dark:bg-emerald-900/20 p-4 mb-4">
+                    <div className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                          {t('detail.groupDiscount.calloutTitle')}
+                        </p>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-200">
+                          {t('detail.groupDiscount.calloutDescription', {
+                            minParticipants: minGroupParticipants,
+                            percent: maxGroupDiscountPercent,
+                          })}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -359,7 +393,14 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                         {item.question}
                         <span className="ml-2 text-muted-foreground transition-transform group-open:rotate-180">▼</span>
                       </summary>
-                      <p className="mt-3 text-sm text-muted-foreground whitespace-pre-wrap">{item.answer}</p>
+                      {item.answer ? (
+                        <div className="mt-3">
+                          <MarkdownContent
+                            content={item.answer}
+                            className="text-sm text-muted-foreground [&_p]:m-0"
+                          />
+                        </div>
+                      ) : null}
                     </details>
                   ))}
                 </div>
@@ -409,7 +450,14 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                     return (
                       <div key={policy.key} className="rounded-lg border bg-card p-4">
                         <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
-                        {policy.text && <p className="text-sm text-muted-foreground mt-2 whitespace-pre-wrap">{policy.text}</p>}
+                        {policy.text && (
+                          <div className="mt-2">
+                            <MarkdownContent
+                              content={policy.text}
+                              className="text-sm text-muted-foreground [&_p]:m-0"
+                            />
+                          </div>
+                        )}
                         {deadlineText && <p className="text-xs text-muted-foreground mt-3">{policyCopy[policy.key].deadline(deadlineText)}</p>}
                       </div>
                     );

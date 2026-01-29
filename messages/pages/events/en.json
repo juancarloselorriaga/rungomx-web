@@ -70,7 +70,9 @@
     "free": "Free",
     "groupDiscount": {
       "badge": "Groups of {minParticipants}+ save {percent}%",
-      "savePercent": "Groups save {percent}%"
+      "savePercent": "Groups save {percent}%",
+      "calloutTitle": "Group discounts available",
+      "calloutDescription": "Save up to {percent}% when registering {minParticipants}+ participants."
     },
     "virtualEvent": "Virtual event",
     "timeLimit": "{hours}h time limit",

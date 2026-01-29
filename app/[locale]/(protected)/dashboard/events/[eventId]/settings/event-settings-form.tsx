@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownField } from '@/components/ui/markdown-field';
 import { Switch } from '@/components/ui/switch';
 import { useRouter } from '@/i18n/navigation';
 import {
@@ -690,17 +691,16 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
             </FormField>
           </div>
 
-          <FormField label={tDescription('label')} error={detailsForm.errors.description}>
-            <div className="space-y-2">
-              <textarea
-                {...detailsForm.register('description')}
-                rows={4}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-                disabled={detailsForm.isSubmitting}
-              />
-              <p className="text-xs text-muted-foreground">{tDescription('help')}</p>
-            </div>
-          </FormField>
+          <MarkdownField
+            label={tDescription('label')}
+            value={detailsForm.values.description}
+            onChange={(value) => detailsForm.setFieldValue('description', value)}
+            error={detailsForm.errors.description}
+            disabled={detailsForm.isSubmitting}
+            helperText={tDescription('help')}
+            textareaClassName="resize-none"
+            textareaProps={{ rows: 4 }}
+          />
 
           <FormField label={t('details.timezone')} error={detailsForm.errors.timezone}>
             <select

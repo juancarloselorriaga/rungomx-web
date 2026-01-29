@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
+import { MarkdownField } from '@/components/ui/markdown-field';
 import { cn } from '@/lib/utils';
 
 import {
@@ -679,15 +680,16 @@ function AddOnForm({
         </FormField>
       </div>
 
-      <FormField label={t('addOn.descriptionField')}>
-        <textarea
-          value={formData.description}
-          onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-          placeholder={t('addOn.descriptionPlaceholder')}
-          rows={2}
-          className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </FormField>
+      <MarkdownField
+        label={t('addOn.descriptionField')}
+        value={formData.description}
+        onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+        textareaClassName="flex border-input ring-offset-background shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+        textareaProps={{
+          placeholder: t('addOn.descriptionPlaceholder'),
+          rows: 2,
+        }}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <FormField label={t('addOn.deliveryField')}>

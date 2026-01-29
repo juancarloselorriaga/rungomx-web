@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownField } from '@/components/ui/markdown-field';
 import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
 import { checkSlugAvailability, createEventSeries, createEventEdition } from '@/lib/events/actions';
@@ -662,18 +663,18 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
               </FormField>
             </div>
 
-            <FormField
+            <MarkdownField
               label={t('event.descriptionLabel')}
+              value={form.values.description}
+              onChange={(value) => form.setFieldValue('description', value)}
               error={form.errors.description}
-            >
-              <textarea
-                {...form.register('description')}
-                placeholder={t('event.descriptionPlaceholder')}
-                rows={4}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-                disabled={form.isSubmitting}
-              />
-            </FormField>
+              disabled={form.isSubmitting}
+              textareaClassName="resize-none"
+              textareaProps={{
+                placeholder: t('event.descriptionPlaceholder'),
+                rows: 4,
+              }}
+            />
 
             <FormField
               label={t('event.dateLabel')}

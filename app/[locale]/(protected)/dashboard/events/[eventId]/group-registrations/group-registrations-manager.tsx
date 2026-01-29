@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { uploadEventMediaFile } from '@/components/events/event-media-upload';
 import { Link, useRouter } from '@/i18n/navigation';
 import {
@@ -14,14 +15,19 @@ import {
 import { cn } from '@/lib/utils';
 import {
   AlertCircle,
+  Check,
   CheckCircle2,
   Download,
   ExternalLink,
   FileSpreadsheet,
   Loader2,
+  Pencil,
   Play,
   RefreshCw,
+  ToggleLeft,
+  ToggleRight,
   Upload,
+  X,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
@@ -519,55 +525,66 @@ export function GroupRegistrationsManager({
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1">
                         {editingRuleId === rule.id ? (
                           <>
-                            <Button
+                            <IconTooltipButton
                               type="button"
-                              size="sm"
+                              size="icon"
+                              variant="ghost"
+                              label={t('discountRule.actions.save')}
                               onClick={() => handleSaveEditedRule(rule)}
                               disabled={isUpdatingRuleId === rule.id}
                             >
-                              {t('discountRule.actions.save')}
-                            </Button>
-                            <Button
+                              <Check className="h-4 w-4" />
+                            </IconTooltipButton>
+                            <IconTooltipButton
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              size="icon"
+                              variant="ghost"
+                              label={t('discountRule.actions.cancel')}
                               onClick={() => {
                                 setEditingRuleId(null);
                                 setEditingPercentOff('');
                               }}
                               disabled={isUpdatingRuleId === rule.id}
                             >
-                              {t('discountRule.actions.cancel')}
-                            </Button>
+                              <X className="h-4 w-4" />
+                            </IconTooltipButton>
                           </>
                         ) : (
                           <>
-                            <Button
+                            <IconTooltipButton
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              size="icon"
+                              variant="ghost"
+                              label={t('discountRule.actions.edit')}
                               onClick={() => {
                                 setEditingRuleId(rule.id);
                                 setEditingPercentOff(String(rule.percentOff));
                               }}
                               disabled={isUpdatingRuleId === rule.id}
                             >
-                              {t('discountRule.actions.edit')}
-                            </Button>
-                            <Button
+                              <Pencil className="h-4 w-4" />
+                            </IconTooltipButton>
+                            <IconTooltipButton
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              size="icon"
+                              variant="ghost"
+                              label={
+                                rule.isActive
+                                  ? t('discountRule.actions.deactivate')
+                                  : t('discountRule.actions.activate')
+                              }
                               onClick={() => handleToggleRule(rule)}
                               disabled={isUpdatingRuleId === rule.id}
                             >
-                              {rule.isActive
-                                ? t('discountRule.actions.deactivate')
-                                : t('discountRule.actions.activate')}
-                            </Button>
+                              {rule.isActive ? (
+                                <ToggleLeft className="h-4 w-4" />
+                              ) : (
+                                <ToggleRight className="h-4 w-4" />
+                              )}
+                            </IconTooltipButton>
                           </>
                         )}
                       </div>

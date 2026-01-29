@@ -20,6 +20,7 @@ import { EVENT_MEDIA_BLOB_PREFIX } from '@/lib/events/media/constants';
 import { cn } from '@/lib/utils';
 import {
   AlertTriangle,
+  Check,
   FileUp,
   Loader2,
   Mail,
@@ -28,6 +29,7 @@ import {
   RotateCw,
   Send,
   Trash2,
+  X,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
@@ -476,13 +478,24 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                                   onChange={(event) => setEditedEmail(event.target.value)}
                                 />
                               </FormField>
-                              <div className="flex gap-2">
-                                <Button size="sm" onClick={() => handleUpdateEmail(row.invite!.id)} disabled={isPending}>
-                                  {t('updateEmail.action')}
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => setEditingInviteId(null)}>
-                                  {t('actions.cancel')}
-                                </Button>
+                              <div className="flex items-center gap-1">
+                                <IconTooltipButton
+                                  size="icon"
+                                  variant="ghost"
+                                  label={t('updateEmail.action')}
+                                  onClick={() => handleUpdateEmail(row.invite!.id)}
+                                  disabled={isPending}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </IconTooltipButton>
+                                <IconTooltipButton
+                                  size="icon"
+                                  variant="ghost"
+                                  label={t('actions.cancel')}
+                                  onClick={() => setEditingInviteId(null)}
+                                >
+                                  <X className="h-4 w-4" />
+                                </IconTooltipButton>
                               </div>
                             </div>
                             ) : (

@@ -2,6 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { MarkdownField } from '@/components/ui/markdown-field';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createWaiver, updateWaiver, reorderWaivers } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
 import { GripVertical, Loader2, Pencil, Plus, Save, X } from 'lucide-react';
@@ -212,15 +214,15 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
                     disabled={isPending}
                   />
                 </FormField>
-                <FormField label={t('bodyLabel')} required>
-                  <textarea
-                    value={formBody}
-                    onChange={(e) => setFormBody(e.target.value)}
-                    rows={4}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-                    disabled={isPending}
-                  />
-                </FormField>
+                <MarkdownField
+                  label={t('bodyLabel')}
+                  required
+                  value={formBody}
+                  onChange={setFormBody}
+                  disabled={isPending}
+                  textareaClassName="resize-none"
+                  textareaProps={{ rows: 4 }}
+                />
                 <FormField label={t('signatureTypeLabel')} required>
                   <select
                     value={formSignatureType}
@@ -278,9 +280,10 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
                         {signatureTypeLabels[item.signatureType]}
                       </p>
                     </div>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {item.body}
-                    </p>
+                    <MarkdownContent
+                      content={item.body}
+                      className="text-sm text-muted-foreground [&_p]:m-0"
+                    />
                   </div>
                   <div className="flex items-start gap-1">
                     <Button
@@ -311,16 +314,18 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
               disabled={isPending}
             />
           </FormField>
-          <FormField label={t('bodyLabel')} required>
-            <textarea
-              value={formBody}
-              onChange={(e) => setFormBody(e.target.value)}
-              placeholder={t('bodyPlaceholder')}
-              rows={4}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 resize-none"
-              disabled={isPending}
-            />
-          </FormField>
+          <MarkdownField
+            label={t('bodyLabel')}
+            required
+            value={formBody}
+            onChange={setFormBody}
+            disabled={isPending}
+            textareaClassName="resize-none"
+            textareaProps={{
+              placeholder: t('bodyPlaceholder'),
+              rows: 4,
+            }}
+          />
           <FormField label={t('signatureTypeLabel')} required>
             <select
               value={formSignatureType}

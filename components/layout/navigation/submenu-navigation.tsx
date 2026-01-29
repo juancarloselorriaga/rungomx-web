@@ -28,7 +28,7 @@ export function SubmenuNavigation({ submenuId, ...props }: SubmenuNavigationProp
     case 'event-detail':
       return <EventSubmenuNavigation {...props} />;
     case 'org-detail':
-      return <OrgSubmenuNavigation {...props} />;
+      return <OrgSubmenuNavigation />;
     default:
       return null;
   }

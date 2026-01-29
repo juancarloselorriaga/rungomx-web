@@ -20,9 +20,8 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
-import { MarkdownHint } from '@/components/ui/markdown-hint';
+import { MarkdownField } from '@/components/ui/markdown-field';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { BulkDocumentUploader } from '@/components/events/bulk-document-uploader';
 import { SortableDocumentList, type DocumentItem } from '@/components/events/sortable-document-list';
 import { BulkPhotoUploader } from '@/components/events/bulk-photo-uploader';
@@ -80,8 +79,11 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     scheduleRaceDay: false,
   });
 
-  const toggleMarkdownPreview = (key: keyof typeof markdownPreviews) => {
-    setMarkdownPreviews((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleMarkdownPreview = (
+    key: keyof typeof markdownPreviews,
+    nextValue?: boolean,
+  ) => {
+    setMarkdownPreviews((prev) => ({ ...prev, [key]: nextValue ?? !prev[key] }));
   };
 
   // Load existing content on mount
@@ -607,80 +609,30 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         {expandedSections.has('overview') && (
           <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
-            <FormField
+            <MarkdownField
               label={t('sections.overview.contentLabel')}
-              labelActions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 h-7 px-2 text-xs"
-                  onClick={() => toggleMarkdownPreview('overviewContent')}
-                >
-                  {markdownPreviews.overviewContent ? t('markdown.hidePreview') : t('markdown.preview')}
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                <div
-                  className={cn(
-                    'grid gap-3',
-                    markdownPreviews.overviewContent && 'lg:grid-cols-2 lg:items-start',
-                  )}
-                >
-                  <textarea
-                    placeholder={t('sections.overview.contentPlaceholder')}
-                    value={blocks.overview?.content ?? ''}
-                    onChange={(e) => updateOverview('content', e.target.value)}
-                    rows={6}
-                    className={textareaClassName}
-                  />
-                  {markdownPreviews.overviewContent ? (
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <MarkdownContent content={blocks.overview?.content ?? ''} className="text-sm" />
-                    </div>
-                  ) : null}
-                </div>
-                <MarkdownHint />
-              </div>
-            </FormField>
-            <FormField
+              value={blocks.overview?.content ?? ''}
+              onChange={(value) => updateOverview('content', value)}
+              preview={markdownPreviews.overviewContent}
+              onTogglePreview={(next) => toggleMarkdownPreview('overviewContent', next)}
+              textareaClassName={textareaClassName}
+              textareaProps={{
+                placeholder: t('sections.overview.contentPlaceholder'),
+                rows: 6,
+              }}
+            />
+            <MarkdownField
               label={t('sections.overview.terrainLabel')}
-              labelActions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 h-7 px-2 text-xs"
-                  onClick={() => toggleMarkdownPreview('overviewTerrain')}
-                >
-                  {markdownPreviews.overviewTerrain ? t('markdown.hidePreview') : t('markdown.preview')}
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                <div
-                  className={cn(
-                    'grid gap-3',
-                    markdownPreviews.overviewTerrain && 'lg:grid-cols-2 lg:items-start',
-                  )}
-                >
-                  <textarea
-                    placeholder={t('sections.overview.terrainPlaceholder')}
-                    value={blocks.overview?.terrain ?? ''}
-                    onChange={(e) => updateOverview('terrain', e.target.value)}
-                    rows={3}
-                    className={textareaClassName}
-                  />
-                  {markdownPreviews.overviewTerrain ? (
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <MarkdownContent content={blocks.overview?.terrain ?? ''} className="text-sm" />
-                    </div>
-                  ) : null}
-                </div>
-                <MarkdownHint />
-              </div>
-            </FormField>
+              value={blocks.overview?.terrain ?? ''}
+              onChange={(value) => updateOverview('terrain', value)}
+              preview={markdownPreviews.overviewTerrain}
+              onTogglePreview={(next) => toggleMarkdownPreview('overviewTerrain', next)}
+              textareaClassName={textareaClassName}
+              textareaProps={{
+                placeholder: t('sections.overview.terrainPlaceholder'),
+                rows: 3,
+              }}
+            />
           </div>
         )}
       </div>
@@ -728,43 +680,18 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         {expandedSections.has('course') && (
           <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
-            <FormField
+            <MarkdownField
               label={t('sections.course.descriptionLabel')}
-              labelActions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 h-7 px-2 text-xs"
-                  onClick={() => toggleMarkdownPreview('courseDescription')}
-                >
-                  {markdownPreviews.courseDescription ? t('markdown.hidePreview') : t('markdown.preview')}
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                <div
-                  className={cn(
-                    'grid gap-3',
-                    markdownPreviews.courseDescription && 'lg:grid-cols-2 lg:items-start',
-                  )}
-                >
-                  <textarea
-                    placeholder={t('sections.course.descriptionPlaceholder')}
-                    value={blocks.course?.description ?? ''}
-                    onChange={(e) => updateCourse('description', e.target.value)}
-                    rows={4}
-                    className={textareaClassName}
-                  />
-                  {markdownPreviews.courseDescription ? (
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <MarkdownContent content={blocks.course?.description ?? ''} className="text-sm" />
-                    </div>
-                  ) : null}
-                </div>
-                <MarkdownHint />
-              </div>
-            </FormField>
+              value={blocks.course?.description ?? ''}
+              onChange={(value) => updateCourse('description', value)}
+              preview={markdownPreviews.courseDescription}
+              onTogglePreview={(next) => toggleMarkdownPreview('courseDescription', next)}
+              textareaClassName={textareaClassName}
+              textareaProps={{
+                placeholder: t('sections.course.descriptionPlaceholder'),
+                rows: 4,
+              }}
+            />
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label={t('sections.course.elevationLabel')}>
                 <input
@@ -926,117 +853,42 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
         {expandedSections.has('schedule') && (
           <div className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-4 border-t">
             <div className="pt-4" />
-            <FormField
+            <MarkdownField
               label={t('sections.schedule.packetPickupLabel')}
-              labelActions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 h-7 px-2 text-xs"
-                  onClick={() => toggleMarkdownPreview('schedulePacketPickup')}
-                >
-                  {markdownPreviews.schedulePacketPickup ? t('markdown.hidePreview') : t('markdown.preview')}
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                <div
-                  className={cn(
-                    'grid gap-3',
-                    markdownPreviews.schedulePacketPickup && 'lg:grid-cols-2 lg:items-start',
-                  )}
-                >
-                  <textarea
-                    placeholder={t('sections.schedule.packetPickupPlaceholder')}
-                    value={blocks.schedule?.packetPickup ?? ''}
-                    onChange={(e) => updateSchedule('packetPickup', e.target.value)}
-                    rows={3}
-                    className={textareaClassName}
-                  />
-                  {markdownPreviews.schedulePacketPickup ? (
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <MarkdownContent content={blocks.schedule?.packetPickup ?? ''} className="text-sm" />
-                    </div>
-                  ) : null}
-                </div>
-                <MarkdownHint />
-              </div>
-            </FormField>
-            <FormField
+              value={blocks.schedule?.packetPickup ?? ''}
+              onChange={(value) => updateSchedule('packetPickup', value)}
+              preview={markdownPreviews.schedulePacketPickup}
+              onTogglePreview={(next) => toggleMarkdownPreview('schedulePacketPickup', next)}
+              textareaClassName={textareaClassName}
+              textareaProps={{
+                placeholder: t('sections.schedule.packetPickupPlaceholder'),
+                rows: 3,
+              }}
+            />
+            <MarkdownField
               label={t('sections.schedule.parkingLabel')}
-              labelActions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 h-7 px-2 text-xs"
-                  onClick={() => toggleMarkdownPreview('scheduleParking')}
-                >
-                  {markdownPreviews.scheduleParking ? t('markdown.hidePreview') : t('markdown.preview')}
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                <div
-                  className={cn(
-                    'grid gap-3',
-                    markdownPreviews.scheduleParking && 'lg:grid-cols-2 lg:items-start',
-                  )}
-                >
-                  <textarea
-                    placeholder={t('sections.schedule.parkingPlaceholder')}
-                    value={blocks.schedule?.parking ?? ''}
-                    onChange={(e) => updateSchedule('parking', e.target.value)}
-                    rows={3}
-                    className={textareaClassName}
-                  />
-                  {markdownPreviews.scheduleParking ? (
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <MarkdownContent content={blocks.schedule?.parking ?? ''} className="text-sm" />
-                    </div>
-                  ) : null}
-                </div>
-                <MarkdownHint />
-              </div>
-            </FormField>
-            <FormField
+              value={blocks.schedule?.parking ?? ''}
+              onChange={(value) => updateSchedule('parking', value)}
+              preview={markdownPreviews.scheduleParking}
+              onTogglePreview={(next) => toggleMarkdownPreview('scheduleParking', next)}
+              textareaClassName={textareaClassName}
+              textareaProps={{
+                placeholder: t('sections.schedule.parkingPlaceholder'),
+                rows: 3,
+              }}
+            />
+            <MarkdownField
               label={t('sections.schedule.raceDayLabel')}
-              labelActions={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-w-0 h-7 px-2 text-xs"
-                  onClick={() => toggleMarkdownPreview('scheduleRaceDay')}
-                >
-                  {markdownPreviews.scheduleRaceDay ? t('markdown.hidePreview') : t('markdown.preview')}
-                </Button>
-              }
-            >
-              <div className="space-y-2">
-                <div
-                  className={cn(
-                    'grid gap-3',
-                    markdownPreviews.scheduleRaceDay && 'lg:grid-cols-2 lg:items-start',
-                  )}
-                >
-                  <textarea
-                    placeholder={t('sections.schedule.raceDayPlaceholder')}
-                    value={blocks.schedule?.raceDay ?? ''}
-                    onChange={(e) => updateSchedule('raceDay', e.target.value)}
-                    rows={3}
-                    className={textareaClassName}
-                  />
-                  {markdownPreviews.scheduleRaceDay ? (
-                    <div className="rounded-md border bg-muted/30 p-3">
-                      <MarkdownContent content={blocks.schedule?.raceDay ?? ''} className="text-sm" />
-                    </div>
-                  ) : null}
-                </div>
-                <MarkdownHint />
-              </div>
-            </FormField>
+              value={blocks.schedule?.raceDay ?? ''}
+              onChange={(value) => updateSchedule('raceDay', value)}
+              preview={markdownPreviews.scheduleRaceDay}
+              onTogglePreview={(next) => toggleMarkdownPreview('scheduleRaceDay', next)}
+              textareaClassName={textareaClassName}
+              textareaProps={{
+                placeholder: t('sections.schedule.raceDayPlaceholder'),
+                rows: 3,
+              }}
+            />
 
             {/* Start Times */}
             <div className="space-y-3">

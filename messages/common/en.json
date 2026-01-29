@@ -29,5 +29,9 @@
     "label": "Markdown supported",
     "tooltip": "You can use formatting like **bold**, *italic*, [links](url), and lists. Click 'Learn more' to see all options.",
     "learnMore": "Learn more"
+  },
+  "markdown": {
+    "preview": "Preview",
+    "hidePreview": "Hide preview"
   }
 }

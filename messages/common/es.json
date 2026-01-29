@@ -29,5 +29,9 @@
     "label": "Soporta Markdown",
     "tooltip": "Puedes usar formato como **negritas**, *cursivas*, [enlaces](url) y listas. Haz clic en 'Más información' para ver todas las opciones.",
     "learnMore": "Más información"
+  },
+  "markdown": {
+    "preview": "Vista previa",
+    "hidePreview": "Ocultar vista previa"
   }
 }

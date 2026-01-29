@@ -32,6 +32,7 @@ interface FormProps<TFieldValues extends Record<string, unknown>> extends Omit<
 > {
   form: UseFormReturn<TFieldValues>;
   children: React.ReactNode;
+  onSubmit?: React.FormEventHandler<HTMLFormElement>;
 }
 
 /**
@@ -41,13 +42,14 @@ export function Form<TFieldValues extends Record<string, unknown>>({
   form,
   children,
   className,
+  onSubmit,
   ...props
 }: FormProps<TFieldValues>) {
   return (
     <FormContext.Provider value={form as UseFormReturn<GenericFormValues>}>
       <form
         className={cn('space-y-4', className)}
-        onSubmit={form.handleSubmit}
+        onSubmit={onSubmit ?? form.handleSubmit}
         noValidate
         {...props}
       >
