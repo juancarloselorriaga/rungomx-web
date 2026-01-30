@@ -9,15 +9,15 @@
   "create": {
     "title": "Crear enlace de grupo",
     "description": "Elige una distancia y comparte un enlace con tus amigos.",
-    "howItWorks": {
-      "title": "Cómo funciona",
-      "description": "Una forma ligera de coordinar un registro para grupos pequeños.",
-      "points": {
-        "noReservation": "Este enlace no reserva lugares. La disponibilidad puede cambiar.",
-        "selfPay": "Cada participante se inscribe y paga por separado.",
-        "limit": "Define un máximo de participantes para mantenerlo manejable."
-      }
-    },
+      "howItWorks": {
+        "title": "Cómo funciona",
+        "description": "Una forma ligera de coordinar un registro para grupos pequeños.",
+        "points": {
+          "noReservation": "Este enlace no reserva lugares. Los lugares se apartan solo cuando cada persona inicia su inscripción, y la disponibilidad puede cambiar.",
+          "selfPay": "Cada participante se inscribe y paga por separado. Si hay descuento de grupo, se aplica al pagar cuando se unen suficientes miembros verificados.",
+          "limit": "Define un máximo de participantes para mantenerlo manejable."
+        }
+      },
     "form": {
       "title": "Detalles del grupo",
       "description": "Elige una distancia y el tamaño del grupo.",
@@ -45,8 +45,8 @@
     "code": "Código: {prefix}…"
   },
   "howItWorks": {
-    "noReservation": "Este enlace no reserva lugares. Si el evento es popular, únete pronto.",
-    "selfPay": "Cada participante paga durante su propia inscripción."
+    "noReservation": "Unirte a este grupo no reserva un lugar. Los lugares se apartan solo cuando inicias tu inscripción, y la disponibilidad puede cambiar.",
+    "selfPay": "Cada quien se inscribe y paga por separado. Los descuentos de grupo (si existen) se aplican al pagar cuando se unen suficientes miembros verificados."
   },
   "loginRequired": {
     "title": "Inicio de sesión requerido",
@@ -57,11 +57,13 @@
   "actions": {
     "title": "Tu lugar",
     "joined": "Te uniste a este grupo.",
-    "notJoined": "Únete para aparecer en la lista del grupo.",
+    "notJoined": "Únete para aparecer en la lista del grupo y contar para los descuentos de grupo.",
     "groupFull": "Este grupo alcanzó su límite."
   },
   "share": {
     "copyLink": "Copiar enlace",
+    "shareLink": "Compartir",
+    "shareText": "Únete a mi grupo para {eventName}!",
     "copied": "Enlace copiado",
     "failed": "No se pudo copiar el enlace"
   },
@@ -81,6 +83,16 @@
     "closedAt": "Las inscripciones cerraron {date}.",
     "closed": "Las inscripciones están cerradas para este evento."
   },
+  "discount": {
+    "title": "Descuentos de grupo",
+    "currentDiscount": "Descuento actual: {percent}% (se aplica al pagar)",
+    "noDiscountYet": "Aún no hay descuento",
+    "registeredCount": "{count} miembros verificados unidos",
+    "progress": "{count} / {total} miembros verificados",
+    "nextTier": "{count} miembros verificados más para desbloquear {percent}% de descuento",
+    "tierMet": "{min}+ miembros verificados: {percent}% de descuento",
+    "tierPending": "{min}+ miembros verificados: {percent}% de descuento"
+  },
   "members": {
     "title": "Personas que se unieron",
     "description": "Ver quién se unió y si ya inició su inscripción.",
@@ -92,6 +104,10 @@
     },
     "actions": {
       "remove": "Eliminar"
+    },
+    "memberView": {
+      "registered": "Inscrito",
+      "notRegistered": "Sin inscripción"
     },
     "removed": "Participante eliminado",
     "registrationStatus": {

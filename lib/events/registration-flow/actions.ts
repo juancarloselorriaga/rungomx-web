@@ -11,10 +11,12 @@ import {
   eventEditions,
   registrants,
   registrationAnswers,
+  registrationGroups,
   registrations,
   waiverAcceptances,
   waivers,
 } from '@/db/schema';
+import { getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { isEventsNoPaymentMode } from '@/lib/features/flags';
 import type { AppLocale } from '@/i18n/routing';
@@ -31,7 +33,9 @@ import {
   StartRegistrationError,
   startRegistrationForUser,
 } from '@/lib/events/start-registration';
+import { syncRegistrationGroupDiscountForRegistration } from '@/lib/events/registration-groups/sync-registration-discount';
 import { type ActionResult, revalidatePublicEventByEditionId } from '@/lib/events/shared';
+import { hashToken } from '@/lib/events/group-upload/tokens';
 
 // =============================================================================
 // Schemas
@@ -39,6 +43,7 @@ import { type ActionResult, revalidatePublicEventByEditionId } from '@/lib/event
 
 const startRegistrationSchema = z.object({
   distanceId: z.string().uuid(),
+  groupToken: z.string().min(1).optional(),
 });
 
 const submitRegistrantInfoSchema = z.object({
@@ -99,6 +104,8 @@ type RegistrationData = {
   feesCents: number | null;
   taxCents: number | null;
   totalCents: number | null;
+  groupDiscountPercentOff: number | null;
+  groupDiscountAmountCents: number | null;
 };
 
 // =============================================================================
@@ -116,10 +123,35 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
     return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
   }
 
-  const { distanceId } = validated.data;
+  const { distanceId, groupToken } = validated.data;
   try {
+    let registrationGroupId: string | undefined;
+    if (groupToken) {
+      const tokenHash = hashToken(groupToken);
+      const group = await db.query.registrationGroups.findFirst({
+        where: and(
+          eq(registrationGroups.tokenHash, tokenHash),
+          isNull(registrationGroups.deletedAt),
+        ),
+        columns: { id: true, isActive: true },
+      });
+
+      if (!group) {
+        return { ok: false, error: 'Group not found', code: 'NOT_FOUND' };
+      }
+
+      if (!group.isActive) {
+        return { ok: false, error: 'Group link is not active', code: 'NOT_FOUND' };
+      }
+
+      registrationGroupId = group.id;
+    }
+
+    const requestContext = await getRequestContext(await headers());
     const registration = await startRegistrationForUser(authContext.user.id, distanceId, {
       emailNormalized: authContext.user.email ?? null,
+      registrationGroupId,
+      requestContext,
     });
 
     revalidateTag(eventEditionDetailTag(registration.editionId), { expire: 0 });
@@ -137,6 +169,8 @@ export const startRegistration = withAuthenticatedUser<ActionResult<Registration
         feesCents: registration.feesCents,
         taxCents: registration.taxCents,
         totalCents: registration.totalCents,
+        groupDiscountPercentOff: registration.groupDiscountPercentOff,
+        groupDiscountAmountCents: registration.groupDiscountAmountCents,
       },
     };
   } catch (error) {
@@ -254,6 +288,8 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
         feesCents: updatedRegistration.feesCents,
         taxCents: updatedRegistration.taxCents,
         totalCents: updatedRegistration.totalCents,
+        groupDiscountPercentOff: updatedRegistration.groupDiscountPercentOff,
+        groupDiscountAmountCents: updatedRegistration.groupDiscountAmountCents,
       },
     };
   } catch (error) {
@@ -404,6 +440,8 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         feesCents: registration.feesCents,
         taxCents: registration.taxCents,
         totalCents: registration.totalCents,
+        groupDiscountPercentOff: registration.groupDiscountPercentOff,
+        groupDiscountAmountCents: registration.groupDiscountAmountCents,
       },
     };
   }
@@ -556,6 +594,8 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         }
       }
 
+      await syncRegistrationGroupDiscountForRegistration({ registrationId, now, tx });
+
       const nextStatus =
         isEventsNoPaymentMode() || registration.paymentResponsibility === 'central_pay'
           ? 'confirmed'
@@ -613,6 +653,8 @@ export const finalizeRegistration = withAuthenticatedUser<ActionResult<Registrat
         feesCents: updated.feesCents,
         taxCents: updated.taxCents,
         totalCents: updated.totalCents,
+        groupDiscountPercentOff: updated.groupDiscountPercentOff,
+        groupDiscountAmountCents: updated.groupDiscountAmountCents,
       },
     };
   } catch (error) {

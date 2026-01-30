@@ -3,7 +3,7 @@
   "description": "Browse upcoming and past running events.",
   "metadata": {
     "title": "Events | RunGoMX",
-    "description": "Find and register for trail running, triathlon, cycling, and other endurance events in Mexico."
+    "description": "Find and register for endurance events in Mexico."
   },
   "detail": {
     "tabs": {
@@ -28,8 +28,8 @@
     "registrationOpen": "Registration open",
     "registrationClosed": "Registration closed",
     "registrationDetails": "Registration details",
-    "registrationOpens": "Registration opens {date}",
-    "registrationCloses": "Registration closes {date}",
+    "registrationOpens": "Opens {date}",
+    "registrationCloses": "Closes {date}",
     "registrationPaused": "Registration is paused",
     "registerNow": "Register now",
     "registerWithFriends": "Register with friends",
@@ -73,10 +73,10 @@
       "badge": "Groups of {minParticipants}+ save {percent}%",
       "savePercent": "Groups save {percent}%",
       "title": "Group discounts",
-      "description": "Save up to {percent}% when registering as a group.",
+      "description": "Save up to {percent}% with a group.",
       "tierLine": "{minParticipants}+ participants: {percent}% off",
-      "howTo": "To use a group discount, register through a group invitation link from the organizer.",
-      "lockNote": "Discount is locked when group spots are reserved together."
+      "howTo": "Use the organizer's group invite link to get the discount.",
+      "lockNote": "Discount locks when group spots are reserved."
     },
     "virtualEvent": "Virtual event",
     "timeLimit": "{hours}h time limit",
@@ -126,12 +126,12 @@
     },
     "distance": {
       "title": "Select your distance",
-      "description": "Choose the distance you want to participate in.",
+      "description": "Choose your distance.",
       "continue": "Continue"
     },
     "info": {
       "title": "Participant information",
-      "description": "Enter your details for registration.",
+      "description": "Enter your details.",
       "firstName": "First name",
       "lastName": "Last name",
       "email": "Email",
@@ -151,7 +151,7 @@
     },
     "questions": {
       "title": "Additional questions",
-      "description": "Please answer the following questions from the event organizer.",
+      "description": "Answer the organizer's questions.",
       "required": "Required",
       "optional": "Optional",
       "continue": "Continue",
@@ -159,7 +159,7 @@
     },
     "addons": {
       "title": "Add-ons",
-      "description": "Enhance your experience with optional add-ons.",
+      "description": "Optional add-ons for your event.",
       "noAddons": "No add-ons available for this event.",
       "merchandise": "Merchandise",
       "donation": "Donation",
@@ -177,7 +177,7 @@
     },
     "policies": {
       "title": "Policies",
-      "description": "Review the event policies before continuing.",
+      "description": "Review policies before continuing.",
       "acknowledge": "I have read and understand the refund, transfer, and deferral policies for this event.",
       "continue": "Continue"
     },
@@ -199,13 +199,21 @@
     },
     "payment": {
       "title": "Payment",
-      "description": "Complete your payment to finalize registration.",
+      "description": "Complete payment to finish registration.",
       "summary": "Order summary",
       "distance": "Distance",
       "price": "Price",
       "addons": "Add-ons",
       "subtotal": "Subtotal",
       "discount": "Discount",
+      "groupDiscount": "Group discount ({percent}%)",
+      "groupDiscountNotice": "Group discount applied. Applying a discount code will replace it.",
+      "confirmReplaceGroupDiscount": {
+        "title": "Replace group discount?",
+        "description": "Applying this code will replace your group discount and increase your total from {current} to {next} (+{difference}).",
+        "cancel": "Keep group discount",
+        "confirm": "Apply code"
+      },
       "discountCode": "Discount code",
       "applyCode": "Apply",
       "removeCode": "Remove",

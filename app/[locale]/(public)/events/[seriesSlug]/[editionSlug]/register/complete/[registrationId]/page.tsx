@@ -153,6 +153,10 @@ export default async function RegisterCompletePage({ params }: RegisterCompleteP
         taxCents: registration.taxCents ?? null,
         totalCents: registration.totalCents ?? null,
       }}
+      resumeGroupDiscount={{
+        percentOff: registration.groupDiscountPercentOff ?? null,
+        amountCents: registration.groupDiscountAmountCents ?? null,
+      }}
     />
   );
 }

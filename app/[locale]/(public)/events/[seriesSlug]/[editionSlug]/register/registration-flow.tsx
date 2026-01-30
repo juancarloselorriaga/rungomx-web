@@ -4,6 +4,17 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { GenderField } from '@/components/settings/fields/gender-field';
 import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Link } from '@/i18n/navigation';
@@ -74,6 +85,7 @@ type RegistrationFlowProps = {
   userId: string;
   showOrganizerSelfRegistrationWarning?: boolean;
   preSelectedDistanceId?: string;
+  groupToken?: string;
   existingRegistration?: ActiveRegistrationInfo | null;
   activeInviteExists?: boolean;
   resumeRegistrationId?: string;
@@ -83,6 +95,10 @@ type RegistrationFlowProps = {
     feesCents: number | null;
     taxCents: number | null;
     totalCents: number | null;
+  } | null;
+  resumeGroupDiscount?: {
+    percentOff: number | null;
+    amountCents: number | null;
   } | null;
 };
 
@@ -97,11 +113,13 @@ export function RegistrationFlow({
   userProfile,
   showOrganizerSelfRegistrationWarning,
   preSelectedDistanceId,
+  groupToken,
   existingRegistration,
   activeInviteExists,
   resumeRegistrationId,
   resumeDistanceId,
   resumePricing,
+  resumeGroupDiscount,
 }: RegistrationFlowProps) {
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
@@ -377,10 +395,25 @@ export function RegistrationFlow({
   const [addOnOptionDrafts, setAddOnOptionDrafts] = useState<Record<string, string>>({});
   const [addOnQuantityDrafts, setAddOnQuantityDrafts] = useState<Record<string, number>>({});
 
+  // Group discount
+  const [groupDiscountPercentOff, setGroupDiscountPercentOff] = useState<number | null>(
+    resumeGroupDiscount?.percentOff ?? null,
+  );
+  const [groupDiscountAmountCents, setGroupDiscountAmountCents] = useState(
+    resumeGroupDiscount?.amountCents ?? 0,
+  );
+
   // Discount code
   const [appliedDiscountCode, setAppliedDiscountCode] = useState<string | null>(null);
   const [discountAmountCents, setDiscountAmountCents] = useState(0);
   const [discountError, setDiscountError] = useState<string | null>(null);
+  const [pendingCodeConfirmation, setPendingCodeConfirmation] = useState<{
+    code: string;
+    normalizedCode: string;
+    currentTotalCents: number;
+    nextTotalCents: number;
+    differenceCents: number;
+  } | null>(null);
 
   type PaymentFormValues = { discountCode: string };
   const paymentForm = useForm<PaymentFormValues, void>({
@@ -455,7 +488,11 @@ export function RegistrationFlow({
   const feesCents = registrationPricing?.feesCents ?? 0;
   const taxCents = registrationPricing?.taxCents ?? 0;
   const subtotalCents = basePriceCents + addOnsSubtotalCents;
-  const totalCents = Math.max(0, subtotalCents + feesCents + taxCents - discountAmountCents);
+  const totalCents = Math.max(
+    0,
+    subtotalCents + feesCents + taxCents - discountAmountCents - groupDiscountAmountCents,
+  );
+  const isGroupDiscountApplied = groupDiscountPercentOff !== null;
 
   // Format price
   const formatPrice = (cents: number, currency: string) => {
@@ -485,6 +522,7 @@ export function RegistrationFlow({
     startTransition(async () => {
       const result = await startRegistration({
         distanceId: selectedDistanceId,
+        groupToken,
       });
 
       if (!result.ok) {
@@ -525,6 +563,8 @@ export function RegistrationFlow({
         taxCents: result.data.taxCents,
         totalCents: result.data.totalCents,
       });
+      setGroupDiscountPercentOff(result.data.groupDiscountPercentOff ?? null);
+      setGroupDiscountAmountCents(result.data.groupDiscountAmountCents ?? 0);
       setStep('info');
     });
   }
@@ -553,6 +593,10 @@ export function RegistrationFlow({
     setAppliedDiscountCode(null);
     setDiscountAmountCents(0);
     setDiscountError(null);
+    if (!resumeRegistrationId) {
+      setGroupDiscountPercentOff(null);
+      setGroupDiscountAmountCents(0);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDistanceId]);
 
@@ -592,20 +636,36 @@ export function RegistrationFlow({
         return;
       }
 
-      const result = await applyDiscountCode({
-        registrationId,
-        code,
-      });
+      const normalizedCode = validation.data.discountCode?.code ?? code.toUpperCase();
+      const validatedDiscountAmountCents = validation.data.discountAmountCents ?? 0;
 
+      const nextTotalCents = Math.max(
+        0,
+        subtotalCents + feesCents + taxCents - validatedDiscountAmountCents,
+      );
+
+      if (isGroupDiscountApplied && nextTotalCents > totalCents) {
+        setPendingCodeConfirmation({
+          code,
+          normalizedCode,
+          currentTotalCents: totalCents,
+          nextTotalCents,
+          differenceCents: nextTotalCents - totalCents,
+        });
+        return;
+      }
+
+      const result = await applyDiscountCode({ registrationId, code });
       if (!result.ok) {
         setDiscountError(result.error);
         return;
       }
 
-      const normalizedCode = validation.data.discountCode?.code ?? code.toUpperCase();
       setAppliedDiscountCode(normalizedCode);
       paymentForm.setFieldValue('discountCode', normalizedCode);
       setDiscountAmountCents(result.data.discountAmountCents);
+      setGroupDiscountPercentOff(result.data.groupDiscountPercentOff ?? null);
+      setGroupDiscountAmountCents(result.data.groupDiscountAmountCents ?? 0);
     });
   }
 
@@ -622,6 +682,8 @@ export function RegistrationFlow({
 
       setAppliedDiscountCode(null);
       setDiscountAmountCents(0);
+      setGroupDiscountPercentOff(result.data.groupDiscountPercentOff ?? null);
+      setGroupDiscountAmountCents(result.data.groupDiscountAmountCents ?? 0);
       paymentForm.setFieldValue('discountCode', '');
     });
   }
@@ -649,6 +711,63 @@ export function RegistrationFlow({
 
   return (
     <div className="container mx-auto px-4 py-4 sm:py-8 max-w-2xl">
+      <AlertDialog
+        open={Boolean(pendingCodeConfirmation)}
+        onOpenChange={(open) => {
+          if (!open) setPendingCodeConfirmation(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('payment.confirmReplaceGroupDiscount.title')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingCodeConfirmation
+                ? t('payment.confirmReplaceGroupDiscount.description', {
+                    current: formatPrice(
+                      pendingCodeConfirmation.currentTotalCents,
+                      selectedDistance?.currency ?? 'MXN',
+                    ),
+                    next: formatPrice(
+                      pendingCodeConfirmation.nextTotalCents,
+                      selectedDistance?.currency ?? 'MXN',
+                    ),
+                    difference: formatPrice(
+                      pendingCodeConfirmation.differenceCents,
+                      selectedDistance?.currency ?? 'MXN',
+                    ),
+                  })
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('payment.confirmReplaceGroupDiscount.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!pendingCodeConfirmation || !registrationId) return;
+                const { code, normalizedCode } = pendingCodeConfirmation;
+                setPendingCodeConfirmation(null);
+
+                startTransition(async () => {
+                  const result = await applyDiscountCode({ registrationId, code });
+                  if (!result.ok) {
+                    setDiscountError(result.error);
+                    return;
+                  }
+
+                  setAppliedDiscountCode(normalizedCode);
+                  paymentForm.setFieldValue('discountCode', normalizedCode);
+                  setDiscountAmountCents(result.data.discountAmountCents);
+                  setGroupDiscountPercentOff(result.data.groupDiscountPercentOff ?? null);
+                  setGroupDiscountAmountCents(result.data.groupDiscountAmountCents ?? 0);
+                });
+              }}
+            >
+              {t('payment.confirmReplaceGroupDiscount.confirm')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Header */}
       <div className="mb-4 sm:mb-8">
         <Link
@@ -1469,6 +1588,12 @@ export function RegistrationFlow({
                 <span className="text-muted-foreground">{t('payment.subtotal')}</span>
                 <span>{formatPrice(subtotalCents, selectedDistance?.currency ?? 'MXN')}</span>
               </div>
+              {groupDiscountPercentOff !== null && (
+                <div className="flex justify-between text-sm text-emerald-700">
+                  <span>{t('payment.groupDiscount', { percent: groupDiscountPercentOff })}</span>
+                  <span>-{formatPrice(groupDiscountAmountCents, selectedDistance?.currency ?? 'MXN')}</span>
+                </div>
+              )}
               {discountAmountCents > 0 && (
                 <div className="flex justify-between text-sm text-green-700">
                   <span>{t('payment.discount')}</span>
@@ -1506,7 +1631,9 @@ export function RegistrationFlow({
                   onChange={(e) => paymentForm.setFieldValue('discountCode', e.target.value)}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   placeholder={t('payment.discountCode')}
-                  disabled={isPending || paymentForm.isSubmitting || !!appliedDiscountCode}
+                  disabled={
+                    isPending || paymentForm.isSubmitting || !!appliedDiscountCode
+                  }
                 />
                 {appliedDiscountCode ? (
                   <Button
@@ -1521,12 +1648,19 @@ export function RegistrationFlow({
                   <Button
                     type="button"
                     onClick={handleApplyDiscountCode}
-                    disabled={isPending || paymentForm.isSubmitting || !paymentForm.values.discountCode.trim()}
+                    disabled={
+                      isPending ||
+                      paymentForm.isSubmitting ||
+                      !paymentForm.values.discountCode.trim()
+                    }
                   >
                     {t('payment.applyCode')}
                   </Button>
                 )}
               </div>
+              {isGroupDiscountApplied && (
+                <p className="text-sm text-muted-foreground">{t('payment.groupDiscountNotice')}</p>
+              )}
               {discountError && (
                 <p className="text-sm text-destructive">{discountError}</p>
               )}

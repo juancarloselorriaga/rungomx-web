@@ -9,15 +9,15 @@
   "create": {
     "title": "Create a group link",
     "description": "Choose a distance and share a link with your friends.",
-    "howItWorks": {
-      "title": "How it works",
-      "description": "A lightweight way to coordinate a small group registration.",
-      "points": {
-        "noReservation": "This link does not reserve spots. Availability can change.",
-        "selfPay": "Each participant registers and pays individually.",
-        "limit": "Set a max group size to keep it manageable."
-      }
-    },
+      "howItWorks": {
+        "title": "How it works",
+        "description": "A lightweight way to coordinate a small group registration.",
+        "points": {
+          "noReservation": "This link doesn’t reserve spots. Spots are held only when each person starts registration, and availability can change.",
+          "selfPay": "Each participant registers and pays individually. If a group discount is available, it’s applied at checkout once enough verified members have joined.",
+          "limit": "Set a max group size to keep it manageable."
+        }
+      },
     "form": {
       "title": "Group details",
       "description": "Pick a distance and set your group size.",
@@ -45,8 +45,8 @@
     "code": "Code: {prefix}…"
   },
   "howItWorks": {
-    "noReservation": "This link does not reserve spots. If the race is popular, join early.",
-    "selfPay": "Each participant pays during their own registration."
+    "noReservation": "Joining this group doesn’t reserve a spot. Spots are held only when you start registration, and availability can change.",
+    "selfPay": "Everyone registers and pays individually. Group discounts (if available) are applied at checkout once enough verified members have joined."
   },
   "loginRequired": {
     "title": "Sign in required",
@@ -57,11 +57,13 @@
   "actions": {
     "title": "Your spot",
     "joined": "You joined this group.",
-    "notJoined": "Join to be included in the group list.",
+    "notJoined": "Join to be included in the group list and count toward group discounts.",
     "groupFull": "This group reached its limit."
   },
   "share": {
     "copyLink": "Copy link",
+    "shareLink": "Share",
+    "shareText": "Join my group for {eventName}!",
     "copied": "Link copied",
     "failed": "Couldn't copy link"
   },
@@ -81,6 +83,16 @@
     "closedAt": "Registration closed {date}.",
     "closed": "Registration is closed for this event."
   },
+  "discount": {
+    "title": "Group discounts",
+    "currentDiscount": "Current discount: {percent}% off (applied at checkout)",
+    "noDiscountYet": "No discount yet",
+    "registeredCount": "{count} verified members joined",
+    "progress": "{count} / {total} verified members",
+    "nextTier": "{count} more verified members to unlock {percent}% off",
+    "tierMet": "{min}+ verified members: {percent}% off",
+    "tierPending": "{min}+ verified members: {percent}% off"
+  },
   "members": {
     "title": "People who joined",
     "description": "Track who joined and whether they started registration.",
@@ -92,6 +104,10 @@
     },
     "actions": {
       "remove": "Remove"
+    },
+    "memberView": {
+      "registered": "Registered",
+      "notRegistered": "Not yet registered"
     },
     "removed": "Member removed",
     "registrationStatus": {
@@ -114,4 +130,3 @@
     "groupFull": "This group is full."
   }
 }
-

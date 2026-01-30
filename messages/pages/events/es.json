@@ -3,7 +3,7 @@
   "description": "Explora eventos próximos y pasados de carreras.",
   "metadata": {
     "title": "Eventos | RunGoMX",
-    "description": "Encuentra e inscríbete en eventos de trail running, triatlón, ciclismo y otros deportes de resistencia en México."
+    "description": "Encuentra e inscríbete en eventos de resistencia en México."
   },
   "detail": {
     "tabs": {
@@ -28,8 +28,8 @@
     "registrationOpen": "Inscripciones abiertas",
     "registrationClosed": "Inscripciones cerradas",
     "registrationDetails": "Detalles de inscripción",
-    "registrationOpens": "Inscripciones abren el {date}",
-    "registrationCloses": "Inscripciones cierran el {date}",
+    "registrationOpens": "Abre {date}",
+    "registrationCloses": "Cierra {date}",
     "registrationPaused": "Las inscripciones están pausadas",
     "registerNow": "Inscribirme",
     "registerWithFriends": "Inscribirme con amigos",
@@ -73,10 +73,10 @@
       "badge": "Grupos de {minParticipants}+ ahorran {percent}%",
       "savePercent": "Grupos ahorran {percent}%",
       "title": "Descuentos para grupos",
-      "description": "Ahorra hasta {percent}% al inscribirte en grupo.",
+      "description": "Ahorra hasta {percent}% en grupo.",
       "tierLine": "{minParticipants}+ participantes: {percent}% de descuento",
-      "howTo": "Para obtener el descuento, regístrate mediante un enlace de invitación del organizador.",
-      "lockNote": "El descuento se fija cuando se reservan los lugares del grupo."
+      "howTo": "Usa el enlace de invitación del organizador para el descuento.",
+      "lockNote": "El descuento se fija al reservar los lugares del grupo."
     },
     "virtualEvent": "Evento virtual",
     "timeLimit": "{hours}h límite de tiempo",
@@ -126,12 +126,12 @@
     },
     "distance": {
       "title": "Selecciona tu distancia",
-      "description": "Elige la distancia en la que deseas participar.",
+      "description": "Elige tu distancia.",
       "continue": "Continuar"
     },
     "info": {
       "title": "Información del participante",
-      "description": "Ingresa tus datos para la inscripción.",
+      "description": "Ingresa tus datos.",
       "firstName": "Nombre",
       "lastName": "Apellidos",
       "email": "Correo electrónico",
@@ -151,7 +151,7 @@
     },
     "questions": {
       "title": "Preguntas adicionales",
-      "description": "Por favor responde las siguientes preguntas del organizador.",
+      "description": "Responde las preguntas del organizador.",
       "required": "Requerido",
       "optional": "Opcional",
       "continue": "Continuar",
@@ -159,7 +159,7 @@
     },
     "addons": {
       "title": "Complementos",
-      "description": "Mejora tu experiencia con complementos opcionales.",
+      "description": "Complementos opcionales para tu evento.",
       "noAddons": "No hay complementos disponibles para este evento.",
       "merchandise": "Mercancía",
       "donation": "Donación",
@@ -177,7 +177,7 @@
     },
     "policies": {
       "title": "Políticas",
-      "description": "Revisa las políticas del evento antes de continuar.",
+      "description": "Revisa las políticas antes de continuar.",
       "acknowledge": "He leído y entiendo las políticas de reembolso, transferencia y diferimiento de este evento.",
       "continue": "Continuar"
     },
@@ -199,13 +199,21 @@
     },
     "payment": {
       "title": "Pago",
-      "description": "Completa tu pago para finalizar la inscripción.",
+      "description": "Completa el pago para finalizar la inscripción.",
       "summary": "Resumen del pedido",
       "distance": "Distancia",
       "price": "Precio",
       "addons": "Complementos",
       "subtotal": "Subtotal",
       "discount": "Descuento",
+      "groupDiscount": "Descuento de grupo ({percent}%)",
+      "groupDiscountNotice": "Descuento de grupo aplicado. Si aplicas un código de descuento, se reemplazará.",
+      "confirmReplaceGroupDiscount": {
+        "title": "¿Reemplazar descuento de grupo?",
+        "description": "Al aplicar este código se reemplazará tu descuento de grupo y tu total aumentará de {current} a {next} (+{difference}).",
+        "cancel": "Conservar descuento de grupo",
+        "confirm": "Aplicar código"
+      },
       "discountCode": "Código de descuento",
       "applyCode": "Aplicar",
       "removeCode": "Eliminar",

@@ -897,13 +897,19 @@ export const submitAddOnSelections = withAuthenticatedUser<ActionResult>({
     });
 
     const discountAmountCents = redemption?.discountAmountCents ?? 0;
+    const groupDiscountAmountCents = registration.groupDiscountAmountCents ?? 0;
     const basePriceCents = registration.basePriceCents ?? 0;
     const feesCents = registration.feesCents ?? 0;
     const taxCents = registration.taxCents ?? 0;
 
     const nextTotal = Math.max(
       0,
-      basePriceCents + feesCents + taxCents + addOnTotalCents - discountAmountCents,
+      basePriceCents +
+        feesCents +
+        taxCents +
+        addOnTotalCents -
+        discountAmountCents -
+        groupDiscountAmountCents,
     );
 
     await tx

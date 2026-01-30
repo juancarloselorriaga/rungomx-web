@@ -336,6 +336,10 @@ export const registrationsRelations = relations(registrations, ({ one, many }) =
     fields: [registrations.distanceId],
     references: [eventDistances.id],
   }),
+  registrationGroup: one(registrationGroups, {
+    fields: [registrations.registrationGroupId],
+    references: [registrationGroups.id],
+  }),
   buyer: one(users, {
     fields: [registrations.buyerUserId],
     references: [users.id],
@@ -514,6 +518,7 @@ export const registrationGroupsRelations = relations(registrationGroups, ({ one,
     references: [users.id],
   }),
   members: many(registrationGroupMembers),
+  registrations: many(registrations),
 }));
 
 export const registrationGroupMembersRelations = relations(registrationGroupMembers, ({ one }) => ({

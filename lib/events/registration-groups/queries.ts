@@ -4,6 +4,7 @@ import { db } from '@/db';
 import {
   eventDistances,
   eventEditions,
+  groupDiscountRules,
   registrationGroupMembers,
   registrationGroups,
   registrations,
@@ -61,6 +62,14 @@ function resolveRegistrationForMember(
   return best && byPriority(best) > 0 ? best : null;
 }
 
+function formatMemberDisplayName(name: string): string {
+  const parts = name.split(' ').map(part => part.trim()).filter(Boolean);
+  if (parts.length === 0) return name;
+  if (parts.length === 1) return parts[0];
+  const lastInitial = parts[parts.length - 1]?.[0] ?? '';
+  return lastInitial ? `${parts[0]} ${lastInitial}.` : parts[0];
+}
+
 export async function getRegistrationGroupContext(params: {
   token: string;
   userId?: string | null;
@@ -90,6 +99,13 @@ export async function getRegistrationGroupContext(params: {
       event: null,
       distance: null,
       memberCount: 0,
+      memberSummary: [],
+      discount: {
+        tiers: [],
+        joinedMemberCount: 0,
+        currentPercentOff: null,
+        nextTier: null,
+      },
       viewer: {
         isAuthenticated: Boolean(params.userId),
         isCreator: false,
@@ -102,7 +118,7 @@ export async function getRegistrationGroupContext(params: {
 
   const status = resolveGroupStatus(group);
 
-  const [edition, distance, memberCountRow] = await Promise.all([
+  const [edition, distance, memberCountRow, verifiedMemberCountRow] = await Promise.all([
     db.query.eventEditions.findFirst({
       where: and(eq(eventEditions.id, group.editionId), isNull(eventEditions.deletedAt)),
       with: { series: true },
@@ -114,6 +130,18 @@ export async function getRegistrationGroupContext(params: {
       .select({ count: sql<number>`count(*)::int` })
       .from(registrationGroupMembers)
       .where(and(eq(registrationGroupMembers.groupId, group.id), isNull(registrationGroupMembers.leftAt))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(registrationGroupMembers)
+      .innerJoin(users, eq(registrationGroupMembers.userId, users.id))
+      .where(
+        and(
+          eq(registrationGroupMembers.groupId, group.id),
+          isNull(registrationGroupMembers.leftAt),
+          isNull(users.deletedAt),
+          eq(users.emailVerified, true),
+        ),
+      ),
   ]);
 
   if (!edition?.series || !distance) {
@@ -123,6 +151,13 @@ export async function getRegistrationGroupContext(params: {
       event: null,
       distance: null,
       memberCount: 0,
+      memberSummary: [],
+      discount: {
+        tiers: [],
+        joinedMemberCount: 0,
+        currentPercentOff: null,
+        nextTier: null,
+      },
       viewer: {
         isAuthenticated: Boolean(params.userId),
         isCreator: false,
@@ -134,6 +169,39 @@ export async function getRegistrationGroupContext(params: {
   }
 
   const memberCount = memberCountRow[0]?.count ?? 0;
+  const verifiedMemberCount = verifiedMemberCountRow[0]?.count ?? 0;
+
+  const discountRules = await db.query.groupDiscountRules.findMany({
+    where: and(
+      eq(groupDiscountRules.editionId, group.editionId),
+      eq(groupDiscountRules.isActive, true),
+    ),
+    orderBy: (rule, { asc }) => [asc(rule.minParticipants)],
+  });
+
+  const discountTiers = discountRules
+    .filter((rule) => rule.minParticipants <= group.maxMembers)
+    .map((rule) => ({
+      minParticipants: rule.minParticipants,
+      percentOff: rule.percentOff,
+    }));
+
+  let currentPercentOff: number | null = null;
+  for (const tier of discountTiers) {
+    if (verifiedMemberCount >= tier.minParticipants) {
+      currentPercentOff = tier.percentOff;
+    }
+  }
+
+  const nextTierCandidate =
+    discountTiers.find((tier) => verifiedMemberCount < tier.minParticipants) ?? null;
+  const nextTier = nextTierCandidate
+    ? {
+        minParticipants: nextTierCandidate.minParticipants,
+        percentOff: nextTierCandidate.percentOff,
+        membersNeeded: Math.max(nextTierCandidate.minParticipants - verifiedMemberCount, 0),
+      }
+    : null;
 
   // Determine registration status for the event
   let isRegistrationOpen = false;
@@ -212,8 +280,13 @@ export async function getRegistrationGroupContext(params: {
     joinedAt: string;
     registration: { id: string; status: string; expiresAt: string | null; distanceId: string } | null;
   }> = [];
+  let memberSummary: Array<{
+    userId: string;
+    displayName: string;
+    isRegistered: boolean;
+  }> = [];
 
-  if (isCreator) {
+  if (isCreator || isMember) {
     const memberRows = await db
       .select({
         userId: users.id,
@@ -262,27 +335,32 @@ export async function getRegistrationGroupContext(params: {
       registrationsByUser.set(row.buyerUserId, list);
     }
 
-    members = memberRows.map((member): {
-      userId: string;
-      name: string;
-      joinedAt: string;
-      registration: { id: string; status: string; expiresAt: string | null; distanceId: string } | null;
-    } => {
+    const resolvedMembers = memberRows.map((member) => {
       const reg = resolveRegistrationForMember(registrationsByUser.get(member.userId) ?? [], now);
-      return {
+      return { member, registration: reg };
+    });
+
+    memberSummary = resolvedMembers.map(({ member, registration }) => ({
+      userId: member.userId,
+      displayName: isCreator ? member.name : formatMemberDisplayName(member.name),
+      isRegistered: Boolean(registration),
+    }));
+
+    if (isCreator) {
+      members = resolvedMembers.map(({ member, registration }) => ({
         userId: member.userId,
         name: member.name,
         joinedAt: member.joinedAt.toISOString(),
-        registration: reg
+        registration: registration
           ? {
-              id: reg.id,
-              status: reg.status,
-              expiresAt: reg.expiresAt ? reg.expiresAt.toISOString() : null,
-              distanceId: reg.distanceId,
+              id: registration.id,
+              status: registration.status,
+              expiresAt: registration.expiresAt ? registration.expiresAt.toISOString() : null,
+              distanceId: registration.distanceId,
             }
           : null,
-      };
-    });
+      }));
+    }
   }
 
   return {
@@ -317,6 +395,13 @@ export async function getRegistrationGroupContext(params: {
       spotsRemaining,
     },
     memberCount,
+    memberSummary,
+    discount: {
+      tiers: discountTiers,
+      joinedMemberCount: verifiedMemberCount,
+      currentPercentOff,
+      nextTier,
+    },
     viewer: {
       isAuthenticated: Boolean(viewerUserId),
       isCreator,

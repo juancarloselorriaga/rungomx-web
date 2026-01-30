@@ -8,7 +8,7 @@ import {
   removeRegistrationGroupMember,
 } from '@/lib/events/registration-groups/actions';
 import { cn } from '@/lib/utils';
-import { Copy, Loader2, LogIn, Users, X } from 'lucide-react';
+import { CheckCircle, Circle, Loader2, LogIn, Share2, Users, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -60,6 +60,17 @@ type GroupLinkPageProps = {
     joinedAt: string;
     registration: { id: string; status: string; expiresAt: string | null; distanceId: string } | null;
   }>;
+  memberSummary: Array<{
+    userId: string;
+    displayName: string;
+    isRegistered: boolean;
+  }>;
+  discount: {
+    tiers: Array<{ minParticipants: number; percentOff: number }>;
+    joinedMemberCount: number;
+    currentPercentOff: number | null;
+    nextTier: { minParticipants: number; percentOff: number; membersNeeded: number } | null;
+  };
 };
 
 const STATUS_STYLES: Record<string, string> = {
@@ -89,6 +100,8 @@ export function GroupLinkPage({
   group,
   viewer,
   members,
+  memberSummary,
+  discount,
 }: GroupLinkPageProps) {
   const t = useTranslations('pages.groupLink');
   const activeLocale = useLocale();
@@ -122,6 +135,11 @@ export function GroupLinkPage({
   );
 
   const locationLabel = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
+  const shareTitle = t('share.shareLink');
+  const shareText = t('share.shareText', {
+    eventName: `${event.seriesName} ${event.editionLabel}`,
+  });
+  const showDiscountCard = discount.tiers.length > 0;
 
   const handleCopyLink = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -131,6 +149,23 @@ export function GroupLinkPage({
     } catch {
       toast.error(t('share.failed'));
     }
+  };
+
+  const handleShare = async () => {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    if (!url) return;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: shareTitle, text: shareText, url });
+        return;
+      } catch {
+        await handleCopyLink();
+        return;
+      }
+    }
+
+    await handleCopyLink();
   };
 
   const handleJoin = () => {
@@ -259,6 +294,76 @@ export function GroupLinkPage({
         </div>
       </div>
 
+      {showDiscountCard ? (
+        <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-base font-semibold">{t('discount.title')}</h2>
+            <p className="text-sm text-muted-foreground">
+              {discount.currentPercentOff !== null
+                ? t('discount.currentDiscount', { percent: discount.currentPercentOff })
+                : t('discount.noDiscountYet')}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {discount.tiers.map((tier) => {
+              const isMet = discount.joinedMemberCount >= tier.minParticipants;
+              return (
+                <div
+                  key={tier.minParticipants}
+                  className={cn(
+                    'flex items-center justify-between rounded-md border px-3 py-2 text-sm',
+                    isMet
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-muted bg-muted/30 text-muted-foreground',
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    {isMet ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <Circle className="h-4 w-4" />
+                    )}
+                    <span>
+                      {isMet
+                        ? t('discount.tierMet', {
+                            min: tier.minParticipants,
+                            percent: tier.percentOff,
+                          })
+                        : t('discount.tierPending', {
+                            min: tier.minParticipants,
+                            percent: tier.percentOff,
+                          })}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {discount.nextTier ? (
+            <div className="text-sm text-muted-foreground space-y-1">
+              <div className="font-medium text-foreground">
+                {t('discount.nextTier', {
+                  count: discount.nextTier.membersNeeded,
+                  percent: discount.nextTier.percentOff,
+                })}
+              </div>
+              <div>
+                {t('discount.progress', {
+                  count: discount.joinedMemberCount,
+                  total: discount.nextTier.minParticipants,
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              {t('discount.registeredCount', { count: discount.joinedMemberCount })}
+            </div>
+          )}
+        </div>
+      ) : null}
+
       {!isAuthenticated && signInUrl && signUpUrl ? (
         <div className="rounded-lg border bg-card p-5 shadow-sm space-y-3">
           <div>
@@ -292,10 +397,10 @@ export function GroupLinkPage({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {viewer.isCreator ? (
-              <Button variant="outline" onClick={handleCopyLink} disabled={isPending}>
-                <Copy className="h-4 w-4 mr-2" />
-                {t('share.copyLink')}
+            {viewer.isCreator || viewer.isMember ? (
+              <Button variant="outline" onClick={handleShare} disabled={isPending}>
+                <Share2 className="h-4 w-4 mr-2" />
+                {t('share.shareLink')}
               </Button>
             ) : null}
 
@@ -317,7 +422,7 @@ export function GroupLinkPage({
                   href={{
                     pathname: '/events/[seriesSlug]/[editionSlug]/register',
                     params: { seriesSlug: event.seriesSlug, editionSlug: event.editionSlug },
-                    query: { distanceId: distance.id },
+                    query: { distanceId: distance.id, groupToken },
                   }}
                 >
                   {t('registration.start')}
@@ -401,6 +506,36 @@ export function GroupLinkPage({
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      ) : null}
+
+      {viewer.isMember && !viewer.isCreator ? (
+        <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-base font-semibold">{t('members.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('members.description')}</p>
+          </div>
+
+          <div className="space-y-2">
+            {memberSummary.map((member) => (
+              <div
+                key={member.userId}
+                className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+              >
+                <span>{member.displayName}</span>
+                <span
+                  className={cn(
+                    'text-xs font-medium',
+                    member.isRegistered ? 'text-emerald-600' : 'text-muted-foreground',
+                  )}
+                >
+                  {member.isRegistered
+                    ? t('members.memberView.registered')
+                    : t('members.memberView.notRegistered')}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       ) : null}

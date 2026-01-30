@@ -640,6 +640,11 @@ export const registrations = pgTable(
     feesCents: integer('fees_cents'),
     taxCents: integer('tax_cents'),
     totalCents: integer('total_cents'),
+    registrationGroupId: uuid('registration_group_id').references(() => registrationGroups.id, {
+      onDelete: 'set null',
+    }),
+    groupDiscountPercentOff: integer('group_discount_percent_off'),
+    groupDiscountAmountCents: integer('group_discount_amount_cents'),
     expiresAt: timestamp('expires_at', { withTimezone: true, mode: 'date' }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
@@ -652,6 +657,9 @@ export const registrations = pgTable(
     statusExpiresAtIdx: index('registrations_status_expires_at_idx')
       .on(table.status, table.expiresAt)
       .where(sql`${table.deletedAt} is null and ${table.expiresAt} is not null`),
+    registrationGroupIdIdx: index('registrations_registration_group_id_idx')
+      .on(table.registrationGroupId)
+      .where(sql`${table.registrationGroupId} is not null`),
   }),
 );
 

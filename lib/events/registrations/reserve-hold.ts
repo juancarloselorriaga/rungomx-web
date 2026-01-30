@@ -38,6 +38,9 @@ export type ReserveHoldParams = {
     taxCents: number | null;
     totalCents: number | null;
   };
+  registrationGroupId?: string | null;
+  groupDiscountPercentOff?: number | null;
+  groupDiscountAmountCents?: number | null;
   registrantSnapshot?: RegistrantSnapshot | null;
   registrantUserId?: string | null;
   now?: Date;
@@ -64,6 +67,9 @@ export async function reserveHold({
   expiresAt,
   paymentResponsibility,
   pricing,
+  registrationGroupId,
+  groupDiscountPercentOff,
+  groupDiscountAmountCents,
   registrantSnapshot,
   registrantUserId,
   now = new Date(),
@@ -129,6 +135,9 @@ export async function reserveHold({
       feesCents: pricing.feesCents,
       taxCents: pricing.taxCents,
       totalCents: pricing.totalCents,
+      registrationGroupId: registrationGroupId ?? null,
+      groupDiscountPercentOff: groupDiscountPercentOff ?? null,
+      groupDiscountAmountCents: groupDiscountAmountCents ?? null,
       expiresAt,
       paymentResponsibility,
     })

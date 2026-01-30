@@ -18,7 +18,7 @@ import { LoginRequired } from './login-required';
 
 type RegisterPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
-  searchParams?: Promise<{ distanceId?: string }>;
+  searchParams?: Promise<{ distanceId?: string; groupToken?: string }>;
 };
 
 export async function generateMetadata({ params }: RegisterPageProps): Promise<Metadata> {
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: RegisterPageProps): Promise<M
 
 export default async function RegisterPage({ params, searchParams }: RegisterPageProps) {
   const { locale, seriesSlug, editionSlug } = await params;
-  const { distanceId: preSelectedDistanceId } = (await searchParams) ?? {};
+  const { distanceId: preSelectedDistanceId, groupToken } = (await searchParams) ?? {};
   await configPageLocale(params, { pathname: '/events/[seriesSlug]/[editionSlug]/register' });
 
   const event = await getPublicEventBySlug(seriesSlug, editionSlug);
@@ -129,6 +129,7 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
       userId={authContext.user!.id}
       showOrganizerSelfRegistrationWarning={isOrganizerForEvent}
       preSelectedDistanceId={preSelectedDistanceId}
+      groupToken={groupToken}
       existingRegistration={existingRegistration}
       activeInviteExists={Boolean(activeInvite)}
     />

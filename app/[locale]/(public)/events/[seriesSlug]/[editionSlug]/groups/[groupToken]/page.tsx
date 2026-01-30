@@ -106,6 +106,8 @@ export default async function GroupPage({ params }: GroupPageProps) {
       }}
       viewer={groupContext.viewer}
       members={groupContext.members}
+      memberSummary={groupContext.memberSummary}
+      discount={groupContext.discount}
     />
   );
 }

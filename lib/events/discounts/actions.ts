@@ -10,6 +10,7 @@ import { addOnSelections, discountCodes, discountRedemptions, eventEditions, reg
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
+import { syncRegistrationGroupDiscountForRegistration } from '@/lib/events/registration-groups/sync-registration-discount';
 import { isExpiredHold } from '@/lib/events/registration-holds';
 import { RegistrationOwnershipError, getRegistrationForOwnerOrThrow } from '@/lib/events/registrations/ownership';
 import {
@@ -534,7 +535,13 @@ export const validateDiscountCode = withAuthenticatedUser<ActionResult<DiscountV
  * Apply a discount code to a registration.
  * This creates a redemption record and updates the registration total.
  */
-export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAmountCents: number }>>({
+export const applyDiscountCode = withAuthenticatedUser<
+  ActionResult<{
+    discountAmountCents: number;
+    groupDiscountPercentOff: number | null;
+    groupDiscountAmountCents: number | null;
+  }>
+>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof applyDiscountCodeSchema>) => {
   const validated = applyDiscountCodeSchema.safeParse(input);
@@ -700,6 +707,8 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
     await tx
       .update(registrations)
       .set({
+        groupDiscountPercentOff: null,
+        groupDiscountAmountCents: null,
         totalCents: newTotal,
         updatedAt: now,
       })
@@ -718,7 +727,14 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
       tx,
     );
 
-    return { ok: true as const, data: { discountAmountCents } };
+    return {
+      ok: true as const,
+      data: {
+        discountAmountCents,
+        groupDiscountPercentOff: null,
+        groupDiscountAmountCents: null,
+      },
+    };
   });
 
   if (result.ok) {
@@ -732,7 +748,9 @@ export const applyDiscountCode = withAuthenticatedUser<ActionResult<{ discountAm
 /**
  * Remove a discount code from a registration.
  */
-export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
+export const removeDiscountCode = withAuthenticatedUser<
+  ActionResult<{ groupDiscountPercentOff: number | null; groupDiscountAmountCents: number | null }>
+>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof removeDiscountCodeSchema>) => {
   const validated = removeDiscountCodeSchema.safeParse(input);
@@ -796,7 +814,7 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
 
   const requestContext = await getRequestContext(await headers());
 
-  await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     // Serialize changes to this registration (one coupon per registration correctness).
     await tx.execute(sql`SELECT id FROM ${registrations} WHERE id = ${registrationId} FOR UPDATE`);
 
@@ -805,29 +823,10 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
       .delete(discountRedemptions)
       .where(eq(discountRedemptions.id, redemption.id));
 
-    // Restore registration total
-    const basePriceCents = registration.basePriceCents || 0;
-    const feesCents = registration.feesCents || 0;
-    const taxCents = registration.taxCents || 0;
-    const [{ total: addOnTotalCents }] = await tx
-      .select({
-        total: sql<number>`coalesce(sum(${addOnSelections.lineTotalCents}), 0)::int`,
-      })
-      .from(addOnSelections)
-      .where(
-        and(
-          eq(addOnSelections.registrationId, registrationId),
-          isNull(addOnSelections.deletedAt),
-        ),
-      );
-    const newTotal = basePriceCents + feesCents + taxCents + addOnTotalCents;
-    await tx
-      .update(registrations)
-      .set({
-        totalCents: newTotal,
-        updatedAt: now,
-      })
-      .where(eq(registrations.id, registrationId));
+    const synced = await syncRegistrationGroupDiscountForRegistration({ registrationId, now, tx });
+    if (!synced) {
+      return { ok: false as const, error: 'Registration not found', code: 'NOT_FOUND' };
+    }
 
     await createAuditLog(
       {
@@ -844,10 +843,20 @@ export const removeDiscountCode = withAuthenticatedUser<ActionResult>({
       },
       tx,
     );
+
+    return {
+      ok: true as const,
+      data: {
+        groupDiscountPercentOff: synced.groupDiscountPercentOff,
+        groupDiscountAmountCents: synced.groupDiscountAmountCents,
+      },
+    };
   });
 
-  revalidateTag(eventEditionCouponsTag(registration.editionId), { expire: 0 });
-  revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
+  if (result.ok) {
+    revalidateTag(eventEditionCouponsTag(registration.editionId), { expire: 0 });
+    revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
+  }
 
-  return { ok: true, data: undefined };
+  return result;
 });

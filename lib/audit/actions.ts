@@ -75,6 +75,7 @@ export const AUDIT_ACTIONS = {
   'registration_group.join': 'Registration group joined',
   'registration_group.leave': 'Registration group left',
   'registration_group.member.remove': 'Registration group member removed',
+  'registration_group.discount.apply': 'Registration group discount applied',
 
   // Group Registrations (Phase 3)
   'group_registrations.upload': 'Group registrations batch uploaded',

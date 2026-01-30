@@ -1,7 +1,17 @@
 import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
-import { eventDistances, eventEditions, pricingTiers, registrations, users } from '@/db/schema';
+import {
+  eventDistances,
+  eventEditions,
+  pricingTiers,
+  registrationGroupMembers,
+  registrationGroups,
+  registrations,
+  users,
+} from '@/db/schema';
+import { createAuditLog } from '@/lib/audit';
+import { resolveGroupDiscount } from '@/lib/events/registration-groups/discount';
 import { normalizeEmail } from '@/lib/events/shared/identity';
 import { getCurrentInviteForEmail } from '@/lib/events/invite-claim/queries';
 import { computeExpiresAt } from '@/lib/events/registration-holds';
@@ -16,6 +26,8 @@ export type StartRegistrationResult = {
   feesCents: number;
   taxCents: number;
   totalCents: number | null;
+  groupDiscountPercentOff: number | null;
+  groupDiscountAmountCents: number | null;
 };
 
 export type StartRegistrationErrorCode =
@@ -40,6 +52,8 @@ export class StartRegistrationError extends Error {
 type StartRegistrationDeps = {
   now?: Date;
   emailNormalized?: string | null;
+  registrationGroupId?: string;
+  requestContext?: { ipAddress?: string; userAgent?: string };
 };
 
 /**
@@ -92,8 +106,10 @@ export async function startRegistrationForUser(
 
   const priceCents = activeTier?.priceCents ?? 0;
   const feesCents = Math.round(priceCents * 0.05);
-  const totalCents = priceCents + feesCents;
   let emailNormalized = deps.emailNormalized ?? null;
+  let groupDiscountPercentOff: number | null = null;
+  let groupDiscountAmountCents: number | null = null;
+  let groupDiscountJoinedMemberCount: number | null = null;
 
   if (!emailNormalized) {
     const user = await db.query.users.findFirst({
@@ -162,8 +178,69 @@ export async function startRegistrationForUser(
         );
       }
 
+      let resolvedGroupId: string | null = null;
+      if (deps.registrationGroupId) {
+        const group = await tx.query.registrationGroups.findFirst({
+          where: and(
+            eq(registrationGroups.id, deps.registrationGroupId),
+            isNull(registrationGroups.deletedAt),
+          ),
+          columns: {
+            id: true,
+            editionId: true,
+            distanceId: true,
+            isActive: true,
+          },
+        });
+
+        if (!group) {
+          throw new StartRegistrationError('NOT_FOUND', 'Registration group not found');
+        }
+
+        if (!group.isActive) {
+          throw new StartRegistrationError('NOT_FOUND', 'Registration group is not active');
+        }
+
+        if (group.editionId !== edition.id || group.distanceId !== distanceId) {
+          throw new StartRegistrationError('NOT_FOUND', 'Registration group is invalid');
+        }
+
+        const membership = await tx.query.registrationGroupMembers.findFirst({
+          where: and(
+            eq(registrationGroupMembers.groupId, group.id),
+            eq(registrationGroupMembers.userId, userId),
+            isNull(registrationGroupMembers.leftAt),
+          ),
+          columns: { id: true },
+        });
+
+        if (!membership) {
+          throw new StartRegistrationError('NOT_FOUND', 'You must join the group before registering');
+        }
+
+        resolvedGroupId = group.id;
+
+        const discount = await resolveGroupDiscount({
+          groupId: group.id,
+          editionId: edition.id,
+          now,
+          tx,
+        });
+
+        if (discount) {
+          groupDiscountPercentOff = discount.percentOff;
+          groupDiscountJoinedMemberCount = discount.joinedMemberCount;
+          groupDiscountAmountCents = Math.round((priceCents * discount.percentOff) / 100);
+        }
+      }
+
+      const totalCents = Math.max(
+        0,
+        priceCents + feesCents - (groupDiscountAmountCents ?? 0),
+      );
+
       try {
-        return await reserveHold({
+        const registration = await reserveHold({
           tx,
           editionId: edition.id,
           distanceId,
@@ -180,8 +257,37 @@ export async function startRegistrationForUser(
             taxCents: 0,
             totalCents,
           },
+          registrationGroupId: resolvedGroupId,
+          groupDiscountPercentOff,
+          groupDiscountAmountCents,
           now,
         });
+
+        if (groupDiscountPercentOff !== null && resolvedGroupId && edition.series?.organizationId) {
+          try {
+            await createAuditLog(
+              {
+                organizationId: edition.series.organizationId,
+                actorUserId: userId,
+                action: 'registration_group.discount.apply',
+                entityType: 'registration',
+                entityId: registration.id,
+                after: {
+                  groupId: resolvedGroupId,
+                  percentOff: groupDiscountPercentOff,
+                  discountAmountCents: groupDiscountAmountCents,
+                  joinedMemberCount: groupDiscountJoinedMemberCount,
+                },
+                request: deps.requestContext,
+              },
+              tx,
+            );
+          } catch (error) {
+            console.warn('[registration-group-discount] Failed to write audit log:', error);
+          }
+        }
+
+        return registration;
       } catch (error) {
         if (error instanceof ReserveHoldError) {
           throw new StartRegistrationError('SOLD_OUT', error.message);
@@ -199,6 +305,8 @@ export async function startRegistrationForUser(
       feesCents: registration.feesCents ?? feesCents,
       taxCents: registration.taxCents ?? 0,
       totalCents: registration.totalCents,
+      groupDiscountPercentOff: registration.groupDiscountPercentOff ?? groupDiscountPercentOff,
+      groupDiscountAmountCents: registration.groupDiscountAmountCents ?? groupDiscountAmountCents,
     };
   } catch (error) {
     if (error instanceof StartRegistrationError) {
