@@ -214,6 +214,18 @@
         }
       }
     },
+    "SettingsBilling": {
+      "metadata": {
+        "title": "Facturación y Pro | RunGoMX",
+        "description": "Administra tu acceso Pro, pruebas y promociones.",
+        "keywords": ["facturación", "pro", "suscripción", "promoción"],
+        "openGraph": {
+          "title": "Facturación y Pro | RunGoMX",
+          "description": "Revisa los detalles de tu acceso Pro.",
+          "imageAlt": "Facturación y Pro"
+        }
+      }
+    },
     "AdminAccount": {
       "metadata": {
         "title": "Cuenta de administrador | RunGoMX",

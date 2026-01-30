@@ -8,5 +8,10 @@
   "account": {
     "title": "Cuenta",
     "description": "Administra tu nombre y contraseña."
+  },
+  "billing": {
+    "title": "Facturación y Pro",
+    "description": "Administra tu acceso Pro, pruebas y promociones.",
+    "empty": "No pudimos cargar tu estado de facturación. Actualiza la página."
   }
 }

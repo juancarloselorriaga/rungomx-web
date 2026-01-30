@@ -14,12 +14,12 @@ export async function createTestUser(
     createdAt?: Date;
   } = {},
 ) {
-  const now = Date.now();
+  const unique = randomUUID();
   const [user] = await db
     .insert(schema.users)
     .values({
-      email: overrides.email ?? `test-${now}@example.com`,
-      name: overrides.name ?? `test-${now}`,
+      email: overrides.email ?? `test-${unique}@example.com`,
+      name: overrides.name ?? `test-${unique}`,
       emailVerified: overrides.emailVerified ?? false,
       createdAt: overrides.createdAt,
     })

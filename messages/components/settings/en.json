@@ -10,6 +10,10 @@
       "account": {
         "title": "Account",
         "description": "Identity details and password."
+      },
+      "billing": {
+        "title": "Billing & Pro",
+        "description": "Trials, promos, and access details."
       }
     }
   },
@@ -238,6 +242,120 @@
       "description": "This will remove your profile picture. You can upload a new one anytime.",
       "cancel": "Cancel",
       "confirm": "Delete"
+    }
+  },
+  "billing": {
+    "status": {
+      "sectionLabel": "Pro status",
+      "title": "Current access",
+      "description": "Review your Pro access, sources, and timelines.",
+      "badges": {
+        "pro": "Pro active",
+        "free": "Free"
+      },
+      "labels": {
+        "proUntil": "Pro until",
+        "effectiveSource": "Effective source",
+        "nextProStarts": "Next Pro starts",
+        "sources": "Access sources",
+        "sourceWindow": "Access window"
+      },
+      "values": {
+        "none": "None",
+        "unlimited": "Unlimited"
+      },
+      "internal": "Internal accounts always have Pro access.",
+      "utc": "UTC"
+    },
+    "sources": {
+      "internal_bypass": "Internal access",
+      "subscription": "Subscription",
+      "trial": "Trial",
+      "admin_override": "Admin override",
+      "pending_grant": "Pending grant",
+      "promotion": "Promotion",
+      "system": "System",
+      "migration": "Migration"
+    },
+    "trial": {
+      "sectionLabel": "Trial",
+      "title": "Start your trial",
+      "description": "Each account is eligible for one Pro trial.",
+      "activeLabel": "Trial active",
+      "activeUntil": "Your trial ends on {endsAt}.",
+      "requiresVerification": "Verify your email to start a trial.",
+      "alreadyUsed": "This account has already used its trial.",
+      "alreadyPro": "You already have Pro access.",
+      "actions": {
+        "start": "Start trial",
+        "starting": "Starting trial"
+      },
+      "success": "Trial started. Pro access ends on {endsAt}.",
+      "errors": {
+        "emailNotVerified": "Verify your email before starting a trial.",
+        "alreadyPro": "You already have Pro access.",
+        "alreadyUsed": "This account has already used its trial.",
+        "unauthenticated": "Sign in to start a trial.",
+        "generic": "We couldn't start the trial. Please try again."
+      }
+    },
+    "subscription": {
+      "sectionLabel": "Subscription",
+      "title": "Subscription management",
+      "description": "Cancel or resume your current period.",
+      "window": {
+        "trial": "trial",
+        "active": "subscription"
+      },
+      "status": {
+        "trialing": "Trialing",
+        "active": "Active",
+        "ended": "Ended"
+      },
+      "cancelScheduled": "Canceling at period end",
+      "endsAt": "{window} ends on {endsAt}.",
+      "none": "No subscription on file yet.",
+      "actions": {
+        "cancel": "Cancel at period end",
+        "canceling": "Canceling",
+        "resume": "Resume subscription",
+        "resuming": "Resuming"
+      },
+      "success": {
+        "cancelScheduled": "Cancellation scheduled.",
+        "resumed": "Subscription resumed."
+      },
+      "errors": {
+        "notFound": "No subscription found for this account.",
+        "notActive": "Subscription is not active.",
+        "ended": "Subscription already ended.",
+        "generic": "We couldn't update the subscription. Please try again."
+      }
+    },
+    "promo": {
+      "sectionLabel": "Promo code",
+      "title": "Redeem a promo",
+      "description": "Enter a promo code to extend Pro access.",
+      "fields": {
+        "code": "Promo code"
+      },
+      "actions": {
+        "redeem": "Redeem code"
+      },
+      "success": {
+        "redeemed": "Promo applied. Pro access extends to {endsAt}.",
+        "alreadyRedeemed": "Promo code already redeemed for this account.",
+        "noExtension": "Promo redeemed, but it does not extend your current access."
+      },
+      "errors": {
+        "unauthenticated": "Sign in to redeem a promo.",
+        "rateLimited": "Too many attempts. Please wait and try again.",
+        "notFound": "Promo code not found.",
+        "inactive": "Promo code is inactive or expired.",
+        "maxRedemptions": "This promo has reached its redemption limit.",
+        "invalidInput": "Enter a valid promo code.",
+        "generic": "We couldn't redeem that promo code."
+      }
     }
   }
 }

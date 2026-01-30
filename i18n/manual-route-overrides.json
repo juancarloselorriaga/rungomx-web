@@ -20,5 +20,8 @@
   "/dashboard/events/[eventId]/registrations": {
     "selection": "protected",
     "pages": ["dashboardEvents", "eventsRegistrations"]
-  }
+  },
+  "/settings/billing": { "selection": "protected", "pages": ["settings"] },
+  "/admin": { "selection": "public", "pages": ["dashboard"] },
+  "/admin/tools": { "selection": "public", "pages": ["dashboard"] }
 }

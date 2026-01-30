@@ -214,6 +214,18 @@
         }
       }
     },
+    "SettingsBilling": {
+      "metadata": {
+        "title": "Billing & Pro | RunGoMX",
+        "description": "Manage your Pro access, trials, and promotions.",
+        "keywords": ["billing", "pro", "subscription", "promotion"],
+        "openGraph": {
+          "title": "Billing & Pro | RunGoMX",
+          "description": "Review your Pro access details.",
+          "imageAlt": "Billing & Pro"
+        }
+      }
+    },
     "AdminAccount": {
       "metadata": {
         "title": "Admin account | RunGoMX",

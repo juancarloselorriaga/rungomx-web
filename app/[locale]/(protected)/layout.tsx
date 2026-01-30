@@ -13,6 +13,7 @@ import ProtectedLayoutWrapper from '@/components/layout/protected-layout-wrapper
 import { getPathname } from '@/i18n/navigation';
 import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
+import { maybeAutoClaimPendingGrants } from '@/lib/billing/auto-claim';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -32,6 +33,14 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
         locale,
       }),
     );
+  }
+
+  if (authContext.user) {
+    await maybeAutoClaimPendingGrants({
+      userId: authContext.user.id,
+      email: authContext.user.email,
+      emailVerified: authContext.user.emailVerified,
+    });
   }
 
   // Redirect non-user-area users to admin, EXCEPT internal staff with events management permissions

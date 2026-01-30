@@ -114,7 +114,194 @@
     "tools": {
       "title": "Herramientas de staff",
       "description": "Utilidades operativas y atajos para gestión de eventos.",
-      "placeholder": "Las herramientas de staff estarán disponibles pronto."
+      "placeholder": "Las herramientas de staff estarán disponibles pronto.",
+      "billing": {
+        "lookup": {
+          "sectionLabel": "Búsqueda",
+          "title": "Buscar usuario",
+          "description": "Busca un usuario y revisa su acceso Pro.",
+          "fields": {
+            "email": "Correo del usuario"
+          },
+          "actions": {
+            "search": "Buscar"
+          },
+          "labels": {
+            "user": "Usuario",
+            "userId": "ID de usuario",
+            "createdAt": "Creado"
+          },
+          "values": {
+            "unknown": "Desconocido"
+          },
+          "errors": {
+            "unauthenticated": "Inicia sesión para usar herramientas.",
+            "forbidden": "No tienes acceso a herramientas de facturación.",
+            "notFound": "No se encontró un usuario con ese correo.",
+            "invalidInput": "Ingresa un correo válido.",
+            "generic": "No pudimos cargar el usuario."
+          },
+          "success": "Usuario cargado."
+        },
+        "status": {
+          "badges": {
+            "pro": "Pro activo",
+            "free": "Gratis",
+            "internal": "Interno"
+          },
+          "labels": {
+            "proUntil": "Pro hasta",
+            "effectiveSource": "Fuente efectiva",
+            "sources": "Fuentes de acceso"
+          },
+          "values": {
+            "none": "Ninguno",
+            "unlimited": "Sin límite"
+          },
+          "utc": "UTC"
+        },
+        "sources": {
+          "internal_bypass": "Acceso interno",
+          "subscription": "Suscripción",
+          "trial": "Prueba",
+          "admin_override": "Override administrativo",
+          "pending_grant": "Asignación pendiente",
+          "promotion": "Promoción",
+          "system": "Sistema",
+          "migration": "Migración"
+        },
+        "events": {
+          "title": "Historial de eventos",
+          "empty": "No hay eventos de facturación.",
+          "types": {
+            "trial_started": "Prueba iniciada",
+            "cancel_scheduled": "Cancelación programada",
+            "cancel_reverted": "Cancelación revertida",
+            "subscription_ended": "Suscripción finalizada",
+            "override_granted": "Override otorgado",
+            "override_extended": "Override extendido",
+            "override_revoked": "Override revocado",
+            "promotion_created": "Promoción creada",
+            "promotion_disabled": "Promoción desactivada",
+            "promotion_redeemed": "Promoción canjeada",
+            "pending_grant_created": "Asignación pendiente creada",
+            "pending_grant_disabled": "Asignación pendiente desactivada",
+            "pending_grant_claimed": "Asignación pendiente reclamada"
+          }
+        },
+        "override": {
+          "sectionLabel": "Overrides",
+          "title": "Overrides administrativos",
+          "description": "Otorga, extiende o revoca acceso Pro.",
+          "latestLabel": "Último override",
+          "fields": {
+            "userId": "ID de usuario",
+            "reason": "Motivo",
+            "duration": "Duración (días)",
+            "fixedEndsAt": "Fin fijo (UTC)",
+            "overrideId": "ID de override"
+          },
+          "grant": {
+            "title": "Otorgar",
+            "action": "Otorgar override"
+          },
+          "extend": {
+            "title": "Extender",
+            "action": "Extender override"
+          },
+          "revoke": {
+            "title": "Revocar",
+            "action": "Revocar override"
+          },
+          "success": {
+            "granted": "Override otorgado.",
+            "extended": "Override extendido.",
+            "revoked": "Override revocado."
+          },
+          "errors": {
+            "unauthenticated": "Inicia sesión para gestionar overrides.",
+            "forbidden": "No tienes acceso para gestionar overrides.",
+            "invalidInput": "Revisa los campos obligatorios e intenta de nuevo.",
+            "generic": "No pudimos actualizar el override."
+          }
+        },
+        "promotion": {
+          "sectionLabel": "Promociones",
+          "title": "Códigos promocionales",
+          "description": "Crea o desactiva códigos promocionales.",
+          "latestLabel": "Código más reciente",
+          "codeHint": "Copia el código ahora; no se mostrará de nuevo.",
+          "fields": {
+            "name": "Nombre",
+            "description": "Descripción",
+            "duration": "Duración (días)",
+            "fixedEndsAt": "Fin fijo (UTC)",
+            "validFrom": "Válido desde (UTC)",
+            "validTo": "Válido hasta (UTC)",
+            "maxRedemptions": "Máximo de canjes",
+            "isActive": "Activo",
+            "isActiveHint": "Desactiva para detener nuevos canjes."
+          },
+          "actions": {
+            "create": "Crear promoción",
+            "copy": "Copiar"
+          },
+          "disable": {
+            "title": "Desactivar promoción",
+            "fields": {
+              "promotionId": "ID de promoción"
+            },
+            "action": "Desactivar promoción"
+          },
+          "success": {
+            "created": "Promoción creada.",
+            "disabled": "Promoción desactivada.",
+            "copied": "Código copiado."
+          },
+          "errors": {
+            "unauthenticated": "Inicia sesión para gestionar promociones.",
+            "forbidden": "No tienes acceso para gestionar promociones.",
+            "invalidInput": "Revisa los datos de la promoción e intenta de nuevo.",
+            "copyFailed": "No pudimos copiar el código. Cópialo manualmente.",
+            "generic": "No pudimos actualizar la promoción."
+          }
+        },
+        "pendingGrant": {
+          "sectionLabel": "Asignaciones pendientes",
+          "title": "Asignaciones por correo",
+          "description": "Crea accesos Pro que se reclaman tras verificar el correo.",
+          "latestLabel": "Última asignación pendiente",
+          "fields": {
+            "email": "Correo",
+            "duration": "Duración (días)",
+            "fixedEndsAt": "Fin fijo (UTC)",
+            "claimValidFrom": "Válido desde (UTC)",
+            "claimValidTo": "Válido hasta (UTC)",
+            "isActive": "Activo",
+            "isActiveHint": "Las asignaciones inactivas no se pueden reclamar."
+          },
+          "actions": {
+            "create": "Crear asignación pendiente"
+          },
+          "disable": {
+            "title": "Desactivar asignación pendiente",
+            "fields": {
+              "pendingGrantId": "ID de asignación pendiente"
+            },
+            "action": "Desactivar asignación pendiente"
+          },
+          "success": {
+            "created": "Asignación pendiente creada.",
+            "disabled": "Asignación pendiente desactivada."
+          },
+          "errors": {
+            "unauthenticated": "Inicia sesión para gestionar asignaciones.",
+            "forbidden": "No tienes acceso para gestionar asignaciones.",
+            "invalidInput": "Revisa los datos e intenta de nuevo.",
+            "generic": "No pudimos actualizar la asignación pendiente."
+          }
+        }
+      }
     },
     "metrics": {
       "sectionTitle": "Actividad de la plataforma",

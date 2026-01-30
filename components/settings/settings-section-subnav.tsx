@@ -27,6 +27,13 @@ export function SettingsSectionSubnav({ className }: SettingsSectionSubnavProps)
         label: t('sections.account.title'),
         description: t('sections.account.description'),
       },
+      {
+        key: 'billing',
+        href: '/settings/billing',
+        localizedHref: '/configuracion/facturacion',
+        label: t('sections.billing.title'),
+        description: t('sections.billing.description'),
+      },
     ],
     [t],
   );

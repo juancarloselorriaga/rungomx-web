@@ -8,5 +8,10 @@
   "account": {
     "title": "Account",
     "description": "Manage your name and password."
+  },
+  "billing": {
+    "title": "Billing & Pro",
+    "description": "Manage your Pro access, trials, and promotions.",
+    "empty": "We couldn't load your billing status. Please refresh."
   }
 }

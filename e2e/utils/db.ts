@@ -64,6 +64,13 @@ export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
   await db.delete(schema.userRoles); // References users, roles
   await db.delete(schema.profiles); // References users
   await db.delete(schema.contactSubmissions); // May reference users
+  await db.delete(schema.billingPromotionRedemptions);
+  await db.delete(schema.billingEntitlementOverrides);
+  await db.delete(schema.billingPendingEntitlementGrants);
+  await db.delete(schema.billingPromotions);
+  await db.delete(schema.billingSubscriptions);
+  await db.delete(schema.billingTrialUses);
+  await db.delete(schema.billingEvents);
   await db.delete(schema.users); // Root user table
 
   // Independent tables

@@ -19,6 +19,13 @@ export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
   await db.delete(schema.verifications);
   await db.delete(schema.sessions);
   await db.delete(schema.accounts);
+  await db.delete(schema.billingPromotionRedemptions);
+  await db.delete(schema.billingEntitlementOverrides);
+  await db.delete(schema.billingPendingEntitlementGrants);
+  await db.delete(schema.billingPromotions);
+  await db.delete(schema.billingSubscriptions);
+  await db.delete(schema.billingTrialUses);
+  await db.delete(schema.billingEvents);
   await db.delete(schema.userRoles);
   await db.delete(schema.profiles);
   await db.delete(schema.contactSubmissions);

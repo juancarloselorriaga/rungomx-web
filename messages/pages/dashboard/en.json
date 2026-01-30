@@ -114,7 +114,194 @@
     "tools": {
       "title": "Staff tools",
       "description": "Operational utilities and event management shortcuts.",
-      "placeholder": "Staff tools will be available soon."
+      "placeholder": "Staff tools will be available soon.",
+      "billing": {
+        "lookup": {
+          "sectionLabel": "Lookup",
+          "title": "User lookup",
+          "description": "Find a user and review their Pro access.",
+          "fields": {
+            "email": "User email"
+          },
+          "actions": {
+            "search": "Search"
+          },
+          "labels": {
+            "user": "User",
+            "userId": "User ID",
+            "createdAt": "Created"
+          },
+          "values": {
+            "unknown": "Unknown"
+          },
+          "errors": {
+            "unauthenticated": "Sign in to use staff tools.",
+            "forbidden": "You don't have access to billing tools.",
+            "notFound": "No user found with that email.",
+            "invalidInput": "Enter a valid email address.",
+            "generic": "We couldn't load that user."
+          },
+          "success": "User loaded."
+        },
+        "status": {
+          "badges": {
+            "pro": "Pro active",
+            "free": "Free",
+            "internal": "Internal"
+          },
+          "labels": {
+            "proUntil": "Pro until",
+            "effectiveSource": "Effective source",
+            "sources": "Access sources"
+          },
+          "values": {
+            "none": "None",
+            "unlimited": "Unlimited"
+          },
+          "utc": "UTC"
+        },
+        "sources": {
+          "internal_bypass": "Internal access",
+          "subscription": "Subscription",
+          "trial": "Trial",
+          "admin_override": "Admin override",
+          "pending_grant": "Pending grant",
+          "promotion": "Promotion",
+          "system": "System",
+          "migration": "Migration"
+        },
+        "events": {
+          "title": "Events timeline",
+          "empty": "No billing events found.",
+          "types": {
+            "trial_started": "Trial started",
+            "cancel_scheduled": "Cancellation scheduled",
+            "cancel_reverted": "Cancellation reverted",
+            "subscription_ended": "Subscription ended",
+            "override_granted": "Override granted",
+            "override_extended": "Override extended",
+            "override_revoked": "Override revoked",
+            "promotion_created": "Promotion created",
+            "promotion_disabled": "Promotion disabled",
+            "promotion_redeemed": "Promotion redeemed",
+            "pending_grant_created": "Pending grant created",
+            "pending_grant_disabled": "Pending grant disabled",
+            "pending_grant_claimed": "Pending grant claimed"
+          }
+        },
+        "override": {
+          "sectionLabel": "Overrides",
+          "title": "Admin overrides",
+          "description": "Grant, extend, or revoke Pro access.",
+          "latestLabel": "Latest override",
+          "fields": {
+            "userId": "User ID",
+            "reason": "Reason",
+            "duration": "Duration (days)",
+            "fixedEndsAt": "Fixed end (UTC)",
+            "overrideId": "Override ID"
+          },
+          "grant": {
+            "title": "Grant",
+            "action": "Grant override"
+          },
+          "extend": {
+            "title": "Extend",
+            "action": "Extend override"
+          },
+          "revoke": {
+            "title": "Revoke",
+            "action": "Revoke override"
+          },
+          "success": {
+            "granted": "Override granted.",
+            "extended": "Override extended.",
+            "revoked": "Override revoked."
+          },
+          "errors": {
+            "unauthenticated": "Sign in to manage overrides.",
+            "forbidden": "You don't have access to manage overrides.",
+            "invalidInput": "Check the required fields and try again.",
+            "generic": "We couldn't update the override."
+          }
+        },
+        "promotion": {
+          "sectionLabel": "Promotions",
+          "title": "Promo codes",
+          "description": "Create or disable promo codes.",
+          "latestLabel": "Latest code",
+          "codeHint": "Copy the code now; it won't be shown again.",
+          "fields": {
+            "name": "Name",
+            "description": "Description",
+            "duration": "Duration (days)",
+            "fixedEndsAt": "Fixed end (UTC)",
+            "validFrom": "Valid from (UTC)",
+            "validTo": "Valid to (UTC)",
+            "maxRedemptions": "Max redemptions",
+            "isActive": "Active",
+            "isActiveHint": "Disable to stop new redemptions."
+          },
+          "actions": {
+            "create": "Create promo",
+            "copy": "Copy"
+          },
+          "disable": {
+            "title": "Disable promo",
+            "fields": {
+              "promotionId": "Promotion ID"
+            },
+            "action": "Disable promo"
+          },
+          "success": {
+            "created": "Promo created.",
+            "disabled": "Promo disabled.",
+            "copied": "Promo code copied."
+          },
+          "errors": {
+            "unauthenticated": "Sign in to manage promotions.",
+            "forbidden": "You don't have access to manage promotions.",
+            "invalidInput": "Check the promo details and try again.",
+            "copyFailed": "Couldn't copy the code. Copy it manually.",
+            "generic": "We couldn't update the promotion."
+          }
+        },
+        "pendingGrant": {
+          "sectionLabel": "Pending grants",
+          "title": "Email-based grants",
+          "description": "Create Pro access grants that claim after verification.",
+          "latestLabel": "Latest pending grant",
+          "fields": {
+            "email": "Email",
+            "duration": "Duration (days)",
+            "fixedEndsAt": "Fixed end (UTC)",
+            "claimValidFrom": "Claim valid from (UTC)",
+            "claimValidTo": "Claim valid to (UTC)",
+            "isActive": "Active",
+            "isActiveHint": "Inactive grants can't be claimed."
+          },
+          "actions": {
+            "create": "Create pending grant"
+          },
+          "disable": {
+            "title": "Disable pending grant",
+            "fields": {
+              "pendingGrantId": "Pending grant ID"
+            },
+            "action": "Disable pending grant"
+          },
+          "success": {
+            "created": "Pending grant created.",
+            "disabled": "Pending grant disabled."
+          },
+          "errors": {
+            "unauthenticated": "Sign in to manage pending grants.",
+            "forbidden": "You don't have access to manage pending grants.",
+            "invalidInput": "Check the grant details and try again.",
+            "generic": "We couldn't update the pending grant."
+          }
+        }
+      }
     },
     "metrics": {
       "sectionTitle": "Platform activity",

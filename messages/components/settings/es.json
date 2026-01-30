@@ -10,6 +10,10 @@
       "account": {
         "title": "Cuenta",
         "description": "Datos de la cuenta y contraseña."
+      },
+      "billing": {
+        "title": "Facturación y Pro",
+        "description": "Pruebas, promociones y acceso."
       }
     }
   },
@@ -238,6 +242,120 @@
       "description": "Esto eliminará tu foto de perfil. Puedes subir una nueva en cualquier momento.",
       "cancel": "Cancelar",
       "confirm": "Eliminar"
+    }
+  },
+  "billing": {
+    "status": {
+      "sectionLabel": "Estado Pro",
+      "title": "Acceso actual",
+      "description": "Revisa tu acceso Pro, fuentes y periodos.",
+      "badges": {
+        "pro": "Pro activo",
+        "free": "Gratis"
+      },
+      "labels": {
+        "proUntil": "Pro hasta",
+        "effectiveSource": "Fuente efectiva",
+        "nextProStarts": "Próximo Pro inicia",
+        "sources": "Fuentes de acceso",
+        "sourceWindow": "Ventana de acceso"
+      },
+      "values": {
+        "none": "Ninguno",
+        "unlimited": "Sin límite"
+      },
+      "internal": "Las cuentas internas siempre tienen acceso Pro.",
+      "utc": "UTC"
+    },
+    "sources": {
+      "internal_bypass": "Acceso interno",
+      "subscription": "Suscripción",
+      "trial": "Prueba",
+      "admin_override": "Override administrativo",
+      "pending_grant": "Asignación pendiente",
+      "promotion": "Promoción",
+      "system": "Sistema",
+      "migration": "Migración"
+    },
+    "trial": {
+      "sectionLabel": "Prueba",
+      "title": "Inicia tu prueba",
+      "description": "Cada cuenta tiene derecho a una sola prueba Pro.",
+      "activeLabel": "Prueba activa",
+      "activeUntil": "Tu prueba termina el {endsAt}.",
+      "requiresVerification": "Verifica tu correo para iniciar la prueba.",
+      "alreadyUsed": "Esta cuenta ya usó su prueba.",
+      "alreadyPro": "Ya tienes acceso Pro.",
+      "actions": {
+        "start": "Iniciar prueba",
+        "starting": "Iniciando prueba"
+      },
+      "success": "Prueba iniciada. El acceso Pro termina el {endsAt}.",
+      "errors": {
+        "emailNotVerified": "Verifica tu correo antes de iniciar la prueba.",
+        "alreadyPro": "Ya tienes acceso Pro.",
+        "alreadyUsed": "Esta cuenta ya usó su prueba.",
+        "unauthenticated": "Inicia sesión para empezar una prueba.",
+        "generic": "No pudimos iniciar la prueba. Intenta de nuevo."
+      }
+    },
+    "subscription": {
+      "sectionLabel": "Suscripción",
+      "title": "Administrar suscripción",
+      "description": "Cancela o reanuda tu periodo actual.",
+      "window": {
+        "trial": "prueba",
+        "active": "suscripción"
+      },
+      "status": {
+        "trialing": "En prueba",
+        "active": "Activa",
+        "ended": "Finalizada"
+      },
+      "cancelScheduled": "Cancelación al final del periodo",
+      "endsAt": "El {window} termina el {endsAt}.",
+      "none": "No hay una suscripción registrada.",
+      "actions": {
+        "cancel": "Cancelar al final del periodo",
+        "canceling": "Cancelando",
+        "resume": "Reanudar suscripción",
+        "resuming": "Reanudando"
+      },
+      "success": {
+        "cancelScheduled": "Cancelación programada.",
+        "resumed": "Suscripción reanudada."
+      },
+      "errors": {
+        "notFound": "No se encontró una suscripción para esta cuenta.",
+        "notActive": "La suscripción no está activa.",
+        "ended": "La suscripción ya finalizó.",
+        "generic": "No pudimos actualizar la suscripción. Intenta de nuevo."
+      }
+    },
+    "promo": {
+      "sectionLabel": "Código promocional",
+      "title": "Canjear promoción",
+      "description": "Ingresa un código para extender tu acceso Pro.",
+      "fields": {
+        "code": "Código promocional"
+      },
+      "actions": {
+        "redeem": "Canjear código"
+      },
+      "success": {
+        "redeemed": "Promoción aplicada. El acceso Pro se extiende hasta {endsAt}.",
+        "alreadyRedeemed": "Este código ya fue canjeado en esta cuenta.",
+        "noExtension": "Código canjeado, pero no extiende tu acceso actual."
+      },
+      "errors": {
+        "unauthenticated": "Inicia sesión para canjear un código.",
+        "rateLimited": "Demasiados intentos. Espera y vuelve a intentar.",
+        "notFound": "Código promocional no encontrado.",
+        "inactive": "El código está inactivo o expiró.",
+        "maxRedemptions": "El código alcanzó su límite de canjes.",
+        "invalidInput": "Ingresa un código válido.",
+        "generic": "No pudimos canjear el código."
+      }
     }
   }
 }

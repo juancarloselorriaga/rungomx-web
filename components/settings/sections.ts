@@ -18,5 +18,11 @@ export function buildSettingsSections(locale: AppLocale, t: TranslateFn): Settin
       title: t('sections.account.title'),
       description: t('sections.account.description'),
     },
+    {
+      key: 'billing',
+      href: getPathname({ href: '/settings/billing', locale }),
+      title: t('sections.billing.title'),
+      description: t('sections.billing.description'),
+    },
   ];
 }

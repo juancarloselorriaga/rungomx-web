@@ -6,6 +6,13 @@ import {
   addOnSelections,
   addOns,
   auditLogs,
+  billingEntitlementOverrides,
+  billingEvents,
+  billingPendingEntitlementGrants,
+  billingPromotionRedemptions,
+  billingPromotions,
+  billingSubscriptions,
+  billingTrialUses,
   contactSubmissions,
   discountCodes,
   discountRedemptions,
@@ -49,6 +56,29 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
   userRoles: many(userRoles),
   contactSubmissions: many(contactSubmissions),
+  billingSubscription: one(billingSubscriptions, {
+    fields: [users.id],
+    references: [billingSubscriptions.userId],
+  }),
+  billingTrialUse: one(billingTrialUses, {
+    fields: [users.id],
+    references: [billingTrialUses.userId],
+  }),
+  billingEntitlementOverrides: many(billingEntitlementOverrides),
+  billingOverridesGranted: many(billingEntitlementOverrides, {
+    relationName: 'billingOverridesGrantedBy',
+  }),
+  billingEvents: many(billingEvents),
+  billingPromotionRedemptions: many(billingPromotionRedemptions),
+  billingPromotionsCreated: many(billingPromotions, {
+    relationName: 'billingPromotionsCreatedBy',
+  }),
+  billingPendingGrantsCreated: many(billingPendingEntitlementGrants, {
+    relationName: 'billingPendingGrantsCreatedBy',
+  }),
+  billingPendingGrantsClaimed: many(billingPendingEntitlementGrants, {
+    relationName: 'billingPendingGrantsClaimedBy',
+  }),
   organizationMemberships: many(organizationMemberships),
   registrations: many(registrations),
   registrants: many(registrants),
@@ -113,6 +143,85 @@ export const rateLimitsRelations = relations(rateLimits, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// =============================================================================
+// BILLING RELATIONS
+// =============================================================================
+
+export const billingSubscriptionsRelations = relations(billingSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [billingSubscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const billingTrialUsesRelations = relations(billingTrialUses, ({ one }) => ({
+  user: one(users, {
+    fields: [billingTrialUses.userId],
+    references: [users.id],
+  }),
+}));
+
+export const billingEntitlementOverridesRelations = relations(
+  billingEntitlementOverrides,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [billingEntitlementOverrides.userId],
+      references: [users.id],
+    }),
+    grantedBy: one(users, {
+      fields: [billingEntitlementOverrides.grantedByUserId],
+      references: [users.id],
+      relationName: 'billingOverridesGrantedBy',
+    }),
+  }),
+);
+
+export const billingEventsRelations = relations(billingEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [billingEvents.userId],
+    references: [users.id],
+  }),
+}));
+
+export const billingPromotionsRelations = relations(billingPromotions, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [billingPromotions.createdByUserId],
+    references: [users.id],
+    relationName: 'billingPromotionsCreatedBy',
+  }),
+  redemptions: many(billingPromotionRedemptions),
+}));
+
+export const billingPromotionRedemptionsRelations = relations(
+  billingPromotionRedemptions,
+  ({ one }) => ({
+    promotion: one(billingPromotions, {
+      fields: [billingPromotionRedemptions.promotionId],
+      references: [billingPromotions.id],
+    }),
+    user: one(users, {
+      fields: [billingPromotionRedemptions.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+export const billingPendingEntitlementGrantsRelations = relations(
+  billingPendingEntitlementGrants,
+  ({ one }) => ({
+    createdBy: one(users, {
+      fields: [billingPendingEntitlementGrants.createdByUserId],
+      references: [users.id],
+      relationName: 'billingPendingGrantsCreatedBy',
+    }),
+    claimedBy: one(users, {
+      fields: [billingPendingEntitlementGrants.claimedByUserId],
+      references: [users.id],
+      relationName: 'billingPendingGrantsClaimedBy',
+    }),
+  }),
+);
 
 // =============================================================================
 // EVENTS PLATFORM RELATIONS (Phase 0)

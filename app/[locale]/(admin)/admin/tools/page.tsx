@@ -1,3 +1,4 @@
+import { BillingTools } from '@/components/admin/billing/billing-tools';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -19,12 +20,12 @@ export default async function AdminToolsPage({ params }: LocalePageProps) {
   const t = await getTranslations('pages.dashboard');
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">{t('admin.tools.title')}</h1>
-      <p className="text-muted-foreground text-sm">{t('admin.tools.description')}</p>
-      <div className="rounded-lg border bg-card p-4 shadow-sm text-sm text-muted-foreground">
-        {t('admin.tools.placeholder')}
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold">{t('admin.tools.title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('admin.tools.description')}</p>
       </div>
+      <BillingTools />
     </div>
   );
 }

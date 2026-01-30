@@ -230,6 +230,229 @@ export const rateLimits = pgTable(
 );
 
 // =============================================================================
+// BILLING TABLES (Pro Subscriptions + Promotions)
+// =============================================================================
+
+export const billingSubscriptions = pgTable(
+  'billing_subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    planKey: varchar('plan_key', { length: 50 }).notNull(),
+    status: varchar('status', { length: 20 }).notNull(), // 'trialing' | 'active' | 'ended'
+    trialStartsAt: timestamp('trial_starts_at', { withTimezone: true, mode: 'date' }),
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true, mode: 'date' }),
+    currentPeriodStartsAt: timestamp('current_period_starts_at', {
+      withTimezone: true,
+      mode: 'date',
+    }),
+    currentPeriodEndsAt: timestamp('current_period_ends_at', { withTimezone: true, mode: 'date' }),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    canceledAt: timestamp('canceled_at', { withTimezone: true, mode: 'date' }),
+    endedAt: timestamp('ended_at', { withTimezone: true, mode: 'date' }),
+    provider: varchar('provider', { length: 50 }),
+    providerCustomerId: varchar('provider_customer_id', { length: 255 }),
+    providerSubscriptionId: varchar('provider_subscription_id', { length: 255 }),
+    providerPriceId: varchar('provider_price_id', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('billing_subscriptions_user_id_idx').on(table.userId),
+    index('billing_subscriptions_trial_ends_at_idx').on(table.trialEndsAt),
+    index('billing_subscriptions_current_period_ends_at_idx').on(table.currentPeriodEndsAt),
+    index('billing_subscriptions_ended_at_idx').on(table.endedAt),
+    check(
+      'billing_subscriptions_trial_window_check',
+      sql`${table.trialEndsAt} > ${table.trialStartsAt}`,
+    ),
+    check(
+      'billing_subscriptions_period_window_check',
+      sql`${table.currentPeriodEndsAt} > ${table.currentPeriodStartsAt}`,
+    ),
+  ],
+);
+
+export const billingTrialUses = pgTable('billing_trial_uses', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  usedAt: timestamp('used_at', { withTimezone: true, mode: 'date' }).notNull(),
+  source: varchar('source', { length: 20 }),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+});
+
+export const billingEntitlementOverrides = pgTable(
+  'billing_entitlement_overrides',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    entitlementKey: varchar('entitlement_key', { length: 50 })
+      .notNull()
+      .default('pro_access'),
+    startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }).notNull(),
+    endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }).notNull(),
+    sourceType: varchar('source_type', { length: 30 }).notNull(),
+    sourceId: uuid('source_id'),
+    reason: text('reason'),
+    grantedByUserId: uuid('granted_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    metadataJson: jsonb('metadata_json').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('billing_entitlement_overrides_user_entitlement_idx').on(
+      table.userId,
+      table.entitlementKey,
+    ),
+    index('billing_entitlement_overrides_user_entitlement_range_idx').on(
+      table.userId,
+      table.entitlementKey,
+      table.startsAt,
+      table.endsAt,
+    ),
+    check(
+      'billing_entitlement_overrides_window_check',
+      sql`${table.endsAt} > ${table.startsAt}`,
+    ),
+  ],
+);
+
+export const billingEvents = pgTable(
+  'billing_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    provider: varchar('provider', { length: 50 }),
+    source: varchar('source', { length: 20 }).notNull(), // 'system' | 'admin' | 'provider'
+    type: varchar('type', { length: 50 }).notNull(),
+    externalEventId: varchar('external_event_id', { length: 255 }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    entityType: varchar('entity_type', { length: 50 }).notNull(),
+    entityId: uuid('entity_id'),
+    payloadJson: jsonb('payload_json').$type<Record<string, unknown>>().notNull().default({}),
+    requestId: varchar('request_id', { length: 100 }),
+    idempotencyKey: varchar('idempotency_key', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('billing_events_provider_external_event_id_idx').on(
+      table.provider,
+      table.externalEventId,
+    ),
+    index('billing_events_user_id_idx').on(table.userId),
+  ],
+);
+
+export const billingPromotions = pgTable(
+  'billing_promotions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    hashVersion: integer('hash_version').notNull(),
+    codeHash: varchar('code_hash', { length: 64 }).notNull(),
+    codePrefix: varchar('code_prefix', { length: 16 }),
+    name: varchar('name', { length: 255 }),
+    description: text('description'),
+    entitlementKey: varchar('entitlement_key', { length: 50 })
+      .notNull()
+      .default('pro_access'),
+    grantDurationDays: integer('grant_duration_days'),
+    grantFixedEndsAt: timestamp('grant_fixed_ends_at', { withTimezone: true, mode: 'date' }),
+    isActive: boolean('is_active').notNull().default(true),
+    validFrom: timestamp('valid_from', { withTimezone: true, mode: 'date' }),
+    validTo: timestamp('valid_to', { withTimezone: true, mode: 'date' }),
+    maxRedemptions: integer('max_redemptions'),
+    perUserMaxRedemptions: integer('per_user_max_redemptions').notNull().default(1),
+    redemptionCount: integer('redemption_count').notNull().default(0),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('billing_promotions_code_hash_idx').on(table.codeHash),
+    index('billing_promotions_active_valid_idx').on(table.isActive, table.validFrom, table.validTo),
+    check(
+      'billing_promotions_grant_exclusive_check',
+      sql`(${table.grantDurationDays} is null) <> (${table.grantFixedEndsAt} is null)`,
+    ),
+  ],
+);
+
+export const billingPromotionRedemptions = pgTable(
+  'billing_promotion_redemptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    promotionId: uuid('promotion_id')
+      .notNull()
+      .references(() => billingPromotions.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    redeemedAt: timestamp('redeemed_at', { withTimezone: true, mode: 'date' }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('billing_promotion_redemptions_promotion_user_idx').on(
+      table.promotionId,
+      table.userId,
+    ),
+  ],
+);
+
+export const billingPendingEntitlementGrants = pgTable(
+  'billing_pending_entitlement_grants',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    hashVersion: integer('hash_version').notNull(),
+    emailHash: varchar('email_hash', { length: 64 }).notNull(),
+    entitlementKey: varchar('entitlement_key', { length: 50 })
+      .notNull()
+      .default('pro_access'),
+    grantDurationDays: integer('grant_duration_days'),
+    grantFixedEndsAt: timestamp('grant_fixed_ends_at', { withTimezone: true, mode: 'date' }),
+    isActive: boolean('is_active').notNull().default(true),
+    claimValidFrom: timestamp('claim_valid_from', { withTimezone: true, mode: 'date' }),
+    claimValidTo: timestamp('claim_valid_to', { withTimezone: true, mode: 'date' }),
+    claimedAt: timestamp('claimed_at', { withTimezone: true, mode: 'date' }),
+    claimedByUserId: uuid('claimed_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    claimSource: varchar('claim_source', { length: 50 }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('billing_pending_entitlement_grants_email_active_idx').on(
+      table.emailHash,
+      table.isActive,
+      table.claimedAt,
+    ),
+    check(
+      'billing_pending_entitlement_grants_grant_exclusive_check',
+      sql`(${table.grantDurationDays} is null) <> (${table.grantFixedEndsAt} is null)`,
+    ),
+  ],
+);
+
+// =============================================================================
 // EVENTS PLATFORM TABLES (Phase 0)
 // =============================================================================
 

@@ -173,6 +173,10 @@ export const routing = defineRouting({
       es: '/configuracion/cuenta',
       en: '/settings/account',
     },
+    '/settings/billing': {
+      es: '/configuracion/facturacion',
+      en: '/settings/billing',
+    },
     '/admin/account': {
       es: '/admin/cuenta',
       en: '/admin/account',
