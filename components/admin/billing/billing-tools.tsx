@@ -21,7 +21,7 @@ import type { SerializableBillingStatus } from '@/lib/billing/serialization';
 import type { EntitlementSource } from '@/lib/billing/types';
 import { cn } from '@/lib/utils';
 import { Copy, Search, ShieldCheck } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -113,6 +113,8 @@ function toOptionalNumber(value: string) {
 
 export function BillingTools() {
   const t = useTranslations('pages.dashboard.admin.tools.billing');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
   const format = useFormatter();
 
   const [lookupResult, setLookupResult] = useState<BillingUserSummary | null>(null);
@@ -657,6 +659,8 @@ export function BillingTools() {
               <DateTimePicker
                 value={grantForm.values.grantFixedEndsAt}
                 onChangeAction={(value) => grantForm.setFieldValue('grantFixedEndsAt', value)}
+                locale={locale}
+                clearLabel={tCommon('clear')}
               />
             </FormField>
             <Button type="submit" disabled={grantForm.isSubmitting}>
@@ -702,6 +706,8 @@ export function BillingTools() {
               <DateTimePicker
                 value={extendForm.values.grantFixedEndsAt}
                 onChangeAction={(value) => extendForm.setFieldValue('grantFixedEndsAt', value)}
+                locale={locale}
+                clearLabel={tCommon('clear')}
               />
             </FormField>
             <Button type="submit" disabled={extendForm.isSubmitting}>
@@ -789,6 +795,8 @@ export function BillingTools() {
                 <DateTimePicker
                   value={promoForm.values.grantFixedEndsAt}
                   onChangeAction={(value) => promoForm.setFieldValue('grantFixedEndsAt', value)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
                 />
               </FormField>
             </div>
@@ -797,12 +805,16 @@ export function BillingTools() {
                 <DateTimePicker
                   value={promoForm.values.validFrom}
                   onChangeAction={(value) => promoForm.setFieldValue('validFrom', value)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
                 />
               </FormField>
               <FormField label={t('promotion.fields.validTo')} error={promoForm.errors.validTo}>
                 <DateTimePicker
                   value={promoForm.values.validTo}
                   onChangeAction={(value) => promoForm.setFieldValue('validTo', value)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
                 />
               </FormField>
             </div>
@@ -903,6 +915,8 @@ export function BillingTools() {
                 <DateTimePicker
                   value={pendingGrantForm.values.grantFixedEndsAt}
                   onChangeAction={(value) => pendingGrantForm.setFieldValue('grantFixedEndsAt', value)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
                 />
               </FormField>
             </div>
@@ -911,12 +925,16 @@ export function BillingTools() {
                 <DateTimePicker
                   value={pendingGrantForm.values.claimValidFrom}
                   onChangeAction={(value) => pendingGrantForm.setFieldValue('claimValidFrom', value)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
                 />
               </FormField>
               <FormField label={t('pendingGrant.fields.claimValidTo')} error={pendingGrantForm.errors.claimValidTo}>
                 <DateTimePicker
                   value={pendingGrantForm.values.claimValidTo}
                   onChangeAction={(value) => pendingGrantForm.setFieldValue('claimValidTo', value)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
                 />
               </FormField>
             </div>

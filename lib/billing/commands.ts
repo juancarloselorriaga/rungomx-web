@@ -19,8 +19,10 @@ import {
   billingSubscriptions,
   billingTrialUses,
 } from '@/db/schema';
+import { safeRevalidateTag } from '@/lib/next-cache';
 
 import { BILLING_ENTITLEMENT_KEY, BILLING_PLAN_KEY, BILLING_TRIAL_DAYS, PROMO_CODE_LENGTH } from './constants';
+import { billingStatusTag } from './cache-tags';
 import { appendBillingEvent } from './events';
 import {
   getLatestBillingHashSecret,
@@ -59,6 +61,10 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
+function revalidateBillingStatus(userId: string) {
+  safeRevalidateTag(billingStatusTag(userId), { expire: 0 });
+}
+
 function isWithinWindow({
   now,
   startsAt,
@@ -95,7 +101,7 @@ export async function startTrialForUser({
     return { ok: false, error: 'User already has Pro access', code: 'ALREADY_PRO' };
   }
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const [trialUse] = await tx
       .insert(billingTrialUses)
       .values({
@@ -162,6 +168,12 @@ export async function startTrialForUser({
 
     return { ok: true, data: { subscriptionId: subscription.id, trialEndsAt } } as const;
   });
+
+  if (result.ok) {
+    revalidateBillingStatus(userId);
+  }
+
+  return result;
 }
 
 export async function scheduleCancelAtPeriodEnd({
@@ -171,7 +183,7 @@ export async function scheduleCancelAtPeriodEnd({
   userId: string;
   now?: Date;
 }): Promise<ActionResult<{ subscriptionId: string; cancelAtPeriodEnd: boolean }>> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     await tx.execute(
       sql`SELECT id FROM ${billingSubscriptions} WHERE user_id = ${userId} FOR UPDATE`,
     );
@@ -233,6 +245,12 @@ export async function scheduleCancelAtPeriodEnd({
       data: { subscriptionId: subscription.id, cancelAtPeriodEnd: true },
     } as const;
   });
+
+  if (result.ok) {
+    revalidateBillingStatus(userId);
+  }
+
+  return result;
 }
 
 export async function resumeSubscription({
@@ -242,7 +260,7 @@ export async function resumeSubscription({
   userId: string;
   now?: Date;
 }): Promise<ActionResult<{ subscriptionId: string; cancelAtPeriodEnd: boolean }>> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     await tx.execute(
       sql`SELECT id FROM ${billingSubscriptions} WHERE user_id = ${userId} FOR UPDATE`,
     );
@@ -297,6 +315,12 @@ export async function resumeSubscription({
       data: { subscriptionId: subscription.id, cancelAtPeriodEnd: false },
     } as const;
   });
+
+  if (result.ok) {
+    revalidateBillingStatus(userId);
+  }
+
+  return result;
 }
 
 export async function redeemPromotionForUser({
@@ -320,7 +344,7 @@ export async function redeemPromotionForUser({
 > {
   const hashes = hashPromoCodeAllVersions(promoCode);
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const hashValues = hashes.map((entry) => entry.hash);
     const hashList = sql.join(hashValues.map((hash) => sql`${hash}`), sql`, `);
 
@@ -461,6 +485,12 @@ export async function redeemPromotionForUser({
       },
     } as const;
   });
+
+  if (result.ok) {
+    revalidateBillingStatus(userId);
+  }
+
+  return result;
 }
 
 export async function createPromotion({
@@ -734,7 +764,7 @@ export async function claimPendingEntitlementGrantsForUser({
   const hashes = hashEmailAllVersions(email);
   const hashValues = hashes.map((entry) => entry.hash);
 
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const hashList = sql.join(hashValues.map((hash) => sql`${hash}`), sql`, `);
 
     await tx.execute(sql`
@@ -869,6 +899,12 @@ export async function claimPendingEntitlementGrantsForUser({
 
     return { ok: true, data: { claimedCount, overridesCreated, noExtensionCount } } as const;
   });
+
+  if (result.ok && result.data.claimedCount > 0) {
+    revalidateBillingStatus(userId);
+  }
+
+  return result;
 }
 
 async function upsertAdminOverride({
@@ -888,7 +924,7 @@ async function upsertAdminOverride({
   eventType: BillingEventType;
   now: Date;
 }): Promise<ActionResult<{ overrideId?: string; startsAt?: Date; endsAt?: Date; noExtension?: boolean }>> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     const entitlement = await getProEntitlementForUser({
       userId,
       isInternal: false,
@@ -955,6 +991,12 @@ async function upsertAdminOverride({
       data: { overrideId: override.id, startsAt: grantWindow.startsAt, endsAt: grantWindow.endsAt },
     } as const;
   });
+
+  if (result.ok) {
+    revalidateBillingStatus(userId);
+  }
+
+  return result;
 }
 
 export async function grantAdminOverride(params: {
@@ -988,7 +1030,9 @@ export async function revokeAdminOverride({
   revokedByUserId: string;
   now?: Date;
 }): Promise<ActionResult<{ overrideId: string; alreadyRevoked: boolean }>> {
-  return db.transaction(async (tx) => {
+  let affectedUserId: string | null = null;
+
+  const result = await db.transaction(async (tx) => {
     const override = await tx.query.billingEntitlementOverrides.findFirst({
       where: eq(billingEntitlementOverrides.id, overrideId),
     });
@@ -996,6 +1040,8 @@ export async function revokeAdminOverride({
     if (!override) {
       return { ok: false, error: 'Override not found', code: 'NOT_FOUND' } as const;
     }
+
+    affectedUserId = override.userId;
 
     if (override.endsAt <= now) {
       return { ok: true, data: { overrideId, alreadyRevoked: true } } as const;
@@ -1023,4 +1069,10 @@ export async function revokeAdminOverride({
 
     return { ok: true, data: { overrideId, alreadyRevoked: false } } as const;
   });
+
+  if (result.ok && affectedUserId) {
+    revalidateBillingStatus(affectedUserId);
+  }
+
+  return result;
 }

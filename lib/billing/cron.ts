@@ -2,7 +2,9 @@ import { and, eq, inArray, isNotNull, lte, or } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { billingPendingEntitlementGrants, billingPromotions, billingSubscriptions } from '@/db/schema';
+import { safeRevalidateTag } from '@/lib/next-cache';
 
+import { billingStatusTag } from './cache-tags';
 import { appendBillingEvent } from './events';
 
 export async function finalizeExpiredSubscriptions(): Promise<number> {
@@ -34,6 +36,7 @@ export async function finalizeExpiredSubscriptions(): Promise<number> {
   }
 
   let endedCount = 0;
+  const affectedUserIds = new Set<string>();
 
   await db.transaction(async (tx) => {
     for (const subscription of expired) {
@@ -59,6 +62,7 @@ export async function finalizeExpiredSubscriptions(): Promise<number> {
       if (!updated) continue;
 
       endedCount += 1;
+      affectedUserIds.add(subscription.userId);
 
       await appendBillingEvent(
         {
@@ -75,6 +79,10 @@ export async function finalizeExpiredSubscriptions(): Promise<number> {
       );
     }
   });
+
+  for (const userId of affectedUserIds) {
+    safeRevalidateTag(billingStatusTag(userId), { expire: 0 });
+  }
 
   return endedCount;
 }

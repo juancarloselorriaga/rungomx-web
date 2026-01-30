@@ -2,7 +2,9 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { billingSubscriptions, billingTrialUses } from '@/db/schema';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 
+import { billingStatusTag } from './cache-tags';
 import { getProEntitlementForUser } from './entitlements';
 import type { BillingSubscriptionStatus, EntitlementEvaluationResult } from './types';
 
@@ -38,6 +40,10 @@ export async function getBillingStatusForUser({
   now?: Date;
   tx?: DbClient;
 }): Promise<BillingStatus> {
+  'use cache: private';
+  safeCacheTag(billingStatusTag(userId));
+  safeCacheLife({ expire: 60 });
+
   const [subscription, trialUse, entitlement] = await Promise.all([
     tx.query.billingSubscriptions.findFirst({
       where: eq(billingSubscriptions.userId, userId),
