@@ -280,6 +280,17 @@ const updateInviteEmailSchema = z.object({
   email: z.string().email(),
 });
 
+const reissueInviteForRowSchema = z.object({
+  uploadToken: z.string().min(1),
+  batchRowId: z.string().uuid(),
+  locale: z.string().min(2).max(10),
+});
+
+const extendInviteHoldSchema = z.object({
+  uploadToken: z.string().min(1),
+  inviteId: z.string().uuid(),
+});
+
 const cancelInviteSchema = z.object({
   uploadToken: z.string().min(1),
   inviteId: z.string().uuid(),
@@ -479,6 +490,8 @@ export const listUploadLinksForEdition = withAuthenticatedUser<
     orderBy: (table, { desc }) => [desc(table.createdAt)],
   });
 
+  const now = new Date();
+
   const batchCounts = await db
     .select({
       uploadLinkId: groupRegistrationBatches.uploadLinkId,
@@ -494,12 +507,25 @@ export const listUploadLinksForEdition = withAuthenticatedUser<
       count: sql<number>`count(*)::int`,
     })
     .from(registrationInvites)
-    .where(eq(registrationInvites.editionId, validated.data.editionId))
+    .innerJoin(registrations, eq(registrationInvites.registrationId, registrations.id))
+    .where(
+      and(
+        eq(registrationInvites.editionId, validated.data.editionId),
+        eq(registrationInvites.isCurrent, true),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
+    )
     .groupBy(registrationInvites.uploadLinkId);
 
   const batchCountMap = new Map(batchCounts.map((row) => [row.uploadLinkId ?? '', row.count]));
   const inviteCountMap = new Map(inviteCounts.map((row) => [row.uploadLinkId ?? '', row.count]));
-  const now = new Date();
 
   return {
     ok: true,
@@ -636,6 +662,7 @@ export const uploadBatchViaLink = withAuthenticatedUser<
       batchId: validated.data.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
 
     const existingRows = await db.query.groupRegistrationBatchRows.findFirst({
@@ -837,6 +864,7 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
       batchId: validated.data.batchId,
       uploadToken: validated.data.uploadToken,
       authContext,
+      requireActiveLink: false,
     });
 
     if (access.batch.status === 'uploaded') {
@@ -896,7 +924,21 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
       const [{ count: inviteCount }] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(registrationInvites)
-        .where(eq(registrationInvites.uploadLinkId, access.uploadLink.id));
+        .innerJoin(registrations, eq(registrationInvites.registrationId, registrations.id))
+        .where(
+          and(
+            eq(registrationInvites.uploadLinkId, access.uploadLink.id),
+            eq(registrationInvites.isCurrent, true),
+            isNull(registrations.deletedAt),
+            or(
+              eq(registrations.status, 'confirmed'),
+              and(
+                inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+                gt(registrations.expiresAt, now),
+              ),
+            ),
+          ),
+        );
 
       const maxInvites = access.uploadLink.maxInvites ?? 0;
       maxInvitesRemaining = Math.max(maxInvites - (inviteCount ?? 0), 0);
@@ -1075,6 +1117,8 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
                 totalCents,
               },
               registrantSnapshot,
+              registrantGenderIdentity:
+                typeof raw.genderIdentity === 'string' ? raw.genderIdentity : null,
               registrantUserId: null,
               now,
             });
@@ -1749,6 +1793,412 @@ export const updateInviteEmail = withAuthenticatedUser<ActionResult>({
   });
 
   return { ok: true, data: undefined };
+});
+
+export const reissueInviteForBatchRow = withAuthenticatedUser<
+  ActionResult<{ inviteId: string }>
+>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof reissueInviteForRowSchema>) => {
+  const validated = reissueInviteForRowSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const batchRow = await db.query.groupRegistrationBatchRows.findFirst({
+    where: eq(groupRegistrationBatchRows.id, validated.data.batchRowId),
+    with: {
+      batch: true,
+    },
+  });
+
+  if (!batchRow?.batch) {
+    return { ok: false, error: 'Batch row not found', code: 'NOT_FOUND' };
+  }
+
+  let access: Awaited<ReturnType<typeof getBatchForCoordinatorOrThrow>>;
+  try {
+    access = await getBatchForCoordinatorOrThrow({
+      batchId: batchRow.batchId,
+      uploadToken: validated.data.uploadToken,
+      authContext,
+      requireActiveLink: false,
+    });
+  } catch (error) {
+    if (error instanceof BatchAccessError) {
+      return { ok: false, error: error.message, code: error.code };
+    }
+    throw error;
+  }
+
+  if (!batchRow.createdRegistrationId) {
+    return { ok: false, error: 'Row has not been reserved yet', code: 'INVALID_STATE' };
+  }
+
+  if ((batchRow.validationErrorsJson ?? []).length > 0) {
+    return { ok: false, error: 'Row contains validation errors', code: 'INVALID_STATE' };
+  }
+
+  if (!access.batch.distanceId) {
+    return { ok: false, error: 'Batch distance not set', code: 'INVALID_BATCH' };
+  }
+
+  const edition = await db.query.eventEditions.findFirst({
+    where: eq(eventEditions.id, access.batch.editionId),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
+  }
+
+  const distance = await db.query.eventDistances.findFirst({
+    where: and(eq(eventDistances.id, access.batch.distanceId), isNull(eventDistances.deletedAt)),
+    with: {
+      pricingTiers: {
+        where: isNull(pricingTiers.deletedAt),
+      },
+    },
+  });
+
+  if (!distance) {
+    return { ok: false, error: 'Distance not found', code: 'NOT_FOUND' };
+  }
+
+  const now = new Date();
+
+  const activeTier =
+    distance.pricingTiers
+      .filter((tier) => {
+        if (tier.startsAt && now < tier.startsAt) return false;
+        if (tier.endsAt && now > tier.endsAt) return false;
+        return true;
+      })
+      .sort((a, b) => a.sortOrder - b.sortOrder)[0] ?? null;
+
+  const basePriceCents = activeTier?.priceCents ?? 0;
+  const feesCents = Math.round(basePriceCents * 0.05);
+  const totalCents = basePriceCents + feesCents;
+
+  const inviteLocale = edition.primaryLocale || edition.series.primaryLocale || validated.data.locale;
+
+  const raw = (batchRow.rawJson ?? {}) as Record<string, unknown>;
+  const emailNormalized =
+    typeof raw.emailNormalized === 'string'
+      ? raw.emailNormalized
+      : normalizeEmail(String(raw.email ?? ''));
+  const dateOfBirth = typeof raw.dateOfBirth === 'string' ? raw.dateOfBirth : null;
+
+  if (!emailNormalized || !dateOfBirth) {
+    await db
+      .update(groupRegistrationBatchRows)
+      .set({ validationErrorsJson: ['INVALID_ROW'] })
+      .where(eq(groupRegistrationBatchRows.id, batchRow.id));
+
+    return { ok: false, error: 'Row data is invalid', code: 'INVALID_ROW' };
+  }
+
+  const dateOfBirthDate = new Date(`${dateOfBirth}T00:00:00.000Z`);
+
+  const matchedUser = await db.query.users.findFirst({
+    where: and(eq(users.email, emailNormalized), isNull(users.deletedAt)),
+    with: { profile: true },
+  });
+
+  if (matchedUser?.profile?.dateOfBirth) {
+    const matchDob = toIsoDateString(matchedUser.profile.dateOfBirth);
+    if (matchDob && matchDob !== dateOfBirth) {
+      await db
+        .update(groupRegistrationBatchRows)
+        .set({ validationErrorsJson: ['DOB_MISMATCH'] })
+        .where(eq(groupRegistrationBatchRows.id, batchRow.id));
+
+      return { ok: false, error: 'Date of birth mismatch', code: 'DOB_MISMATCH' };
+    }
+  }
+
+  if (matchedUser?.id) {
+    const existingRegistration = await db.query.registrations.findFirst({
+      where: and(
+        eq(registrations.buyerUserId, matchedUser.id),
+        eq(registrations.editionId, edition.id),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+            ),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+        isNull(registrations.deletedAt),
+      ),
+    });
+
+    if (existingRegistration) {
+      await db
+        .update(groupRegistrationBatchRows)
+        .set({ validationErrorsJson: ['ALREADY_REGISTERED'] })
+        .where(eq(groupRegistrationBatchRows.id, batchRow.id));
+
+      return { ok: false, error: 'User already registered', code: 'ALREADY_REGISTERED' };
+    }
+  }
+
+  const registrantSnapshot = {
+    firstName: typeof raw.firstName === 'string' ? raw.firstName : undefined,
+    lastName: typeof raw.lastName === 'string' ? raw.lastName : undefined,
+    email: typeof raw.email === 'string' ? raw.email : undefined,
+    dateOfBirth,
+    phone: typeof raw.phone === 'string' ? raw.phone : undefined,
+    gender: typeof raw.gender === 'string' ? raw.gender : undefined,
+    city: typeof raw.city === 'string' ? raw.city : undefined,
+    state: typeof raw.state === 'string' ? raw.state : undefined,
+    country: typeof raw.country === 'string' ? raw.country : undefined,
+    emergencyContactName:
+      typeof raw.emergencyContactName === 'string' ? raw.emergencyContactName : undefined,
+    emergencyContactPhone:
+      typeof raw.emergencyContactPhone === 'string' ? raw.emergencyContactPhone : undefined,
+  };
+
+  try {
+    const inviteId = await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`SELECT id FROM ${groupRegistrationBatchRows} WHERE id = ${batchRow.id} FOR UPDATE`,
+      );
+
+      const currentRow = await tx.query.groupRegistrationBatchRows.findFirst({
+        where: eq(groupRegistrationBatchRows.id, batchRow.id),
+        columns: {
+          id: true,
+          createdRegistrationId: true,
+        },
+      });
+
+      if (!currentRow?.createdRegistrationId) {
+        throw new Error('ROW_NOT_RESERVED');
+      }
+
+      const existingRegistration = await tx.query.registrations.findFirst({
+        where: eq(registrations.id, currentRow.createdRegistrationId),
+        columns: { status: true, expiresAt: true },
+      });
+
+      const registrationIsActive =
+        existingRegistration &&
+        (existingRegistration.status === 'confirmed' ||
+          (['started', 'submitted', 'payment_pending'].includes(existingRegistration.status) &&
+            !!existingRegistration.expiresAt &&
+            existingRegistration.expiresAt > now));
+
+      if (registrationIsActive) {
+        throw new Error('REGISTRATION_ACTIVE');
+      }
+
+      await tx
+        .update(registrationInvites)
+        .set({ status: 'expired', isCurrent: false, updatedAt: now })
+        .where(
+          and(
+            eq(registrationInvites.batchRowId, batchRow.id),
+            eq(registrationInvites.isCurrent, true),
+          ),
+        );
+
+      await tx
+        .update(registrations)
+        .set({ status: 'cancelled', expiresAt: null, updatedAt: now })
+        .where(eq(registrations.id, currentRow.createdRegistrationId));
+
+      let createdRegistration;
+      try {
+        createdRegistration = await reserveHold({
+          tx,
+          editionId: edition.id,
+          distanceId: distance.id,
+          capacityScope: distance.capacityScope as 'shared_pool' | 'per_distance',
+          editionSharedCapacity: edition.sharedCapacity ?? null,
+          distanceCapacity: distance.capacity ?? null,
+          buyerUserId: null,
+          status: 'started',
+          expiresAt: computeInviteExpiresAt(now),
+          paymentResponsibility: access.batch.paymentResponsibility,
+          pricing: {
+            basePriceCents,
+            feesCents,
+            taxCents: 0,
+            totalCents,
+          },
+          registrantSnapshot,
+          registrantGenderIdentity:
+            typeof raw.genderIdentity === 'string' ? raw.genderIdentity : null,
+          registrantUserId: null,
+          now,
+        });
+      } catch (error) {
+        if (error instanceof ReserveHoldError) {
+          await tx
+            .update(groupRegistrationBatchRows)
+            .set({ validationErrorsJson: ['SOLD_OUT'] })
+            .where(eq(groupRegistrationBatchRows.id, batchRow.id));
+          throw error;
+        }
+        throw error;
+      }
+
+      const newInviteId = crypto.randomUUID();
+      const inviteToken = deriveInviteToken(newInviteId);
+      const inviteTokenHash = hashToken(inviteToken);
+
+      await tx.insert(registrationInvites).values({
+        id: newInviteId,
+        editionId: edition.id,
+        uploadLinkId: access.uploadLink.id,
+        batchId: access.batch.id,
+        batchRowId: batchRow.id,
+        registrationId: createdRegistration.id,
+        createdByUserId: authContext.user.id,
+        email: typeof raw.email === 'string' ? raw.email : emailNormalized,
+        emailNormalized,
+        dateOfBirth: dateOfBirthDate,
+        inviteLocale,
+        tokenHash: inviteTokenHash,
+        tokenPrefix: getTokenPrefix(inviteToken),
+        status: 'draft',
+        expiresAt: createdRegistration.expiresAt ?? computeInviteExpiresAt(now),
+      });
+
+      await tx
+        .update(groupRegistrationBatchRows)
+        .set({ createdRegistrationId: createdRegistration.id, validationErrorsJson: [] })
+        .where(eq(groupRegistrationBatchRows.id, batchRow.id));
+
+      return newInviteId;
+    });
+
+    try {
+      const requestContext = await getRequestContext(await headers());
+      await createAuditLog(
+        {
+          organizationId: edition.series.organizationId,
+          actorUserId: authContext.user.id,
+          action: 'group_upload_invite.reissue',
+          entityType: 'registration_invite',
+          entityId: inviteId,
+          after: { batchId: access.batch.id, batchRowId: batchRow.id },
+          request: requestContext,
+        },
+        db,
+      );
+    } catch (error) {
+      console.warn('[group-upload] Failed to create audit log for invite reissue:', error);
+    }
+
+    return { ok: true, data: { inviteId } };
+  } catch (error) {
+    if (error instanceof ReserveHoldError) {
+      return { ok: false, error: 'Distance is sold out', code: 'SOLD_OUT' };
+    }
+    if (error instanceof Error) {
+      if (error.message === 'REGISTRATION_ACTIVE') {
+        return { ok: false, error: 'Row already has an active registration', code: 'INVALID_STATE' };
+      }
+      if (error.message === 'ROW_NOT_RESERVED') {
+        return { ok: false, error: 'Row is not reserved', code: 'INVALID_STATE' };
+      }
+    }
+    throw error;
+  }
+});
+
+export const extendInviteHold = withAuthenticatedUser<
+  ActionResult<{ expiresAt: string }>
+>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: z.infer<typeof extendInviteHoldSchema>) => {
+  const validated = extendInviteHoldSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  const invite = await db.query.registrationInvites.findFirst({
+    where: eq(registrationInvites.id, validated.data.inviteId),
+    with: {
+      registration: true,
+      edition: {
+        with: { series: true },
+      },
+    },
+  });
+
+  if (!invite?.registration) {
+    return { ok: false, error: 'Invite not found', code: 'NOT_FOUND' };
+  }
+
+  try {
+    await getBatchForCoordinatorOrThrow({
+      batchId: invite.batchId,
+      uploadToken: validated.data.uploadToken,
+      authContext,
+      requireActiveLink: false,
+    });
+  } catch (error) {
+    if (error instanceof BatchAccessError) {
+      return { ok: false, error: error.message, code: error.code };
+    }
+    throw error;
+  }
+
+  if (!invite.isCurrent || !['draft', 'sent', 'claimed'].includes(invite.status)) {
+    return { ok: false, error: 'Invite cannot be extended', code: 'INVALID_STATE' };
+  }
+
+  if (invite.registration.status === 'cancelled') {
+    return { ok: false, error: 'Invite has expired', code: 'INVITE_EXPIRED' };
+  }
+
+  if (invite.registration.status === 'confirmed') {
+    return { ok: false, error: 'Registration already confirmed', code: 'INVALID_STATE' };
+  }
+
+  const now = new Date();
+  const expiresAt = computeInviteExpiresAt(now);
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(registrations)
+      .set({ expiresAt, updatedAt: now })
+      .where(eq(registrations.id, invite.registrationId));
+
+    await tx
+      .update(registrationInvites)
+      .set({ expiresAt, updatedAt: now })
+      .where(eq(registrationInvites.id, invite.id));
+  });
+
+  if (invite.edition?.series) {
+    try {
+      const requestContext = await getRequestContext(await headers());
+      await createAuditLog(
+        {
+          organizationId: invite.edition.series.organizationId,
+          actorUserId: authContext.user.id,
+          action: 'group_upload_invite.extend',
+          entityType: 'registration_invite',
+          entityId: invite.id,
+          after: { expiresAt: expiresAt.toISOString(), registrationId: invite.registrationId },
+          request: requestContext,
+        },
+        db,
+      );
+    } catch (error) {
+      console.warn('[group-upload] Failed to create audit log for invite hold extend:', error);
+    }
+  }
+
+  return { ok: true, data: { expiresAt: expiresAt.toISOString() } };
 });
 
 export const cancelInvite = withAuthenticatedUser<ActionResult>({

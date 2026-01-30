@@ -9,6 +9,8 @@ import { useRouter } from '@/i18n/navigation';
 import {
   cancelBatch,
   cancelInvite,
+  extendInviteHold,
+  reissueInviteForBatchRow,
   reserveInvitesForBatch,
   resendInvite,
   rotateInviteToken,
@@ -29,6 +31,8 @@ import {
   RotateCw,
   Send,
   Trash2,
+  X,
+  Timer,
   X,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -113,6 +117,7 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
       DUPLICATE_EMAIL_IN_FILE: t('errors.row.DUPLICATE_EMAIL_IN_FILE'),
       DOB_MISMATCH: t('errors.row.DOB_MISMATCH'),
       INVALID_ROW: t('errors.row.INVALID_ROW'),
+      INVITE_LIMIT_REACHED: t('errors.row.INVITE_LIMIT_REACHED'),
       EXISTING_ACTIVE_INVITE: t('errors.row.EXISTING_ACTIVE_INVITE'),
       ALREADY_REGISTERED: t('errors.row.ALREADY_REGISTERED'),
       SOLD_OUT: t('errors.row.SOLD_OUT'),
@@ -318,6 +323,34 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
     });
   };
 
+  const handleReissueInvite = (batchRowId: string) => {
+    startTransition(async () => {
+      const result = await reissueInviteForBatchRow({ uploadToken, batchRowId, locale });
+
+      if (!result.ok) {
+        toast.error(t('errors.reissue'), { description: result.error });
+        return;
+      }
+
+      toast.success(t('reissue.success'));
+      router.refresh();
+    });
+  };
+
+  const handleExtendHold = (inviteId: string) => {
+    startTransition(async () => {
+      const result = await extendInviteHold({ uploadToken, inviteId });
+
+      if (!result.ok) {
+        toast.error(t('errors.extendHold'), { description: result.error });
+        return;
+      }
+
+      toast.success(t('extendHold.success'), { description: formatDateTime(result.data.expiresAt) });
+      router.refresh();
+    });
+  };
+
   const summary = useMemo(() => {
     return {
       total: rows.length,
@@ -442,7 +475,7 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                   : row.invite
                     ? inviteStatusLabelMap[row.invite.status] ?? row.invite.status
                     : row.createdRegistrationId
-                      ? t('rows.status.reserved')
+                      ? inviteStatusLabelMap.expired
                       : t('rows.status.pending');
 
                 return (
@@ -523,6 +556,17 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                                     <Mail className="h-4 w-4" />
                                   </IconTooltipButton>
                                 ) : null}
+                                {row.invite.status === 'claimed' ? (
+                                  <IconTooltipButton
+                                    variant="ghost"
+                                    size="icon"
+                                    label={t('extendHold.action')}
+                                    onClick={() => handleExtendHold(row.invite!.id)}
+                                    disabled={isPending}
+                                  >
+                                    <Timer className="h-4 w-4" />
+                                  </IconTooltipButton>
+                                ) : null}
                                 {['draft', 'sent'].includes(row.invite.status) ? (
                                   <IconTooltipButton
                                     variant="ghost"
@@ -563,6 +607,16 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                               </div>
                             )}
                           </div>
+                      ) : row.createdRegistrationId ? (
+                        <IconTooltipButton
+                          variant="ghost"
+                          size="icon"
+                          label={t('reissue.action')}
+                          onClick={() => handleReissueInvite(row.id)}
+                          disabled={isPending}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </IconTooltipButton>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
                       )}

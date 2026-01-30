@@ -425,6 +425,14 @@
       "action": "Editar correo",
       "success": "Correo actualizado"
     },
+    "reissue": {
+      "action": "Reemitir",
+      "success": "Invitación reemitida"
+    },
+    "extendHold": {
+      "action": "Extender tiempo",
+      "success": "Tiempo extendido"
+    },
     "cancelInvite": {
       "action": "Cancelar invitación",
       "confirm": "¿Cancelar esta invitación y liberar el lugar?",
@@ -448,6 +456,8 @@
       "sendInvites": "Error al enviar invitaciones",
       "resend": "Error al reenviar",
       "rotate": "Error al rotar enlace",
+      "reissue": "Error al reemitir invitación",
+      "extendHold": "Error al extender tiempo",
       "emailRequired": "El correo es obligatorio",
       "updateEmail": "Error al actualizar correo",
       "cancelInvite": "Error al cancelar invitación",
@@ -463,6 +473,7 @@
         "DUPLICATE_EMAIL_IN_FILE": "Correo duplicado en el archivo",
         "DOB_MISMATCH": "Fecha de nacimiento no coincide",
         "INVALID_ROW": "Fila inválida",
+        "INVITE_LIMIT_REACHED": "Se alcanzó el límite de invitaciones",
         "EXISTING_ACTIVE_INVITE": "Ya existe una invitación activa",
         "ALREADY_REGISTERED": "Ya está inscrito",
         "SOLD_OUT": "Cupo agotado"

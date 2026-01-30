@@ -425,6 +425,14 @@
       "action": "Edit email",
       "success": "Email updated"
     },
+    "reissue": {
+      "action": "Reissue",
+      "success": "Invite reissued"
+    },
+    "extendHold": {
+      "action": "Extend hold",
+      "success": "Hold extended"
+    },
     "cancelInvite": {
       "action": "Cancel invite",
       "confirm": "Cancel this invite and release the spot?",
@@ -448,6 +456,8 @@
       "sendInvites": "Failed to send invites",
       "resend": "Failed to resend invite",
       "rotate": "Failed to rotate invite",
+      "reissue": "Failed to reissue invite",
+      "extendHold": "Failed to extend hold",
       "emailRequired": "Email is required",
       "updateEmail": "Failed to update email",
       "cancelInvite": "Failed to cancel invite",
@@ -463,6 +473,7 @@
         "DUPLICATE_EMAIL_IN_FILE": "Duplicate email in file",
         "DOB_MISMATCH": "Date of birth mismatch",
         "INVALID_ROW": "Invalid row data",
+        "INVITE_LIMIT_REACHED": "Invite limit reached",
         "EXISTING_ACTIVE_INVITE": "Active invite already exists",
         "ALREADY_REGISTERED": "Already registered",
         "SOLD_OUT": "Sold out"

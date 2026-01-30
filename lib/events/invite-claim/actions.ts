@@ -76,17 +76,35 @@ export const claimInvite = withAuthenticatedUser<ActionResult<{ registrationId: 
     }
 
     if (invite.status === 'claimed') {
-      if (invite.claimedByUserId === user.id) {
-        return {
-          ok: true as const,
-          data: {
-            registrationId: invite.registrationId,
-            editionId: invite.editionId,
-            inviteId: invite.id,
-          },
-        };
+      if (invite.claimedByUserId !== user.id) {
+        return { ok: false as const, error: 'Invite already claimed', code: 'ALREADY_CLAIMED' };
       }
-      return { ok: false as const, error: 'Invite already claimed', code: 'ALREADY_CLAIMED' };
+
+      await tx.execute(sql`SELECT id FROM ${registrations} WHERE id = ${invite.registrationId} FOR UPDATE`);
+
+      const existingRegistration = await tx.query.registrations.findFirst({
+        where: eq(registrations.id, invite.registrationId),
+      });
+
+      if (!existingRegistration || existingRegistration.status === 'cancelled') {
+        return { ok: false as const, error: 'Invite expired', code: 'INVITE_EXPIRED' };
+      }
+
+      if (
+        existingRegistration.status !== 'confirmed' &&
+        (!existingRegistration.expiresAt || existingRegistration.expiresAt <= now)
+      ) {
+        return { ok: false as const, error: 'Invite expired', code: 'INVITE_EXPIRED' };
+      }
+
+      return {
+        ok: true as const,
+        data: {
+          registrationId: invite.registrationId,
+          editionId: invite.editionId,
+          inviteId: invite.id,
+        },
+      };
     }
 
     if (invite.status === 'cancelled') {

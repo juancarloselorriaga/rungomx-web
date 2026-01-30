@@ -89,6 +89,8 @@ export const AUDIT_ACTIONS = {
   'group_upload_batch.discount_apply': 'Group upload batch discount applied',
   'group_upload_invites.send': 'Group upload invites sent',
   'group_upload_invite.cancel': 'Group upload invite cancelled',
+  'group_upload_invite.extend': 'Group upload invite hold extended',
+  'group_upload_invite.reissue': 'Group upload invite reissued',
   'group_upload_batch.cancel': 'Group upload batch cancelled',
   'registration_invite.claim': 'Registration invite claimed',
 

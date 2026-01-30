@@ -102,7 +102,21 @@ export async function getUploadLinkByToken(params: {
     executor
       .select({ count: sql<number>`count(*)::int` })
       .from(registrationInvites)
-      .where(eq(registrationInvites.uploadLinkId, link.id)),
+      .innerJoin(registrations, eq(registrationInvites.registrationId, registrations.id))
+      .where(
+        and(
+          eq(registrationInvites.uploadLinkId, link.id),
+          eq(registrationInvites.isCurrent, true),
+          isNull(registrations.deletedAt),
+          or(
+            eq(registrations.status, 'confirmed'),
+            and(
+              inArray(registrations.status, ['started', 'submitted', 'payment_pending']),
+              gt(registrations.expiresAt, now),
+            ),
+          ),
+        ),
+      ),
   ]);
 
   const batchCount = batchCountResult[0]?.count ?? 0;

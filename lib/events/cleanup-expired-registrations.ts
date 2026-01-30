@@ -40,7 +40,7 @@ export async function cleanupExpiredRegistrations(): Promise<number> {
       .where(
         and(
           inArray(registrationInvites.registrationId, expiredIds),
-          inArray(registrationInvites.status, ['draft', 'sent']),
+          inArray(registrationInvites.status, ['draft', 'sent', 'claimed']),
           isNotNull(registrationInvites.expiresAt),
         ),
       );

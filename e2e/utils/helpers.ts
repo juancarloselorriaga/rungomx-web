@@ -5,6 +5,15 @@ import type { Locator } from '@playwright/test';
  * Test helper utilities for RunGoMX E2E tests
  */
 
+async function forceSignOut(page: Page) {
+  await page.evaluate(async () => {
+    await fetch('/api/auth/sign-out', { method: 'POST', credentials: 'include' }).catch(() => null);
+    localStorage.clear();
+    sessionStorage.clear();
+  });
+  await page.context().clearCookies();
+}
+
 /**
  * Generate unique timestamp-based identifier
  */
@@ -28,88 +37,24 @@ export async function signInAsUser(
   credentials: { email: string; password: string },
   options?: { role?: 'organizer' | 'athlete' | 'volunteer' },
 ) {
+  // Ensure we're on the app origin first.
+  await page.goto('/en');
+  await page.waitForLoadState('networkidle');
+
+  // Ensure a clean session before signing in.
+  await forceSignOut(page);
+
   // Navigate to sign-in page
   await page.goto('/en/sign-in');
 
   // Wait for navigation to complete
   await page.waitForLoadState('networkidle');
 
-  // Check if already signed in (redirected to dashboard or home)
-  const currentUrl = page.url();
-  const isOnSignInPage = currentUrl.includes('/sign-in');
-
-  if (!isOnSignInPage) {
-    // Already signed in - need to check if it's the right user
-    const expectedUserPrefix = credentials.email.split('@')[0].toLowerCase();
-
-    // Look for user button - it could be anywhere in the page
-    // The button typically shows the user's name like "Test Organizer" or "Test Athlete"
-    const userButton = page.getByRole('button').filter({
-      hasText: /Test|Organizer|Athlete/i,
-    }).first();
-
-    const userButtonVisible = await userButton.isVisible({ timeout: 2000 }).catch(() => false);
-
-    if (userButtonVisible) {
-      const buttonText = (await userButton.textContent().catch(() => '')) || '';
-      const buttonTextLower = buttonText.toLowerCase();
-
-      // Check user type based on email prefix
-      // Email format is like: "athlete-reg-123@...", "org-capacity-123@..."
-      const isAthleteExpected = expectedUserPrefix.startsWith('athlete');
-      const isOrganizerExpected = expectedUserPrefix.startsWith('org');
-
-      // Button will show name like "Capacity Test Athlete" or "Capacity Test Organizer"
-      const isAthleteSignedIn = buttonTextLower.includes('athlete');
-      const isOrganizerSignedIn = buttonTextLower.includes('organizer');
-
-      // Check if signed in as the correct user type
-      const isCorrectUser =
-        (isAthleteExpected && isAthleteSignedIn) ||
-        (isOrganizerExpected && isOrganizerSignedIn);
-
-      // If signed in as different user, sign out first
-      if (!isCorrectUser) {
-        // Clear all storage and cookies
-        await page.context().clearCookies();
-        await page.evaluate(() => {
-          localStorage.clear();
-          sessionStorage.clear();
-        });
-
-        // Navigate to home page first to get clean state
-        await page.goto('/en');
-        await page.waitForLoadState('networkidle');
-
-        // Check if still signed in - if so, need to call sign-out API
-        const stillSignedIn = await page.getByRole('button').filter({
-          hasText: /Test|Organizer|Athlete/i,
-        }).first().isVisible({ timeout: 2000 }).catch(() => false);
-
-        if (stillSignedIn) {
-          // Call sign-out API
-          await page.evaluate(async () => {
-            await fetch('/api/auth/sign-out', {
-              method: 'POST',
-              credentials: 'include',
-            });
-          });
-          await page.waitForTimeout(500);
-          await page.context().clearCookies();
-        }
-
-        // Navigate to sign-in page
-        await page.goto('/en/sign-in');
-        await page.waitForLoadState('networkidle');
-      } else {
-        // Already signed in as the correct user
-        return;
-      }
-    } else {
-      // On a page but no user button - might be logged out, navigate to sign-in
-      await page.goto('/en/sign-in');
-      await page.waitForLoadState('networkidle');
-    }
+  // If the sign-in page redirects away, we're still signed in. Force a clean sign-out.
+  if (!page.url().includes('/sign-in')) {
+    await forceSignOut(page);
+    await page.goto('/en/sign-in');
+    await page.waitForLoadState('networkidle');
   }
 
   // Verify we're on sign-in page now
@@ -241,7 +186,7 @@ export async function signInAsOrganizer(
   page: Page,
   credentials: { email: string; password: string },
 ) {
-  return signInAsUser(page, credentials);
+  return signInAsUser(page, credentials, { role: 'organizer' });
 }
 
 /**
@@ -251,7 +196,7 @@ export async function signInAsAthlete(
   page: Page,
   credentials: { email: string; password: string },
 ) {
-  return signInAsUser(page, credentials);
+  return signInAsUser(page, credentials, { role: 'athlete' });
 }
 
 /**

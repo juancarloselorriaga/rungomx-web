@@ -72,21 +72,8 @@ export async function getClaimPageContextByToken(params: { token: string; now?: 
   const isExpired =
     row.inviteStatus === 'expired' ||
     row.registrationStatus === 'cancelled' ||
-    !row.registrationExpiresAt ||
-    row.registrationExpiresAt <= now;
-
-  if (row.inviteStatus === 'claimed') {
-    return {
-      status: 'CLAIMED' as const,
-      event: {
-        seriesSlug: row.seriesSlug,
-        seriesName: row.seriesName,
-        editionSlug: row.editionSlug,
-        editionLabel: row.editionLabel,
-        distanceLabel: row.distanceLabel,
-      },
-    };
-  }
+    (row.registrationStatus !== 'confirmed' &&
+      (!row.registrationExpiresAt || row.registrationExpiresAt <= now));
 
   if (row.inviteStatus === 'cancelled') {
     return {
@@ -104,6 +91,19 @@ export async function getClaimPageContextByToken(params: { token: string; now?: 
   if (isExpired) {
     return {
       status: 'EXPIRED' as const,
+      event: {
+        seriesSlug: row.seriesSlug,
+        seriesName: row.seriesName,
+        editionSlug: row.editionSlug,
+        editionLabel: row.editionLabel,
+        distanceLabel: row.distanceLabel,
+      },
+    };
+  }
+
+  if (row.inviteStatus === 'claimed') {
+    return {
+      status: 'CLAIMED' as const,
       event: {
         seriesSlug: row.seriesSlug,
         seriesName: row.seriesName,

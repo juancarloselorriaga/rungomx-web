@@ -38,6 +38,19 @@ export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
   await db.delete(schema.auditLogs);
 
   // Event-related tables (most dependent)
+  // Phase 3 group upload / invites (must be removed before event_distances due to FK + CHECK constraint)
+  await db.delete(schema.registrationInvites); // References registrations, batches, upload_links
+  await db.delete(schema.groupRegistrationBatchRows); // References registrations, batches
+  await db.delete(schema.groupRegistrationBatches); // References event_distances with CHECK involving upload_link_id
+  await db.delete(schema.groupUploadLinks); // References event_editions, users
+
+  // Phase 3 group link (small groups)
+  await db.delete(schema.registrationGroupMembers); // References registration_groups, users
+  await db.delete(schema.registrationGroups); // References event_distances, users
+
+  await db.delete(schema.groupDiscountRules); // References event_editions
+  await db.delete(schema.eventSlugRedirects); // Independent (phase 3)
+
   await db.delete(schema.waiverAcceptances); // References registrations
   await db.delete(schema.registrants); // References registrations, users
   await db.delete(schema.registrations); // References event_distances, users

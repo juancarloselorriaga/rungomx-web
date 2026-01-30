@@ -66,7 +66,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           }
 
           const linkResult = await getUploadLinkByToken({ token: uploadToken });
-          if (!linkResult.link || !['ACTIVE', 'MAXED_OUT'].includes(linkResult.status)) {
+          if (!linkResult.link || !['ACTIVE', 'EXPIRED', 'MAXED_OUT'].includes(linkResult.status)) {
             throw new Error('Invalid upload link');
           }
 
