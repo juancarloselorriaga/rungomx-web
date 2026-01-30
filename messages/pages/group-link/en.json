@@ -1,0 +1,117 @@
+{
+  "title": "Group link",
+  "description": "Invite friends with a link. Everyone registers and pays individually.",
+  "status": {
+    "ACTIVE": "Active",
+    "DISABLED": "Disabled",
+    "NOT_FOUND": "Unavailable"
+  },
+  "create": {
+    "title": "Create a group link",
+    "description": "Choose a distance and share a link with your friends.",
+    "howItWorks": {
+      "title": "How it works",
+      "description": "A lightweight way to coordinate a small group registration.",
+      "points": {
+        "noReservation": "This link does not reserve spots. Availability can change.",
+        "selfPay": "Each participant registers and pays individually.",
+        "limit": "Set a max group size to keep it manageable."
+      }
+    },
+    "form": {
+      "title": "Group details",
+      "description": "Pick a distance and set your group size.",
+      "groupName": {
+        "label": "Group name (optional)",
+        "placeholder": "e.g., Office run crew"
+      },
+      "groupSize": {
+        "label": "Max participants"
+      },
+      "distance": {
+        "label": "Select distance",
+        "spotsRemaining": "{count} spots remaining",
+        "selected": "Selected"
+      },
+      "action": "Create group link"
+    }
+  },
+  "group": {
+    "nameLabel": "Group",
+    "unnamed": "No name",
+    "distanceLabel": "Distance",
+    "memberCount": "{count} / {max} joined",
+    "spotsRemaining": "{count} spots remaining",
+    "code": "Code: {prefix}…"
+  },
+  "howItWorks": {
+    "noReservation": "This link does not reserve spots. If the race is popular, join early.",
+    "selfPay": "Each participant pays during their own registration."
+  },
+  "loginRequired": {
+    "title": "Sign in required",
+    "description": "Sign in to join this group and start registration.",
+    "signIn": "Sign in",
+    "signUp": "Create account"
+  },
+  "actions": {
+    "title": "Your spot",
+    "joined": "You joined this group.",
+    "notJoined": "Join to be included in the group list.",
+    "groupFull": "This group reached its limit."
+  },
+  "share": {
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "failed": "Couldn't copy link"
+  },
+  "join": {
+    "action": "Join group",
+    "success": "Joined the group"
+  },
+  "leave": {
+    "action": "Leave group",
+    "success": "Left the group"
+  },
+  "registration": {
+    "start": "Start registration",
+    "ctaDisabled": "Registration is not open yet.",
+    "paused": "Registration is paused for this event.",
+    "opensAt": "Registration opens {date}.",
+    "closedAt": "Registration closed {date}.",
+    "closed": "Registration is closed for this event."
+  },
+  "members": {
+    "title": "People who joined",
+    "description": "Track who joined and whether they started registration.",
+    "headers": {
+      "name": "Member",
+      "joinedAt": "Joined",
+      "registration": "Registration",
+      "actions": "Actions"
+    },
+    "actions": {
+      "remove": "Remove"
+    },
+    "removed": "Member removed",
+    "registrationStatus": {
+      "confirmed": "Confirmed",
+      "paymentPending": "Awaiting payment",
+      "inProgress": "In progress",
+      "notStarted": "Not started",
+      "differentDistance": "Different distance",
+      "expiresAt": "Expires {date}"
+    }
+  },
+  "errors": {
+    "distanceRequired": "Please select a distance",
+    "groupSizeInvalid": "Please enter a valid group size",
+    "createGroup": "Unable to create group",
+    "join": "Unable to join group",
+    "leave": "Unable to leave group",
+    "removeMember": "Unable to remove member",
+    "alreadyInAnotherGroup": "You already joined another group for this event.",
+    "groupFull": "This group is full."
+  }
+}
+

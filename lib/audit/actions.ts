@@ -70,6 +70,12 @@ export const AUDIT_ACTIONS = {
   'registration.cancel': 'Registration cancelled',
   'registration.demo_pay': 'Registration demo payment completed',
 
+  // Registration Groups (Self-serve, Phase 3)
+  'registration_group.create': 'Registration group created',
+  'registration_group.join': 'Registration group joined',
+  'registration_group.leave': 'Registration group left',
+  'registration_group.member.remove': 'Registration group member removed',
+
   // Group Registrations (Phase 3)
   'group_registrations.upload': 'Group registrations batch uploaded',
   'group_registrations.process': 'Group registrations batch processed',

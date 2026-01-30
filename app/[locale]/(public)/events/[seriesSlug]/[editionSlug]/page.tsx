@@ -273,6 +273,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           fromPrice: formattedMinPrice ? t('detail.fromPrice', { price: formattedMinPrice }) : '',
           free: t('detail.free'),
           registerNow: t('detail.registerNow'),
+          registerWithFriends: t('detail.registerWithFriends'),
           groupDiscountBadge: bestGroupDiscount
             ? t('detail.groupDiscount.badge', {
                 minParticipants: bestGroupDiscount.minParticipants,

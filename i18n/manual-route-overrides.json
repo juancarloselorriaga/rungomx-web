@@ -28,5 +28,7 @@
   "/admin/users/pro-access": { "selection": "public", "pages": ["adminProAccess"] },
   "/admin/users/pro-access/overrides": { "selection": "public", "pages": ["adminProAccess"] },
   "/admin/users/pro-access/promo-codes": { "selection": "public", "pages": ["adminProAccess"] },
-  "/admin/users/pro-access/email-grants": { "selection": "public", "pages": ["adminProAccess"] }
+  "/admin/users/pro-access/email-grants": { "selection": "public", "pages": ["adminProAccess"] },
+  "/events/[seriesSlug]/[editionSlug]/groups/new": { "selection": "public", "pages": ["groupLink"] },
+  "/events/[seriesSlug]/[editionSlug]/groups/[groupToken]": { "selection": "public", "pages": ["groupLink"] }
 }

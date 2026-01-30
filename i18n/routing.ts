@@ -177,6 +177,14 @@ export const routing = defineRouting({
       es: '/eventos/[seriesSlug]/[editionSlug]/carga-grupal/[uploadToken]/lotes/[batchId]',
       en: '/events/[seriesSlug]/[editionSlug]/group-upload/[uploadToken]/batches/[batchId]',
     },
+    '/events/[seriesSlug]/[editionSlug]/groups/new': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/grupos/nuevo',
+      en: '/events/[seriesSlug]/[editionSlug]/groups/new',
+    },
+    '/events/[seriesSlug]/[editionSlug]/groups/[groupToken]': {
+      es: '/eventos/[seriesSlug]/[editionSlug]/grupos/[groupToken]',
+      en: '/events/[seriesSlug]/[editionSlug]/groups/[groupToken]',
+    },
     '/settings': {
       es: '/configuracion',
       en: '/settings',

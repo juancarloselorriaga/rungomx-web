@@ -996,6 +996,60 @@ export const registrationInvites = pgTable(
   }),
 );
 
+export const registrationGroups = pgTable(
+  'registration_groups',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    distanceId: uuid('distance_id')
+      .notNull()
+      .references(() => eventDistances.id, { onDelete: 'cascade' }),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }),
+    tokenHash: text('token_hash').notNull(),
+    tokenPrefix: varchar('token_prefix', { length: 12 }).notNull(),
+    maxMembers: integer('max_members').notNull().default(10),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('registration_groups_token_hash_idx').on(table.tokenHash),
+    index('registration_groups_edition_created_at_idx').on(table.editionId, table.createdAt),
+    index('registration_groups_created_by_user_created_at_idx').on(table.createdByUserId, table.createdAt),
+    check('registration_groups_max_members_check', sql`${table.maxMembers} > 0`),
+  ],
+);
+
+export const registrationGroupMembers = pgTable(
+  'registration_group_members',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => registrationGroups.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    joinedAt: timestamp('joined_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    leftAt: timestamp('left_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => ({
+    groupUserActiveUnique: uniqueIndex('registration_group_members_group_user_active_idx')
+      .on(table.groupId, table.userId)
+      .where(sql`${table.leftAt} is null`),
+    groupJoinedAtIdx: index('registration_group_members_group_joined_at_idx').on(table.groupId, table.joinedAt),
+  }),
+);
+
 export const groupDiscountRules = pgTable(
   'group_discount_rules',
   {

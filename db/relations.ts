@@ -36,6 +36,8 @@ import {
   rateLimits,
   registrants,
   registrationAnswers,
+  registrationGroupMembers,
+  registrationGroups,
   registrationInvites,
   registrationQuestions,
   registrations,
@@ -85,6 +87,8 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   groupRegistrationBatches: many(groupRegistrationBatches),
   groupUploadLinksCreated: many(groupUploadLinks, { relationName: 'groupUploadLinksCreatedBy' }),
   groupUploadLinksRevoked: many(groupUploadLinks, { relationName: 'groupUploadLinksRevokedBy' }),
+  registrationGroupsCreated: many(registrationGroups),
+  registrationGroupMemberships: many(registrationGroupMembers),
   registrationInvitesCreated: many(registrationInvites, {
     relationName: 'registrationInvitesCreatedBy',
   }),
@@ -294,6 +298,7 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   groupRegistrationBatches: many(groupRegistrationBatches),
   groupUploadLinks: many(groupUploadLinks),
   registrationInvites: many(registrationInvites),
+  registrationGroups: many(registrationGroups),
   groupDiscountRules: many(groupDiscountRules),
   // Phase 2 relations
   addOns: many(addOns),
@@ -309,6 +314,7 @@ export const eventDistancesRelations = relations(eventDistances, ({ one, many })
   pricingTiers: many(pricingTiers),
   registrations: many(registrations),
   groupRegistrationBatches: many(groupRegistrationBatches),
+  registrationGroups: many(registrationGroups),
   // Phase 2 relations (distance-scoped)
   addOns: many(addOns),
   registrationQuestions: many(registrationQuestions),
@@ -491,6 +497,33 @@ export const registrationInvitesRelations = relations(registrationInvites, ({ on
     fields: [registrationInvites.claimedByUserId],
     references: [users.id],
     relationName: 'registrationInvitesClaimedBy',
+  }),
+}));
+
+export const registrationGroupsRelations = relations(registrationGroups, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [registrationGroups.editionId],
+    references: [eventEditions.id],
+  }),
+  distance: one(eventDistances, {
+    fields: [registrationGroups.distanceId],
+    references: [eventDistances.id],
+  }),
+  createdByUser: one(users, {
+    fields: [registrationGroups.createdByUserId],
+    references: [users.id],
+  }),
+  members: many(registrationGroupMembers),
+}));
+
+export const registrationGroupMembersRelations = relations(registrationGroupMembers, ({ one }) => ({
+  group: one(registrationGroups, {
+    fields: [registrationGroupMembers.groupId],
+    references: [registrationGroups.id],
+  }),
+  user: one(users, {
+    fields: [registrationGroupMembers.userId],
+    references: [users.id],
   }),
 }));
 

@@ -1,0 +1,116 @@
+{
+  "title": "Enlace de grupo",
+  "description": "Invita a tus amigos con un enlace. Cada quien se inscribe y paga por separado.",
+  "status": {
+    "ACTIVE": "Activo",
+    "DISABLED": "Desactivado",
+    "NOT_FOUND": "No disponible"
+  },
+  "create": {
+    "title": "Crear enlace de grupo",
+    "description": "Elige una distancia y comparte un enlace con tus amigos.",
+    "howItWorks": {
+      "title": "Cómo funciona",
+      "description": "Una forma ligera de coordinar un registro para grupos pequeños.",
+      "points": {
+        "noReservation": "Este enlace no reserva lugares. La disponibilidad puede cambiar.",
+        "selfPay": "Cada participante se inscribe y paga por separado.",
+        "limit": "Define un máximo de participantes para mantenerlo manejable."
+      }
+    },
+    "form": {
+      "title": "Detalles del grupo",
+      "description": "Elige una distancia y el tamaño del grupo.",
+      "groupName": {
+        "label": "Nombre del grupo (opcional)",
+        "placeholder": "p. ej., Equipo de oficina"
+      },
+      "groupSize": {
+        "label": "Máximo de participantes"
+      },
+      "distance": {
+        "label": "Selecciona distancia",
+        "spotsRemaining": "{count} lugares disponibles",
+        "selected": "Seleccionado"
+      },
+      "action": "Crear enlace de grupo"
+    }
+  },
+  "group": {
+    "nameLabel": "Grupo",
+    "unnamed": "Sin nombre",
+    "distanceLabel": "Distancia",
+    "memberCount": "{count} de {max} unidos",
+    "spotsRemaining": "{count} lugares disponibles",
+    "code": "Código: {prefix}…"
+  },
+  "howItWorks": {
+    "noReservation": "Este enlace no reserva lugares. Si el evento es popular, únete pronto.",
+    "selfPay": "Cada participante paga durante su propia inscripción."
+  },
+  "loginRequired": {
+    "title": "Inicio de sesión requerido",
+    "description": "Inicia sesión para unirte a este grupo y comenzar la inscripción.",
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta"
+  },
+  "actions": {
+    "title": "Tu lugar",
+    "joined": "Te uniste a este grupo.",
+    "notJoined": "Únete para aparecer en la lista del grupo.",
+    "groupFull": "Este grupo alcanzó su límite."
+  },
+  "share": {
+    "copyLink": "Copiar enlace",
+    "copied": "Enlace copiado",
+    "failed": "No se pudo copiar el enlace"
+  },
+  "join": {
+    "action": "Unirme al grupo",
+    "success": "Te uniste al grupo"
+  },
+  "leave": {
+    "action": "Salir del grupo",
+    "success": "Saliste del grupo"
+  },
+  "registration": {
+    "start": "Comenzar inscripción",
+    "ctaDisabled": "Las inscripciones aún no están abiertas.",
+    "paused": "Las inscripciones están pausadas para este evento.",
+    "opensAt": "Las inscripciones abren {date}.",
+    "closedAt": "Las inscripciones cerraron {date}.",
+    "closed": "Las inscripciones están cerradas para este evento."
+  },
+  "members": {
+    "title": "Personas que se unieron",
+    "description": "Ver quién se unió y si ya inició su inscripción.",
+    "headers": {
+      "name": "Participante",
+      "joinedAt": "Se unió",
+      "registration": "Inscripción",
+      "actions": "Acciones"
+    },
+    "actions": {
+      "remove": "Eliminar"
+    },
+    "removed": "Participante eliminado",
+    "registrationStatus": {
+      "confirmed": "Confirmada",
+      "paymentPending": "Pendiente de pago",
+      "inProgress": "En progreso",
+      "notStarted": "Sin iniciar",
+      "differentDistance": "Distancia diferente",
+      "expiresAt": "Expira {date}"
+    }
+  },
+  "errors": {
+    "distanceRequired": "Selecciona una distancia",
+    "groupSizeInvalid": "Ingresa un tamaño de grupo válido",
+    "createGroup": "No se pudo crear el grupo",
+    "join": "No se pudo unir al grupo",
+    "leave": "No se pudo salir del grupo",
+    "removeMember": "No se pudo eliminar al participante",
+    "alreadyInAnotherGroup": "Ya te uniste a otro grupo para este evento.",
+    "groupFull": "Este grupo está lleno."
+  }
+}

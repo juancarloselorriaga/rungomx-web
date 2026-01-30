@@ -28,6 +28,7 @@ type EventHeroSectionProps = {
     fromPrice: string;
     free: string;
     registerNow: string;
+    registerWithFriends: string;
     groupDiscountBadge?: string;
   };
 };
@@ -121,16 +122,28 @@ export function EventHeroSection({
               <span className="text-lg font-semibold text-green-600">{labels.free}</span>
             )}
             {isRegistrationOpen && (
-              <Button size="lg" asChild className="mt-2">
-                <Link
-                  href={{
-                    pathname: '/events/[seriesSlug]/[editionSlug]/register',
-                    params: { seriesSlug, editionSlug },
-                  }}
-                >
-                  {labels.registerNow}
-                </Link>
-              </Button>
+              <div className="mt-2 flex flex-col gap-3 sm:flex-row lg:justify-end">
+                <Button size="lg" asChild>
+                  <Link
+                    href={{
+                      pathname: '/events/[seriesSlug]/[editionSlug]/register',
+                      params: { seriesSlug, editionSlug },
+                    }}
+                  >
+                    {labels.registerNow}
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link
+                    href={{
+                      pathname: '/events/[seriesSlug]/[editionSlug]/groups/new',
+                      params: { seriesSlug, editionSlug },
+                    }}
+                  >
+                    {labels.registerWithFriends}
+                  </Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>
