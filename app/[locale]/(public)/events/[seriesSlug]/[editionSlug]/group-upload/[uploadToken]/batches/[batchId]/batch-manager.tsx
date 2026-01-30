@@ -33,7 +33,6 @@ import {
   Trash2,
   X,
   Timer,
-  X,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';

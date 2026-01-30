@@ -14,7 +14,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { GenderField } from '@/components/settings/fields/gender-field';
 import { PhoneField } from '@/components/settings/fields/phone-field';
 import { Link } from '@/i18n/navigation';
