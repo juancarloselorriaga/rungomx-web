@@ -59,3 +59,5 @@ e2e/.auth/
 
 .playwright-mcp/
 playwright-report/
+_bmad
+_bmad-output
