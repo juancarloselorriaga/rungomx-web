@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { hydratePortEnv } from './utils/port-env';
 
 /**
  * Phase 2 smoke tests (dev DB).
@@ -9,6 +10,12 @@ import { defineConfig, devices } from '@playwright/test';
  * Run:
  *   pnpm playwright test --config e2e/playwright.phase2-smoke.config.ts
  */
+hydratePortEnv();
+
+const baseURL =
+  process.env.PLAYWRIGHT_BASE_URL ||
+  `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || process.env.PORT || 3001}`;
+
 export default defineConfig({
   testDir: './phase2-smoke',
   fullyParallel: false,
@@ -22,7 +29,7 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3001',
+    baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

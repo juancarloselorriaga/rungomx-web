@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --raw \"pnpm watch:i18n\" \"next dev -p 8080\"",
-    "dev:no-watch": "next dev -p 8080",
+    "dev": "concurrently --raw \"pnpm watch:i18n\" \"node scripts/next-dev-with-port.mjs\"",
+    "dev:no-watch": "node scripts/next-dev-with-port.mjs",
     "build": "pnpm generate:i18n && next build",
     "start": "next start",
     "lint": "eslint",

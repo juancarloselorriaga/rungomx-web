@@ -92,7 +92,7 @@ e2e/
 - Example: `E2E Test Event ${Date.now()}`
 
 ### Avoiding local clashes
-- **Port isolation:** default server is `127.0.0.1:43137`. Override with `PLAYWRIGHT_PORT=3005` (or `PLAYWRIGHT_BASE_URL=...`).
+- **Port isolation:** default server is `127.0.0.1:43137`. Override with `PLAYWRIGHT_PORT=3005`, `PLAYWRIGHT_BASE_URL=...`, or set `PORT` in `.env.local` for per-worktree defaults.
 - **Artifact isolation:** set `E2E_RUN_ID=...` to write results to per-run folders, or run `pnpm test:e2e:isolated`.
 - **Parallel runs:** require isolated configs (different `DATABASE_URL` + different `PLAYWRIGHT_BASE_URL`).
 

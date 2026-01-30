@@ -149,8 +149,10 @@ pnpm exec playwright install chromium
 ```bash
 # Make sure the Playwright dev server can start
 # - free the default port (43137), or
-# - set a custom base URL
+# - set a custom base URL/port
 PLAYWRIGHT_PORT=3005 pnpm test:e2e
+# Or rely on PORT from .env.local
+pnpm test:e2e
 ```
 
 ### "Another E2E run appears to be active"

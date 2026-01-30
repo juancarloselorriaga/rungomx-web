@@ -4,16 +4,18 @@ import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.test') });
 
 import { defineConfig, devices } from '@playwright/test';
+import { hydratePortEnv } from './utils/port-env';
 
 /**
  * Playwright Configuration for RunGoMX E2E Tests
  *
  * Tests Phase 0–2 (Foundations → Event Platform) features
  */
+hydratePortEnv();
 const DEFAULT_E2E_PORT = 43137;
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ||
-  `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || DEFAULT_E2E_PORT}`;
+  `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || process.env.PORT || DEFAULT_E2E_PORT}`;
 const origin = (() => {
   try {
     return new URL(baseURL).origin;
@@ -147,6 +149,7 @@ export default defineConfig({
     env: {
       // Ensure auth + redirects use the same origin as the test server.
       NEXT_PUBLIC_SITE_URL: origin,
+      PORT: String(port),
       // Force dev server to use test database
       ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
       // Mapbox tokens for location search

@@ -18,7 +18,7 @@ const trustedOrigins = Array.from(
       process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
       process.env.VERCEL_BRANCH_URL ? `https://${process.env.VERCEL_BRANCH_URL}` : null,
       process.env.AUTH_ADDITIONAL_TRUSTED_ORIGINS,
-      'http://localhost:3000',
+      `http://localhost:${process.env.PORT || 8080}`,
     ]
       .filter((origin): origin is string => Boolean(origin))
       .flatMap((origin) =>
@@ -54,7 +54,7 @@ export const auth = betterAuth({
         const profile = await getProfileByUserId(user.id);
 
         // Extract locale from the url which contains the redirectTo parameter
-        // The url looks like: http://localhost:3000/api/auth/verify?token=...&callbackURL=/en/reset-password
+        // The url looks like: http://localhost:8080/api/auth/verify?token=...&callbackURL=/en/reset-password
         const urlObj = new URL(url);
         const callbackURL = urlObj.searchParams.get('callbackURL') || '';
 
