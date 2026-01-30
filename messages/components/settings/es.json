@@ -251,6 +251,7 @@
       "description": "Revisa tu acceso Pro, fuentes y periodos.",
       "badges": {
         "pro": "Pro activo",
+        "internal": "Interno",
         "free": "Gratis"
       },
       "labels": {
@@ -264,7 +265,7 @@
         "none": "Ninguno",
         "unlimited": "Sin límite"
       },
-      "internal": "Las cuentas internas siempre tienen acceso Pro.",
+      "internal": "Las cuentas internas no son elegibles para facturación Pro.",
       "utc": "UTC"
     },
     "sources": {

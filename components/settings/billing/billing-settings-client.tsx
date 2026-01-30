@@ -237,6 +237,8 @@ export function BillingSettingsClient({
     endsAt: formatDateTime(source.endsAt),
   }));
 
+  const isInternalBypass = isInternal || status.effectiveSource === 'internal_bypass';
+
   return (
     <div className="space-y-6">
       <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
@@ -250,10 +252,17 @@ export function BillingSettingsClient({
 
         <div className="border-t border-border/70 pt-4 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge variant={status.isPro ? 'green' : 'default'} data-testid="billing-pro-badge">
-              {status.isPro ? t('status.badges.pro') : t('status.badges.free')}
+            <Badge
+              variant={isInternalBypass ? 'indigo' : status.isPro ? 'green' : 'default'}
+              data-testid="billing-pro-badge"
+            >
+              {isInternalBypass
+                ? t('status.badges.internal')
+                : status.isPro
+                  ? t('status.badges.pro')
+                  : t('status.badges.free')}
             </Badge>
-            {status.isPro && status.effectiveSource === 'internal_bypass' ? (
+            {isInternalBypass ? (
               <span className="text-sm text-muted-foreground">{t('status.internal')}</span>
             ) : null}
           </div>
@@ -322,7 +331,9 @@ export function BillingSettingsClient({
         </div>
       </section>
 
-      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
+      {!isInternal ? (
+        <>
+          <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t('trial.sectionLabel')}
@@ -485,6 +496,8 @@ export function BillingSettingsClient({
           </div>
         </Form>
       </section>
+        </>
+      ) : null}
     </div>
   );
 }

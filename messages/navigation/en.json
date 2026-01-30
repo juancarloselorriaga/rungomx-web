@@ -11,6 +11,21 @@
   "adminDashboard": "Admin",
   "adminUsers": "Users",
   "staffTools": "Staff tools",
+  "adminUsersSubmenu": {
+    "subtitle": "User lists and Pro access tools.",
+    "sections": {
+      "users": "Users",
+      "proAccess": "Pro access"
+    },
+    "items": {
+      "selfSignup": "Self-signup",
+      "internal": "Internal",
+      "status": "Lookup & status",
+      "overrides": "Overrides",
+      "promoCodes": "Promo codes",
+      "emailGrants": "Email grants"
+    }
+  },
   "profile": "Profile",
   "account": "Account",
   "settings": "Settings",

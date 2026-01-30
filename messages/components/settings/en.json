@@ -251,6 +251,7 @@
       "description": "Review your Pro access, sources, and timelines.",
       "badges": {
         "pro": "Pro active",
+        "internal": "Internal",
         "free": "Free"
       },
       "labels": {
@@ -264,7 +265,7 @@
         "none": "None",
         "unlimited": "Unlimited"
       },
-      "internal": "Internal accounts always have Pro access.",
+      "internal": "Internal accounts aren't eligible for Pro billing.",
       "utc": "UTC"
     },
     "sources": {

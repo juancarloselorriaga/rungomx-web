@@ -11,6 +11,21 @@
   "adminDashboard": "Administración",
   "adminUsers": "Usuarios",
   "staffTools": "Herramientas",
+  "adminUsersSubmenu": {
+    "subtitle": "Listas de usuarios y herramientas de Acceso Pro.",
+    "sections": {
+      "users": "Usuarios",
+      "proAccess": "Acceso Pro"
+    },
+    "items": {
+      "selfSignup": "Auto-registro",
+      "internal": "Internos",
+      "status": "Estado",
+      "overrides": "Overrides",
+      "promoCodes": "Códigos promocionales",
+      "emailGrants": "Asignaciones por correo"
+    }
+  },
   "profile": "Perfil",
   "account": "Cuenta",
   "settings": "Configuración",

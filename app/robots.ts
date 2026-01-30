@@ -13,8 +13,12 @@ export default function robots(): MetadataRoute.Robots {
     '/profile',
     '/admin',
     '/admin/users',
+    '/admin/users/internal',
     '/admin/users/self-signup',
-    '/admin/tools',
+    '/admin/users/pro-access',
+    '/admin/users/pro-access/overrides',
+    '/admin/users/pro-access/promo-codes',
+    '/admin/users/pro-access/email-grants',
     '/admin/account',
   ] as const;
 

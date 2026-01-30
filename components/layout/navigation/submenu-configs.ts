@@ -3,13 +3,17 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
+  Crown,
   DollarSign,
   ExternalLink,
   FileText,
   Gift,
   Globe,
   HelpCircle,
+  Mail,
+  Search,
   Settings,
+  ShieldCheck,
   Tag,
   Users,
 } from 'lucide-react';
@@ -36,6 +40,12 @@ export const submenuConfigs: SubmenuConfig[] = [
       const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)/);
       return match ? { orgId: match[1] } : null;
     },
+  },
+  {
+    id: 'admin-users',
+    parentItemHref: '/admin/users',
+    urlPattern: /^\/admin\/users(\/|$)/,
+    extractParams: () => ({}),
   },
 ];
 
@@ -106,4 +116,39 @@ export const eventIconMap: SubmenuIconMap = {
   users: Users,
   waivers: FileText,
   website: Globe,
+};
+
+/**
+ * Admin users submenu navigation sections.
+ * These sections appear in the sidebar when working in /admin/users/*.
+ */
+export const adminUsersNavigationSections: SubmenuNavigationSection[] = [
+  {
+    titleKey: 'users',
+    items: [
+      { label: 'selfSignup', href: '/self-signup', icon: 'users' },
+      { label: 'internal', href: '/internal', icon: 'shieldCheck' },
+    ],
+  },
+  {
+    titleKey: 'proAccess',
+    items: [
+      { label: 'status', href: '/pro-access', icon: 'search' },
+      { label: 'overrides', href: '/pro-access/overrides', icon: 'shieldCheck' },
+      { label: 'promoCodes', href: '/pro-access/promo-codes', icon: 'tag' },
+      { label: 'emailGrants', href: '/pro-access/email-grants', icon: 'mail' },
+    ],
+  },
+];
+
+/**
+ * Icon map for admin users submenu navigation.
+ */
+export const adminUsersIconMap: SubmenuIconMap = {
+  crown: Crown,
+  mail: Mail,
+  search: Search,
+  shieldCheck: ShieldCheck,
+  tag: Tag,
+  users: Users,
 };

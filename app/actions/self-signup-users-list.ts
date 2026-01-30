@@ -2,7 +2,7 @@
 
 import { db } from '@/db';
 import { roles, userRoles, users } from '@/db/schema';
-import { withAdminUser } from '@/lib/auth/action-wrapper';
+import { withStaffUser } from '@/lib/auth/action-wrapper';
 import { getExternalRoleSourceNamesByKind, getUserRolesWithInternalFlag } from '@/lib/auth/roles';
 import {
   type NormalizedSelfSignupUsersQuery,
@@ -15,7 +15,7 @@ import { and, asc, desc, eq, ilike, inArray, isNull, or, SQL, sql } from 'drizzl
 const EXTERNAL_ROLE_NAMES_BY_KIND = getExternalRoleSourceNamesByKind();
 const EXTERNAL_ROLE_NAMES = Array.from(new Set(Object.values(EXTERNAL_ROLE_NAMES_BY_KIND).flat()));
 
-export const listSelfSignupUsers = withAdminUser<ListSelfSignupUsersResult>({
+export const listSelfSignupUsers = withStaffUser<ListSelfSignupUsersResult>({
   unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED' }),
   forbidden: () => ({ ok: false, error: 'FORBIDDEN' }),
 })(async (_context, query?: SelfSignupUsersQuery) => {

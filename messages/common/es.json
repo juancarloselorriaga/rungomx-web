@@ -33,5 +33,10 @@
   "markdown": {
     "preview": "Vista previa",
     "hidePreview": "Ocultar vista previa"
+  },
+  "billing": {
+    "pro": "PRO",
+    "proMember": "RunGo Pro",
+    "welcomeBackPro": "¡Bienvenido de nuevo, corredor Pro!"
   }
 }

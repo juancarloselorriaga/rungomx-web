@@ -25,11 +25,11 @@ export function buildAdminNavSections(
     });
   }
 
-  if (permissions.canViewStaffTools || permissions.canManageEvents) {
+  if (!permissions.canManageUsers && permissions.canViewStaffTools) {
     items.push({
-      href: '/admin/tools',
-      labelKey: 'staffTools',
-      iconName: 'FileText',
+      href: '/admin/users',
+      labelKey: 'adminUsers',
+      iconName: 'Users',
     });
   }
 

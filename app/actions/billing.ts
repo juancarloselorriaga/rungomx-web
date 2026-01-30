@@ -52,6 +52,10 @@ export const startTrialAction = withAuthenticatedUser<ActionResult<{ trialEndsAt
     return { ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' };
   }
 
+  if (authContext.isInternal) {
+    return { ok: false, error: 'Internal accounts are not eligible for trials', code: 'FORBIDDEN' };
+  }
+
   const result = await startTrialForUser({
     userId: user.id,
     isInternal: authContext.isInternal,
@@ -73,6 +77,14 @@ export const scheduleCancelAtPeriodEndAction = withAuthenticatedUser<ActionResul
     return { ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' };
   }
 
+  if (authContext.isInternal) {
+    return {
+      ok: false,
+      error: 'Internal accounts cannot manage subscriptions',
+      code: 'FORBIDDEN',
+    };
+  }
+
   const result = await scheduleCancelAtPeriodEnd({ userId: user.id });
   if (!result.ok) {
     return { ok: false, error: result.error, code: result.code };
@@ -87,6 +99,14 @@ export const resumeSubscriptionAction = withAuthenticatedUser<ActionResult<null>
   const user = authContext.user;
   if (!user) {
     return { ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' };
+  }
+
+  if (authContext.isInternal) {
+    return {
+      ok: false,
+      error: 'Internal accounts cannot manage subscriptions',
+      code: 'FORBIDDEN',
+    };
   }
 
   const result = await resumeSubscription({ userId: user.id });
@@ -121,6 +141,10 @@ export const redeemPromoCodeAction = withAuthenticatedUser<FormActionResult<Rede
   const user = authContext.user;
   if (!user) {
     return { ok: false, error: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' };
+  }
+
+  if (authContext.isInternal) {
+    return { ok: false, error: 'FORBIDDEN', message: 'FORBIDDEN' };
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -188,6 +212,12 @@ export const getProEntitlementAction = withAuthenticatedUser<ActionResult<{ isPr
   const user = authContext.user;
   if (!user) {
     return { ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' };
+  }
+
+  // Internal accounts have Pro access via bypass for feature access, but should never be treated
+  // as "Pro members" for UI/billing branding.
+  if (authContext.isInternal) {
+    return { ok: true, data: { isPro: false } };
   }
 
   const entitlement = await getProEntitlementForUser({

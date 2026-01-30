@@ -13,6 +13,7 @@ const badgeVariants = cva(
         blue: 'bg-[var(--brand-blue)]/10 text-[var(--brand-blue)]',
         green: 'bg-[var(--brand-green)]/10 text-[var(--brand-green)]',
         indigo: 'bg-[var(--brand-indigo)]/10 text-[var(--brand-indigo)]',
+        pro: 'bg-[var(--brand-gold)]/15 text-[var(--brand-gold-dark)] dark:text-[var(--brand-gold)]',
         outline: 'border border-border bg-transparent text-foreground',
         ghost: 'bg-transparent text-muted-foreground',
       },

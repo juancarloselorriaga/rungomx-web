@@ -1,6 +1,6 @@
 import { UsersTableSkeleton } from '@/components/admin/users/users-table-skeleton';
 
-export default function UsersLoading() {
+export default function AdminInternalUsersLoading() {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -24,7 +24,7 @@ export default function UsersLoading() {
       </div>
 
       <UsersTableSkeleton
-        rows={5}
+        rows={6}
         columns={{ user: true, role: true, created: true, actions: true }}
         showHeader
         minWidthClassName="min-w-[720px]"
@@ -32,3 +32,4 @@ export default function UsersLoading() {
     </div>
   );
 }
+

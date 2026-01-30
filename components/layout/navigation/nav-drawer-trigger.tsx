@@ -14,10 +14,11 @@ const NavigationDrawerContent = dynamic<NavigationDrawerContentProps>(() =>
 
 interface NavDrawerTriggerProps {
   user?: NavigationDrawerContentProps['user'];
+  isPro?: NavigationDrawerContentProps['isPro'];
   items: NavigationDrawerContentProps['items'];
 }
 
-export function NavDrawerTrigger({ user, items }: NavDrawerTriggerProps) {
+export function NavDrawerTrigger({ user, isPro, items }: NavDrawerTriggerProps) {
   const { open, setOpen } = useNavDrawer();
 
   return (
@@ -29,7 +30,7 @@ export function NavDrawerTrigger({ user, items }: NavDrawerTriggerProps) {
           </Button>
         </SheetTrigger>
         <Suspense fallback={null}>
-          <NavigationDrawerContent user={user} items={items} />
+          <NavigationDrawerContent user={user} isPro={isPro} items={items} />
         </Suspense>
       </Sheet>
     </div>

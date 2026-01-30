@@ -2,10 +2,16 @@
 
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
+import { useSession } from '@/lib/auth/client';
 import { ExternalLink, HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
-import { eventIconMap, eventNavigationSections } from './submenu-configs';
+import {
+  adminUsersIconMap,
+  adminUsersNavigationSections,
+  eventIconMap,
+  eventNavigationSections,
+} from './submenu-configs';
 import type { SubmenuFooterLink, SubmenuIconMap, SubmenuNavigationSection } from './submenu-types';
 
 type SubmenuNavigationProps = {
@@ -29,6 +35,8 @@ export function SubmenuNavigation({ submenuId, ...props }: SubmenuNavigationProp
       return <EventSubmenuNavigation {...props} />;
     case 'org-detail':
       return <OrgSubmenuNavigation />;
+    case 'admin-users':
+      return <AdminUsersSubmenuNavigation {...props} />;
     default:
       return null;
   }
@@ -93,6 +101,51 @@ function OrgSubmenuNavigation() {
   return null;
 }
 
+function AdminUsersSubmenuNavigation({
+  basePath,
+  footerLink,
+  variant = 'sidebar',
+}: Omit<SubmenuNavigationProps, 'submenuId'>) {
+  const tNav = useTranslations('navigation');
+  const pathname = usePathname();
+  const { data } = useSession();
+  const canManageUsers = Boolean(data?.permissions?.canManageUsers);
+
+  const sections: SubmenuNavigationSection[] = adminUsersNavigationSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => item.label !== 'internal' || canManageUsers),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  const sectionTitles = {
+    users: tNav('adminUsersSubmenu.sections.users'),
+    proAccess: tNav('adminUsersSubmenu.sections.proAccess'),
+  };
+
+  const itemLabels = {
+    selfSignup: tNav('adminUsersSubmenu.items.selfSignup'),
+    internal: tNav('adminUsersSubmenu.items.internal'),
+    status: tNav('adminUsersSubmenu.items.status'),
+    overrides: tNav('adminUsersSubmenu.items.overrides'),
+    promoCodes: tNav('adminUsersSubmenu.items.promoCodes'),
+    emailGrants: tNav('adminUsersSubmenu.items.emailGrants'),
+  };
+
+  return (
+    <SubmenuSectionRenderer
+      sections={sections}
+      sectionTitles={sectionTitles}
+      itemLabels={itemLabels}
+      iconMap={adminUsersIconMap}
+      basePath={basePath}
+      footerLink={footerLink}
+      variant={variant}
+      pathname={pathname}
+    />
+  );
+}
+
 /**
  * Generic submenu section renderer.
  * Renders navigation sections with items, icons, and active states.
@@ -119,6 +172,9 @@ function SubmenuSectionRenderer({
   pathname,
 }: SubmenuSectionRendererProps) {
   const isSheet = variant === 'drawer';
+  const normalizePath = (value: string) => value.replace(/\/+$/, '') || '/';
+  const normalizedPathname = normalizePath(pathname);
+  const normalizedBasePath = normalizePath(basePath);
 
   return (
     <nav
@@ -138,12 +194,15 @@ function SubmenuSectionRenderer({
             {section.items.map((item) => {
               const Icon = iconMap[item.icon] ?? HelpCircle;
               const fullPath = item.pathname || `${basePath}${item.href}`;
+              const normalizedFullPath = normalizePath(fullPath);
 
               // Check if this is the active route
               const isActive =
                 item.href === ''
-                  ? pathname === basePath || pathname.endsWith(basePath)
-                  : pathname.includes(item.href);
+                  ? normalizedPathname === normalizedBasePath ||
+                    normalizedPathname.endsWith(normalizedBasePath)
+                  : normalizedPathname === normalizedFullPath ||
+                    normalizedPathname.endsWith(normalizedFullPath);
 
               return (
                 <Link

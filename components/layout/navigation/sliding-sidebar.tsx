@@ -1,7 +1,9 @@
 'use client';
 
+import { getProEntitlementAction } from '@/app/actions/billing';
 import {
   Calendar,
+  Crown,
   FileText,
   LayoutDashboard,
   Megaphone,
@@ -10,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import { FeedbackDialog } from './feedback-dialog';
 import { NavLink } from './nav-link';
 import { SidebarBackHeader } from './sidebar-back-header';
@@ -32,6 +35,7 @@ const iconMap = {
 interface SlidingSidebarProps {
   items?: readonly NavItem<ProtectedNavIconName>[];
   sections?: readonly NavSection<ProtectedNavIconName>[];
+  isPro?: boolean;
 }
 
 /**
@@ -46,9 +50,12 @@ interface SlidingSidebarProps {
  * - Smooth CSS animations
  * - Fixed 256px width (no collapse)
  */
-export function SlidingSidebar({ items, sections }: SlidingSidebarProps) {
+export function SlidingSidebar({ items, sections, isPro }: SlidingSidebarProps) {
   const t = useTranslations('navigation');
+  const tBilling = useTranslations('common.billing');
   const { displayLevel, detectedSubmenuId, submenuContext, goToRoot } = useSlidingNav();
+  const [fetchedIsPro, setFetchedIsPro] = useState<boolean | undefined>(undefined);
+  const resolvedIsPro = isPro !== undefined ? isPro : fetchedIsPro;
 
   const resolvedSections: readonly NavSection<ProtectedNavIconName>[] =
     sections ?? (items ? [{ items }] : []);
@@ -58,6 +65,22 @@ export function SlidingSidebar({ items, sections }: SlidingSidebarProps) {
       typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/'),
     ),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (isPro !== undefined) return;
+
+    (async () => {
+      const result = await getProEntitlementAction();
+      if (cancelled) return;
+      setFetchedIsPro(result.ok ? result.data.isPro : false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPro]);
 
   if (resolvedSections.length === 0) return null;
 
@@ -105,6 +128,12 @@ export function SlidingSidebar({ items, sections }: SlidingSidebarProps) {
           </nav>
 
           <div className="sliding-nav-panel-footer px-2 py-3 space-y-1">
+            {resolvedIsPro ? (
+              <div className="flex items-center gap-3 rounded-lg px-3 py-2 bg-brand-gold/10 border border-brand-gold/25 text-brand-gold-dark dark:text-brand-gold">
+                <Crown className="size-5 flex-shrink-0" />
+                <span className="text-sm font-semibold">{tBilling('proMember')}</span>
+              </div>
+            ) : null}
             <FeedbackDialog
               collapsed={false}
               label={t('feedback')}

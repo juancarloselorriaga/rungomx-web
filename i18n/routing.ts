@@ -53,13 +53,29 @@ export const routing = defineRouting({
       es: '/admin/usuarios',
       en: '/admin/users',
     },
+    '/admin/users/internal': {
+      es: '/admin/usuarios/internos',
+      en: '/admin/users/internal',
+    },
     '/admin/users/self-signup': {
       es: '/admin/usuarios/auto-registro',
       en: '/admin/users/self-signup',
     },
-    '/admin/tools': {
-      es: '/admin/herramientas',
-      en: '/admin/tools',
+    '/admin/users/pro-access': {
+      es: '/admin/usuarios/acceso-pro',
+      en: '/admin/users/pro-access',
+    },
+    '/admin/users/pro-access/overrides': {
+      es: '/admin/usuarios/acceso-pro/overrides',
+      en: '/admin/users/pro-access/overrides',
+    },
+    '/admin/users/pro-access/promo-codes': {
+      es: '/admin/usuarios/acceso-pro/codigos-promocionales',
+      en: '/admin/users/pro-access/promo-codes',
+    },
+    '/admin/users/pro-access/email-grants': {
+      es: '/admin/usuarios/acceso-pro/asignaciones-por-correo',
+      en: '/admin/users/pro-access/email-grants',
     },
     '/dashboard': {
       es: '/tablero',

@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { submenuConfigs } from './submenu-configs';
 import type { SubmenuConfig, SubmenuContext } from './submenu-types';
 
 /**
@@ -63,30 +64,7 @@ type SlidingNavProviderProps = {
   configs?: SubmenuConfig[];
 };
 
-/**
- * Default submenu configurations
- * Add new submenus here as they're implemented
- */
-const defaultSubmenuConfigs: SubmenuConfig[] = [
-  {
-    id: 'event-detail',
-    parentItemHref: '/dashboard/events',
-    urlPattern: /^\/dashboard\/events\/([^/]+)/,
-    extractParams: (pathname) => {
-      const match = pathname.match(/^\/dashboard\/events\/([^/]+)/);
-      return match ? { eventId: match[1] } : null;
-    },
-  },
-  {
-    id: 'org-detail',
-    parentItemHref: '/dashboard/organizations',
-    urlPattern: /^\/dashboard\/organizations\/([^/]+)/,
-    extractParams: (pathname) => {
-      const match = pathname.match(/^\/dashboard\/organizations\/([^/]+)/);
-      return match ? { orgId: match[1] } : null;
-    },
-  },
-];
+const defaultSubmenuConfigs: SubmenuConfig[] = submenuConfigs;
 
 export function SlidingNavProvider({
   children,

@@ -1,6 +1,5 @@
 'use client';
 
-import { UsersSectionSubnav } from '@/components/admin/users/users-section-subnav';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -43,8 +42,6 @@ export function UsersSectionHeader({
 
         {primaryAction ? <div className="w-full sm:w-auto">{primaryAction}</div> : null}
       </div>
-
-      <UsersSectionSubnav />
     </div>
   );
 }

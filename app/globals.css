@@ -47,6 +47,8 @@
   --brand-indigo: oklch(0.427 0.149 278.3);
   --brand-green: oklch(0.624 0.174 158.1);
   --brand-green-dark: oklch(0.544 0.154 158.1);
+  --brand-gold: oklch(0.795 0.16 86); /* warm gold */
+  --brand-gold-dark: oklch(0.695 0.16 86); /* deeper gold for dark mode text */
 }
 
 .dark {
@@ -85,6 +87,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.552 0.016 285.938);
+  --brand-gold: oklch(0.795 0.16 86); /* warm gold */
+  --brand-gold-dark: oklch(0.695 0.16 86); /* deeper gold for dark mode text */
 }
 
 @theme inline {
@@ -132,6 +136,8 @@
   --color-brand-indigo: var(--brand-indigo);
   --color-brand-green: var(--brand-green);
   --color-brand-green-dark: var(--brand-green-dark);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-dark: var(--brand-gold-dark);
 }
 
 @layer base {

@@ -1,3 +1,4 @@
+import { ProAvatarWrapper } from '@/components/billing/pro-avatar-wrapper';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Link } from '@/i18n/navigation';
 import { User } from '@/lib/auth/types';
@@ -25,6 +26,7 @@ interface UserAvatarProps
   extends Omit<ComponentProps<typeof Link>, 'href'>,
     VariantProps<typeof avatarVariants> {
   user: User | null;
+  isPro?: boolean;
   className?: string;
   avatarClassName?: string;
   linkDisabled?: boolean;
@@ -32,6 +34,7 @@ interface UserAvatarProps
 
 const UserAvatar: FC<UserAvatarProps> = ({
   user,
+  isPro,
   size,
   className,
   avatarClassName,
@@ -52,13 +55,19 @@ const UserAvatar: FC<UserAvatarProps> = ({
     </Avatar>
   );
 
+  const maybeProAvatarElement = (
+    <ProAvatarWrapper isPro={isPro} size={size ?? undefined}>
+      {avatarElement}
+    </ProAvatarWrapper>
+  );
+
   if (linkDisabled) {
-    return avatarElement;
+    return maybeProAvatarElement;
   }
 
   return (
     <Link href="/settings" className="flex" {...props}>
-      {avatarElement}
+      {maybeProAvatarElement}
     </Link>
   );
 };

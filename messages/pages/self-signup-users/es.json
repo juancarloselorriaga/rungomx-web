@@ -53,6 +53,7 @@
   },
   "actions": {
     "working": "Procesando...",
+    "proAccess": "Acceso Pro",
     "deleteUser": "Eliminar usuario"
   },
   "deleteDialog": {

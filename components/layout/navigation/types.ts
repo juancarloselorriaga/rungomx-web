@@ -5,7 +5,10 @@ import type navigationMessages from '@/messages/navigation/es.json';
 import type { ComponentProps } from 'react';
 
 type NavigationMessages = typeof navigationMessages;
-export type NavigationMessageKey = keyof NavigationMessages;
+type NavigationStringKey = {
+  [K in keyof NavigationMessages]: NavigationMessages[K] extends string ? K : never;
+}[keyof NavigationMessages];
+export type NavigationMessageKey = NavigationStringKey;
 
 type LinkHref = ComponentProps<typeof Link>['href'];
 
@@ -41,5 +44,6 @@ export interface NavSection<TIcon extends NavIconName = NavIconName> {
 
 export interface NavigationDrawerContentProps {
   user?: User | null;
+  isPro?: boolean;
   items: readonly NavItem[];
 }

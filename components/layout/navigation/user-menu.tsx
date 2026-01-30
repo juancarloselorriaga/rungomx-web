@@ -1,6 +1,9 @@
 'use client';
 
+import { getProEntitlementAction } from '@/app/actions/billing';
 import UserAvatar from '@/components/auth/user-avatar';
+import { ProWelcomeToast } from '@/components/billing/pro-welcome-toast';
+import { Badge } from '@/components/common/badge';
 import { useAppTheme } from '@/components/providers/app-theme';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,22 +24,43 @@ import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
 import { Check, Languages, LogOut, Moon, Sun, User as UserIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 type ThemeOption = 'light' | 'dark';
 
-export function UserMenu({ user }: { user: User | null }) {
+export function UserMenu({ user, isPro }: { user: User | null; isPro?: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { theme, setTheme } = useAppTheme();
   const { changeLocale, currentLocale } = useLocaleChange();
+  const userId = user?.id;
+  const [fetchedIsPro, setFetchedIsPro] = useState<boolean | undefined>(undefined);
+  const resolvedIsPro = isPro !== undefined ? isPro : fetchedIsPro;
 
   const tAuth = useTranslations('auth');
   const tTheme = useTranslations('components.themeSwitcher');
   const tLocale = useTranslations('components.localeSwitcher');
+  const tBilling = useTranslations('common.billing');
 
   const displayName = user?.name || user?.email || 'Guest';
   const displayEmail = user?.email;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (isPro !== undefined) return;
+    if (!userId) return;
+
+    (async () => {
+      const result = await getProEntitlementAction();
+      if (cancelled) return;
+      setFetchedIsPro(result.ok ? result.data.isPro : false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPro, userId]);
 
   const handleSignOut = () => {
     startTransition(async () => {
@@ -55,18 +79,32 @@ export function UserMenu({ user }: { user: User | null }) {
       size="icon"
       aria-label={displayName}
     >
-      <UserAvatar user={user} size="sm" linkDisabled className="h-8 w-8" />
+      <UserAvatar
+        user={user}
+        size="sm"
+        isPro={resolvedIsPro}
+        linkDisabled
+        className="h-8 w-8"
+      />
     </Button>
   );
 
   return (
     <DropdownMenu>
+      <ProWelcomeToast isPro={Boolean(resolvedIsPro)} />
       <DropdownMenuTrigger asChild>{triggerAvatar}</DropdownMenuTrigger>
       <DropdownMenuContent className="w-64" align="end">
         <DropdownMenuLabel className="flex items-center gap-3">
-          <UserAvatar user={user} linkDisabled className="h-10 w-10" />
+          <UserAvatar user={user} isPro={resolvedIsPro} linkDisabled className="h-10 w-10" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">{displayName}</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-semibold">{displayName}</p>
+              {user && resolvedIsPro ? (
+                <Badge variant="pro" size="sm" className="flex-shrink-0">
+                  {tBilling('pro')}
+                </Badge>
+              ) : null}
+            </div>
             {displayEmail ? (
               <p className="truncate text-xs text-muted-foreground">{displayEmail}</p>
             ) : null}

@@ -23,5 +23,10 @@
   },
   "/settings/billing": { "selection": "protected", "pages": ["settings"] },
   "/admin": { "selection": "public", "pages": ["dashboard"] },
-  "/admin/tools": { "selection": "public", "pages": ["dashboard"] }
+  "/admin/users/internal": { "selection": "public", "pages": ["adminUsers"] },
+  "/admin/users/self-signup": { "selection": "public", "pages": ["selfSignupUsers"] },
+  "/admin/users/pro-access": { "selection": "public", "pages": ["adminProAccess"] },
+  "/admin/users/pro-access/overrides": { "selection": "public", "pages": ["adminProAccess"] },
+  "/admin/users/pro-access/promo-codes": { "selection": "public", "pages": ["adminProAccess"] },
+  "/admin/users/pro-access/email-grants": { "selection": "public", "pages": ["adminProAccess"] }
 }

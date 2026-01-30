@@ -8,10 +8,11 @@ import type { NavigationDrawerContentProps } from '@/components/layout/navigatio
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Link, usePathname } from '@/i18n/navigation';
+import { getProEntitlementAction } from '@/app/actions/billing';
 import { useSession } from '@/lib/auth/client';
-import { Megaphone } from 'lucide-react';
+import { Crown, Megaphone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Suspense, useEffect, useMemo } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavDrawer } from './nav-drawer-context';
 import { SidebarBackHeader } from './sidebar-back-header';
 import { useSlidingNavOptional } from './sliding-nav-context';
@@ -19,16 +20,39 @@ import { SubmenuNavigation } from './submenu-navigation';
 
 export function NavigationDrawerContent({
   user: initialUser,
+  isPro: initialIsPro,
   items,
 }: NavigationDrawerContentProps) {
   const pathname = usePathname();
   const t = useTranslations('common');
+  const tBilling = useTranslations('common.billing');
   const navigationTranslations = useTranslations('navigation');
   const { data } = useSession();
   const { open, setOpen } = useNavDrawer();
   const slidingNav = useSlidingNavOptional();
 
   const resolvedUser = useMemo(() => data?.user ?? initialUser ?? null, [data?.user, initialUser]);
+  const resolvedUserId = resolvedUser?.id;
+  const [fetchedIsPro, setFetchedIsPro] = useState<boolean | undefined>(undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (initialIsPro !== undefined) return;
+    if (!resolvedUserId) return;
+
+    (async () => {
+      const result = await getProEntitlementAction();
+      if (cancelled) return;
+      setFetchedIsPro(result.ok ? result.data.isPro : false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialIsPro, resolvedUserId]);
+
+  const resolvedIsPro = initialIsPro !== undefined ? initialIsPro : fetchedIsPro;
 
   // Get sliding nav state (falls back to 'root' if no context)
   const displayLevel = slidingNav?.displayLevel ?? 'root';
@@ -103,6 +127,14 @@ export function NavigationDrawerContent({
 
         {/* Footer - always visible */}
         <div className="border-t p-4 space-y-4 flex-shrink-0">
+          {resolvedUser && resolvedIsPro ? (
+            <div className="flex items-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/15 px-3 py-1 text-xs font-semibold text-brand-gold-dark dark:text-brand-gold">
+                <Crown className="size-4" />
+                <span>{tBilling('proMember')}</span>
+              </div>
+            </div>
+          ) : null}
           <div className="flex w-full items-center justify-between">
             <AuthControlsCompact initialUser={resolvedUser} />
             <div className="flex items-center gap-2">

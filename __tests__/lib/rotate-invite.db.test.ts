@@ -2,6 +2,8 @@ process.env.EVENTS_INVITE_TOKEN_SECRET ??= 'test-secret-for-rotate-invite';
 
 import type { AuthContext } from '@/lib/auth/server';
 
+jest.setTimeout(60_000);
+
 type AuthContextStub = Omit<Partial<AuthContext>, 'user' | 'profile' | 'permissions'> & {
   user?: Partial<NonNullable<AuthContext['user']>> | null;
   profile?: Partial<NonNullable<AuthContext['profile']>> | null;

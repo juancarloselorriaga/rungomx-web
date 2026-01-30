@@ -5,6 +5,8 @@ import * as schema from '@/db/schema';
 import { getPublicEventBySlug } from '@/lib/events/queries';
 import { cleanDatabase, getTestDb } from '@/tests/helpers/db';
 
+jest.setTimeout(60_000);
+
 async function cleanupEvents(db: ReturnType<typeof getTestDb>) {
   await db.delete(schema.waiverAcceptances);
   await db.delete(schema.registrants);

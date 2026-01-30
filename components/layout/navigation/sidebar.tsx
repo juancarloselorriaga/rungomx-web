@@ -1,9 +1,12 @@
 'use client';
 
+import { getProEntitlementAction } from '@/app/actions/billing';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
   Calendar,
+  Crown,
   FileText,
   LayoutDashboard,
   Megaphone,
@@ -14,7 +17,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FeedbackDialog } from './feedback-dialog';
 import { navActionContainer, NavActionContent } from './nav-action';
 import { NavLink } from './nav-link';
@@ -35,11 +38,15 @@ const iconMap = {
 interface SidebarProps {
   items?: readonly NavItem<ProtectedNavIconName>[];
   sections?: readonly NavSection<ProtectedNavIconName>[];
+  isPro?: boolean;
 }
 
-export function Sidebar({ items, sections }: SidebarProps) {
+export function Sidebar({ items, sections, isPro: initialIsPro }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const t = useTranslations('navigation');
+  const tBilling = useTranslations('common.billing');
+  const [fetchedIsPro, setFetchedIsPro] = useState<boolean | undefined>(undefined);
+  const isPro = initialIsPro !== undefined ? initialIsPro : fetchedIsPro;
   const resolvedSections: readonly NavSection<ProtectedNavIconName>[] =
     sections ?? (items ? [{ items }] : []);
   const allItemHrefs = resolvedSections.flatMap((section) =>
@@ -47,6 +54,22 @@ export function Sidebar({ items, sections }: SidebarProps) {
       typeof item.href === 'string' ? item.href : (item.href.pathname ?? '/'),
     ),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (initialIsPro !== undefined) return;
+
+    (async () => {
+      const result = await getProEntitlementAction();
+      if (cancelled) return;
+      setFetchedIsPro(result.ok ? result.data.isPro : false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialIsPro]);
 
   if (resolvedSections.length === 0) return null;
 
@@ -115,6 +138,48 @@ export function Sidebar({ items, sections }: SidebarProps) {
         </nav>
 
         <div className="mt-auto border-t px-2 py-3 space-y-1">
+          {isPro ? (
+            collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      navActionContainer(),
+                      'w-full flex justify-center cursor-default bg-brand-gold/10 border border-brand-gold/25 text-brand-gold-dark dark:text-brand-gold',
+                    )}
+                    tabIndex={0}
+                    aria-label={tBilling('proMember')}
+                  >
+                    <NavActionContent
+                      icon={Crown}
+                      label={tBilling('proMember')}
+                      iconSize={ICON_SIZE}
+                      collapsed
+                      labelDelay="0ms"
+                      iconClassName="text-brand-gold-dark dark:text-brand-gold"
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right">{tBilling('proMember')}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <div
+                className={cn(
+                  navActionContainer(),
+                  'w-full flex justify-start cursor-default bg-brand-gold/10 border border-brand-gold/25 text-brand-gold-dark dark:text-brand-gold',
+                )}
+              >
+                <NavActionContent
+                  icon={Crown}
+                  label={tBilling('proMember')}
+                  iconSize={ICON_SIZE}
+                  collapsed={false}
+                  iconClassName="text-brand-gold-dark dark:text-brand-gold"
+                  labelClassName="font-semibold"
+                />
+              </div>
+            )
+          ) : null}
           <FeedbackDialog
             collapsed={collapsed}
             label={t('feedback')}

@@ -6,9 +6,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
+import { useSession } from '@/lib/auth/client';
+import { BadgeCheck, Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -28,6 +31,8 @@ export function SelfSignupUsersTableActions({
   onDeletedAction,
 }: SelfSignupUsersTableActionsProps) {
   const t = useTranslations('pages.selfSignupUsers.actions');
+  const { data } = useSession();
+  const canManageUsers = Boolean(data?.permissions?.canManageUsers);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const isSelf = currentUserId === userId;
@@ -51,33 +56,51 @@ export function SelfSignupUsersTableActions({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem
-            onSelect={(event) => {
-              event.preventDefault();
-              if (isSelf) return;
-              setDeleteOpen(true);
-            }}
-            disabled={isSelf || isPending}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="size-4" />
-            {t('deleteUser')}
+          <DropdownMenuItem asChild>
+            <Link
+              href={{
+                pathname: '/admin/users/pro-access',
+                query: { email: userEmail },
+              }}
+            >
+              <BadgeCheck className="size-4" />
+              {t('proAccess')}
+            </Link>
           </DropdownMenuItem>
+          {canManageUsers ? (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  if (isSelf) return;
+                  setDeleteOpen(true);
+                }}
+                disabled={isSelf || isPending}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="size-4" />
+                {t('deleteUser')}
+              </DropdownMenuItem>
+            </>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <UserDeleteDialog
-        open={deleteOpen}
-        onOpenChangeAction={setDeleteOpen}
-        userId={userId}
-        userName={userName}
-        userEmail={userEmail}
-        translationNamespace="pages.selfSignupUsers.deleteDialog"
-        onDeletedAction={onDeletedAction}
-        onPendingChangeAction={(pending) => {
-          setIsPending(pending);
-        }}
-      />
+      {canManageUsers ? (
+        <UserDeleteDialog
+          open={deleteOpen}
+          onOpenChangeAction={setDeleteOpen}
+          userId={userId}
+          userName={userName}
+          userEmail={userEmail}
+          translationNamespace="pages.selfSignupUsers.deleteDialog"
+          onDeletedAction={onDeletedAction}
+          onPendingChangeAction={(pending) => {
+            setIsPending(pending);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
