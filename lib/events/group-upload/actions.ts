@@ -839,6 +839,14 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
       authContext,
     });
 
+    if (access.batch.status === 'uploaded') {
+      return {
+        ok: false,
+        error: 'Upload a roster file before reserving invites',
+        code: 'BATCH_NOT_UPLOADED',
+      };
+    }
+
     if (!access.batch.distanceId) {
       return { ok: false, error: 'Batch distance not set', code: 'INVALID_BATCH' };
     }
@@ -883,6 +891,17 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
     const inviteLocale =
       edition.primaryLocale || edition.series.primaryLocale || validated.data.locale;
 
+    let maxInvitesRemaining: number | null = null;
+    if (access.uploadLink.maxInvites !== null) {
+      const [{ count: inviteCount }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(registrationInvites)
+        .where(eq(registrationInvites.uploadLinkId, access.uploadLink.id));
+
+      const maxInvites = access.uploadLink.maxInvites ?? 0;
+      maxInvitesRemaining = Math.max(maxInvites - (inviteCount ?? 0), 0);
+    }
+
     const rowsToProcess = await db.query.groupRegistrationBatchRows.findMany({
       where: and(
         eq(groupRegistrationBatchRows.batchId, access.batch.id),
@@ -891,7 +910,22 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
       orderBy: (table, { asc }) => [asc(table.rowIndex)],
     });
 
-    const eligibleRows = rowsToProcess.filter((row) => (row.validationErrorsJson ?? []).length === 0);
+    let inviteLimitErrorCount = 0;
+    let eligibleRows = rowsToProcess.filter((row) => (row.validationErrorsJson ?? []).length === 0);
+    if (maxInvitesRemaining !== null) {
+      const overflowRows =
+        maxInvitesRemaining <= 0 ? eligibleRows : eligibleRows.slice(maxInvitesRemaining);
+
+      if (overflowRows.length > 0) {
+        inviteLimitErrorCount = overflowRows.length;
+        await db
+          .update(groupRegistrationBatchRows)
+          .set({ validationErrorsJson: ['INVITE_LIMIT_REACHED'] })
+          .where(inArray(groupRegistrationBatchRows.id, overflowRows.map((row) => row.id)));
+      }
+
+      eligibleRows = maxInvitesRemaining <= 0 ? [] : eligibleRows.slice(0, maxInvitesRemaining);
+    }
     const targetRows = eligibleRows.slice(0, limit);
 
     const emails = Array.from(
@@ -921,7 +955,7 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
     const userByEmail = new Map(usersByEmail.map((u) => [u.email.toLowerCase(), u]));
 
     let succeeded = 0;
-    let failed = 0;
+    let failed = inviteLimitErrorCount;
 
     for (const row of targetRows) {
       const raw = row.rawJson as Record<string, unknown>;
@@ -1210,7 +1244,7 @@ export const reserveInvitesForBatch = withAuthenticatedUser<
     return {
       ok: true,
       data: {
-        processed: targetRows.length,
+        processed: targetRows.length + inviteLimitErrorCount,
         succeeded,
         failed,
         remaining: Math.max(remaining ?? 0, 0),

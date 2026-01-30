@@ -35,7 +35,7 @@ export async function getBatchForCoordinatorOrThrow(params: {
     throw new BatchAccessError('LINK_INVALID', 'Upload link is not active');
   }
 
-  if (requireActiveLink && linkResult.status !== 'ACTIVE') {
+  if (requireActiveLink && !['ACTIVE', 'MAXED_OUT'].includes(linkResult.status)) {
     throw new BatchAccessError('LINK_INVALID', 'Upload link is not active');
   }
 
