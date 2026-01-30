@@ -1,11 +1,17 @@
 'use server';
 
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, or, sql } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { eventDistances, eventEditions, registrationGroupMembers, registrationGroups } from '@/db/schema';
+import {
+  eventDistances,
+  eventEditions,
+  registrationGroupMembers,
+  registrationGroups,
+  registrations,
+} from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { checkRateLimit } from '@/lib/rate-limit';
@@ -348,17 +354,50 @@ export const leaveRegistrationGroup = withAuthenticatedUser<ActionResult>({
   const now = new Date();
   const requestContext = await getRequestContext(await headers());
 
-  await db.transaction(async (tx) => {
-    await tx
-      .update(registrationGroupMembers)
-      .set({ leftAt: now })
-      .where(
-        and(
-          eq(registrationGroupMembers.groupId, group.id),
-          eq(registrationGroupMembers.userId, authContext.user.id),
-          isNull(registrationGroupMembers.leftAt),
+  return db.transaction(async (tx): Promise<ActionResult> => {
+    const membership = await tx.query.registrationGroupMembers.findFirst({
+      where: and(
+        eq(registrationGroupMembers.groupId, group.id),
+        eq(registrationGroupMembers.userId, authContext.user.id),
+        isNull(registrationGroupMembers.leftAt),
+      ),
+      columns: { id: true },
+    });
+
+    // Idempotent: if the user already left (or never joined), treat it as success.
+    if (!membership) {
+      return { ok: true, data: undefined };
+    }
+
+    const activeRegistration = await tx.query.registrations.findFirst({
+      where: and(
+        eq(registrations.buyerUserId, authContext.user.id),
+        eq(registrations.editionId, group.editionId),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+            ),
+            gt(registrations.expiresAt, now),
+          ),
         ),
-      );
+      ),
+      columns: { id: true },
+    });
+
+    if (activeRegistration) {
+      return {
+        ok: false,
+        error: 'Cannot leave a group after starting registration',
+        code: 'MEMBER_HAS_ACTIVE_REGISTRATION',
+      };
+    }
+
+    await tx.update(registrationGroupMembers).set({ leftAt: now }).where(eq(registrationGroupMembers.id, membership.id));
 
     try {
       await createAuditLog(
@@ -376,9 +415,9 @@ export const leaveRegistrationGroup = withAuthenticatedUser<ActionResult>({
     } catch (error) {
       console.warn('[registration-groups] Failed to write audit log:', error);
     }
-  });
 
-  return { ok: true, data: undefined };
+    return { ok: true, data: undefined };
+  });
 });
 
 const removeMemberSchema = z.object({
@@ -419,17 +458,53 @@ export const removeRegistrationGroupMember = withAuthenticatedUser<ActionResult>
   const now = new Date();
   const requestContext = await getRequestContext(await headers());
 
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx): Promise<ActionResult> => {
+    const membership = await tx.query.registrationGroupMembers.findFirst({
+      where: and(
+        eq(registrationGroupMembers.groupId, group.id),
+        eq(registrationGroupMembers.userId, memberUserId),
+        isNull(registrationGroupMembers.leftAt),
+      ),
+      columns: { id: true },
+    });
+
+    // Keep this action idempotent: if the user isn't currently an active member, treat it as already removed.
+    if (!membership) {
+      return { ok: true, data: undefined };
+    }
+
+    const activeRegistration = await tx.query.registrations.findFirst({
+      where: and(
+        eq(registrations.buyerUserId, memberUserId),
+        eq(registrations.editionId, group.editionId),
+        isNull(registrations.deletedAt),
+        or(
+          eq(registrations.status, 'confirmed'),
+          and(
+            or(
+              eq(registrations.status, 'started'),
+              eq(registrations.status, 'submitted'),
+              eq(registrations.status, 'payment_pending'),
+            ),
+            gt(registrations.expiresAt, now),
+          ),
+        ),
+      ),
+      columns: { id: true },
+    });
+
+    if (activeRegistration) {
+      return {
+        ok: false,
+        error: 'Cannot remove a member who has already started registration',
+        code: 'MEMBER_HAS_ACTIVE_REGISTRATION',
+      };
+    }
+
     await tx
       .update(registrationGroupMembers)
       .set({ leftAt: now })
-      .where(
-        and(
-          eq(registrationGroupMembers.groupId, group.id),
-          eq(registrationGroupMembers.userId, memberUserId),
-          isNull(registrationGroupMembers.leftAt),
-        ),
-      );
+      .where(eq(registrationGroupMembers.id, membership.id));
 
     try {
       await createAuditLog(
@@ -447,7 +522,7 @@ export const removeRegistrationGroupMember = withAuthenticatedUser<ActionResult>
     } catch (error) {
       console.warn('[registration-groups] Failed to write audit log:', error);
     }
-  });
 
-  return { ok: true, data: undefined };
+    return { ok: true, data: undefined };
+  });
 });

@@ -492,7 +492,7 @@ export function GroupLinkPage({
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemoveMember(member.userId)}
-                          disabled={isPending && removingUserId === member.userId}
+                          disabled={Boolean(reg) || (isPending && removingUserId === member.userId)}
                         >
                           {isPending && removingUserId === member.userId ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
