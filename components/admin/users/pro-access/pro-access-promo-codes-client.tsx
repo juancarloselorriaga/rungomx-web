@@ -218,25 +218,15 @@ export function ProAccessPromoCodesClient() {
           {tPage('sectionLabel')}
         </p>
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold leading-tight">{tPage('title')}</h1>
-          <p className="text-muted-foreground">{tPage('description')}</p>
-        </div>
-      </div>
-
-      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('promotion.sectionLabel')}
-          </p>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold">{t('promotion.title')}</h2>
+            <h1 className="text-3xl font-bold leading-tight">{tPage('title')}</h1>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-muted-foreground"
+                  className="h-8 w-8 text-muted-foreground"
                   aria-label={t('promotion.info.triggerLabel')}
                 >
                   <Info className="h-4 w-4" />
@@ -254,6 +244,16 @@ export function ProAccessPromoCodesClient() {
               </PopoverContent>
             </Popover>
           </div>
+          <p className="text-muted-foreground">{tPage('description')}</p>
+        </div>
+      </div>
+
+      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('promotion.sectionLabel')}
+          </p>
+          <h2 className="text-lg font-semibold">{t('promotion.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('promotion.description')}</p>
         </div>
 
