@@ -22,9 +22,11 @@ export type BillingEventType =
   | 'override_extended'
   | 'override_revoked'
   | 'promotion_created'
+  | 'promotion_enabled'
   | 'promotion_disabled'
   | 'promotion_redeemed'
   | 'pending_grant_created'
+  | 'pending_grant_enabled'
   | 'pending_grant_disabled'
   | 'pending_grant_claimed';
 

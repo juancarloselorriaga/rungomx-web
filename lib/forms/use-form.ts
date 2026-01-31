@@ -49,14 +49,20 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
    * Handle form submission
    */
   const handleSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
+    (event: React.FormEvent<HTMLFormElement>, overrideValues?: TFieldValues) => {
       event.preventDefault();
       setError(null);
       setErrors({});
 
+      const submissionValues = overrideValues ?? values;
+
+      if (overrideValues) {
+        setValues(overrideValues);
+      }
+
       startTransition(async () => {
         try {
-          const result = await onSubmit(values);
+          const result = await onSubmit(submissionValues);
 
           if (!result.ok) {
             if (result.error === 'INVALID_INPUT' && 'fieldErrors' in result && result.fieldErrors) {
@@ -64,7 +70,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
               const newErrors: FieldErrors<TFieldValues> = {};
 
               Object.entries(result.fieldErrors).forEach(([field, messages]) => {
-                if (field in values) {
+                if (field in submissionValues) {
                   // Take first error message for each field
                   newErrors[field as keyof TFieldValues] = (messages as string[])[0] || null;
                 }

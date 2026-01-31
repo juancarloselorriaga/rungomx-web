@@ -5,22 +5,37 @@ import {
   grantOverrideAction,
   lookupBillingUserAction,
   revokeOverrideAction,
+  searchUserEmailOptionsAction,
 } from '@/app/actions/billing-admin';
 import { Badge } from '@/components/common/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
+import { SearchablePicker } from '@/components/ui/searchable-picker';
 import { Spinner } from '@/components/ui/spinner';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { SerializableBillingStatus } from '@/lib/billing/serialization';
 import { cn } from '@/lib/utils';
 import { Search, ShieldCheck } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type BillingUserSummary = {
+  serverTimeMs: number;
   user: {
     id: string;
     name: string | null;
@@ -38,14 +53,15 @@ type LookupFormValues = {
 };
 
 type OverrideFormValues = {
-  userId: string;
   reason: string;
+  grantType: 'duration' | 'until';
   grantDurationDays: string;
   grantFixedEndsAt: string;
 };
 
-type RevokeOverrideFormValues = {
-  overrideId: string;
+type AdminOverrideState = {
+  active: { id: string; endsAt: Date } | null;
+  scheduled: { id: string; startsAt: Date } | null;
 };
 
 function toOptionalNumber(value: string) {
@@ -59,14 +75,22 @@ export function ProAccessOverridesClient() {
   const tPage = useTranslations('pages.adminProAccess.page.overrides');
   const t = useTranslations('pages.adminProAccess.billing');
   const tCommon = useTranslations('common');
+  const format = useFormatter();
   const locale = useLocale();
   const searchParams = useSearchParams();
 
   const initialEmail = useMemo(() => (searchParams?.get('email') ?? '').trim(), [searchParams]);
 
   const [lookupResult, setLookupResult] = useState<BillingUserSummary | null>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [latestOverrideId, setLatestOverrideId] = useState<string | null>(null);
+  const [referenceTimeMs, setReferenceTimeMs] = useState(0);
+  const hasAutoSubmitted = useRef(false);
+  const [isRevoking, setIsRevoking] = useState(false);
+
+  const formatUtc = (value: Date | null) => {
+    if (!value) return t('status.values.none');
+    return format.dateTime(value, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
+  };
 
   const lookupForm = useForm<LookupFormValues, BillingUserSummary>({
     defaultValues: { email: initialEmail },
@@ -96,130 +120,151 @@ export function ProAccessOverridesClient() {
       return result;
     },
     onSuccess: (data) => {
+      setReferenceTimeMs(data.serverTimeMs);
       setLookupResult(data);
-      setSelectedUserId(data.user.id);
       toast.success(t('lookup.success'));
     },
   });
 
-  const grantForm = useForm<OverrideFormValues, { overrideId?: string }>({
-    defaultValues: {
-      userId: '',
-      reason: '',
-      grantDurationDays: '',
-      grantFixedEndsAt: '',
-    },
-    onSubmit: async (values) => {
-      const payload = {
-        userId: values.userId.trim(),
-        reason: values.reason.trim(),
-        grantDurationDays: toOptionalNumber(values.grantDurationDays),
-        grantFixedEndsAt: values.grantFixedEndsAt ? values.grantFixedEndsAt : null,
-      };
+  const emailField = lookupForm.register('email');
 
-      const result = await grantOverrideAction(payload);
-      if (!result.ok) {
-        const message =
-          result.error === 'UNAUTHENTICATED'
-            ? t('override.errors.unauthenticated')
-            : result.error === 'FORBIDDEN'
-              ? t('override.errors.forbidden')
-              : result.error === 'INVALID_INPUT'
-                ? t('override.errors.invalidInput')
-                : t('override.errors.generic');
-        return { ok: false, error: result.error, message };
-      }
+  const loadUserEmailOptions = useCallback(async (query: string) => {
+    const result = await searchUserEmailOptionsAction({ query });
+    if (!result.ok) return [];
 
-      return result;
-    },
-    onSuccess: (data) => {
-      setLatestOverrideId(data.overrideId ?? null);
-      toast.success(t('override.success.granted'));
-      grantForm.reset();
-      if (selectedUserId) {
-        grantForm.setFieldValue('userId', selectedUserId);
-      }
-    },
-  });
-
-  const extendForm = useForm<OverrideFormValues, { overrideId?: string }>({
-    defaultValues: {
-      userId: '',
-      reason: '',
-      grantDurationDays: '',
-      grantFixedEndsAt: '',
-    },
-    onSubmit: async (values) => {
-      const payload = {
-        userId: values.userId.trim(),
-        reason: values.reason.trim(),
-        grantDurationDays: toOptionalNumber(values.grantDurationDays),
-        grantFixedEndsAt: values.grantFixedEndsAt ? values.grantFixedEndsAt : null,
-      };
-
-      const result = await extendOverrideAction(payload);
-      if (!result.ok) {
-        const message =
-          result.error === 'UNAUTHENTICATED'
-            ? t('override.errors.unauthenticated')
-            : result.error === 'FORBIDDEN'
-              ? t('override.errors.forbidden')
-              : result.error === 'INVALID_INPUT'
-                ? t('override.errors.invalidInput')
-                : t('override.errors.generic');
-        return { ok: false, error: result.error, message };
-      }
-
-      return result;
-    },
-    onSuccess: (data) => {
-      setLatestOverrideId(data.overrideId ?? null);
-      toast.success(t('override.success.extended'));
-      extendForm.reset();
-      if (selectedUserId) {
-        extendForm.setFieldValue('userId', selectedUserId);
-      }
-    },
-  });
-
-  const revokeForm = useForm<RevokeOverrideFormValues, { overrideId: string }>({
-    defaultValues: { overrideId: '' },
-    onSubmit: async (values) => {
-      const result = await revokeOverrideAction({ overrideId: values.overrideId.trim() });
-      if (!result.ok) {
-        const message =
-          result.error === 'UNAUTHENTICATED'
-            ? t('override.errors.unauthenticated')
-            : result.error === 'FORBIDDEN'
-              ? t('override.errors.forbidden')
-              : result.error === 'INVALID_INPUT'
-                ? t('override.errors.invalidInput')
-                : t('override.errors.generic');
-        return { ok: false, error: result.error, message };
-      }
-      return result;
-    },
-    onSuccess: (data) => {
-      setLatestOverrideId(data.overrideId);
-      toast.success(t('override.success.revoked'));
-      revokeForm.reset();
-    },
-  });
-
-  const grantUserIdValue = grantForm.values.userId;
-  const extendUserIdValue = extendForm.values.userId;
-  const setGrantFieldValue = grantForm.setFieldValue;
-  const setExtendFieldValue = extendForm.setFieldValue;
+    return result.data.options.map((option) => ({
+      value: option.email,
+      label: option.email,
+      description: option.name,
+    }));
+  }, []);
 
   useEffect(() => {
-    if (!selectedUserId) return;
-    if (!grantUserIdValue) {
-      setGrantFieldValue('userId', selectedUserId);
+    if (!initialEmail) return;
+    if (hasAutoSubmitted.current) return;
+    hasAutoSubmitted.current = true;
+    lookupForm.handleSubmit({ preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>);
+  }, [initialEmail, lookupForm]);
+
+  const overrideMode = lookupResult?.status.isPro ? 'extend' : 'grant';
+  const overridesDisabled = Boolean(lookupResult?.user.isInternal);
+
+  const adminOverrideState: AdminOverrideState = useMemo(() => {
+    if (!lookupResult) return { active: null, scheduled: null };
+
+    const now = referenceTimeMs;
+    const overrides = lookupResult.status.sources
+      .filter((source) => source.source === 'admin_override')
+      .map((source) => ({
+        id: source.sourceId ?? null,
+        startsAt: new Date(source.startsAt),
+        endsAt: new Date(source.endsAt),
+      }))
+      .filter((source) => Boolean(source.id)) as Array<{ id: string; startsAt: Date; endsAt: Date }>;
+
+    const active = overrides
+      .filter((override) => override.startsAt.getTime() <= now && now < override.endsAt.getTime())
+      .sort((a, b) => b.endsAt.getTime() - a.endsAt.getTime())[0];
+
+    const scheduled = overrides
+      .filter((override) => override.startsAt.getTime() > now)
+      .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())[0];
+
+    return {
+      active: active ? { id: active.id, endsAt: active.endsAt } : null,
+      scheduled: scheduled ? { id: scheduled.id, startsAt: scheduled.startsAt } : null,
+    };
+  }, [lookupResult, referenceTimeMs]);
+
+  const refreshLookup = async () => {
+    const email = lookupForm.values.email.trim();
+    if (!email) return;
+
+    const result = await lookupBillingUserAction({ email });
+    if (!result.ok) return;
+
+    setReferenceTimeMs(result.data.serverTimeMs);
+    setLookupResult(result.data);
+  };
+
+  const overrideForm = useForm<OverrideFormValues, { overrideId?: string }>({
+    defaultValues: {
+      reason: '',
+      grantType: 'duration',
+      grantDurationDays: '',
+      grantFixedEndsAt: '',
+    },
+    onSubmit: async (values) => {
+      if (!lookupResult) {
+        return { ok: false, error: 'INVALID_INPUT', message: t('override.errors.generic') };
+      }
+      if (lookupResult.user.isInternal) {
+        return { ok: false, error: 'INVALID_INPUT', message: t('override.errors.internalUser') };
+      }
+
+      const payload = {
+        userId: lookupResult.user.id,
+        reason: values.reason.trim(),
+        grantDurationDays:
+          values.grantType === 'duration' ? toOptionalNumber(values.grantDurationDays) : null,
+        grantFixedEndsAt:
+          values.grantType === 'until' && values.grantFixedEndsAt ? values.grantFixedEndsAt : null,
+      };
+
+      const result =
+        overrideMode === 'extend'
+          ? await extendOverrideAction(payload)
+          : await grantOverrideAction(payload);
+      if (!result.ok) {
+        const message =
+          result.error === 'UNAUTHENTICATED'
+            ? t('override.errors.unauthenticated')
+            : result.error === 'FORBIDDEN'
+              ? t('override.errors.forbidden')
+              : result.error === 'INVALID_INPUT'
+                ? t('override.errors.invalidInput')
+                : t('override.errors.generic');
+        return { ok: false, error: result.error, message };
+      }
+
+      return result;
+    },
+    onSuccess: (data) => {
+      setLatestOverrideId(data.overrideId ?? null);
+      toast.success(
+        overrideMode === 'extend' ? t('override.success.extended') : t('override.success.granted'),
+      );
+      overrideForm.reset();
+      overrideForm.setFieldValue('grantType', 'duration');
+      void refreshLookup();
+    },
+  });
+
+  const handleRevokeActiveOverride = async () => {
+    if (!adminOverrideState.active) return;
+    if (lookupResult?.user.isInternal) return;
+    setIsRevoking(true);
+
+    const result = await revokeOverrideAction({ overrideId: adminOverrideState.active.id });
+    if (!result.ok) {
+      const message =
+        result.error === 'UNAUTHENTICATED'
+          ? t('override.errors.unauthenticated')
+          : result.error === 'FORBIDDEN'
+            ? t('override.errors.forbidden')
+            : result.error === 'INVALID_INPUT'
+              ? t('override.errors.invalidInput')
+              : t('override.errors.generic');
+      toast.error(message);
+      setIsRevoking(false);
+      return;
     }
-    if (!extendUserIdValue) {
-      setExtendFieldValue('userId', selectedUserId);
-    }
-  }, [selectedUserId, grantUserIdValue, extendUserIdValue, setGrantFieldValue, setExtendFieldValue]);
+
+    toast.success(t('override.success.revoked'));
+    setLatestOverrideId(result.data.overrideId);
+    setIsRevoking(false);
+    await refreshLookup();
+  };
 
   return (
     <div className="space-y-6">
@@ -245,16 +290,24 @@ export function ProAccessOverridesClient() {
         <Form form={lookupForm} className="space-y-4 border-t border-border/70 pt-4">
           <FormError />
           <FormField label={t('lookup.fields.email')} required error={lookupForm.errors.email}>
-            <input
-              type="email"
-              autoComplete="off"
-              className={cn(
-                'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                lookupForm.errors.email && 'border-destructive focus-visible:border-destructive',
-              )}
-              {...lookupForm.register('email')}
+            <SearchablePicker
+              value={emailField.value}
+              onChangeAction={emailField.onChange}
+              onSelectOptionAction={(option) => {
+                if (lookupForm.isSubmitting) return;
+                lookupForm.handleSubmit(
+                  { preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>,
+                  { ...lookupForm.values, email: option.value },
+                );
+              }}
+              loadOptionsAction={loadUserEmailOptions}
+              inputType="email"
               disabled={lookupForm.isSubmitting}
+              invalid={Boolean(lookupForm.errors.email)}
+              name={emailField.name as string}
+              loadingLabel={tCommon('loading')}
+              emptyLabel={tCommon('searchPicker.noResults')}
+              errorLabel={tCommon('searchPicker.loadFailed')}
             />
           </FormField>
           <div className="flex items-center justify-end gap-3 border-t border-border/70 pt-4">
@@ -307,121 +360,189 @@ export function ProAccessOverridesClient() {
           </div>
         ) : null}
 
-        <div className="grid gap-6 border-t border-border/70 pt-4 lg:grid-cols-3">
-          <Form form={grantForm} className="space-y-4">
-            <FormError />
-            <p className="text-sm font-semibold text-foreground">{t('override.grant.title')}</p>
-            <FormField label={t('override.fields.userId')} required error={grantForm.errors.userId}>
-              <input
-                type="text"
-                className={cn(
-                  'h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  grantForm.errors.userId && 'border-destructive focus-visible:border-destructive',
-                )}
-                {...grantForm.register('userId')}
-              />
-            </FormField>
-            <FormField label={t('override.fields.reason')} required error={grantForm.errors.reason}>
-              <textarea
-                rows={3}
-                className={cn(
-                  'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  grantForm.errors.reason && 'border-destructive focus-visible:border-destructive',
-                )}
-                {...grantForm.register('reason')}
-              />
-            </FormField>
-            <FormField label={t('override.fields.duration')} error={grantForm.errors.grantDurationDays}>
-              <input
-                type="number"
-                min="1"
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                {...grantForm.register('grantDurationDays')}
-              />
-            </FormField>
-            <FormField label={t('override.fields.fixedEndsAt')} error={grantForm.errors.grantFixedEndsAt}>
-              <DateTimePicker
-                value={grantForm.values.grantFixedEndsAt}
-                onChangeAction={(value) => grantForm.setFieldValue('grantFixedEndsAt', value)}
-                locale={locale}
-                clearLabel={tCommon('clear')}
-              />
-            </FormField>
-            <Button type="submit" disabled={grantForm.isSubmitting}>
-              {grantForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : <ShieldCheck className="size-4" />}
-              {t('override.grant.action')}
-            </Button>
-          </Form>
+        {lookupResult ? (
+          <div className="space-y-6 border-t border-border/70 pt-4">
+            <div className="rounded-lg border bg-background/60 p-4 text-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t('status.labels.proUntil')}
+              </p>
+              <p className="mt-1 text-sm font-medium">
+                {lookupResult.status.isPro
+                  ? lookupResult.status.proUntil
+                    ? `${formatUtc(new Date(lookupResult.status.proUntil))} ${t('status.utc')}`
+                    : t('status.values.unlimited')
+                  : t('status.values.none')}
+              </p>
+            </div>
 
-          <Form form={extendForm} className="space-y-4">
-            <FormError />
-            <p className="text-sm font-semibold text-foreground">{t('override.extend.title')}</p>
-            <FormField label={t('override.fields.userId')} required error={extendForm.errors.userId}>
-              <input
-                type="text"
-                className={cn(
-                  'h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  extendForm.errors.userId && 'border-destructive focus-visible:border-destructive',
-                )}
-                {...extendForm.register('userId')}
-              />
-            </FormField>
-            <FormField label={t('override.fields.reason')} required error={extendForm.errors.reason}>
-              <textarea
-                rows={3}
-                className={cn(
-                  'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  extendForm.errors.reason && 'border-destructive focus-visible:border-destructive',
-                )}
-                {...extendForm.register('reason')}
-              />
-            </FormField>
-            <FormField label={t('override.fields.duration')} error={extendForm.errors.grantDurationDays}>
-              <input
-                type="number"
-                min="1"
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                {...extendForm.register('grantDurationDays')}
-              />
-            </FormField>
-            <FormField label={t('override.fields.fixedEndsAt')} error={extendForm.errors.grantFixedEndsAt}>
-              <DateTimePicker
-                value={extendForm.values.grantFixedEndsAt}
-                onChangeAction={(value) => extendForm.setFieldValue('grantFixedEndsAt', value)}
-                locale={locale}
-                clearLabel={tCommon('clear')}
-              />
-            </FormField>
-            <Button type="submit" disabled={extendForm.isSubmitting}>
-              {extendForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : <ShieldCheck className="size-4" />}
-              {t('override.extend.action')}
-            </Button>
-          </Form>
+            <Form form={overrideForm} className="space-y-4">
+              <FormError />
+              <p className="text-sm font-semibold text-foreground">
+                {overrideMode === 'extend' ? t('override.extend.title') : t('override.grant.title')}
+              </p>
+              {overridesDisabled ? (
+                <p className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                  {t('override.internalHint')}
+                </p>
+              ) : null}
+              <FormField label={t('override.fields.reason')} required error={overrideForm.errors.reason}>
+                <textarea
+                  rows={3}
+                  className={cn(
+                    'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
+                    'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                    overrideForm.errors.reason && 'border-destructive focus-visible:border-destructive',
+                  )}
+                  {...overrideForm.register('reason')}
+                  disabled={overrideForm.isSubmitting || overridesDisabled}
+                />
+              </FormField>
 
-          <Form form={revokeForm} className="space-y-4">
-            <FormError />
-            <p className="text-sm font-semibold text-foreground">{t('override.revoke.title')}</p>
-            <FormField label={t('override.fields.overrideId')} required error={revokeForm.errors.overrideId}>
-              <input
-                type="text"
-                className={cn(
-                  'h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  revokeForm.errors.overrideId && 'border-destructive focus-visible:border-destructive',
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t('override.fields.grantTypeLabel')}
+                </p>
+                <div className="flex items-stretch gap-1 rounded-lg border bg-background/60 p-1">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={overrideForm.values.grantType === 'duration' ? 'secondary' : 'ghost'}
+                    className="min-w-0 flex-1 justify-center"
+                    onClick={() => {
+                      overrideForm.setFieldValue('grantType', 'duration');
+                      overrideForm.setFieldValue('grantFixedEndsAt', '');
+                      overrideForm.clearError('grantFixedEndsAt');
+                    }}
+                    disabled={overrideForm.isSubmitting || overridesDisabled}
+                  >
+                    {t('override.fields.grantType.duration')}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={overrideForm.values.grantType === 'until' ? 'secondary' : 'ghost'}
+                    className="min-w-0 flex-1 justify-center"
+                    onClick={() => {
+                      overrideForm.setFieldValue('grantType', 'until');
+                      overrideForm.setFieldValue('grantDurationDays', '');
+                      overrideForm.clearError('grantDurationDays');
+                    }}
+                    disabled={overrideForm.isSubmitting || overridesDisabled}
+                  >
+                    {t('override.fields.grantType.until')}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {overrideForm.values.grantType === 'duration'
+                    ? t('override.fields.grantTypeHint.duration')
+                    : t('override.fields.grantTypeHint.until')}
+                </p>
+              </div>
+
+              {overrideForm.values.grantType === 'duration' ? (
+                <FormField
+                  label={t('override.fields.duration')}
+                  required
+                  error={overrideForm.errors.grantDurationDays}
+                >
+                  <input
+                    type="number"
+                    min="1"
+                    className={cn(
+                      'h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
+                      'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                      overrideForm.errors.grantDurationDays && 'border-destructive focus-visible:border-destructive',
+                    )}
+                    {...overrideForm.register('grantDurationDays')}
+                    disabled={overrideForm.isSubmitting || overridesDisabled}
+                  />
+                </FormField>
+              ) : (
+                <FormField
+                  label={t('override.fields.fixedEndsAt')}
+                  required
+                  error={overrideForm.errors.grantFixedEndsAt}
+                >
+                  <DateTimePicker
+                    value={overrideForm.values.grantFixedEndsAt}
+                    onChangeAction={(value) => overrideForm.setFieldValue('grantFixedEndsAt', value)}
+                    locale={locale}
+                    clearLabel={tCommon('clear')}
+                    disabled={overrideForm.isSubmitting || overridesDisabled}
+                  />
+                </FormField>
+              )}
+
+              <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto"
+                  disabled={overrideForm.isSubmitting || overridesDisabled || !lookupResult}
+                >
+                  {overrideForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : <ShieldCheck className="size-4" />}
+                  {overrideMode === 'extend' ? t('override.extend.action') : t('override.grant.action')}
+                </Button>
+              </div>
+            </Form>
+
+            <div className="rounded-lg border bg-background/60 p-4">
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-foreground">{t('override.revoke.title')}</p>
+                {adminOverrideState.active ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t('override.revoke.activeHint', {
+                      endsAt: `${formatUtc(adminOverrideState.active.endsAt)} ${t('status.utc')}`,
+                    })}
+                  </p>
+                ) : adminOverrideState.scheduled ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t('override.revoke.scheduledHint', {
+                      startsAt: `${formatUtc(adminOverrideState.scheduled.startsAt)} ${t('status.utc')}`,
+                    })}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">{t('override.revoke.noneHint')}</p>
                 )}
-                {...revokeForm.register('overrideId')}
-              />
-            </FormField>
-            <Button type="submit" variant="outline" disabled={revokeForm.isSubmitting}>
-              {revokeForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
-              {t('override.revoke.action')}
-            </Button>
-          </Form>
-        </div>
+              </div>
+              <div className="mt-4 flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="w-full sm:w-auto"
+                      disabled={!adminOverrideState.active || overridesDisabled || isRevoking}
+                    >
+                      {isRevoking ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                      {t('override.revoke.action')}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t('override.revoke.confirm.title')}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t('override.revoke.confirm.description')}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleRevokeActiveOverride}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t('override.revoke.confirm.confirm')}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="border-t border-border/70 pt-4 text-sm text-muted-foreground">
+            {t('override.emptyState')}
+          </p>
+        )}
       </section>
     </div>
   );

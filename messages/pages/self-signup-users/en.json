@@ -53,7 +53,8 @@
   },
   "actions": {
     "working": "Working...",
-    "proAccess": "Pro access",
+    "proStatus": "Pro status",
+    "proOverrides": "Overrides",
     "deleteUser": "Delete user"
   },
   "deleteDialog": {

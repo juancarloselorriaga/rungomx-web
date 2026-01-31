@@ -63,7 +63,7 @@ export interface UseFormReturn<TFieldValues extends Record<string, unknown>> {
         | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
     ) => void;
   };
-  handleSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  handleSubmit: (event: React.FormEvent<HTMLFormElement>, overrideValues?: TFieldValues) => void;
   reset: () => void;
   setError: (field: keyof TFieldValues, message: string) => void;
   clearError: (field: keyof TFieldValues) => void;

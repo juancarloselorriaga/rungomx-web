@@ -1,4 +1,3 @@
-import { ProAccessOverridesClient } from '@/components/admin/users/pro-access/pro-access-overrides-client';
 import { getAuthContext } from '@/lib/auth/server';
 import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
@@ -23,7 +22,12 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   );
 }
 
-export default async function AdminUsersProAccessOverridesPage({ params }: LocalePageProps) {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default async function AdminUsersProAccessOverridesPage({
+  params,
+  searchParams,
+}: LocalePageProps & { searchParams?: SearchParams }) {
   const { locale } = await params;
   await configPageLocale(params, { pathname: '/admin/users/pro-access/overrides' });
   const authContext = await getAuthContext();
@@ -32,6 +36,13 @@ export default async function AdminUsersProAccessOverridesPage({ params }: Local
     redirect(getPathname({ href: '/admin', locale }));
   }
 
-  return <ProAccessOverridesClient />;
-}
+  const rawEmail = searchParams?.email;
+  const email = Array.isArray(rawEmail) ? rawEmail[0] : rawEmail;
 
+  const basePath = getPathname({ href: '/admin/users/pro-access', locale });
+  const nextSearch = new URLSearchParams();
+  if (email) nextSearch.set('email', email);
+  nextSearch.set('section', 'overrides');
+
+  redirect(`${basePath}?${nextSearch.toString()}`);
+}

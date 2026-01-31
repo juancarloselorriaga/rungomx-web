@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { roles, userRoles, users } from '@/db/schema';
 import { withStaffUser } from '@/lib/auth/action-wrapper';
 import { getExternalRoleSourceNamesByKind, getUserRolesWithInternalFlag } from '@/lib/auth/roles';
+import { getBillingStatusForUser } from '@/lib/billing/queries';
 import {
   type NormalizedSelfSignupUsersQuery,
   normalizeSelfSignupUsersQuery,
@@ -89,6 +90,7 @@ export const listSelfSignupUsers = withStaffUser<ListSelfSignupUsersResult>({
         }
 
         const externalRoles = lookup.canonicalRoles.filter((role) => role.startsWith('external.'));
+        const billingStatus = await getBillingStatusForUser({ userId: row.userId, isInternal: false });
 
         return {
           userId: row.userId,
@@ -97,6 +99,10 @@ export const listSelfSignupUsers = withStaffUser<ListSelfSignupUsersResult>({
           createdAt: row.createdAt,
           canonicalRoles: externalRoles,
           isInternal: false as const,
+          proAccess: {
+            isPro: billingStatus.isPro,
+            proUntil: billingStatus.proUntil,
+          },
         } satisfies SelfSignupUserRow;
       }),
     );

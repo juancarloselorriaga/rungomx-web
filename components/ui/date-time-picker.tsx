@@ -79,6 +79,7 @@ export function DateTimePicker({
         <DatePicker
           locale={locale}
           value={datePart}
+          disabled={disabled}
           onChangeAction={(date) => {
             if (!date) {
               onChangeAction?.('');
