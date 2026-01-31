@@ -15,6 +15,7 @@ export type BillingEventEntityType =
 
 export type BillingEventType =
   | 'trial_started'
+  | 'trial_expiring_soon_notified'
   | 'cancel_scheduled'
   | 'cancel_reverted'
   | 'subscription_ended'

@@ -15,3 +15,4 @@ export const BILLING_TRIAL_DAYS = (() => {
 
 export const PROMO_CODE_LENGTH = 12;
 export const PROMO_CODE_PREFIX_LENGTH = 8;
+export const BILLING_TRIAL_EXPIRING_SOON_DAYS = 2;

@@ -20,6 +20,43 @@
     "expirationNote": "Este enlace expirará en 1 hora por razones de seguridad.",
     "footer": "© {year} RungoMX. Todos los derechos reservados."
   },
+  "billing": {
+    "trialStarted": {
+      "subject": "Tu prueba Pro ha comenzado — RungoMX",
+      "title": "Bienvenido a Pro",
+      "greeting": "Hola {userName},",
+      "message": "Tu prueba Pro de {trialDays} días ya está activa. Disfruta acceso completo hasta {trialEndsAt}.",
+      "features": "Esto es lo que puedes hacer con Pro:",
+      "cta": "Explorar funciones Pro",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    },
+    "trialExpiringSoon": {
+      "subject": "Tu prueba Pro termina pronto — RungoMX",
+      "title": "La prueba termina pronto",
+      "greeting": "Hola {userName},",
+      "message": "Tu prueba Pro termina el {trialEndsAt}. Después de eso, perderás acceso a las funciones Pro.",
+      "cta": "Mantener acceso a Pro",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    },
+    "subscriptionEnded": {
+      "subject": "Tu acceso Pro ha terminado — RungoMX",
+      "title": "Acceso Pro terminado",
+      "greeting": "Hola {userName},",
+      "messageTrial": "Tu prueba Pro ha terminado. Esperamos que hayas disfrutado la experiencia.",
+      "messageActive": "Tu suscripción Pro ha terminado.",
+      "cta": "Reactivar Pro",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    },
+    "cancelScheduled": {
+      "subject": "Cancelación confirmada — RungoMX",
+      "title": "Cancelación programada",
+      "greeting": "Hola {userName},",
+      "message": "Tu acceso Pro terminará el {endsAt}. Puedes seguir usando las funciones Pro hasta entonces.",
+      "revertMessage": "¿Cambiaste de opinión? Puedes reanudar tu suscripción en cualquier momento antes de que termine.",
+      "cta": "Mantener Pro",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    }
+  },
   "userDeletion": {
     "user": {
       "subject": "Tu cuenta de RungoMX ha sido eliminada",

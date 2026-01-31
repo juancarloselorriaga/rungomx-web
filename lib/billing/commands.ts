@@ -23,6 +23,7 @@ import { safeRevalidateTag } from '@/lib/next-cache';
 
 import { BILLING_ENTITLEMENT_KEY, BILLING_PLAN_KEY, BILLING_TRIAL_DAYS, PROMO_CODE_LENGTH } from './constants';
 import { billingStatusTag } from './cache-tags';
+import { sendCancelScheduledEmail, sendTrialStartedEmail } from './emails';
 import { appendBillingEvent } from './events';
 import {
   getLatestBillingHashSecret,
@@ -171,6 +172,7 @@ export async function startTrialForUser({
 
   if (result.ok) {
     revalidateBillingStatus(userId);
+    sendTrialStartedEmail({ userId }).catch(() => {});
   }
 
   return result;
@@ -182,7 +184,14 @@ export async function scheduleCancelAtPeriodEnd({
 }: {
   userId: string;
   now?: Date;
-}): Promise<ActionResult<{ subscriptionId: string; cancelAtPeriodEnd: boolean }>> {
+}): Promise<
+  ActionResult<{
+    subscriptionId: string;
+    cancelAtPeriodEnd: boolean;
+    endsAt: Date;
+    alreadyScheduled: boolean;
+  }>
+> {
   const result = await db.transaction(async (tx) => {
     await tx.execute(
       sql`SELECT id FROM ${billingSubscriptions} WHERE user_id = ${userId} FOR UPDATE`,
@@ -209,10 +218,17 @@ export async function scheduleCancelAtPeriodEnd({
       return { ok: false, error: 'Subscription is not active', code: 'NOT_ACTIVE' } as const;
     }
 
+    const endsAt = window.endsAt;
+
     if (subscription.cancelAtPeriodEnd) {
       return {
         ok: true,
-        data: { subscriptionId: subscription.id, cancelAtPeriodEnd: true },
+        data: {
+          subscriptionId: subscription.id,
+          cancelAtPeriodEnd: true,
+          endsAt,
+          alreadyScheduled: true,
+        },
       } as const;
     }
 
@@ -242,12 +258,20 @@ export async function scheduleCancelAtPeriodEnd({
 
     return {
       ok: true,
-      data: { subscriptionId: subscription.id, cancelAtPeriodEnd: true },
+      data: {
+        subscriptionId: subscription.id,
+        cancelAtPeriodEnd: true,
+        endsAt,
+        alreadyScheduled: false,
+      },
     } as const;
   });
 
   if (result.ok) {
     revalidateBillingStatus(userId);
+    if (!result.data.alreadyScheduled) {
+      sendCancelScheduledEmail({ userId, endsAt: result.data.endsAt }).catch(() => {});
+    }
   }
 
   return result;

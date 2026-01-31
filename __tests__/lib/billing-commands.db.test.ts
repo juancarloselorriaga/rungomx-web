@@ -1,3 +1,8 @@
+jest.mock('@/lib/billing/emails', () => ({
+  sendTrialStartedEmail: jest.fn(() => Promise.resolve()),
+  sendCancelScheduledEmail: jest.fn(() => Promise.resolve()),
+}));
+
 import {
   billingEntitlementOverrides,
   billingPendingEntitlementGrants,

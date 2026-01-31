@@ -20,6 +20,43 @@
     "expirationNote": "This link will expire in 1 hour for security reasons.",
     "footer": "© {year} RungoMX. All rights reserved."
   },
+  "billing": {
+    "trialStarted": {
+      "subject": "Your Pro trial has started — RungoMX",
+      "title": "Welcome to Pro",
+      "greeting": "Hi {userName},",
+      "message": "Your {trialDays}-day Pro trial is now active. Enjoy full access until {trialEndsAt}.",
+      "features": "Here's what you can do with Pro:",
+      "cta": "Explore Pro features",
+      "footer": "© {year} RungoMX. All rights reserved."
+    },
+    "trialExpiringSoon": {
+      "subject": "Your Pro trial ends soon — RungoMX",
+      "title": "Trial ending soon",
+      "greeting": "Hi {userName},",
+      "message": "Your Pro trial ends on {trialEndsAt}. After that, you'll lose access to Pro features.",
+      "cta": "Keep your Pro access",
+      "footer": "© {year} RungoMX. All rights reserved."
+    },
+    "subscriptionEnded": {
+      "subject": "Your Pro access has ended — RungoMX",
+      "title": "Pro access ended",
+      "greeting": "Hi {userName},",
+      "messageTrial": "Your Pro trial has ended. We hope you enjoyed the experience.",
+      "messageActive": "Your Pro subscription has ended.",
+      "cta": "Reactivate Pro",
+      "footer": "© {year} RungoMX. All rights reserved."
+    },
+    "cancelScheduled": {
+      "subject": "Cancellation confirmed — RungoMX",
+      "title": "Cancellation scheduled",
+      "greeting": "Hi {userName},",
+      "message": "Your Pro access will end on {endsAt}. You can continue using Pro features until then.",
+      "revertMessage": "Changed your mind? You can resume your subscription anytime before it ends.",
+      "cta": "Keep Pro",
+      "footer": "© {year} RungoMX. All rights reserved."
+    }
+  },
   "userDeletion": {
     "user": {
       "subject": "Your RungoMX account has been deleted",
