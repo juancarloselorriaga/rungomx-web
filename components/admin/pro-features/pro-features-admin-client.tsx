@@ -2,7 +2,7 @@
 
 import { listProFeatureConfigsAdminAction, updateProFeatureConfigAdminAction, getProFeatureUsageReportAdminAction } from '@/app/actions/pro-features-admin';
 import type { ProFeatureAdminSummary, ProFeatureUsageReport } from '@/app/actions/pro-features-admin';
-import { Badge } from '@/components/common/badge';
+import { Badge, type BadgeProps } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
@@ -126,27 +126,29 @@ export function ProFeaturesAdminClient() {
           <p className="text-sm text-muted-foreground">{tPage('features.description')}</p>
         </div>
 
-        {loading ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Spinner className="h-4 w-4" />
-            {tCommon('loading')}
-          </div>
-        ) : loadError ? (
-          <p className="text-sm text-destructive">{tPage('features.errors.load')}</p>
-        ) : (
-          <div className="space-y-4">
-            {features.map((feature) => (
-              <ProFeatureConfigCard
-                key={feature.featureKey}
-                feature={feature}
-                onUpdated={loadFeatures}
-                statusLabel={statusLabel}
-                visibilityLabel={visibilityLabel}
-                enforcementLabel={enforcementLabel}
-              />
-            ))}
-          </div>
-        )}
+        <div className="border-t border-border/70 pt-4">
+          {loading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Spinner className="h-4 w-4" />
+              {tCommon('loading')}
+            </div>
+          ) : loadError ? (
+            <p className="text-sm text-destructive">{tPage('features.errors.load')}</p>
+          ) : (
+            <div className="space-y-4">
+              {features.map((feature) => (
+                <ProFeatureConfigCard
+                  key={feature.featureKey}
+                  feature={feature}
+                  onUpdated={loadFeatures}
+                  statusLabel={statusLabel}
+                  visibilityLabel={visibilityLabel}
+                  enforcementLabel={enforcementLabel}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="space-y-4 rounded-lg border bg-card p-5 shadow-sm">
@@ -158,29 +160,31 @@ export function ProFeaturesAdminClient() {
           <p className="text-sm text-muted-foreground">{tPage('report.description')}</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          <FormField label={tPage('report.fields.from')}>
-            <DatePicker
-              value={reportRange.from}
-              onChangeAction={(value) => setReportRange((prev) => ({ ...prev, from: value }))}
-              locale={locale}
-              placeholder={tPage('report.fields.fromPlaceholder')}
-              clearLabel={tCommon('clear')}
-            />
-          </FormField>
-          <FormField label={tPage('report.fields.to')}>
-            <DatePicker
-              value={reportRange.to}
-              onChangeAction={(value) => setReportRange((prev) => ({ ...prev, to: value }))}
-              locale={locale}
-              placeholder={tPage('report.fields.toPlaceholder')}
-              clearLabel={tCommon('clear')}
-            />
-          </FormField>
-          <Button type="button" onClick={runReport} disabled={reportLoading}>
-            {reportLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
-            {tPage('report.actions.run')}
-          </Button>
+        <div className="rounded-lg border border-border/70 bg-background/60 p-4">
+          <div className="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+            <FormField label={tPage('report.fields.from')}>
+              <DatePicker
+                value={reportRange.from}
+                onChangeAction={(value) => setReportRange((prev) => ({ ...prev, from: value }))}
+                locale={locale}
+                placeholder={tPage('report.fields.fromPlaceholder')}
+                clearLabel={tCommon('clear')}
+              />
+            </FormField>
+            <FormField label={tPage('report.fields.to')}>
+              <DatePicker
+                value={reportRange.to}
+                onChangeAction={(value) => setReportRange((prev) => ({ ...prev, to: value }))}
+                locale={locale}
+                placeholder={tPage('report.fields.toPlaceholder')}
+                clearLabel={tCommon('clear')}
+              />
+            </FormField>
+            <Button type="button" onClick={runReport} disabled={reportLoading}>
+              {reportLoading ? <Spinner className="mr-2 h-4 w-4" /> : null}
+              {tPage('report.actions.run')}
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -314,6 +318,8 @@ function ProFeatureConfigCard({
     form.values.visibilityOverride !== (feature.config.visibilityOverride ?? '') ||
     form.values.notes !== (feature.config.notes ?? '');
 
+  const isSubmitting = form.isSubmitting;
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!hasChanges) {
@@ -326,94 +332,120 @@ function ProFeatureConfigCard({
   const proDecision = feature.decisions.pro;
   const nonProDecision = feature.decisions.nonPro;
 
+  const statusVariant = (status: ProFeatureStatus): BadgeProps['variant'] => {
+    switch (status) {
+      case 'enabled':
+        return 'green';
+      case 'locked':
+        return 'outline';
+      case 'hidden':
+        return 'ghost';
+      case 'disabled':
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-border/70 bg-background/60 p-4">
+    <div className="space-y-4 rounded-lg border border-border/70 bg-background/60 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold">
-              {tPage(feature.labelKey)}
-            </h3>
-          </div>
+          <h3 className="text-base font-semibold">{tPage(feature.labelKey)}</h3>
           <p className="text-sm text-muted-foreground">{tPage(feature.descriptionKey)}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span className="font-mono">{feature.featureKey}</span>
-            <span>{tPage('features.labels.defaultVisibility')}: {visibilityLabel(feature.defaultVisibility)}</span>
-            <span>{tPage('features.labels.enforcement')}: {enforcementLabel(feature.enforcement)}</span>
+            <span>
+              {tPage('features.labels.defaultVisibility')}: {visibilityLabel(feature.defaultVisibility)}
+            </span>
+            <span>
+              {tPage('features.labels.enforcement')}: {enforcementLabel(feature.enforcement)}
+            </span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" size="sm">
+          <Badge variant={statusVariant(proDecision.status)} size="sm">
             {tPage('features.labels.proLabel')}: {statusLabel(proDecision.status)}
           </Badge>
-          <Badge variant="outline" size="sm">
+          <Badge variant={statusVariant(nonProDecision.status)} size="sm">
             {tPage('features.labels.nonProLabel')}: {statusLabel(nonProDecision.status)}
           </Badge>
         </div>
       </div>
 
-      <Form form={form} onSubmit={handleSubmit} className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <FormError className="lg:col-span-2" />
-        <div className="space-y-3">
-          <FormField label={tPage('features.labels.enabled')}>
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.values.enabled}
-                onCheckedChange={(value) => form.setFieldValue('enabled', value)}
+      <Form form={form} onSubmit={handleSubmit} className="space-y-4">
+        <FormError />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3 rounded-lg border border-border/70 bg-background/70 p-4">
+            <FormField label={tPage('features.labels.enabled')}>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={form.values.enabled}
+                  onCheckedChange={(value) => form.setFieldValue('enabled', value)}
+                  disabled={isSubmitting}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {form.values.enabled
+                    ? tPage('features.enabledStates.on')
+                    : tPage('features.enabledStates.off')}
+                </span>
+              </div>
+            </FormField>
+
+            <FormField label={tPage('features.labels.visibilityOverride')}>
+              <select
+                className={cn(
+                  'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
+                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                )}
+                value={form.values.visibilityOverride}
+                onChange={(event) =>
+                  form.setFieldValue('visibilityOverride', event.target.value as VisibilityOverrideValue)
+                }
+                disabled={isSubmitting}
+              >
+                <option value="">{tPage('features.visibility.default')}</option>
+                <option value="locked">{tPage('features.visibility.locked')}</option>
+                <option value="hidden">{tPage('features.visibility.hidden')}</option>
+              </select>
+            </FormField>
+
+            <FormField label={tPage('features.labels.notes')}>
+              <textarea
+                className={cn(
+                  'min-h-[110px] w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
+                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                )}
+                {...form.register('notes')}
+                disabled={isSubmitting}
               />
-              <span className="text-sm text-muted-foreground">
-                {form.values.enabled
-                  ? tPage('features.enabledStates.on')
-                  : tPage('features.enabledStates.off')}
-              </span>
-            </div>
-          </FormField>
+            </FormField>
+          </div>
 
-          <FormField label={tPage('features.labels.visibilityOverride')}>
-            <select
-              className={cn(
-                'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              )}
-              value={form.values.visibilityOverride}
-              onChange={(event) =>
-                form.setFieldValue('visibilityOverride', event.target.value as VisibilityOverrideValue)
-              }
-            >
-              <option value="">{tPage('features.visibility.default')}</option>
-              <option value="locked">{tPage('features.visibility.locked')}</option>
-              <option value="hidden">{tPage('features.visibility.hidden')}</option>
-            </select>
-          </FormField>
-
-          <FormField label={tPage('features.labels.notes')}>
-            <textarea
-              className={cn(
-                'min-h-[110px] w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              )}
-              {...form.register('notes')}
-            />
-          </FormField>
+          <div className="space-y-3 rounded-lg border border-border/70 bg-background/70 p-4">
+            <FormField label={tPage('features.labels.reason')} required error={form.errors.reason}>
+              <textarea
+                className={cn(
+                  'min-h-[110px] w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
+                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                  'disabled:cursor-not-allowed disabled:opacity-60',
+                  form.errors.reason && 'border-destructive focus-visible:border-destructive',
+                )}
+                placeholder={tPage('features.labels.reasonPlaceholder')}
+                {...form.register('reason')}
+                disabled={isSubmitting}
+              />
+            </FormField>
+          </div>
         </div>
 
-        <div className="space-y-3">
-          <FormField label={tPage('features.labels.reason')} required error={form.errors.reason}>
-            <textarea
-              className={cn(
-                'min-h-[110px] w-full rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                form.errors.reason && 'border-destructive focus-visible:border-destructive',
-              )}
-              placeholder={tPage('features.labels.reasonPlaceholder')}
-              {...form.register('reason')}
-            />
-          </FormField>
-
-          <Button type="submit" disabled={form.isSubmitting}>
-            {form.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
-            {form.isSubmitting ? tPage('features.actions.saving') : tPage('features.actions.save')}
+        <div className="flex justify-end border-t border-border/70 pt-4">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
+            {isSubmitting ? tPage('features.actions.saving') : tPage('features.actions.save')}
           </Button>
         </div>
       </Form>
