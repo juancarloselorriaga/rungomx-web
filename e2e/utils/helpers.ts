@@ -415,8 +415,15 @@ export async function createEvent(
   await expect(page.getByRole('button', { name: /create event/i })).toBeEnabled({ timeout: 30000 });
   await page.getByRole('button', { name: /create event/i }).click();
 
+  // Next will often start compiling the destination route after submit
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build after event submit...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(1000);
+  }
+
   // Wait for redirect to event dashboard
-  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}/, { timeout: 45000 });
+  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}/, { timeout: 90000 });
 
   // Extract event ID from URL
   const url = page.url();
@@ -553,8 +560,27 @@ export async function addDistance(
  * Publish event (change visibility to Published)
  */
 export async function publishEvent(page: Page) {
+  // Wait for Next.js compilation/rendering to complete if it's running
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build before publishing...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(1000);
+  }
+
   // Scroll to visibility section first
-  await page.getByRole('heading', { name: 'Event Visibility' }).scrollIntoViewIfNeeded();
+  const visibilityHeading = page.getByRole('heading', { name: 'Event Visibility' });
+  await expect(visibilityHeading).toBeVisible({ timeout: 15000 });
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await visibilityHeading.scrollIntoViewIfNeeded();
+      break;
+    } catch (error) {
+      if (attempt === 2) throw error;
+      await page.waitForTimeout(300);
+    }
+  }
 
   // Wait for section to be fully loaded
   await page.waitForLoadState('networkidle');
@@ -579,52 +605,82 @@ export async function publishEvent(page: Page) {
  * Pause event registration
  */
 export async function pauseRegistration(page: Page) {
-  await page.getByRole('button', { name: /pause registration/i }).click();
-  // Wait for network response
-  await page.waitForLoadState('networkidle');
-  // The badge should now show "Paused"
-  const registrationSection = page.locator('section').filter({ hasText: 'Registration Status' });
-  await expect(registrationSection.getByText('Paused')).toBeVisible({ timeout: 10000 });
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build before pausing registration...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(1000);
+  }
+
+  const registrationHeading = page.getByRole('heading', { name: 'Registration Status' });
+  await expect(registrationHeading).toBeVisible({ timeout: 15000 });
+  await registrationHeading.scrollIntoViewIfNeeded();
+
+  const registrationSection = page.locator('section', { has: registrationHeading });
+  const pauseBtn = registrationSection.getByRole('button', { name: /pause registration/i });
+  await expect(pauseBtn).toBeVisible({ timeout: 15000 });
+  await expect(pauseBtn).toBeEnabled();
+
+  // Retry once if the click happens during a re-render and the action doesn't fire.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await pauseBtn.click();
+
+    // Wait for any refresh/build to settle, then verify state changed.
+    await expect(buildIndicator).toBeHidden({ timeout: 60000 });
+
+    const pausedBadge = registrationSection.getByText(/^Paused$/);
+    try {
+      await expect(pausedBadge).toBeVisible({ timeout: 30000 });
+      break;
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await page.waitForTimeout(500);
+    }
+  }
+
+  const resumeBtn = registrationSection.getByRole('button', { name: /resume registration/i });
+  await expect(resumeBtn).toBeVisible({ timeout: 15000 });
 }
 
 /**
  * Resume event registration
  */
 export async function resumeRegistration(page: Page) {
-  // First, scroll to the registration section
-  await page.getByRole('heading', { name: 'Registration Status' }).scrollIntoViewIfNeeded();
-  await page.waitForTimeout(300);
-
-  const resumeBtn = page.getByRole('button', { name: /resume registration/i });
-  await expect(resumeBtn).toBeVisible();
-  await expect(resumeBtn).toBeEnabled();
-
-  // Use force click to ensure it works even if there's an overlay
-  await resumeBtn.click({ force: true });
-
-  // Wait for the loading state to appear and disappear
-  // The button shows a loading spinner while processing
-  await page.waitForTimeout(500);
-
-  // Wait for network to settle
-  await page.waitForLoadState('networkidle');
-
-  // Give React time to update state
-  await page.waitForTimeout(1000);
-
-  // After resume, the button should change to "Pause Registration"
-  // and the badge should show "Active"
-  const pauseBtn = page.getByRole('button', { name: /pause registration/i });
-
-  // If button doesn't appear, try reloading the page to get fresh state
-  const pauseBtnVisible = await pauseBtn.isVisible({ timeout: 5000 }).catch(() => false);
-  if (!pauseBtnVisible) {
-    // Reload page to get fresh server state
-    await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForTimeout(500);
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    console.log('[E2E] Waiting for Next.js build before resuming registration...');
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(1000);
   }
 
-  await expect(pauseBtn).toBeVisible({ timeout: 10000 });
+  const registrationHeading = page.getByRole('heading', { name: 'Registration Status' });
+  await expect(registrationHeading).toBeVisible({ timeout: 15000 });
+  await registrationHeading.scrollIntoViewIfNeeded();
+
+  const registrationSection = page.locator('section', { has: registrationHeading });
+  const resumeBtn = registrationSection.getByRole('button', { name: /resume registration/i });
+  await expect(resumeBtn).toBeVisible({ timeout: 15000 });
+  await expect(resumeBtn).toBeEnabled();
+
+  // Retry once if the click happens during a re-render and the action doesn't fire.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await resumeBtn.click();
+
+    // Wait for any refresh/build to settle, then verify state changed.
+    await expect(buildIndicator).toBeHidden({ timeout: 60000 });
+
+    const activeBadge = registrationSection.getByText(/^Active$/);
+    try {
+      await expect(activeBadge).toBeVisible({ timeout: 30000 });
+      break;
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await page.waitForTimeout(500);
+    }
+  }
+
+  const pauseBtn = registrationSection.getByRole('button', { name: /pause registration/i });
+  await expect(pauseBtn).toBeVisible({ timeout: 15000 });
 }
 
 /**
