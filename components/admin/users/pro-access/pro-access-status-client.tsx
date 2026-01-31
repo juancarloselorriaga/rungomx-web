@@ -75,9 +75,12 @@ type OverrideFormValues = {
 };
 
 type AdminOverrideState = {
-  active: { id: string; endsAt: Date } | null;
-  scheduled: { id: string; startsAt: Date } | null;
+  active: { id: string; endsAt: Date; durationDays: number } | null;
+  scheduled: { id: string; startsAt: Date; durationDays: number } | null;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_GRANT_DURATION_DAYS = '7';
 
 function toOptionalNumber(value: string) {
   const trimmed = value.trim();
@@ -402,9 +405,14 @@ export function ProAccessStatusClient() {
       .filter((override) => override.startsAt.getTime() > now)
       .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())[0];
 
+    const toDurationDays = (override: { startsAt: Date; endsAt: Date }) =>
+      Math.max(1, Math.ceil((override.endsAt.getTime() - override.startsAt.getTime()) / DAY_MS));
+
     return {
-      active: active ? { id: active.id, endsAt: active.endsAt } : null,
-      scheduled: scheduled ? { id: scheduled.id, startsAt: scheduled.startsAt } : null,
+      active: active ? { id: active.id, endsAt: active.endsAt, durationDays: toDurationDays(active) } : null,
+      scheduled: scheduled
+        ? { id: scheduled.id, startsAt: scheduled.startsAt, durationDays: toDurationDays(scheduled) }
+        : null,
     };
   }, [lookupResult, referenceTimeMs]);
 
@@ -423,7 +431,7 @@ export function ProAccessStatusClient() {
     defaultValues: {
       reason: '',
       grantType: 'duration',
-      grantDurationDays: '',
+      grantDurationDays: DEFAULT_GRANT_DURATION_DAYS,
       grantFixedEndsAt: '',
     },
     onSubmit: async (values) => {
@@ -727,7 +735,12 @@ export function ProAccessStatusClient() {
                   onChangeAction={(next) => {
                     overrideForm.setFieldValue('grantType', next);
                     if (next === 'duration') {
+                      const durationDays =
+                        adminOverrideState.active?.durationDays ??
+                        adminOverrideState.scheduled?.durationDays ??
+                        Number(DEFAULT_GRANT_DURATION_DAYS);
                       overrideForm.setFieldValue('grantFixedEndsAt', '');
+                      overrideForm.setFieldValue('grantDurationDays', String(durationDays));
                       overrideForm.clearError('grantFixedEndsAt');
                     } else {
                       overrideForm.setFieldValue('grantDurationDays', '');

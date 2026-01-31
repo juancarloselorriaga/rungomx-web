@@ -51,6 +51,8 @@ function toOptionalNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+const DEFAULT_GRANT_DURATION_DAYS = '7';
+
 export function ProAccessPromoCodesClient() {
   const tPage = useTranslations('pages.adminProAccess.page.promoCodes');
   const t = useTranslations('pages.adminProAccess.billing');
@@ -66,7 +68,7 @@ export function ProAccessPromoCodesClient() {
       name: '',
       description: '',
       grantType: 'duration',
-      grantDurationDays: '',
+      grantDurationDays: DEFAULT_GRANT_DURATION_DAYS,
       grantFixedEndsAt: '',
       validFrom: '',
       validTo: '',
@@ -280,6 +282,7 @@ export function ProAccessPromoCodesClient() {
                       promoForm.setFieldValue('grantType', next);
                       if (next === 'duration') {
                         promoForm.setFieldValue('grantFixedEndsAt', '');
+                        promoForm.setFieldValue('grantDurationDays', DEFAULT_GRANT_DURATION_DAYS);
                         promoForm.clearError('grantFixedEndsAt');
                       } else {
                         promoForm.setFieldValue('grantDurationDays', '');

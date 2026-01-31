@@ -49,6 +49,8 @@ function toOptionalNumber(value: string) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+const DEFAULT_GRANT_DURATION_DAYS = '7';
+
 function looksLikeEmail(value: string) {
   const trimmed = value.trim();
   const at = trimmed.indexOf('@');
@@ -72,7 +74,7 @@ export function ProAccessEmailGrantsClient() {
     defaultValues: {
       email: '',
       grantType: 'duration',
-      grantDurationDays: '',
+      grantDurationDays: DEFAULT_GRANT_DURATION_DAYS,
       grantFixedEndsAt: '',
       claimValidFrom: '',
       claimValidTo: '',
@@ -306,6 +308,7 @@ export function ProAccessEmailGrantsClient() {
                       pendingGrantForm.setFieldValue('grantType', next);
                       if (next === 'duration') {
                         pendingGrantForm.setFieldValue('grantFixedEndsAt', '');
+                        pendingGrantForm.setFieldValue('grantDurationDays', DEFAULT_GRANT_DURATION_DAYS);
                         pendingGrantForm.clearError('grantFixedEndsAt');
                       } else {
                         pendingGrantForm.setFieldValue('grantDurationDays', '');
