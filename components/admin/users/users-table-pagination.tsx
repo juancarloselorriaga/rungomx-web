@@ -14,7 +14,7 @@ type UsersTablePaginationProps = {
   basePath: string;
   filters: Record<string, string>;
   onNavigateAction?: () => void;
-  translationNamespace?: 'pages.adminUsers.pagination' | 'pages.selfSignupUsers.pagination';
+  translationNamespace?: Parameters<typeof useTranslations>[0];
 };
 
 export function UsersTablePagination({

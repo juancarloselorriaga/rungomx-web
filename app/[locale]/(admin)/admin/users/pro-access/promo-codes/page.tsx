@@ -1,4 +1,10 @@
+import { listPromotions } from '@/app/actions/billing-admin';
 import { ProAccessPromoCodesClient } from '@/components/admin/users/pro-access/pro-access-promo-codes-client';
+import {
+  normalizeAdminPromotionsQuery,
+  parseAdminPromotionsSearchParams,
+  type NormalizedAdminPromotionsQuery,
+} from '@/lib/admin-pro-access/promotions-query';
 import { getAuthContext } from '@/lib/auth/server';
 import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
@@ -23,7 +29,14 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   );
 }
 
-export default async function AdminUsersProAccessPromoCodesPage({ params }: LocalePageProps) {
+type AdminUsersProAccessPromoCodesPageProps = LocalePageProps & {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function AdminUsersProAccessPromoCodesPage({
+  params,
+  searchParams,
+}: AdminUsersProAccessPromoCodesPageProps) {
   const { locale } = await params;
   await configPageLocale(params, { pathname: '/admin/users/pro-access/promo-codes' });
   const authContext = await getAuthContext();
@@ -32,6 +45,48 @@ export default async function AdminUsersProAccessPromoCodesPage({ params }: Loca
     redirect(getPathname({ href: '/admin', locale }));
   }
 
-  return <ProAccessPromoCodesClient />;
-}
+  const resolvedSearchParams = await searchParams;
+  const query = parseAdminPromotionsSearchParams(resolvedSearchParams);
+  const normalizedQuery: NormalizedAdminPromotionsQuery = normalizeAdminPromotionsQuery(query);
 
+  const result = await listPromotions(normalizedQuery);
+
+  const initialPromotions = result.ok
+    ? result.promotions.map((promotion) => ({
+        ...promotion,
+        validFrom: promotion.validFrom ? promotion.validFrom.toISOString() : null,
+        validTo: promotion.validTo ? promotion.validTo.toISOString() : null,
+        createdAt: promotion.createdAt.toISOString(),
+        updatedAt: promotion.updatedAt.toISOString(),
+      }))
+    : [];
+
+  const initialError = result.ok ? null : result.error;
+
+  const paginationMeta = result.ok
+    ? {
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        pageCount: result.pageCount,
+      }
+    : {
+        page: normalizedQuery.page,
+        pageSize: normalizedQuery.pageSize,
+        total: 0,
+        pageCount: 0,
+      };
+
+  return (
+    <ProAccessPromoCodesClient
+      initialPromotions={initialPromotions}
+      initialError={initialError}
+      initialQuery={{
+        ...normalizedQuery,
+        page: result.ok ? result.page : normalizedQuery.page,
+        pageSize: result.ok ? result.pageSize : normalizedQuery.pageSize,
+      }}
+      paginationMeta={paginationMeta}
+    />
+  );
+}

@@ -214,7 +214,7 @@
         "validFrom": "Válido desde (UTC)",
         "validTo": "Válido hasta (UTC)",
         "maxRedemptions": "Canjes máximos",
-        "manageHint": "¿Necesitas pausar una promo después? Usa el panel \"Gestionar promos\".",
+        "manageHint": "¿Necesitas pausar una promo después? Usa la tabla de promociones abajo.",
         "isActive": "Activo",
         "isActiveHint": "Desactiva para detener nuevos canjes."
       },
@@ -243,6 +243,49 @@
         },
         "errors": {
           "selectPromotion": "Selecciona una promoción de los resultados."
+        }
+      },
+      "list": {
+        "sectionLabel": "Explorar",
+        "title": "Promociones",
+        "description": "Explora las promociones existentes y actívalas o desactívalas.",
+        "search": {
+          "placeholder": "Buscar por nombre, prefijo o ID",
+          "apply": "Aplicar"
+        },
+        "filters": {
+          "label": "Filtros",
+          "clear": "Limpiar filtros",
+          "status": {
+            "all": "Todas",
+            "active": "Activas",
+            "inactive": "Inactivas"
+          }
+        },
+        "columns": {
+          "promotion": "Promoción",
+          "prefix": "Prefijo",
+          "redemptions": "Canjes",
+          "created": "Creada",
+          "actions": "Acciones"
+        },
+        "actions": {
+          "enable": "Activar promo",
+          "disable": "Desactivar promo",
+          "copyId": "Copiar ID"
+        },
+        "values": {
+          "missing": "—"
+        },
+        "empty": {
+          "title": "No se encontraron promos",
+          "description": "Prueba ajustando la búsqueda o los filtros.",
+          "clearButton": "Limpiar filtros"
+        },
+        "pagination": {
+          "showing": "Mostrando {start}-{end} de {total} promos",
+          "previous": "Anterior",
+          "next": "Siguiente"
         }
       },
       "search": {
@@ -324,6 +367,17 @@
         "labels": {
           "internalId": "ID interno"
         },
+        "table": {
+          "columns": {
+            "grant": "Asignación",
+            "status": "Estado",
+            "created": "Creada",
+            "actions": "Acciones"
+          },
+          "actions": {
+            "copyId": "Copiar ID"
+          }
+        },
         "actions": {
           "enable": "Activar asignación",
           "disable": "Desactivar asignación"
@@ -347,12 +401,14 @@
       "success": {
         "created": "Asignación creada.",
         "enabled": "Asignación activada.",
-        "disabled": "Asignación desactivada."
+        "disabled": "Asignación desactivada.",
+        "copiedId": "ID copiado."
       },
       "errors": {
         "unauthenticated": "Inicia sesión para gestionar asignaciones.",
         "forbidden": "No tienes acceso para gestionar asignaciones.",
         "invalidInput": "Revisa los detalles e intenta de nuevo.",
+        "copyFailed": "No se pudo copiar el ID. Cópialo manualmente.",
         "generic": "No pudimos actualizar la asignación."
       }
     }

@@ -1,6 +1,6 @@
 'use server';
 
-import { and, desc, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { db } from '@/db';
@@ -12,6 +12,11 @@ import {
   userRoles,
   users,
 } from '@/db/schema';
+import {
+  normalizeAdminPromotionsQuery,
+  type AdminPromotionsQuery,
+  type NormalizedAdminPromotionsQuery,
+} from '@/lib/admin-pro-access/promotions-query';
 import { withStaffUser } from '@/lib/auth/action-wrapper';
 import { getInternalRoleSourceNames, getUserRolesWithInternalFlag } from '@/lib/auth/roles';
 import {
@@ -274,6 +279,125 @@ export const enablePromotionAction = withStaffUser<FormActionResult<{ promotionI
   }
 
   return { ok: true, data: { promotionId: validation.data.promotionId } };
+});
+
+export type AdminPromotionRow = {
+  id: string;
+  name: string | null;
+  description: string | null;
+  codePrefix: string | null;
+  isActive: boolean;
+  redemptionCount: number;
+  maxRedemptions: number | null;
+  validFrom: Date | null;
+  validTo: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type ListPromotionsResult =
+  | {
+      ok: true;
+      promotions: AdminPromotionRow[];
+      page: number;
+      pageSize: number;
+      total: number;
+      pageCount: number;
+    }
+  | { ok: false; error: 'UNAUTHENTICATED' | 'FORBIDDEN' | 'SERVER_ERROR' };
+
+export const listPromotions = withStaffUser<ListPromotionsResult>({
+  unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED' }),
+  forbidden: () => ({ ok: false, error: 'FORBIDDEN' }),
+})(async (_authContext, query?: AdminPromotionsQuery) => {
+  const normalized = normalizeAdminPromotionsQuery(query);
+
+  try {
+    const filters: SQL<unknown>[] = [eq(billingPromotions.entitlementKey, 'pro_access')];
+
+    if (normalized.status === 'active') {
+      filters.push(eq(billingPromotions.isActive, true));
+    } else if (normalized.status === 'inactive') {
+      filters.push(eq(billingPromotions.isActive, false));
+    }
+
+    if (normalized.search) {
+      const pattern = `%${normalized.search}%`;
+      filters.push(
+        or(
+          ilike(billingPromotions.name, pattern),
+          ilike(billingPromotions.description, pattern),
+          ilike(billingPromotions.codePrefix, pattern),
+          sql`${billingPromotions.id}::text ILIKE ${pattern}`,
+        ) as SQL<unknown>,
+      );
+    }
+
+    const whereClause = and(...filters);
+
+    const sortColumnMap: Record<NormalizedAdminPromotionsQuery['sortBy'], SQL<unknown>> = {
+      createdAt: sql`${billingPromotions.createdAt}`,
+      name: sql`coalesce(${billingPromotions.name}, '')`,
+      redemptions: sql`${billingPromotions.redemptionCount}`,
+    };
+
+    const sortColumn = sortColumnMap[normalized.sortBy];
+
+    const promotions = await db
+      .select({
+        id: billingPromotions.id,
+        name: billingPromotions.name,
+        description: billingPromotions.description,
+        codePrefix: billingPromotions.codePrefix,
+        isActive: billingPromotions.isActive,
+        redemptionCount: billingPromotions.redemptionCount,
+        maxRedemptions: billingPromotions.maxRedemptions,
+        validFrom: billingPromotions.validFrom,
+        validTo: billingPromotions.validTo,
+        createdAt: billingPromotions.createdAt,
+        updatedAt: billingPromotions.updatedAt,
+      })
+      .from(billingPromotions)
+      .where(whereClause)
+      .orderBy(
+        normalized.sortDir === 'asc' ? asc(sortColumn) : desc(sortColumn),
+        desc(billingPromotions.createdAt),
+      )
+      .limit(normalized.pageSize)
+      .offset((normalized.page - 1) * normalized.pageSize);
+
+    const totalResult = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(billingPromotions)
+      .where(whereClause);
+
+    const total = Number(totalResult[0]?.value ?? 0);
+    const pageCount = total === 0 ? 0 : Math.ceil(total / normalized.pageSize);
+
+    return {
+      ok: true,
+      promotions: promotions.map((promotion) => ({
+        id: promotion.id,
+        name: promotion.name ?? null,
+        description: promotion.description ?? null,
+        codePrefix: promotion.codePrefix ?? null,
+        isActive: promotion.isActive,
+        redemptionCount: promotion.redemptionCount,
+        maxRedemptions: promotion.maxRedemptions ?? null,
+        validFrom: promotion.validFrom ?? null,
+        validTo: promotion.validTo ?? null,
+        createdAt: promotion.createdAt,
+        updatedAt: promotion.updatedAt,
+      })),
+      page: normalized.page,
+      pageSize: normalized.pageSize,
+      total,
+      pageCount,
+    };
+  } catch (error) {
+    console.error('[billing-admin] Failed to list promotions', error);
+    return { ok: false, error: 'SERVER_ERROR' };
+  }
 });
 
 type PromotionSearchOption = {

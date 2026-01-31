@@ -9,15 +9,19 @@ import {
 } from '@/app/actions/billing-admin';
 import { GrantTypeSelector } from '@/components/admin/users/pro-access/grant-type-selector';
 import { Badge } from '@/components/common/badge';
+import { EntityListView } from '@/components/list-view/entity-list-view';
+import type { ListViewColumn } from '@/components/list-view/types';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
+import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { SearchablePicker } from '@/components/ui/searchable-picker';
 import { Spinner } from '@/components/ui/spinner';
 import { Form, FormError, useForm } from '@/lib/forms';
+import { CheckCircle2, Copy, Pause, Play } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type PendingGrantFormValues = {
@@ -210,33 +214,163 @@ export function ProAccessEmailGrantsClient() {
     return () => window.clearTimeout(timeout);
   }, [manageEmailValue, manageHandleSubmit, manageIsSubmitting]);
 
-  const toggleGrant = async (grant: PendingGrantSearchOption) => {
-    if (grant.claimedAt) return;
+  const toggleGrant = useCallback(
+    async (grant: PendingGrantSearchOption) => {
+      if (grant.claimedAt) return;
 
-    setTogglingGrantId(grant.id);
+      setTogglingGrantId(grant.id);
 
-    const result = grant.isActive
-      ? await disablePendingGrantAction({ pendingGrantId: grant.id })
-      : await enablePendingGrantAction({ pendingGrantId: grant.id });
+      const result = grant.isActive
+        ? await disablePendingGrantAction({ pendingGrantId: grant.id })
+        : await enablePendingGrantAction({ pendingGrantId: grant.id });
 
-    if (!result.ok) {
-      const message =
-        result.error === 'UNAUTHENTICATED'
-          ? t('pendingGrant.errors.unauthenticated')
-          : result.error === 'FORBIDDEN'
-            ? t('pendingGrant.errors.forbidden')
-            : result.error === 'INVALID_INPUT'
-              ? t('pendingGrant.errors.invalidInput')
-              : t('pendingGrant.errors.generic');
-      toast.error(message);
+      if (!result.ok) {
+        const message =
+          result.error === 'UNAUTHENTICATED'
+            ? t('pendingGrant.errors.unauthenticated')
+            : result.error === 'FORBIDDEN'
+              ? t('pendingGrant.errors.forbidden')
+              : result.error === 'INVALID_INPUT'
+                ? t('pendingGrant.errors.invalidInput')
+                : t('pendingGrant.errors.generic');
+        toast.error(message);
+        setTogglingGrantId(null);
+        return;
+      }
+
+      toast.success(
+        grant.isActive ? t('pendingGrant.success.disabled') : t('pendingGrant.success.enabled'),
+      );
+      await refreshManageResults();
       setTogglingGrantId(null);
-      return;
-    }
+    },
+    [refreshManageResults, t],
+  );
 
-    toast.success(grant.isActive ? t('pendingGrant.success.disabled') : t('pendingGrant.success.enabled'));
-    await refreshManageResults();
-    setTogglingGrantId(null);
-  };
+  const copyPendingGrantId = useCallback(
+    async (pendingGrantId: string) => {
+      try {
+        await navigator.clipboard.writeText(pendingGrantId);
+        toast.success(t('pendingGrant.success.copiedId'));
+      } catch {
+        toast.error(t('pendingGrant.errors.copyFailed'));
+      }
+    },
+    [t],
+  );
+
+  const manageColumns = useMemo(() => {
+    const formatUtcLabel = (value: string) =>
+      `${format.dateTime(new Date(value), {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'UTC',
+      })} ${t('status.utc')}`;
+
+    return [
+      {
+        key: 'grant',
+        header: t('pendingGrant.manage.table.columns.grant'),
+        cell: (grant) => {
+          const summary = grant.grantDurationDays
+            ? t('pendingGrant.search.summary.duration', { days: grant.grantDurationDays })
+            : grant.grantFixedEndsAt
+              ? t('pendingGrant.search.summary.fixedEnd', { endsAt: formatUtcLabel(grant.grantFixedEndsAt) })
+              : grant.id;
+
+          return (
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">{summary}</p>
+              <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{grant.id}</p>
+            </div>
+          );
+        },
+      },
+      {
+        key: 'status',
+        header: t('pendingGrant.manage.table.columns.status'),
+        cell: (grant) => (
+          <div className="flex flex-wrap items-center gap-1">
+            {grant.isActive ? (
+              <Badge variant="green" size="sm">
+                {t('pendingGrant.search.badges.active')}
+              </Badge>
+            ) : (
+              <Badge variant="outline" size="sm">
+                {t('pendingGrant.search.badges.inactive')}
+              </Badge>
+            )}
+            {grant.claimedAt ? (
+              <Badge variant="outline" size="sm">
+                {t('pendingGrant.search.badges.claimed')}
+              </Badge>
+            ) : null}
+          </div>
+        ),
+      },
+      {
+        key: 'created',
+        header: t('pendingGrant.manage.table.columns.created'),
+        cell: (grant) => (
+          <span className="text-sm text-muted-foreground" suppressHydrationWarning>
+            {formatUtcLabel(grant.createdAt)}
+          </span>
+        ),
+      },
+      {
+        key: 'actions',
+        header: t('pendingGrant.manage.table.columns.actions'),
+        align: 'right',
+        cell: (grant) => (
+          <div className="flex items-center justify-end gap-1">
+            {grant.claimedAt ? (
+              <IconTooltipButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                label={t('pendingGrant.search.badges.claimed')}
+                disabled
+              >
+                <CheckCircle2 className="size-4" />
+              </IconTooltipButton>
+            ) : (
+              <IconTooltipButton
+                type="button"
+                variant="ghost"
+                size="icon"
+                label={
+                  grant.isActive
+                    ? t('pendingGrant.manage.actions.disable')
+                    : t('pendingGrant.manage.actions.enable')
+                }
+                disabled={togglingGrantId === grant.id}
+                onClick={() => toggleGrant(grant)}
+              >
+                {togglingGrantId === grant.id ? (
+                  <Spinner className="size-4" />
+                ) : grant.isActive ? (
+                  <Pause className="size-4" />
+                ) : (
+                  <Play className="size-4" />
+                )}
+              </IconTooltipButton>
+            )}
+
+            <IconTooltipButton
+              type="button"
+              variant="ghost"
+              size="icon"
+              label={t('pendingGrant.manage.table.actions.copyId')}
+              onClick={() => copyPendingGrantId(grant.id)}
+              disabled={togglingGrantId === grant.id}
+            >
+              <Copy className="size-4" />
+            </IconTooltipButton>
+          </div>
+        ),
+      },
+    ] satisfies Array<ListViewColumn<PendingGrantSearchOption, string>>;
+  }, [copyPendingGrantId, format, t, toggleGrant, togglingGrantId]);
 
   return (
     <div className="space-y-6">
@@ -446,79 +580,13 @@ export function ProAccessEmailGrantsClient() {
                 ) : manageResults.length === 0 ? (
                   <p className="text-sm text-muted-foreground">{t('pendingGrant.manage.emptyResults')}</p>
                 ) : (
-                  <div className="space-y-3">
-                    {manageResults.map((grant) => {
-                      const summary = grant.grantDurationDays
-                        ? t('pendingGrant.search.summary.duration', { days: grant.grantDurationDays })
-                        : grant.grantFixedEndsAt
-                          ? t('pendingGrant.search.summary.fixedEnd', {
-                              endsAt: `${format.dateTime(new Date(grant.grantFixedEndsAt), {
-                                dateStyle: 'medium',
-                                timeStyle: 'short',
-                                timeZone: 'UTC',
-                              })} ${t('status.utc')}`,
-                            })
-                          : grant.id;
-
-                      const createdAtLabel = `${format.dateTime(new Date(grant.createdAt), {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                        timeZone: 'UTC',
-                      })} ${t('status.utc')}`;
-
-                      return (
-                        <div key={grant.id} className="rounded-md border border-border/60 bg-muted/20 p-3">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div className="min-w-0">
-                              <p className="text-sm font-semibold text-foreground">{summary}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">{createdAtLabel}</p>
-                              <details className="mt-2 text-xs text-muted-foreground">
-                                <summary className="cursor-pointer">
-                                  {t('pendingGrant.manage.labels.internalId')}
-                                </summary>
-                                <p className="mt-1 font-mono">{grant.id}</p>
-                              </details>
-                            </div>
-                            <div className="flex flex-col gap-2 sm:items-end">
-                              <div className="flex flex-wrap items-center gap-1">
-                                {grant.isActive ? (
-                                  <Badge variant="green" size="sm">
-                                    {t('pendingGrant.search.badges.active')}
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" size="sm">
-                                    {t('pendingGrant.search.badges.inactive')}
-                                  </Badge>
-                                )}
-                                {grant.claimedAt ? (
-                                  <Badge variant="outline" size="sm">
-                                    {t('pendingGrant.search.badges.claimed')}
-                                  </Badge>
-                                ) : null}
-                              </div>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant={grant.claimedAt ? 'outline' : grant.isActive ? 'destructive' : 'default'}
-                                className="w-full sm:w-auto"
-                                disabled={Boolean(grant.claimedAt) || togglingGrantId === grant.id}
-                                onClick={() => toggleGrant(grant)}
-                              >
-                                {togglingGrantId === grant.id ? (
-                                  <Spinner className="mr-2 h-4 w-4" />
-                                ) : null}
-                                {grant.claimedAt
-                                  ? t('pendingGrant.search.badges.claimed')
-                                  : grant.isActive
-                                    ? t('pendingGrant.manage.actions.disable')
-                                    : t('pendingGrant.manage.actions.enable')}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <EntityListView
+                    items={manageResults}
+                    getRowIdAction={(grant) => grant.id}
+                    columns={manageColumns}
+                    rowPadding="py-2"
+                    minWidthClassName="min-w-[560px]"
+                  />
                 )
               ) : (
                 <p className="text-sm text-muted-foreground">{t('pendingGrant.manage.emptyState')}</p>
