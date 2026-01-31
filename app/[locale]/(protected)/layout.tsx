@@ -10,10 +10,10 @@ import {
 import { SlidingNavProvider } from '@/components/layout/navigation/sliding-nav-context';
 import { SlidingSidebar } from '@/components/layout/navigation/sliding-sidebar';
 import ProtectedLayoutWrapper from '@/components/layout/protected-layout-wrapper';
+import { AutoClaimPendingGrantsClient } from '@/components/billing/auto-claim-pending-grants-client';
 import { getPathname } from '@/i18n/navigation';
 import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
-import { maybeAutoClaimPendingGrants } from '@/lib/billing/auto-claim';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -35,13 +35,9 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
     );
   }
 
-  if (authContext.user) {
-    await maybeAutoClaimPendingGrants({
-      userId: authContext.user.id,
-      email: authContext.user.email,
-      emailVerified: authContext.user.emailVerified,
-    });
-  }
+  const shouldAutoClaimGrants = Boolean(
+    authContext.user?.emailVerified && authContext.user.email && !authContext.isInternal,
+  );
 
   // Redirect non-user-area users to admin, EXCEPT internal staff with events management permissions
   // (they need access to organizer shell for support per Phase 0 plan)
@@ -64,6 +60,7 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
 
   return (
     <ProtectedLayoutWrapper>
+      <AutoClaimPendingGrantsClient enabled={shouldAutoClaimGrants} />
       <SlidingNavProvider>
         <NavDrawerProvider>
           <MobileNavPushLayout className="min-h-screen bg-background">
