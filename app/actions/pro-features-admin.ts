@@ -213,10 +213,6 @@ export const updateProFeatureConfigAdminAction = withStaffUser<
       return { ok: true as const, featureKey };
     });
 
-    if (!result.ok) {
-      return { ok: false, error: result.error, message: result.message };
-    }
-
     safeRevalidateTag(proFeaturesConfigTag());
     return { ok: true, data: { featureKey: result.featureKey } };
   } catch (error) {

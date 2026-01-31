@@ -191,12 +191,13 @@ export function BillingSettingsClient({
         toast.success(t('promo.success.redeemed', { endsAt }));
       }
       promoForm.reset();
-      if (data.endsAt) {
+      const endsAt = data.endsAt;
+      if (endsAt) {
         setStatus((prev) => ({
           ...prev,
           isPro: true,
           trialEligible: false,
-          proUntil: data.endsAt,
+          proUntil: endsAt,
         }));
       }
     },
