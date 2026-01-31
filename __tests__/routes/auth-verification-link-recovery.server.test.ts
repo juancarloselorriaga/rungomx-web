@@ -48,15 +48,16 @@ describe('Auth route verification link recovery', () => {
   it('redirects invalid verification links to verify-email with nested callback and email (full URL callback)', async () => {
     // Require the handler after mocks are in place
     const { GET } = require('@/app/api/auth/[...all]/route');
+    const { siteUrl } = require('@/config/url');
 
     const nestedCallbackPath = '/en/dashboard';
-    const successURL = `http://localhost:3000/en/verify-email-success?callbackURL=${encodeURIComponent(
+    const successURL = `${siteUrl}/en/verify-email-success?callbackURL=${encodeURIComponent(
       nestedCallbackPath,
     )}`;
 
     const request = {
       method: 'GET',
-      url: `http://localhost:3000/api/auth/verify-email?token=expired-token&callbackURL=${encodeURIComponent(
+      url: `${siteUrl}/api/auth/verify-email?token=expired-token&callbackURL=${encodeURIComponent(
         successURL,
       )}&email=user@example.com`,
       headers: new Headers(),
@@ -67,19 +68,20 @@ describe('Auth route verification link recovery', () => {
     expect(response.status).toBe(302);
     const location = response.headers.get('Location');
     expect(location).toBe(
-      'http://localhost:3000/en/verify-email?callbackURL=%2Fen%2Fdashboard&email=user%40example.com',
+      `${siteUrl}/en/verify-email?callbackURL=%2Fen%2Fdashboard&email=user%40example.com`,
     );
   });
 
   it('redirects invalid verification links when callbackURL is a path-only success URL', async () => {
     const { GET } = require('@/app/api/auth/[...all]/route');
+    const { siteUrl } = require('@/config/url');
 
     const nestedCallbackPath = '/en/dashboard';
     const successPath = `/en/verify-email-success?callbackURL=${encodeURIComponent(nestedCallbackPath)}`;
 
     const request = {
       method: 'GET',
-      url: `http://localhost:3000/api/auth/verify-email?token=expired-token&callbackURL=${encodeURIComponent(
+      url: `${siteUrl}/api/auth/verify-email?token=expired-token&callbackURL=${encodeURIComponent(
         successPath,
       )}&email=user@example.com`,
       headers: new Headers(),
@@ -90,7 +92,7 @@ describe('Auth route verification link recovery', () => {
     expect(response.status).toBe(302);
     const location = response.headers.get('Location');
     expect(location).toBe(
-      'http://localhost:3000/en/verify-email?callbackURL=%2Fen%2Fdashboard&email=user%40example.com',
+      `${siteUrl}/en/verify-email?callbackURL=%2Fen%2Fdashboard&email=user%40example.com`,
     );
   });
 });

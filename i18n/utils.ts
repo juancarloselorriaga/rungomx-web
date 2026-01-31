@@ -39,6 +39,9 @@ const DEFAULT_COMPONENT_NAMESPACES = Object.keys(
   componentNamespaceLoaders,
 ) as (keyof typeof componentNamespaceLoaders)[];
 const ALL_PAGES = Object.keys(pageNamespaceLoaders) as (keyof typeof pageNamespaceLoaders)[];
+const DEFAULT_ROUTE_BASE_NAMESPACES = DEFAULT_BASE_NAMESPACES.filter(
+  (namespace) => namespace !== 'emails',
+) as (keyof typeof rootNamespaceLoaders)[];
 
 const FULL_SELECTION: NamespaceSelection = {
   base: DEFAULT_BASE_NAMESPACES,
@@ -164,7 +167,7 @@ function resolveRouteNamespaces(pathname: string): NamespaceSelection {
   const normalized = normalizePathname(pathname);
   return (
     routeNamespaceMap[normalized] ?? {
-      base: DEFAULT_BASE_NAMESPACES,
+      base: DEFAULT_ROUTE_BASE_NAMESPACES,
       components: DEFAULT_COMPONENT_NAMESPACES,
       pages: [],
     }
