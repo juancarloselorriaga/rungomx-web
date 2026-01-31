@@ -13,6 +13,8 @@ import {
   adminUsersNavigationSections,
   eventIconMap,
   eventNavigationSections,
+  settingsIconMap,
+  settingsNavigationSections,
 } from './submenu-configs';
 import type { SubmenuFooterLink, SubmenuIconMap, SubmenuNavigationSection } from './submenu-types';
 
@@ -39,6 +41,8 @@ export function SubmenuNavigation({ submenuId, ...props }: SubmenuNavigationProp
       return <OrgSubmenuNavigation />;
     case 'admin-users':
       return <AdminUsersSubmenuNavigation {...props} />;
+    case 'settings':
+      return <SettingsSubmenuNavigation {...props} />;
     default:
       return null;
   }
@@ -114,6 +118,38 @@ function EventSubmenuNavigation({
  */
 function OrgSubmenuNavigation() {
   return null;
+}
+
+function SettingsSubmenuNavigation({
+  basePath,
+  footerLink,
+  variant = 'sidebar',
+}: Omit<SubmenuNavigationProps, 'submenuId'>) {
+  const tNav = useTranslations('pages.settings');
+  const pathname = usePathname();
+
+  const sectionTitles = {
+    settings: tNav('title'),
+  };
+
+  const itemLabels = {
+    profile: tNav('profile.title'),
+    account: tNav('account.title'),
+    billing: tNav('billing.title'),
+  };
+
+  return (
+    <SubmenuSectionRenderer
+      sections={settingsNavigationSections}
+      sectionTitles={sectionTitles}
+      itemLabels={itemLabels}
+      iconMap={settingsIconMap}
+      basePath={basePath}
+      footerLink={footerLink}
+      variant={variant}
+      pathname={pathname}
+    />
+  );
 }
 
 function AdminUsersSubmenuNavigation({

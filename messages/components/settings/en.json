@@ -280,8 +280,8 @@
     },
     "trial": {
       "sectionLabel": "Trial",
-      "title": "Start your trial",
-      "description": "Each account is eligible for one Pro trial.",
+      "title": "Start your Pro trial",
+      "description": "Get instant access to Pro training tools and perks—no commitment required.",
       "activeLabel": "Trial active",
       "activeUntil": "Your trial ends on {endsAt}.",
       "requiresVerification": "Verify your email to start a trial.",
@@ -336,7 +336,7 @@
     "promo": {
       "sectionLabel": "Promo code",
       "title": "Redeem a promo",
-      "description": "Enter a promo code to extend Pro access.",
+      "description": "Have a promo code? Apply it to extend Pro access instantly.",
       "fields": {
         "code": "Promo code"
       },
