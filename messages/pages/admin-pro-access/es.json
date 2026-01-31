@@ -272,6 +272,15 @@
       "sectionLabel": "Asignaciones",
       "title": "Asignaciones por correo",
       "description": "Crea asignaciones de acceso Pro que se reclaman después de verificar el correo.",
+      "info": {
+        "triggerLabel": "Sobre asignaciones por correo",
+        "title": "Cómo funcionan las asignaciones por correo",
+        "steps": {
+          "assign": "Asigna acceso Pro a un correo antes de que el usuario se registre.",
+          "verify": "La asignación se reclama automáticamente después de verificar ese correo.",
+          "configure": "Elige duración o fin fijo; la ventana de reclamo es opcional y limita cuándo se puede reclamar."
+        }
+      },
       "latestLabel": "Última asignación",
       "grant": {
         "title": "Asignación",

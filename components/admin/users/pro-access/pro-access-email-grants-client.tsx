@@ -12,9 +12,11 @@ import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SearchablePicker } from '@/components/ui/searchable-picker';
 import { Spinner } from '@/components/ui/spinner';
 import { Form, FormError, useForm } from '@/lib/forms';
+import { Info } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -247,7 +249,32 @@ export function ProAccessEmailGrantsClient() {
           {tPage('sectionLabel')}
         </p>
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold leading-tight">{tPage('title')}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-3xl font-bold leading-tight">{tPage('title')}</h1>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground"
+                  aria-label={t('pendingGrant.info.triggerLabel')}
+                >
+                  <Info className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-2 text-sm">
+                  <p className="font-semibold text-foreground">{t('pendingGrant.info.title')}</p>
+                  <ul className="space-y-1 pl-4 text-muted-foreground list-disc">
+                    <li>{t('pendingGrant.info.steps.assign')}</li>
+                    <li>{t('pendingGrant.info.steps.verify')}</li>
+                    <li>{t('pendingGrant.info.steps.configure')}</li>
+                  </ul>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <p className="text-muted-foreground">{tPage('description')}</p>
         </div>
       </div>

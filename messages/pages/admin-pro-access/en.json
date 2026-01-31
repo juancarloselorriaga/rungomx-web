@@ -272,6 +272,15 @@
       "sectionLabel": "Pending grants",
       "title": "Email-based grants",
       "description": "Create Pro access grants that claim after verification.",
+      "info": {
+        "triggerLabel": "About email-based grants",
+        "title": "How email grants work",
+        "steps": {
+          "assign": "Assign Pro access to an email before the user signs up.",
+          "verify": "The grant is claimed automatically after that email is verified.",
+          "configure": "Choose duration or fixed end; optional claim window limits when it can be claimed."
+        }
+      },
       "latestLabel": "Latest pending grant",
       "grant": {
         "title": "Grant",
