@@ -29,10 +29,8 @@ function resolveBillingHashSecrets(): BillingHashSecret[] {
     const existingIndex = secrets.findIndex((entry) => entry.version === 1);
     if (existingIndex === -1) {
       secrets.push({ version: 1, secret: legacySecret });
-    } else {
-      secrets[existingIndex] = { version: 1, secret: legacySecret };
+      secrets.sort((a, b) => a.version - b.version);
     }
-    secrets.sort((a, b) => a.version - b.version);
   }
 
   if (secrets.length === 0) {

@@ -134,7 +134,6 @@ export const adminUsersNavigationSections: SubmenuNavigationSection[] = [
     titleKey: 'proAccess',
     items: [
       { label: 'status', href: '/pro-access', icon: 'search' },
-      { label: 'overrides', href: '/pro-access/overrides', icon: 'shieldCheck' },
       { label: 'promoCodes', href: '/pro-access/promo-codes', icon: 'tag' },
       { label: 'emailGrants', href: '/pro-access/email-grants', icon: 'mail' },
     ],

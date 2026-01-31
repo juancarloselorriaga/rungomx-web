@@ -9,6 +9,10 @@
   "close": "Cerrar",
   "clear": "Limpiar",
   "search": "Buscar",
+  "searchPicker": {
+    "noResults": "No se encontraron resultados.",
+    "loadFailed": "No se pudieron cargar los resultados."
+  },
   "filter": "Filtrar",
   "sort": "Ordenar",
   "next": "Siguiente",

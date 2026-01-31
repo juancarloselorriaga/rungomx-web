@@ -1,5 +1,10 @@
 import type { CanonicalRole } from '@/lib/auth/roles';
 
+export type ProAccessSummary = {
+  isPro: boolean;
+  proUntil: Date | null;
+};
+
 export type SelfSignupUserRow = {
   userId: string;
   email: string;
@@ -7,10 +12,16 @@ export type SelfSignupUserRow = {
   canonicalRoles: CanonicalRole[];
   createdAt: Date;
   isInternal: false;
+  proAccess: ProAccessSummary;
 };
 
-export type SerializedSelfSignupUserRow = Omit<SelfSignupUserRow, 'createdAt'> & {
+export type SerializedProAccessSummary = Omit<ProAccessSummary, 'proUntil'> & {
+  proUntil: string | null;
+};
+
+export type SerializedSelfSignupUserRow = Omit<SelfSignupUserRow, 'createdAt' | 'proAccess'> & {
   createdAt: string;
+  proAccess: SerializedProAccessSummary;
 };
 
 export type ListSelfSignupUsersResult =

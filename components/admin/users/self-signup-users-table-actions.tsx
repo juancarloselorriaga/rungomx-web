@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Link } from '@/i18n/navigation';
 import { useSession } from '@/lib/auth/client';
-import { BadgeCheck, Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
+import { BadgeCheck, Loader2, MoreHorizontal, ShieldCheck, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -64,7 +64,18 @@ export function SelfSignupUsersTableActions({
               }}
             >
               <BadgeCheck className="size-4" />
-              {t('proAccess')}
+              {t('proStatus')}
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href={{
+                pathname: '/admin/users/pro-access',
+                query: { email: userEmail, section: 'overrides' },
+              }}
+            >
+              <ShieldCheck className="size-4" />
+              {t('proOverrides')}
             </Link>
           </DropdownMenuItem>
           {canManageUsers ? (

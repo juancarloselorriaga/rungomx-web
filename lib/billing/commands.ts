@@ -92,7 +92,7 @@ export async function startTrialForUser({
   emailVerified: boolean;
   now?: Date;
   trialDays?: number;
-}): Promise<ActionResult<{ subscriptionId: string; trialEndsAt: Date }>> {
+}): Promise<ActionResult<{ subscriptionId: string; trialStartsAt: Date; trialEndsAt: Date }>> {
   if (!emailVerified) {
     return { ok: false, error: 'Email verification required', code: 'EMAIL_NOT_VERIFIED' };
   }
@@ -167,7 +167,10 @@ export async function startTrialForUser({
       tx,
     );
 
-    return { ok: true, data: { subscriptionId: subscription.id, trialEndsAt } } as const;
+    return {
+      ok: true,
+      data: { subscriptionId: subscription.id, trialStartsAt: now, trialEndsAt },
+    } as const;
   });
 
   if (result.ok) {
@@ -589,6 +592,7 @@ export async function createPromotion({
             entityId: created.id,
             payload: {
               promotionId: created.id,
+              createdByUserId,
               codePrefix,
               hashVersion: version,
               grantDurationDays: grantDurationDays ?? null,
@@ -596,6 +600,7 @@ export async function createPromotion({
               validFrom: validFrom ? validFrom.toISOString() : null,
               validTo: validTo ? validTo.toISOString() : null,
               maxRedemptions: maxRedemptions ?? null,
+              isActive,
             },
           },
           tx,
@@ -650,11 +655,61 @@ export async function disablePromotion({
         userId: disabledByUserId,
         entityType: 'promotion',
         entityId: promotionId,
+        payload: {
+          promotionId,
+          disabledByUserId,
+        },
       },
       tx,
     );
 
     return { ok: true, data: { promotionId, alreadyDisabled: false } } as const;
+  });
+}
+
+export async function enablePromotion({
+  promotionId,
+  enabledByUserId,
+  now = new Date(),
+}: {
+  promotionId: string;
+  enabledByUserId: string;
+  now?: Date;
+}): Promise<ActionResult<{ promotionId: string; alreadyEnabled: boolean }>> {
+  return db.transaction(async (tx) => {
+    const promotion = await tx.query.billingPromotions.findFirst({
+      where: eq(billingPromotions.id, promotionId),
+    });
+
+    if (!promotion) {
+      return { ok: false, error: 'Promotion not found', code: 'NOT_FOUND' } as const;
+    }
+
+    if (promotion.isActive) {
+      return { ok: true, data: { promotionId, alreadyEnabled: true } } as const;
+    }
+
+    await tx
+      .update(billingPromotions)
+      .set({ isActive: true, updatedAt: now })
+      .where(eq(billingPromotions.id, promotionId));
+
+    await appendBillingEvent(
+      {
+        source: 'admin',
+        type: 'promotion_enabled',
+        userId: enabledByUserId,
+        entityType: 'promotion',
+        entityId: promotionId,
+        payload: {
+          promotionId,
+          enabledByUserId,
+        },
+      },
+      tx,
+    );
+
+    return { ok: true, data: { promotionId, alreadyEnabled: false } } as const;
   });
 }
 
@@ -712,11 +767,13 @@ export async function createPendingEntitlementGrant({
         entityId: pendingGrant.id,
         payload: {
           pendingGrantId: pendingGrant.id,
+          createdByUserId,
           hashVersion: current.version,
           grantDurationDays: grantDurationDays ?? null,
           grantFixedEndsAt: grantFixedEndsAt ? grantFixedEndsAt.toISOString() : null,
           claimValidFrom: claimValidFrom ? claimValidFrom.toISOString() : null,
           claimValidTo: claimValidTo ? claimValidTo.toISOString() : null,
+          isActive,
         },
       },
       tx,
@@ -760,11 +817,61 @@ export async function disablePendingEntitlementGrant({
         userId: disabledByUserId,
         entityType: 'pending_grant',
         entityId: pendingGrantId,
+        payload: {
+          pendingGrantId,
+          disabledByUserId,
+        },
       },
       tx,
     );
 
     return { ok: true, data: { pendingGrantId, alreadyDisabled: false } } as const;
+  });
+}
+
+export async function enablePendingEntitlementGrant({
+  pendingGrantId,
+  enabledByUserId,
+  now = new Date(),
+}: {
+  pendingGrantId: string;
+  enabledByUserId: string;
+  now?: Date;
+}): Promise<ActionResult<{ pendingGrantId: string; alreadyEnabled: boolean }>> {
+  return db.transaction(async (tx) => {
+    const pendingGrant = await tx.query.billingPendingEntitlementGrants.findFirst({
+      where: eq(billingPendingEntitlementGrants.id, pendingGrantId),
+    });
+
+    if (!pendingGrant) {
+      return { ok: false, error: 'Pending grant not found', code: 'NOT_FOUND' } as const;
+    }
+
+    if (pendingGrant.isActive) {
+      return { ok: true, data: { pendingGrantId, alreadyEnabled: true } } as const;
+    }
+
+    await tx
+      .update(billingPendingEntitlementGrants)
+      .set({ isActive: true, updatedAt: now })
+      .where(eq(billingPendingEntitlementGrants.id, pendingGrantId));
+
+    await appendBillingEvent(
+      {
+        source: 'admin',
+        type: 'pending_grant_enabled',
+        userId: enabledByUserId,
+        entityType: 'pending_grant',
+        entityId: pendingGrantId,
+        payload: {
+          pendingGrantId,
+          enabledByUserId,
+        },
+      },
+      tx,
+    );
+
+    return { ok: true, data: { pendingGrantId, alreadyEnabled: false } } as const;
   });
 }
 
@@ -971,7 +1078,15 @@ async function upsertAdminOverride({
           userId,
           entityType: 'override',
           entityId: null,
-          payload: { noExtension: true },
+          payload: {
+            noExtension: true,
+            grantedByUserId,
+            reason,
+            grantDurationDays: grantDurationDays ?? null,
+            grantFixedEndsAt: grantFixedEndsAt ? grantFixedEndsAt.toISOString() : null,
+            startsAt: grantWindow.startsAt.toISOString(),
+            endsAt: grantWindow.endsAt.toISOString(),
+          },
         },
         tx,
       );
@@ -1003,6 +1118,10 @@ async function upsertAdminOverride({
         entityId: override.id,
         payload: {
           overrideId: override.id,
+          grantedByUserId,
+          reason,
+          grantDurationDays: grantDurationDays ?? null,
+          grantFixedEndsAt: grantFixedEndsAt ? grantFixedEndsAt.toISOString() : null,
           startsAt: grantWindow.startsAt.toISOString(),
           endsAt: grantWindow.endsAt.toISOString(),
         },
@@ -1066,6 +1185,8 @@ export async function revokeAdminOverride({
     }
 
     affectedUserId = override.userId;
+    const previousEndsAt = override.endsAt;
+    const previousStartsAt = override.startsAt;
 
     if (override.endsAt <= now) {
       return { ok: true, data: { overrideId, alreadyRevoked: true } } as const;
@@ -1084,9 +1205,16 @@ export async function revokeAdminOverride({
       {
         source: 'admin',
         type: 'override_revoked',
-        userId: revokedByUserId,
+        userId: override.userId,
         entityType: 'override',
         entityId: overrideId,
+        payload: {
+          overrideId,
+          revokedByUserId,
+          startsAt: previousStartsAt.toISOString(),
+          previousEndsAt: previousEndsAt.toISOString(),
+          endsAt: now.toISOString(),
+        },
       },
       tx,
     );

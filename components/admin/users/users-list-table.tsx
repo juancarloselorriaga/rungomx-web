@@ -6,6 +6,7 @@ import { UsersTablePagination } from '@/components/admin/users/users-table-pagin
 import { UsersTableSkeleton } from '@/components/admin/users/users-table-skeleton';
 import { EntityListView } from '@/components/list-view/entity-list-view';
 import type { ListViewColumn } from '@/components/list-view/types';
+import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import type { CanonicalRole } from '@/lib/auth/roles';
@@ -53,6 +54,10 @@ export type UsersListRow = {
   name: string;
   canonicalRoles: CanonicalRole[];
   createdAt: Date;
+  proAccess?: {
+    isPro: boolean;
+    proUntil: Date | null;
+  };
 };
 
 type UsersListSortBy = 'createdAt' | 'name' | 'email' | 'role';
@@ -177,7 +182,14 @@ export function UsersListTable<TRoleFilter extends string>({
         visible: columnVisibility.name,
         cell: (user) => (
           <div className="flex flex-col gap-1">
-            <span className="font-semibold text-foreground">{user.name}</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-foreground">{user.name}</span>
+              {user.proAccess?.isPro ? (
+                <Badge variant="pro" size="sm">
+                  Pro
+                </Badge>
+              ) : null}
+            </div>
             <span className="text-xs text-muted-foreground">{user.email}</span>
           </div>
         ),

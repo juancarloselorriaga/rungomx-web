@@ -97,6 +97,20 @@
     "events": {
       "title": "Events timeline",
       "empty": "No billing events found.",
+      "details": {
+        "actor": "By: {actor}",
+        "accessWindow": "Access: {startsAt} → {endsAt}",
+        "noExtension": "No extension applied.",
+        "reason": "Reason: {reason}",
+        "previousEndsAt": "Original end: {endsAt}",
+        "codePrefix": "Code prefix: {codePrefix}",
+        "grantDuration": "Grant: {days} days",
+        "grantFixedEnd": "Grant ends: {endsAt}",
+        "validityWindow": "Valid: {from} → {to}",
+        "claimWindow": "Claim window: {from} → {to}",
+        "maxRedemptions": "Max redemptions: {count}",
+        "rawDetails": "Raw details"
+      },
       "types": {
         "trial_started": "Trial started",
         "cancel_scheduled": "Cancellation scheduled",
@@ -106,9 +120,11 @@
         "override_extended": "Override extended",
         "override_revoked": "Override revoked",
         "promotion_created": "Promotion created",
+        "promotion_enabled": "Promotion enabled",
         "promotion_disabled": "Promotion disabled",
         "promotion_redeemed": "Promotion redeemed",
         "pending_grant_created": "Pending grant created",
+        "pending_grant_enabled": "Pending grant enabled",
         "pending_grant_disabled": "Pending grant disabled",
         "pending_grant_claimed": "Pending grant claimed"
       }
@@ -118,12 +134,21 @@
       "title": "Admin overrides",
       "description": "Grant, extend, or revoke Pro access.",
       "latestLabel": "Latest override",
+      "emptyState": "Search for a user to manage overrides.",
+      "internalHint": "Overrides are disabled for internal users.",
       "fields": {
-        "userId": "User ID",
         "reason": "Reason",
+        "grantTypeLabel": "Grant type",
+        "grantType": {
+          "duration": "Duration",
+          "until": "Fixed end"
+        },
+        "grantTypeHint": {
+          "duration": "Extend by a number of days.",
+          "until": "Set a specific end date (UTC)."
+        },
         "duration": "Duration (days)",
-        "fixedEndsAt": "Fixed end (UTC)",
-        "overrideId": "Override ID"
+        "fixedEndsAt": "Fixed end (UTC)"
       },
       "grant": {
         "title": "Grant",
@@ -135,7 +160,15 @@
       },
       "revoke": {
         "title": "Revoke",
-        "action": "Revoke override"
+        "action": "Revoke override",
+        "activeHint": "Active override ends {endsAt}.",
+        "scheduledHint": "Scheduled override starts {startsAt}. It can be revoked once active.",
+        "noneHint": "No active admin override found.",
+        "confirm": {
+          "title": "Revoke override?",
+          "description": "This will end the active override immediately.",
+          "confirm": "Revoke now"
+        }
       },
       "success": {
         "granted": "Override granted.",
@@ -146,6 +179,7 @@
         "unauthenticated": "Sign in to manage overrides.",
         "forbidden": "You don't have access to manage overrides.",
         "invalidInput": "Check the required fields and try again.",
+        "internalUser": "Overrides are disabled for internal users.",
         "generic": "We couldn't update the override."
       }
     },
@@ -155,14 +189,32 @@
       "description": "Create or disable promo codes.",
       "latestLabel": "Latest code",
       "codeHint": "Copy the code now; it won't be shown again.",
+      "grant": {
+        "title": "Grant",
+        "description": "Choose what Pro access the promo grants when redeemed."
+      },
+      "validity": {
+        "title": "Redemption window",
+        "description": "Optional: restrict when the code can be redeemed (UTC)."
+      },
       "fields": {
         "name": "Name",
         "description": "Description",
+        "grantTypeLabel": "Grant type",
+        "grantType": {
+          "duration": "Duration",
+          "until": "Fixed end"
+        },
+        "grantTypeHint": {
+          "duration": "Extend by a number of days.",
+          "until": "Set a specific end date (UTC)."
+        },
         "duration": "Duration (days)",
         "fixedEndsAt": "Fixed end (UTC)",
         "validFrom": "Valid from (UTC)",
         "validTo": "Valid to (UTC)",
         "maxRedemptions": "Max redemptions",
+        "manageHint": "Need to pause a promo later? Use the Manage promos panel.",
         "isActive": "Active",
         "isActiveHint": "Disable to stop new redemptions."
       },
@@ -173,12 +225,38 @@
       "disable": {
         "title": "Disable promo",
         "fields": {
-          "promotionId": "Promotion ID"
+          "promotionId": "Promotion",
+          "promotionIdPlaceholder": "Search by name or code prefix"
         },
         "action": "Disable promo"
       },
+      "manage": {
+        "title": "Manage promos",
+        "description": "Search an existing promo and enable or disable it.",
+        "fields": {
+          "promotionId": "Promotion",
+          "promotionIdPlaceholder": "Search by name or code prefix"
+        },
+        "actions": {
+          "enable": "Enable promo",
+          "disable": "Disable promo"
+        },
+        "errors": {
+          "selectPromotion": "Select a promotion from the results."
+        }
+      },
+      "search": {
+        "badges": {
+          "active": "Active",
+          "inactive": "Inactive"
+        },
+        "summary": {
+          "redemptions": "{count} redeemed"
+        }
+      },
       "success": {
         "created": "Promo created.",
+        "enabled": "Promo enabled.",
         "disabled": "Promo disabled.",
         "copied": "Promo code copied."
       },
@@ -195,12 +273,31 @@
       "title": "Email-based grants",
       "description": "Create Pro access grants that claim after verification.",
       "latestLabel": "Latest pending grant",
+      "grant": {
+        "title": "Grant",
+        "description": "Choose what Pro access the grant should apply after the user verifies their email."
+      },
+      "claim": {
+        "title": "Claim window",
+        "description": "Optional: restrict when the grant can be claimed (UTC)."
+      },
       "fields": {
         "email": "Email",
+        "emailPlaceholder": "Type an email or pick a recent user",
+        "grantTypeLabel": "Grant type",
+        "grantType": {
+          "duration": "Duration",
+          "until": "Fixed end"
+        },
+        "grantTypeHint": {
+          "duration": "Extend by a number of days.",
+          "until": "Set a specific end date (UTC)."
+        },
         "duration": "Duration (days)",
         "fixedEndsAt": "Fixed end (UTC)",
         "claimValidFrom": "Claim valid from (UTC)",
         "claimValidTo": "Claim valid to (UTC)",
+        "manageHint": "Need to pause a grant later? Use the Manage grants panel.",
         "isActive": "Active",
         "isActiveHint": "Inactive grants can't be claimed."
       },
@@ -210,12 +307,46 @@
       "disable": {
         "title": "Disable pending grant",
         "fields": {
-          "pendingGrantId": "Pending grant ID"
+          "pendingGrantId": "Pending grant",
+          "pendingGrantIdPlaceholder": "Search by email (recommended) or ID"
         },
         "action": "Disable pending grant"
       },
+      "manage": {
+        "title": "Manage grants",
+        "description": "Search grants by email and enable or disable them.",
+        "fields": {
+          "email": "Email",
+          "emailPlaceholder": "Type an email to find grants"
+        },
+        "emptyState": "Enter an email to view grants.",
+        "emptyResults": "No pending grants found for this email.",
+        "labels": {
+          "internalId": "Internal ID"
+        },
+        "actions": {
+          "enable": "Enable pending grant",
+          "disable": "Disable pending grant"
+        },
+        "errors": {
+          "invalidEmail": "Enter a valid email address.",
+          "selectPendingGrant": "Select a pending grant from the results."
+        }
+      },
+      "search": {
+        "badges": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "claimed": "Claimed"
+        },
+        "summary": {
+          "duration": "{days} days",
+          "fixedEnd": "Ends {endsAt}"
+        }
+      },
       "success": {
         "created": "Pending grant created.",
+        "enabled": "Pending grant enabled.",
         "disabled": "Pending grant disabled."
       },
       "errors": {
@@ -227,4 +358,3 @@
     }
   }
 }
-

@@ -97,6 +97,20 @@
     "events": {
       "title": "Historial de eventos",
       "empty": "No hay eventos de facturación.",
+      "details": {
+        "actor": "Por: {actor}",
+        "accessWindow": "Acceso: {startsAt} → {endsAt}",
+        "noExtension": "No se aplicó extensión.",
+        "reason": "Motivo: {reason}",
+        "previousEndsAt": "Fin original: {endsAt}",
+        "codePrefix": "Prefijo del código: {codePrefix}",
+        "grantDuration": "Asignación: {days} días",
+        "grantFixedEnd": "Termina: {endsAt}",
+        "validityWindow": "Vigencia: {from} → {to}",
+        "claimWindow": "Ventana de reclamo: {from} → {to}",
+        "maxRedemptions": "Canjes máximos: {count}",
+        "rawDetails": "Detalles"
+      },
       "types": {
         "trial_started": "Prueba iniciada",
         "cancel_scheduled": "Cancelación programada",
@@ -106,9 +120,11 @@
         "override_extended": "Override extendido",
         "override_revoked": "Override revocado",
         "promotion_created": "Promoción creada",
+        "promotion_enabled": "Promoción activada",
         "promotion_disabled": "Promoción desactivada",
         "promotion_redeemed": "Promoción canjeada",
         "pending_grant_created": "Asignación pendiente creada",
+        "pending_grant_enabled": "Asignación pendiente activada",
         "pending_grant_disabled": "Asignación pendiente desactivada",
         "pending_grant_claimed": "Asignación pendiente reclamada"
       }
@@ -118,12 +134,21 @@
       "title": "Overrides administrativos",
       "description": "Otorga, extiende o revoca acceso Pro.",
       "latestLabel": "Último override",
+      "emptyState": "Busca un usuario para gestionar overrides.",
+      "internalHint": "Los overrides no están disponibles para usuarios internos.",
       "fields": {
-        "userId": "ID de usuario",
         "reason": "Motivo",
+        "grantTypeLabel": "Tipo de asignación",
+        "grantType": {
+          "duration": "Duración",
+          "until": "Fin fijo"
+        },
+        "grantTypeHint": {
+          "duration": "Extiende por una cantidad de días.",
+          "until": "Define una fecha de término (UTC)."
+        },
         "duration": "Duración (días)",
-        "fixedEndsAt": "Termina en (UTC)",
-        "overrideId": "ID de override"
+        "fixedEndsAt": "Termina en (UTC)"
       },
       "grant": {
         "title": "Otorgar",
@@ -135,7 +160,15 @@
       },
       "revoke": {
         "title": "Revocar",
-        "action": "Revocar override"
+        "action": "Revocar override",
+        "activeHint": "El override activo termina {endsAt}.",
+        "scheduledHint": "El override programado comienza {startsAt}. Podrás revocarlo cuando esté activo.",
+        "noneHint": "No hay un override administrativo activo.",
+        "confirm": {
+          "title": "¿Revocar override?",
+          "description": "Esto termina el override activo de inmediato.",
+          "confirm": "Revocar ahora"
+        }
       },
       "success": {
         "granted": "Override otorgado.",
@@ -146,6 +179,7 @@
         "unauthenticated": "Inicia sesión para gestionar overrides.",
         "forbidden": "No tienes acceso para gestionar overrides.",
         "invalidInput": "Revisa los campos requeridos e intenta de nuevo.",
+        "internalUser": "Los overrides no están disponibles para usuarios internos.",
         "generic": "No pudimos actualizar el override."
       }
     },
@@ -155,14 +189,32 @@
       "description": "Crea o desactiva códigos promocionales.",
       "latestLabel": "Último código",
       "codeHint": "Copia el código ahora; no se mostrará de nuevo.",
+      "grant": {
+        "title": "Asignación",
+        "description": "Elige qué acceso Pro otorga la promo al canjearse."
+      },
+      "validity": {
+        "title": "Ventana de canje",
+        "description": "Opcional: limita cuándo se puede canjear el código (UTC)."
+      },
       "fields": {
         "name": "Nombre",
         "description": "Descripción",
+        "grantTypeLabel": "Tipo de asignación",
+        "grantType": {
+          "duration": "Duración",
+          "until": "Fin fijo"
+        },
+        "grantTypeHint": {
+          "duration": "Extiende por una cantidad de días.",
+          "until": "Define una fecha de término (UTC)."
+        },
         "duration": "Duración (días)",
         "fixedEndsAt": "Termina en (UTC)",
         "validFrom": "Válido desde (UTC)",
         "validTo": "Válido hasta (UTC)",
         "maxRedemptions": "Canjes máximos",
+        "manageHint": "¿Necesitas pausar una promo después? Usa el panel \"Gestionar promos\".",
         "isActive": "Activo",
         "isActiveHint": "Desactiva para detener nuevos canjes."
       },
@@ -173,12 +225,38 @@
       "disable": {
         "title": "Desactivar promo",
         "fields": {
-          "promotionId": "ID de promoción"
+          "promotionId": "Promoción",
+          "promotionIdPlaceholder": "Buscar por nombre o prefijo del código"
         },
         "action": "Desactivar promo"
       },
+      "manage": {
+        "title": "Gestionar promos",
+        "description": "Busca una promo existente y actívala o desactívala.",
+        "fields": {
+          "promotionId": "Promoción",
+          "promotionIdPlaceholder": "Buscar por nombre o prefijo del código"
+        },
+        "actions": {
+          "enable": "Activar promo",
+          "disable": "Desactivar promo"
+        },
+        "errors": {
+          "selectPromotion": "Selecciona una promoción de los resultados."
+        }
+      },
+      "search": {
+        "badges": {
+          "active": "Activo",
+          "inactive": "Inactivo"
+        },
+        "summary": {
+          "redemptions": "{count} canjeados"
+        }
+      },
       "success": {
         "created": "Promo creada.",
+        "enabled": "Promo activada.",
         "disabled": "Promo desactivada.",
         "copied": "Código copiado."
       },
@@ -195,12 +273,31 @@
       "title": "Asignaciones por correo",
       "description": "Crea asignaciones de acceso Pro que se reclaman después de verificar el correo.",
       "latestLabel": "Última asignación",
+      "grant": {
+        "title": "Asignación",
+        "description": "Elige qué acceso Pro debe aplicarse después de que el usuario verifique su correo."
+      },
+      "claim": {
+        "title": "Ventana de reclamo",
+        "description": "Opcional: limita cuándo se puede reclamar la asignación (UTC)."
+      },
       "fields": {
         "email": "Correo",
+        "emailPlaceholder": "Escribe un correo o elige un usuario reciente",
+        "grantTypeLabel": "Tipo de asignación",
+        "grantType": {
+          "duration": "Duración",
+          "until": "Fin fijo"
+        },
+        "grantTypeHint": {
+          "duration": "Extiende por una cantidad de días.",
+          "until": "Define una fecha de término (UTC)."
+        },
         "duration": "Duración (días)",
         "fixedEndsAt": "Termina en (UTC)",
         "claimValidFrom": "Reclamo válido desde (UTC)",
         "claimValidTo": "Reclamo válido hasta (UTC)",
+        "manageHint": "¿Necesitas pausar una asignación después? Usa el panel \"Gestionar asignaciones\".",
         "isActive": "Activo",
         "isActiveHint": "Las asignaciones inactivas no se pueden reclamar."
       },
@@ -210,12 +307,46 @@
       "disable": {
         "title": "Desactivar asignación",
         "fields": {
-          "pendingGrantId": "ID de asignación"
+          "pendingGrantId": "Asignación",
+          "pendingGrantIdPlaceholder": "Buscar por correo (recomendado) o ID"
         },
         "action": "Desactivar asignación"
       },
+      "manage": {
+        "title": "Gestionar asignaciones",
+        "description": "Busca asignaciones por correo y actívalas o desactívalas.",
+        "fields": {
+          "email": "Correo",
+          "emailPlaceholder": "Escribe un correo para encontrar asignaciones"
+        },
+        "emptyState": "Escribe un correo para ver asignaciones.",
+        "emptyResults": "No se encontraron asignaciones para este correo.",
+        "labels": {
+          "internalId": "ID interno"
+        },
+        "actions": {
+          "enable": "Activar asignación",
+          "disable": "Desactivar asignación"
+        },
+        "errors": {
+          "invalidEmail": "Escribe un correo válido.",
+          "selectPendingGrant": "Selecciona una asignación de los resultados."
+        }
+      },
+      "search": {
+        "badges": {
+          "active": "Activo",
+          "inactive": "Inactivo",
+          "claimed": "Reclamado"
+        },
+        "summary": {
+          "duration": "{days} días",
+          "fixedEnd": "Termina {endsAt}"
+        }
+      },
       "success": {
         "created": "Asignación creada.",
+        "enabled": "Asignación activada.",
         "disabled": "Asignación desactivada."
       },
       "errors": {
@@ -227,4 +358,3 @@
     }
   }
 }
-

@@ -33,6 +33,10 @@ function deserializeUsers(users: SerializedSelfSignupUserRow[]): SelfSignupUserR
   return users.map((user) => ({
     ...user,
     createdAt: new Date(user.createdAt),
+    proAccess: {
+      ...user.proAccess,
+      proUntil: user.proAccess.proUntil ? new Date(user.proAccess.proUntil) : null,
+    },
   }));
 }
 

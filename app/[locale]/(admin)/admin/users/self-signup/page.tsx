@@ -49,6 +49,10 @@ export default async function SelfSignupUsersPage({
     ? result.users.map((user) => ({
         ...user,
         createdAt: user.createdAt.toISOString(),
+        proAccess: {
+          ...user.proAccess,
+          proUntil: user.proAccess.proUntil ? user.proAccess.proUntil.toISOString() : null,
+        },
       }))
     : [];
 
