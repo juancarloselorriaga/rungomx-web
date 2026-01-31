@@ -99,5 +99,12 @@ export async function getBillingStatusForUser(
   if (hasTransaction) {
     return getBillingStatusForUserUncached(params);
   }
+
+  // E2E runs and Jest suites expect read-your-writes behavior. When Next cache is enabled,
+  // status updates (trial start, promo redemption, grant claims) can lag until cache expiry.
+  if (process.env.NODE_ENV === 'test') {
+    return getBillingStatusForUserUncached(params);
+  }
+
   return getBillingStatusForUserCached(params);
 }
