@@ -88,6 +88,7 @@ export function ProAccessOverridesClient() {
   const [latestOverrideId, setLatestOverrideId] = useState<string | null>(null);
   const [referenceTimeMs, setReferenceTimeMs] = useState(0);
   const hasAutoSubmitted = useRef(false);
+  const prevInitialEmail = useRef(initialEmail);
   const [isRevoking, setIsRevoking] = useState(false);
 
   const formatUtc = (value: Date | null) => {
@@ -143,10 +144,22 @@ export function ProAccessOverridesClient() {
   }, []);
 
   useEffect(() => {
+    if (prevInitialEmail.current === initialEmail) return;
+    prevInitialEmail.current = initialEmail;
+    hasAutoSubmitted.current = false;
+    setLookupResult(null);
+    setLatestOverrideId(null);
+    lookupForm.setFieldValue('email', initialEmail);
+  }, [initialEmail, lookupForm]);
+
+  useEffect(() => {
     if (!initialEmail) return;
     if (hasAutoSubmitted.current) return;
     hasAutoSubmitted.current = true;
-    lookupForm.handleSubmit({ preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>);
+    lookupForm.handleSubmit(
+      { preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>,
+      { email: initialEmail },
+    );
   }, [initialEmail, lookupForm]);
 
   const overrideMode = lookupResult?.status.isPro ? 'extend' : 'grant';

@@ -125,6 +125,7 @@ export function ProAccessStatusClient() {
   const [latestOverrideId, setLatestOverrideId] = useState<string | null>(null);
   const hasAutoSubmitted = useRef(false);
   const lastLookupEmail = useRef<string | null>(null);
+  const prevInitialEmail = useRef(initialEmail);
   const [isRevoking, setIsRevoking] = useState(false);
 
   const overridesSectionRef = useRef<HTMLElement | null>(null);
@@ -342,11 +343,24 @@ export function ProAccessStatusClient() {
   }, []);
 
   useEffect(() => {
+    if (prevInitialEmail.current === initialEmail) return;
+    prevInitialEmail.current = initialEmail;
+    hasAutoSubmitted.current = false;
+    lastLookupEmail.current = null;
+    setLookupResult(null);
+    setLatestOverrideId(null);
+    lookupForm.setFieldValue('email', initialEmail);
+  }, [initialEmail, lookupForm]);
+
+  useEffect(() => {
     if (!initialEmail) return;
     if (hasAutoSubmitted.current) return;
     hasAutoSubmitted.current = true;
     lastLookupEmail.current = initialEmail;
-    lookupHandleSubmit({ preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>);
+    lookupHandleSubmit(
+      { preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>,
+      { email: initialEmail },
+    );
   }, [initialEmail, lookupHandleSubmit]);
 
   useEffect(() => {
