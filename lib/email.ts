@@ -28,6 +28,21 @@ interface SendEmailOptions {
 
 type SendEmailResult = Awaited<ReturnType<typeof emailApi.sendTransacEmail>>;
 
+type EmailDeliveryDisableReason = 'DISABLE_EMAIL_SENDING' | 'EMAIL_DELIVERY_DISABLED' | null;
+
+function getEmailDeliveryDisableReason(): EmailDeliveryDisableReason {
+  const disableEmailSending = process.env.DISABLE_EMAIL_SENDING;
+  if (disableEmailSending === '1' || disableEmailSending === 'true') {
+    return 'DISABLE_EMAIL_SENDING';
+  }
+
+  if (process.env.EMAIL_DELIVERY_DISABLED === 'true') {
+    return 'EMAIL_DELIVERY_DISABLED';
+  }
+
+  return null;
+}
+
 function normalizeRecipients(
   recipients: SendEmailOptions['to'],
   fallbackName?: string,
@@ -73,13 +88,15 @@ export async function sendEmail({
   textContent,
   toName,
 }: SendEmailOptions): Promise<SendEmailResult> {
+}: SendEmailOptions): Promise<SendEmailResult> {
   const recipients = normalizeRecipients(to, toName);
   if (recipients.length === 0) {
     throw new Error('No email recipients provided');
   }
 
   const isProduction = process.env.NODE_ENV === 'production';
-  const deliveryDisabled = process.env.EMAIL_DELIVERY_DISABLED === 'true';
+  const deliveryDisabledReason = getEmailDeliveryDisableReason();
+  const deliveryDisabled = deliveryDisabledReason !== null;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || 'RungoMX';
 
@@ -96,7 +113,7 @@ export async function sendEmail({
     console.warn('[email] Delivery skipped (non-production or disabled)', {
       to: recipients.map((r) => r.email),
       subject,
-      reason: deliveryDisabled ? 'EMAIL_DELIVERY_DISABLED' : 'BREVO_CONFIG_MISSING',
+      reason: deliveryDisabledReason ?? 'BREVO_CONFIG_MISSING',
     });
 
     return { body: { messageId: 'skipped' } } as unknown as SendEmailResult;
