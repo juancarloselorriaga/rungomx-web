@@ -137,6 +137,7 @@ export default defineConfig({
   webServer: {
     // Avoid file watchers (EMFILE) and bind to localhost for E2E stability.
     command: `NODE_ENV=test pnpm exec next dev -H 127.0.0.1 -p ${port}`,
+    cwd: repoRoot,
     url: origin,
     // Always start a fresh server for E2E to guarantee env + DB isolation.
     // Reusing an existing server can point tests at the wrong DATABASE_URL.

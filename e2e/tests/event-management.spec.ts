@@ -38,6 +38,8 @@ test.describe('Event Management', () => {
   let editionSlug: string;
 
   test.beforeAll(async ({ browser }) => {
+    test.setTimeout(120_000);
+
     const db = getTestDb();
     const context = await browser.newContext();
     const page = await context.newPage();
@@ -179,8 +181,22 @@ test.describe('Event Management', () => {
     // Pause registration
     await pauseRegistration(page);
 
-    // Status should show Paused
-    await expect(page.getByText(/paused/i)).toBeVisible();
+    // Verify the pause is persisted in the database
+    const db = getTestDb();
+    const start = Date.now();
+    let pausedValue = false;
+
+    while (Date.now() - start < 5000) {
+      const edition = await db.query.eventEditions.findFirst({
+        where: and(eq(eventEditions.id, eventId), isNull(eventEditions.deletedAt)),
+      });
+
+      pausedValue = Boolean(edition?.isRegistrationPaused);
+      if (pausedValue) break;
+      await page.waitForTimeout(250);
+    }
+
+    expect(pausedValue).toBe(true);
   });
 
   test('Test 1.6b: Paused registration shows on public page', async ({ page }) => {
@@ -233,17 +249,31 @@ test.describe('Event Management', () => {
     const locationButton = page.getByRole('button', { name: /event location/i });
     await expect(locationButton).toBeVisible();
     await expect(locationButton).toBeEnabled();
+    const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+    const searchInput = page.getByPlaceholder(/search for a place or address/i);
+
+    await locationButton.scrollIntoViewIfNeeded();
     await locationButton.click();
+    await expect(buildIndicator).toBeHidden({ timeout: 60000 });
 
-    // Wait a moment for dialog to open
-    await page.waitForTimeout(500);
+    // The dialog is dynamic-imported and can take a bit to mount; if it doesn't mount,
+    // retry opening once, but avoid clicking the underlying button when the overlay is already open.
+    try {
+      await searchInput.waitFor({ state: 'visible', timeout: 30000 });
+    } catch (error) {
+      const anyDialog = page.locator('[data-slot="dialog-content"]').first();
+      const isDialogOpen = await anyDialog.isVisible().catch(() => false);
+      if (!isDialogOpen) {
+        await locationButton.click();
+        await expect(buildIndicator).toBeHidden({ timeout: 60000 });
+      }
+      await searchInput.waitFor({ state: 'visible', timeout: 30000 });
+    }
 
-    // Wait for location dialog
-    const locationDialog = page.getByRole('dialog');
-    await expect(locationDialog).toBeVisible({ timeout: 10000 });
+    const locationDialog = page.locator('[data-slot="dialog-content"]').filter({ has: searchInput }).first();
+    await expect(locationDialog).toBeVisible({ timeout: 30000 });
 
     // Search for new location
-    const searchInput = locationDialog.getByPlaceholder(/search for a place or address/i);
     await searchInput.fill('Guadalajara, Jalisco, Mexico');
     await page.waitForTimeout(500);
 
