@@ -187,6 +187,15 @@
       "sectionLabel": "Promotions",
       "title": "Promo codes",
       "description": "Create or disable promo codes.",
+      "info": {
+        "triggerLabel": "About promo codes",
+        "title": "How promo codes work",
+        "steps": {
+          "create": "Create a code and share it with the recipient.",
+          "redeem": "Redeeming the code grants Pro access based on the grant settings.",
+          "control": "Use validity dates, max redemptions, or disable to stop new redemptions."
+        }
+      },
       "latestLabel": "Latest code",
       "codeHint": "Copy the code now; it won't be shown again.",
       "grant": {
@@ -315,6 +324,15 @@
       "sectionLabel": "Pending grants",
       "title": "Email-based grants",
       "description": "Create Pro access grants that claim after verification.",
+      "info": {
+        "triggerLabel": "About email-based grants",
+        "title": "How email grants work",
+        "steps": {
+          "assign": "Assign Pro access to an email before the user signs up.",
+          "verify": "The grant is claimed automatically after that email is verified.",
+          "configure": "Choose duration or fixed end; optional claim window limits when it can be claimed."
+        }
+      },
       "latestLabel": "Latest pending grant",
       "grant": {
         "title": "Grant",

@@ -75,9 +75,12 @@ type OverrideFormValues = {
 };
 
 type AdminOverrideState = {
-  active: { id: string; endsAt: Date } | null;
-  scheduled: { id: string; startsAt: Date } | null;
+  active: { id: string; endsAt: Date; durationDays: number } | null;
+  scheduled: { id: string; startsAt: Date; durationDays: number } | null;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_GRANT_DURATION_DAYS = '7';
 
 function toOptionalNumber(value: string) {
   const trimmed = value.trim();
@@ -122,6 +125,7 @@ export function ProAccessStatusClient() {
   const [latestOverrideId, setLatestOverrideId] = useState<string | null>(null);
   const hasAutoSubmitted = useRef(false);
   const lastLookupEmail = useRef<string | null>(null);
+  const prevInitialEmail = useRef(initialEmail);
   const [isRevoking, setIsRevoking] = useState(false);
 
   const overridesSectionRef = useRef<HTMLElement | null>(null);
@@ -339,11 +343,24 @@ export function ProAccessStatusClient() {
   }, []);
 
   useEffect(() => {
+    if (prevInitialEmail.current === initialEmail) return;
+    prevInitialEmail.current = initialEmail;
+    hasAutoSubmitted.current = false;
+    lastLookupEmail.current = null;
+    setLookupResult(null);
+    setLatestOverrideId(null);
+    lookupForm.setFieldValue('email', initialEmail);
+  }, [initialEmail, lookupForm]);
+
+  useEffect(() => {
     if (!initialEmail) return;
     if (hasAutoSubmitted.current) return;
     hasAutoSubmitted.current = true;
     lastLookupEmail.current = initialEmail;
-    lookupHandleSubmit({ preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>);
+    lookupHandleSubmit(
+      { preventDefault: () => {} } as unknown as FormEvent<HTMLFormElement>,
+      { email: initialEmail },
+    );
   }, [initialEmail, lookupHandleSubmit]);
 
   useEffect(() => {
@@ -402,9 +419,14 @@ export function ProAccessStatusClient() {
       .filter((override) => override.startsAt.getTime() > now)
       .sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime())[0];
 
+    const toDurationDays = (override: { startsAt: Date; endsAt: Date }) =>
+      Math.max(1, Math.ceil((override.endsAt.getTime() - override.startsAt.getTime()) / DAY_MS));
+
     return {
-      active: active ? { id: active.id, endsAt: active.endsAt } : null,
-      scheduled: scheduled ? { id: scheduled.id, startsAt: scheduled.startsAt } : null,
+      active: active ? { id: active.id, endsAt: active.endsAt, durationDays: toDurationDays(active) } : null,
+      scheduled: scheduled
+        ? { id: scheduled.id, startsAt: scheduled.startsAt, durationDays: toDurationDays(scheduled) }
+        : null,
     };
   }, [lookupResult, referenceTimeMs]);
 
@@ -423,7 +445,7 @@ export function ProAccessStatusClient() {
     defaultValues: {
       reason: '',
       grantType: 'duration',
-      grantDurationDays: '',
+      grantDurationDays: DEFAULT_GRANT_DURATION_DAYS,
       grantFixedEndsAt: '',
     },
     onSubmit: async (values) => {
@@ -727,7 +749,12 @@ export function ProAccessStatusClient() {
                   onChangeAction={(next) => {
                     overrideForm.setFieldValue('grantType', next);
                     if (next === 'duration') {
+                      const durationDays =
+                        adminOverrideState.active?.durationDays ??
+                        adminOverrideState.scheduled?.durationDays ??
+                        Number(DEFAULT_GRANT_DURATION_DAYS);
                       overrideForm.setFieldValue('grantFixedEndsAt', '');
+                      overrideForm.setFieldValue('grantDurationDays', String(durationDays));
                       overrideForm.clearError('grantFixedEndsAt');
                     } else {
                       overrideForm.setFieldValue('grantDurationDays', '');
