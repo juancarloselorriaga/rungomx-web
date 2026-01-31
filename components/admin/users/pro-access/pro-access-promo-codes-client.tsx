@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  createPromotionAction,
   disablePromotionAction,
   enablePromotionAction,
 } from '@/app/actions/billing-admin';
@@ -9,34 +8,20 @@ import type { NormalizedAdminPromotionsQuery } from '@/lib/admin-pro-access/prom
 import { buildAdminUsersQueryObject } from '@/components/admin/users/search-params';
 import { adminUsersTextInputClassName } from '@/components/admin/users/styles';
 import { UsersTablePagination } from '@/components/admin/users/users-table-pagination';
-import { GrantTypeSelector } from '@/components/admin/users/pro-access/grant-type-selector';
+import { PromoCodeCreateDialog } from '@/components/admin/users/pro-access/promo-code-create-dialog';
 import { Badge } from '@/components/common/badge';
 import { EntityListView } from '@/components/list-view/entity-list-view';
 import type { ListViewColumn } from '@/components/list-view/types';
 import { Button } from '@/components/ui/button';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { Spinner } from '@/components/ui/spinner';
-import { Form, FormError, useForm } from '@/lib/forms';
 import { usePathname, useRouter } from '@/i18n/navigation';
-import { Copy, Pause, Play, Search } from 'lucide-react';
-import { useFormatter, useLocale, useTranslations } from 'next-intl';
+import { Copy, Pause, Play, Plus, Search } from 'lucide-react';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-
-type PromotionFormValues = {
-  name: string;
-  description: string;
-  grantType: 'duration' | 'until';
-  grantDurationDays: string;
-  grantFixedEndsAt: string;
-  validFrom: string;
-  validTo: string;
-  maxRedemptions: string;
-};
 
 export type SerializedAdminPromotionRow = {
   id: string;
@@ -77,13 +62,6 @@ type ProAccessPromoCodesClientProps = {
     pageCount: number;
   };
 };
-
-function toOptionalNumber(value: string) {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 function deserializePromotions(rows: SerializedAdminPromotionRow[]): AdminPromotionRow[] {
   return rows.map((row) => ({
@@ -427,68 +405,13 @@ export function ProAccessPromoCodesClient({
 }: ProAccessPromoCodesClientProps) {
   const tPage = useTranslations('pages.adminProAccess.page.promoCodes');
   const t = useTranslations('pages.adminProAccess.billing');
-  const tCommon = useTranslations('common');
-  const locale = useLocale();
   const router = useRouter();
 
   const promotions = useMemo(() => deserializePromotions(initialPromotions), [initialPromotions]);
   const [isTableLoading, setIsTableLoading] = useState(false);
 
   const [latestPromoCode, setLatestPromoCode] = useState<string | null>(null);
-
-  const promoForm = useForm<PromotionFormValues, { code: string }>({
-    defaultValues: {
-      name: '',
-      description: '',
-      grantType: 'duration',
-      grantDurationDays: '',
-      grantFixedEndsAt: '',
-      validFrom: '',
-      validTo: '',
-      maxRedemptions: '',
-    },
-    onSubmit: async (values) => {
-      const payload = {
-        name: values.name.trim() || null,
-        description: values.description.trim() || null,
-        grantDurationDays:
-          values.grantType === 'duration' ? toOptionalNumber(values.grantDurationDays) : null,
-        grantFixedEndsAt:
-          values.grantType === 'until' && values.grantFixedEndsAt ? values.grantFixedEndsAt : null,
-        validFrom: values.validFrom ? values.validFrom : null,
-        validTo: values.validTo ? values.validTo : null,
-        maxRedemptions: toOptionalNumber(values.maxRedemptions),
-      };
-
-      const result = await createPromotionAction(payload);
-      if (!result.ok) {
-        const message =
-          result.error === 'UNAUTHENTICATED'
-            ? t('promotion.errors.unauthenticated')
-            : result.error === 'FORBIDDEN'
-              ? t('promotion.errors.forbidden')
-              : result.error === 'INVALID_INPUT'
-                ? t('promotion.errors.invalidInput')
-                : t('promotion.errors.generic');
-        const fieldErrors =
-          result.error === 'INVALID_INPUT' && 'fieldErrors' in result && result.fieldErrors
-            ? Object.fromEntries(
-                Object.keys(result.fieldErrors).map((field) => [field, [message]]),
-              )
-            : undefined;
-        return fieldErrors ? { ...result, fieldErrors, message } : { ...result, message };
-      }
-      return result;
-    },
-    onSuccess: (data) => {
-      setLatestPromoCode(data.code);
-      toast.success(t('promotion.success.created'));
-      promoForm.reset();
-      promoForm.setFieldValue('grantType', 'duration');
-      setIsTableLoading(true);
-      router.refresh();
-    },
-  });
+  const [createOpen, setCreateOpen] = useState(false);
 
   const bannerMessage = useMemo(() => {
     if (!initialError) return null;
@@ -514,14 +437,20 @@ export function ProAccessPromoCodesClient({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
-          {tPage('sectionLabel')}
-        </p>
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold leading-tight">{tPage('title')}</h1>
-          <p className="text-muted-foreground">{tPage('description')}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+            {tPage('sectionLabel')}
+          </p>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold leading-tight">{tPage('title')}</h1>
+            <p className="text-muted-foreground">{tPage('description')}</p>
+          </div>
         </div>
+        <Button onClick={() => setCreateOpen(true)} className="shrink-0">
+          <Plus className="size-4" />
+          {t('promotion.actions.create')}
+        </Button>
       </div>
 
       {bannerMessage ? (
@@ -530,160 +459,23 @@ export function ProAccessPromoCodesClient({
         </div>
       ) : null}
 
-      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('promotion.sectionLabel')}
+      {latestPromoCode ? (
+        <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {t('promotion.latestLabel')}
           </p>
-          <h2 className="text-lg font-semibold">{t('promotion.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('promotion.description')}</p>
-        </div>
-
-        {latestPromoCode ? (
-          <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t('promotion.latestLabel')}
-            </p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <span className="font-mono text-base font-semibold text-foreground">
-                {latestPromoCode}
-              </span>
-              <Button type="button" size="sm" variant="outline" onClick={copyPromoCode}>
-                <Copy className="size-4" />
-                {t('promotion.actions.copy')}
-              </Button>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">{t('promotion.codeHint')}</p>
-          </div>
-        ) : null}
-
-        <Form form={promoForm} className="flex flex-col">
-          <FormError />
-          <div className="flex-1 space-y-4">
-            <FormField label={t('promotion.fields.name')} error={promoForm.errors.name}>
-              <input
-                type="text"
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                {...promoForm.register('name')}
-              />
-            </FormField>
-            <FormField label={t('promotion.fields.description')} error={promoForm.errors.description}>
-              <textarea
-                rows={3}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                {...promoForm.register('description')}
-              />
-            </FormField>
-
-            <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
-              <p className="text-sm font-semibold text-foreground">{t('promotion.grant.title')}</p>
-              <p className="text-xs text-muted-foreground">{t('promotion.grant.description')}</p>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">
-                  {t('promotion.fields.grantTypeLabel')}
-                </p>
-                <GrantTypeSelector
-                  value={promoForm.values.grantType}
-                  onChangeAction={(next) => {
-                    promoForm.setFieldValue('grantType', next);
-                    if (next === 'duration') {
-                      promoForm.setFieldValue('grantFixedEndsAt', '');
-                      promoForm.clearError('grantFixedEndsAt');
-                    } else {
-                      promoForm.setFieldValue('grantDurationDays', '');
-                      promoForm.clearError('grantDurationDays');
-                    }
-                  }}
-                  disabled={promoForm.isSubmitting}
-                  label={t('promotion.fields.grantTypeLabel')}
-                  durationLabel={t('promotion.fields.grantType.duration')}
-                  durationDescription={t('promotion.fields.grantTypeHint.duration')}
-                  untilLabel={t('promotion.fields.grantType.until')}
-                  untilDescription={t('promotion.fields.grantTypeHint.until')}
-                />
-              </div>
-
-              {promoForm.values.grantType === 'duration' ? (
-                <FormField
-                  label={t('promotion.fields.duration')}
-                  required
-                  error={promoForm.errors.grantDurationDays}
-                >
-                  <input
-                    type="number"
-                    min="1"
-                    className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                    {...promoForm.register('grantDurationDays')}
-                    disabled={promoForm.isSubmitting}
-                  />
-                </FormField>
-              ) : (
-                <FormField
-                  label={t('promotion.fields.fixedEndsAt')}
-                  required
-                  error={promoForm.errors.grantFixedEndsAt}
-                >
-                  <DateTimePicker
-                    value={promoForm.values.grantFixedEndsAt}
-                    onChangeAction={(value) => promoForm.setFieldValue('grantFixedEndsAt', value)}
-                    locale={locale}
-                    clearLabel={tCommon('clear')}
-                    disabled={promoForm.isSubmitting}
-                  />
-                </FormField>
-              )}
-            </div>
-
-            <div className="space-y-2 rounded-md border border-border/60 bg-muted/20 p-3">
-              <p className="text-sm font-semibold text-foreground">{t('promotion.validity.title')}</p>
-              <p className="text-xs text-muted-foreground">{t('promotion.validity.description')}</p>
-              <div className="grid gap-4 md:grid-cols-2">
-                <FormField label={t('promotion.fields.validFrom')} error={promoForm.errors.validFrom}>
-                  <DateTimePicker
-                    value={promoForm.values.validFrom}
-                    onChangeAction={(value) => promoForm.setFieldValue('validFrom', value)}
-                    locale={locale}
-                    clearLabel={tCommon('clear')}
-                    disabled={promoForm.isSubmitting}
-                  />
-                </FormField>
-                <FormField label={t('promotion.fields.validTo')} error={promoForm.errors.validTo}>
-                  <DateTimePicker
-                    value={promoForm.values.validTo}
-                    onChangeAction={(value) => promoForm.setFieldValue('validTo', value)}
-                    locale={locale}
-                    clearLabel={tCommon('clear')}
-                    disabled={promoForm.isSubmitting}
-                  />
-                </FormField>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormField label={t('promotion.fields.maxRedemptions')} error={promoForm.errors.maxRedemptions}>
-                <input
-                  type="number"
-                  min="1"
-                  className="h-10 w-full rounded-md border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  {...promoForm.register('maxRedemptions')}
-                  disabled={promoForm.isSubmitting}
-                />
-              </FormField>
-              <p className="text-xs text-muted-foreground md:col-span-2">
-                {t('promotion.fields.manageHint')}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:justify-end">
-            <Button type="submit" className="w-full sm:w-auto" disabled={promoForm.isSubmitting}>
-              {promoForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
-              {t('promotion.actions.create')}
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <span className="font-mono text-base font-semibold text-foreground">
+              {latestPromoCode}
+            </span>
+            <Button type="button" size="sm" variant="outline" onClick={copyPromoCode}>
+              <Copy className="size-4" />
+              {t('promotion.actions.copy')}
             </Button>
           </div>
-        </Form>
-      </section>
+          <p className="mt-2 text-xs text-muted-foreground">{t('promotion.codeHint')}</p>
+        </div>
+      ) : null}
 
       <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
         <div className="space-y-2">
@@ -702,6 +494,16 @@ export function ProAccessPromoCodesClient({
           onLoadingChangeAction={setIsTableLoading}
         />
       </section>
+
+      <PromoCodeCreateDialog
+        open={createOpen}
+        onOpenChangeAction={setCreateOpen}
+        onSuccessAction={(code) => {
+          setLatestPromoCode(code);
+          setIsTableLoading(true);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
