@@ -16,6 +16,7 @@ export function getTestDb() {
 export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
   // Delete in FK-safe order to avoid deadlocks on the remote Neon instance.
   await db.delete(schema.auditLogs);
+  await db.delete(schema.proFeatureUsageEvents);
   await db.delete(schema.verifications);
   await db.delete(schema.sessions);
   await db.delete(schema.accounts);

@@ -10,6 +10,7 @@
   "dashboard": "Panel",
   "adminDashboard": "Administración",
   "adminUsers": "Usuarios",
+  "adminProFeatures": "Funciones Pro",
   "staffTools": "Herramientas",
   "adminUsersSubmenu": {
     "subtitle": "Listas de usuarios y herramientas de Acceso Pro.",

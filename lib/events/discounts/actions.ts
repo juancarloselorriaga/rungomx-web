@@ -10,6 +10,8 @@ import { addOnSelections, discountCodes, discountRedemptions, eventEditions, reg
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
+import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
+import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import { syncRegistrationGroupDiscountForRegistration } from '@/lib/events/registration-groups/sync-registration-discount';
 import { isExpiredHold } from '@/lib/events/registration-holds';
 import { RegistrationOwnershipError, getRegistrationForOwnerOrThrow } from '@/lib/events/registrations/ownership';
@@ -168,6 +170,15 @@ export const createDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
     return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
   }
 
+  try {
+    await requireProFeature('coupons', authContext);
+  } catch (error) {
+    if (error instanceof ProFeatureAccessError) {
+      return { ok: false, error: error.message, code: error.code };
+    }
+    throw error;
+  }
+
   // Check if code already exists for this edition
   const existingCode = await db.query.discountCodes.findFirst({
     where: and(
@@ -216,6 +227,12 @@ export const createDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
     });
 
     revalidateTag(eventEditionCouponsTag(editionId), { expire: 0 });
+
+    await trackProFeatureEvent({
+      featureKey: 'coupons',
+      userId: authContext.user.id,
+      eventType: 'used',
+    });
 
     return {
       ok: true,
@@ -274,6 +291,15 @@ export const updateDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
     } catch {
       return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
     }
+  }
+
+  try {
+    await requireProFeature('coupons', authContext);
+  } catch (error) {
+    if (error instanceof ProFeatureAccessError) {
+      return { ok: false, error: error.message, code: error.code };
+    }
+    throw error;
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -342,6 +368,12 @@ export const updateDiscountCode = withAuthenticatedUser<ActionResult<DiscountCod
 
   revalidateTag(eventEditionCouponsTag(existingCode.editionId), { expire: 0 });
 
+  await trackProFeatureEvent({
+    featureKey: 'coupons',
+    userId: authContext.user.id,
+    eventType: 'used',
+  });
+
   return {
     ok: true,
     data: {
@@ -395,6 +427,15 @@ export const deleteDiscountCode = withAuthenticatedUser<ActionResult>({
     }
   }
 
+  try {
+    await requireProFeature('coupons', authContext);
+  } catch (error) {
+    if (error instanceof ProFeatureAccessError) {
+      return { ok: false, error: error.message, code: error.code };
+    }
+    throw error;
+  }
+
   const requestContext = await getRequestContext(await headers());
 
   await db.transaction(async (tx) => {
@@ -418,6 +459,12 @@ export const deleteDiscountCode = withAuthenticatedUser<ActionResult>({
   });
 
   revalidateTag(eventEditionCouponsTag(existingCode.editionId), { expire: 0 });
+
+  await trackProFeatureEvent({
+    featureKey: 'coupons',
+    userId: authContext.user.id,
+    eventType: 'used',
+  });
 
   return { ok: true, data: undefined };
 });

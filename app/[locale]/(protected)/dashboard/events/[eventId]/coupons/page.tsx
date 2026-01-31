@@ -3,6 +3,7 @@ import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getDiscountCodesForEdition } from '@/lib/events/discounts/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
+import { guardProFeaturePage } from '@/lib/pro-features/server/guard';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
@@ -56,6 +57,19 @@ export default async function EventCouponsPage({ params }: CouponsPageProps) {
   const canAccess = await canUserAccessSeries(authContext.user!.id, event.seriesId);
   if (!canAccess) {
     redirect(getPathname({ href: '/dashboard/events', locale }));
+  }
+
+  const gate = await guardProFeaturePage('coupons', authContext);
+  if (!gate.allowed) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
+          <p className="text-muted-foreground">{t('description')}</p>
+        </div>
+        <div className="max-w-2xl">{gate.disabled ?? gate.upsell}</div>
+      </div>
+    );
   }
 
   // Get discount codes for this edition

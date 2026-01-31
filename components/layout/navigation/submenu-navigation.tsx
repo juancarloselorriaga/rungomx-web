@@ -6,6 +6,8 @@ import { useSession } from '@/lib/auth/client';
 import { ExternalLink, HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
+import { useMemo } from 'react';
+import { useProFeatureDecision } from '@/hooks/use-pro-feature-decision';
 import {
   adminUsersIconMap,
   adminUsersNavigationSections,
@@ -53,6 +55,8 @@ function EventSubmenuNavigation({
 }: Omit<SubmenuNavigationProps, 'submenuId'>) {
   const tNav = useTranslations('pages.dashboardEvents.detail.nav');
   const pathname = usePathname();
+  const couponsDecision = useProFeatureDecision('coupons');
+  const hideCoupons = couponsDecision.status === 'hidden' || couponsDecision.status === 'disabled';
 
   // Build translations objects for the renderer
   const sectionTitles = {
@@ -78,9 +82,20 @@ function EventSubmenuNavigation({
     registrations: tNav('registrations'),
   };
 
+  const sections = useMemo(
+    () =>
+      eventNavigationSections
+        .map((section) => ({
+          ...section,
+          items: section.items.filter((item) => item.label !== 'coupons' || !hideCoupons),
+        }))
+        .filter((section) => section.items.length > 0),
+    [hideCoupons],
+  );
+
   return (
     <SubmenuSectionRenderer
-      sections={eventNavigationSections}
+      sections={sections}
       sectionTitles={sectionTitles}
       itemLabels={itemLabels}
       iconMap={eventIconMap}

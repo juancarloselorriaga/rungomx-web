@@ -77,6 +77,10 @@ export const routing = defineRouting({
       es: '/admin/usuarios/acceso-pro/asignaciones-por-correo',
       en: '/admin/users/pro-access/email-grants',
     },
+    '/admin/pro-features': {
+      es: '/admin/funciones-pro',
+      en: '/admin/pro-features',
+    },
     '/dashboard': {
       es: '/tablero',
       en: '/dashboard',

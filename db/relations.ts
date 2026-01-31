@@ -33,6 +33,7 @@ import {
   organizations,
   pricingTiers,
   profiles,
+  proFeatureUsageEvents,
   rateLimits,
   registrants,
   registrationAnswers,
@@ -78,6 +79,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   billingPendingGrantsCreated: many(billingPendingEntitlementGrants, {
     relationName: 'billingPendingGrantsCreatedBy',
   }),
+  proFeatureUsageEvents: many(proFeatureUsageEvents),
   billingPendingGrantsClaimed: many(billingPendingEntitlementGrants, {
     relationName: 'billingPendingGrantsClaimedBy',
   }),
@@ -546,6 +548,13 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
   actor: one(users, {
     fields: [auditLogs.actorUserId],
+    references: [users.id],
+  }),
+}));
+
+export const proFeatureUsageEventsRelations = relations(proFeatureUsageEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [proFeatureUsageEvents.userId],
     references: [users.id],
   }),
 }));

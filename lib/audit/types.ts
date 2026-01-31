@@ -11,7 +11,7 @@ export type AuditAction = keyof typeof AUDIT_ACTIONS;
  */
 export interface CreateAuditLogParams {
   /** Organization ID (required for org-scoped event audits) */
-  organizationId: string;
+  organizationId: string | null;
   /** User ID of the actor performing the action */
   actorUserId: string;
   /** The action being performed */
@@ -65,6 +65,7 @@ export const AUDIT_ENTITY_TYPES = [
   'discount_redemption',
   'registration_question',
   'registration_answer',
+  'pro_feature_config',
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

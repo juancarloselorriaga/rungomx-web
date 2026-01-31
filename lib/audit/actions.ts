@@ -58,6 +58,9 @@ export const AUDIT_ACTIONS = {
   // Policies
   'policy.update': 'Policy configuration updated',
 
+  // Pro Features
+  'pro_feature_config.update': 'Pro feature configuration updated',
+
   // Media
   'media.upload': 'Media uploaded',
   'media.delete': 'Media deleted',

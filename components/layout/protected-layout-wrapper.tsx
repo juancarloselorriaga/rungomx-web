@@ -1,6 +1,7 @@
 'use client';
 
 import { OnboardingOverridesProvider } from '@/components/auth/onboarding-context';
+import { ProFeaturesProvider } from '@/components/pro-features/pro-features-provider';
 import RoleEnforcementBoundary from '@/components/auth/role-enforcement-boundary';
 import ProfileEnforcementBoundary from '@/components/profile/profile-enforcement-boundary';
 import { useLocaleSyncOnAuth } from '@/hooks/use-locale-sync-on-auth';
@@ -11,9 +12,11 @@ export default function ProtectedLayoutWrapper({ children }: { children: React.R
 
   return (
     <OnboardingOverridesProvider>
-      <RoleEnforcementBoundary>
-        <ProfileEnforcementBoundary>{children}</ProfileEnforcementBoundary>
-      </RoleEnforcementBoundary>
+      <ProFeaturesProvider>
+        <RoleEnforcementBoundary>
+          <ProfileEnforcementBoundary>{children}</ProfileEnforcementBoundary>
+        </RoleEnforcementBoundary>
+      </ProFeaturesProvider>
     </OnboardingOverridesProvider>
   );
 }

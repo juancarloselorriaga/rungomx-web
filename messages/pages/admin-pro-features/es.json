@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "title": "Funciones Pro",
+    "description": "Administra la configuración y el uso de funciones Pro."
+  },
+  "page": {
+    "sectionLabel": "Admin",
+    "title": "Funciones Pro",
+    "description": "Configura el acceso a funciones Pro y revisa su uso."
+  },
+  "features": {
+    "sectionLabel": "Funciones",
+    "title": "Configuración de funciones",
+    "description": "Controla qué funciones están activas y cómo se muestran.",
+    "labels": {
+      "defaultVisibility": "Visibilidad predeterminada",
+      "enforcement": "Aplicación",
+      "enabled": "Activo",
+      "visibilityOverride": "Visibilidad forzada",
+      "notes": "Notas",
+      "reason": "Motivo",
+      "reasonPlaceholder": "¿Por qué cambias esta configuración?",
+      "proLabel": "Pro",
+      "nonProLabel": "No Pro"
+    },
+    "actions": {
+      "save": "Guardar cambios",
+      "saving": "Guardando..."
+    },
+    "errors": {
+      "load": "No pudimos cargar las funciones Pro.",
+      "update": "No pudimos actualizar esta función.",
+      "reasonRequired": "Ingresa un motivo para guardar los cambios.",
+      "noChanges": "No hay cambios para guardar."
+    },
+    "success": {
+      "updated": "Función actualizada."
+    },
+    "visibility": {
+      "default": "Predeterminado",
+      "locked": "Bloqueado",
+      "hidden": "Oculto"
+    },
+    "enforcement": {
+      "ui_only": "Solo UI",
+      "server_required": "Requiere servidor"
+    },
+    "status": {
+      "enabled": "Habilitado",
+      "locked": "Bloqueado",
+      "hidden": "Oculto",
+      "disabled": "Desactivado"
+    },
+    "enabledStates": {
+      "on": "Habilitado",
+      "off": "Desactivado"
+    },
+    "event_clone": {
+      "label": "Clonado de eventos",
+      "description": "Duplica una edición del evento."
+    },
+    "coupons": {
+      "label": "Cupones",
+      "description": "Crea y administra códigos de descuento."
+    }
+  },
+  "report": {
+    "sectionLabel": "Uso",
+    "title": "Reporte de uso",
+    "description": "Revisa las funciones Pro bloqueadas y usadas.",
+    "fields": {
+      "from": "Desde",
+      "to": "Hasta",
+      "fromPlaceholder": "Fecha inicial",
+      "toPlaceholder": "Fecha final"
+    },
+    "actions": {
+      "run": "Generar reporte"
+    },
+    "blockedTitle": "Más bloqueadas",
+    "usedTitle": "Más usadas",
+    "empty": "Sin datos de uso en este rango.",
+    "count": "{count} eventos",
+    "errors": {
+      "load": "No pudimos cargar el reporte."
+    }
+  }
+}

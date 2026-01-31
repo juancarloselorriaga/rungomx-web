@@ -1,0 +1,88 @@
+{
+  "metadata": {
+    "title": "Pro features",
+    "description": "Manage Pro feature gating and usage."
+  },
+  "page": {
+    "sectionLabel": "Admin",
+    "title": "Pro features",
+    "description": "Configure Pro feature gates and review usage."
+  },
+  "features": {
+    "sectionLabel": "Features",
+    "title": "Feature configuration",
+    "description": "Control which features are enabled and how they're exposed.",
+    "labels": {
+      "defaultVisibility": "Default visibility",
+      "enforcement": "Enforcement",
+      "enabled": "Enabled",
+      "visibilityOverride": "Visibility override",
+      "notes": "Notes",
+      "reason": "Reason",
+      "reasonPlaceholder": "Why are you changing this setting?",
+      "proLabel": "Pro",
+      "nonProLabel": "Non-Pro"
+    },
+    "actions": {
+      "save": "Save changes",
+      "saving": "Saving..."
+    },
+    "errors": {
+      "load": "We couldn't load Pro features.",
+      "update": "We couldn't update this feature.",
+      "reasonRequired": "Enter a reason to save changes.",
+      "noChanges": "No changes to save."
+    },
+    "success": {
+      "updated": "Feature updated."
+    },
+    "visibility": {
+      "default": "Default",
+      "locked": "Locked",
+      "hidden": "Hidden"
+    },
+    "enforcement": {
+      "ui_only": "UI only",
+      "server_required": "Server required"
+    },
+    "status": {
+      "enabled": "Enabled",
+      "locked": "Locked",
+      "hidden": "Hidden",
+      "disabled": "Disabled"
+    },
+    "enabledStates": {
+      "on": "Enabled",
+      "off": "Disabled"
+    },
+    "event_clone": {
+      "label": "Event cloning",
+      "description": "Duplicate an event edition."
+    },
+    "coupons": {
+      "label": "Coupons",
+      "description": "Create and manage discount codes."
+    }
+  },
+  "report": {
+    "sectionLabel": "Usage",
+    "title": "Usage report",
+    "description": "Review blocked and used Pro features.",
+    "fields": {
+      "from": "From",
+      "to": "To",
+      "fromPlaceholder": "Start date",
+      "toPlaceholder": "End date"
+    },
+    "actions": {
+      "run": "Run report"
+    },
+    "blockedTitle": "Top blocked",
+    "usedTitle": "Top used",
+    "empty": "No usage data for this range.",
+    "count": "{count} events",
+    "errors": {
+      "load": "We couldn't load the report."
+    }
+  }
+}

@@ -24,6 +24,8 @@ import {
 } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
+import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
+import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import {
   canUserAccessSeries,
   getOrgMembership,
@@ -293,6 +295,15 @@ export const cloneEdition = withAuthenticatedUser<ActionResult<CloneEditionResul
     }
   }
 
+  try {
+    await requireProFeature('event_clone', authContext);
+  } catch (error) {
+    if (error instanceof ProFeatureAccessError) {
+      return { ok: false, error: error.message, code: error.code };
+    }
+    throw error;
+  }
+
   // Enforce uniqueness within series
   const [existingSlug, existingLabel] = await Promise.all([
     db.query.eventEditions.findFirst({
@@ -527,6 +538,12 @@ export const cloneEdition = withAuthenticatedUser<ActionResult<CloneEditionResul
     }
 
     return newEdition;
+  });
+
+  await trackProFeatureEvent({
+    featureKey: 'event_clone',
+    userId: authContext.user.id,
+    eventType: 'used',
   });
 
   return { ok: true, data: { editionId: created.id } };

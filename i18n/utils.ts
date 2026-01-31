@@ -54,7 +54,7 @@ const localePathLookup = buildLocalePathLookup();
 // and layout rendering can share the resolved pathname/messages for the same request.
 const routeContext = new AsyncLocalStorage<{ pathname: string; messages?: Messages }>();
 
-export const ROUTE_MESSAGES_BYTE_LIMIT = 20000;
+export const ROUTE_MESSAGES_BYTE_LIMIT = 22000;
 export const isValidLocale = (value: string): value is AppLocale =>
   routing.locales.includes(value as AppLocale);
 

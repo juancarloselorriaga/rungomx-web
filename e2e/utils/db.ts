@@ -36,6 +36,7 @@ export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
   // Delete in FK-safe order to avoid violations
   // Audit logs first (references organizations, users with onDelete: restrict)
   await db.delete(schema.auditLogs);
+  await db.delete(schema.proFeatureUsageEvents);
 
   // Event-related tables (most dependent)
   // Phase 3 group upload / invites (must be removed before event_distances due to FK + CHECK constraint)

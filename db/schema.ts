@@ -1104,7 +1104,6 @@ export const media = pgTable('media', {
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').defaultRandom().primaryKey(),
   organizationId: uuid('organization_id')
-    .notNull()
     .references(() => organizations.id, { onDelete: 'restrict' }), // required for org-scoped event audits
   actorUserId: uuid('actor_user_id')
     .notNull()
@@ -1118,6 +1117,55 @@ export const auditLogs = pgTable('audit_logs', {
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 });
+
+export const proFeatureConfigs = pgTable(
+  'pro_feature_configs',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    featureKey: varchar('feature_key', { length: 100 }).notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    visibilityOverride: varchar('visibility_override', { length: 20 }),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('pro_feature_configs_feature_key_idx').on(table.featureKey),
+    check(
+      'pro_feature_configs_visibility_override_chk',
+      sql`${table.visibilityOverride} IS NULL OR ${table.visibilityOverride} IN ('locked', 'hidden')`,
+    ),
+  ],
+);
+
+export const proFeatureUsageEvents = pgTable(
+  'pro_feature_usage_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    featureKey: varchar('feature_key', { length: 100 }).notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    eventType: varchar('event_type', { length: 20 }).notNull(),
+    meta: jsonb('meta').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('pro_feature_usage_events_created_at_idx').on(table.createdAt),
+    index('pro_feature_usage_events_feature_type_created_at_idx').on(
+      table.featureKey,
+      table.eventType,
+      table.createdAt,
+    ),
+    check(
+      'pro_feature_usage_events_event_type_chk',
+      sql`${table.eventType} IN ('used', 'blocked')`,
+    ),
+  ],
+);
 
 // =============================================================================
 // EVENTS PLATFORM TABLES (Phase 2)

@@ -10,10 +10,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { ProLockedCard } from '@/components/billing/pro-locked-card';
 import { Link, useRouter } from '@/i18n/navigation';
 import { cloneEdition, checkSlugAvailability } from '@/lib/events/actions';
 import { renameEventSeriesSlug } from '@/lib/events/series/actions';
 import { cn } from '@/lib/utils';
+import { getProFeatureMeta } from '@/lib/pro-features/catalog';
 import { Calendar, Copy, ExternalLink, Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useRef, useState } from 'react';
@@ -101,8 +103,10 @@ export function EditionsManager({
   const t = useTranslations('pages.dashboardEvents.editions');
   const tSlug = useTranslations('pages.dashboardEvents');
   const tVisibility = useTranslations('pages.dashboardEvents.visibility');
+  const tCommon = useTranslations('common');
   const locale = useLocale();
   const router = useRouter();
+  const cloneMeta = getProFeatureMeta('event_clone');
 
   const editionsById = useMemo(() => new Map(editions.map((e) => [e.id, e])), [editions]);
 
@@ -119,6 +123,7 @@ export function EditionsManager({
   const [newSlug, setNewSlug] = useState('');
   const [isCloning, setIsCloning] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [showProLockedDialog, setShowProLockedDialog] = useState(false);
 
   const openEdition = openForEditionId ? editionsById.get(openForEditionId) : undefined;
 
@@ -267,6 +272,11 @@ export function EditionsManager({
       });
 
       if (!result.ok) {
+        if (result.code === 'PRO_REQUIRED') {
+          setOpenForEditionId(null);
+          setShowProLockedDialog(true);
+          return;
+        }
         const errorKey =
           result.code === 'SLUG_TAKEN'
             ? 'slugTaken'
@@ -504,6 +514,24 @@ export function EditionsManager({
             {t('seriesSlug.confirm.confirm')}
           </Button>
         </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    <Dialog open={showProLockedDialog} onOpenChange={setShowProLockedDialog}>
+      <DialogContent className="sm:max-w-lg">
+        <div className="space-y-4">
+          <ProLockedCard
+            title={tCommon(cloneMeta.i18n.lockedTitleKey)}
+            description={tCommon(cloneMeta.i18n.lockedDescriptionKey)}
+            ctaLabel={tCommon(cloneMeta.i18n.lockedCtaKey)}
+            href={cloneMeta.upsellHref}
+          />
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" onClick={() => setShowProLockedDialog(false)}>
+              {tCommon('close')}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   </div>

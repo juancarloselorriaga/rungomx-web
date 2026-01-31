@@ -38,5 +38,21 @@
     "pro": "PRO",
     "proMember": "RunGo Pro",
     "welcomeBackPro": "¡Bienvenido de nuevo, corredor Pro!"
+  },
+  "proFeatures": {
+    "event_clone": {
+      "title": "Clonar eventos",
+      "description": "Clona una edición del evento para reutilizar distancias, precios y configuración.",
+      "ctaLabel": "Actualizar a Pro"
+    },
+    "coupons": {
+      "title": "Cupones",
+      "description": "Crea y administra códigos de descuento para tus inscripciones.",
+      "ctaLabel": "Actualizar a Pro"
+    },
+    "disabled": {
+      "title": "Función no disponible",
+      "description": "Esta función está desactivada para todos."
+    }
   }
 }

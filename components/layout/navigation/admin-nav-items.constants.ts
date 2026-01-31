@@ -33,6 +33,14 @@ export function buildAdminNavSections(
     });
   }
 
+  if (permissions.canViewStaffTools) {
+    items.push({
+      href: '/admin/pro-features',
+      labelKey: 'adminProFeatures',
+      iconName: 'FileText',
+    });
+  }
+
   return [
     {
       titleKey: 'sectionGeneral',
