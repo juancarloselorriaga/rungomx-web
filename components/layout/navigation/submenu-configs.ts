@@ -3,6 +3,7 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
+  CreditCard,
   Crown,
   DollarSign,
   ExternalLink,
@@ -15,6 +16,7 @@ import {
   Settings,
   ShieldCheck,
   Tag,
+  User,
   Users,
 } from 'lucide-react';
 
@@ -45,6 +47,12 @@ export const submenuConfigs: SubmenuConfig[] = [
     id: 'admin-users',
     parentItemHref: '/admin/users',
     urlPattern: /^\/admin\/users(\/|$)/,
+    extractParams: () => ({}),
+  },
+  {
+    id: 'settings',
+    parentItemHref: '/settings/profile',
+    urlPattern: /^\/settings(\/|$)/,
     extractParams: () => ({}),
   },
 ];
@@ -116,6 +124,30 @@ export const eventIconMap: SubmenuIconMap = {
   users: Users,
   waivers: FileText,
   website: Globe,
+};
+
+/**
+ * Settings submenu navigation sections.
+ * These sections appear in the sidebar when viewing /settings/* pages.
+ */
+export const settingsNavigationSections: SubmenuNavigationSection[] = [
+  {
+    titleKey: 'settings',
+    items: [
+      { label: 'profile', href: '/profile', icon: 'user' },
+      { label: 'account', href: '/account', icon: 'settings' },
+      { label: 'billing', href: '/billing', icon: 'creditCard' },
+    ],
+  },
+];
+
+/**
+ * Icon map for settings submenu navigation.
+ */
+export const settingsIconMap: SubmenuIconMap = {
+  creditCard: CreditCard,
+  settings: Settings,
+  user: User,
 };
 
 /**

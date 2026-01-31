@@ -316,6 +316,10 @@ export function BillingSettingsClient({
   }));
 
   const isInternalBypass = isInternal || status.effectiveSource === 'internal_bypass';
+  const isProMember = status.isPro;
+  const showTrialSection = !isInternalBypass && !isProMember;
+  const showPromoSection = !isInternalBypass;
+  const showSubscriptionSection = !isInternalBypass;
 
   return (
     <div className="space-y-6">
@@ -409,172 +413,173 @@ export function BillingSettingsClient({
         </div>
       </section>
 
-      {!isInternal ? (
-        <>
-          <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('trial.sectionLabel')}
-          </p>
-          <h2 className="text-lg font-semibold">{t('trial.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('trial.description')}</p>
-        </div>
-
-        <div className="border-t border-border/70 pt-4 space-y-4">
-          {trialActive ? (
-            <div className="space-y-1 text-sm">
-              <p className="font-semibold">{t('trial.activeLabel')}</p>
-              <p className="text-muted-foreground">
-                {t('trial.activeUntil', {
-                  endsAt: `${formatDateTime(trialActive)} ${t('status.utc')}`,
-                })}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2 text-sm text-muted-foreground">
-              {!emailVerified ? <p>{t('trial.requiresVerification')}</p> : null}
-              {!status.trialEligible && !status.isPro && emailVerified ? (
-                <p>{t('trial.alreadyUsed')}</p>
-              ) : null}
-              {status.isPro ? <p>{t('trial.alreadyPro')}</p> : null}
-            </div>
-          )}
-
-          {trialError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {trialError}
-            </div>
-          ) : null}
-
-          <div>
-            <Button
-              type="button"
-              variant="default"
-              onClick={handleStartTrial}
-              disabled={!canStartTrial || isStartingTrial}
-              isLoading={isStartingTrial}
-              loadingPlacement="replace"
-              loadingLabel={t('trial.actions.starting')}
-              data-testid="billing-start-trial"
-            >
-              {t('trial.actions.start')}
-            </Button>
+      {showTrialSection ? (
+        <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('trial.sectionLabel')}
+            </p>
+            <h2 className="text-lg font-semibold">{t('trial.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('trial.description')}</p>
           </div>
-        </div>
-      </section>
 
-      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('subscription.sectionLabel')}
-          </p>
-          <h2 className="text-lg font-semibold">{t('subscription.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('subscription.description')}</p>
-        </div>
-
-        <div className="border-t border-border/70 pt-4 space-y-4">
-          {subscription ? (
-            <div className="grid gap-3 text-sm">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant={hasActiveSubscription ? 'green' : 'default'} size="sm">
-                  {subscriptionStatusLabel(subscription.status)}
-                </Badge>
-                {subscription.cancelAtPeriodEnd ? (
-                  <Badge variant="outline" size="sm">
-                    {t('subscription.cancelScheduled')}
-                  </Badge>
-                ) : null}
-              </div>
-
-              {subscriptionEndsAt ? (
+          <div className="border-t border-border/70 pt-4 space-y-4">
+            {trialActive ? (
+              <div className="space-y-1 text-sm">
+                <p className="font-semibold">{t('trial.activeLabel')}</p>
                 <p className="text-muted-foreground">
-                  {t('subscription.endsAt', {
-                    window: subscriptionWindowLabel,
-                    endsAt: `${formatDateTime(subscriptionEndsAt)} ${t('status.utc')}`,
+                  {t('trial.activeUntil', {
+                    endsAt: `${formatDateTime(trialActive)} ${t('status.utc')}`,
                   })}
                 </p>
+              </div>
+            ) : (
+              <div className="space-y-2 text-sm text-muted-foreground">
+                {!emailVerified ? <p>{t('trial.requiresVerification')}</p> : null}
+                {!status.trialEligible && !status.isPro && emailVerified ? (
+                  <p>{t('trial.alreadyUsed')}</p>
+                ) : null}
+              </div>
+            )}
+
+            {trialError ? (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {trialError}
+              </div>
+            ) : null}
+
+            <div>
+              <Button
+                type="button"
+                variant="default"
+                onClick={handleStartTrial}
+                disabled={!canStartTrial || isStartingTrial}
+                isLoading={isStartingTrial}
+                loadingPlacement="replace"
+                loadingLabel={t('trial.actions.starting')}
+                data-testid="billing-start-trial"
+              >
+                {t('trial.actions.start')}
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {showSubscriptionSection ? (
+        <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('subscription.sectionLabel')}
+            </p>
+            <h2 className="text-lg font-semibold">{t('subscription.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('subscription.description')}</p>
+          </div>
+
+          <div className="border-t border-border/70 pt-4 space-y-4">
+            {subscription ? (
+              <div className="grid gap-3 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={hasActiveSubscription ? 'green' : 'default'} size="sm">
+                    {subscriptionStatusLabel(subscription.status)}
+                  </Badge>
+                  {subscription.cancelAtPeriodEnd ? (
+                    <Badge variant="outline" size="sm">
+                      {t('subscription.cancelScheduled')}
+                    </Badge>
+                  ) : null}
+                </div>
+
+                {subscriptionEndsAt ? (
+                  <p className="text-muted-foreground">
+                    {t('subscription.endsAt', {
+                      window: subscriptionWindowLabel,
+                      endsAt: `${formatDateTime(subscriptionEndsAt)} ${t('status.utc')}`,
+                    })}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t('subscription.none')}</p>
+            )}
+
+            {subscriptionError ? (
+              <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {subscriptionError}
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap gap-3">
+              {subscription && hasActiveSubscription ? (
+                subscription.cancelAtPeriodEnd ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleResume}
+                    disabled={isResuming}
+                    isLoading={isResuming}
+                    loadingPlacement="replace"
+                    loadingLabel={t('subscription.actions.resuming')}
+                    data-testid="billing-resume-subscription"
+                  >
+                    {t('subscription.actions.resume')}
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancel}
+                    disabled={isCanceling}
+                    isLoading={isCanceling}
+                    loadingPlacement="replace"
+                    loadingLabel={t('subscription.actions.canceling')}
+                    data-testid="billing-cancel-subscription"
+                  >
+                    {t('subscription.actions.cancel')}
+                  </Button>
+                )
               ) : null}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">{t('subscription.none')}</p>
-          )}
+          </div>
+        </section>
+      ) : null}
 
-          {subscriptionError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {subscriptionError}
+      {showPromoSection ? (
+        <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {t('promo.sectionLabel')}
+            </p>
+            <h2 className="text-lg font-semibold">{t('promo.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('promo.description')}</p>
+          </div>
+
+          <Form form={promoForm} className="space-y-4 border-t border-border/70 pt-4">
+            <FormError />
+
+            <FormField label={t('promo.fields.code')} required error={promoForm.errors.code}>
+              <input
+                type="text"
+                autoComplete="off"
+                className={cn(
+                  'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
+                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                  promoForm.errors.code && 'border-destructive focus-visible:border-destructive',
+                )}
+                {...promoForm.register('code')}
+                disabled={promoForm.isSubmitting}
+                data-testid="billing-promo-code"
+              />
+            </FormField>
+
+            <div className="flex items-center justify-end gap-3 border-t border-border/70 pt-4">
+              <Button type="submit" disabled={promoForm.isSubmitting} data-testid="billing-redeem-promo">
+                {promoForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
+                {t('promo.actions.redeem')}
+              </Button>
             </div>
-          ) : null}
-
-          <div className="flex flex-wrap gap-3">
-            {subscription && hasActiveSubscription ? (
-              subscription.cancelAtPeriodEnd ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleResume}
-                  disabled={isResuming}
-                  isLoading={isResuming}
-                  loadingPlacement="replace"
-                  loadingLabel={t('subscription.actions.resuming')}
-                  data-testid="billing-resume-subscription"
-                >
-                  {t('subscription.actions.resume')}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isCanceling}
-                  isLoading={isCanceling}
-                  loadingPlacement="replace"
-                  loadingLabel={t('subscription.actions.canceling')}
-                  data-testid="billing-cancel-subscription"
-                >
-                  {t('subscription.actions.cancel')}
-                </Button>
-              )
-            ) : null}
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('promo.sectionLabel')}
-          </p>
-          <h2 className="text-lg font-semibold">{t('promo.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('promo.description')}</p>
-        </div>
-
-        <Form form={promoForm} className="space-y-4 border-t border-border/70 pt-4">
-          <FormError />
-
-          <FormField label={t('promo.fields.code')} required error={promoForm.errors.code}>
-            <input
-              type="text"
-              autoComplete="off"
-              className={cn(
-                'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                promoForm.errors.code && 'border-destructive focus-visible:border-destructive',
-              )}
-              {...promoForm.register('code')}
-              disabled={promoForm.isSubmitting}
-              data-testid="billing-promo-code"
-            />
-          </FormField>
-
-          <div className="flex items-center justify-end gap-3 border-t border-border/70 pt-4">
-            <Button type="submit" disabled={promoForm.isSubmitting} data-testid="billing-redeem-promo">
-              {promoForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
-              {t('promo.actions.redeem')}
-            </Button>
-          </div>
-        </Form>
-      </section>
-        </>
+          </Form>
+        </section>
       ) : null}
     </div>
   );

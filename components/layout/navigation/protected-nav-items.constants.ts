@@ -27,8 +27,8 @@ export function buildProtectedNavSections(
       : []),
     {
       href: '/settings/profile',
-      labelKey: 'profile',
-      iconName: 'User',
+      labelKey: 'settings',
+      iconName: 'Settings',
     },
   ];
 

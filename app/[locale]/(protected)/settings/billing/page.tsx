@@ -1,5 +1,4 @@
 import { BillingSettingsClient } from '@/components/settings/billing/billing-settings-client';
-import { SettingsSectionSubnav } from '@/components/settings/settings-section-subnav';
 import { getAuthContext } from '@/lib/auth/server';
 import { getBillingStatusForUser } from '@/lib/billing/queries';
 import { serializeBillingStatus } from '@/lib/billing/serialization';
@@ -44,8 +43,6 @@ export default async function BillingSettingsPage({ params }: LocalePageProps) {
         <h1 className="text-3xl font-semibold">{tPage('title')}</h1>
         <p className="text-muted-foreground">{tPage('description')}</p>
       </div>
-
-      <SettingsSectionSubnav />
 
       {status && user ? (
         <BillingSettingsClient

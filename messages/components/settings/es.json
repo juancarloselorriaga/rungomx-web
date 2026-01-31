@@ -280,8 +280,8 @@
     },
     "trial": {
       "sectionLabel": "Prueba",
-      "title": "Inicia tu prueba",
-      "description": "Cada cuenta tiene derecho a una sola prueba Pro.",
+      "title": "Inicia tu prueba Pro",
+      "description": "Accede al instante a las herramientas y beneficios Pro, sin compromiso.",
       "activeLabel": "Prueba activa",
       "activeUntil": "Tu prueba termina el {endsAt}.",
       "requiresVerification": "Verifica tu correo para iniciar la prueba.",
@@ -336,7 +336,7 @@
     "promo": {
       "sectionLabel": "Código promocional",
       "title": "Canjear promoción",
-      "description": "Ingresa un código para extender tu acceso Pro.",
+      "description": "¿Tienes un código? Aplícalo para extender el acceso Pro al instante.",
       "fields": {
         "code": "Código promocional"
       },
