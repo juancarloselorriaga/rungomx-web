@@ -29,7 +29,7 @@ export type BillingStatus = EntitlementEvaluationResult & {
   trialEligible: boolean;
 };
 
-export async function getBillingStatusForUser({
+async function getBillingStatusForUserUncached({
   userId,
   isInternal,
   now = new Date(),
@@ -40,10 +40,6 @@ export async function getBillingStatusForUser({
   now?: Date;
   tx?: DbClient;
 }): Promise<BillingStatus> {
-  'use cache: private';
-  safeCacheTag(billingStatusTag(userId));
-  safeCacheLife({ expire: 60 });
-
   const [subscription, trialUse, entitlement] = await Promise.all([
     tx.query.billingSubscriptions.findFirst({
       where: eq(billingSubscriptions.userId, userId),
@@ -87,4 +83,21 @@ export async function getBillingStatusForUser({
     subscription: subscriptionSnapshot,
     trialEligible: !trialUse && !entitlement.isPro,
   };
+}
+
+async function getBillingStatusForUserCached(params: Parameters<typeof getBillingStatusForUserUncached>[0]) {
+  'use cache: private';
+  safeCacheTag(billingStatusTag(params.userId));
+  safeCacheLife({ expire: 60 });
+  return getBillingStatusForUserUncached(params);
+}
+
+export async function getBillingStatusForUser(
+  params: Parameters<typeof getBillingStatusForUserUncached>[0],
+): Promise<BillingStatus> {
+  const hasTransaction = params.tx && params.tx !== db;
+  if (hasTransaction) {
+    return getBillingStatusForUserUncached(params);
+  }
+  return getBillingStatusForUserCached(params);
 }

@@ -1,17 +1,22 @@
 'use client';
 
-import { redeemPromoCodeAction, resumeSubscriptionAction, scheduleCancelAtPeriodEndAction, startTrialAction } from '@/app/actions/billing';
+import {
+  getBillingStatusAction,
+  redeemPromoCodeAction,
+  resumeSubscriptionAction,
+  scheduleCancelAtPeriodEndAction,
+  startTrialAction,
+} from '@/app/actions/billing';
 import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Spinner } from '@/components/ui/spinner';
-import { useRouter } from '@/i18n/navigation';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { SerializableBillingStatus } from '@/lib/billing/serialization';
 import type { EntitlementSource } from '@/lib/billing/types';
 import { cn } from '@/lib/utils';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type BillingSettingsClientProps = {
@@ -51,18 +56,56 @@ export function BillingSettingsClient({
 }: BillingSettingsClientProps) {
   const t = useTranslations('components.settings.billing');
   const format = useFormatter();
-  const router = useRouter();
 
-  const [status, setStatus] = useState(initialStatus);
+  const [status, setStatus] = useState(() => initialStatus);
   const [trialError, setTrialError] = useState<string | null>(null);
   const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
-  const [isStartingTrial, startTrialTransition] = useTransition();
-  const [isCanceling, startCancelTransition] = useTransition();
-  const [isResuming, startResumeTransition] = useTransition();
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [isResuming, setIsResuming] = useState(false);
+  const hasSyncedRef = useRef(false);
+
+  const applyLatestStatus = useCallback((next: SerializableBillingStatus) => {
+    setStatus((prev) => {
+      // Avoid regressing "Pro" UI back to "Free" due to transient read-your-own-write delays.
+      if (prev.isPro && !next.isPro) {
+        return prev;
+      }
+      return next;
+    });
+  }, []);
+
+  const syncStatusFromServer = useCallback(async ({
+    attempts = 8,
+    delayMs = 400,
+  }: {
+    attempts?: number;
+    delayMs?: number;
+  } = {}) => {
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        const result = await getBillingStatusAction();
+        if (result.ok) {
+          applyLatestStatus(result.data);
+          return result.data;
+        }
+      } catch {
+        // ignore and retry
+      }
+
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+
+    return null;
+  }, [applyLatestStatus]);
 
   useEffect(() => {
-    setStatus(initialStatus);
-  }, [initialStatus]);
+    if (hasSyncedRef.current) return;
+    hasSyncedRef.current = true;
+    void syncStatusFromServer({ attempts: 5, delayMs: 300 });
+  }, [syncStatusFromServer]);
 
   const formatDateTime = (value: string | null) => {
     if (!value) return t('status.values.none');
@@ -148,42 +191,62 @@ export function BillingSettingsClient({
         toast.success(t('promo.success.redeemed', { endsAt }));
       }
       promoForm.reset();
-      router.refresh();
+      if (data.endsAt) {
+        setStatus((prev) => ({
+          ...prev,
+          isPro: true,
+          trialEligible: false,
+          proUntil: data.endsAt,
+        }));
+      }
     },
   });
 
   const handleStartTrial = () => {
     setTrialError(null);
+    void (async () => {
+      setIsStartingTrial(true);
 
-    startTrialTransition(async () => {
-      const result = await startTrialAction();
+      let errorMessage: string | null = null;
+      try {
+        try {
+          const result = await startTrialAction();
+          if (!result.ok) {
+            errorMessage =
+              result.code === 'EMAIL_NOT_VERIFIED'
+                ? t('trial.errors.emailNotVerified')
+                : result.code === 'ALREADY_PRO'
+                  ? t('trial.errors.alreadyPro')
+                  : result.code === 'TRIAL_ALREADY_USED'
+                    ? t('trial.errors.alreadyUsed')
+                    : result.code === 'UNAUTHENTICATED'
+                      ? t('trial.errors.unauthenticated')
+                      : t('trial.errors.generic');
+          }
+        } catch {
+          errorMessage = t('trial.errors.generic');
+        }
 
-      if (!result.ok) {
-        const message =
-          result.code === 'EMAIL_NOT_VERIFIED'
-            ? t('trial.errors.emailNotVerified')
-            : result.code === 'ALREADY_PRO'
-              ? t('trial.errors.alreadyPro')
-              : result.code === 'TRIAL_ALREADY_USED'
-                ? t('trial.errors.alreadyUsed')
-                : result.code === 'UNAUTHENTICATED'
-                  ? t('trial.errors.unauthenticated')
-                  : t('trial.errors.generic');
+        const latest = await syncStatusFromServer({ attempts: 20, delayMs: 500 });
+        if (latest?.isPro) {
+          const endsAt = formatDateTime(latest.proUntil);
+          toast.success(t('trial.success', { endsAt }));
+          return;
+        }
 
+        const message = errorMessage ?? t('trial.errors.generic');
         setTrialError(message);
         toast.error(message);
-        return;
+      } finally {
+        setIsStartingTrial(false);
       }
-
-      const endsAt = formatDateTime(result.data.trialEndsAt);
-      toast.success(t('trial.success', { endsAt }));
-      router.refresh();
-    });
+    })();
   };
 
   const handleCancel = () => {
     setSubscriptionError(null);
-    startCancelTransition(async () => {
+    void (async () => {
+      setIsCanceling(true);
       const result = await scheduleCancelAtPeriodEndAction();
 
       if (!result.ok) {
@@ -201,14 +264,22 @@ export function BillingSettingsClient({
         return;
       }
 
+      setStatus((prev) => ({
+        ...prev,
+        subscription: prev.subscription
+          ? { ...prev.subscription, cancelAtPeriodEnd: true }
+          : prev.subscription,
+      }));
       toast.success(t('subscription.success.cancelScheduled'));
-      router.refresh();
+    })().finally(() => {
+      setIsCanceling(false);
     });
   };
 
   const handleResume = () => {
     setSubscriptionError(null);
-    startResumeTransition(async () => {
+    void (async () => {
+      setIsResuming(true);
       const result = await resumeSubscriptionAction();
 
       if (!result.ok) {
@@ -226,8 +297,15 @@ export function BillingSettingsClient({
         return;
       }
 
+      setStatus((prev) => ({
+        ...prev,
+        subscription: prev.subscription
+          ? { ...prev.subscription, cancelAtPeriodEnd: false }
+          : prev.subscription,
+      }));
       toast.success(t('subscription.success.resumed'));
-      router.refresh();
+    })().finally(() => {
+      setIsResuming(false);
     });
   };
 

@@ -6,7 +6,10 @@ import { z } from 'zod';
 import { getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { getProEntitlementForUser } from '@/lib/billing/entitlements';
+import { billingStatusTag } from '@/lib/billing/cache-tags';
+import { safeRevalidateTag } from '@/lib/next-cache';
 import {
+  claimPendingEntitlementGrantsForUser,
   redeemPromotionForUser,
   resumeSubscription,
   scheduleCancelAtPeriodEnd,
@@ -44,6 +47,40 @@ export const getBillingStatusAction = withAuthenticatedUser<ActionResult<Seriali
   return { ok: true, data: serializeBillingStatus(status) };
 });
 
+export const autoClaimPendingGrantsAction = withAuthenticatedUser<ActionResult<{ claimedCount: number }>>({
+  unauthenticated: () => ({
+    ok: false,
+    error: 'Authentication required',
+    code: 'UNAUTHENTICATED',
+  }),
+})(async (authContext) => {
+  const user = authContext.user;
+  if (!user) {
+    return { ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' };
+  }
+
+  if (authContext.isInternal) {
+    return { ok: true, data: { claimedCount: 0 } };
+  }
+
+  if (!user.emailVerified || !user.email) {
+    return { ok: true, data: { claimedCount: 0 } };
+  }
+
+  const result = await claimPendingEntitlementGrantsForUser({
+    userId: user.id,
+    email: user.email,
+    claimSource: 'auto_on_verified_session',
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: result.error, code: result.code };
+  }
+
+  safeRevalidateTag(billingStatusTag(user.id), { expire: 0 });
+  return { ok: true, data: { claimedCount: result.data.claimedCount } };
+});
+
 export const startTrialAction = withAuthenticatedUser<ActionResult<{ trialEndsAt: string }>>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext) => {
@@ -66,6 +103,7 @@ export const startTrialAction = withAuthenticatedUser<ActionResult<{ trialEndsAt
     return { ok: false, error: result.error, code: result.code };
   }
 
+  safeRevalidateTag(billingStatusTag(user.id), { expire: 0 });
   return { ok: true, data: { trialEndsAt: result.data.trialEndsAt.toISOString() } };
 });
 
@@ -90,6 +128,7 @@ export const scheduleCancelAtPeriodEndAction = withAuthenticatedUser<ActionResul
     return { ok: false, error: result.error, code: result.code };
   }
 
+  safeRevalidateTag(billingStatusTag(user.id), { expire: 0 });
   return { ok: true, data: null };
 });
 
@@ -114,6 +153,7 @@ export const resumeSubscriptionAction = withAuthenticatedUser<ActionResult<null>
     return { ok: false, error: result.error, code: result.code };
   }
 
+  safeRevalidateTag(billingStatusTag(user.id), { expire: 0 });
   return { ok: true, data: null };
 });
 
@@ -193,6 +233,7 @@ export const redeemPromoCodeAction = withAuthenticatedUser<FormActionResult<Rede
     };
   }
 
+  safeRevalidateTag(billingStatusTag(user.id), { expire: 0 });
   return {
     ok: true,
     data: {
