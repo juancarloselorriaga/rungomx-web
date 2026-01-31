@@ -187,6 +187,15 @@
       "sectionLabel": "Promociones",
       "title": "Códigos promocionales",
       "description": "Crea o desactiva códigos promocionales.",
+      "info": {
+        "triggerLabel": "Sobre códigos promocionales",
+        "title": "Cómo funcionan los códigos promocionales",
+        "steps": {
+          "create": "Crea un código y compártelo con la persona.",
+          "redeem": "Al canjearlo se otorga acceso Pro según la asignación definida.",
+          "control": "Usa fechas de validez, máximo de canjes o desactívalo para detener canjes nuevos."
+        }
+      },
       "latestLabel": "Último código",
       "codeHint": "Copia el código ahora; no se mostrará de nuevo.",
       "grant": {

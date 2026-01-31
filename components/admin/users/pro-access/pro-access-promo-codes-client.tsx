@@ -11,10 +11,11 @@ import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SearchablePicker } from '@/components/ui/searchable-picker';
 import { Spinner } from '@/components/ui/spinner';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { Copy } from 'lucide-react';
+import { Copy, Info } from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
@@ -227,7 +228,32 @@ export function ProAccessPromoCodesClient() {
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {t('promotion.sectionLabel')}
           </p>
-          <h2 className="text-lg font-semibold">{t('promotion.title')}</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-lg font-semibold">{t('promotion.title')}</h2>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground"
+                  aria-label={t('promotion.info.triggerLabel')}
+                >
+                  <Info className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-2 text-sm">
+                  <p className="font-semibold text-foreground">{t('promotion.info.title')}</p>
+                  <ul className="space-y-1 pl-4 text-muted-foreground list-disc">
+                    <li>{t('promotion.info.steps.create')}</li>
+                    <li>{t('promotion.info.steps.redeem')}</li>
+                    <li>{t('promotion.info.steps.control')}</li>
+                  </ul>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
           <p className="text-sm text-muted-foreground">{t('promotion.description')}</p>
         </div>
 

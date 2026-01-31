@@ -187,6 +187,15 @@
       "sectionLabel": "Promotions",
       "title": "Promo codes",
       "description": "Create or disable promo codes.",
+      "info": {
+        "triggerLabel": "About promo codes",
+        "title": "How promo codes work",
+        "steps": {
+          "create": "Create a code and share it with the recipient.",
+          "redeem": "Redeeming the code grants Pro access based on the grant settings.",
+          "control": "Use validity dates, max redemptions, or disable to stop new redemptions."
+        }
+      },
       "latestLabel": "Latest code",
       "codeHint": "Copy the code now; it won't be shown again.",
       "grant": {
