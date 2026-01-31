@@ -177,11 +177,9 @@ test.describe('Event Creation', () => {
     // Navigate to events dashboard
     await page.goto('/en/dashboard/events');
 
-    // Event should appear in list
-    await expect(page.getByText(eventData.seriesName)).toBeVisible();
-
-    // Draft badge should be visible
-    await expect(page.getByText(/draft/i)).toBeVisible();
+    const eventLink = page.getByRole('link', { name: new RegExp(eventData.seriesName) }).first();
+    await expect(eventLink).toBeVisible();
+    await expect(eventLink.getByText(/draft/i)).toBeVisible();
   });
 
   test('Test 1.4: Draft event does NOT appear on public directory', async ({ page }) => {

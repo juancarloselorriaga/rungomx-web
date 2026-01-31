@@ -27,6 +27,10 @@ import { DISTANCE_DATA } from '../fixtures/test-data';
  * Tests the complete registration flow from athlete perspective
  */
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // File-scoped test credentials
 let organizerCreds: { email: string; password: string; name: string };
 let athleteCreds: { email: string; password: string; name: string };
@@ -242,14 +246,16 @@ test.describe('Athlete Registration', () => {
     await expect(page.getByText(registrationId)).toBeVisible();
     await expect(page.getByText(seriesName)).toBeVisible();
 
-    await page.getByRole('link', { name: /view details/i }).first().click();
-    await expect(page.getByText(registrationId)).toBeVisible();
-    await expect(page.getByText(seriesName)).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: `${seriesName} ${editionLabel}` }),
-    ).toBeVisible();
-    await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
-  });
+	    await page.getByRole('link', { name: /view details/i }).first().click();
+	    await expect(page.getByText(registrationId)).toBeVisible();
+	    await expect(page.getByText(seriesName)).toBeVisible();
+	    await expect(
+	      page.getByRole('heading', {
+	        name: new RegExp(`${escapeRegExp(seriesName)}\\s+${escapeRegExp(editionLabel)}`),
+	      }),
+	    ).toBeVisible();
+	    await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
+	  });
 
   test('Test 1.8i: Verify registration cannot be duplicated', async ({ page }) => {
     await signInAsAthlete(page, athleteCreds);

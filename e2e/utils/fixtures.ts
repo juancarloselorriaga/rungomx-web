@@ -262,8 +262,18 @@ export async function assignExternalRole(
         name: roleName,
         description: `External ${roleName} role`,
       })
+      .onConflictDoNothing()
       .returning();
-    role = newRole;
+
+    role =
+      newRole ??
+      (await db.query.roles.findFirst({
+        where: eq(schema.roles.name, roleName),
+      }));
+  }
+
+  if (!role) {
+    throw new Error(`Failed to ensure role exists: ${roleName}`);
   }
 
   // Assign the role to the user

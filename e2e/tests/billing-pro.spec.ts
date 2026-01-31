@@ -53,25 +53,37 @@ test.describe('Billing Pro flows', () => {
 
     await Promise.all([
       createTestProfile(db, trialUser.id, {
+        dateOfBirth: new Date('1995-08-20'),
+        gender: 'female',
         phone: '+523312300001',
         city: 'Mexico City',
         state: 'CDMX',
         emergencyContactName: 'Trial Contact',
         emergencyContactPhone: '+523312300002',
+        bloodType: 'O+',
+        shirtSize: 'M',
       }),
       createTestProfile(db, promoUser.id, {
+        dateOfBirth: new Date('1995-08-20'),
+        gender: 'female',
         phone: '+523312300101',
         city: 'Mexico City',
         state: 'CDMX',
         emergencyContactName: 'Promo Contact',
         emergencyContactPhone: '+523312300102',
+        bloodType: 'O+',
+        shirtSize: 'M',
       }),
       createTestProfile(db, pendingUser.id, {
+        dateOfBirth: new Date('1995-08-20'),
+        gender: 'female',
         phone: '+523312300201',
         city: 'Mexico City',
         state: 'CDMX',
         emergencyContactName: 'Pending Contact',
         emergencyContactPhone: '+523312300202',
+        bloodType: 'O+',
+        shirtSize: 'M',
       }),
       assignExternalRole(db, trialUser.id, 'athlete'),
       assignExternalRole(db, promoUser.id, 'athlete'),
@@ -130,9 +142,12 @@ test.describe('Billing Pro flows', () => {
       throw new Error('Missing trial user.');
     }
 
+    const expiredTrialEndsAt = new Date(Date.now() - 60 * 1000);
+    const expiredTrialStartsAt = new Date(expiredTrialEndsAt.getTime() - 2 * 60 * 1000);
+
     await db
       .update(billingSubscriptions)
-      .set({ trialEndsAt: new Date(Date.now() - 60 * 1000) })
+      .set({ trialStartsAt: expiredTrialStartsAt, trialEndsAt: expiredTrialEndsAt })
       .where(eq(billingSubscriptions.userId, trialUser.id));
 
     await page.reload();
