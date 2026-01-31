@@ -212,6 +212,34 @@ export function BillingSettingsClient({
       try {
         try {
           const result = await startTrialAction();
+          if (result.ok) {
+            const nowIso = new Date().toISOString();
+            setStatus((prev) => ({
+              ...prev,
+              isPro: true,
+              trialEligible: false,
+              proUntil: result.data.trialEndsAt,
+              effectiveSource: 'trial',
+              subscription: {
+                id: prev.subscription?.id ?? 'trial',
+                status: 'trialing',
+                planKey: prev.subscription?.planKey ?? 'pro',
+                cancelAtPeriodEnd: prev.subscription?.cancelAtPeriodEnd ?? false,
+                trialStartsAt: prev.subscription?.trialStartsAt ?? nowIso,
+                trialEndsAt: result.data.trialEndsAt,
+                currentPeriodStartsAt: null,
+                currentPeriodEndsAt: null,
+                canceledAt: prev.subscription?.canceledAt ?? null,
+                endedAt: prev.subscription?.endedAt ?? null,
+              },
+            }));
+
+            const endsAt = formatDateTime(result.data.trialEndsAt);
+            toast.success(t('trial.success', { endsAt }));
+            void syncStatusFromServer({ attempts: 5, delayMs: 500 });
+            return;
+          }
+
           if (!result.ok) {
             errorMessage =
               result.code === 'EMAIL_NOT_VERIFIED'
