@@ -88,7 +88,6 @@ export async function sendEmail({
   textContent,
   toName,
 }: SendEmailOptions): Promise<SendEmailResult> {
-}: SendEmailOptions): Promise<SendEmailResult> {
   const recipients = normalizeRecipients(to, toName);
   if (recipients.length === 0) {
     throw new Error('No email recipients provided');
