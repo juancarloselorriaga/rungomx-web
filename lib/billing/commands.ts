@@ -23,7 +23,6 @@ import { safeRevalidateTag } from '@/lib/next-cache';
 
 import { BILLING_ENTITLEMENT_KEY, BILLING_PLAN_KEY, BILLING_TRIAL_DAYS, PROMO_CODE_LENGTH } from './constants';
 import { billingStatusTag } from './cache-tags';
-import { sendCancelScheduledEmail, sendTrialStartedEmail } from './emails';
 import { appendBillingEvent } from './events';
 import {
   getLatestBillingHashSecret,
@@ -39,6 +38,16 @@ import type { BillingEventType } from './types';
 type ActionResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string; code: string };
+
+async function sendTrialStartedEmailSafe(userId: string) {
+  const { sendTrialStartedEmail } = await import('./emails');
+  await sendTrialStartedEmail({ userId });
+}
+
+async function sendCancelScheduledEmailSafe(userId: string, endsAt: Date) {
+  const { sendCancelScheduledEmail } = await import('./emails');
+  await sendCancelScheduledEmail({ userId, endsAt });
+}
 
 const PROMO_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
@@ -175,7 +184,7 @@ export async function startTrialForUser({
 
   if (result.ok) {
     revalidateBillingStatus(userId);
-    sendTrialStartedEmail({ userId }).catch(() => {});
+    sendTrialStartedEmailSafe(userId).catch(() => {});
   }
 
   return result;
@@ -273,7 +282,7 @@ export async function scheduleCancelAtPeriodEnd({
   if (result.ok) {
     revalidateBillingStatus(userId);
     if (!result.data.alreadyScheduled) {
-      sendCancelScheduledEmail({ userId, endsAt: result.data.endsAt }).catch(() => {});
+      sendCancelScheduledEmailSafe(userId, result.data.endsAt).catch(() => {});
     }
   }
 
