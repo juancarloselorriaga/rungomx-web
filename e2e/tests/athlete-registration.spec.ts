@@ -115,14 +115,14 @@ test.describe('Athlete Registration', () => {
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
 
     // Register button should be visible
-    await expect(page.getByRole('link', { name: /register/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /register now/i })).toBeVisible();
   });
 
   test('Test 1.8b: Clicking register shows login required for unauthenticated users', async ({ page }) => {
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
 
     // Click register button
-    await page.getByRole('link', { name: /register/i }).first().click();
+    await page.getByRole('link', { name: /register now/i }).click();
 
     // Should show login required page (not redirect)
     await expect(page).toHaveURL(/\/register/);
@@ -149,7 +149,7 @@ test.describe('Athlete Registration', () => {
 
     // Navigate to event and click register
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
-    await page.getByRole('link', { name: /register/i }).first().click();
+    await page.getByRole('link', { name: /register now/i }).click();
 
     // Should be on registration page
     await expect(page).toHaveURL(/\/register/);

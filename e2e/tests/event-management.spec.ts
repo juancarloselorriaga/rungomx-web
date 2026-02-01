@@ -168,7 +168,7 @@ test.describe('Event Management', () => {
     await expect(page.getByText('10K Trail Run')).toBeVisible();
 
     // Registration button should be visible
-    await expect(page.getByRole('link', { name: /register/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /register now/i })).toBeVisible();
   });
 
   test('Test 1.6: Pause registration', async ({ page }) => {
@@ -260,7 +260,7 @@ test.describe('Event Management', () => {
     // retry opening once, but avoid clicking the underlying button when the overlay is already open.
     try {
       await searchInput.waitFor({ state: 'visible', timeout: 30000 });
-    } catch (error) {
+    } catch {
       const anyDialog = page.locator('[data-slot="dialog-content"]').first();
       const isDialogOpen = await anyDialog.isVisible().catch(() => false);
       if (!isDialogOpen) {
