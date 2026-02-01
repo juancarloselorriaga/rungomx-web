@@ -14,6 +14,9 @@ import { AutoClaimPendingGrantsClient } from '@/components/billing/auto-claim-pe
 import { getPathname } from '@/i18n/navigation';
 import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
+import { getProEntitlementForUser } from '@/lib/billing/entitlements';
+import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
+import type { ProFeaturesSnapshot } from '@/app/actions/pro-features';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -58,15 +61,41 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
   const navSections = buildProtectedNavSections(authContext.permissions);
   const navItems = buildProtectedNavItems(authContext.permissions);
 
+  let isProMembership = false;
+  if (authContext.user && !authContext.isInternal) {
+    try {
+      const entitlement = await getProEntitlementForUser({
+        userId: authContext.user.id,
+        isInternal: authContext.isInternal,
+      });
+      isProMembership = entitlement.isPro;
+    } catch (error) {
+      console.warn('[billing] Failed to resolve pro entitlement for nav', error);
+      isProMembership = false;
+    }
+  }
+
+  let proFeaturesSnapshot: ProFeaturesSnapshot | undefined;
+  try {
+    const configs = await getProFeatureConfigSnapshot();
+    proFeaturesSnapshot = {
+      isInternal: authContext.isInternal,
+      isProMembership,
+      configs,
+    };
+  } catch (error) {
+    console.warn('[pro-features] Failed to resolve initial snapshot', error);
+  }
+
   return (
-    <ProtectedLayoutWrapper>
+    <ProtectedLayoutWrapper initialProFeaturesSnapshot={proFeaturesSnapshot}>
       <AutoClaimPendingGrantsClient enabled={shouldAutoClaimGrants} />
       <SlidingNavProvider>
         <NavDrawerProvider>
           <MobileNavPushLayout className="min-h-screen bg-background">
-            <NavigationBar items={navItems} variant="protected" />
+            <NavigationBar items={navItems} variant="protected" isPro={isProMembership} />
             <div className="flex">
-              <SlidingSidebar sections={navSections} />
+              <SlidingSidebar sections={navSections} isPro={isProMembership} />
               <div className="flex-1 min-w-0">
                 <main className="px-4 pb-10 pt-6 md:px-8 lg:px-10">
                   <div className="mx-auto w-full max-w-6xl">{children}</div>

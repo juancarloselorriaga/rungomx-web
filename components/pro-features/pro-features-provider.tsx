@@ -13,9 +13,15 @@ type ProFeaturesContextValue = {
 
 const ProFeaturesContext = createContext<ProFeaturesContextValue | null>(null);
 
-export function ProFeaturesProvider({ children }: { children: React.ReactNode }) {
-  const [snapshot, setSnapshot] = useState<ProFeaturesSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
+export function ProFeaturesProvider({
+  children,
+  initialSnapshot,
+}: {
+  children: React.ReactNode;
+  initialSnapshot?: ProFeaturesSnapshot;
+}) {
+  const [snapshot, setSnapshot] = useState<ProFeaturesSnapshot | null>(initialSnapshot ?? null);
+  const [loading, setLoading] = useState(!initialSnapshot);
   const [error, setError] = useState<string | null>(null);
 
   const loadSnapshot = useCallback(async () => {
@@ -36,9 +42,10 @@ export function ProFeaturesProvider({ children }: { children: React.ReactNode })
   }, []);
 
   useEffect(() => {
+    if (initialSnapshot) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial snapshot load updates local UI state.
     void loadSnapshot();
-  }, [loadSnapshot]);
+  }, [initialSnapshot, loadSnapshot]);
 
   return (
     <ProFeaturesContext.Provider

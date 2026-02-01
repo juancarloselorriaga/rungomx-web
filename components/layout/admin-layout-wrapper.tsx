@@ -9,9 +9,10 @@ import { SlidingSidebar } from './navigation/sliding-sidebar';
 type AdminLayoutWrapperProps = {
   children: ReactNode;
   permissions: PermissionSet;
+  isPro?: boolean;
 };
 
-export default function AdminLayoutWrapper({ children, permissions }: AdminLayoutWrapperProps) {
+export default function AdminLayoutWrapper({ children, permissions, isPro }: AdminLayoutWrapperProps) {
   const navSections = buildAdminNavSections(permissions);
   const navItems = buildAdminNavItems(permissions);
 
@@ -19,9 +20,9 @@ export default function AdminLayoutWrapper({ children, permissions }: AdminLayou
     <SlidingNavProvider>
       <NavDrawerProvider>
         <MobileNavPushLayout className="min-h-screen bg-background">
-          <NavigationBar items={navItems} variant="protected" />
+          <NavigationBar items={navItems} variant="protected" isPro={isPro} />
           <div className="flex">
-            <SlidingSidebar sections={navSections} />
+            <SlidingSidebar sections={navSections} isPro={isPro} />
             <div className="flex-1 min-w-0">
               <main className="px-4 pb-10 pt-6 md:px-8 lg:px-10">
                 <div className="mx-auto w-full max-w-6xl">{children}</div>

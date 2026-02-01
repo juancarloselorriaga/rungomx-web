@@ -3,6 +3,7 @@ import { LocaleSyncWrapper } from '@/components/locale-sync-wrapper';
 import { getPathname } from '@/i18n/navigation';
 import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
+import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -23,9 +24,25 @@ export default async function AdminLayout({ children, params }: AdminLayoutProps
     redirect(getPathname({ href: '/dashboard', locale }));
   }
 
+  let isProMembership = false;
+  if (authContext.user && !authContext.isInternal) {
+    try {
+      const entitlement = await getProEntitlementForUser({
+        userId: authContext.user.id,
+        isInternal: authContext.isInternal,
+      });
+      isProMembership = entitlement.isPro;
+    } catch (error) {
+      console.warn('[billing] Failed to resolve pro entitlement for admin nav', error);
+      isProMembership = false;
+    }
+  }
+
   return (
     <LocaleSyncWrapper>
-      <AdminLayoutWrapper permissions={authContext.permissions}>{children}</AdminLayoutWrapper>
+      <AdminLayoutWrapper permissions={authContext.permissions} isPro={isProMembership}>
+        {children}
+      </AdminLayoutWrapper>
     </LocaleSyncWrapper>
   );
 }
