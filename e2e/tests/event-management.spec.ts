@@ -252,7 +252,6 @@ test.describe('Event Management', () => {
     const buildIndicator = page.locator('text=/Compiling|Rendering/i');
     const searchInput = page.getByPlaceholder(/search for a place or address/i);
 
-    await locationButton.scrollIntoViewIfNeeded();
     await locationButton.click();
     await expect(buildIndicator).toBeHidden({ timeout: 60000 });
 
