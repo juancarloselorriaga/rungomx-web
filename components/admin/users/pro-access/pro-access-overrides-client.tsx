@@ -147,6 +147,7 @@ export function ProAccessOverridesClient() {
     if (prevInitialEmail.current === initialEmail) return;
     prevInitialEmail.current = initialEmail;
     hasAutoSubmitted.current = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Reset local UI state when initialEmail changes.
     setLookupResult(null);
     setLatestOverrideId(null);
     lookupForm.setFieldValue('email', initialEmail);
