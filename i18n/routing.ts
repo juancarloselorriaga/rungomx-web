@@ -149,6 +149,30 @@ export const routing = defineRouting({
       es: '/tablero/eventos/[eventId]/inscripciones-grupales',
       en: '/dashboard/events/[eventId]/group-registrations',
     },
+    '/dashboard/events/[eventId]/results': {
+      es: '/tablero/eventos/[eventId]/resultados',
+      en: '/dashboard/events/[eventId]/results',
+    },
+    '/dashboard/events/[eventId]/results/capture': {
+      es: '/tablero/eventos/[eventId]/resultados/captura',
+      en: '/dashboard/events/[eventId]/results/capture',
+    },
+    '/dashboard/events/[eventId]/results/import': {
+      es: '/tablero/eventos/[eventId]/resultados/importar',
+      en: '/dashboard/events/[eventId]/results/import',
+    },
+    '/dashboard/events/[eventId]/results/review': {
+      es: '/tablero/eventos/[eventId]/resultados/revision',
+      en: '/dashboard/events/[eventId]/results/review',
+    },
+    '/dashboard/events/[eventId]/results/corrections': {
+      es: '/tablero/eventos/[eventId]/resultados/correcciones',
+      en: '/dashboard/events/[eventId]/results/corrections',
+    },
+    '/dashboard/events/[eventId]/results/investigation': {
+      es: '/tablero/eventos/[eventId]/resultados/investigacion',
+      en: '/dashboard/events/[eventId]/results/investigation',
+    },
     '/dashboard/my-registrations': {
       es: '/tablero/inscripciones',
       en: '/dashboard/my-registrations',
@@ -216,6 +240,18 @@ export const routing = defineRouting({
     '/results': {
       es: '/resultados',
       en: '/results',
+    },
+    '/results/[seriesSlug]/[editionSlug]': {
+      es: '/resultados/[seriesSlug]/[editionSlug]',
+      en: '/results/[seriesSlug]/[editionSlug]',
+    },
+    '/results/how-it-works': {
+      es: '/resultados/como-funciona',
+      en: '/results/how-it-works',
+    },
+    '/rankings': {
+      es: '/clasificaciones',
+      en: '/rankings',
     },
     '/news': {
       es: '/noticias',

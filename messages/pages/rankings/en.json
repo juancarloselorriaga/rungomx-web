@@ -1,0 +1,76 @@
+{
+  "title": "National Rankings",
+  "description": "Official national leaderboard computed from promoted official result snapshots.",
+  "scope": {
+    "national": "National scope",
+    "organizer": "Organizer scope",
+    "default": "National by default",
+    "contextOrg": "Organizer context: {organization}"
+  },
+  "snapshot": {
+    "summary": "Ruleset {ruleset} · {rows} rows",
+    "current": "Current snapshot",
+    "historical": "Historical snapshot"
+  },
+  "reproducibility": {
+    "summary": "Reproducibility context",
+    "notAvailable": "Not available",
+    "referenceLink": "Open ruleset reference",
+    "referenceMissing": "No ruleset reference is linked for this snapshot.",
+    "fields": {
+      "ruleset": "Ruleset version",
+      "generatedAt": "Snapshot generated",
+      "promotedAt": "Snapshot promoted",
+      "snapshotId": "Snapshot ID"
+    }
+  },
+  "filters": {
+    "scope": "Scope",
+    "organization": "Organizer",
+    "snapshot": "Snapshot history",
+    "discipline": "Discipline",
+    "gender": "Gender",
+    "ageGroup": "Age group",
+    "all": "All",
+    "currentSnapshot": "Current snapshot",
+    "snapshotOption": "{ruleset} · {generatedAt}",
+    "apply": "Apply",
+    "reset": "Reset"
+  },
+  "table": {
+    "title": "National leaderboard",
+    "description": "Current promoted national snapshot.",
+    "headers": {
+      "rank": "Rank",
+      "runner": "Runner",
+      "bib": "Bib",
+      "discipline": "Discipline",
+      "gender": "Gender",
+      "ageGroup": "Age group",
+      "finishTime": "Finish time"
+    }
+  },
+  "empty": {
+    "noSnapshot": "No promoted national snapshot is available yet.",
+    "noRows": "No ranking rows are available yet.",
+    "noMatch": "No ranking rows match the selected filters."
+  },
+  "discipline": {
+    "trail_running": "Trail running",
+    "triathlon": "Triathlon",
+    "cycling": "Cycling",
+    "mtb": "MTB",
+    "gravel_bike": "Gravel bike",
+    "duathlon": "Duathlon",
+    "backyard_ultra": "Backyard ultra"
+  },
+  "gender": {
+    "male": "Male",
+    "female": "Female",
+    "non_binary": "Non-binary",
+    "other": "Other"
+  },
+  "ageGroup": {
+    "option": "{ageGroup}"
+  }
+}

@@ -34,7 +34,15 @@ import {
   pricingTiers,
   profiles,
   proFeatureUsageEvents,
+  rankingSnapshotRows,
+  rankingSnapshots,
+  rankingRulesets,
+  resultCorrectionRequests,
   rateLimits,
+  resultEntryClaims,
+  resultEntries,
+  resultIngestionSessions,
+  resultVersions,
   registrants,
   registrationAnswers,
   registrationGroupMembers,
@@ -86,6 +94,32 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   organizationMemberships: many(organizationMemberships),
   registrations: many(registrations),
   registrants: many(registrants),
+  createdResultVersions: many(resultVersions, { relationName: 'resultVersionsCreatedBy' }),
+  finalizedResultVersions: many(resultVersions, {
+    relationName: 'resultVersionsFinalizedBy',
+  }),
+  resultEntries: many(resultEntries),
+  requestedResultEntryClaims: many(resultEntryClaims, {
+    relationName: 'resultEntryClaimsRequestedBy',
+  }),
+  linkedResultEntryClaims: many(resultEntryClaims, {
+    relationName: 'resultEntryClaimsLinkedUser',
+  }),
+  reviewedResultEntryClaims: many(resultEntryClaims, {
+    relationName: 'resultEntryClaimsReviewedBy',
+  }),
+  startedResultIngestionSessions: many(resultIngestionSessions, {
+    relationName: 'resultIngestionSessionsStartedBy',
+  }),
+  requestedResultCorrectionRequests: many(resultCorrectionRequests, {
+    relationName: 'resultCorrectionRequestsRequestedBy',
+  }),
+  reviewedResultCorrectionRequests: many(resultCorrectionRequests, {
+    relationName: 'resultCorrectionRequestsReviewedBy',
+  }),
+  publishedRankingRulesets: many(rankingRulesets, {
+    relationName: 'rankingRulesetsPublishedBy',
+  }),
   groupRegistrationBatches: many(groupRegistrationBatches),
   groupUploadLinksCreated: many(groupUploadLinks, { relationName: 'groupUploadLinksCreatedBy' }),
   groupUploadLinksRevoked: many(groupUploadLinks, { relationName: 'groupUploadLinksRevokedBy' }),
@@ -236,6 +270,7 @@ export const billingPendingEntitlementGrantsRelations = relations(
 export const organizationsRelations = relations(organizations, ({ many, one }) => ({
   memberships: many(organizationMemberships),
   eventSeries: many(eventSeries),
+  rankingSnapshots: many(rankingSnapshots),
   media: many(media),
   auditLogs: many(auditLogs),
   payoutProfile: one(organizationPayoutProfiles, {
@@ -297,6 +332,7 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   waivers: many(waivers),
   websiteContent: many(eventWebsiteContent),
   faqItems: many(eventFaqItems),
+  resultIngestionSessions: many(resultIngestionSessions),
   groupRegistrationBatches: many(groupRegistrationBatches),
   groupUploadLinks: many(groupUploadLinks),
   registrationInvites: many(registrationInvites),
@@ -306,6 +342,8 @@ export const eventEditionsRelations = relations(eventEditions, ({ one, many }) =
   addOns: many(addOns),
   discountCodes: many(discountCodes),
   registrationQuestions: many(registrationQuestions),
+  // Phase 3 relations
+  resultVersions: many(resultVersions),
 }));
 
 export const eventDistancesRelations = relations(eventDistances, ({ one, many }) => ({
@@ -320,6 +358,167 @@ export const eventDistancesRelations = relations(eventDistances, ({ one, many })
   // Phase 2 relations (distance-scoped)
   addOns: many(addOns),
   registrationQuestions: many(registrationQuestions),
+  // Phase 3 relations
+  resultEntries: many(resultEntries),
+}));
+
+export const resultVersionsRelations = relations(resultVersions, ({ one, many }) => ({
+  edition: one(eventEditions, {
+    fields: [resultVersions.editionId],
+    references: [eventEditions.id],
+  }),
+  parentVersion: one(resultVersions, {
+    fields: [resultVersions.parentVersionId],
+    references: [resultVersions.id],
+    relationName: 'resultVersionParent',
+  }),
+  childVersions: many(resultVersions, {
+    relationName: 'resultVersionParent',
+  }),
+  createdByUser: one(users, {
+    fields: [resultVersions.createdByUserId],
+    references: [users.id],
+    relationName: 'resultVersionsCreatedBy',
+  }),
+  finalizedByUser: one(users, {
+    fields: [resultVersions.finalizedByUserId],
+    references: [users.id],
+    relationName: 'resultVersionsFinalizedBy',
+  }),
+  entries: many(resultEntries),
+  correctionRequests: many(resultCorrectionRequests),
+  triggeredRankingSnapshots: many(rankingSnapshots, {
+    relationName: 'rankingSnapshotsTriggerVersion',
+  }),
+  rankingSnapshotRows: many(rankingSnapshotRows),
+  ingestionSession: one(resultIngestionSessions, {
+    fields: [resultVersions.id],
+    references: [resultIngestionSessions.resultVersionId],
+  }),
+}));
+
+export const resultEntriesRelations = relations(resultEntries, ({ one, many }) => ({
+  resultVersion: one(resultVersions, {
+    fields: [resultEntries.resultVersionId],
+    references: [resultVersions.id],
+  }),
+  distance: one(eventDistances, {
+    fields: [resultEntries.distanceId],
+    references: [eventDistances.id],
+  }),
+  user: one(users, {
+    fields: [resultEntries.userId],
+    references: [users.id],
+  }),
+  claim: one(resultEntryClaims, {
+    fields: [resultEntries.id],
+    references: [resultEntryClaims.resultEntryId],
+  }),
+  correctionRequests: many(resultCorrectionRequests),
+  rankingSnapshotRows: many(rankingSnapshotRows),
+}));
+
+export const resultEntryClaimsRelations = relations(resultEntryClaims, ({ one }) => ({
+  resultEntry: one(resultEntries, {
+    fields: [resultEntryClaims.resultEntryId],
+    references: [resultEntries.id],
+  }),
+  requestedByUser: one(users, {
+    fields: [resultEntryClaims.requestedByUserId],
+    references: [users.id],
+    relationName: 'resultEntryClaimsRequestedBy',
+  }),
+  linkedUser: one(users, {
+    fields: [resultEntryClaims.linkedUserId],
+    references: [users.id],
+    relationName: 'resultEntryClaimsLinkedUser',
+  }),
+  reviewedByUser: one(users, {
+    fields: [resultEntryClaims.reviewedByUserId],
+    references: [users.id],
+    relationName: 'resultEntryClaimsReviewedBy',
+  }),
+}));
+
+export const resultIngestionSessionsRelations = relations(resultIngestionSessions, ({ one }) => ({
+  edition: one(eventEditions, {
+    fields: [resultIngestionSessions.editionId],
+    references: [eventEditions.id],
+  }),
+  resultVersion: one(resultVersions, {
+    fields: [resultIngestionSessions.resultVersionId],
+    references: [resultVersions.id],
+  }),
+  startedByUser: one(users, {
+    fields: [resultIngestionSessions.startedByUserId],
+    references: [users.id],
+    relationName: 'resultIngestionSessionsStartedBy',
+  }),
+}));
+
+export const resultCorrectionRequestsRelations = relations(
+  resultCorrectionRequests,
+  ({ one }) => ({
+    resultEntry: one(resultEntries, {
+      fields: [resultCorrectionRequests.resultEntryId],
+      references: [resultEntries.id],
+    }),
+    resultVersion: one(resultVersions, {
+      fields: [resultCorrectionRequests.resultVersionId],
+      references: [resultVersions.id],
+    }),
+    requestedByUser: one(users, {
+      fields: [resultCorrectionRequests.requestedByUserId],
+      references: [users.id],
+      relationName: 'resultCorrectionRequestsRequestedBy',
+    }),
+    reviewedByUser: one(users, {
+      fields: [resultCorrectionRequests.reviewedByUserId],
+      references: [users.id],
+      relationName: 'resultCorrectionRequestsReviewedBy',
+    }),
+  }),
+);
+
+export const rankingRulesetsRelations = relations(rankingRulesets, ({ one, many }) => ({
+  publishedByUser: one(users, {
+    fields: [rankingRulesets.publishedByUserId],
+    references: [users.id],
+    relationName: 'rankingRulesetsPublishedBy',
+  }),
+  snapshots: many(rankingSnapshots),
+}));
+
+export const rankingSnapshotsRelations = relations(rankingSnapshots, ({ one, many }) => ({
+  ruleset: one(rankingRulesets, {
+    fields: [rankingSnapshots.rulesetId],
+    references: [rankingRulesets.id],
+  }),
+  organization: one(organizations, {
+    fields: [rankingSnapshots.organizationId],
+    references: [organizations.id],
+  }),
+  triggerResultVersion: one(resultVersions, {
+    fields: [rankingSnapshots.triggerResultVersionId],
+    references: [resultVersions.id],
+    relationName: 'rankingSnapshotsTriggerVersion',
+  }),
+  rows: many(rankingSnapshotRows),
+}));
+
+export const rankingSnapshotRowsRelations = relations(rankingSnapshotRows, ({ one }) => ({
+  snapshot: one(rankingSnapshots, {
+    fields: [rankingSnapshotRows.snapshotId],
+    references: [rankingSnapshots.id],
+  }),
+  resultEntry: one(resultEntries, {
+    fields: [rankingSnapshotRows.resultEntryId],
+    references: [resultEntries.id],
+  }),
+  resultVersion: one(resultVersions, {
+    fields: [rankingSnapshotRows.resultVersionId],
+    references: [resultVersions.id],
+  }),
 }));
 
 export const pricingTiersRelations = relations(pricingTiers, ({ one }) => ({

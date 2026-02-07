@@ -51,3 +51,14 @@ export {
 
 // Registration export actions
 export { exportRegistrationsCSV, exportAddOnSalesCSV } from './registrations/actions';
+
+// Results identity actions (Story 1.x)
+export {
+  confirmRunnerResultClaim,
+  createResultDraftVersion,
+  getRunnerResultClaimCandidates,
+  initializeResultIngestionSession,
+  linkDraftResultEntryToUser,
+  reviewRunnerResultClaim,
+  upsertDraftResultEntry,
+} from './results/actions';

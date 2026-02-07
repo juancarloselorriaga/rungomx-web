@@ -142,6 +142,7 @@
       "pricing": "Precios",
       "addOns": "Extras",
       "coupons": "Cupones",
+      "results": "Centro de resultados",
       "groupRegistrations": "Inscripciones grupales",
       "registrations": "Inscripciones",
       "menu": "Secciones",
@@ -189,6 +190,497 @@
     "faqTitle": "Preguntas frecuentes",
     "editFaq": "Editar todas",
     "viewAllFaq": "+{count} preguntas más"
+  },
+  "resultsWorkspace": {
+    "title": "Centro de resultados",
+    "description": "Base de estados de confianza para los flujos de captura, importación y revisión.",
+    "stateRail": {
+      "title": "Rail de estado de resultados",
+      "description": "El ciclo Draft/Official, conectividad, conteo pendiente y siguiente acción siempre están visibles.",
+      "lifecycle": "Ciclo",
+      "lifecycleDraft": "Borrador",
+      "lifecycleOfficial": "Oficial",
+      "lifecycleDraftHint": "Aún no es público.",
+      "lifecycleOfficialHint": "Atestiguado y visible públicamente.",
+      "connectivity": "Conectividad",
+      "connectivityOnline": "En línea",
+      "connectivityOffline": "Sin conexión",
+      "connectivityOnlineHint": "Listo para sincronizar y revisar.",
+      "connectivityOfflineHint": "Modo local-first con datos protegidos en borrador.",
+      "unsyncedCount": "Entradas sin sincronizar",
+      "nextAction": "Siguiente acción",
+      "nextActionSyncPending": "Sincronizar filas pendientes del borrador",
+      "nextActionReviewDraft": "Revisar filas en borrador antes de publicar",
+      "nextActionReadyToPublish": "El borrador está listo para atestiguar",
+      "nextActionStartIngestion": "Iniciar una nueva ingesta en borrador"
+    },
+    "versionVisibility": {
+      "title": "Visibilidad de versiones oficiales",
+      "description": "Visualiza la versión Official activa y el historial previo del ciclo para esta edición.",
+      "empty": "Aún no hay versiones de resultados para esta edición.",
+      "noOfficialVersion": "Aún no hay versión Official",
+      "activeOfficialLabel": "Hay una versión Official activa",
+      "activeMarker": "Official activa",
+      "historicalMarker": "Histórica",
+      "headers": {
+        "version": "Versión",
+        "status": "Estado",
+        "finalizedAt": "Finalizada en",
+        "finalizedBy": "Finalizada por",
+        "marker": "Marca"
+      },
+      "status": {
+        "draft": "Borrador",
+        "official": "Official",
+        "corrected": "Corregida"
+      },
+      "unknownFinalizedAt": "Sin finalizar",
+      "unknownFinalizedBy": "Desconocido"
+    },
+    "density": {
+      "label": "Densidad de filas",
+      "compact": "Compacto",
+      "full": "Completo"
+    },
+    "table": {
+      "title": "Tabla de resultados en borrador",
+      "description": "Las semánticas de confianza se mantienen visibles en modo Compacto y Completo.",
+      "empty": "Aún no hay filas de borrador. Inicia captura o importación para poblar esta tabla.",
+      "headers": {
+        "bib": "Bib",
+        "runner": "Corredor",
+        "validation": "Validación",
+        "resultStatus": "Estado del resultado",
+        "syncStatus": "Estado de sincronización",
+        "finishTime": "Tiempo final",
+        "updated": "Actualizado",
+        "details": "Detalles"
+      }
+    },
+    "validationState": {
+      "clear": "Sin alertas",
+      "warning": "Advertencia",
+      "blocker": "Bloqueador"
+    },
+    "status": {
+      "finish": "Finalizó",
+      "dnf": "DNF",
+      "dns": "DNS",
+      "dq": "DQ",
+      "synced": "Sincronizado",
+      "pendingSync": "Sincronización pendiente",
+      "conflict": "Conflicto"
+    },
+    "feedback": {
+      "heading": "SAFE -> NEXT -> DETAILS",
+      "safe": "SAFE",
+      "next": "NEXT",
+      "details": "DETAILS"
+    },
+    "lanes": {
+      "capture": {
+        "title": "Flujo de captura",
+        "description": "Captura móvil y local-first en borrador con estado de sincronización claro.",
+        "action": "Abrir flujo de captura"
+      },
+      "import": {
+        "title": "Flujo de importación",
+        "description": "Ingesta CSV/Excel con visibilidad de estado de confianza y señales de conflicto.",
+        "action": "Abrir flujo de importación"
+      },
+      "review": {
+        "title": "Flujo de revisión",
+        "description": "Revisión unificada del borrador antes de atestiguar y publicar.",
+        "action": "Abrir flujo de revisión"
+      },
+      "corrections": {
+        "title": "Flujo de correcciones",
+        "description": "Revisa solicitudes pendientes y registra decisiones del organizador con metadatos auditables.",
+        "action": "Abrir flujo de correcciones"
+      },
+      "investigation": {
+        "title": "Flujo de investigacion",
+        "description": "Vista interna consolidada para procedencia de versiones y transiciones de correcciones.",
+        "action": "Abrir flujo de investigacion"
+      }
+    },
+    "corrections": {
+      "title": "Cola de revisión de correcciones",
+      "description": "Las solicitudes pendientes se priorizan primero. Revisa cada solicitud y aprueba o rechaza con atribución auditable.",
+      "empty": "No se encontraron solicitudes de corrección para esta edición.",
+      "status": {
+        "pending": "Pendiente",
+        "approved": "Aprobada",
+        "rejected": "Rechazada"
+      },
+      "fields": {
+        "reason": "Motivo",
+        "context": "Contexto de la solicitud",
+        "requestedBy": "Solicitada por",
+        "requestedAt": "Solicitada en",
+        "reviewedBy": "Revisada por",
+        "reviewedAt": "Revisada en",
+        "reviewNote": "Nota de decisión",
+        "runner": "Corredor",
+        "bib": "Bib",
+        "entryStatus": "Estado de la entrada",
+        "finishTime": "Tiempo final (ms)"
+      },
+      "review": {
+        "notePlaceholder": "Nota opcional de decisión del organizador",
+        "approveAction": "Aprobar solicitud",
+        "rejectAction": "Rechazar solicitud",
+        "pendingAction": "Guardando decisión...",
+        "successMessage": "La decisión se guardó correctamente.",
+        "failurePrefix": "No se pudo guardar la decisión:",
+        "noDecisionYet": "Pendiente de revisión",
+        "noContext": "No se proporcionó contexto adicional.",
+        "noReviewNote": "No se proporcionó nota de decisión.",
+        "noValue": "N/D"
+      },
+      "audit": {
+        "title": "Bitácora de auditoría de correcciones",
+        "description": "Línea de tiempo interna que vincula cada solicitud con su transición de versión publicada.",
+        "empty": "No se encontraron transiciones de corrección publicadas para esta edición.",
+        "fields": {
+          "requestId": "ID de solicitud",
+          "reason": "Motivo",
+          "requestedBy": "Solicitada por",
+          "reviewedBy": "Revisada por",
+          "requestedAt": "Solicitada en",
+          "reviewedAt": "Revisada en",
+          "publishedAt": "Publicada en",
+          "versionTransition": "Transición de versión"
+        },
+        "fallback": {
+          "pending": "Pendiente de revisión",
+          "noPublishedAt": "Sin publicar"
+        }
+      },
+      "metrics": {
+        "title": "Métricas del ciclo de correcciones",
+        "description": "Monitorea SLA y KPIs de confianza usando estados y marcas de tiempo del ciclo.",
+        "generatedAtLabel": "Generado en",
+        "filtersTitle": "Filtros aplicados",
+        "summary": {
+          "total": "Solicitudes totales",
+          "pending": "Pendientes",
+          "approved": "Aprobadas",
+          "rejected": "Rechazadas",
+          "medianResolutionHours": "Resolución mediana (horas)",
+          "oldestPendingHours": "Pendiente más antigua (horas)"
+        },
+        "filters": {
+          "editionId": "Edición",
+          "organizationId": "Organización",
+          "requestedFrom": "Solicitada desde",
+          "requestedTo": "Solicitada hasta"
+        },
+        "aging": {
+          "title": "Buckets de antigüedad pendientes",
+          "description": "La antigüedad destaca riesgo de backlog sin resolver y prioridad operativa.",
+          "lessThan24Hours": "< 24h",
+          "oneToThreeDays": "1-3 días",
+          "threeToSevenDays": "3-7 días",
+          "moreThanSevenDays": "> 7 días",
+          "highlightsTitle": "Solicitudes pendientes más antiguas",
+          "highlightsEmpty": "No hay solicitudes pendientes para destacar.",
+          "requestedAt": "Solicitada en",
+          "requestedBy": "Solicitada por",
+          "edition": "Edición",
+          "ageHours": "Antigüedad (horas)"
+        },
+        "export": {
+          "action": "Descargar CSV de métricas",
+          "helper": "Filas exportadas",
+          "empty": "No hay filas disponibles para exportar.",
+          "filePrefix": "metricas-ciclo-correcciones"
+        },
+        "fallback": {
+          "notAvailable": "N/D",
+          "notSet": "Sin definir"
+        }
+      }
+    },
+    "investigation": {
+      "title": "Vista interna de investigacion",
+      "description": "Traza procedencia de versiones y transiciones de correcciones sin acceso directo a la base de datos.",
+      "selectedDiff": {
+        "title": "Transicion de version seleccionada",
+        "description": "Usa este resumen para explicar exactamente que cambio y quien lo aprobo.",
+        "empty": "Aun no se selecciono una transicion de correccion.",
+        "transitionValue": "v{fromVersion} ({fromStatus}) -> v{toVersion} ({toStatus})",
+        "fields": {
+          "fromVersion": "Version origen",
+          "toVersion": "Version corregida",
+          "transition": "Resumen de transicion",
+          "approver": "Aprobador",
+          "reviewedAt": "Revisada en",
+          "publishedAt": "Publicada en",
+          "reason": "Motivo"
+        }
+      },
+      "versions": {
+        "title": "Linea de tiempo de versiones y procedencia",
+        "description": "Cada version de resultados incluye contexto de fuente e ingesta.",
+        "empty": "No se encontraron versiones de resultados para esta edicion.",
+        "versionLabel": "Version {version}",
+        "fields": {
+          "versionId": "ID de version",
+          "parentVersionId": "Version padre",
+          "createdAt": "Creada en",
+          "finalizedAt": "Finalizada en",
+          "createdBy": "Creada por",
+          "finalizedBy": "Finalizada por",
+          "sourceReference": "Referencia de fuente",
+          "sourceChecksum": "Checksum de fuente",
+          "ingestionLane": "Flujo de ingesta",
+          "ingestionStartedAt": "Ingesta iniciada",
+          "ingestionStartedBy": "Ingesta iniciada por",
+          "ingestionSessionId": "Sesion de ingesta"
+        }
+      },
+      "corrections": {
+        "title": "Linea de tiempo de transiciones de correccion",
+        "description": "Cada correccion aprobada enlaza directamente a su contexto de transicion de version.",
+        "empty": "No se encontraron transiciones de correccion aprobadas para esta edicion.",
+        "viewDiff": "Abrir contexto de diff de version",
+        "fields": {
+          "requestId": "ID de solicitud",
+          "transition": "Transicion de version",
+          "requestedBy": "Solicitada por",
+          "reviewedBy": "Revisada por",
+          "reviewedAt": "Revisada en",
+          "publishedAt": "Publicada en",
+          "reason": "Motivo"
+        }
+      },
+      "audit": {
+        "title": "Bitacora de auditoria de acciones criticas",
+        "description": "Filtra acciones criticas de confianza por evento, tipo de accion y ventana de tiempo.",
+        "empty": "Ninguna entrada de auditoria coincide con los filtros seleccionados.",
+        "fields": {
+          "action": "Accion",
+          "actor": "Actor",
+          "entity": "Entidad objetivo",
+          "timestamp": "Marca de tiempo"
+        },
+        "filters": {
+          "action": "Filtro de accion",
+          "allActions": "Todas las acciones criticas",
+          "from": "Desde",
+          "to": "Hasta",
+          "apply": "Aplicar"
+        },
+        "actions": {
+          "results": {
+            "ingestion": {
+              "initialize": "Ingestion de resultados inicializada"
+            },
+            "version": {
+              "finalize": "Version de resultados finalizada"
+            },
+            "correction": {
+              "review": {
+                "approve": "Correccion aprobada"
+              },
+              "publish": "Correccion publicada"
+            }
+          }
+        }
+      },
+      "status": {
+        "draft": "Borrador",
+        "official": "Official",
+        "corrected": "Corregida"
+      },
+      "source": {
+        "manual_offline": "Captura manual offline",
+        "csv_excel": "Importacion CSV/Excel",
+        "correction": "Publicacion de correccion"
+      },
+      "fallback": {
+        "notAvailable": "N/D",
+        "unknown": "Desconocido"
+      }
+    },
+    "reviewGate": {
+      "title": "Control de preparación para finalización",
+      "description": "Revisa bloqueadores y advertencias antes de pasar a la atestiguación.",
+      "attemptProceedAction": "Intentar continuar a finalización",
+      "finalizePendingAction": "Publicando versión oficial...",
+      "proceedBlockedMessage": "La finalización está bloqueada hasta resolver todos los bloqueadores.",
+      "proceedReadyMessage": "No se detectaron bloqueadores. El borrador está listo para finalización.",
+      "proceedUnavailableMessage": "Aún no hay filas de borrador. Inicia captura o importación primero.",
+      "finalizeSuccessMessage": "La versión oficial se publicó. Se invalidaron los cachés segmentados de resultados y rankings.",
+      "finalizeFailurePrefix": "La finalización falló:",
+      "nextRequiredActionLabel": "Siguiente acción requerida",
+      "issueListTitle": "Navegación de incidencias",
+      "issueListDescription": "Abre el flujo de remediación directamente desde cada incidencia antes de finalizar.",
+      "issueListEmpty": "No hay incidencias de revisión pendientes. Puedes continuar a finalización.",
+      "blockerCountLabel": "Bloqueadores",
+      "warningCountLabel": "Advertencias",
+      "rowCountLabel": "Filas en borrador",
+      "issueSeverity": {
+        "blocker": "Bloqueador",
+        "warning": "Advertencia"
+      },
+      "issueFields": {
+        "bib": "Bib",
+        "runner": "Corredor",
+        "guidance": "Guía"
+      },
+      "remediationAction": {
+        "capture": "Abrir flujo de captura",
+        "import": "Abrir flujo de importación"
+      }
+    },
+    "captureEntry": {
+      "title": "Captura offline por bib",
+      "description": "Captura bib, tiempo y estado en Borrador aunque la conectividad sea inestable.",
+      "connectivityLabel": "Conectividad",
+      "connectivityOnline": "En línea",
+      "connectivityOffline": "Sin conexión",
+      "reassuranceSavedLocally": "Guardado localmente",
+      "reassuranceNotPublic": "Aún no es público",
+      "reassurancePendingSync": "{count} entradas pendientes de sincronizar",
+      "bibLabel": "Número de bib",
+      "bibPlaceholder": "ej. 245",
+      "timeLabel": "Tiempo final",
+      "timePlaceholder": "HH:MM:SS o MM:SS",
+      "statusLabel": "Estado del resultado",
+      "submitAction": "Guardar entrada en borrador",
+      "validationBibRequired": "El número de bib es obligatorio antes de guardar una entrada en borrador.",
+      "validationFinishTimeInvalid": "El estado Finalizó requiere un tiempo final válido.",
+      "entrySaved": "Entrada guardada localmente en estado borrador.",
+      "entriesTitle": "Vista previa de borrador desde captura offline",
+      "entriesDescription": "Se preserva la semántica de estado y el lugar general se deriva solo de tiempos de finalización.",
+      "entriesEmpty": "Aún no hay entradas de captura offline.",
+      "syncTitle": "Sincronización determinista",
+      "syncDescription": "Sincroniza filas pendientes de borrador de forma idempotente. Los reintentos continúan desde el último checkpoint consistente.",
+      "syncAction": "Ejecutar sincronización",
+      "syncOfflineGuard": "Reconéctate antes de ejecutar la sincronización.",
+      "syncProgressMessage": "Se sincronizaron {processed} entradas. Quedan {remaining} pendientes.",
+      "syncCompleteMessage": "Todas las entradas pendientes se sincronizaron sin duplicaciones.",
+      "syncInterruptedMessage": "Checkpoint de sincronización guardado tras {processed} entradas. Reintenta para continuar con las {remaining} restantes.",
+      "syncBlockedByConflicts": "Resuelve todos los conflictos pendientes antes de completar la sincronización.",
+      "conflictTitle": "Revisión de conflictos",
+      "conflictDescription": "Compara valores locales y del servidor lado a lado, luego elige una resolución explícita para cada conflicto.",
+      "conflictEmpty": "No hay conflictos de sincronización pendientes.",
+      "conflictNeedsDecision": "Resolución obligatoria",
+      "conflictResolved": "Resolución seleccionada",
+      "conflictLocalValues": "Valores locales",
+      "conflictServerValues": "Valores del servidor",
+      "conflictFieldBib": "Bib",
+      "conflictFieldStatus": "Estado",
+      "conflictFieldFinishTime": "Tiempo final",
+      "conflictFieldUpdatedAt": "Actualizado en",
+      "conflictActionKeepLocal": "Conservar local",
+      "conflictActionKeepServer": "Conservar servidor",
+      "conflictChoiceKeepLocal": "Se conservan valores locales",
+      "conflictChoiceKeepServer": "Se conservan valores del servidor",
+      "headers": {
+        "bib": "Bib",
+        "status": "Estado",
+        "syncStatus": "Estado de sincronización",
+        "finishTime": "Tiempo final",
+        "derivedOverall": "Lugar general derivado",
+        "capturedAt": "Capturado en",
+        "provenance": "Procedencia"
+      },
+      "statusOptions": {
+        "finish": "Finalizó",
+        "dnf": "DNF",
+        "dns": "DNS",
+        "dq": "DQ"
+      },
+      "provenanceSession": "Sesión",
+      "provenanceDevice": "Dispositivo",
+      "provenanceEditor": "Editor",
+      "syncStatusPending": "Sincronización pendiente",
+      "syncStatusSynced": "Sincronizado",
+      "syncStatusConflict": "Conflicto",
+      "safeNextDetails": {
+        "title": "SAFE -> NEXT -> DETAILS",
+        "safe": "SAFE",
+        "next": "NEXT",
+        "details": "DETAILS",
+        "safeMessage": "Los datos en borrador permanecen protegidos mientras existan conflictos sin resolver.",
+        "nextMessage": "Elige una resolución para cada conflicto y vuelve a ejecutar la sincronización.",
+        "detailConflictSummary": "{count} conflictos requieren acción del organizador.",
+        "detailDraftProtection": "Los resultados oficiales no cambian hasta finalizar la sincronización."
+      }
+    },
+    "importMapping": {
+      "title": "Vista previa de mapeo CSV/Excel",
+      "description": "Sube un archivo, mapea columnas origen a campos canónicos de resultados y conserva un mapeo determinista para la vista previa.",
+      "uploadLabel": "Subir archivo CSV/Excel",
+      "uploadHint": "Formatos compatibles: .csv, .xls, .xlsx (máx. 5MB).",
+      "parseSummary": "Resumen del archivo parseado",
+      "columnsLabel": "Columnas",
+      "sampleRowsLabel": "Filas de muestra",
+      "totalRowsLabel": "Filas totales",
+      "savedTemplatesLabel": "Plantillas de mapeo guardadas",
+      "savedTemplatesEmpty": "Selecciona una plantilla guardada",
+      "saveTemplateNameLabel": "Nombre de plantilla",
+      "saveTemplateNamePlaceholder": "Mi mapeo de importación",
+      "saveTemplateAction": "Guardar plantilla",
+      "templateAppliedMessage": "Plantilla aplicada",
+      "templateSavedMessage": "Plantilla guardada para este alcance de organizador.",
+      "requiredMappingMessage": "Mapea los campos canónicos requeridos antes de guardar una plantilla.",
+      "parsingMessage": "Parseando archivo y extrayendo filas de muestra...",
+      "mapFieldLabel": "Mapear campo",
+      "unmappedOption": "Sin mapear",
+      "requiredTag": "requerido",
+      "optionalTag": "opcional",
+      "mappingTableFieldLabel": "Campo canónico",
+      "mappingTableSourceLabel": "Columna origen",
+      "mappingPreviewTitle": "Payload de mapeo determinista",
+      "mappingPreviewDescription": "Este mapeo explícito es el contrato usado por la validación y vista previa posteriores.",
+      "samplePreviewTitle": "Vista previa de filas de muestra",
+      "samplePreviewDescription": "Usa filas de muestra para verificar asignaciones de columnas antes de continuar.",
+      "validationTitle": "Reporte de validación",
+      "validationDescription": "Los bloqueadores deben resolverse antes de la vista previa del borrador; las advertencias permanecen como guía no bloqueante.",
+      "blockersLabel": "Bloqueadores",
+      "warningsLabel": "Advertencias",
+      "issuesTableSeverityLabel": "Severidad",
+      "issuesTableRowLabel": "Fila",
+      "issuesTableFieldLabel": "Campo",
+      "issuesTableSourceLabel": "Columna origen",
+      "issuesTableIssueLabel": "Problema",
+      "issuesTableGuidanceLabel": "Guía de corrección",
+      "derivedPreviewTitle": "Vista previa de borrador con lugar derivado",
+      "derivedPreviewDescription": "Cuando no hay bloqueadores, esta vista previa muestra cómo se verán las filas antes de publicar.",
+      "derivedPreviewBlocked": "Resuelve los bloqueadores para habilitar la vista previa del borrador.",
+      "derivedPreviewEmpty": "Aún no hay filas mapeadas disponibles para vista previa.",
+      "derivedPreviewHeaders": {
+        "runner": "Corredor",
+        "bib": "Bib",
+        "status": "Estado",
+        "finishTime": "Tiempo final",
+        "derivedOverall": "Lugar general derivado"
+      },
+      "parseErrors": {
+        "unsupportedFormat": "Tipo de archivo no compatible. Sube un archivo .csv, .xls o .xlsx.",
+        "fileTooLarge": "El archivo excede el límite de 5MB. Divídelo e inténtalo de nuevo.",
+        "emptyFile": "El archivo subido está vacío. Agrega filas de datos y vuelve a subirlo.",
+        "missingHeaders": "No se encontraron encabezados. Agrega una fila de encabezados antes de subir.",
+        "duplicateHeaders": "Se detectaron encabezados duplicados. Renombra duplicados e inténtalo de nuevo.",
+        "malformedFile": "No se pudo parsear el archivo. Verifica el formato e inténtalo de nuevo."
+      },
+      "canonicalFields": {
+        "runnerFullName": "Nombre del corredor",
+        "bibNumber": "Número de bib",
+        "finishTimeMillis": "Tiempo final",
+        "status": "Estado del resultado",
+        "gender": "Género",
+        "age": "Edad",
+        "overallPlace": "Lugar general",
+        "genderPlace": "Lugar por género",
+        "ageGroupPlace": "Lugar por grupo de edad",
+        "distanceLabel": "Etiqueta de distancia"
+      }
+    }
   },
   "faq": {
     "title": "Preguntas Frecuentes",

@@ -48,3 +48,17 @@ export {
   getMyRegistrationDetail,
   getActiveRegistrationForEdition,
 } from './my-registrations/queries';
+
+// Results queries
+export {
+  findDraftEntriesByIdentity,
+  findUnclaimedResultClaimCandidateByEntryId,
+  findUnclaimedResultClaimCandidates,
+  getPublicOfficialResultsPageData,
+  listPublicOfficialResultsDirectory,
+  searchPublicOfficialResultEntries,
+  getDraftResultVersionById,
+  getResultClaimResolutionTrace,
+  listDraftResultEntries,
+  listPendingResultClaimReviewsForEdition,
+} from './results/queries';

@@ -1,0 +1,156 @@
+import { Badge } from '@/components/common/badge';
+import { cn } from '@/lib/utils';
+import type {
+  OrganizerResultsRailState,
+  ResultsConnectivityState,
+  ResultsLifecycleState,
+  ResultsNextActionKey,
+} from '@/lib/events/results/workspace';
+import { ArrowRightCircle, CloudOff, Wifi, ShieldCheck } from 'lucide-react';
+
+type ResultsStateRailLabels = {
+  title: string;
+  description: string;
+  lifecycle: string;
+  lifecycleDraft: string;
+  lifecycleOfficial: string;
+  lifecycleDraftHint: string;
+  lifecycleOfficialHint: string;
+  connectivity: string;
+  connectivityOnline: string;
+  connectivityOffline: string;
+  connectivityOnlineHint: string;
+  connectivityOfflineHint: string;
+  unsyncedCount: string;
+  nextAction: string;
+  nextActionSyncPending: string;
+  nextActionReviewDraft: string;
+  nextActionReadyToPublish: string;
+  nextActionStartIngestion: string;
+};
+
+type ResultsStateRailProps = {
+  state: OrganizerResultsRailState;
+  labels: ResultsStateRailLabels;
+  className?: string;
+};
+
+const lifecycleBadgeVariant: Record<ResultsLifecycleState, 'indigo' | 'green'> = {
+  draft: 'indigo',
+  official: 'green',
+};
+
+const connectivityBadgeVariant: Record<ResultsConnectivityState, 'outline' | 'primary'> = {
+  online: 'primary',
+  offline: 'outline',
+};
+
+function getNextActionLabel(
+  nextActionKey: ResultsNextActionKey,
+  labels: ResultsStateRailLabels,
+): string {
+  switch (nextActionKey) {
+    case 'syncPending':
+      return labels.nextActionSyncPending;
+    case 'reviewDraft':
+      return labels.nextActionReviewDraft;
+    case 'readyToPublish':
+      return labels.nextActionReadyToPublish;
+    default:
+      return labels.nextActionStartIngestion;
+  }
+}
+
+export function ResultsStateRail({ state, labels, className }: ResultsStateRailProps) {
+  const lifecycleLabel =
+    state.lifecycle === 'official' ? labels.lifecycleOfficial : labels.lifecycleDraft;
+  const lifecycleHint =
+    state.lifecycle === 'official'
+      ? labels.lifecycleOfficialHint
+      : labels.lifecycleDraftHint;
+
+  const connectivityLabel =
+    state.connectivity === 'online'
+      ? labels.connectivityOnline
+      : labels.connectivityOffline;
+  const connectivityHint =
+    state.connectivity === 'online'
+      ? labels.connectivityOnlineHint
+      : labels.connectivityOfflineHint;
+  const nextActionLabel = getNextActionLabel(state.nextActionKey, labels);
+
+  return (
+    <section
+      className={cn(
+        'rounded-xl border bg-card p-4 shadow-sm sm:p-5',
+        className,
+      )}
+      aria-live="polite"
+      aria-label={labels.title}
+    >
+      <h2 className="text-sm font-semibold tracking-wide text-foreground sm:text-base">
+        {labels.title}
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
+
+      <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border bg-background/40 p-3">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {labels.lifecycle}
+          </dt>
+          <dd className="mt-2 space-y-1">
+            <Badge
+              size="sm"
+              variant={lifecycleBadgeVariant[state.lifecycle]}
+              icon={<ShieldCheck className="h-3 w-3" />}
+            >
+              {lifecycleLabel}
+            </Badge>
+            <p className="text-xs text-muted-foreground">{lifecycleHint}</p>
+          </dd>
+        </div>
+
+        <div className="rounded-lg border bg-background/40 p-3">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {labels.connectivity}
+          </dt>
+          <dd className="mt-2 space-y-1">
+            <Badge
+              size="sm"
+              variant={connectivityBadgeVariant[state.connectivity]}
+              icon={
+                state.connectivity === 'online' ? (
+                  <Wifi className="h-3 w-3" />
+                ) : (
+                  <CloudOff className="h-3 w-3" />
+                )
+              }
+            >
+              {connectivityLabel}
+            </Badge>
+            <p className="text-xs text-muted-foreground">{connectivityHint}</p>
+          </dd>
+        </div>
+
+        <div className="rounded-lg border bg-background/40 p-3">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {labels.unsyncedCount}
+          </dt>
+          <dd className="mt-2 text-sm font-semibold text-foreground">
+            {state.unsyncedCount.toLocaleString()}
+          </dd>
+        </div>
+
+        <div className="rounded-lg border bg-background/40 p-3">
+          <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {labels.nextAction}
+          </dt>
+          <dd className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-foreground">
+            <ArrowRightCircle className="h-3.5 w-3.5" />
+            <span>{nextActionLabel}</span>
+          </dd>
+        </div>
+      </dl>
+    </section>
+  );
+}

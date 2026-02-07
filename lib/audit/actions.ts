@@ -65,6 +65,14 @@ export const AUDIT_ACTIONS = {
   'media.upload': 'Media uploaded',
   'media.delete': 'Media deleted',
 
+  // Results correction authorization
+  'results.correction.request.denied': 'Correction request authorization denied',
+  'results.correction.review.denied': 'Correction review authorization denied',
+  'results.ingestion.initialize': 'Results ingestion session initialized',
+  'results.version.finalize': 'Result version finalized as official',
+  'results.correction.review.approve': 'Correction request approved',
+  'results.correction.publish': 'Approved correction published as corrected version',
+
   // Registrations (access events - for sensitive data access logging)
   'registration.create': 'Registration created',
   'registration.view': 'Registration viewed',

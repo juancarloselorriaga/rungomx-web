@@ -13,6 +13,7 @@
     "type-check": "pnpm generate:i18n && tsc --noEmit",
     "test": "pnpm test:app && pnpm test:db",
     "test:app": "jest --selectProjects client server --no-watchman",
+    "test:results-compliance": "pnpm -s test:app -- __tests__/app/results-public-compliance.server.test.ts --runInBand",
     "test:db": "jest --selectProjects database --runInBand --no-watchman",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

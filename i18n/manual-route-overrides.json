@@ -21,6 +21,30 @@
     "selection": "protected",
     "pages": ["dashboardEvents", "eventsRegistrations"]
   },
+  "/dashboard/events/[eventId]/results": { "selection": "protected", "pages": ["dashboardEvents"] },
+  "/dashboard/events/[eventId]/results/capture": {
+    "selection": "protected",
+    "pages": ["dashboardEvents"]
+  },
+  "/dashboard/events/[eventId]/results/import": {
+    "selection": "protected",
+    "pages": ["dashboardEvents"]
+  },
+  "/dashboard/events/[eventId]/results/review": {
+    "selection": "protected",
+    "pages": ["dashboardEvents"]
+  },
+  "/dashboard/events/[eventId]/results/corrections": {
+    "selection": "protected",
+    "pages": ["dashboardEvents"]
+  },
+  "/dashboard/events/[eventId]/results/investigation": {
+    "selection": "protected",
+    "pages": ["dashboardEvents"]
+  },
+  "/results/[seriesSlug]/[editionSlug]": { "selection": "public", "pages": ["results"] },
+  "/results/how-it-works": { "selection": "public", "pages": ["results"] },
+  "/rankings": { "selection": "public", "pages": ["rankings"] },
   "/settings/billing": { "selection": "protected", "pages": ["settings"] },
   "/admin": { "selection": "public", "pages": ["dashboard"] },
   "/admin/users/internal": { "selection": "public", "pages": ["adminUsers"] },

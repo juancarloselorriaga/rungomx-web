@@ -67,3 +67,6 @@ _bmad
 _bmad-output
 .claude
 .codex
+
+tmp/
+.tmp/

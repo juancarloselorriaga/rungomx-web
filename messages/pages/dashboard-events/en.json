@@ -142,6 +142,7 @@
       "pricing": "Pricing",
       "addOns": "Add-ons",
       "coupons": "Coupons",
+      "results": "Results workspace",
       "groupRegistrations": "Group registrations",
       "registrations": "Registrations",
       "menu": "Sections",
@@ -189,6 +190,497 @@
     "faqTitle": "FAQ",
     "editFaq": "Edit all",
     "viewAllFaq": "+{count} more questions"
+  },
+  "resultsWorkspace": {
+    "title": "Results workspace",
+    "description": "Trust-state foundations for capture, import, and review lanes.",
+    "stateRail": {
+      "title": "Results state rail",
+      "description": "Draft/official lifecycle, connectivity, unsynced count, and next action are always visible.",
+      "lifecycle": "Lifecycle",
+      "lifecycleDraft": "Draft",
+      "lifecycleOfficial": "Official",
+      "lifecycleDraftHint": "Not public yet.",
+      "lifecycleOfficialHint": "Attested and visible publicly.",
+      "connectivity": "Connectivity",
+      "connectivityOnline": "Online",
+      "connectivityOffline": "Offline",
+      "connectivityOnlineHint": "Ready to sync and review.",
+      "connectivityOfflineHint": "Local-first mode with protected draft data.",
+      "unsyncedCount": "Unsynced entries",
+      "nextAction": "Next action",
+      "nextActionSyncPending": "Sync pending draft rows",
+      "nextActionReviewDraft": "Review draft rows before publishing",
+      "nextActionReadyToPublish": "Draft is ready for attestation",
+      "nextActionStartIngestion": "Start a new draft ingestion"
+    },
+    "versionVisibility": {
+      "title": "Official version visibility",
+      "description": "Track the active Official version and prior lifecycle history for this edition.",
+      "empty": "No result versions are available for this edition yet.",
+      "noOfficialVersion": "No Official version yet",
+      "activeOfficialLabel": "Active Official version available",
+      "activeMarker": "Active official",
+      "historicalMarker": "Historical",
+      "headers": {
+        "version": "Version",
+        "status": "Status",
+        "finalizedAt": "Finalized at",
+        "finalizedBy": "Finalized by",
+        "marker": "Marker"
+      },
+      "status": {
+        "draft": "Draft",
+        "official": "Official",
+        "corrected": "Corrected"
+      },
+      "unknownFinalizedAt": "Not finalized",
+      "unknownFinalizedBy": "Unknown"
+    },
+    "density": {
+      "label": "Row density",
+      "compact": "Compact",
+      "full": "Full"
+    },
+    "table": {
+      "title": "Draft results table",
+      "description": "Core trust semantics stay visible in both Compact and Full modes.",
+      "empty": "No draft rows available yet. Start capture or import to seed this table.",
+      "headers": {
+        "bib": "Bib",
+        "runner": "Runner",
+        "validation": "Validation",
+        "resultStatus": "Result status",
+        "syncStatus": "Sync state",
+        "finishTime": "Finish time",
+        "updated": "Updated",
+        "details": "Details"
+      }
+    },
+    "validationState": {
+      "clear": "Clear",
+      "warning": "Warning",
+      "blocker": "Blocker"
+    },
+    "status": {
+      "finish": "Finish",
+      "dnf": "DNF",
+      "dns": "DNS",
+      "dq": "DQ",
+      "synced": "Synced",
+      "pendingSync": "Pending sync",
+      "conflict": "Conflict"
+    },
+    "feedback": {
+      "heading": "SAFE -> NEXT -> DETAILS",
+      "safe": "SAFE",
+      "next": "NEXT",
+      "details": "DETAILS"
+    },
+    "lanes": {
+      "capture": {
+        "title": "Capture lane",
+        "description": "Mobile-first, local-first draft capture with clear sync state.",
+        "action": "Open capture lane"
+      },
+      "import": {
+        "title": "Import lane",
+        "description": "CSV/Excel ingestion with trust-state visibility and conflict cues.",
+        "action": "Open import lane"
+      },
+      "review": {
+        "title": "Review lane",
+        "description": "Unified draft review before attestation and publication.",
+        "action": "Open review lane"
+      },
+      "corrections": {
+        "title": "Corrections lane",
+        "description": "Review pending correction requests and record organizer decisions with audit metadata.",
+        "action": "Open corrections lane"
+      },
+      "investigation": {
+        "title": "Investigation lane",
+        "description": "Consolidated internal view for version provenance and correction transitions.",
+        "action": "Open investigation lane"
+      }
+    },
+    "corrections": {
+      "title": "Correction review queue",
+      "description": "Pending requests are prioritized first. Review each request, then approve or reject with audit-ready attribution.",
+      "empty": "No correction requests found for this edition.",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "fields": {
+        "reason": "Reason",
+        "context": "Request context",
+        "requestedBy": "Requested by",
+        "requestedAt": "Requested at",
+        "reviewedBy": "Reviewed by",
+        "reviewedAt": "Reviewed at",
+        "reviewNote": "Decision note",
+        "runner": "Runner",
+        "bib": "Bib",
+        "entryStatus": "Entry status",
+        "finishTime": "Finish time (ms)"
+      },
+      "review": {
+        "notePlaceholder": "Optional organizer decision note",
+        "approveAction": "Approve request",
+        "rejectAction": "Reject request",
+        "pendingAction": "Saving decision...",
+        "successMessage": "Decision saved successfully.",
+        "failurePrefix": "Could not save decision:",
+        "noDecisionYet": "Pending review",
+        "noContext": "No additional request context provided.",
+        "noReviewNote": "No decision note provided.",
+        "noValue": "N/A"
+      },
+      "audit": {
+        "title": "Correction audit trail",
+        "description": "Internal timeline linking each correction request to its published version transition.",
+        "empty": "No published correction transitions found for this edition.",
+        "fields": {
+          "requestId": "Request ID",
+          "reason": "Reason",
+          "requestedBy": "Requested by",
+          "reviewedBy": "Reviewed by",
+          "requestedAt": "Requested at",
+          "reviewedAt": "Reviewed at",
+          "publishedAt": "Published at",
+          "versionTransition": "Version transition"
+        },
+        "fallback": {
+          "pending": "Pending review",
+          "noPublishedAt": "Not published"
+        }
+      },
+      "metrics": {
+        "title": "Correction lifecycle metrics",
+        "description": "Track correction SLA and trust operations using lifecycle timestamps.",
+        "generatedAtLabel": "Generated at",
+        "filtersTitle": "Applied filters",
+        "summary": {
+          "total": "Total requests",
+          "pending": "Pending",
+          "approved": "Approved",
+          "rejected": "Rejected",
+          "medianResolutionHours": "Median resolution (hours)",
+          "oldestPendingHours": "Oldest pending (hours)"
+        },
+        "filters": {
+          "editionId": "Edition",
+          "organizationId": "Organization",
+          "requestedFrom": "Requested from",
+          "requestedTo": "Requested to"
+        },
+        "aging": {
+          "title": "Pending aging buckets",
+          "description": "Aging highlights unresolved backlog risk and operational follow-up priority.",
+          "lessThan24Hours": "< 24h",
+          "oneToThreeDays": "1-3 days",
+          "threeToSevenDays": "3-7 days",
+          "moreThanSevenDays": "> 7 days",
+          "highlightsTitle": "Oldest pending requests",
+          "highlightsEmpty": "No pending requests to highlight.",
+          "requestedAt": "Requested at",
+          "requestedBy": "Requested by",
+          "edition": "Edition",
+          "ageHours": "Age (hours)"
+        },
+        "export": {
+          "action": "Download metrics CSV",
+          "helper": "Rows exported",
+          "empty": "No rows available for export.",
+          "filePrefix": "correction-lifecycle-metrics"
+        },
+        "fallback": {
+          "notAvailable": "N/A",
+          "notSet": "Not set"
+        }
+      }
+    },
+    "investigation": {
+      "title": "Internal investigation view",
+      "description": "Trace version provenance and correction transitions without direct database access.",
+      "selectedDiff": {
+        "title": "Selected version transition",
+        "description": "Use this summary to explain exactly what changed and who approved it.",
+        "empty": "No correction transition selected yet.",
+        "transitionValue": "v{fromVersion} ({fromStatus}) -> v{toVersion} ({toStatus})",
+        "fields": {
+          "fromVersion": "Source version",
+          "toVersion": "Corrected version",
+          "transition": "Transition summary",
+          "approver": "Approver",
+          "reviewedAt": "Reviewed at",
+          "publishedAt": "Published at",
+          "reason": "Reason"
+        }
+      },
+      "versions": {
+        "title": "Version + provenance timeline",
+        "description": "Every result version includes source and ingestion provenance context.",
+        "empty": "No result versions found for this edition.",
+        "versionLabel": "Version {version}",
+        "fields": {
+          "versionId": "Version ID",
+          "parentVersionId": "Parent version",
+          "createdAt": "Created at",
+          "finalizedAt": "Finalized at",
+          "createdBy": "Created by",
+          "finalizedBy": "Finalized by",
+          "sourceReference": "Source reference",
+          "sourceChecksum": "Source checksum",
+          "ingestionLane": "Ingestion lane",
+          "ingestionStartedAt": "Ingestion started",
+          "ingestionStartedBy": "Ingestion started by",
+          "ingestionSessionId": "Ingestion session"
+        }
+      },
+      "corrections": {
+        "title": "Correction transition timeline",
+        "description": "Each approved correction links directly to a version transition context.",
+        "empty": "No approved correction transitions found for this edition.",
+        "viewDiff": "Open version diff context",
+        "fields": {
+          "requestId": "Request ID",
+          "transition": "Version transition",
+          "requestedBy": "Requested by",
+          "reviewedBy": "Reviewed by",
+          "reviewedAt": "Reviewed at",
+          "publishedAt": "Published at",
+          "reason": "Reason"
+        }
+      },
+      "audit": {
+        "title": "Trust-critical audit logs",
+        "description": "Filter organizer trust actions by event, action type, and time window.",
+        "empty": "No trust-critical audit logs matched the selected filters.",
+        "fields": {
+          "action": "Action",
+          "actor": "Actor",
+          "entity": "Target entity",
+          "timestamp": "Timestamp"
+        },
+        "filters": {
+          "action": "Action filter",
+          "allActions": "All trust actions",
+          "from": "From",
+          "to": "To",
+          "apply": "Apply"
+        },
+        "actions": {
+          "results": {
+            "ingestion": {
+              "initialize": "Results ingestion initialized"
+            },
+            "version": {
+              "finalize": "Result version finalized"
+            },
+            "correction": {
+              "review": {
+                "approve": "Correction approved"
+              },
+              "publish": "Correction published"
+            }
+          }
+        }
+      },
+      "status": {
+        "draft": "Draft",
+        "official": "Official",
+        "corrected": "Corrected"
+      },
+      "source": {
+        "manual_offline": "Manual offline",
+        "csv_excel": "CSV/Excel import",
+        "correction": "Correction publication"
+      },
+      "fallback": {
+        "notAvailable": "N/A",
+        "unknown": "Unknown"
+      }
+    },
+    "reviewGate": {
+      "title": "Finalization readiness gate",
+      "description": "Review blockers and warnings before moving to attestation.",
+      "attemptProceedAction": "Attempt proceed to finalization",
+      "finalizePendingAction": "Publishing official version...",
+      "proceedBlockedMessage": "Finalization is blocked until all blockers are resolved.",
+      "proceedReadyMessage": "No blocking issues found. Draft review is ready for finalization.",
+      "proceedUnavailableMessage": "No draft rows are available yet. Start capture or import first.",
+      "finalizeSuccessMessage": "Official version published. Targeted results and rankings caches were invalidated.",
+      "finalizeFailurePrefix": "Finalization failed:",
+      "nextRequiredActionLabel": "Next required action",
+      "issueListTitle": "Issue navigation",
+      "issueListDescription": "Open the remediation lane directly from each issue before finalization.",
+      "issueListEmpty": "No unresolved review issues. You can continue to finalization.",
+      "blockerCountLabel": "Blockers",
+      "warningCountLabel": "Warnings",
+      "rowCountLabel": "Draft rows",
+      "issueSeverity": {
+        "blocker": "Blocker",
+        "warning": "Warning"
+      },
+      "issueFields": {
+        "bib": "Bib",
+        "runner": "Runner",
+        "guidance": "Guidance"
+      },
+      "remediationAction": {
+        "capture": "Open capture lane",
+        "import": "Open import lane"
+      }
+    },
+    "captureEntry": {
+      "title": "Offline bib capture",
+      "description": "Capture bib, time, and status in Draft even when connectivity is unstable.",
+      "connectivityLabel": "Connectivity",
+      "connectivityOnline": "Online",
+      "connectivityOffline": "Offline",
+      "reassuranceSavedLocally": "Saved locally",
+      "reassuranceNotPublic": "Not public yet",
+      "reassurancePendingSync": "{count} entries pending sync",
+      "bibLabel": "Bib number",
+      "bibPlaceholder": "e.g. 245",
+      "timeLabel": "Finish time",
+      "timePlaceholder": "HH:MM:SS or MM:SS",
+      "statusLabel": "Result status",
+      "submitAction": "Save draft entry",
+      "validationBibRequired": "Bib number is required before saving a draft entry.",
+      "validationFinishTimeInvalid": "Finish status requires a valid finish time.",
+      "entrySaved": "Entry saved locally in draft state.",
+      "entriesTitle": "Draft preview from offline capture",
+      "entriesDescription": "Status semantics are preserved and overall placement is derived from finish times only.",
+      "entriesEmpty": "No offline capture entries yet.",
+      "syncTitle": "Deterministic sync",
+      "syncDescription": "Sync pending draft rows idempotently. Retries continue from the last consistent checkpoint.",
+      "syncAction": "Run sync",
+      "syncOfflineGuard": "Reconnect before running sync.",
+      "syncProgressMessage": "Synced {processed} entries. {remaining} entries remain pending.",
+      "syncCompleteMessage": "All pending entries were synced without duplication.",
+      "syncInterruptedMessage": "Sync checkpoint saved after {processed} entries. Retry to continue the remaining {remaining}.",
+      "syncBlockedByConflicts": "Resolve all pending conflicts before sync can complete.",
+      "conflictTitle": "Conflict review",
+      "conflictDescription": "Compare local and server values side-by-side, then choose an explicit resolution for each conflict.",
+      "conflictEmpty": "No unresolved sync conflicts.",
+      "conflictNeedsDecision": "Resolution required",
+      "conflictResolved": "Resolution selected",
+      "conflictLocalValues": "Local values",
+      "conflictServerValues": "Server values",
+      "conflictFieldBib": "Bib",
+      "conflictFieldStatus": "Status",
+      "conflictFieldFinishTime": "Finish time",
+      "conflictFieldUpdatedAt": "Updated at",
+      "conflictActionKeepLocal": "Keep local",
+      "conflictActionKeepServer": "Keep server",
+      "conflictChoiceKeepLocal": "Keeping local values",
+      "conflictChoiceKeepServer": "Keeping server values",
+      "headers": {
+        "bib": "Bib",
+        "status": "Status",
+        "syncStatus": "Sync state",
+        "finishTime": "Finish time",
+        "derivedOverall": "Derived overall place",
+        "capturedAt": "Captured at",
+        "provenance": "Provenance"
+      },
+      "statusOptions": {
+        "finish": "Finish",
+        "dnf": "DNF",
+        "dns": "DNS",
+        "dq": "DQ"
+      },
+      "provenanceSession": "Session",
+      "provenanceDevice": "Device",
+      "provenanceEditor": "Editor",
+      "syncStatusPending": "Pending sync",
+      "syncStatusSynced": "Synced",
+      "syncStatusConflict": "Conflict",
+      "safeNextDetails": {
+        "title": "SAFE -> NEXT -> DETAILS",
+        "safe": "SAFE",
+        "next": "NEXT",
+        "details": "DETAILS",
+        "safeMessage": "Draft data remains protected while conflicts are unresolved.",
+        "nextMessage": "Choose a resolution for every conflict and rerun sync.",
+        "detailConflictSummary": "{count} conflicts require organizer action.",
+        "detailDraftProtection": "Official results remain unchanged until sync finalization."
+      }
+    },
+    "importMapping": {
+      "title": "CSV/Excel mapping preview",
+      "description": "Upload a file, map source columns to canonical result fields, and keep mappings deterministic for downstream preview.",
+      "uploadLabel": "Upload CSV/Excel file",
+      "uploadHint": "Supported formats: .csv, .xls, .xlsx (max 5MB).",
+      "parseSummary": "Parsed file summary",
+      "columnsLabel": "Columns",
+      "sampleRowsLabel": "Sample rows",
+      "totalRowsLabel": "Total rows",
+      "savedTemplatesLabel": "Saved mapping templates",
+      "savedTemplatesEmpty": "Select a saved template",
+      "saveTemplateNameLabel": "Template name",
+      "saveTemplateNamePlaceholder": "My organizer import mapping",
+      "saveTemplateAction": "Save template",
+      "templateAppliedMessage": "Template applied",
+      "templateSavedMessage": "Template saved for this organizer scope.",
+      "requiredMappingMessage": "Map required canonical fields before saving a template.",
+      "parsingMessage": "Parsing file and extracting sample rows...",
+      "mapFieldLabel": "Map field",
+      "unmappedOption": "Not mapped",
+      "requiredTag": "required",
+      "optionalTag": "optional",
+      "mappingTableFieldLabel": "Canonical field",
+      "mappingTableSourceLabel": "Source column",
+      "mappingPreviewTitle": "Deterministic mapping payload",
+      "mappingPreviewDescription": "This explicit mapping is the contract used by downstream validation and preview.",
+      "samplePreviewTitle": "Sample row preview",
+      "samplePreviewDescription": "Use sample rows to verify column assignments before continuing.",
+      "validationTitle": "Validation report",
+      "validationDescription": "Blockers must be resolved before draft preview; warnings stay visible as non-blocking guidance.",
+      "blockersLabel": "Blockers",
+      "warningsLabel": "Warnings",
+      "issuesTableSeverityLabel": "Severity",
+      "issuesTableRowLabel": "Row",
+      "issuesTableFieldLabel": "Field",
+      "issuesTableSourceLabel": "Source column",
+      "issuesTableIssueLabel": "Issue",
+      "issuesTableGuidanceLabel": "Fix guidance",
+      "derivedPreviewTitle": "Draft preview with derived placement",
+      "derivedPreviewDescription": "When blockers are clear, this preview shows how rows will appear before publish.",
+      "derivedPreviewBlocked": "Resolve blockers to unlock draft preview.",
+      "derivedPreviewEmpty": "No mapped rows available for preview yet.",
+      "derivedPreviewHeaders": {
+        "runner": "Runner",
+        "bib": "Bib",
+        "status": "Status",
+        "finishTime": "Finish time",
+        "derivedOverall": "Derived overall place"
+      },
+      "parseErrors": {
+        "unsupportedFormat": "Unsupported file type. Upload a .csv, .xls, or .xlsx file.",
+        "fileTooLarge": "The file exceeds the 5MB limit. Split it and retry.",
+        "emptyFile": "The uploaded file is empty. Add data rows and upload again.",
+        "missingHeaders": "No headers were found. Add a header row before uploading.",
+        "duplicateHeaders": "Duplicate headers were detected. Rename duplicates and retry.",
+        "malformedFile": "The file could not be parsed. Verify formatting and retry."
+      },
+      "canonicalFields": {
+        "runnerFullName": "Runner name",
+        "bibNumber": "Bib number",
+        "finishTimeMillis": "Finish time",
+        "status": "Result status",
+        "gender": "Gender",
+        "age": "Age",
+        "overallPlace": "Overall place",
+        "genderPlace": "Gender place",
+        "ageGroupPlace": "Age-group place",
+        "distanceLabel": "Distance label"
+      }
+    }
   },
   "faq": {
     "title": "Frequently Asked Questions",

@@ -1,4 +1,138 @@
 {
   "title": "Results",
-  "description": "View competition results and standings here."
+  "description": "View competition results and standings here.",
+  "discovery": {
+    "title": "Find official results",
+    "description": "Filter by event context and search by name or bib to locate the official page quickly.",
+    "searchNameLabel": "Runner name",
+    "searchNamePlaceholder": "e.g. Ana Martinez",
+    "searchBibLabel": "Bib",
+    "searchBibPlaceholder": "e.g. 101",
+    "seriesFilterLabel": "Series",
+    "seriesFilterAll": "All series",
+    "searchAction": "Search",
+    "resetAction": "Reset"
+  },
+  "directory": {
+    "title": "Official results directory",
+    "description": "Published official result pages by edition.",
+    "empty": "No official editions match the selected context.",
+    "eventDate": "Event date: {date}",
+    "openOfficial": "Open official page"
+  },
+  "searchResults": {
+    "title": "Search matches",
+    "description": "Official-entry matches for your current name/bib filters.",
+    "empty": "No official matches found for this search.",
+    "context": "Bib {bib} · Place {place} · {status} · {finishTime}",
+    "openOfficial": "Open official page"
+  },
+  "howItWorks": {
+    "panel": {
+      "title": "Cómo funciona / How it works",
+      "description": "Quick trust summary for official results and rankings.",
+      "point1": "Official means organizer-finalized publication for this edition.",
+      "point2": "Corrections publish as new versions with visible history.",
+      "point3": "Rankings use published official versions only.",
+      "cta": "Read the full explainer"
+    },
+    "explainer": {
+      "eyebrow": "Cómo funciona / How it works",
+      "title": "Official results and rankings transparency",
+      "description": "This page explains what official means, how corrections are published, and how rankings consume official versions.",
+      "officialMeaning": {
+        "title": "What “Official” means",
+        "point1": "Official results are published by the event organizer as the accountable authority.",
+        "point2": "Draft data is not presented as official public record."
+      },
+      "correctionProcess": {
+        "title": "How corrections work",
+        "point1": "Approved corrections publish a new corrected version instead of overwriting history.",
+        "point2": "Public pages expose correction context so changes remain transparent."
+      },
+      "rankingsRules": {
+        "title": "How rankings use results",
+        "point1": "Rankings are computed from published official/corrected versions only.",
+        "point2": "Ruleset references are versioned so outputs remain reproducible."
+      }
+    }
+  },
+  "corrections": {
+    "title": "Recent correction summaries",
+    "description": "When official data is corrected, we publish a concise summary with attribution and timing.",
+    "empty": "No published corrections yet.",
+    "fields": {
+      "reason": "Reason",
+      "changes": "What changed",
+      "approvedBy": "Approved by",
+      "approvedAt": "Approved at",
+      "versionTransition": "Version transition"
+    },
+    "fallback": {
+      "unknownApprover": "Organizer",
+      "unknownTime": "Not available",
+      "noChanges": "No detailed field changes were provided."
+    }
+  },
+  "official": {
+    "title": "{seriesName} {editionLabel} Official Results",
+    "subtitle": "This stable URL always points to the latest official or corrected publication for this edition.",
+    "status": {
+      "official": "Official",
+      "corrected": "Corrected",
+      "unlisted": "Unlisted"
+    },
+    "version": "Version {versionNumber}",
+    "eventDate": "Event date: {date}",
+    "finalizedAt": "Finalized: {value}",
+    "updatedAt": "Last update: {value}",
+    "viewEventLink": "View event page",
+    "entryStatus": {
+      "finish": "Finish",
+      "dnf": "DNF",
+      "dns": "DNS",
+      "dq": "DQ"
+    },
+    "trustScan": {
+      "title": "Trust scan",
+      "description": "Immediate legitimacy cues for this official publication.",
+      "scopeValue": "Official edition results ledger",
+      "fields": {
+        "organizer": "Organizer authority",
+        "scope": "Scope",
+        "version": "Version",
+        "updatedAt": "Last update",
+        "correction": "Correction indicator"
+      },
+      "status": {
+        "unknown": "Status unavailable"
+      },
+      "correction": {
+        "corrected": "Corrections applied",
+        "none": "No correction publication"
+      }
+    },
+    "table": {
+      "title": "Official ledger rows",
+      "description": "Public row sample from the active official publication.",
+      "empty": "No published entries are available yet for this official version.",
+      "headers": {
+        "place": "Place",
+        "runner": "Runner",
+        "bib": "Bib",
+        "distance": "Distance",
+        "status": "Status",
+        "finishTime": "Finish time"
+      }
+    },
+    "nonOfficial": {
+      "badge": "Pending official publication",
+      "description": "Official results are not finalized for this edition yet.",
+      "noDraftDisclosure": "Draft and non-official data are not exposed from this public URL."
+    },
+    "fallback": {
+      "notAvailable": "Not available",
+      "notAvailableShort": "-"
+    }
+  }
 }

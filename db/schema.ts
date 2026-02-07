@@ -601,6 +601,434 @@ export const eventDistances = pgTable('event_distances', {
   deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
 });
 
+// =============================================================================
+// RESULTS DOMAIN TABLES (Phase 3 - Story 1.1 foundation)
+// =============================================================================
+
+export const resultVersionStatusEnum = pgEnum('result_version_status', [
+  'draft',
+  'official',
+  'corrected',
+]);
+
+export const resultVersionSourceEnum = pgEnum('result_version_source', [
+  'manual_offline',
+  'csv_excel',
+  'correction',
+]);
+
+export const resultEntryStatusEnum = pgEnum('result_entry_status', ['finish', 'dq', 'dnf', 'dns']);
+
+export const resultDisciplineEnum = pgEnum('result_discipline', [
+  'trail_running',
+  'triathlon',
+  'cycling',
+  'mtb',
+  'gravel_bike',
+  'duathlon',
+  'backyard_ultra',
+]);
+
+export const resultEntryClaimStatusEnum = pgEnum('result_entry_claim_status', [
+  'pending_review',
+  'linked',
+  'rejected',
+]);
+
+export const resultCorrectionRequestStatusEnum = pgEnum('result_correction_request_status', [
+  'pending',
+  'approved',
+  'rejected',
+]);
+
+export const resultIngestionSourceLaneEnum = pgEnum('result_ingestion_source_lane', [
+  'manual_offline',
+  'csv_excel',
+]);
+
+export const rankingRulesetStatusEnum = pgEnum('ranking_ruleset_status', [
+  'draft',
+  'active',
+  'retired',
+]);
+
+export const rankingSnapshotScopeEnum = pgEnum('ranking_snapshot_scope', [
+  'national',
+  'organizer',
+]);
+
+export const resultVersions = pgTable(
+  'result_versions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    status: resultVersionStatusEnum('status').notNull().default('draft'),
+    source: resultVersionSourceEnum('source').notNull(),
+    versionNumber: integer('version_number').notNull(),
+    parentVersionId: uuid('parent_version_id'),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    finalizedByUserId: uuid('finalized_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    finalizedAt: timestamp('finalized_at', { withTimezone: true, mode: 'date' }),
+    sourceFileChecksum: varchar('source_file_checksum', { length: 128 }),
+    sourceReference: varchar('source_reference', { length: 255 }),
+    provenanceJson: jsonb('provenance_json').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    foreignKey({
+      name: 'result_versions_parent_version_fk',
+      columns: [table.parentVersionId],
+      foreignColumns: [table.id],
+    }).onDelete('set null'),
+    uniqueIndex('result_versions_edition_version_idx').on(table.editionId, table.versionNumber),
+    index('result_versions_edition_status_idx').on(table.editionId, table.status),
+    index('result_versions_parent_version_idx')
+      .on(table.parentVersionId)
+      .where(sql`${table.parentVersionId} is not null`),
+    index('result_versions_created_by_idx')
+      .on(table.createdByUserId)
+      .where(sql`${table.createdByUserId} is not null`),
+  ],
+);
+
+export const resultEntries = pgTable(
+  'result_entries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    resultVersionId: uuid('result_version_id')
+      .notNull()
+      .references(() => resultVersions.id, { onDelete: 'cascade' }),
+    distanceId: uuid('distance_id').references(() => eventDistances.id, { onDelete: 'set null' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }), // nullable for unclaimed results
+    discipline: resultDisciplineEnum('discipline').notNull(),
+    runnerFullName: varchar('runner_full_name', { length: 255 }).notNull(),
+    bibNumber: varchar('bib_number', { length: 50 }),
+    gender: varchar('gender', { length: 20 }),
+    age: integer('age'),
+    status: resultEntryStatusEnum('status').notNull().default('finish'),
+    finishTimeMillis: integer('finish_time_millis'),
+    overallPlace: integer('overall_place'),
+    genderPlace: integer('gender_place'),
+    ageGroupPlace: integer('age_group_place'),
+    identitySnapshot: jsonb('identity_snapshot').$type<Record<string, unknown>>().notNull().default({}),
+    rawSourceData: jsonb('raw_source_data').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    index('result_entries_version_idx').on(table.resultVersionId),
+    index('result_entries_user_idx').on(table.userId).where(sql`${table.userId} is not null`),
+    index('result_entries_distance_idx')
+      .on(table.distanceId)
+      .where(sql`${table.distanceId} is not null`),
+    index('result_entries_version_bib_idx')
+      .on(table.resultVersionId, table.bibNumber)
+      .where(sql`${table.bibNumber} is not null`),
+    index('result_entries_version_name_idx').on(table.resultVersionId, table.runnerFullName),
+    uniqueIndex('result_entries_version_bib_unique_idx')
+      .on(table.resultVersionId, table.bibNumber)
+      .where(sql`${table.bibNumber} is not null`),
+    uniqueIndex('result_entries_version_name_no_bib_unique_idx')
+      .on(table.resultVersionId, table.runnerFullName)
+      .where(sql`${table.bibNumber} is null`),
+    check('result_entries_age_non_negative_chk', sql`${table.age} is null OR ${table.age} >= 0`),
+    check(
+      'result_entries_finish_time_positive_chk',
+      sql`${table.finishTimeMillis} is null OR ${table.finishTimeMillis} > 0`,
+    ),
+  ],
+);
+
+export const resultEntryClaims = pgTable(
+  'result_entry_claims',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    resultEntryId: uuid('result_entry_id')
+      .notNull()
+      .references(() => resultEntries.id, { onDelete: 'cascade' }),
+    requestedByUserId: uuid('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    linkedUserId: uuid('linked_user_id').references(() => users.id, { onDelete: 'set null' }),
+    reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true, mode: 'date' }),
+    status: resultEntryClaimStatusEnum('status').notNull().default('pending_review'),
+    confidenceBasisPoints: integer('confidence_basis_points'),
+    reviewReason: varchar('review_reason', { length: 120 }),
+    reviewContext: jsonb('review_context').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('result_entry_claims_entry_unique_idx')
+      .on(table.resultEntryId)
+      .where(sql`${table.deletedAt} is null`),
+    index('result_entry_claims_requested_by_idx').on(table.requestedByUserId),
+    index('result_entry_claims_linked_user_idx')
+      .on(table.linkedUserId)
+      .where(sql`${table.linkedUserId} is not null`),
+    index('result_entry_claims_reviewed_by_idx')
+      .on(table.reviewedByUserId)
+      .where(sql`${table.reviewedByUserId} is not null`),
+    index('result_entry_claims_status_idx').on(table.status),
+    check(
+      'result_entry_claims_confidence_range_chk',
+      sql`${table.confidenceBasisPoints} is null OR (${table.confidenceBasisPoints} >= 0 AND ${table.confidenceBasisPoints} <= 1000)`,
+    ),
+    check(
+      'result_entry_claims_linked_user_required_chk',
+      sql`${table.status} != 'linked' OR ${table.linkedUserId} is not null`,
+    ),
+    check(
+      'result_entry_claims_pending_review_unlinked_chk',
+      sql`${table.status} != 'pending_review' OR ${table.linkedUserId} is null`,
+    ),
+    check(
+      'result_entry_claims_rejected_unlinked_chk',
+      sql`${table.status} != 'rejected' OR ${table.linkedUserId} is null`,
+    ),
+  ],
+);
+
+export const resultIngestionSessions = pgTable(
+  'result_ingestion_sessions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    resultVersionId: uuid('result_version_id')
+      .notNull()
+      .references(() => resultVersions.id, { onDelete: 'cascade' }),
+    sourceLane: resultIngestionSourceLaneEnum('source_lane').notNull(),
+    startedByUserId: uuid('started_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    sourceReference: varchar('source_reference', { length: 255 }),
+    sourceFileChecksum: varchar('source_file_checksum', { length: 128 }),
+    provenanceJson: jsonb('provenance_json').$type<Record<string, unknown>>().notNull().default({}),
+    startedAt: timestamp('started_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('result_ingestion_sessions_version_unique_idx')
+      .on(table.resultVersionId)
+      .where(sql`${table.deletedAt} is null`),
+    index('result_ingestion_sessions_edition_idx').on(table.editionId),
+    index('result_ingestion_sessions_lane_idx').on(table.sourceLane),
+    index('result_ingestion_sessions_started_by_idx')
+      .on(table.startedByUserId)
+      .where(sql`${table.startedByUserId} is not null`),
+  ],
+);
+
+export const resultCorrectionRequests = pgTable(
+  'result_correction_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    resultEntryId: uuid('result_entry_id')
+      .notNull()
+      .references(() => resultEntries.id, { onDelete: 'cascade' }),
+    resultVersionId: uuid('result_version_id')
+      .notNull()
+      .references(() => resultVersions.id, { onDelete: 'cascade' }),
+    requestedByUserId: uuid('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: resultCorrectionRequestStatusEnum('status').notNull().default('pending'),
+    reason: varchar('reason', { length: 500 }).notNull(),
+    requestContext: jsonb('request_context').$type<Record<string, unknown>>().notNull().default({}),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
+    reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true, mode: 'date' }),
+    reviewDecisionNote: varchar('review_decision_note', { length: 500 }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    index('result_correction_requests_entry_idx').on(table.resultEntryId),
+    index('result_correction_requests_version_idx').on(table.resultVersionId),
+    index('result_correction_requests_requested_by_idx').on(table.requestedByUserId),
+    index('result_correction_requests_status_idx').on(table.status),
+    index('result_correction_requests_reviewed_by_idx')
+      .on(table.reviewedByUserId)
+      .where(sql`${table.reviewedByUserId} is not null`),
+  ],
+);
+
+export const rankingRulesets = pgTable(
+  'ranking_rulesets',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    versionTag: varchar('version_tag', { length: 64 }).notNull(),
+    status: rankingRulesetStatusEnum('status').notNull().default('draft'),
+    rulesDefinitionJson: jsonb('rules_definition_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    explainabilityReference: varchar('explainability_reference', { length: 255 }),
+    activationStartsAt: timestamp('activation_starts_at', { withTimezone: true, mode: 'date' })
+      .notNull(),
+    activationEndsAt: timestamp('activation_ends_at', { withTimezone: true, mode: 'date' }),
+    publishedByUserId: uuid('published_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    publishedAt: timestamp('published_at', { withTimezone: true, mode: 'date' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('ranking_rulesets_version_tag_unique_idx')
+      .on(table.versionTag)
+      .where(sql`${table.deletedAt} is null`),
+    index('ranking_rulesets_status_idx').on(table.status),
+    index('ranking_rulesets_activation_window_idx').on(
+      table.activationStartsAt,
+      table.activationEndsAt,
+    ),
+    index('ranking_rulesets_published_by_idx')
+      .on(table.publishedByUserId)
+      .where(sql`${table.publishedByUserId} is not null`),
+    check(
+      'ranking_rulesets_activation_window_chk',
+      sql`${table.activationEndsAt} is null OR ${table.activationEndsAt} > ${table.activationStartsAt}`,
+    ),
+    check(
+      'ranking_rulesets_active_requires_published_at_chk',
+      sql`${table.status} != 'active' OR ${table.publishedAt} is not null`,
+    ),
+  ],
+);
+
+export const rankingSnapshots = pgTable(
+  'ranking_snapshots',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    rulesetId: uuid('ruleset_id')
+      .notNull()
+      .references(() => rankingRulesets.id, { onDelete: 'cascade' }),
+    scope: rankingSnapshotScopeEnum('scope').notNull().default('national'),
+    organizationId: uuid('organization_id').references(() => organizations.id, {
+      onDelete: 'set null',
+    }),
+    sourceVersionIdsJson: jsonb('source_version_ids_json')
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    exclusionLogJson: jsonb('exclusion_log_json')
+      .$type<Record<string, unknown>[]>()
+      .notNull()
+      .default([]),
+    triggerResultVersionId: uuid('trigger_result_version_id').references(() => resultVersions.id, {
+      onDelete: 'set null',
+    }),
+    isCurrent: boolean('is_current').notNull().default(false),
+    promotedAt: timestamp('promoted_at', { withTimezone: true, mode: 'date' }),
+    rowCount: integer('row_count').notNull().default(0),
+    generatedAt: timestamp('generated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    index('ranking_snapshots_ruleset_idx').on(table.rulesetId),
+    index('ranking_snapshots_scope_org_idx')
+      .on(table.scope, table.organizationId)
+      .where(sql`${table.organizationId} is not null`),
+    index('ranking_snapshots_generated_at_idx').on(table.generatedAt),
+    index('ranking_snapshots_current_idx')
+      .on(table.scope, table.organizationId, table.isCurrent)
+      .where(sql`${table.isCurrent} = true`),
+    index('ranking_snapshots_trigger_version_idx')
+      .on(table.triggerResultVersionId)
+      .where(sql`${table.triggerResultVersionId} is not null`),
+    check(
+      'ranking_snapshots_scope_org_consistency_chk',
+      sql`(${table.scope} = 'national' AND ${table.organizationId} is null) OR (${table.scope} = 'organizer' AND ${table.organizationId} is not null)`,
+    ),
+  ],
+);
+
+export const rankingSnapshotRows = pgTable(
+  'ranking_snapshot_rows',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    snapshotId: uuid('snapshot_id')
+      .notNull()
+      .references(() => rankingSnapshots.id, { onDelete: 'cascade' }),
+    rank: integer('rank').notNull(),
+    resultEntryId: uuid('result_entry_id').references(() => resultEntries.id, {
+      onDelete: 'set null',
+    }),
+    resultVersionId: uuid('result_version_id').references(() => resultVersions.id, {
+      onDelete: 'set null',
+    }),
+    runnerFullName: varchar('runner_full_name', { length: 255 }).notNull(),
+    bibNumber: varchar('bib_number', { length: 50 }),
+    discipline: resultDisciplineEnum('discipline').notNull(),
+    gender: varchar('gender', { length: 20 }),
+    age: integer('age'),
+    finishTimeMillis: integer('finish_time_millis'),
+    metadataJson: jsonb('metadata_json').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('ranking_snapshot_rows_snapshot_rank_unique_idx')
+      .on(table.snapshotId, table.rank)
+      .where(sql`${table.deletedAt} is null`),
+    index('ranking_snapshot_rows_snapshot_idx').on(table.snapshotId),
+    index('ranking_snapshot_rows_result_version_idx')
+      .on(table.resultVersionId)
+      .where(sql`${table.resultVersionId} is not null`),
+    index('ranking_snapshot_rows_result_entry_idx')
+      .on(table.resultEntryId)
+      .where(sql`${table.resultEntryId} is not null`),
+    check('ranking_snapshot_rows_rank_positive_chk', sql`${table.rank} > 0`),
+  ],
+);
+
 export const pricingTiers = pgTable('pricing_tiers', {
   id: uuid('id').defaultRandom().primaryKey(),
   distanceId: uuid('distance_id')
