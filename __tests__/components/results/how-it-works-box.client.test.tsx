@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children }: { children: unknown }) => <a>{children}</a>,
+  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
 import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box';

@@ -74,6 +74,7 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
   const { locale, seriesSlug, editionSlug } = await params;
   await configPageLocale(params, { pathname: '/results/[seriesSlug]/[editionSlug]' });
   const t = await getTranslations('pages.results.official');
+  const tResults = await getTranslations('pages.results');
   const identityPolicy = getPublicResultIdentityPolicy();
 
   const pageData = await getPublicOfficialResultsPageData(seriesSlug, editionSlug);
@@ -194,12 +195,12 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
       />
 
       <HowItWorksBox
-        title={t('howItWorks.panel.title')}
-        description={t('howItWorks.panel.description')}
-        bulletOne={t('howItWorks.panel.point1')}
-        bulletTwo={t('howItWorks.panel.point2')}
-        bulletThree={t('howItWorks.panel.point3')}
-        ctaLabel={t('howItWorks.panel.cta')}
+        title={tResults('howItWorks.panel.title')}
+        description={tResults('howItWorks.panel.description')}
+        bulletOne={tResults('howItWorks.panel.point1')}
+        bulletTwo={tResults('howItWorks.panel.point2')}
+        bulletThree={tResults('howItWorks.panel.point3')}
+        ctaLabel={tResults('howItWorks.panel.cta')}
       />
 
       <section className="rounded-xl border bg-card p-4 text-sm text-muted-foreground shadow-sm">

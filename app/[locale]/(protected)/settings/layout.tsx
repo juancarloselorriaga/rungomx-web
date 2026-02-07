@@ -1,4 +1,3 @@
-import { AppLocale } from '@/i18n/routing';
 import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
 import { getAuthContext } from '@/lib/auth/server';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -7,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 
 type SettingsLayoutProps = {
   children: ReactNode;
-  params: Promise<{ locale: AppLocale }>;
+  params: Promise<{ locale: string }>;
 };
 
 export default async function SettingsLayout({ children, params }: SettingsLayoutProps) {

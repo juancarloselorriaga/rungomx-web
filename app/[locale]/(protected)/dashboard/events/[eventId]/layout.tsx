@@ -4,13 +4,12 @@ import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import type { EventVisibility } from '@/lib/events/constants';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
-import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
-type EventLayoutProps = LocalePageProps & {
+type EventLayoutProps = {
   params: Promise<{ locale: string; eventId: string }>;
   children: ReactNode;
 };
@@ -19,8 +18,8 @@ export default async function EventDetailLayout({
   params,
   children,
 }: EventLayoutProps) {
-  const { locale, eventId } = await params;
-  await configPageLocale(params, { pathname: '/dashboard/events/[eventId]' });
+  const { eventId } = await params;
+  const { locale } = await configPageLocale(params, { pathname: '/dashboard/events/[eventId]' });
   const t = await getTranslations('pages.dashboardEvents.detail');
   const tEvents = await getTranslations('pages.dashboardEvents');
   const authContext = await getAuthContext();

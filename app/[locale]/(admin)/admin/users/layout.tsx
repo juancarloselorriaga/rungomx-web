@@ -1,10 +1,10 @@
 import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
-import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-type AdminUsersLayoutProps = LocalePageProps & {
+type AdminUsersLayoutProps = {
+  params: Promise<{ locale: string }>;
   children: ReactNode;
 };
 
@@ -24,4 +24,3 @@ export default async function AdminUsersLayout({ children, params }: AdminUsersL
     </SubmenuContextProvider>
   );
 }
-

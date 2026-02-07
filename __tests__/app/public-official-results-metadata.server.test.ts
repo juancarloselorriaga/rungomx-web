@@ -6,7 +6,7 @@ jest.mock('@/lib/events/results/queries', () => ({
 }));
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children }: { children: unknown }) => children,
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 jest.mock('@/utils/config-page-locale', () => ({
@@ -104,7 +104,7 @@ describe('public official results metadata', () => {
       });
 
     const params = Promise.resolve({
-      locale: 'es',
+      locale: 'es' as const,
       seriesSlug: 'ultra-valle',
       editionSlug: 'ultra-valle-2026',
     });
@@ -151,7 +151,7 @@ describe('public official results metadata', () => {
 
     const metadata = await generateMetadata({
       params: Promise.resolve({
-        locale: 'en',
+        locale: 'en' as const,
         seriesSlug: 'ultra-valle',
         editionSlug: 'ultra-valle-2026',
       }),

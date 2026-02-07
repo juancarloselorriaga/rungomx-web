@@ -19,6 +19,31 @@ type RankingsPageProps = LocalePageProps & {
   }>;
 };
 
+const DISCIPLINE_LABEL_KEYS = {
+  trail_running: 'discipline.trail_running',
+  triathlon: 'discipline.triathlon',
+  cycling: 'discipline.cycling',
+  mtb: 'discipline.mtb',
+  gravel_bike: 'discipline.gravel_bike',
+  duathlon: 'discipline.duathlon',
+  backyard_ultra: 'discipline.backyard_ultra',
+} as const;
+
+const GENDER_LABEL_KEYS = {
+  male: 'gender.male',
+  female: 'gender.female',
+  non_binary: 'gender.non_binary',
+  other: 'gender.other',
+} as const;
+
+function resolveDisciplineLabelKey(value: string) {
+  return DISCIPLINE_LABEL_KEYS[value as keyof typeof DISCIPLINE_LABEL_KEYS];
+}
+
+function resolveGenderLabelKey(value: string) {
+  return GENDER_LABEL_KEYS[value as keyof typeof GENDER_LABEL_KEYS];
+}
+
 function formatFinishTime(milliseconds: number | null): string {
   if (milliseconds === null || milliseconds < 0) return '-';
 
@@ -204,11 +229,14 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
               className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
             >
               <option value="">{t('filters.all')}</option>
-              {leaderboard.filters.availableDisciplines.map((discipline) => (
-                <option key={discipline} value={discipline}>
-                  {t(`discipline.${discipline}` as const)}
-                </option>
-              ))}
+              {leaderboard.filters.availableDisciplines.map((discipline) => {
+                const disciplineLabelKey = resolveDisciplineLabelKey(discipline);
+                return (
+                  <option key={discipline} value={discipline}>
+                    {disciplineLabelKey ? t(disciplineLabelKey) : discipline}
+                  </option>
+                );
+              })}
             </select>
           </label>
 
@@ -220,11 +248,14 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
               className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
             >
               <option value="">{t('filters.all')}</option>
-              {leaderboard.filters.availableGenders.map((gender) => (
-                <option key={gender} value={gender}>
-                  {t(`gender.${gender}` as const)}
-                </option>
-              ))}
+              {leaderboard.filters.availableGenders.map((gender) => {
+                const genderLabelKey = resolveGenderLabelKey(gender);
+                return (
+                  <option key={gender} value={gender}>
+                    {genderLabelKey ? t(genderLabelKey) : gender}
+                  </option>
+                );
+              })}
             </select>
           </label>
 
@@ -316,10 +347,17 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                     <td className="px-4 py-3 text-foreground">{row.runnerFullName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.bibNumber ?? '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {t(`discipline.${row.discipline}` as const)}
+                      {(() => {
+                        const disciplineLabelKey = resolveDisciplineLabelKey(row.discipline);
+                        return disciplineLabelKey ? t(disciplineLabelKey) : row.discipline;
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {row.gender ? t(`gender.${row.gender}` as const) : '-'}
+                      {(() => {
+                        if (!row.gender) return '-';
+                        const genderLabelKey = resolveGenderLabelKey(row.gender);
+                        return genderLabelKey ? t(genderLabelKey) : row.gender;
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {row.ageGroup ? t('ageGroup.option', { ageGroup: row.ageGroup }) : '-'}

@@ -22,6 +22,15 @@ export default async function ResultsCapturePage({ params }: ResultsCapturePageP
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/results/capture' });
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
+  type CaptureTemplateKey =
+    | 'captureEntry.reassurancePendingSync'
+    | 'captureEntry.syncProgressMessage'
+    | 'captureEntry.syncInterruptedMessage'
+    | 'captureEntry.safeNextDetails.detailConflictSummary';
+  const rawLabel = (key: CaptureTemplateKey) => {
+    const value = t.raw(key);
+    return typeof value === 'string' ? value : String(value ?? '');
+  };
   const pageData = await getResultsWorkspacePageData(eventId, locale, 'capture');
 
   return (
@@ -42,7 +51,7 @@ export default async function ResultsCapturePage({ params }: ResultsCapturePageP
           connectivityOffline: t('captureEntry.connectivityOffline'),
           reassuranceSavedLocally: t('captureEntry.reassuranceSavedLocally'),
           reassuranceNotPublic: t('captureEntry.reassuranceNotPublic'),
-          reassurancePendingSync: t('captureEntry.reassurancePendingSync'),
+          reassurancePendingSync: rawLabel('captureEntry.reassurancePendingSync'),
           bibLabel: t('captureEntry.bibLabel'),
           bibPlaceholder: t('captureEntry.bibPlaceholder'),
           timeLabel: t('captureEntry.timeLabel'),
@@ -59,9 +68,9 @@ export default async function ResultsCapturePage({ params }: ResultsCapturePageP
           syncDescription: t('captureEntry.syncDescription'),
           syncAction: t('captureEntry.syncAction'),
           syncOfflineGuard: t('captureEntry.syncOfflineGuard'),
-          syncProgressMessage: t('captureEntry.syncProgressMessage'),
+          syncProgressMessage: rawLabel('captureEntry.syncProgressMessage'),
           syncCompleteMessage: t('captureEntry.syncCompleteMessage'),
-          syncInterruptedMessage: t('captureEntry.syncInterruptedMessage'),
+          syncInterruptedMessage: rawLabel('captureEntry.syncInterruptedMessage'),
           syncBlockedByConflicts: t('captureEntry.syncBlockedByConflicts'),
           conflictTitle: t('captureEntry.conflictTitle'),
           conflictDescription: t('captureEntry.conflictDescription'),
@@ -106,7 +115,7 @@ export default async function ResultsCapturePage({ params }: ResultsCapturePageP
             details: t('captureEntry.safeNextDetails.details'),
             safeMessage: t('captureEntry.safeNextDetails.safeMessage'),
             nextMessage: t('captureEntry.safeNextDetails.nextMessage'),
-            detailConflictSummary: t('captureEntry.safeNextDetails.detailConflictSummary'),
+            detailConflictSummary: rawLabel('captureEntry.safeNextDetails.detailConflictSummary'),
             detailDraftProtection: t('captureEntry.safeNextDetails.detailDraftProtection'),
           },
         }}

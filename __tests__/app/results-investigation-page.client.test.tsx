@@ -107,7 +107,7 @@ describe('results investigation page', () => {
 
   it('renders selected diff and correction links from URL-driven context', async () => {
     const ui = await ResultsInvestigationPage({
-      params: Promise.resolve({ locale: 'en', eventId: 'edition-1' }),
+      params: Promise.resolve({ locale: 'en' as const, eventId: 'edition-1' }),
       searchParams: Promise.resolve({
         fromVersionId: 'version-1',
         toVersionId: 'version-2',
@@ -144,7 +144,7 @@ describe('results investigation page', () => {
 
   it('passes audit action and date filters to the audit log query', async () => {
     const ui = await ResultsInvestigationPage({
-      params: Promise.resolve({ locale: 'en', eventId: 'edition-1' }),
+      params: Promise.resolve({ locale: 'en' as const, eventId: 'edition-1' }),
       searchParams: Promise.resolve({
         auditAction: 'results.version.finalize',
         auditFrom: '2026-08-01',

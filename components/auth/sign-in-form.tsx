@@ -18,6 +18,10 @@ type SignInFormProps = {
 type Router = ReturnType<typeof useRouter>;
 type RouterPushHref = Parameters<Router['push']>[0];
 
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export function SignInForm({ callbackPath }: SignInFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
@@ -32,8 +36,21 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
   >({
     defaultValues: { email: '', password: '' },
     onSubmit: async (values) => {
+      const normalizedEmail = normalizeEmail(values.email);
+      if (!normalizedEmail || !values.password) {
+        return {
+          ok: false,
+          error: 'INVALID_INPUT',
+          message: t('missingFields'),
+          fieldErrors: {
+            email: normalizedEmail ? undefined : [t('email')],
+            password: values.password ? undefined : [t('password')],
+          },
+        };
+      }
+
       const { error: signInError } = await signIn.email({
-        email: values.email,
+        email: normalizedEmail,
         password: values.password,
         callbackURL: targetPath,
       });
@@ -43,7 +60,7 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
         if (status === 403) {
           return {
             ok: true,
-            data: { kind: 'verify-email', email: values.email, callbackPath: targetPath },
+            data: { kind: 'verify-email', email: normalizedEmail, callbackPath: targetPath },
           };
         }
 
@@ -96,7 +113,17 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
   };
 
   return (
-    <Form form={form} className="space-y-4">
+    <Form
+      form={form}
+      className="space-y-4"
+      onSubmit={(event) => {
+        const formData = new FormData(event.currentTarget);
+        form.handleSubmit(event, {
+          email: String(formData.get('email') ?? ''),
+          password: String(formData.get('password') ?? ''),
+        });
+      }}
+    >
       <FormError />
 
       <FormField label={t('email')} required error={form.errors.email}>

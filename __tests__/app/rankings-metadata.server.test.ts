@@ -7,7 +7,7 @@ jest.mock('@/utils/config-page-locale', () => ({
 }));
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children }: { children: unknown }) => children,
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 jest.mock('@/lib/events/results/rankings', () => ({

@@ -21,11 +21,8 @@ export function safeCacheTag(...tags: string[]) {
 
 export function safeCacheLife(profile: string | CacheLifeConfig) {
   try {
-    if (typeof profile === 'string') {
-      cacheLife(profile);
-    } else {
-      cacheLife(profile);
-    }
+    if (typeof profile === 'string') return;
+    cacheLife(profile);
   } catch (error) {
     if (shouldSuppressCacheError()) return;
     throw error;

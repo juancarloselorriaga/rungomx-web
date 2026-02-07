@@ -1232,8 +1232,44 @@ export async function getInternalResultsInvestigationViewData(params: {
     INTERNAL_INVESTIGATION_CORRECTION_LIMIT_MAX,
   );
 
+  type InvestigationUserRow = {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+
+  type InvestigationIngestionSessionRow = {
+    id: string;
+    sourceLane: InternalResultVersionInvestigationItem['ingestion']['sourceLane'];
+    startedByUserId: string | null;
+    sourceReference: string | null;
+    sourceFileChecksum: string | null;
+    provenanceJson: Record<string, unknown>;
+    startedAt: Date;
+    startedByUser?: InvestigationUserRow;
+  } | null;
+
+  type InvestigationVersionRow = {
+    id: string;
+    versionNumber: number;
+    status: InternalResultVersionInvestigationItem['status'];
+    source: InternalResultVersionInvestigationItem['source'];
+    parentVersionId: string | null;
+    createdAt: Date;
+    finalizedAt: Date | null;
+    createdByUserId: string | null;
+    createdByUser?: InvestigationUserRow;
+    finalizedByUserId: string | null;
+    finalizedByUser?: InvestigationUserRow;
+    sourceReference: string | null;
+    sourceFileChecksum: string | null;
+    provenanceJson: Record<string, unknown>;
+    ingestionSession?: InvestigationIngestionSessionRow;
+    editionId: string;
+  };
+
   const toInvestigationVersion = (
-    row: Awaited<ReturnType<typeof db.query.resultVersions.findMany>>[number],
+    row: InvestigationVersionRow,
   ): InternalResultVersionInvestigationItem => ({
     id: row.id,
     versionNumber: row.versionNumber,

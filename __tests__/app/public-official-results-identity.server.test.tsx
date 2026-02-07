@@ -13,7 +13,7 @@ jest.mock('@/utils/config-page-locale', () => ({
 }));
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children }: { children: unknown }) => <a>{children}</a>,
+  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
 jest.mock('@/i18n/routing', () => {
@@ -113,7 +113,7 @@ describe('public official results identity display policy', () => {
   it('shows full name under the baseline policy', async () => {
     const ui = await PublicOfficialResultsPage({
       params: Promise.resolve({
-        locale: 'en',
+        locale: 'en' as const,
         seriesSlug: 'ultra-valle',
         editionSlug: 'ultra-valle-2026',
       }),
@@ -129,7 +129,7 @@ describe('public official results identity display policy', () => {
 
     const ui = await PublicOfficialResultsPage({
       params: Promise.resolve({
-        locale: 'en',
+        locale: 'en' as const,
         seriesSlug: 'ultra-valle',
         editionSlug: 'ultra-valle-2026',
       }),

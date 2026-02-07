@@ -16,7 +16,7 @@ jest.mock('@/config/url', () => ({
 }));
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children }: { children: unknown }) => <a>{children}</a>,
+  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
 jest.mock('@/i18n/routing', () => {

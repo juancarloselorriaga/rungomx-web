@@ -17,7 +17,7 @@ jest.mock('@/utils/config-page-locale', () => ({
 }));
 
 jest.mock('@/i18n/navigation', () => ({
-  Link: ({ children }: { children: unknown }) => children,
+  Link: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 jest.mock('@/i18n/routing', () => {
@@ -159,14 +159,14 @@ describe('results public i18n + SEO compliance suite', () => {
       });
 
     const resultsMetadata = await generateResultsMetadata({
-      params: Promise.resolve({ locale: 'es' }),
+      params: Promise.resolve({ locale: 'es' as const }),
     });
     expect(resultsMetadata.alternates?.canonical).toBe('https://example.com/resultados');
     expect(resultsMetadata.alternates?.languages?.en).toBe('https://example.com/en/results');
     expect(resultsMetadata.robots).toBeUndefined();
 
     const explainerMetadata = await generateHowItWorksMetadata({
-      params: Promise.resolve({ locale: 'en' }),
+      params: Promise.resolve({ locale: 'en' as const }),
     });
     expect(explainerMetadata.alternates?.canonical).toBe(
       'https://example.com/en/results/how-it-works',
@@ -178,7 +178,7 @@ describe('results public i18n + SEO compliance suite', () => {
 
     const officialMetadata = await generateOfficialMetadata({
       params: Promise.resolve({
-        locale: 'en',
+        locale: 'en' as const,
         seriesSlug: 'ultra-valle',
         editionSlug: 'ultra-valle-2026',
       }),
@@ -193,7 +193,7 @@ describe('results public i18n + SEO compliance suite', () => {
 
     const notFinalizedMetadata = await generateOfficialMetadata({
       params: Promise.resolve({
-        locale: 'en',
+        locale: 'en' as const,
         seriesSlug: 'ultra-valle',
         editionSlug: 'ultra-valle-2026',
       }),

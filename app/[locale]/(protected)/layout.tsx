@@ -12,21 +12,26 @@ import { SlidingSidebar } from '@/components/layout/navigation/sliding-sidebar';
 import ProtectedLayoutWrapper from '@/components/layout/protected-layout-wrapper';
 import { AutoClaimPendingGrantsClient } from '@/components/billing/auto-claim-pending-grants-client';
 import { getPathname } from '@/i18n/navigation';
-import { AppLocale } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
 import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 import type { ProFeaturesSnapshot } from '@/app/actions/pro-features';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ReactNode } from 'react';
 
 type ProtectedLayoutProps = {
   children: ReactNode;
-  params: Promise<{ locale: AppLocale }>;
+  params: Promise<{ locale: string }>;
 };
+
+const isSupportedLocale = (value: string): value is 'es' | 'en' =>
+  value === 'es' || value === 'en';
 
 export default async function ProtectedLayout({ children, params }: ProtectedLayoutProps) {
   const { locale } = await params;
+  if (!isSupportedLocale(locale)) {
+    notFound();
+  }
   const authContext = await getAuthContext();
 
   if (!authContext.session) {

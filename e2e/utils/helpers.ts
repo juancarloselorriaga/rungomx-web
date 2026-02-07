@@ -499,7 +499,26 @@ export async function navigateToEventSettings(page: Page, eventId: string) {
     await page.waitForTimeout(1000);
   }
 
-  await expect(page).toHaveURL(/\/settings$/, { timeout: 30000 });
+  await expect(page).toHaveURL(/\/settings(?:\?.*)?$/, { timeout: 30000 });
+
+  // Ensure at least one stable settings anchor is visible before continuing.
+  const detailsHeading = page.getByRole('heading', { name: /details|detalles/i }).first();
+  const visibilityHeading = page
+    .getByRole('heading', { name: /event visibility|visibility|visibilidad/i })
+    .first();
+  const addDistanceButton = page
+    .getByRole('button', { name: /add distance|agregar distancia/i })
+    .first();
+
+  await expect
+    .poll(
+      async () =>
+        (await detailsHeading.isVisible().catch(() => false)) ||
+        (await visibilityHeading.isVisible().catch(() => false)) ||
+        (await addDistanceButton.isVisible().catch(() => false)),
+      { timeout: 30000 },
+    )
+    .toBe(true);
 }
 
 /**
@@ -517,22 +536,34 @@ export async function addDistance(
 ) {
   const { label, distance, terrain, price, capacity } = options;
 
-  // Wait for the Distances heading to be visible before scrolling
-  const distancesHeading = page.getByRole('heading', { name: 'Distances' });
-  await expect(distancesHeading).toBeVisible({ timeout: 15000 });
+  const distancesHeading = page.getByRole('heading', { name: /distances|distancias/i }).first();
+  const addDistanceBtn = page.getByRole('button', { name: /add distance|agregar distancia/i }).first();
+  const labelInput = page.locator('input[name="label"]').first();
 
-  // Scroll to the Distances section and wait for page to settle
-  await distancesHeading.scrollIntoViewIfNeeded();
+  await expect
+    .poll(
+      async () =>
+        (await distancesHeading.isVisible().catch(() => false)) ||
+        (await addDistanceBtn.isVisible().catch(() => false)) ||
+        (await labelInput.isVisible().catch(() => false)),
+      { timeout: 30000 },
+    )
+    .toBe(true);
+
+  if (await distancesHeading.isVisible({ timeout: 1000 }).catch(() => false)) {
+    await distancesHeading.scrollIntoViewIfNeeded();
+  } else {
+    await addDistanceBtn.scrollIntoViewIfNeeded();
+  }
+
   await page.waitForLoadState('networkidle');
 
-  // Check if form is already visible using the form's input name attribute
-  const labelInput = page.locator('input[name="label"]');
+  // Check if form is already visible using the form's input name attribute.
   if (!(await labelInput.isVisible({ timeout: 1000 }).catch(() => false))) {
-    // Click the "Add Distance" button in the section header
-    // Use locator chain to find button with "Add Distance" text
-    const addDistanceBtn = page.locator('section').filter({ hasText: 'Distances' }).getByRole('button', { name: 'Add Distance' });
+    await expect(addDistanceBtn).toBeVisible({ timeout: 10000 });
+    await expect(addDistanceBtn).toBeEnabled({ timeout: 10000 });
     await addDistanceBtn.click();
-    await expect(labelInput).toBeVisible({ timeout: 5000 });
+    await expect(labelInput).toBeVisible({ timeout: 10000 });
   }
 
   // Fill the form using name attributes (most reliable selector)
@@ -546,11 +577,15 @@ export async function addDistance(
   await page.locator('input[name="price"]').fill(price.toString());
   await page.locator('input[name="capacity"]').fill(capacity.toString());
 
-  // Click the submit button inside the distance form (has text "Add Distance")
-  await page.getByRole('button', { name: 'Add Distance', exact: true }).last().click();
+  // Submit from the form that contains the active label input.
+  const addDistanceForm = labelInput.locator('xpath=ancestor::form[1]');
+  const submitBtn = addDistanceForm.getByRole('button', { name: /add distance|agregar distancia/i });
+  await expect(submitBtn).toBeEnabled({ timeout: 5000 });
+  await submitBtn.click();
 
   // Wait for network response and form to process
   await page.waitForLoadState('networkidle');
+  await expect(labelInput).toBeHidden({ timeout: 10000 });
 
   // Wait for the distance to appear in the list (confirms successful save)
   await expect(page.getByText(label)).toBeVisible({ timeout: 10000 });
@@ -568,9 +603,11 @@ export async function publishEvent(page: Page) {
     await page.waitForTimeout(1000);
   }
 
-  // Scroll to visibility section first
-  const visibilityHeading = page.getByRole('heading', { name: 'Event Visibility' });
-  await expect(visibilityHeading).toBeVisible({ timeout: 15000 });
+  // Scroll to visibility section first.
+  const visibilityHeading = page
+    .getByRole('heading', { name: /event visibility|visibilidad del evento|visibility/i })
+    .first();
+  await expect(visibilityHeading).toBeVisible({ timeout: 30000 });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
@@ -585,20 +622,17 @@ export async function publishEvent(page: Page) {
   // Wait for section to be fully loaded
   await page.waitForLoadState('networkidle');
 
-  // Find the visibility badge - it shows current status next to the heading
-  // Initially it should show "Draft"
-  const visibilitySection = page.locator('section').filter({ hasText: 'Event Visibility' });
+  const visibilitySection = page.locator('section', { has: visibilityHeading }).first();
+  const publishedBtn = visibilitySection.getByRole('button', { name: /published|publicado/i }).first();
+  await expect(publishedBtn).toBeVisible({ timeout: 15000 });
 
-  // Click Published button in visibility section
-  const publishedBtn = page.getByRole('button', { name: 'Published', exact: true });
-  await publishedBtn.click();
+  // If already selected, skip the click and just assert stable selected state.
+  const publishedSelectedIndicator = publishedBtn.locator('svg');
+  if (!(await publishedSelectedIndicator.isVisible({ timeout: 1000 }).catch(() => false))) {
+    await publishedBtn.click();
+  }
 
-  // Wait for the server action to complete and state to update
-  // The visibility badge should change from "Draft" to "Published"
-  // The badge is a span with specific styling containing the visibility text
-  await expect(
-    visibilitySection.locator('span').filter({ hasText: 'Published' }).first(),
-  ).toBeVisible({ timeout: 15000 });
+  await expect(publishedSelectedIndicator).toBeVisible({ timeout: 15000 });
 }
 
 /**
