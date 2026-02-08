@@ -62,7 +62,7 @@ e2e/test-results/
 e2e/.auth/
 
 .playwright-mcp/
-playwright-report/
+playwright-*/
 _bmad
 _bmad-output
 .claude
