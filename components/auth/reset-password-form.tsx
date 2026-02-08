@@ -2,9 +2,9 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { resetPasswordWithToken } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { cn } from '@/lib/utils';
 import { KeyRound, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
@@ -71,16 +71,12 @@ export function ResetPasswordForm() {
       <FormError />
 
       <FormField label={t('newPassword')} required error={form.errors.password}>
-        <input
+        <Input
           id="password"
           required
           type="password"
           autoComplete="new-password"
-          className={cn(
-            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.password && 'border-destructive focus-visible:border-destructive',
-          )}
+          aria-invalid={form.errors.password ? true : undefined}
           placeholder="••••••••"
           {...form.register('password')}
           disabled={isPending || form.isSubmitting}
@@ -90,16 +86,12 @@ export function ResetPasswordForm() {
       </FormField>
 
       <FormField label={t('confirmPassword')} required error={form.errors.confirmPassword}>
-        <input
+        <Input
           id="confirmPassword"
           required
           type="password"
           autoComplete="new-password"
-          className={cn(
-            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.confirmPassword && 'border-destructive focus-visible:border-destructive',
-          )}
+          aria-invalid={form.errors.confirmPassword ? true : undefined}
           placeholder="••••••••"
           {...form.register('confirmPassword')}
           disabled={isPending || form.isSubmitting}

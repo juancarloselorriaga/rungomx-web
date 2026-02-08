@@ -24,4 +24,20 @@ describe('Button Component', () => {
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
   });
+
+  it('enforces >=44px tap targets on mobile via size tokens', () => {
+    render(<Button>Tap target</Button>);
+
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('min-h-11');
+    expect(button).toHaveClass('sm:min-h-9');
+  });
+
+  it('enforces >=44px tap targets for icon buttons on mobile', () => {
+    render(<Button size="icon">X</Button>);
+
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('min-h-11');
+    expect(button).toHaveClass('min-w-11');
+  });
 });

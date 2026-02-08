@@ -2,11 +2,11 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { useRouter } from '@/i18n/navigation';
 import { signIn, signUp } from '@/lib/auth/client';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { isSafeRedirectPath } from '@/lib/utils/redirect';
-import { cn } from '@/lib/utils';
 import { Loader2, UserRoundPlus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
@@ -110,16 +110,12 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
       <FormError />
 
       <FormField label={t('name')} required error={form.errors.name}>
-        <input
+        <Input
           id="name"
           required
           type="text"
           autoComplete="name"
-          className={cn(
-            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.name && 'border-destructive focus-visible:border-destructive',
-          )}
+          aria-invalid={form.errors.name ? true : undefined}
           placeholder={t('namePlaceholder')}
           {...form.register('name')}
           disabled={form.isSubmitting}
@@ -127,16 +123,12 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
       </FormField>
 
       <FormField label={t('email')} required error={form.errors.email}>
-        <input
+        <Input
           id="email"
           required
           type="email"
           autoComplete="email"
-          className={cn(
-            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.email && 'border-destructive focus-visible:border-destructive',
-          )}
+          aria-invalid={form.errors.email ? true : undefined}
           placeholder="you@example.com"
           {...form.register('email')}
           disabled={form.isSubmitting}
@@ -144,18 +136,14 @@ export function SignUpForm({ callbackPath }: SignUpFormProps) {
       </FormField>
 
       <FormField label={t('password')} required error={form.errors.password}>
-        <input
+        <Input
           id="password"
           required
           type="password"
           autoComplete="new-password"
           minLength={8}
           maxLength={128}
-          className={cn(
-            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.password && 'border-destructive focus-visible:border-destructive',
-          )}
+          aria-invalid={form.errors.password ? true : undefined}
           placeholder="••••••••"
           {...form.register('password')}
           disabled={form.isSubmitting}

@@ -1,4 +1,6 @@
 import { Badge } from '@/components/common/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   getInternalResultsInvestigationViewData,
   listResultTrustAuditLogsForEdition,
@@ -423,7 +425,7 @@ export default async function ResultsInvestigationPage({
             <select
               name="auditAction"
               defaultValue={auditAction ?? ''}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <option value="">{t('audit.filters.allActions')}</option>
               {TRUST_AUDIT_ACTION_OPTIONS.map((action) => (
@@ -435,29 +437,26 @@ export default async function ResultsInvestigationPage({
           </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
             <span>{t('audit.filters.from')}</span>
-            <input
+            <Input
               type="date"
               name="auditFrom"
               defaultValue={resolvedSearchParams?.auditFrom ?? ''}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="shadow-none"
             />
           </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
             <span>{t('audit.filters.to')}</span>
-            <input
+            <Input
               type="date"
               name="auditTo"
               defaultValue={resolvedSearchParams?.auditTo ?? ''}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="shadow-none"
             />
           </label>
           <div className="flex items-end">
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-            >
+            <Button type="submit" className="min-w-0">
               {t('audit.filters.apply')}
-            </button>
+            </Button>
           </div>
         </form>
 

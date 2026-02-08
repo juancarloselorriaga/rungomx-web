@@ -66,7 +66,7 @@ export function PhoneInput({
         onChange={(val) => onChangeAction(val || '')}
         disabled={disabled}
         className={cn(
-          'flex w-full items-center gap-2 rounded-md border bg-background px-3 py-2 shadow-sm transition',
+          'flex min-h-11 sm:min-h-10 w-full items-center gap-2 rounded-md border bg-background px-3 py-2 shadow-sm transition',
           'focus-within:border-primary focus-within:ring-2 focus-within:ring-ring/30',
           error && 'border-destructive focus-within:ring-destructive/30',
           disabled && 'opacity-50 cursor-not-allowed',

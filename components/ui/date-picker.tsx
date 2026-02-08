@@ -137,7 +137,7 @@ export function DatePicker({
             variant="outline"
             data-empty={!selectedDate}
             disabled={disabled}
-            className="flex h-auto w-full items-center justify-between rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition font-normal data-[empty=true]:text-muted-foreground hover:bg-background hover:text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-background dark:hover:bg-background"
+            className="w-full justify-between font-normal shadow-sm data-[empty=true]:text-muted-foreground hover:bg-background hover:text-foreground dark:bg-background dark:hover:bg-background"
           >
             <span className="truncate">{formatted || resolvedPlaceholder}</span>
             <CalendarIcon className="ml-2 h-4 w-4 opacity-70" />

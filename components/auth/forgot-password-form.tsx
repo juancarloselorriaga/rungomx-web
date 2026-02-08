@@ -2,10 +2,10 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { useRouter } from '@/i18n/navigation';
 import { requestPasswordReset } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { cn } from '@/lib/utils';
 import { Loader2, Send } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -53,16 +53,12 @@ export function ForgotPasswordForm() {
       <FormError />
 
       <FormField label={t('email')} required error={form.errors.email}>
-        <input
+        <Input
           id="email"
           required
           type="email"
           autoComplete="email"
-          className={cn(
-            'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition',
-            'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-            form.errors.email && 'border-destructive focus-visible:border-destructive',
-          )}
+          aria-invalid={form.errors.email ? true : undefined}
           placeholder="you@example.com"
           {...form.register('email')}
           disabled={isPending || form.isSubmitting}

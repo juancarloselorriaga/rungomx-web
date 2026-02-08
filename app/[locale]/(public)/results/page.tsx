@@ -1,6 +1,8 @@
 import { CorrectionSummaryBlock } from '@/components/results/public/correction-summary-block';
 import { Badge } from '@/components/common/badge';
 import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Link } from '@/i18n/navigation';
 import {
   listPublicOfficialResultsDirectory,
@@ -124,22 +126,22 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
         <form className="mt-4 grid gap-3 md:grid-cols-4" method="get">
           <label className="grid gap-1 text-xs text-muted-foreground md:col-span-2">
             <span>{t('discovery.searchNameLabel')}</span>
-            <input
+            <Input
               type="search"
               name="q"
               defaultValue={normalizedQuery}
               placeholder={t('discovery.searchNamePlaceholder')}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="shadow-none"
             />
           </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
             <span>{t('discovery.searchBibLabel')}</span>
-            <input
+            <Input
               type="search"
               name="bib"
               defaultValue={normalizedBib}
               placeholder={t('discovery.searchBibPlaceholder')}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="shadow-none"
             />
           </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
@@ -147,7 +149,7 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
             <select
               name="series"
               defaultValue={normalizedSeries}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <option value="">{t('discovery.seriesFilterAll')}</option>
               {availableSeries.map((seriesOption) => (
@@ -159,19 +161,13 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
           </label>
 
           <div className="md:col-span-4 flex flex-wrap gap-2">
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-            >
+            <Button type="submit" className="min-w-0">
               {t('discovery.searchAction')}
-            </button>
+            </Button>
             {normalizedQuery || normalizedBib || normalizedSeries ? (
-              <Link
-                href="/results"
-                className="inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium text-foreground"
-              >
-                {t('discovery.resetAction')}
-              </Link>
+              <Button asChild variant="outline" className="min-w-0">
+                <Link href="/results">{t('discovery.resetAction')}</Link>
+              </Button>
             ) : null}
           </div>
         </form>

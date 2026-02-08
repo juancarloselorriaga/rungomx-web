@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/badge';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -197,7 +198,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
             <select
               name="scope"
               defaultValue={leaderboard.filters.scope}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <option value="national">{t('scope.national')}</option>
               <option value="organizer">{t('scope.organizer')}</option>
@@ -210,7 +211,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
               name="organizationId"
               defaultValue={leaderboard.filters.organizationId ?? ''}
               disabled={leaderboard.filters.scope !== 'organizer'}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground disabled:opacity-50"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">{t('filters.all')}</option>
               {leaderboard.filters.availableOrganizers.map((organizer) => (
@@ -226,7 +227,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
             <select
               name="discipline"
               defaultValue={leaderboard.filters.discipline ?? ''}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <option value="">{t('filters.all')}</option>
               {leaderboard.filters.availableDisciplines.map((discipline) => {
@@ -245,7 +246,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
             <select
               name="gender"
               defaultValue={leaderboard.filters.gender ?? ''}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <option value="">{t('filters.all')}</option>
               {leaderboard.filters.availableGenders.map((gender) => {
@@ -264,7 +265,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
             <select
               name="ageGroup"
               defaultValue={leaderboard.filters.ageGroup ?? ''}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             >
               <option value="">{t('filters.all')}</option>
               {leaderboard.filters.availableAgeGroups.map((ageGroup) => (
@@ -281,7 +282,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
               name="snapshotId"
               defaultValue={leaderboard.filters.snapshotId ?? ''}
               disabled={leaderboard.filters.availableSnapshots.length === 0}
-              className="h-10 rounded-md border bg-background px-3 text-sm text-foreground disabled:opacity-50"
+              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">{t('filters.currentSnapshot')}</option>
               {leaderboard.filters.availableSnapshots.map((snapshotOption) => (
@@ -296,18 +297,12 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
           </label>
 
           <div className="flex flex-wrap items-end gap-2 md:col-span-6">
-            <button
-              type="submit"
-              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-            >
+            <Button type="submit" className="min-w-0">
               {t('filters.apply')}
-            </button>
-            <Link
-              href="/rankings"
-              className="inline-flex h-10 items-center rounded-md border px-4 text-sm font-medium text-foreground"
-            >
-              {t('filters.reset')}
-            </Link>
+            </Button>
+            <Button asChild variant="outline" className="min-w-0">
+              <Link href="/rankings">{t('filters.reset')}</Link>
+            </Button>
           </div>
         </form>
       </section>

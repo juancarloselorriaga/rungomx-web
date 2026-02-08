@@ -2,6 +2,7 @@
 
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -99,17 +100,13 @@ export function SearchablePicker({
       <PopoverAnchor asChild>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
+          <Input
             ref={inputRef}
             type={inputType}
             autoComplete="off"
             name={name}
-            className={cn(
-              'h-10 w-full rounded-md border bg-background pl-9 pr-3 text-sm shadow-sm outline-none ring-0 transition',
-              'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-              invalid && 'border-destructive focus-visible:border-destructive',
-              disabled && 'opacity-60',
-            )}
+            className={cn('pl-9', disabled && 'opacity-60')}
+            aria-invalid={invalid || undefined}
             value={value}
             onChange={(event) => onChangeAction(event.target.value)}
             onFocus={() => setOpen(true)}

@@ -23,9 +23,9 @@ export function NavDrawerTrigger({ user, isPro, items }: NavDrawerTriggerProps) 
 
   return (
     <div className="md:hidden">
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-sm p-1 -ml-2 h-10 w-10">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="rounded-sm p-1 -ml-2">
             <PanelRightClose size={22} />
           </Button>
         </SheetTrigger>
