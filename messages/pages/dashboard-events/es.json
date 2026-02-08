@@ -201,7 +201,7 @@
       "lifecycleDraft": "Borrador",
       "lifecycleOfficial": "Oficial",
       "lifecycleDraftHint": "Aún no es público.",
-      "lifecycleOfficialHint": "Atestiguado y visible públicamente.",
+      "lifecycleOfficialHint": "Oficial y visible públicamente.",
       "connectivity": "Conectividad",
       "connectivityOnline": "En línea",
       "connectivityOffline": "Sin conexión",
@@ -211,7 +211,7 @@
       "nextAction": "Siguiente acción",
       "nextActionSyncPending": "Sincronizar filas pendientes del borrador",
       "nextActionReviewDraft": "Revisar filas en borrador antes de publicar",
-      "nextActionReadyToPublish": "El borrador está listo para atestiguar",
+      "nextActionReadyToPublish": "Publicar resultados oficiales",
       "nextActionStartIngestion": "Iniciar una nueva ingesta en borrador"
     },
     "versionVisibility": {
@@ -272,10 +272,10 @@
       "conflict": "Conflicto"
     },
     "feedback": {
-      "heading": "SAFE -> NEXT -> DETAILS",
-      "safe": "SAFE",
-      "next": "NEXT",
-      "details": "DETAILS"
+      "heading": "Guía",
+      "safe": "Estado",
+      "next": "Siguiente paso",
+      "details": "Detalles"
     },
     "lanes": {
       "capture": {
@@ -290,7 +290,7 @@
       },
       "review": {
         "title": "Flujo de revisión",
-        "description": "Revisión unificada del borrador antes de atestiguar y publicar.",
+        "description": "Revisión unificada del borrador antes de publicar resultados oficiales.",
         "action": "Abrir flujo de revisión"
       },
       "corrections": {
@@ -506,7 +506,7 @@
     },
     "reviewGate": {
       "title": "Control de preparación para finalización",
-      "description": "Revisa bloqueadores y advertencias antes de pasar a la atestiguación.",
+      "description": "Revisa bloqueadores y advertencias antes de publicar resultados oficiales.",
       "attemptProceedAction": "Intentar continuar a finalización",
       "finalizePendingAction": "Publicando versión oficial...",
       "proceedBlockedMessage": "La finalización está bloqueada hasta resolver todos los bloqueadores.",
@@ -601,10 +601,10 @@
       "syncStatusSynced": "Sincronizado",
       "syncStatusConflict": "Conflicto",
       "safeNextDetails": {
-        "title": "SAFE -> NEXT -> DETAILS",
-        "safe": "SAFE",
-        "next": "NEXT",
-        "details": "DETAILS",
+        "title": "Guía",
+        "safe": "Estado",
+        "next": "Siguiente paso",
+        "details": "Detalles",
         "safeMessage": "Los datos en borrador permanecen protegidos mientras existan conflictos sin resolver.",
         "nextMessage": "Elige una resolución para cada conflicto y vuelve a ejecutar la sincronización.",
         "detailConflictSummary": "{count} conflictos requieren acción del organizador.",

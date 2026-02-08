@@ -1,10 +1,12 @@
 import { cn } from '@/lib/utils';
+import type { ReactNode } from 'react';
 
 type SafeNextDetailsMessageProps = {
-  title: string;
+  title?: string;
   safe: string;
   next: string;
   details: readonly string[];
+  actions?: ReactNode;
   labels: {
     safe: string;
     next: string;
@@ -15,10 +17,10 @@ type SafeNextDetailsMessageProps = {
 };
 
 const toneClasses: Record<NonNullable<SafeNextDetailsMessageProps['tone']>, string> = {
-  info: 'border-blue-200/80 bg-blue-50/50 dark:border-blue-900/60 dark:bg-blue-950/20',
+  info: 'border-blue-200/80 bg-blue-50/50 dark:border-blue-900/70 dark:bg-blue-950/35',
   warning:
-    'border-amber-200/80 bg-amber-50/60 dark:border-amber-900/70 dark:bg-amber-950/20',
-  danger: 'border-red-200/80 bg-red-50/60 dark:border-red-900/70 dark:bg-red-950/20',
+    'border-amber-200/80 bg-amber-50/60 dark:border-amber-900/80 dark:bg-amber-950/30',
+  danger: 'border-red-200/80 bg-red-50/60 dark:border-red-900/80 dark:bg-red-950/30',
 };
 
 export function SafeNextDetailsMessage({
@@ -26,6 +28,7 @@ export function SafeNextDetailsMessage({
   safe,
   next,
   details,
+  actions,
   labels,
   tone = 'info',
   className,
@@ -40,8 +43,8 @@ export function SafeNextDetailsMessage({
       role="alert"
       aria-live="polite"
     >
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      <dl className="mt-3 space-y-3 text-sm">
+      {title ? <h3 className="text-sm font-semibold text-foreground">{title}</h3> : null}
+      <dl className={cn('space-y-3 text-sm', title ? 'mt-3' : '')}>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.safe}
@@ -67,6 +70,7 @@ export function SafeNextDetailsMessage({
           </dd>
         </div>
       </dl>
+      {actions ? <div className={cn(title ? 'mt-4' : 'mt-3')}>{actions}</div> : null}
     </article>
   );
 }

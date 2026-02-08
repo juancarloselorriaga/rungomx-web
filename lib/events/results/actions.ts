@@ -117,11 +117,11 @@ const OFFICIAL_IMMUTABLE_MUTATION_ERROR =
 const OFFICIAL_IMMUTABLE_LINK_ERROR =
   'Official versions are immutable. Use the correction-version workflow to adjust linked identities.';
 const FINALIZATION_ATTESTATION_REQUIRED_ERROR =
-  'Attestation confirmation is required before publishing official results.';
+  'Confirmation is required before publishing official results.';
 const FINALIZATION_EMPTY_DRAFT_ERROR =
-  'Draft review gate failed: no draft rows are available for attestation.';
+  'Draft review gate failed: no draft rows are available for publishing.';
 const FINALIZATION_BLOCKED_ERROR =
-  'Draft review gate failed. Resolve blockers before attestation.';
+  'Draft review gate failed. Resolve blockers before publishing official results.';
 
 const CLAIM_PENDING_REVIEW_STEPS = [
   'Wait for organizer review of this contested claim.',
@@ -1004,7 +1004,7 @@ export const finalizeResultVersionAttestation = withAuthenticatedUser<
   if (!draftVersion) {
     return {
       ok: false,
-      error: 'No draft result version available for attestation',
+      error: 'No draft result version available for publishing',
       code: 'NOT_FOUND',
     };
   }

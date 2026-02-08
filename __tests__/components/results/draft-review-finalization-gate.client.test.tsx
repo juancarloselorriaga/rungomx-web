@@ -29,7 +29,7 @@ jest.mock('@/lib/events/results/actions', () => ({
 
 const labels = {
   title: 'Finalization readiness gate',
-  description: 'Review blockers and warnings before attestation.',
+  description: 'Review blockers and warnings before publishing official results.',
   attemptProceedAction: 'Attempt proceed to finalization',
   finalizePendingAction: 'Publishing official version...',
   proceedBlockedMessage: 'Finalization is blocked until all blockers are resolved.',

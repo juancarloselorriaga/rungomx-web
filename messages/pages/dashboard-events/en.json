@@ -201,7 +201,7 @@
       "lifecycleDraft": "Draft",
       "lifecycleOfficial": "Official",
       "lifecycleDraftHint": "Not public yet.",
-      "lifecycleOfficialHint": "Attested and visible publicly.",
+      "lifecycleOfficialHint": "Official and publicly visible.",
       "connectivity": "Connectivity",
       "connectivityOnline": "Online",
       "connectivityOffline": "Offline",
@@ -211,7 +211,7 @@
       "nextAction": "Next action",
       "nextActionSyncPending": "Sync pending draft rows",
       "nextActionReviewDraft": "Review draft rows before publishing",
-      "nextActionReadyToPublish": "Draft is ready for attestation",
+      "nextActionReadyToPublish": "Publish official results",
       "nextActionStartIngestion": "Start a new draft ingestion"
     },
     "versionVisibility": {
@@ -272,10 +272,10 @@
       "conflict": "Conflict"
     },
     "feedback": {
-      "heading": "SAFE -> NEXT -> DETAILS",
-      "safe": "SAFE",
-      "next": "NEXT",
-      "details": "DETAILS"
+      "heading": "Guidance",
+      "safe": "Status",
+      "next": "Next step",
+      "details": "Details"
     },
     "lanes": {
       "capture": {
@@ -290,7 +290,7 @@
       },
       "review": {
         "title": "Review lane",
-        "description": "Unified draft review before attestation and publication.",
+        "description": "Unified draft review before publishing official results.",
         "action": "Open review lane"
       },
       "corrections": {
@@ -506,7 +506,7 @@
     },
     "reviewGate": {
       "title": "Finalization readiness gate",
-      "description": "Review blockers and warnings before moving to attestation.",
+      "description": "Review blockers and warnings before publishing official results.",
       "attemptProceedAction": "Attempt proceed to finalization",
       "finalizePendingAction": "Publishing official version...",
       "proceedBlockedMessage": "Finalization is blocked until all blockers are resolved.",
@@ -601,10 +601,10 @@
       "syncStatusSynced": "Synced",
       "syncStatusConflict": "Conflict",
       "safeNextDetails": {
-        "title": "SAFE -> NEXT -> DETAILS",
-        "safe": "SAFE",
-        "next": "NEXT",
-        "details": "DETAILS",
+        "title": "Guidance",
+        "safe": "Status",
+        "next": "Next step",
+        "details": "Details",
         "safeMessage": "Draft data remains protected while conflicts are unresolved.",
         "nextMessage": "Choose a resolution for every conflict and rerun sync.",
         "detailConflictSummary": "{count} conflicts require organizer action.",

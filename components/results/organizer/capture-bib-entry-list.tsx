@@ -454,7 +454,6 @@ export function CaptureBibEntryList({
         ) : (
           <div className="space-y-3">
             <SafeNextDetailsMessage
-              title={labels.safeNextDetails.title}
               safe={labels.safeNextDetails.safeMessage}
               next={labels.safeNextDetails.nextMessage}
               details={[

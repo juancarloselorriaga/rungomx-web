@@ -867,7 +867,7 @@ describe('results identity model actions', () => {
 
     expect(result).toEqual({
       ok: false,
-      error: 'Draft review gate failed. Resolve blockers before attestation.',
+      error: 'Draft review gate failed. Resolve blockers before publishing official results.',
       code: 'VALIDATION_ERROR',
     });
     expect(mockUpdateSetCalls).toHaveLength(0);

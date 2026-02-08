@@ -72,28 +72,29 @@ export function OrganizerResultsLane({
         labels={labels.table}
       />
 
-      <section className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground sm:text-base">
-          {labels.feedback.heading}
-        </h3>
-        <div className="grid gap-3">
-          {feedbackItems.map((item) => (
-            <SafeNextDetailsMessage
-              key={item.id}
-              title={labels.feedback.heading}
-              safe={item.safe}
-              next={item.next}
-              details={item.details}
-              tone={item.tone}
-              labels={{
-                safe: labels.feedback.safe,
-                next: labels.feedback.next,
-                details: labels.feedback.details,
-              }}
-            />
-          ))}
-        </div>
-      </section>
+      {feedbackItems.length > 0 ? (
+        <section className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground sm:text-base">
+            {labels.feedback.heading}
+          </h3>
+          <div className="grid gap-3">
+            {feedbackItems.map((item) => (
+              <SafeNextDetailsMessage
+                key={item.id}
+                safe={item.safe}
+                next={item.next}
+                details={item.details}
+                tone={item.tone}
+                labels={{
+                  safe: labels.feedback.safe,
+                  next: labels.feedback.next,
+                  details: labels.feedback.details,
+                }}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

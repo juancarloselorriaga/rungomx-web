@@ -72,10 +72,10 @@ const labels = {
   syncStatusSynced: 'Synced',
   syncStatusConflict: 'Conflict',
   safeNextDetails: {
-    title: 'SAFE -> NEXT -> DETAILS',
-    safe: 'SAFE',
-    next: 'NEXT',
-    details: 'DETAILS',
+    title: 'Guidance',
+    safe: 'Status',
+    next: 'Next step',
+    details: 'Details',
     safeMessage:
       'Draft records remain protected while conflicts are unresolved.',
     nextMessage: 'Select an explicit resolution for each conflict and rerun sync.',
@@ -217,9 +217,15 @@ describe('CaptureBibEntryList', () => {
     expect(screen.getByText(labels.conflictTitle)).toBeInTheDocument();
     expect(screen.getByText(labels.conflictLocalValues)).toBeInTheDocument();
     expect(screen.getByText(labels.conflictServerValues)).toBeInTheDocument();
-    expect(screen.getByText(labels.safeNextDetails.safe)).toBeInTheDocument();
-    expect(screen.getByText(labels.safeNextDetails.next)).toBeInTheDocument();
-    expect(screen.getByText(labels.safeNextDetails.details)).toBeInTheDocument();
+    const safeNextDetailsMessage = screen
+      .getByText(labels.safeNextDetails.safeMessage)
+      .closest('article');
+    expect(safeNextDetailsMessage).not.toBeNull();
+
+    const safeNextDetails = within(safeNextDetailsMessage as HTMLElement);
+    expect(safeNextDetails.getByText(labels.safeNextDetails.safe)).toBeInTheDocument();
+    expect(safeNextDetails.getByText(labels.safeNextDetails.next)).toBeInTheDocument();
+    expect(safeNextDetails.getByText(labels.safeNextDetails.details)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: labels.conflictActionKeepLocal }));
     expect(screen.getByText(labels.conflictChoiceKeepLocal)).toBeInTheDocument();
