@@ -66,7 +66,9 @@ export async function getClaimPageContextByToken(params: { token: string; now?: 
     .where(eq(registrationInvites.tokenHash, tokenHash));
 
   if (!row) {
-    return { status: 'NOT_FOUND' as const, event: null };
+    // Missing tokens should render deterministic invalid-token messaging,
+    // not a 404 page, so public claim links fail safely with context.
+    return { status: 'INVALID' as const, event: null };
   }
 
   const isExpired =

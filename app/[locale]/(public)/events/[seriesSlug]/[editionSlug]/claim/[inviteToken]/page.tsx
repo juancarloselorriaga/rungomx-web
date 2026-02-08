@@ -32,10 +32,6 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
     getClaimPageContextByToken({ token: inviteToken }),
   ]);
 
-  if (!claimContext.event && claimContext.status === 'NOT_FOUND') {
-    notFound();
-  }
-
   if (
     claimContext.event &&
     (claimContext.event.seriesSlug !== seriesSlug ||
