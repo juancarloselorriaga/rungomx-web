@@ -1,14 +1,19 @@
 import { Badge } from '@/components/common/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   getInternalResultsInvestigationViewData,
   listResultTrustAuditLogsForEdition,
 } from '@/lib/events/results/queries';
+import type {
+  ResultIngestionSourceLane,
+  ResultVersionSource,
+  ResultVersionStatus,
+} from '@/lib/events/results/types';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+import { ResultsInvestigationAuditFiltersForm } from './_audit-filters-form';
 
 type ResultsInvestigationPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -75,13 +80,27 @@ export default async function ResultsInvestigationPage({
     pathname: '/dashboard/events/[eventId]/results/investigation',
   });
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace.investigation');
+  const tCommon = await getTranslations('common');
   const auditAction = isTrustAuditActionOption(resolvedSearchParams?.auditAction)
     ? resolvedSearchParams?.auditAction
     : undefined;
   const auditFromDate = parseDateBoundary(resolvedSearchParams?.auditFrom, 'start');
   const auditToDate = parseDateBoundary(resolvedSearchParams?.auditTo, 'end');
 
-  const [investigationData, auditLogs] = await Promise.all([
+  type InvestigationData = Awaited<ReturnType<typeof getInternalResultsInvestigationViewData>>;
+
+  const investigationFallback: InvestigationData = {
+    editionId: eventId,
+    versions: [],
+    corrections: [],
+    selectedDiff: null,
+  };
+
+  let investigationData: InvestigationData = investigationFallback;
+  let auditLogs: Awaited<ReturnType<typeof listResultTrustAuditLogsForEdition>> = [];
+  let loadFailed = false;
+
+  const [investigationResult, auditLogsResult] = await Promise.allSettled([
     getInternalResultsInvestigationViewData({
       editionId: eventId,
       fromVersionId: resolvedSearchParams?.fromVersionId,
@@ -96,10 +115,57 @@ export default async function ResultsInvestigationPage({
     }),
   ]);
 
+  if (investigationResult.status === 'fulfilled') {
+    investigationData = investigationResult.value;
+  } else {
+    loadFailed = true;
+    console.error('[ResultsInvestigationPage] Failed to load investigation view data', {
+      editionId: eventId,
+      error: investigationResult.reason,
+    });
+  }
+
+  if (auditLogsResult.status === 'fulfilled') {
+    auditLogs = auditLogsResult.value;
+  } else {
+    loadFailed = true;
+    console.error('[ResultsInvestigationPage] Failed to load trust audit logs', {
+      editionId: eventId,
+      error: auditLogsResult.reason,
+    });
+  }
+
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'short',
     timeStyle: 'short',
   });
+
+  const statusLabel = (status: ResultVersionStatus | null | undefined, fallback: string) => {
+    if (!status) return fallback;
+    switch (status) {
+      case 'draft':
+        return t('status.draft');
+      case 'official':
+        return t('status.official');
+      case 'corrected':
+        return t('status.corrected');
+    }
+  };
+
+  const sourceLabel = (
+    source: ResultVersionSource | ResultIngestionSourceLane | null | undefined,
+    fallback: string,
+  ) => {
+    if (!source) return fallback;
+    switch (source) {
+      case 'manual_offline':
+        return t('source.manual_offline');
+      case 'csv_excel':
+        return t('source.csv_excel');
+      case 'correction':
+        return t('source.correction');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -107,6 +173,13 @@ export default async function ResultsInvestigationPage({
         <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
         <p className="text-muted-foreground">{t('description')}</p>
       </header>
+
+      {loadFailed ? (
+        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <p className="font-semibold text-destructive">{tCommon('error')}</p>
+          <p className="mt-1 text-muted-foreground">{t('loadError')}</p>
+        </section>
+      ) : null}
 
       <section className="rounded-xl border bg-card p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{t('selectedDiff.title')}</h3>
@@ -137,13 +210,9 @@ export default async function ResultsInvestigationPage({
               <dd className="text-foreground">
                 {t('selectedDiff.transitionValue', {
                   fromVersion: investigationData.selectedDiff.fromVersionNumber ?? '?',
-                  fromStatus: investigationData.selectedDiff.fromStatus
-                    ? t(`status.${investigationData.selectedDiff.fromStatus}` as const)
-                    : t('fallback.unknown'),
+                  fromStatus: statusLabel(investigationData.selectedDiff.fromStatus, t('fallback.unknown')),
                   toVersion: investigationData.selectedDiff.toVersionNumber ?? '?',
-                  toStatus: investigationData.selectedDiff.toStatus
-                    ? t(`status.${investigationData.selectedDiff.toStatus}` as const)
-                    : t('fallback.unknown'),
+                  toStatus: statusLabel(investigationData.selectedDiff.toStatus, t('fallback.unknown')),
                 })}
               </dd>
             </div>
@@ -202,13 +271,13 @@ export default async function ResultsInvestigationPage({
         ) : (
           <div className="mt-3 space-y-3">
             {investigationData.versions.map((version) => (
-              <article key={version.id} className="rounded-md border bg-background/50 p-3">
+              <article key={version.id} className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
                     {t('versions.versionLabel', { version: version.versionNumber })}
                   </Badge>
-                  <Badge variant="indigo">{t(`status.${version.status}` as const)}</Badge>
-                  <Badge variant="outline">{t(`source.${version.source}` as const)}</Badge>
+                  <Badge variant="indigo">{statusLabel(version.status, t('fallback.unknown'))}</Badge>
+                  <Badge variant="outline">{sourceLabel(version.source, t('fallback.unknown'))}</Badge>
                 </div>
 
                 <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
@@ -279,9 +348,7 @@ export default async function ResultsInvestigationPage({
                       {t('versions.fields.ingestionLane')}
                     </dt>
                     <dd>
-                      {version.ingestion.sourceLane
-                        ? t(`source.${version.ingestion.sourceLane}` as const)
-                        : t('fallback.notAvailable')}
+                      {sourceLabel(version.ingestion.sourceLane, t('fallback.notAvailable'))}
                     </dd>
                   </div>
                   <div>
@@ -330,7 +397,7 @@ export default async function ResultsInvestigationPage({
         ) : (
           <div className="mt-3 space-y-3">
             {investigationData.corrections.map((item) => (
-              <article key={item.requestId} className="rounded-md border bg-background/50 p-3">
+              <article key={item.requestId} className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40">
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">
@@ -409,63 +476,33 @@ export default async function ResultsInvestigationPage({
         <h3 className="text-sm font-semibold">{t('audit.title')}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{t('audit.description')}</p>
 
-        <form className="mt-3 grid gap-3 md:grid-cols-4" method="get">
-          <input
-            type="hidden"
-            name="fromVersionId"
-            value={resolvedSearchParams?.fromVersionId ?? ''}
-          />
-          <input
-            type="hidden"
-            name="toVersionId"
-            value={resolvedSearchParams?.toVersionId ?? ''}
-          />
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('audit.filters.action')}</span>
-            <select
-              name="auditAction"
-              defaultValue={auditAction ?? ''}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            >
-              <option value="">{t('audit.filters.allActions')}</option>
-              {TRUST_AUDIT_ACTION_OPTIONS.map((action) => (
-                <option key={action} value={action}>
-                  {t(`audit.actions.${action}` as const)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('audit.filters.from')}</span>
-            <Input
-              type="date"
-              name="auditFrom"
-              defaultValue={resolvedSearchParams?.auditFrom ?? ''}
-              className="shadow-none"
-            />
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('audit.filters.to')}</span>
-            <Input
-              type="date"
-              name="auditTo"
-              defaultValue={resolvedSearchParams?.auditTo ?? ''}
-              className="shadow-none"
-            />
-          </label>
-          <div className="flex items-end">
-            <Button type="submit" className="min-w-0">
-              {t('audit.filters.apply')}
-            </Button>
-          </div>
-        </form>
+        <ResultsInvestigationAuditFiltersForm
+          locale={locale}
+          fromVersionId={resolvedSearchParams?.fromVersionId ?? ''}
+          toVersionId={resolvedSearchParams?.toVersionId ?? ''}
+          auditAction={auditAction}
+          auditFrom={resolvedSearchParams?.auditFrom}
+          auditTo={resolvedSearchParams?.auditTo}
+          clearLabel={tCommon('clear')}
+          labels={{
+            action: t('audit.filters.action'),
+            allActions: t('audit.filters.allActions'),
+            from: t('audit.filters.from'),
+            to: t('audit.filters.to'),
+            apply: t('audit.filters.apply'),
+          }}
+          actionOptions={TRUST_AUDIT_ACTION_OPTIONS.map((action) => ({
+            value: action,
+            label: t(`audit.actions.${action}` as const),
+          }))}
+        />
 
         {auditLogs.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{t('audit.empty')}</p>
         ) : (
           <div className="mt-3 space-y-3">
             {auditLogs.map((item) => (
-              <article key={item.id} className="rounded-md border bg-background/50 p-3">
+              <article key={item.id} className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40">
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">
