@@ -3,9 +3,9 @@
   "description": "Ver resultados de competencias y clasificaciones aquí.",
   "discovery": {
     "title": "Encontrar resultados oficiales",
-    "description": "Filtra por contexto del evento y busca por nombre o dorsal para ubicar rapidamente la pagina oficial.",
+    "description": "Filtra por contexto del evento y busca por nombre o dorsal para ubicar rápidamente la página oficial.",
     "searchNameLabel": "Nombre del corredor",
-    "searchNamePlaceholder": "ej. Ana Martinez",
+    "searchNamePlaceholder": "ej. Ana Martínez",
     "searchBibLabel": "Dorsal",
     "searchBibPlaceholder": "ej. 101",
     "seriesFilterLabel": "Serie",
@@ -15,45 +15,45 @@
   },
   "directory": {
     "title": "Directorio de resultados oficiales",
-    "description": "Paginas oficiales publicadas por edicion.",
+    "description": "Páginas oficiales publicadas por edición.",
     "empty": "No hay ediciones oficiales para el contexto seleccionado.",
     "eventDate": "Fecha del evento: {date}",
-    "openOfficial": "Abrir pagina oficial"
+    "openOfficial": "Abrir página oficial"
   },
   "searchResults": {
-    "title": "Coincidencias de busqueda",
+    "title": "Coincidencias de búsqueda",
     "description": "Coincidencias oficiales para los filtros actuales de nombre/dorsal.",
-    "empty": "No se encontraron coincidencias oficiales para esta busqueda.",
+    "empty": "No se encontraron coincidencias oficiales para esta búsqueda.",
     "context": "Dorsal {bib} · Lugar {place} · {status} · {finishTime}",
-    "openOfficial": "Abrir pagina oficial"
+    "openOfficial": "Abrir página oficial"
   },
   "howItWorks": {
     "panel": {
-      "title": "Cómo funciona / How it works",
-      "description": "Resumen rapido de confianza para resultados y rankings oficiales.",
-      "point1": "Oficial significa publicacion finalizada por el organizador para esta edicion.",
+      "title": "Cómo funciona",
+      "description": "Resumen rápido de confianza para resultados y clasificaciones oficiales.",
+      "point1": "Oficial significa una publicación finalizada por el organizador para esta edición.",
       "point2": "Las correcciones publican nuevas versiones con historial visible.",
-      "point3": "Los rankings usan solo versiones oficiales publicadas.",
-      "cta": "Leer explicador completo"
+      "point3": "Las clasificaciones usan solo versiones oficiales publicadas.",
+      "cta": "Leer el explicador completo"
     },
     "explainer": {
-      "eyebrow": "Cómo funciona / How it works",
-      "title": "Transparencia de resultados y rankings oficiales",
-      "description": "Esta pagina explica que significa oficial, como se publican correcciones y como rankings consume versiones oficiales.",
+      "eyebrow": "Cómo funciona",
+      "title": "Transparencia de resultados y clasificaciones oficiales",
+      "description": "Esta página explica qué significa “Oficial”, cómo se publican correcciones y cómo las clasificaciones consumen versiones oficiales.",
       "officialMeaning": {
-        "title": "Que significa “Oficial”",
+        "title": "Qué significa “Oficial”",
         "point1": "Los resultados oficiales los publica el organizador del evento como autoridad responsable.",
-        "point2": "Los datos de borrador no se presentan como registro publico oficial."
+        "point2": "Los datos de borrador no se presentan como registro público oficial."
       },
       "correctionProcess": {
-        "title": "Como funcionan las correcciones",
-        "point1": "Las correcciones aprobadas publican una nueva version corregida en lugar de sobrescribir historial.",
-        "point2": "Las paginas publicas muestran contexto de correccion para mantener transparencia."
+        "title": "Cómo funcionan las correcciones",
+        "point1": "Las correcciones aprobadas publican una nueva versión corregida en lugar de sobrescribir el historial.",
+        "point2": "Las páginas públicas muestran el contexto de la corrección para mantener la transparencia."
       },
       "rankingsRules": {
-        "title": "Como rankings usa resultados",
-        "point1": "Rankings se calcula solo desde versiones oficiales/corregidas publicadas.",
-        "point2": "Las referencias de reglas son versionadas para mantener reproducibilidad."
+        "title": "Cómo las clasificaciones usan resultados",
+        "point1": "Las clasificaciones se calculan solo a partir de versiones oficiales/corregidas publicadas.",
+        "point2": "Las referencias del ruleset se versionan para mantener la reproducibilidad."
       }
     }
   },
@@ -76,17 +76,17 @@
   },
   "official": {
     "title": "Resultados oficiales de {seriesName} {editionLabel}",
-    "subtitle": "Esta URL estable siempre apunta a la publicacion oficial o corregida mas reciente de esta edicion.",
+    "subtitle": "Esta URL estable siempre apunta a la publicación oficial o corregida más reciente de esta edición.",
     "status": {
       "official": "Oficial",
       "corrected": "Corregido",
       "unlisted": "No listado"
     },
-    "version": "Version {versionNumber}",
+    "version": "Versión {versionNumber}",
     "eventDate": "Fecha del evento: {date}",
     "finalizedAt": "Finalizado: {value}",
-    "updatedAt": "Ultima actualizacion: {value}",
-    "viewEventLink": "Ver pagina del evento",
+    "updatedAt": "Última actualización: {value}",
+    "viewEventLink": "Ver página del evento",
     "entryStatus": {
       "finish": "Finalizado",
       "dnf": "DNF",
@@ -95,27 +95,27 @@
     },
     "trustScan": {
       "title": "Escaneo de confianza",
-      "description": "Senales inmediatas de legitimidad para esta publicacion oficial.",
-      "scopeValue": "Registro oficial de resultados por edicion",
+      "description": "Señales inmediatas de legitimidad para esta publicación oficial.",
+      "scopeValue": "Registro oficial de resultados por edición",
       "fields": {
         "organizer": "Autoridad organizadora",
         "scope": "Alcance",
-        "version": "Version",
-        "updatedAt": "Ultima actualizacion",
-        "correction": "Indicador de correccion"
+        "version": "Versión",
+        "updatedAt": "Última actualización",
+        "correction": "Indicador de corrección"
       },
       "status": {
         "unknown": "Estado no disponible"
       },
       "correction": {
         "corrected": "Correcciones aplicadas",
-        "none": "Sin publicacion de correccion"
+        "none": "Sin publicación de corrección"
       }
     },
     "table": {
       "title": "Filas del registro oficial",
-      "description": "Muestra publica de filas desde la publicacion oficial activa.",
-      "empty": "Aun no hay filas publicadas para esta version oficial.",
+      "description": "Muestra pública de filas desde la publicación oficial activa.",
+      "empty": "Aún no hay filas publicadas para esta versión oficial.",
       "headers": {
         "place": "Lugar",
         "runner": "Corredor",
@@ -126,9 +126,9 @@
       }
     },
     "nonOfficial": {
-      "badge": "Publicacion oficial pendiente",
-      "description": "Los resultados oficiales aun no estan finalizados para esta edicion.",
-      "noDraftDisclosure": "Los datos de borrador o no oficiales no se exponen desde esta URL publica."
+      "badge": "Publicación oficial pendiente",
+      "description": "Los resultados oficiales aún no están finalizados para esta edición.",
+      "noDraftDisclosure": "Los datos de borrador o no oficiales no se exponen desde esta URL pública."
     },
     "fallback": {
       "notAvailable": "No disponible",

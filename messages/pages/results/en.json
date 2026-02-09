@@ -29,7 +29,7 @@
   },
   "howItWorks": {
     "panel": {
-      "title": "Cómo funciona / How it works",
+      "title": "How it works",
       "description": "Quick trust summary for official results and rankings.",
       "point1": "Official means organizer-finalized publication for this edition.",
       "point2": "Corrections publish as new versions with visible history.",
@@ -37,7 +37,7 @@
       "cta": "Read the full explainer"
     },
     "explainer": {
-      "eyebrow": "Cómo funciona / How it works",
+      "eyebrow": "How it works",
       "title": "Official results and rankings transparency",
       "description": "This page explains what official means, how corrections are published, and how rankings consume official versions.",
       "officialMeaning": {

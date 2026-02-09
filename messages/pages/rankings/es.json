@@ -1,6 +1,6 @@
 {
   "title": "Clasificaciones nacionales",
-  "description": "Tabla nacional oficial calculada desde snapshots promovidos de resultados oficiales.",
+  "description": "Tabla nacional oficial calculada a partir de snapshots promovidos de resultados oficiales.",
   "scope": {
     "national": "Alcance nacional",
     "organizer": "Alcance por organizador",
@@ -10,15 +10,15 @@
   "snapshot": {
     "summary": "Ruleset {ruleset} · {rows} filas",
     "current": "Snapshot actual",
-    "historical": "Snapshot historico"
+    "historical": "Snapshot histórico"
   },
   "reproducibility": {
     "summary": "Contexto de reproducibilidad",
     "notAvailable": "No disponible",
     "referenceLink": "Abrir referencia del ruleset",
-    "referenceMissing": "Este snapshot no tiene referencia publica del ruleset.",
+    "referenceMissing": "Este snapshot no tiene referencia pública del ruleset.",
     "fields": {
-      "ruleset": "Version del ruleset",
+      "ruleset": "Versión del ruleset",
       "generatedAt": "Snapshot generado",
       "promotedAt": "Snapshot promovido",
       "snapshotId": "ID del snapshot"
@@ -29,7 +29,7 @@
     "organization": "Organizador",
     "snapshot": "Historial de snapshots",
     "discipline": "Disciplina",
-    "gender": "Genero",
+    "gender": "Género",
     "ageGroup": "Grupo de edad",
     "all": "Todas",
     "currentSnapshot": "Snapshot actual",
@@ -45,24 +45,24 @@
       "runner": "Corredor",
       "bib": "Dorsal",
       "discipline": "Disciplina",
-      "gender": "Genero",
+      "gender": "Género",
       "ageGroup": "Grupo de edad",
       "finishTime": "Tiempo final"
     }
   },
   "empty": {
-    "noSnapshot": "Aun no hay un snapshot nacional promovido.",
-    "noRows": "Aun no hay filas de ranking disponibles.",
+    "noSnapshot": "Aún no hay un snapshot nacional promovido.",
+    "noRows": "Aún no hay filas de ranking disponibles.",
     "noMatch": "No hay filas de ranking que coincidan con los filtros seleccionados."
   },
   "discipline": {
-    "trail_running": "Trail running",
-    "triathlon": "Triatlon",
+    "trail_running": "Carrera de montaña",
+    "triathlon": "Triatlón",
     "cycling": "Ciclismo",
     "mtb": "MTB",
-    "gravel_bike": "Gravel bike",
-    "duathlon": "Duatlon",
-    "backyard_ultra": "Backyard ultra"
+    "gravel_bike": "Ciclismo gravel",
+    "duathlon": "Duatlón",
+    "backyard_ultra": "Ultramaratón Backyard"
   },
   "gender": {
     "male": "Hombre",
