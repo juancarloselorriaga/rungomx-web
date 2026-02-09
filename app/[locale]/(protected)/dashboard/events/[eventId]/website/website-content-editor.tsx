@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,6 +61,7 @@ interface WebsiteContentEditorProps {
 
 export function WebsiteContentEditor({ editionId, locale, organizationId }: WebsiteContentEditorProps) {
   const t = useTranslations('pages.dashboardEventWebsite');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
@@ -792,15 +794,15 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                         onChange={(e) => updateAidStation(idx, 'services', e.target.value)}
                         className={inputClassName}
                       />
-                      <Button
-                        type="button"
+                      <IconButton
+                        label={tCommon('delete')}
                         variant="ghost"
                         size="icon"
                         className="shrink-0 text-destructive hover:text-destructive"
                         onClick={() => removeAidStation(idx)}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </IconButton>
                     </div>
                   </div>
                 </div>
@@ -946,15 +948,15 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                         onChange={(e) => updateStartTime(idx, 'notes', e.target.value)}
                         className={inputClassName}
                       />
-                      <Button
-                        type="button"
+                      <IconButton
+                        label={tCommon('delete')}
                         variant="ghost"
                         size="icon"
                         className="shrink-0 text-destructive hover:text-destructive"
                         onClick={() => removeStartTime(idx)}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
+                      </IconButton>
                     </div>
                   </div>
                 </div>
@@ -1307,15 +1309,15 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                               </select>
                             </div>
                             <div className="flex items-end justify-end">
-                              <Button
-                                type="button"
+                              <IconButton
+                                label={tCommon('delete')}
                                 variant="ghost"
                                 size="icon"
                                 className="text-destructive hover:text-destructive"
                                 onClick={() => removeTier(tier.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </Button>
+                              </IconButton>
                             </div>
                           </div>
                         </div>
@@ -1355,6 +1357,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                                 upload: t('sections.sponsors.sponsors.upload'),
                                 uploading: t('sections.sponsors.sponsors.uploading'),
                                 cancel: t('sections.sponsors.sponsors.cancel'),
+                                removeFile: t('sections.sponsors.sponsors.removeFile'),
                                 selectFile: t('sections.sponsors.sponsors.selectFile'),
                                 fileTooLarge: t('sections.sponsors.sponsors.fileTooLarge', {
                                   maxSize: Math.round(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024)),
@@ -1407,15 +1410,15 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                                           </p>
                                         )}
                                         <div className="flex justify-end">
-                                          <Button
-                                            type="button"
+                                          <IconButton
+                                            label={tCommon('delete')}
                                             variant="ghost"
                                             size="icon"
                                             className="text-destructive hover:text-destructive h-7 w-7"
                                             onClick={() => removeSponsor(tier.id, sponsor.id)}
                                           >
                                             <Trash2 className="h-3 w-3" />
-                                          </Button>
+                                          </IconButton>
                                         </div>
                                       </div>
                                     </div>

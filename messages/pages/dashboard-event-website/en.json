@@ -169,6 +169,7 @@
         "upload": "Add Sponsor",
         "uploading": "Adding...",
         "cancel": "Cancel",
+        "removeFile": "Remove",
         "selectFile": "Click or drag to upload a logo",
         "fileTooLarge": "File must be smaller than {maxSize}MB.",
         "invalidType": "Please upload an image file (JPG, PNG, WebP, GIF).",

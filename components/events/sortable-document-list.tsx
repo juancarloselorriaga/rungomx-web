@@ -20,7 +20,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { FileText, GripVertical, Trash2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { cn } from '@/lib/utils';
 
 export interface DocumentItem {
@@ -82,19 +82,20 @@ function SortableDocumentItem({
       )}
     >
       {/* Drag handle */}
-      <button
-        type="button"
+      <IconButton
+        label={labels.dragToReorder}
+        variant="ghost"
+        size="icon-sm"
         className={cn(
-          'rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab',
-          'focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary',
+          'opacity-0 group-hover:opacity-100 transition-opacity cursor-grab',
+          'focus-visible:opacity-100',
           isDragging && 'cursor-grabbing opacity-100',
         )}
         {...attributes}
         {...listeners}
-        aria-label={labels.dragToReorder}
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
-      </button>
+      </IconButton>
 
       {/* Icon */}
       <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
@@ -113,16 +114,15 @@ function SortableDocumentItem({
       />
 
       {/* Delete button */}
-      <Button
-        type="button"
+      <IconButton
+        label={labels.deleteDocument}
         variant="ghost"
         size="icon"
         className="flex-shrink-0 text-destructive hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
         onClick={() => onDelete(document.mediaId)}
-        title={labels.deleteDocument}
       >
         <Trash2 className="h-4 w-4" />
-      </Button>
+      </IconButton>
     </div>
   );
 }

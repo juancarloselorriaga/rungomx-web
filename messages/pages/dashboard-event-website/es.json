@@ -169,6 +169,7 @@
         "upload": "Agregar Patrocinador",
         "uploading": "Agregando...",
         "cancel": "Cancelar",
+        "removeFile": "Eliminar",
         "selectFile": "Clic o arrastra para subir un logo",
         "fileTooLarge": "El archivo debe ser menor a {maxSize}MB.",
         "invalidType": "Por favor sube una imagen (JPG, PNG, WebP, GIF).",

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as ImageIcon, Loader2, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { uploadEventMediaFile } from '@/components/events/event-media-upload';
 import { EVENT_MEDIA_IMAGE_TYPES, EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
@@ -21,6 +22,7 @@ interface PhotoUploaderProps {
     upload: string;
     uploading: string;
     cancel: string;
+    removeFile?: string;
     selectFile: string;
     fileTooLarge: string;
     invalidType: string;
@@ -156,8 +158,8 @@ export function PhotoUploader({
               {(selectedFile.size / 1024).toFixed(1)} KB
             </p>
           </div>
-          <Button
-            type="button"
+          <IconButton
+            label={labels.removeFile ?? labels.cancel}
             variant="ghost"
             size="icon"
             onClick={handleRemoveFile}
@@ -165,7 +167,7 @@ export function PhotoUploader({
             className="flex-shrink-0"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </IconButton>
         </div>
       )}
 

@@ -1,9 +1,10 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Sheet, SheetTrigger } from '@/components/ui/sheet';
 import { PanelRightClose } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
 import { useNavDrawer } from './nav-drawer-context';
 import type { NavigationDrawerContentProps } from './types';
@@ -20,14 +21,20 @@ interface NavDrawerTriggerProps {
 
 export function NavDrawerTrigger({ user, isPro, items }: NavDrawerTriggerProps) {
   const { open, setOpen } = useNavDrawer();
+  const tNav = useTranslations('navigation');
 
   return (
     <div className="md:hidden">
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-          <Button variant="ghost" size="icon" className="rounded-sm p-1 -ml-2">
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <IconButton
+            label={open ? tNav('collapseMenu') : tNav('expandMenu')}
+            variant="ghost"
+            size="icon"
+            className="rounded-sm p-1 -ml-2"
+          >
             <PanelRightClose size={22} />
-          </Button>
+          </IconButton>
         </SheetTrigger>
         <Suspense fallback={null}>
           <NavigationDrawerContent user={user} isPro={isPro} items={items} />

@@ -558,20 +558,21 @@ export function AddOnsManager({
                                         >
                                           <Pencil className="h-4 w-4" />
                                         </IconTooltipButton>
-                                        <Button
+                                        <IconTooltipButton
                                           variant="ghost"
-                                          size="sm"
+                                          size="icon"
+                                          label={t('option.delete')}
                                           onClick={() =>
-                                          setDeletingOptionInfo({
-                                            addOnId: addOn.id,
-                                            optionId: option.id,
-                                          })
-                                        }
-                                        disabled={isPending}
-                                        className="text-destructive hover:text-destructive"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
+                                            setDeletingOptionInfo({
+                                              addOnId: addOn.id,
+                                              optionId: option.id,
+                                            })
+                                          }
+                                          disabled={isPending}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </IconTooltipButton>
                                     </div>
                                   </>
                                 )}

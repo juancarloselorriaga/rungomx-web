@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, Edit2, Loader2, Plus, Trash2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Form, FormError, useForm } from '@/lib/forms';
@@ -295,6 +296,7 @@ function QuestionForm({
 export function QuestionsManager({ editionId, distances, initialQuestions }: QuestionsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.questions');
   const tForm = useTranslations('pages.dashboardEvents.questions.form');
+  const tCommon = useTranslations('common');
   const [isPending, startTransition] = useTransition();
   const [questions, setQuestions] = useState<RegistrationQuestionData[]>(
     normalizeQuestions(initialQuestions),
@@ -375,15 +377,15 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
         <div className="rounded-lg border bg-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">{t('createTitle')}</h3>
-            <Button
-              type="button"
+            <IconButton
+              label={tCommon('close')}
               variant="ghost"
               size="icon"
               onClick={() => setShowAddForm(false)}
               disabled={isPending}
             >
               <X className="h-4 w-4" />
-            </Button>
+            </IconButton>
           </div>
           <QuestionForm
             editionId={editionId}

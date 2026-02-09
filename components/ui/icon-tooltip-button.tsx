@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-type IconTooltipButtonProps = React.ComponentProps<typeof Button> & {
+type IconTooltipButtonProps = React.ComponentProps<typeof IconButton> & {
   label: string;
 };
 
@@ -9,9 +9,9 @@ export function IconTooltipButton({ label, children, ...props }: IconTooltipButt
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button aria-label={label} {...props}>
+        <IconButton label={label} {...props}>
           {children}
-        </Button>
+        </IconButton>
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>

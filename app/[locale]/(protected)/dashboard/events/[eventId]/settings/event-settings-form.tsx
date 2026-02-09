@@ -14,6 +14,7 @@ import {
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { Switch } from '@/components/ui/switch';
+import { IconButton } from '@/components/ui/icon-button';
 import { useRouter } from '@/i18n/navigation';
 import {
   updateEventEdition,
@@ -1169,6 +1170,7 @@ function DistanceItem({
 }) {
   const t = useTranslations('pages.dashboardEventSettings.distances');
   const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
+  const tCommon = useTranslations('common');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -1362,10 +1364,16 @@ function DistanceItem({
           </p>
         </div>
         <div className="flex gap-1">
-          <Button variant="ghost" size="icon" onClick={onEdit}>
+          <IconButton
+            label={`${tCommon('edit')}: ${distance.label}`}
+            variant="ghost"
+            size="icon"
+            onClick={onEdit}
+          >
             <Settings2 className="h-4 w-4" />
-          </Button>
-          <Button
+          </IconButton>
+          <IconButton
+            label={`${tCommon('delete')}: ${distance.label}`}
             variant="ghost"
             size="icon"
             onClick={() => setShowDeleteDialog(true)}
@@ -1376,7 +1384,7 @@ function DistanceItem({
             ) : (
               <Trash2 className="h-4 w-4 text-destructive" />
             )}
-          </Button>
+          </IconButton>
         </div>
       </div>
       {error && <p className="text-sm text-destructive mt-2">{error}</p>}

@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { IconButton } from '@/components/ui/icon-button';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createWaiver, updateWaiver, reorderWaivers } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
@@ -254,26 +255,30 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
               </div>
             ) : (
               <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex flex-col gap-1 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0 || isPending}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <GripVertical className="h-4 w-4 rotate-90" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === waivers.length - 1 || isPending}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <GripVertical className="h-4 w-4 -rotate-90" />
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-2">
+	                <div className="flex items-start gap-3">
+	                  <div className="flex flex-col gap-1 pt-1">
+	                    <IconButton
+	                      label={t('actions.moveUp')}
+	                      variant="ghost"
+	                      size="icon-sm"
+	                      onClick={() => handleMoveUp(index)}
+	                      disabled={index === 0 || isPending}
+	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+	                    >
+	                      <GripVertical className="h-4 w-4 rotate-90" />
+	                    </IconButton>
+	                    <IconButton
+	                      label={t('actions.moveDown')}
+	                      variant="ghost"
+	                      size="icon-sm"
+	                      onClick={() => handleMoveDown(index)}
+	                      disabled={index === waivers.length - 1 || isPending}
+	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+	                    >
+	                      <GripVertical className="h-4 w-4 -rotate-90" />
+	                    </IconButton>
+	                  </div>
+	                  <div className="flex-1 min-w-0 space-y-2">
                     <div>
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-xs text-muted-foreground">
@@ -284,20 +289,21 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
                       content={item.body}
                       className="text-sm text-muted-foreground [&_p]:m-0"
                     />
-                  </div>
-                  <div className="flex items-start gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => startEditing(item)}
-                      disabled={isPending}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+	                  </div>
+	                  <div className="flex items-start gap-1">
+	                    <IconButton
+	                      label={t('actions.edit')}
+	                      variant="ghost"
+	                      size="icon"
+	                      onClick={() => startEditing(item)}
+	                      disabled={isPending}
+	                    >
+	                      <Pencil className="h-4 w-4" />
+	                    </IconButton>
+	                  </div>
+	                </div>
+	              </div>
+	            )}
           </div>
         ))}
       </div>

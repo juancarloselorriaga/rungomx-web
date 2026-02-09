@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { AlertCircle, Check, Loader2, RefreshCw, Upload, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { cn } from '@/lib/utils';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
@@ -320,15 +321,15 @@ export function BulkPhotoUploader({
     <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium">{labels.title}</h4>
-        <Button
-          type="button"
+        <IconButton
+          label={labels.cancelAll}
           variant="ghost"
           size="icon"
           className="h-6 w-6"
           onClick={cancelAllUploads}
         >
           <X className="h-4 w-4" />
-        </Button>
+        </IconButton>
       </div>
 
       {/* Dropzone */}
@@ -452,8 +453,8 @@ export function BulkPhotoUploader({
                 {/* Actions */}
                 <div className="flex-shrink-0">
                   {file.status === 'error' && (
-                    <Button
-                      type="button"
+                    <IconButton
+                      label={labels.retry}
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
@@ -464,22 +465,20 @@ export function BulkPhotoUploader({
                           ),
                         )
                       }
-                      title={labels.retry}
                     >
                       <RefreshCw className="h-3 w-3" />
-                    </Button>
+                    </IconButton>
                   )}
                   {(file.status === 'pending' || file.status === 'error') && (
-                    <Button
-                      type="button"
+                    <IconButton
+                      label={labels.removeFile}
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 text-muted-foreground hover:text-destructive"
                       onClick={() => removeFile(file.id)}
-                      title={labels.removeFile}
                     >
                       <X className="h-3 w-3" />
-                    </Button>
+                    </IconButton>
                   )}
                 </div>
               </div>

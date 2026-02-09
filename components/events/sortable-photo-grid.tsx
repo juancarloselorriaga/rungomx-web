@@ -21,7 +21,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { GripVertical, Image as ImageIcon, Trash2 } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { cn } from '@/lib/utils';
 
 export interface PhotoItem {
@@ -87,19 +87,20 @@ function SortablePhotoItem({
       )}
     >
       {/* Drag handle */}
-      <button
-        type="button"
+      <IconButton
+        label={labels.dragToReorder}
+        variant="ghost"
+        size="icon-sm"
         className={cn(
-          'absolute top-2 left-2 z-10 rounded bg-background/80 p-1.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab',
-          'focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary',
+          'absolute top-2 left-2 z-10 rounded bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab',
+          'focus-visible:opacity-100',
           isDragging && 'cursor-grabbing opacity-100',
         )}
         {...attributes}
         {...listeners}
-        aria-label={labels.dragToReorder}
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
-      </button>
+      </IconButton>
 
       {/* Image */}
       <div className="relative aspect-[4/3] bg-muted">
@@ -136,16 +137,15 @@ function SortablePhotoItem({
           />
         </div>
         <div className="flex justify-end">
-          <Button
-            type="button"
+          <IconButton
+            label={labels.deletePhoto}
             variant="ghost"
             size="icon"
             className="text-destructive hover:text-destructive"
             onClick={() => onDelete(photo.mediaId)}
-            title={labels.deletePhoto}
           >
             <Trash2 className="h-4 w-4" />
-          </Button>
+          </IconButton>
         </div>
       </div>
     </div>

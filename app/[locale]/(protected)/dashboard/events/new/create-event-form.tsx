@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
+import { IconButton } from '@/components/ui/icon-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
@@ -58,6 +59,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
   const t = useTranslations('pages.dashboardEvents.createEvent');
   const tSlug = useTranslations('pages.dashboardEvents');
   const tSport = useTranslations('pages.dashboardEvents.sportTypes');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const [step, setStep] = useState<Step>('organization');
 
@@ -521,14 +523,14 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         <Form form={form} className="rounded-lg border bg-card p-6 shadow-sm space-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
+              <IconButton
+                label={tCommon('goBack')}
                 variant="ghost"
                 size="icon"
                 onClick={() => setStep('organization')}
               >
                 <ArrowLeft className="h-4 w-4" />
-              </Button>
+              </IconButton>
               <div>
                 <h2 className="text-lg font-semibold">{t('event.title')}</h2>
                 <p className="text-sm text-muted-foreground">

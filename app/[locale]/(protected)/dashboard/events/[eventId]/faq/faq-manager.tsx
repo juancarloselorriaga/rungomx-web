@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { IconButton } from '@/components/ui/icon-button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
@@ -247,56 +248,62 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
             ) : (
               // View mode
               <div className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex flex-col gap-1 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0 || isPending}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <GripVertical className="h-4 w-4 rotate-90" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === faqItems.length - 1 || isPending}
-                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <GripVertical className="h-4 w-4 -rotate-90" />
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium">{item.question}</h3>
-                    <div className="mt-1">
+	                <div className="flex items-start gap-3">
+	                  <div className="flex flex-col gap-1 pt-1">
+	                    <IconButton
+	                      label={t('actions.moveUp')}
+	                      variant="ghost"
+	                      size="icon-sm"
+	                      onClick={() => handleMoveUp(index)}
+	                      disabled={index === 0 || isPending}
+	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+	                    >
+	                      <GripVertical className="h-4 w-4 rotate-90" />
+	                    </IconButton>
+	                    <IconButton
+	                      label={t('actions.moveDown')}
+	                      variant="ghost"
+	                      size="icon-sm"
+	                      onClick={() => handleMoveDown(index)}
+	                      disabled={index === faqItems.length - 1 || isPending}
+	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+	                    >
+	                      <GripVertical className="h-4 w-4 -rotate-90" />
+	                    </IconButton>
+	                  </div>
+	                  <div className="flex-1 min-w-0">
+	                    <h3 className="font-medium">{item.question}</h3>
+	                    <div className="mt-1">
                       <MarkdownContent
                         content={item.answer}
                         className="text-sm text-muted-foreground [&_p]:m-0"
                       />
                     </div>
-                  </div>
-                  <div className="flex items-start gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => startEditing(item)}
-                      disabled={isPending}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(item.id)}
-                      disabled={isPending}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
+	                  </div>
+	                  <div className="flex items-start gap-1">
+	                    <IconButton
+	                      label={t('actions.edit')}
+	                      variant="ghost"
+	                      size="icon"
+	                      onClick={() => startEditing(item)}
+	                      disabled={isPending}
+	                    >
+	                      <Pencil className="h-4 w-4" />
+	                    </IconButton>
+	                    <IconButton
+	                      label={t('actions.delete')}
+	                      variant="ghost"
+	                      size="icon"
+	                      onClick={() => handleDelete(item.id)}
+	                      disabled={isPending}
+	                      className="text-destructive hover:text-destructive"
+	                    >
+	                      <Trash2 className="h-4 w-4" />
+	                    </IconButton>
+	                  </div>
+	                </div>
+	              </div>
+	            )}
           </div>
         ))}
       </div>
