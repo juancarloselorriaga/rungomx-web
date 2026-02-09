@@ -81,7 +81,6 @@ type CaptureBibEntryListLabels = {
   syncStatusSynced: string;
   syncStatusConflict: string;
   safeNextDetails: {
-    title: string;
     safe: string;
     next: string;
     details: string;
@@ -330,7 +329,7 @@ export function CaptureBibEntryList({
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.connectivityLabel}
           </p>
@@ -338,13 +337,13 @@ export function CaptureBibEntryList({
             {isOnline ? labels.connectivityOnline : labels.connectivityOffline}
           </p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.reassuranceSavedLocally}
           </p>
           <p className="mt-2 text-sm text-foreground">{labels.reassuranceNotPublic}</p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3 sm:col-span-2">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60 sm:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.reassuranceNotPublic}
           </p>
@@ -354,7 +353,7 @@ export function CaptureBibEntryList({
         </article>
       </div>
 
-      <section className="space-y-3 rounded-lg border bg-background/50 p-3">
+      <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -430,7 +429,7 @@ export function CaptureBibEntryList({
         ) : null}
       </section>
 
-      <section className="space-y-2 rounded-lg border bg-background/50 p-3">
+      <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
         <h4 className="text-sm font-semibold text-foreground">{labels.syncTitle}</h4>
         <p className="text-xs text-muted-foreground">{labels.syncDescription}</p>
         <Button
@@ -443,7 +442,7 @@ export function CaptureBibEntryList({
         </Button>
       </section>
 
-      <section className="space-y-3 rounded-lg border bg-background/50 p-3">
+      <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
         <h4 className="text-sm font-semibold text-foreground">{labels.conflictTitle}</h4>
         <p className="text-xs text-muted-foreground">{labels.conflictDescription}</p>
 
@@ -480,7 +479,7 @@ export function CaptureBibEntryList({
                   className="space-y-3 rounded-md border bg-card p-3"
                 >
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1 rounded-md border bg-background/60 p-3">
+                    <div className="space-y-1 rounded-md border bg-muted/30 p-3 dark:bg-muted/50">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {labels.conflictLocalValues}
                       </p>
@@ -510,7 +509,7 @@ export function CaptureBibEntryList({
                       </dl>
                     </div>
 
-                    <div className="space-y-1 rounded-md border bg-background/60 p-3">
+                    <div className="space-y-1 rounded-md border bg-muted/30 p-3 dark:bg-muted/50">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {labels.conflictServerValues}
                       </p>
@@ -570,7 +569,7 @@ export function CaptureBibEntryList({
         )}
       </section>
 
-      <section className="space-y-2 rounded-lg border bg-background/50 p-3">
+      <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
         <h4 className="text-sm font-semibold text-foreground">{labels.entriesTitle}</h4>
         <p className="text-xs text-muted-foreground">{labels.entriesDescription}</p>
 
