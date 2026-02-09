@@ -530,9 +530,173 @@ export async function getPublicRankingLeaderboard(
   const organizationId = normalizeFilterValue(filters.organizationId);
   const snapshotId = normalizeFilterValue(filters.snapshotId);
   const limit = normalizeLimit(filters.limit, 300);
-  const availableOrganizers = await listPublicRankingOrganizerOptions();
+  let availableOrganizers: PublicRankingOrganizerOption[] = [];
 
-  if (scope === 'organizer' && !organizationId) {
+  try {
+    availableOrganizers = await listPublicRankingOrganizerOptions();
+
+    if (scope === 'organizer' && !organizationId) {
+      return emptyLeaderboardState({
+        scope,
+        discipline: disciplineFilter,
+        gender: genderFilter,
+        ageGroup: ageGroupFilter,
+        organizationId,
+        snapshotId,
+        availableOrganizers,
+        availableSnapshots: [],
+      });
+    }
+
+    const snapshotHistory = await db.query.rankingSnapshots.findMany({
+      where: and(
+        eq(rankingSnapshots.scope, scope),
+        toSnapshotScopePredicate(scope, organizationId),
+        isNull(rankingSnapshots.deletedAt),
+      ),
+      with: {
+        ruleset: {
+          columns: {
+            versionTag: true,
+            explainabilityReference: true,
+          },
+        },
+        organization: {
+          columns: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: [desc(rankingSnapshots.promotedAt), desc(rankingSnapshots.generatedAt)],
+      limit: 50,
+    });
+
+    const availableSnapshots: PublicRankingSnapshotOption[] = snapshotHistory
+      .filter((snapshot) => snapshot.ruleset)
+      .map((snapshot) => ({
+        snapshotId: snapshot.id,
+        rulesetVersionTag: snapshot.ruleset!.versionTag,
+        promotedAt: snapshot.promotedAt,
+        generatedAt: snapshot.generatedAt,
+        isCurrent: snapshot.isCurrent,
+      }));
+
+    const selectedSnapshot =
+      (snapshotId ? snapshotHistory.find((snapshot) => snapshot.id === snapshotId) : null) ??
+      snapshotHistory.find((snapshot) => snapshot.isCurrent) ??
+      snapshotHistory[0];
+
+    if (!selectedSnapshot || !selectedSnapshot.ruleset) {
+      return emptyLeaderboardState({
+        scope,
+        discipline: disciplineFilter,
+        gender: genderFilter,
+        ageGroup: ageGroupFilter,
+        organizationId,
+        snapshotId: null,
+        availableOrganizers,
+        availableSnapshots,
+      });
+    }
+
+    const selectedSnapshotId = selectedSnapshot.id;
+
+    const rows = await db.query.rankingSnapshotRows.findMany({
+      where: and(
+        eq(rankingSnapshotRows.snapshotId, selectedSnapshot.id),
+        isNull(rankingSnapshotRows.deletedAt),
+      ),
+      columns: {
+        rank: true,
+        runnerFullName: true,
+        bibNumber: true,
+        discipline: true,
+        gender: true,
+        age: true,
+        finishTimeMillis: true,
+      },
+      orderBy: [asc(rankingSnapshotRows.rank)],
+      limit,
+    });
+
+    const normalizedRows: PublicRankingRow[] = rows.map((row) => ({
+      rank: row.rank,
+      runnerFullName: row.runnerFullName,
+      bibNumber: row.bibNumber,
+      discipline: row.discipline,
+      gender: row.gender,
+      age: row.age,
+      ageGroup: deriveResultAgeGroupKey({
+        age: row.age,
+        brackets: DEFAULT_AGE_GROUP_BRACKETS,
+      }),
+      finishTimeMillis: row.finishTimeMillis,
+    }));
+
+    const availableDisciplines = Array.from(
+      new Set(normalizedRows.map((row) => row.discipline)),
+    ).sort((left, right) => left.localeCompare(right));
+    const availableGenders = Array.from(
+      new Set(
+        normalizedRows
+          .map((row) => normalizeFilterValue(row.gender))
+          .filter((value): value is string => value !== null),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+    const availableAgeGroups = Array.from(
+      new Set(
+        normalizedRows
+          .map((row) => normalizeFilterValue(row.ageGroup))
+          .filter((value): value is string => value !== null),
+      ),
+    ).sort((left, right) => left.localeCompare(right));
+
+    const filteredRows = normalizedRows.filter((row) => {
+      const normalizedGender = normalizeFilterValue(row.gender);
+      const normalizedAgeGroup = normalizeFilterValue(row.ageGroup);
+      if (disciplineFilter && row.discipline !== disciplineFilter) return false;
+      if (genderFilter && normalizedGender !== genderFilter) return false;
+      if (ageGroupFilter && normalizedAgeGroup !== ageGroupFilter) return false;
+      return true;
+    });
+
+    return {
+      state: 'ready',
+      snapshot: {
+        id: selectedSnapshot.id,
+        rulesetVersionTag: selectedSnapshot.ruleset.versionTag,
+        rulesetReference: selectedSnapshot.ruleset.explainabilityReference,
+        generatedAt: selectedSnapshot.generatedAt,
+        promotedAt: selectedSnapshot.promotedAt,
+        rowCount: selectedSnapshot.rowCount,
+        isCurrent: selectedSnapshot.isCurrent,
+        scope,
+        organizationId: selectedSnapshot.organization?.id ?? null,
+        organizationName: selectedSnapshot.organization?.name ?? null,
+      },
+      filters: {
+        discipline: disciplineFilter,
+        gender: genderFilter,
+        ageGroup: ageGroupFilter,
+        scope,
+        organizationId,
+        snapshotId: selectedSnapshotId,
+        availableDisciplines,
+        availableGenders,
+        availableAgeGroups,
+        availableOrganizers,
+        availableSnapshots,
+      },
+      rows: filteredRows,
+    };
+  } catch (error) {
+    console.error('[getPublicRankingLeaderboard] Failed to load public rankings', {
+      scope,
+      organizationId,
+      snapshotId,
+      error,
+    });
     return emptyLeaderboardState({
       scope,
       discipline: disciplineFilter,
@@ -544,149 +708,6 @@ export async function getPublicRankingLeaderboard(
       availableSnapshots: [],
     });
   }
-
-  const snapshotHistory = await db.query.rankingSnapshots.findMany({
-    where: and(
-      eq(rankingSnapshots.scope, scope),
-      toSnapshotScopePredicate(scope, organizationId),
-      isNull(rankingSnapshots.deletedAt),
-    ),
-    with: {
-      ruleset: {
-        columns: {
-          versionTag: true,
-          explainabilityReference: true,
-        },
-      },
-      organization: {
-        columns: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-    orderBy: [desc(rankingSnapshots.promotedAt), desc(rankingSnapshots.generatedAt)],
-    limit: 50,
-  });
-
-  const availableSnapshots: PublicRankingSnapshotOption[] = snapshotHistory
-    .filter((snapshot) => snapshot.ruleset)
-    .map((snapshot) => ({
-      snapshotId: snapshot.id,
-      rulesetVersionTag: snapshot.ruleset!.versionTag,
-      promotedAt: snapshot.promotedAt,
-      generatedAt: snapshot.generatedAt,
-      isCurrent: snapshot.isCurrent,
-    }));
-
-  const selectedSnapshot =
-    (snapshotId ? snapshotHistory.find((snapshot) => snapshot.id === snapshotId) : null) ??
-    snapshotHistory.find((snapshot) => snapshot.isCurrent) ??
-    snapshotHistory[0];
-
-  if (!selectedSnapshot || !selectedSnapshot.ruleset) {
-    return emptyLeaderboardState({
-      scope,
-      discipline: disciplineFilter,
-      gender: genderFilter,
-      ageGroup: ageGroupFilter,
-      organizationId,
-      snapshotId: null,
-      availableOrganizers,
-      availableSnapshots,
-    });
-  }
-
-  const selectedSnapshotId = selectedSnapshot.id;
-
-  const rows = await db.query.rankingSnapshotRows.findMany({
-    where: and(
-      eq(rankingSnapshotRows.snapshotId, selectedSnapshot.id),
-      isNull(rankingSnapshotRows.deletedAt),
-    ),
-    columns: {
-      rank: true,
-      runnerFullName: true,
-      bibNumber: true,
-      discipline: true,
-      gender: true,
-      age: true,
-      finishTimeMillis: true,
-    },
-    orderBy: [asc(rankingSnapshotRows.rank)],
-    limit,
-  });
-
-  const normalizedRows: PublicRankingRow[] = rows.map((row) => ({
-    rank: row.rank,
-    runnerFullName: row.runnerFullName,
-    bibNumber: row.bibNumber,
-    discipline: row.discipline,
-    gender: row.gender,
-    age: row.age,
-    ageGroup: deriveResultAgeGroupKey({
-      age: row.age,
-      brackets: DEFAULT_AGE_GROUP_BRACKETS,
-    }),
-    finishTimeMillis: row.finishTimeMillis,
-  }));
-
-  const availableDisciplines = Array.from(
-    new Set(normalizedRows.map((row) => row.discipline)),
-  ).sort((left, right) => left.localeCompare(right));
-  const availableGenders = Array.from(
-    new Set(
-      normalizedRows
-        .map((row) => normalizeFilterValue(row.gender))
-        .filter((value): value is string => value !== null),
-    ),
-  ).sort((left, right) => left.localeCompare(right));
-  const availableAgeGroups = Array.from(
-    new Set(
-      normalizedRows
-        .map((row) => normalizeFilterValue(row.ageGroup))
-        .filter((value): value is string => value !== null),
-    ),
-  ).sort((left, right) => left.localeCompare(right));
-
-  const filteredRows = normalizedRows.filter((row) => {
-    const normalizedGender = normalizeFilterValue(row.gender);
-    const normalizedAgeGroup = normalizeFilterValue(row.ageGroup);
-    if (disciplineFilter && row.discipline !== disciplineFilter) return false;
-    if (genderFilter && normalizedGender !== genderFilter) return false;
-    if (ageGroupFilter && normalizedAgeGroup !== ageGroupFilter) return false;
-    return true;
-  });
-
-  return {
-    state: 'ready',
-    snapshot: {
-      id: selectedSnapshot.id,
-      rulesetVersionTag: selectedSnapshot.ruleset.versionTag,
-      rulesetReference: selectedSnapshot.ruleset.explainabilityReference,
-      generatedAt: selectedSnapshot.generatedAt,
-      promotedAt: selectedSnapshot.promotedAt,
-      rowCount: selectedSnapshot.rowCount,
-      isCurrent: selectedSnapshot.isCurrent,
-      scope,
-      organizationId: selectedSnapshot.organization?.id ?? null,
-      organizationName: selectedSnapshot.organization?.name ?? null,
-    },
-    filters: {
-      discipline: disciplineFilter,
-      gender: genderFilter,
-      ageGroup: ageGroupFilter,
-      scope,
-      organizationId,
-      snapshotId: selectedSnapshotId,
-      availableDisciplines,
-      availableGenders,
-      availableAgeGroups,
-      availableOrganizers,
-      availableSnapshots,
-    },
-    rows: filteredRows,
-  };
 }
 
 export async function getPublicNationalRankingLeaderboard(

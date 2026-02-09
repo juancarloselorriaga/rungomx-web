@@ -58,18 +58,37 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
   const hasSearchInput = normalizedQuery.length > 0 || normalizedBib.length > 0;
   const identityPolicy = getPublicResultIdentityPolicy();
 
-  const [summaries, directory] = await Promise.all([
-    listRecentPublicCorrectionSummaries(8),
-    listPublicOfficialResultsDirectory({ limit: 80 }),
-  ]);
-  const searchResults = hasSearchInput
-    ? await searchPublicOfficialResultEntries({
+  let summaries: Awaited<ReturnType<typeof listRecentPublicCorrectionSummaries>> = [];
+  let directory: Awaited<ReturnType<typeof listPublicOfficialResultsDirectory>> = [];
+
+  try {
+    [summaries, directory] = await Promise.all([
+      listRecentPublicCorrectionSummaries(8),
+      listPublicOfficialResultsDirectory({ limit: 80 }),
+    ]);
+  } catch (error) {
+    console.error('[ResultsPage] Failed to load public results discovery data', error);
+  }
+
+  let searchResults: Awaited<ReturnType<typeof searchPublicOfficialResultEntries>> = [];
+  if (hasSearchInput) {
+    try {
+      searchResults = await searchPublicOfficialResultEntries({
         query: normalizedQuery || undefined,
         bib: normalizedBib || undefined,
         seriesSlug: normalizedSeries || undefined,
         limit: 80,
-      })
-    : [];
+      });
+    } catch (error) {
+      console.error('[ResultsPage] Failed to search public official result entries', {
+        query: normalizedQuery,
+        bib: normalizedBib,
+        series: normalizedSeries,
+        error,
+      });
+      searchResults = [];
+    }
+  }
 
   const availableSeries = [...new Map(
     directory.map((item) => [item.seriesSlug, item.seriesName]),
