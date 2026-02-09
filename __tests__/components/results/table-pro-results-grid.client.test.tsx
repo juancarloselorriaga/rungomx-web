@@ -1,5 +1,5 @@
 import { TableProResultsGrid } from '@/components/results/organizer/table-pro-results-grid';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 
 describe('TableProResultsGrid', () => {
   beforeEach(() => {
@@ -63,15 +63,17 @@ describe('TableProResultsGrid', () => {
       />,
     );
 
-    expect(screen.getByText('Finish')).toBeInTheDocument();
-    expect(screen.getByText('Pending sync')).toBeInTheDocument();
-    expect(screen.getByRole('columnheader', { name: 'Details' })).toBeInTheDocument();
+    const desktop = screen.getByTestId('pro-results-grid-table');
+    const desktopScope = within(desktop);
+    expect(desktopScope.getByText('Finish')).toBeInTheDocument();
+    expect(desktopScope.getByText('Pending sync')).toBeInTheDocument();
+    expect(desktopScope.getByRole('columnheader', { name: 'Details' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /compact/i }));
 
-    expect(screen.getByText('Finish')).toBeInTheDocument();
-    expect(screen.getByText('Pending sync')).toBeInTheDocument();
-    expect(screen.queryByRole('columnheader', { name: 'Details' })).not.toBeInTheDocument();
+    expect(desktopScope.getByText('Finish')).toBeInTheDocument();
+    expect(desktopScope.getByText('Pending sync')).toBeInTheDocument();
+    expect(desktopScope.queryByRole('columnheader', { name: 'Details' })).not.toBeInTheDocument();
   });
 
   it('renders review validation state when provided', () => {
@@ -95,7 +97,38 @@ describe('TableProResultsGrid', () => {
       />,
     );
 
-    expect(screen.getByRole('columnheader', { name: 'Validation' })).toBeInTheDocument();
-    expect(screen.getByText('Blocker')).toBeInTheDocument();
+    const desktop = screen.getByTestId('pro-results-grid-table');
+    const desktopScope = within(desktop);
+    expect(desktopScope.getByRole('columnheader', { name: 'Validation' })).toBeInTheDocument();
+    expect(desktopScope.getByText('Blocker')).toBeInTheDocument();
+  });
+
+  it('renders a mobile card/list layout alongside the desktop table wrapper', () => {
+    render(
+      <TableProResultsGrid
+        densityStorageKey="results.grid.mobile"
+        labels={labels}
+        rows={[
+          {
+            id: 'row-mobile-1',
+            bibNumber: '42',
+            runnerName: 'Mobile Runner',
+            validationState: 'warning',
+            resultStatus: 'finish',
+            syncStatus: 'synced',
+            finishTimeMillis: 120000,
+            updatedAtLabel: '02/07/26, 09:00',
+            details: 'Looks good.',
+          },
+        ]}
+      />,
+    );
+
+    const mobile = screen.getByTestId('pro-results-grid-mobile');
+    expect(mobile).toHaveTextContent('Mobile Runner');
+    expect(mobile.querySelector('table')).toBeNull();
+
+    const desktop = screen.getByTestId('pro-results-grid-table');
+    expect(desktop.querySelector('table')).toBeInTheDocument();
   });
 });

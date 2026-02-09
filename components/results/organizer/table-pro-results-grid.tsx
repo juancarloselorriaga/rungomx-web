@@ -164,30 +164,12 @@ export function TableProResultsGrid({
       {rows.length === 0 ? (
         <div className="px-5 py-8 text-sm text-muted-foreground">{labels.empty}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="px-4 py-2.5 font-semibold">{labels.headers.bib}</th>
-                <th className="px-4 py-2.5 font-semibold">{labels.headers.runner}</th>
-                {showValidationColumn ? (
-                  <th className="px-4 py-2.5 font-semibold">{labels.headers.validation}</th>
-                ) : null}
-                <th className="px-4 py-2.5 font-semibold">{labels.headers.resultStatus}</th>
-                <th className="px-4 py-2.5 font-semibold">{labels.headers.syncStatus}</th>
-                <th className="px-4 py-2.5 font-semibold">{labels.headers.finishTime}</th>
-                <th className="px-4 py-2.5 font-semibold">{labels.headers.updated}</th>
-                {!isCompact ? (
-                  <th className="px-4 py-2.5 font-semibold">{labels.headers.details}</th>
-                ) : null}
-              </tr>
-            </thead>
-            <tbody>
+        <>
+          {/* Mobile: card/list layout to avoid horizontal hunting. */}
+          <div className="sm:hidden" data-testid="pro-results-grid-mobile">
+            <ul className="divide-y">
               {rows.map((row) => {
-                const resultStatusLabel = getResultStatusLabel(
-                  row.resultStatus,
-                  labels.resultStatus,
-                );
+                const resultStatusLabel = getResultStatusLabel(row.resultStatus, labels.resultStatus);
                 const syncStatusLabel = getSyncStatusLabel(row.syncStatus, labels.syncStatus);
                 const validationStateLabel =
                   row.validationState && labels.validationState
@@ -195,61 +177,160 @@ export function TableProResultsGrid({
                     : null;
 
                 return (
-                  <tr key={row.id} className="border-b last:border-b-0">
-                    <td
-                      className={cn(
-                        'px-4 text-foreground',
-                        isCompact ? 'py-2.5 text-xs' : 'py-3.5',
-                      )}
-                    >
-                      {row.bibNumber ?? '-'}
-                    </td>
-                    <td className={cn('px-4 text-foreground', isCompact ? 'py-2.5' : 'py-3.5')}>
-                      <span className={cn(isCompact ? 'text-xs font-medium' : 'font-medium')}>
-                        {row.runnerName}
-                      </span>
-                    </td>
-                    {showValidationColumn ? (
-                      <td className={cn('px-4', isCompact ? 'py-2.5' : 'py-3.5')}>
-                        {row.validationState && validationStateLabel ? (
+                  <li key={row.id} className="px-4 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {row.runnerName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {labels.headers.bib}: {row.bibNumber ?? '-'}
+                        </p>
+                      </div>
+
+                      <Badge size="sm" variant={syncStatusTone[row.syncStatus]}>
+                        {syncStatusLabel}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {showValidationColumn ? (
+                        row.validationState && validationStateLabel ? (
                           <Badge size="sm" variant={validationTone[row.validationState]}>
                             {validationStateLabel}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </td>
-                    ) : null}
-                    <td className={cn('px-4', isCompact ? 'py-2.5' : 'py-3.5')}>
+                          <span className="text-xs text-muted-foreground">-</span>
+                        )
+                      ) : null}
+
                       <Badge size="sm" variant="outline">
                         {resultStatusLabel}
                       </Badge>
-                    </td>
-                    <td className={cn('px-4', isCompact ? 'py-2.5' : 'py-3.5')}>
-                      <Badge size="sm" variant={syncStatusTone[row.syncStatus]}>
-                        {syncStatusLabel}
-                      </Badge>
-                    </td>
-                    <td className={cn('px-4 text-foreground', isCompact ? 'py-2.5 text-xs' : 'py-3.5')}>
-                      {formatFinishTime(row.finishTimeMillis)}
-                    </td>
-                    <td
-                      className={cn(
-                        'px-4 text-muted-foreground',
-                        isCompact ? 'py-2.5 text-xs' : 'py-3.5',
-                      )}
-                    >
-                      {row.updatedAtLabel}
-                    </td>
-                    {!isCompact ? (
-                      <td className="px-4 py-3.5 text-muted-foreground">{row.details}</td>
-                    ) : null}
-                  </tr>
+                    </div>
+
+                    <details className="mt-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+                      <summary className="cursor-pointer text-sm font-medium text-foreground">
+                        {labels.headers.details}
+                      </summary>
+
+                      <dl className="mt-3 grid gap-2 text-sm">
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {labels.headers.finishTime}
+                          </dt>
+                          <dd className="text-foreground">{formatFinishTime(row.finishTimeMillis)}</dd>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {labels.headers.updated}
+                          </dt>
+                          <dd className="text-foreground">{row.updatedAtLabel}</dd>
+                        </div>
+
+                        <div className="space-y-1">
+                          <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {labels.headers.details}
+                          </dt>
+                          <dd className="text-muted-foreground">{row.details}</dd>
+                        </div>
+                      </dl>
+                    </details>
+                  </li>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </ul>
+          </div>
+
+          {/* Desktop/tablet: keep the full table + density toggle behavior. */}
+          <div
+            className="hidden overflow-x-auto sm:block"
+            data-testid="pro-results-grid-table"
+          >
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-2.5 font-semibold">{labels.headers.bib}</th>
+                  <th className="px-4 py-2.5 font-semibold">{labels.headers.runner}</th>
+                  {showValidationColumn ? (
+                    <th className="px-4 py-2.5 font-semibold">{labels.headers.validation}</th>
+                  ) : null}
+                  <th className="px-4 py-2.5 font-semibold">{labels.headers.resultStatus}</th>
+                  <th className="px-4 py-2.5 font-semibold">{labels.headers.syncStatus}</th>
+                  <th className="px-4 py-2.5 font-semibold">{labels.headers.finishTime}</th>
+                  <th className="px-4 py-2.5 font-semibold">{labels.headers.updated}</th>
+                  {!isCompact ? (
+                    <th className="px-4 py-2.5 font-semibold">{labels.headers.details}</th>
+                  ) : null}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const resultStatusLabel = getResultStatusLabel(row.resultStatus, labels.resultStatus);
+                  const syncStatusLabel = getSyncStatusLabel(row.syncStatus, labels.syncStatus);
+                  const validationStateLabel =
+                    row.validationState && labels.validationState
+                      ? getValidationStateLabel(row.validationState, labels.validationState)
+                      : null;
+
+                  return (
+                    <tr key={row.id} className="border-b last:border-b-0">
+                      <td
+                        className={cn(
+                          'px-4 text-foreground',
+                          isCompact ? 'py-2.5 text-xs' : 'py-3.5',
+                        )}
+                      >
+                        {row.bibNumber ?? '-'}
+                      </td>
+                      <td className={cn('px-4 text-foreground', isCompact ? 'py-2.5' : 'py-3.5')}>
+                        <span className={cn(isCompact ? 'text-xs font-medium' : 'font-medium')}>
+                          {row.runnerName}
+                        </span>
+                      </td>
+                      {showValidationColumn ? (
+                        <td className={cn('px-4', isCompact ? 'py-2.5' : 'py-3.5')}>
+                          {row.validationState && validationStateLabel ? (
+                            <Badge size="sm" variant={validationTone[row.validationState]}>
+                              {validationStateLabel}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </td>
+                      ) : null}
+                      <td className={cn('px-4', isCompact ? 'py-2.5' : 'py-3.5')}>
+                        <Badge size="sm" variant="outline">
+                          {resultStatusLabel}
+                        </Badge>
+                      </td>
+                      <td className={cn('px-4', isCompact ? 'py-2.5' : 'py-3.5')}>
+                        <Badge size="sm" variant={syncStatusTone[row.syncStatus]}>
+                          {syncStatusLabel}
+                        </Badge>
+                      </td>
+                      <td className={cn('px-4 text-foreground', isCompact ? 'py-2.5 text-xs' : 'py-3.5')}>
+                        {formatFinishTime(row.finishTimeMillis)}
+                      </td>
+                      <td
+                        className={cn(
+                          'px-4 text-muted-foreground',
+                          isCompact ? 'py-2.5 text-xs' : 'py-3.5',
+                        )}
+                      >
+                        {row.updatedAtLabel}
+                      </td>
+                      {!isCompact ? (
+                        <td className="px-4 py-3.5 text-muted-foreground">{row.details}</td>
+                      ) : null}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </section>
   );
