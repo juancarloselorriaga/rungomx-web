@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useCallback, useRef, useState, useTransition } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { FieldErrors, UseFormOptions, UseFormReturn } from './types';
 
 export function useForm<TFieldValues extends Record<string, unknown>, TResult = unknown>(
@@ -12,7 +12,7 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
   const [values, setValues] = useState<TFieldValues>(defaultValues);
   const [errors, setErrors] = useState<FieldErrors<TFieldValues>>({});
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Store default values for reset
   const defaultValuesRef = useRef(defaultValues);
@@ -60,7 +60,9 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
         setValues(overrideValues);
       }
 
-      startTransition(async () => {
+      setIsSubmitting(true);
+
+      void (async () => {
         try {
           const result = await onSubmit(submissionValues);
 
@@ -102,8 +104,10 @@ export function useForm<TFieldValues extends Record<string, unknown>, TResult = 
           if (onError) {
             onError(errorMessage);
           }
+        } finally {
+          setIsSubmitting(false);
         }
-      });
+      })();
     },
     [values, onSubmit, onSuccess, onError],
   );
