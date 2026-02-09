@@ -127,7 +127,7 @@ export function CorrectionLifecycleMetricsPanel({
         </p>
       </header>
 
-      <div className="space-y-2 rounded-md border border-border/70 bg-muted/30 px-3 py-2">
+      <div className="space-y-2 rounded-md border border-border/70 bg-muted/30 px-3 py-2 dark:bg-muted/60">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {labels.filtersTitle}
         </p>
@@ -160,29 +160,29 @@ export function CorrectionLifecycleMetricsPanel({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.total}</p>
           <p className="text-xl font-semibold text-foreground">{metrics.statusCounts.total.toLocaleString()}</p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.pending}</p>
           <p className="text-xl font-semibold text-foreground">
             {metrics.statusCounts.pending.toLocaleString()}
           </p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.approved}</p>
           <p className="text-xl font-semibold text-foreground">
             {metrics.statusCounts.approved.toLocaleString()}
           </p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.rejected}</p>
           <p className="text-xl font-semibold text-foreground">
             {metrics.statusCounts.rejected.toLocaleString()}
           </p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {labels.summary.medianResolutionHours}
           </p>
@@ -192,7 +192,7 @@ export function CorrectionLifecycleMetricsPanel({
               : labels.fallback.notAvailable}
           </p>
         </article>
-        <article className="rounded-md border bg-background/50 p-3">
+        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {labels.summary.oldestPendingHours}
           </p>
@@ -210,16 +210,16 @@ export function CorrectionLifecycleMetricsPanel({
         </p>
         <p className="text-xs text-muted-foreground">{labels.aging.description}</p>
         <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
-          <p className="rounded-md border bg-background/50 px-3 py-2">
+          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
             {labels.aging.lessThan24Hours}: {metrics.pendingAging.buckets.lessThan24Hours.toLocaleString()}
           </p>
-          <p className="rounded-md border bg-background/50 px-3 py-2">
+          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
             {labels.aging.oneToThreeDays}: {metrics.pendingAging.buckets.oneToThreeDays.toLocaleString()}
           </p>
-          <p className="rounded-md border bg-background/50 px-3 py-2">
+          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
             {labels.aging.threeToSevenDays}: {metrics.pendingAging.buckets.threeToSevenDays.toLocaleString()}
           </p>
-          <p className="rounded-md border bg-background/50 px-3 py-2">
+          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
             {labels.aging.moreThanSevenDays}: {metrics.pendingAging.buckets.moreThanSevenDays.toLocaleString()}
           </p>
         </div>
@@ -230,13 +230,13 @@ export function CorrectionLifecycleMetricsPanel({
           {labels.aging.highlightsTitle}
         </p>
         {metrics.agingHighlights.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60">
             {labels.aging.highlightsEmpty}
           </p>
         ) : (
           <div className="space-y-2">
             {metrics.agingHighlights.map((item) => (
-              <article key={item.requestId} className="rounded-md border bg-background/50 p-3">
+              <article key={item.requestId} className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">{labels.aging.edition}</dt>
@@ -263,7 +263,7 @@ export function CorrectionLifecycleMetricsPanel({
 
       <section className="space-y-2">
         {metrics.exportRows.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60">
             {labels.export.empty}
           </p>
         ) : (

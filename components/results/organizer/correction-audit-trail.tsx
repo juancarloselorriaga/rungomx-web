@@ -46,7 +46,7 @@ export function CorrectionAuditTrail({ items, labels }: CorrectionAuditTrailProp
           {items.map((item) => (
             <article
               key={item.requestId}
-              className="space-y-2 rounded-md border bg-background/50 p-3"
+              className="space-y-2 rounded-md border bg-muted/30 p-3 dark:bg-muted/60"
             >
               <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                 <div>

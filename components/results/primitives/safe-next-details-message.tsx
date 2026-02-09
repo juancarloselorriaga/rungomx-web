@@ -17,10 +17,10 @@ type SafeNextDetailsMessageProps = {
 };
 
 const toneClasses: Record<NonNullable<SafeNextDetailsMessageProps['tone']>, string> = {
-  info: 'border-blue-200/80 bg-blue-50/50 dark:border-blue-900/70 dark:bg-blue-950/35',
+  info: 'border-blue-200/80 bg-blue-50/50 dark:border-blue-900/70 dark:bg-blue-950/55',
   warning:
-    'border-amber-200/80 bg-amber-50/60 dark:border-amber-900/80 dark:bg-amber-950/30',
-  danger: 'border-red-200/80 bg-red-50/60 dark:border-red-900/80 dark:bg-red-950/30',
+    'border-amber-200/80 bg-amber-50/60 dark:border-amber-900/80 dark:bg-amber-950/45',
+  danger: 'border-red-200/80 bg-red-50/60 dark:border-red-900/80 dark:bg-red-950/45',
 };
 
 export function SafeNextDetailsMessage({

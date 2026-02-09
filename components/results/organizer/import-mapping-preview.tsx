@@ -313,7 +313,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
 
       {parsedImport ? (
         <div className="space-y-5">
-          <section className="space-y-2 rounded-lg border bg-background/50 p-3">
+          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
             <h4 className="text-sm font-semibold text-foreground">{labels.parseSummary}</h4>
             <dl className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <div>
@@ -335,7 +335,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             </dl>
           </section>
 
-          <section className="space-y-3 rounded-lg border bg-background/50 p-3">
+          <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {labels.savedTemplatesLabel}
@@ -378,7 +378,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             </div>
           </section>
 
-          <section className="space-y-3 rounded-lg border bg-background/50 p-3">
+          <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
@@ -425,7 +425,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             </div>
           </section>
 
-          <section className="space-y-2 rounded-lg border bg-background/50 p-3">
+          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
             <h4 className="text-sm font-semibold text-foreground">{labels.mappingPreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.mappingPreviewDescription}</p>
             <pre
@@ -437,7 +437,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
           </section>
 
           {validationResult ? (
-            <section className="space-y-3 rounded-lg border bg-background/50 p-3">
+            <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
               <h4 className="text-sm font-semibold text-foreground">{labels.validationTitle}</h4>
               <p className="text-xs text-muted-foreground">{labels.validationDescription}</p>
 
@@ -514,7 +514,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             </section>
           ) : null}
 
-          <section className="space-y-2 rounded-lg border bg-background/50 p-3">
+          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
             <h4 className="text-sm font-semibold text-foreground">{labels.derivedPreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.derivedPreviewDescription}</p>
 
@@ -558,7 +558,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             )}
           </section>
 
-          <section className="space-y-2 rounded-lg border bg-background/50 p-3">
+          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
             <h4 className="text-sm font-semibold text-foreground">{labels.samplePreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.samplePreviewDescription}</p>
 

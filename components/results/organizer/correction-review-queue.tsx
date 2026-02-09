@@ -142,7 +142,7 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
             return (
               <article
                 key={request.requestId}
-                className="space-y-3 rounded-md border bg-background/50 p-3"
+                className="space-y-3 rounded-md border bg-muted/30 p-3 dark:bg-muted/60"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="space-y-1">

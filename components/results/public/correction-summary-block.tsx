@@ -34,7 +34,7 @@ export function CorrectionSummaryBlock({ summaries, labels }: CorrectionSummaryB
       </header>
 
       {summaries.length === 0 ? (
-        <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+        <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60">
           {labels.empty}
         </p>
       ) : (
@@ -42,7 +42,7 @@ export function CorrectionSummaryBlock({ summaries, labels }: CorrectionSummaryB
           {summaries.map((summary) => (
             <article
               key={summary.requestId}
-              className="space-y-3 rounded-md border bg-background/50 p-3"
+              className="space-y-3 rounded-md border bg-muted/30 p-3 dark:bg-muted/60"
             >
               <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
                 <div>
