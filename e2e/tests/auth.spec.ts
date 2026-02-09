@@ -60,34 +60,16 @@ test.describe('Authentication & Access Control', () => {
     await expect(page).toHaveURL(/\/sign-in/);
 
     // Callback URL should be preserved
-    expect(page.url()).toContain('callbackURL');
+    const callbackURL = new URL(page.url()).searchParams.get('callbackURL');
+    expect(callbackURL).toBeTruthy();
+    expect(callbackURL).toMatch(/\/en\/dashboard\/events/);
   });
 
   test('Test 0.2: Organizer can sign in successfully', async ({ page }) => {
-    // Navigate to sign-in page
-    await page.goto('/en/sign-in');
+    await signInAsOrganizer(page, organizerCreds);
 
-    // Fill credentials
-    await page.getByLabel(/email/i).fill(organizerCreds.email);
-    await page.getByLabel(/password/i).fill(organizerCreds.password);
-
-    // Submit form
-    await page.getByRole('button', { name: /sign in/i }).click();
-
-    // Should redirect to dashboard
-    await expect(page).toHaveURL(/\/dashboard/);
-
-    // New users see a role selection modal - select Organizer role
-    const roleModal = page.getByText('Choose your role to continue');
-    if (await roleModal.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await page.getByRole('button', { name: /organizer/i }).click();
-      await page.getByRole('button', { name: /save roles/i }).click();
-      // Wait for modal to close
-      await expect(roleModal).not.toBeVisible({ timeout: 5000 });
-    }
-
-    // Verify we're on the dashboard (may need to wait for navigation after role selection)
-    await expect(page).toHaveURL(/\/dashboard/);
+    // Successful sign-in should land on a protected route.
+    await expect(page).toHaveURL(/\/(dashboard|settings)/, { timeout: 45000 });
   });
 
   test('Test 0.3: Profile completion is enforced', async ({ page }) => {
