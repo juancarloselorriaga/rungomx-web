@@ -106,8 +106,10 @@ export default async function ResultsImportPage({ params }: ResultsImportPagePro
       />
 
       <OrganizerResultsLane
+        eventId={eventId}
         densityStorageKey={pageData.densityStorageKey}
         railState={pageData.railState}
+        nextActionHref={pageData.nextActionHref}
         versionVisibility={pageData.versionVisibility}
         rows={pageData.rows}
         feedbackItems={pageData.feedbackItems}

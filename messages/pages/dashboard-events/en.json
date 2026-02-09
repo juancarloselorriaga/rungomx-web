@@ -277,6 +277,116 @@
       "next": "Next step",
       "details": "Details"
     },
+    "fallbackRows": {
+      "defaultDetails": "Draft result row available in organizer workflow.",
+      "capture": {
+        "savedLocally": "Saved locally from mobile capture session.",
+        "offlineCheckpoint": "Status confirmed during offline checkpoint."
+      },
+      "import": {
+        "parsed": "Parsed from latest CSV draft import.",
+        "duplicateBib": "Duplicate bib conflict flagged for review."
+      },
+      "review": {
+        "ready": "Draft row ready for final organizer review.",
+        "pendingConflict": "Pending conflict resolution before final review."
+      }
+    },
+    "reviewIssues": {
+      "conflict": {
+        "message": "Conflict resolution is still required for this draft row.",
+        "guidance": "Resolve the explicit sync conflict before attempting finalization."
+      },
+      "pendingSync": {
+        "message": "This row is still pending synchronization.",
+        "guidance": "Run deterministic sync until pending rows reach synced state."
+      },
+      "missingFinishTime": {
+        "message": "Finish status row is missing a finish time.",
+        "guidance": "Provide a valid finish time before continuing to finalization."
+      },
+      "statusTimeMismatch": {
+        "message": "Non-finish status row still includes a finish time value.",
+        "guidance": "Confirm the status/time combination is intentional before publishing."
+      }
+    },
+    "laneFeedback": {
+      "review": {
+        "empty": {
+          "safe": "No draft rows are ready for review yet.",
+          "next": "Start capture or import to create a draft before publishing official results.",
+          "details": {
+            "draftProtection": "Draft rows remain protected until an organizer publishes an Official version.",
+            "blockersWarningsSummary": "Once draft rows exist, blockers and warnings will be summarized here."
+          }
+        },
+        "blockers": {
+          "safe": "Official output is protected while this draft is under review.",
+          "next": "Resolve blockers before publishing official results.",
+          "details": {
+            "blockerCount": "{count, plural, one {# blocker must be resolved before publishing.} other {# blockers must be resolved before publishing.}}",
+            "warningCount": "{count, plural, one {# warning should be reviewed before publishing.} other {# warnings should be reviewed before publishing.}}",
+            "noWarnings": "No warnings are currently flagged."
+          }
+        },
+        "warnings": {
+          "safe": "Draft is protected and can still be adjusted before it becomes Official.",
+          "next": "Review warnings, then publish official results when appropriate.",
+          "details": {
+            "warningCount": "{count, plural, one {# warning is present in this draft.} other {# warnings are present in this draft.}}",
+            "warningsNonBlocking": "Warnings do not necessarily block publication, but should be confirmed intentionally."
+          }
+        }
+      },
+      "capture": {
+        "syncPending": {
+          "safe": "Captured rows stay in Draft and are saved locally.",
+          "next": "Reconnect and run sync to upload pending entries.",
+          "details": {
+            "rowsWaitingForSync": "{count, plural, one {# row is waiting for sync.} other {# rows are waiting for sync.}}",
+            "noPublicChanges": "No public or official records were changed."
+          }
+        },
+        "blocked": {
+          "safe": "Draft capture remains protected while blockers are unresolved.",
+          "next": "Resolve conflicts/blockers, then re-run sync and review.",
+          "details": {
+            "conflictCount": "{count, plural, one {# row requires conflict confirmation.} other {# rows require conflict confirmation.}}",
+            "noConflicts": "No conflicts are currently flagged.",
+            "blockerCount": "{count, plural, one {# blocker is still present in the draft.} other {# blockers are still present in the draft.}}",
+            "noBlockers": "No blockers are currently flagged."
+          }
+        },
+        "warnings": {
+          "safe": "Draft capture is protected and can be refined before review.",
+          "next": "Review warnings, then move to the Review lane.",
+          "details": {
+            "warningCount": "{count, plural, one {# warning is present in the draft.} other {# warnings are present in the draft.}}",
+            "warningsDoNotPublish": "Warnings do not publish data, but should be reviewed before publishing official results."
+          }
+        }
+      },
+      "import": {
+        "blocked": {
+          "safe": "Draft import is protected and not public yet.",
+          "next": "Resolve conflicts/blockers, then review the draft before publishing.",
+          "details": {
+            "conflictCount": "{count, plural, one {# row requires conflict resolution.} other {# rows require conflict resolution.}}",
+            "noConflicts": "No conflicts are currently flagged.",
+            "blockerCount": "{count, plural, one {# blocker is still present in the draft.} other {# blockers are still present in the draft.}}",
+            "noBlockers": "No blockers are currently flagged."
+          }
+        },
+        "warnings": {
+          "safe": "Draft import is protected and can be refined before review.",
+          "next": "Review warnings, then move to the Review lane.",
+          "details": {
+            "warningCount": "{count, plural, one {# warning is present in the draft.} other {# warnings are present in the draft.}}",
+            "warningsDoNotPublish": "Warnings do not publish data, but should be reviewed before publishing official results."
+          }
+        }
+      }
+    },
     "lanes": {
       "capture": {
         "title": "Capture lane",
@@ -405,6 +515,7 @@
     "investigation": {
       "title": "Internal investigation view",
       "description": "Trace version provenance and correction transitions without direct database access.",
+      "loadError": "Investigation data could not be loaded right now. Try again in a moment.",
       "selectedDiff": {
         "title": "Selected version transition",
         "description": "Use this summary to explain exactly what changed and who approved it.",
@@ -694,7 +805,13 @@
     "answerPlaceholder": "Provide a helpful answer...",
     "add": "Add",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "actions": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "edit": "Edit",
+      "delete": "Delete"
+    }
   },
   "waivers": {
     "title": "Waivers",
@@ -714,7 +831,12 @@
     },
     "add": "Add waiver",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "actions": {
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "edit": "Edit"
+    }
   },
   "policies": {
     "title": "Policies",

@@ -64,6 +64,30 @@ describe('DraftReviewFinalizationGate', () => {
     mockFinalizeResultVersionAttestation.mockReset();
   });
 
+  it('disables proceed and shows unavailable message by default when no draft rows exist', () => {
+    render(
+      <DraftReviewFinalizationGate
+        eventId="event-empty"
+        labels={labels}
+        summary={{
+          rowCount: 0,
+          blockerCount: 0,
+          warningCount: 0,
+          canProceed: false,
+          validationStateByRowId: {},
+          nextRequiredAction: null,
+          issues: [],
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: labels.attemptProceedAction })).toBeDisabled();
+    expect(screen.getByTestId('draft-review-proceed-feedback')).toHaveTextContent(
+      labels.proceedUnavailableMessage,
+    );
+    expect(mockFinalizeResultVersionAttestation).not.toHaveBeenCalled();
+  });
+
   it('blocks proceed attempts and shows next required action when blockers exist', () => {
     render(
       <DraftReviewFinalizationGate

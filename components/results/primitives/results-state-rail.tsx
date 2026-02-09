@@ -1,4 +1,6 @@
 import { Badge } from '@/components/common/badge';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type {
   OrganizerResultsRailState,
@@ -32,6 +34,7 @@ type ResultsStateRailLabels = {
 type ResultsStateRailProps = {
   state: OrganizerResultsRailState;
   labels: ResultsStateRailLabels;
+  nextActionHref?: Parameters<typeof Link>[0]['href'];
   className?: string;
 };
 
@@ -61,7 +64,12 @@ function getNextActionLabel(
   }
 }
 
-export function ResultsStateRail({ state, labels, className }: ResultsStateRailProps) {
+export function ResultsStateRail({
+  state,
+  labels,
+  nextActionHref,
+  className,
+}: ResultsStateRailProps) {
   const lifecycleLabel =
     state.lifecycle === 'official' ? labels.lifecycleOfficial : labels.lifecycleDraft;
   const lifecycleHint =
@@ -94,7 +102,7 @@ export function ResultsStateRail({ state, labels, className }: ResultsStateRailP
       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-background/40 p-3">
+        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.lifecycle}
           </dt>
@@ -110,7 +118,7 @@ export function ResultsStateRail({ state, labels, className }: ResultsStateRailP
           </dd>
         </div>
 
-        <div className="rounded-lg border bg-background/40 p-3">
+        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.connectivity}
           </dt>
@@ -132,7 +140,7 @@ export function ResultsStateRail({ state, labels, className }: ResultsStateRailP
           </dd>
         </div>
 
-        <div className="rounded-lg border bg-background/40 p-3">
+        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.unsyncedCount}
           </dt>
@@ -141,13 +149,32 @@ export function ResultsStateRail({ state, labels, className }: ResultsStateRailP
           </dd>
         </div>
 
-        <div className="rounded-lg border bg-background/40 p-3">
+        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.nextAction}
           </dt>
-          <dd className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-foreground">
-            <ArrowRightCircle className="h-3.5 w-3.5" />
-            <span>{nextActionLabel}</span>
+          <dd className="mt-2">
+            {nextActionHref ? (
+              <Button
+                asChild
+                variant="outline"
+                className="h-auto min-w-0 w-full justify-start !whitespace-normal px-5 py-3 text-left"
+              >
+                <Link href={nextActionHref} className="min-w-0 !items-start">
+                  <span className="mt-0.5 flex h-4 w-4 items-center justify-center">
+                    <ArrowRightCircle className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1 break-words !whitespace-normal leading-snug">
+                    {nextActionLabel}
+                  </span>
+                </Link>
+              </Button>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-sm font-medium text-foreground">
+                <ArrowRightCircle className="h-3.5 w-3.5" />
+                <span>{nextActionLabel}</span>
+              </span>
+            )}
           </dd>
         </div>
       </dl>

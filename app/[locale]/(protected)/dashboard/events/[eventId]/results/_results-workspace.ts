@@ -11,10 +11,42 @@ import {
 } from '@/lib/events/results/workspace';
 import { getTranslations } from 'next-intl/server';
 
+function getResultsRailNextActionHref(
+  eventId: string,
+  lane: OrganizerResultsLane,
+  nextActionKey: Awaited<ReturnType<typeof getOrganizerResultsRailState>>['nextActionKey'],
+): Parameters<typeof import('@/i18n/navigation').Link>[0]['href'] {
+  const captureHref = {
+    pathname: '/dashboard/events/[eventId]/results/capture',
+    params: { eventId },
+  } as const;
+  const importHref = {
+    pathname: '/dashboard/events/[eventId]/results/import',
+    params: { eventId },
+  } as const;
+  const reviewHref = {
+    pathname: '/dashboard/events/[eventId]/results/review',
+    params: { eventId },
+  } as const;
+
+  switch (nextActionKey) {
+    case 'syncPending':
+      return captureHref;
+    case 'reviewDraft':
+    case 'readyToPublish':
+      return reviewHref;
+    case 'startIngestion':
+      return lane === 'import' ? importHref : captureHref;
+    default:
+      return reviewHref;
+  }
+}
+
 type ResultsWorkspacePageData = {
   userScopeKey: string;
   densityStorageKey: string;
   railState: Awaited<ReturnType<typeof getOrganizerResultsRailState>>;
+  nextActionHref: Parameters<typeof import('@/i18n/navigation').Link>[0]['href'];
   versionVisibility: {
     activeOfficialVersionId: OrganizerResultVersionVisibility['activeOfficialVersionId'];
     items: Array<
@@ -59,20 +91,36 @@ export async function getResultsWorkspacePageData(
 ): Promise<ResultsWorkspacePageData> {
   const authContext = await getAuthContext();
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
+  // `next-intl` types `t` with exact message keys, but the workspace helpers
+  // accept string keys (used for fallback copy). Bridge the types safely.
+  const tUnsafe = (key: string, values?: Record<string, string | number>) =>
+    t(key as never, values as never);
 
   const [railState, rows, versionVisibility] = await Promise.all([
     getOrganizerResultsRailState(eventId, lane),
     listOrganizerResultsRows(eventId, lane, 30, {
       allowFallback: lane !== 'review',
+      t: tUnsafe,
     }),
     getOrganizerResultVersionVisibility(eventId, 8),
   ]);
 
-  const feedbackItems = getSafeNextDetailsFeedback(lane);
   const reviewSummary =
     lane === 'review'
-      ? buildOrganizerDraftReviewSummary(eventId, rows)
+      ? buildOrganizerDraftReviewSummary(eventId, rows, { t: tUnsafe })
       : null;
+  const feedbackItems = getSafeNextDetailsFeedback({
+    lane,
+    railState,
+    rows,
+    reviewSummary,
+    t: tUnsafe,
+  });
+  const resolvedRailState =
+    lane === 'review' && rows.length === 0 && railState.nextActionKey === 'readyToPublish'
+      ? { ...railState, nextActionKey: 'startIngestion' as const }
+      : railState;
+  const nextActionHref = getResultsRailNextActionHref(eventId, lane, resolvedRailState.nextActionKey);
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'short',
     timeStyle: 'short',
@@ -81,7 +129,8 @@ export async function getResultsWorkspacePageData(
   return {
     userScopeKey: authContext.user?.id ?? 'unknown',
     densityStorageKey: `results.density.${authContext.user?.id ?? 'unknown'}.${eventId}`,
-    railState,
+    railState: resolvedRailState,
+    nextActionHref,
     versionVisibility: {
       activeOfficialVersionId: versionVisibility.activeOfficialVersionId,
       items: versionVisibility.items.map((item) => ({

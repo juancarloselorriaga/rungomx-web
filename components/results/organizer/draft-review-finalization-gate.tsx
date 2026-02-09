@@ -80,12 +80,13 @@ export function DraftReviewFinalizationGate({
     tone: 'success' | 'error';
     message: string;
   } | null>(null);
+  const isDraftEmpty = summary.rowCount === 0;
 
   const proceedFeedback = useMemo(() => {
+    if (isDraftEmpty) return 'unavailable' as const;
     if (!attemptedProceed) return null;
-    if (summary.rowCount === 0) return 'unavailable' as const;
     return summary.canProceed ? ('ready' as const) : ('blocked' as const);
-  }, [attemptedProceed, summary.canProceed, summary.rowCount]);
+  }, [attemptedProceed, isDraftEmpty, summary.canProceed]);
 
   const handleAttemptProceed = () => {
     setAttemptedProceed(true);
@@ -122,7 +123,7 @@ export function DraftReviewFinalizationGate({
       </header>
 
       <dl className="grid gap-2 text-sm sm:grid-cols-3">
-        <div className="rounded-md border bg-background/50 p-3">
+        <div className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.rowCountLabel}
           </dt>
@@ -130,7 +131,7 @@ export function DraftReviewFinalizationGate({
             {summary.rowCount.toLocaleString()}
           </dd>
         </div>
-        <div className="rounded-md border bg-background/50 p-3">
+        <div className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.blockerCountLabel}
           </dt>
@@ -138,7 +139,7 @@ export function DraftReviewFinalizationGate({
             {summary.blockerCount.toLocaleString()}
           </dd>
         </div>
-        <div className="rounded-md border bg-background/50 p-3">
+        <div className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.warningCountLabel}
           </dt>
@@ -148,10 +149,10 @@ export function DraftReviewFinalizationGate({
         </div>
       </dl>
 
-      <div className="space-y-3 rounded-md border bg-background/50 p-3">
+      <div className="space-y-3 rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
         <Button
           type="button"
-          disabled={isSubmittingFinalization}
+          disabled={isDraftEmpty || isSubmittingFinalization}
           onClick={handleAttemptProceed}
         >
           {isSubmittingFinalization
@@ -185,7 +186,7 @@ export function DraftReviewFinalizationGate({
 
         {proceedFeedback === 'unavailable' ? (
           <p
-            className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground"
+            className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60"
             data-testid="draft-review-proceed-feedback"
           >
             {labels.proceedUnavailableMessage}
@@ -211,7 +212,7 @@ export function DraftReviewFinalizationGate({
         <p className="text-xs text-muted-foreground">{labels.issueListDescription}</p>
 
         {summary.issues.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60">
             {labels.issueListEmpty}
           </p>
         ) : (
@@ -219,7 +220,7 @@ export function DraftReviewFinalizationGate({
             {summary.issues.map((issue) => (
               <article
                 key={issue.id}
-                className="space-y-3 rounded-md border bg-background/50 p-3"
+                className="space-y-3 rounded-md border bg-muted/30 p-3 dark:bg-muted/60"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <Badge size="sm" variant={getSeverityVariant(issue.severity)}>

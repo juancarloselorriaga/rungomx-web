@@ -116,13 +116,13 @@
     "error": "No se pudo verificar; se validará al enviar"
   },
   "sportTypes": {
-    "trail_running": "Trail Running",
+    "trail_running": "Carrera de montaña",
     "triathlon": "Triatlón",
     "cycling": "Ciclismo",
     "mtb": "Ciclismo de Montaña",
-    "gravel_bike": "Gravel Bike",
+    "gravel_bike": "Ciclismo gravel",
     "duathlon": "Duatlón",
-    "backyard_ultra": "Backyard Ultra"
+    "backyard_ultra": "Ultramaratón Backyard"
   },
   "detail": {
     "settings": "Configuración",
@@ -195,8 +195,8 @@
     "title": "Centro de resultados",
     "description": "Base de estados de confianza para los flujos de captura, importación y revisión.",
     "stateRail": {
-      "title": "Rail de estado de resultados",
-      "description": "El ciclo Draft/Official, conectividad, conteo pendiente y siguiente acción siempre están visibles.",
+      "title": "Barra de estado de resultados",
+      "description": "El ciclo Borrador/Oficial, conectividad, conteo pendiente y siguiente acción siempre están visibles.",
       "lifecycle": "Ciclo",
       "lifecycleDraft": "Borrador",
       "lifecycleOfficial": "Oficial",
@@ -206,21 +206,21 @@
       "connectivityOnline": "En línea",
       "connectivityOffline": "Sin conexión",
       "connectivityOnlineHint": "Listo para sincronizar y revisar.",
-      "connectivityOfflineHint": "Modo local-first con datos protegidos en borrador.",
+      "connectivityOfflineHint": "Modo primero local con datos protegidos en borrador.",
       "unsyncedCount": "Entradas sin sincronizar",
       "nextAction": "Siguiente acción",
-      "nextActionSyncPending": "Sincronizar filas pendientes del borrador",
-      "nextActionReviewDraft": "Revisar filas en borrador antes de publicar",
+      "nextActionSyncPending": "Sincronizar pendientes del borrador",
+      "nextActionReviewDraft": "Revisar borrador antes de publicar",
       "nextActionReadyToPublish": "Publicar resultados oficiales",
       "nextActionStartIngestion": "Iniciar una nueva ingesta en borrador"
     },
     "versionVisibility": {
       "title": "Visibilidad de versiones oficiales",
-      "description": "Visualiza la versión Official activa y el historial previo del ciclo para esta edición.",
+      "description": "Visualiza la versión Oficial activa y el historial previo del ciclo para esta edición.",
       "empty": "Aún no hay versiones de resultados para esta edición.",
-      "noOfficialVersion": "Aún no hay versión Official",
-      "activeOfficialLabel": "Hay una versión Official activa",
-      "activeMarker": "Official activa",
+      "noOfficialVersion": "Aún no hay versión Oficial",
+      "activeOfficialLabel": "Hay una versión Oficial activa",
+      "activeMarker": "Oficial activa",
       "historicalMarker": "Histórica",
       "headers": {
         "version": "Versión",
@@ -231,7 +231,7 @@
       },
       "status": {
         "draft": "Borrador",
-        "official": "Official",
+        "official": "Oficial",
         "corrected": "Corregida"
       },
       "unknownFinalizedAt": "Sin finalizar",
@@ -247,7 +247,7 @@
       "description": "Las semánticas de confianza se mantienen visibles en modo Compacto y Completo.",
       "empty": "Aún no hay filas de borrador. Inicia captura o importación para poblar esta tabla.",
       "headers": {
-        "bib": "Bib",
+        "bib": "Dorsal",
         "runner": "Corredor",
         "validation": "Validación",
         "resultStatus": "Estado del resultado",
@@ -277,10 +277,120 @@
       "next": "Siguiente paso",
       "details": "Detalles"
     },
+    "fallbackRows": {
+      "defaultDetails": "Fila de resultados en borrador disponible en el flujo del organizador.",
+      "capture": {
+        "savedLocally": "Guardado localmente desde una sesión de captura móvil.",
+        "offlineCheckpoint": "Estado confirmado durante el punto de control sin conexión."
+      },
+      "import": {
+        "parsed": "Parseado de la última importación de borrador CSV.",
+        "duplicateBib": "Conflicto de dorsal duplicado marcado para revisión."
+      },
+      "review": {
+        "ready": "Fila de borrador lista para revisión final del organizador.",
+        "pendingConflict": "Pendiente de resolución de conflicto antes de la revisión final."
+      }
+    },
+    "reviewIssues": {
+      "conflict": {
+        "message": "Aún se requiere resolver el conflicto de sincronización para esta fila de borrador.",
+        "guidance": "Resuelve el conflicto explícito de sincronización antes de intentar la finalización."
+      },
+      "pendingSync": {
+        "message": "Esta fila aún está pendiente de sincronización.",
+        "guidance": "Ejecuta la sincronización determinista hasta que las filas pendientes lleguen a estado sincronizado."
+      },
+      "missingFinishTime": {
+        "message": "La fila con estado Finalizó no tiene un tiempo final.",
+        "guidance": "Proporciona un tiempo final válido antes de continuar con la finalización."
+      },
+      "statusTimeMismatch": {
+        "message": "Una fila con estado distinto de Finalizó aún incluye un valor de tiempo final.",
+        "guidance": "Confirma que la combinación estado/tiempo sea intencional antes de publicar."
+      }
+    },
+    "laneFeedback": {
+      "review": {
+        "empty": {
+          "safe": "Aún no hay filas de borrador listas para revisión.",
+          "next": "Inicia captura o importación para crear un borrador antes de publicar resultados oficiales.",
+          "details": {
+            "draftProtection": "Las filas en borrador permanecen protegidas hasta que un organizador publique una versión Oficial.",
+            "blockersWarningsSummary": "Una vez existan filas en borrador, aquí se resumirán bloqueadores y advertencias."
+          }
+        },
+        "blockers": {
+          "safe": "La salida Oficial está protegida mientras este borrador está en revisión.",
+          "next": "Resuelve los bloqueadores antes de publicar resultados oficiales.",
+          "details": {
+            "blockerCount": "{count, plural, one {# bloqueador debe resolverse antes de publicar.} other {# bloqueadores deben resolverse antes de publicar.}}",
+            "warningCount": "{count, plural, one {# advertencia debería revisarse antes de publicar.} other {# advertencias deberían revisarse antes de publicar.}}",
+            "noWarnings": "No hay advertencias marcadas actualmente."
+          }
+        },
+        "warnings": {
+          "safe": "El borrador está protegido y aún puede ajustarse antes de volverse Oficial.",
+          "next": "Revisa las advertencias y publica resultados oficiales cuando corresponda.",
+          "details": {
+            "warningCount": "{count, plural, one {# advertencia está presente en este borrador.} other {# advertencias están presentes en este borrador.}}",
+            "warningsNonBlocking": "Las advertencias no necesariamente bloquean la publicación, pero deben confirmarse intencionalmente."
+          }
+        }
+      },
+      "capture": {
+        "syncPending": {
+          "safe": "Las filas capturadas permanecen en Borrador y se guardan localmente.",
+          "next": "Reconéctate y ejecuta la sincronización para subir las entradas pendientes.",
+          "details": {
+            "rowsWaitingForSync": "{count, plural, one {# fila está esperando sincronización.} other {# filas están esperando sincronización.}}",
+            "noPublicChanges": "No se modificaron registros públicos u oficiales."
+          }
+        },
+        "blocked": {
+          "safe": "La captura en borrador permanece protegida mientras haya bloqueadores sin resolver.",
+          "next": "Resuelve conflictos/bloqueadores, luego vuelve a sincronizar y revisar.",
+          "details": {
+            "conflictCount": "{count, plural, one {# fila requiere confirmación de conflicto.} other {# filas requieren confirmación de conflicto.}}",
+            "noConflicts": "No hay conflictos marcados actualmente.",
+            "blockerCount": "{count, plural, one {# bloqueador sigue presente en el borrador.} other {# bloqueadores siguen presentes en el borrador.}}",
+            "noBlockers": "No hay bloqueadores marcados actualmente."
+          }
+        },
+        "warnings": {
+          "safe": "La captura en borrador está protegida y puede refinarse antes de la revisión.",
+          "next": "Revisa las advertencias y luego pasa al flujo de revisión.",
+          "details": {
+            "warningCount": "{count, plural, one {# advertencia está presente en el borrador.} other {# advertencias están presentes en el borrador.}}",
+            "warningsDoNotPublish": "Las advertencias no publican datos, pero deben revisarse antes de publicar resultados oficiales."
+          }
+        }
+      },
+      "import": {
+        "blocked": {
+          "safe": "La importación en borrador está protegida y aún no es pública.",
+          "next": "Resuelve conflictos/bloqueadores y luego revisa el borrador antes de publicar.",
+          "details": {
+            "conflictCount": "{count, plural, one {# fila requiere resolución de conflicto.} other {# filas requieren resolución de conflicto.}}",
+            "noConflicts": "No hay conflictos marcados actualmente.",
+            "blockerCount": "{count, plural, one {# bloqueador sigue presente en el borrador.} other {# bloqueadores siguen presentes en el borrador.}}",
+            "noBlockers": "No hay bloqueadores marcados actualmente."
+          }
+        },
+        "warnings": {
+          "safe": "La importación en borrador está protegida y puede refinarse antes de la revisión.",
+          "next": "Revisa las advertencias y luego pasa al flujo de revisión.",
+          "details": {
+            "warningCount": "{count, plural, one {# advertencia está presente en el borrador.} other {# advertencias están presentes en el borrador.}}",
+            "warningsDoNotPublish": "Las advertencias no publican datos, pero deben revisarse antes de publicar resultados oficiales."
+          }
+        }
+      }
+    },
     "lanes": {
       "capture": {
         "title": "Flujo de captura",
-        "description": "Captura móvil y local-first en borrador con estado de sincronización claro.",
+        "description": "Captura móvil y primero local en borrador con estado de sincronización claro.",
         "action": "Abrir flujo de captura"
       },
       "import": {
@@ -299,9 +409,9 @@
         "action": "Abrir flujo de correcciones"
       },
       "investigation": {
-        "title": "Flujo de investigacion",
+        "title": "Flujo de investigación",
         "description": "Vista interna consolidada para procedencia de versiones y transiciones de correcciones.",
-        "action": "Abrir flujo de investigacion"
+        "action": "Abrir flujo de investigación"
       }
     },
     "corrections": {
@@ -322,7 +432,7 @@
         "reviewedAt": "Revisada en",
         "reviewNote": "Nota de decisión",
         "runner": "Corredor",
-        "bib": "Bib",
+        "bib": "Dorsal",
         "entryStatus": "Estado de la entrada",
         "finishTime": "Tiempo final (ms)"
       },
@@ -403,17 +513,18 @@
       }
     },
     "investigation": {
-      "title": "Vista interna de investigacion",
+      "title": "Vista interna de investigación",
       "description": "Traza procedencia de versiones y transiciones de correcciones sin acceso directo a la base de datos.",
+      "loadError": "No se pudieron cargar algunos datos de investigación en este momento. Intenta de nuevo más tarde.",
       "selectedDiff": {
-        "title": "Transicion de version seleccionada",
-        "description": "Usa este resumen para explicar exactamente que cambio y quien lo aprobo.",
-        "empty": "Aun no se selecciono una transicion de correccion.",
+        "title": "Transición de versión seleccionada",
+        "description": "Usa este resumen para explicar exactamente qué cambió y quién lo aprobó.",
+        "empty": "Aún no se seleccionó una transición de corrección.",
         "transitionValue": "v{fromVersion} ({fromStatus}) -> v{toVersion} ({toStatus})",
         "fields": {
-          "fromVersion": "Version origen",
-          "toVersion": "Version corregida",
-          "transition": "Resumen de transicion",
+          "fromVersion": "Versión origen",
+          "toVersion": "Versión corregida",
+          "transition": "Resumen de transición",
           "approver": "Aprobador",
           "reviewedAt": "Revisada en",
           "publishedAt": "Publicada en",
@@ -421,13 +532,13 @@
         }
       },
       "versions": {
-        "title": "Linea de tiempo de versiones y procedencia",
-        "description": "Cada version de resultados incluye contexto de fuente e ingesta.",
-        "empty": "No se encontraron versiones de resultados para esta edicion.",
-        "versionLabel": "Version {version}",
+        "title": "Línea de tiempo de versiones y procedencia",
+        "description": "Cada versión de resultados incluye contexto de fuente e ingesta.",
+        "empty": "No se encontraron versiones de resultados para esta edición.",
+        "versionLabel": "Versión {version}",
         "fields": {
-          "versionId": "ID de version",
-          "parentVersionId": "Version padre",
+          "versionId": "ID de versión",
+          "parentVersionId": "Versión padre",
           "createdAt": "Creada en",
           "finalizedAt": "Finalizada en",
           "createdBy": "Creada por",
@@ -437,17 +548,17 @@
           "ingestionLane": "Flujo de ingesta",
           "ingestionStartedAt": "Ingesta iniciada",
           "ingestionStartedBy": "Ingesta iniciada por",
-          "ingestionSessionId": "Sesion de ingesta"
+          "ingestionSessionId": "Sesión de ingesta"
         }
       },
       "corrections": {
-        "title": "Linea de tiempo de transiciones de correccion",
-        "description": "Cada correccion aprobada enlaza directamente a su contexto de transicion de version.",
-        "empty": "No se encontraron transiciones de correccion aprobadas para esta edicion.",
-        "viewDiff": "Abrir contexto de diff de version",
+        "title": "Línea de tiempo de transiciones de corrección",
+        "description": "Cada corrección aprobada enlaza directamente a su contexto de transición de versión.",
+        "empty": "No se encontraron transiciones de corrección aprobadas para esta edición.",
+        "viewDiff": "Abrir contexto de diff de versión",
         "fields": {
           "requestId": "ID de solicitud",
-          "transition": "Transicion de version",
+          "transition": "Transición de versión",
           "requestedBy": "Solicitada por",
           "reviewedBy": "Revisada por",
           "reviewedAt": "Revisada en",
@@ -456,18 +567,18 @@
         }
       },
       "audit": {
-        "title": "Bitacora de auditoria de acciones criticas",
-        "description": "Filtra acciones criticas de confianza por evento, tipo de accion y ventana de tiempo.",
-        "empty": "Ninguna entrada de auditoria coincide con los filtros seleccionados.",
+        "title": "Bitácora de auditoría de acciones críticas",
+        "description": "Filtra acciones críticas de confianza por evento, tipo de acción y ventana de tiempo.",
+        "empty": "Ninguna entrada de auditoría coincide con los filtros seleccionados.",
         "fields": {
-          "action": "Accion",
+          "action": "Acción",
           "actor": "Actor",
           "entity": "Entidad objetivo",
           "timestamp": "Marca de tiempo"
         },
         "filters": {
-          "action": "Filtro de accion",
-          "allActions": "Todas las acciones criticas",
+          "action": "Filtro de acción",
+          "allActions": "Todas las acciones críticas",
           "from": "Desde",
           "to": "Hasta",
           "apply": "Aplicar"
@@ -475,29 +586,29 @@
         "actions": {
           "results": {
             "ingestion": {
-              "initialize": "Ingestion de resultados inicializada"
+              "initialize": "Ingestión de resultados inicializada"
             },
             "version": {
-              "finalize": "Version de resultados finalizada"
+              "finalize": "Versión de resultados finalizada"
             },
             "correction": {
               "review": {
-                "approve": "Correccion aprobada"
+                "approve": "Corrección aprobada"
               },
-              "publish": "Correccion publicada"
+              "publish": "Corrección publicada"
             }
           }
         }
       },
       "status": {
         "draft": "Borrador",
-        "official": "Official",
+        "official": "Oficial",
         "corrected": "Corregida"
       },
       "source": {
-        "manual_offline": "Captura manual offline",
-        "csv_excel": "Importacion CSV/Excel",
-        "correction": "Publicacion de correccion"
+        "manual_offline": "Captura manual sin conexión",
+        "csv_excel": "Importación CSV/Excel",
+        "correction": "Publicación de corrección"
       },
       "fallback": {
         "notAvailable": "N/D",
@@ -526,7 +637,7 @@
         "warning": "Advertencia"
       },
       "issueFields": {
-        "bib": "Bib",
+        "bib": "Dorsal",
         "runner": "Corredor",
         "guidance": "Guía"
       },
@@ -536,33 +647,33 @@
       }
     },
     "captureEntry": {
-      "title": "Captura offline por bib",
-      "description": "Captura bib, tiempo y estado en Borrador aunque la conectividad sea inestable.",
+      "title": "Captura sin conexión por dorsal",
+      "description": "Captura número de dorsal, tiempo y estado en Borrador aunque la conectividad sea inestable.",
       "connectivityLabel": "Conectividad",
       "connectivityOnline": "En línea",
       "connectivityOffline": "Sin conexión",
       "reassuranceSavedLocally": "Guardado localmente",
       "reassuranceNotPublic": "Aún no es público",
       "reassurancePendingSync": "{count} entradas pendientes de sincronizar",
-      "bibLabel": "Número de bib",
+      "bibLabel": "Número de dorsal",
       "bibPlaceholder": "ej. 245",
       "timeLabel": "Tiempo final",
       "timePlaceholder": "HH:MM:SS o MM:SS",
       "statusLabel": "Estado del resultado",
       "submitAction": "Guardar entrada en borrador",
-      "validationBibRequired": "El número de bib es obligatorio antes de guardar una entrada en borrador.",
+      "validationBibRequired": "El número de dorsal es obligatorio antes de guardar una entrada en borrador.",
       "validationFinishTimeInvalid": "El estado Finalizó requiere un tiempo final válido.",
       "entrySaved": "Entrada guardada localmente en estado borrador.",
-      "entriesTitle": "Vista previa de borrador desde captura offline",
+      "entriesTitle": "Vista previa de borrador desde captura sin conexión",
       "entriesDescription": "Se preserva la semántica de estado y el lugar general se deriva solo de tiempos de finalización.",
-      "entriesEmpty": "Aún no hay entradas de captura offline.",
+      "entriesEmpty": "Aún no hay entradas de captura sin conexión.",
       "syncTitle": "Sincronización determinista",
-      "syncDescription": "Sincroniza filas pendientes de borrador de forma idempotente. Los reintentos continúan desde el último checkpoint consistente.",
+      "syncDescription": "Sincroniza filas pendientes del borrador de forma idempotente. Los reintentos continúan desde el último punto de control consistente.",
       "syncAction": "Ejecutar sincronización",
       "syncOfflineGuard": "Reconéctate antes de ejecutar la sincronización.",
       "syncProgressMessage": "Se sincronizaron {processed} entradas. Quedan {remaining} pendientes.",
       "syncCompleteMessage": "Todas las entradas pendientes se sincronizaron sin duplicaciones.",
-      "syncInterruptedMessage": "Checkpoint de sincronización guardado tras {processed} entradas. Reintenta para continuar con las {remaining} restantes.",
+      "syncInterruptedMessage": "Punto de control de sincronización guardado tras {processed} entradas. Reintenta para continuar con las {remaining} restantes.",
       "syncBlockedByConflicts": "Resuelve todos los conflictos pendientes antes de completar la sincronización.",
       "conflictTitle": "Revisión de conflictos",
       "conflictDescription": "Compara valores locales y del servidor lado a lado, luego elige una resolución explícita para cada conflicto.",
@@ -571,7 +682,7 @@
       "conflictResolved": "Resolución seleccionada",
       "conflictLocalValues": "Valores locales",
       "conflictServerValues": "Valores del servidor",
-      "conflictFieldBib": "Bib",
+      "conflictFieldBib": "Dorsal",
       "conflictFieldStatus": "Estado",
       "conflictFieldFinishTime": "Tiempo final",
       "conflictFieldUpdatedAt": "Actualizado en",
@@ -580,7 +691,7 @@
       "conflictChoiceKeepLocal": "Se conservan valores locales",
       "conflictChoiceKeepServer": "Se conservan valores del servidor",
       "headers": {
-        "bib": "Bib",
+        "bib": "Dorsal",
         "status": "Estado",
         "syncStatus": "Estado de sincronización",
         "finishTime": "Tiempo final",
@@ -600,7 +711,7 @@
       "syncStatusPending": "Sincronización pendiente",
       "syncStatusSynced": "Sincronizado",
       "syncStatusConflict": "Conflicto",
-      "safeNextDetails": {
+    "safeNextDetails": {
         "title": "Guía",
         "safe": "Estado",
         "next": "Siguiente paso",
@@ -655,7 +766,7 @@
       "derivedPreviewEmpty": "Aún no hay filas mapeadas disponibles para vista previa.",
       "derivedPreviewHeaders": {
         "runner": "Corredor",
-        "bib": "Bib",
+        "bib": "Dorsal",
         "status": "Estado",
         "finishTime": "Tiempo final",
         "derivedOverall": "Lugar general derivado"
@@ -670,7 +781,7 @@
       },
       "canonicalFields": {
         "runnerFullName": "Nombre del corredor",
-        "bibNumber": "Número de bib",
+        "bibNumber": "Número de dorsal",
         "finishTimeMillis": "Tiempo final",
         "status": "Estado del resultado",
         "gender": "Género",
@@ -694,7 +805,13 @@
     "answerPlaceholder": "Proporciona una respuesta útil...",
     "add": "Agregar",
     "save": "Guardar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "actions": {
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    }
   },
   "waivers": {
     "title": "Deslindes",
@@ -714,7 +831,12 @@
     },
     "add": "Agregar deslinde",
     "save": "Guardar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "actions": {
+      "moveUp": "Subir",
+      "moveDown": "Bajar",
+      "edit": "Editar"
+    }
   },
   "policies": {
     "title": "Políticas",

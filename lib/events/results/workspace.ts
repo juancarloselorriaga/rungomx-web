@@ -91,6 +91,8 @@ export type SafeNextDetailsFeedback = {
   details: string[];
 };
 
+type TranslationFn = (key: string, values?: Record<string, string | number>) => string;
+
 const OFFLINE_FALLBACK_UNSYNCED_COUNT = 2;
 const DEFAULT_RESULT_STATUS: ResultEntryStatus = 'finish';
 const DEFAULT_SYNC_STATUS_BY_LANE: Record<OrganizerResultsLane, ResultsSyncStatus> = {
@@ -187,8 +189,34 @@ function readUnsyncedCount(
   return fallback;
 }
 
-function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow[] {
+function getFallbackRowsForLane(
+  lane: OrganizerResultsLane,
+  t?: TranslationFn,
+): OrganizerResultsRow[] {
   const now = new Date();
+  const fallbackDetails = {
+    default: t
+      ? t('fallbackRows.defaultDetails')
+      : 'Draft result row available in organizer workflow.',
+    captureSavedLocally: t
+      ? t('fallbackRows.capture.savedLocally')
+      : 'Saved locally from mobile capture session.',
+    captureOfflineCheckpoint: t
+      ? t('fallbackRows.capture.offlineCheckpoint')
+      : 'Status confirmed during offline checkpoint.',
+    importParsed: t
+      ? t('fallbackRows.import.parsed')
+      : 'Parsed from latest CSV draft import.',
+    importDuplicateBib: t
+      ? t('fallbackRows.import.duplicateBib')
+      : 'Duplicate bib conflict flagged for review.',
+    reviewReady: t
+      ? t('fallbackRows.review.ready')
+      : 'Draft row ready for final organizer review.',
+    reviewPendingConflict: t
+      ? t('fallbackRows.review.pendingConflict')
+      : 'Pending conflict resolution before final review.',
+  };
 
   if (lane === 'capture') {
     return [
@@ -202,7 +230,7 @@ function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow
         syncStatus: 'pending_sync',
         finishTimeMillis: 23 * 60 * 1000 + 42 * 1000,
         updatedAt: now,
-        details: 'Saved locally from mobile capture session.',
+        details: fallbackDetails.captureSavedLocally,
       },
       {
         id: 'capture-118',
@@ -214,7 +242,7 @@ function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow
         syncStatus: 'pending_sync',
         finishTimeMillis: null,
         updatedAt: now,
-        details: 'Status confirmed during offline checkpoint.',
+        details: fallbackDetails.captureOfflineCheckpoint,
       },
     ];
   }
@@ -231,7 +259,7 @@ function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow
         syncStatus: 'synced',
         finishTimeMillis: 45 * 60 * 1000 + 5 * 1000,
         updatedAt: now,
-        details: 'Parsed from latest CSV draft import.',
+        details: fallbackDetails.importParsed,
       },
       {
         id: 'import-227',
@@ -243,7 +271,7 @@ function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow
         syncStatus: 'conflict',
         finishTimeMillis: null,
         updatedAt: now,
-        details: 'Duplicate bib conflict flagged for review.',
+        details: fallbackDetails.importDuplicateBib,
       },
     ];
   }
@@ -259,7 +287,7 @@ function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow
       syncStatus: 'synced',
       finishTimeMillis: 37 * 60 * 1000 + 19 * 1000,
       updatedAt: now,
-      details: 'Draft row ready for organizer attestation review.',
+      details: fallbackDetails.reviewReady,
     },
     {
       id: 'review-311',
@@ -271,7 +299,7 @@ function getFallbackRowsForLane(lane: OrganizerResultsLane): OrganizerResultsRow
       syncStatus: 'conflict',
       finishTimeMillis: null,
       updatedAt: now,
-      details: 'Pending conflict resolution before final review.',
+      details: fallbackDetails.reviewPendingConflict,
     },
   ];
 }
@@ -392,9 +420,13 @@ export async function listOrganizerResultsRows(
   limit = 30,
   options: {
     allowFallback?: boolean;
+    t?: TranslationFn;
   } = {},
 ): Promise<OrganizerResultsRow[]> {
   const allowFallback = options.allowFallback ?? true;
+  const detailsFallback = options.t
+    ? options.t('fallbackRows.defaultDetails')
+    : 'Draft result row available in organizer workflow.';
   const [latestDraftVersion] = await db
     .select({
       id: resultVersions.id,
@@ -411,7 +443,7 @@ export async function listOrganizerResultsRows(
     .limit(1);
 
   if (!latestDraftVersion) {
-    return allowFallback ? getFallbackRowsForLane(lane) : [];
+    return allowFallback ? getFallbackRowsForLane(lane, options.t) : [];
   }
 
   const rows = await db
@@ -435,7 +467,7 @@ export async function listOrganizerResultsRows(
     .limit(Math.max(limit, 1));
 
   if (rows.length === 0) {
-    return allowFallback ? getFallbackRowsForLane(lane) : [];
+    return allowFallback ? getFallbackRowsForLane(lane, options.t) : [];
   }
 
   const fallbackSyncStatus = DEFAULT_SYNC_STATUS_BY_LANE[lane];
@@ -455,12 +487,12 @@ export async function listOrganizerResultsRows(
         syncStatus,
         finishTimeMillis: row.finishTimeMillis,
       });
-    const details =
-      typeof rawSourceData?.message === 'string'
-        ? rawSourceData.message
-        : typeof rawSourceData?.notes === 'string'
-          ? rawSourceData.notes
-          : 'Draft result row available in organizer workflow.';
+      const details =
+        typeof rawSourceData?.message === 'string'
+          ? rawSourceData.message
+          : typeof rawSourceData?.notes === 'string'
+            ? rawSourceData.notes
+            : detailsFallback;
 
     return {
       id: row.id,
@@ -480,9 +512,13 @@ export async function listOrganizerResultsRows(
 export function buildOrganizerDraftReviewSummary(
   editionId: string,
   rows: OrganizerResultsRow[],
+  options?: {
+    t?: TranslationFn;
+  },
 ): OrganizerDraftReviewSummary {
   const issues: OrganizerDraftReviewIssue[] = [];
   const validationStateByRowId: Record<string, ResultsValidationState> = {};
+  const t = options?.t;
 
   for (const row of rows) {
     const remediationLane = toRemediationLane(row.sourceLane);
@@ -501,8 +537,12 @@ export function buildOrganizerDraftReviewSummary(
         rowBibNumber: row.bibNumber,
         rowRunnerName: row.runnerName,
         severity: 'blocker',
-        message: 'Conflict resolution is still required for this draft row.',
-        guidance: 'Resolve the explicit sync conflict before attempting finalization.',
+        message: t
+          ? t('reviewIssues.conflict.message')
+          : 'Conflict resolution is still required for this draft row.',
+        guidance: t
+          ? t('reviewIssues.conflict.guidance')
+          : 'Resolve the explicit sync conflict before attempting finalization.',
         remediationLane,
       });
       rowValidationState = 'blocker';
@@ -513,8 +553,12 @@ export function buildOrganizerDraftReviewSummary(
         rowBibNumber: row.bibNumber,
         rowRunnerName: row.runnerName,
         severity: 'blocker',
-        message: 'This row is still pending synchronization.',
-        guidance: 'Run deterministic sync until pending rows reach synced state.',
+        message: t
+          ? t('reviewIssues.pendingSync.message')
+          : 'This row is still pending synchronization.',
+        guidance: t
+          ? t('reviewIssues.pendingSync.guidance')
+          : 'Run deterministic sync until pending rows reach synced state.',
         remediationLane: 'capture',
       });
       rowValidationState = 'blocker';
@@ -527,8 +571,12 @@ export function buildOrganizerDraftReviewSummary(
         rowBibNumber: row.bibNumber,
         rowRunnerName: row.runnerName,
         severity: 'blocker',
-        message: 'Finish status row is missing a finish time.',
-        guidance: 'Provide a valid finish time before continuing to finalization.',
+        message: t
+          ? t('reviewIssues.missingFinishTime.message')
+          : 'Finish status row is missing a finish time.',
+        guidance: t
+          ? t('reviewIssues.missingFinishTime.guidance')
+          : 'Provide a valid finish time before continuing to finalization.',
         remediationLane,
       });
       rowValidationState = 'blocker';
@@ -545,8 +593,12 @@ export function buildOrganizerDraftReviewSummary(
         rowBibNumber: row.bibNumber,
         rowRunnerName: row.runnerName,
         severity: 'warning',
-        message: 'Non-finish status row still includes a finish time value.',
-        guidance: 'Confirm the status/time combination is intentional before attestation.',
+        message: t
+          ? t('reviewIssues.statusTimeMismatch.message')
+          : 'Non-finish status row still includes a finish time value.',
+        guidance: t
+          ? t('reviewIssues.statusTimeMismatch.guidance')
+          : 'Confirm the status/time combination is intentional before publishing.',
         remediationLane,
       });
       rowValidationState = 'warning';
@@ -572,48 +624,258 @@ export function buildOrganizerDraftReviewSummary(
 }
 
 export function getSafeNextDetailsFeedback(
-  lane: OrganizerResultsLane,
+  input: {
+    lane: OrganizerResultsLane;
+    railState: OrganizerResultsRailState;
+    rows: readonly OrganizerResultsRow[];
+    reviewSummary: OrganizerDraftReviewSummary | null;
+    t?: TranslationFn;
+  },
 ): SafeNextDetailsFeedback[] {
+  const lane = input.lane;
+  const rows = input.rows;
+  const t = input.t;
+
+  const countSyncStatus = (status: ResultsSyncStatus) =>
+    rows.reduce((count, row) => (row.syncStatus === status ? count + 1 : count), 0);
+  const countValidationState = (state: ResultsValidationState) =>
+    rows.reduce((count, row) => (row.validationState === state ? count + 1 : count), 0);
+  const pluralize = (count: number, singular: string, plural: string) =>
+    `${count} ${count === 1 ? singular : plural}`;
+
+  if (lane === 'review') {
+    const summary = input.reviewSummary;
+    if (!summary) return [];
+
+    if (summary.rowCount === 0) {
+      return [
+        {
+          id: 'review-empty',
+          tone: 'info',
+          safe: t
+            ? t('laneFeedback.review.empty.safe')
+            : 'No draft rows are ready for review yet.',
+          next: t
+            ? t('laneFeedback.review.empty.next')
+            : 'Start capture or import to create a draft before publishing official results.',
+          details: [
+            t
+              ? t('laneFeedback.review.empty.details.draftProtection')
+              : 'Draft rows remain protected until an organizer publishes an Official version.',
+            t
+              ? t('laneFeedback.review.empty.details.blockersWarningsSummary')
+              : 'Once draft rows exist, blockers and warnings will be summarized here.',
+          ],
+        },
+      ];
+    }
+
+    if (summary.blockerCount > 0) {
+      return [
+        {
+          id: 'review-blockers',
+          tone: 'danger',
+          safe: t
+            ? t('laneFeedback.review.blockers.safe')
+            : 'Official output is protected while this draft is under review.',
+          next: t
+            ? t('laneFeedback.review.blockers.next')
+            : 'Resolve blockers before publishing official results.',
+          details: [
+            t
+              ? t('laneFeedback.review.blockers.details.blockerCount', {
+                  count: summary.blockerCount,
+                })
+              : `${pluralize(summary.blockerCount, 'blocker', 'blockers')} must be resolved before publishing.`,
+            summary.warningCount > 0
+              ? t
+                ? t('laneFeedback.review.blockers.details.warningCount', {
+                    count: summary.warningCount,
+                  })
+                : `${pluralize(summary.warningCount, 'warning', 'warnings')} should be reviewed before publishing.`
+              : t
+                ? t('laneFeedback.review.blockers.details.noWarnings')
+                : 'No warnings are currently flagged.',
+          ],
+        },
+      ];
+    }
+
+    if (summary.warningCount > 0) {
+      return [
+        {
+          id: 'review-warnings',
+          tone: 'warning',
+          safe: t
+            ? t('laneFeedback.review.warnings.safe')
+            : 'Draft is protected and can still be adjusted before it becomes Official.',
+          next: t
+            ? t('laneFeedback.review.warnings.next')
+            : 'Review warnings, then publish official results when appropriate.',
+          details: [
+            t
+              ? t('laneFeedback.review.warnings.details.warningCount', {
+                  count: summary.warningCount,
+                })
+              : `${pluralize(summary.warningCount, 'warning', 'warnings')} are present in this draft.`,
+            t
+              ? t('laneFeedback.review.warnings.details.warningsNonBlocking')
+              : 'Warnings do not necessarily block publication, but should be confirmed intentionally.',
+          ],
+        },
+      ];
+    }
+
+    // Green state: suppress SAFE/NEXT/DETAILS noise.
+    return [];
+  }
+
   if (lane === 'capture') {
-    return [
-      {
-        id: 'capture-sync-interrupted',
-        tone: 'warning',
-        safe: 'Captured rows stay in Draft and are saved locally.',
-        next: 'Reconnect and run sync to upload pending entries.',
-        details: [
-          '2 rows are waiting for sync.',
-          'No public or official records were changed.',
-        ],
-      },
-    ];
+    const unsyncedCount = input.railState.unsyncedCount;
+    const conflictCount = countSyncStatus('conflict');
+    const pendingSyncCount = countSyncStatus('pending_sync');
+    const blockerCount = countValidationState('blocker');
+    const warningCount = countValidationState('warning');
+
+    if (unsyncedCount > 0 || pendingSyncCount > 0) {
+      const pending = Math.max(unsyncedCount, pendingSyncCount);
+      return [
+        {
+          id: 'capture-sync-pending',
+          tone: 'warning',
+          safe: t
+            ? t('laneFeedback.capture.syncPending.safe')
+            : 'Captured rows stay in Draft and are saved locally.',
+          next: t
+            ? t('laneFeedback.capture.syncPending.next')
+            : 'Reconnect and run sync to upload pending entries.',
+          details: [
+            t
+              ? t('laneFeedback.capture.syncPending.details.rowsWaitingForSync', { count: pending })
+              : `${pluralize(pending, 'row is', 'rows are')} waiting for sync.`,
+            t
+              ? t('laneFeedback.capture.syncPending.details.noPublicChanges')
+              : 'No public or official records were changed.',
+          ],
+        },
+      ];
+    }
+
+    if (conflictCount > 0 || blockerCount > 0) {
+      return [
+        {
+          id: 'capture-blocked',
+          tone: 'danger',
+          safe: t
+            ? t('laneFeedback.capture.blocked.safe')
+            : 'Draft capture remains protected while blockers are unresolved.',
+          next: t
+            ? t('laneFeedback.capture.blocked.next')
+            : 'Resolve conflicts/blockers, then re-run sync and review.',
+          details: [
+            conflictCount > 0
+              ? t
+                ? t('laneFeedback.capture.blocked.details.conflictCount', { count: conflictCount })
+                : `${pluralize(conflictCount, 'row requires', 'rows require')} conflict confirmation.`
+              : t
+                ? t('laneFeedback.capture.blocked.details.noConflicts')
+                : 'No conflicts are currently flagged.',
+            blockerCount > 0
+              ? t
+                ? t('laneFeedback.capture.blocked.details.blockerCount', { count: blockerCount })
+                : `${pluralize(blockerCount, 'blocker is', 'blockers are')} still present in the draft.`
+              : t
+                ? t('laneFeedback.capture.blocked.details.noBlockers')
+                : 'No blockers are currently flagged.',
+          ],
+        },
+      ];
+    }
+
+    if (warningCount > 0) {
+      return [
+        {
+          id: 'capture-warnings',
+          tone: 'warning',
+          safe: t
+            ? t('laneFeedback.capture.warnings.safe')
+            : 'Draft capture is protected and can be refined before review.',
+          next: t
+            ? t('laneFeedback.capture.warnings.next')
+            : 'Review warnings, then move to the Review lane.',
+          details: [
+            t
+              ? t('laneFeedback.capture.warnings.details.warningCount', { count: warningCount })
+              : `${pluralize(warningCount, 'warning is', 'warnings are')} present in the draft.`,
+            t
+              ? t('laneFeedback.capture.warnings.details.warningsDoNotPublish')
+              : 'Warnings do not publish data, but should be reviewed before publishing official results.',
+          ],
+        },
+      ];
+    }
+
+    return [];
   }
 
-  if (lane === 'import') {
+  // lane === 'import'
+  const conflictCount = countSyncStatus('conflict');
+  const blockerCount = countValidationState('blocker');
+  const warningCount = countValidationState('warning');
+
+  if (conflictCount > 0 || blockerCount > 0) {
     return [
       {
-        id: 'import-validation',
+        id: 'import-blocked',
         tone: 'danger',
-        safe: 'Draft import is protected and not public yet.',
-        next: 'Fix blockers, then re-run import preview.',
+        safe: t
+          ? t('laneFeedback.import.blocked.safe')
+          : 'Draft import is protected and not public yet.',
+        next: t
+          ? t('laneFeedback.import.blocked.next')
+          : 'Resolve conflicts/blockers, then review the draft before publishing.',
         details: [
-          'One duplicate bib needs explicit conflict resolution.',
-          'Warnings are listed separately and do not publish data.',
+          conflictCount > 0
+            ? t
+              ? t('laneFeedback.import.blocked.details.conflictCount', { count: conflictCount })
+              : `${pluralize(conflictCount, 'row requires', 'rows require')} conflict resolution.`
+            : t
+              ? t('laneFeedback.import.blocked.details.noConflicts')
+              : 'No conflicts are currently flagged.',
+          blockerCount > 0
+            ? t
+              ? t('laneFeedback.import.blocked.details.blockerCount', { count: blockerCount })
+              : `${pluralize(blockerCount, 'blocker is', 'blockers are')} still present in the draft.`
+            : t
+              ? t('laneFeedback.import.blocked.details.noBlockers')
+              : 'No blockers are currently flagged.',
         ],
       },
     ];
   }
 
-  return [
-    {
-      id: 'review-conflict',
-      tone: 'warning',
-      safe: 'Official output is still protected while this draft is under review.',
-      next: 'Resolve remaining conflicts before attestation.',
-      details: [
-        '1 row requires conflict confirmation.',
-        'Review surface shows latest draft-only state for all rows.',
-      ],
-    },
-  ];
+  if (warningCount > 0) {
+    return [
+      {
+        id: 'import-warnings',
+        tone: 'warning',
+        safe: t
+          ? t('laneFeedback.import.warnings.safe')
+          : 'Draft import is protected and can be refined before review.',
+        next: t
+          ? t('laneFeedback.import.warnings.next')
+          : 'Review warnings, then move to the Review lane.',
+        details: [
+          t
+            ? t('laneFeedback.import.warnings.details.warningCount', { count: warningCount })
+            : `${pluralize(warningCount, 'warning is', 'warnings are')} present in the draft.`,
+          t
+            ? t('laneFeedback.import.warnings.details.warningsDoNotPublish')
+            : 'Warnings do not publish data, but should be reviewed before publishing official results.',
+        ],
+      },
+    ];
+  }
+
+  return [];
 }

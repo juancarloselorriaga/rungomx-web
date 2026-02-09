@@ -197,8 +197,10 @@ export default async function ResultsCorrectionsPage({
       />
 
       <OrganizerResultsLane
+        eventId={eventId}
         densityStorageKey={pageData.densityStorageKey}
         railState={pageData.railState}
+        nextActionHref={pageData.nextActionHref}
         versionVisibility={pageData.versionVisibility}
         rows={pageData.rows}
         feedbackItems={pageData.feedbackItems}
