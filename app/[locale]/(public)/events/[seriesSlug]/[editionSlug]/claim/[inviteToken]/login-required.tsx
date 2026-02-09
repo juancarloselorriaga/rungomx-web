@@ -34,12 +34,8 @@ export async function ClaimLoginRequired({
   const signInPath = getPathname({ href: '/sign-in', locale: locale as 'es' | 'en' });
   const signUpPath = getPathname({ href: '/sign-up', locale: locale as 'es' | 'en' });
 
-  const callbackPath = claimPath.startsWith(`/${locale}/`)
-    ? claimPath.slice(locale.length + 1)
-    : claimPath;
-
-  const signInUrl = `${signInPath}?callbackURL=${encodeURIComponent(callbackPath)}`;
-  const signUpUrl = `${signUpPath}?callbackURL=${encodeURIComponent(callbackPath)}`;
+  const signInUrl = `${signInPath}?callbackURL=${encodeURIComponent(claimPath)}`;
+  const signUpUrl = `${signUpPath}?callbackURL=${encodeURIComponent(claimPath)}`;
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-lg">

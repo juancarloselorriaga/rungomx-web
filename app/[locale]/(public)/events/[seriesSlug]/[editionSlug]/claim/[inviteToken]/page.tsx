@@ -88,12 +88,8 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
       locale,
     });
 
-    const callbackPath = claimPath.startsWith(`/${locale}/`)
-      ? claimPath.slice(locale.length + 1)
-      : claimPath;
-
     const verifyPath = getPathname({ href: '/verify-email', locale });
-    const verifyUrl = `${verifyPath}?email=${encodeURIComponent(authContext.user.email ?? '')}&callbackURL=${encodeURIComponent(callbackPath)}`;
+    const verifyUrl = `${verifyPath}?email=${encodeURIComponent(authContext.user.email ?? '')}&callbackURL=${encodeURIComponent(claimPath)}`;
 
     redirect(verifyUrl);
   }

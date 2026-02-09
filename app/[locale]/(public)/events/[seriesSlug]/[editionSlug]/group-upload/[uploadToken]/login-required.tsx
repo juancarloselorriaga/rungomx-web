@@ -34,12 +34,8 @@ export async function GroupUploadLoginRequired({
   const signInPath = getPathname({ href: '/sign-in', locale: locale as 'es' | 'en' });
   const signUpPath = getPathname({ href: '/sign-up', locale: locale as 'es' | 'en' });
 
-  const callbackPath = groupUploadPath.startsWith(`/${locale}/`)
-    ? groupUploadPath.slice(locale.length + 1)
-    : groupUploadPath;
-
-  const signInUrl = `${signInPath}?callbackURL=${encodeURIComponent(callbackPath)}`;
-  const signUpUrl = `${signUpPath}?callbackURL=${encodeURIComponent(callbackPath)}`;
+  const signInUrl = `${signInPath}?callbackURL=${encodeURIComponent(groupUploadPath)}`;
+  const signUpUrl = `${signUpPath}?callbackURL=${encodeURIComponent(groupUploadPath)}`;
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-lg">

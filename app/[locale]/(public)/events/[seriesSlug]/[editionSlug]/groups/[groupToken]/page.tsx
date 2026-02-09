@@ -64,17 +64,13 @@ export default async function GroupPage({ params }: GroupPageProps) {
     locale,
   });
 
-  const callbackPath = groupPath.startsWith(`/${locale}/`)
-    ? groupPath.slice(locale.length + 1)
-    : groupPath;
-
   const signInUrl = authContext.user
     ? undefined
-    : `${getPathname({ href: '/sign-in', locale })}?callbackURL=${encodeURIComponent(callbackPath)}`;
+    : `${getPathname({ href: '/sign-in', locale })}?callbackURL=${encodeURIComponent(groupPath)}`;
 
   const signUpUrl = authContext.user
     ? undefined
-    : `${getPathname({ href: '/sign-up', locale })}?callbackURL=${encodeURIComponent(callbackPath)}`;
+    : `${getPathname({ href: '/sign-up', locale })}?callbackURL=${encodeURIComponent(groupPath)}`;
 
   return (
     <GroupLinkPage

@@ -63,17 +63,13 @@ export default async function GroupUploadLandingPage({ params }: GroupUploadPage
     locale,
   });
 
-  const callbackPath = groupUploadPath.startsWith(`/${locale}/`)
-    ? groupUploadPath.slice(locale.length + 1)
-    : groupUploadPath;
-
   const signInUrl = authContext.user
     ? undefined
-    : `${getPathname({ href: '/sign-in', locale })}?callbackURL=${encodeURIComponent(callbackPath)}`;
+    : `${getPathname({ href: '/sign-in', locale })}?callbackURL=${encodeURIComponent(groupUploadPath)}`;
 
   const signUpUrl = authContext.user
     ? undefined
-    : `${getPathname({ href: '/sign-up', locale })}?callbackURL=${encodeURIComponent(callbackPath)}`;
+    : `${getPathname({ href: '/sign-up', locale })}?callbackURL=${encodeURIComponent(groupUploadPath)}`;
 
   return (
     <GroupUploadLanding

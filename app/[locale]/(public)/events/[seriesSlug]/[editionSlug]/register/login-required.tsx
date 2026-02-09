@@ -37,12 +37,8 @@ export async function LoginRequired({
   const signInPath = getPathname({ href: '/sign-in', locale: locale as 'es' | 'en' });
   const signUpPath = getPathname({ href: '/sign-up', locale: locale as 'es' | 'en' });
 
-  const callbackPath = registerPath.startsWith(`/${locale}/`)
-    ? registerPath.slice(locale.length + 1)
-    : registerPath;
-
-  const signInUrl = `${signInPath}?callbackURL=${encodeURIComponent(callbackPath)}`;
-  const signUpUrl = `${signUpPath}?callbackURL=${encodeURIComponent(callbackPath)}`;
+  const signInUrl = `${signInPath}?callbackURL=${encodeURIComponent(registerPath)}`;
+  const signUpUrl = `${signUpPath}?callbackURL=${encodeURIComponent(registerPath)}`;
 
   return (
     <div className="container mx-auto px-4 py-16 max-w-lg">

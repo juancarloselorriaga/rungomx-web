@@ -23,7 +23,6 @@ export default async function SignInPage({
   searchParams,
 }: LocalePageProps & { searchParams?: Promise<{ reset?: string; callbackURL?: string }> }) {
   await configPageLocale(params, { pathname: '/sign-in' });
-  const { locale } = await params;
   const t = await getTranslations('pages.signIn');
   const authT = await getTranslations('auth');
 
@@ -32,14 +31,6 @@ export default async function SignInPage({
   const callbackPath = (() => {
     const normalized = normalizeCallbackPath(resolvedSearchParams?.callbackURL);
     if (!normalized || !isSafeRedirectPath(normalized)) return undefined;
-
-    // Strip locale prefix (our i18n router will re-apply it)
-    const localePrefix = `/${locale}`;
-    if (normalized === localePrefix) return '/';
-    if (normalized.startsWith(`${localePrefix}/`)) {
-      return normalized.slice(localePrefix.length) || '/';
-    }
-
     return normalized;
   })();
   const signUpHref = callbackPath
