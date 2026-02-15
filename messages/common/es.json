@@ -44,6 +44,11 @@
     "welcomeBackPro": "¡Bienvenido de nuevo, corredor Pro!"
   },
   "proFeatures": {
+    "event_ai_wizard": {
+      "title": "Asistente de configuración",
+      "description": "Crea distancias y precios más rápido con un asistente guiado por IA.",
+      "ctaLabel": "Actualizar a Pro"
+    },
     "event_clone": {
       "title": "Clonar eventos",
       "description": "Clona una edición del evento para reutilizar distancias, precios y configuración.",

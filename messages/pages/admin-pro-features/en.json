@@ -62,6 +62,10 @@
     "coupons": {
       "label": "Coupons",
       "description": "Create and manage discount codes."
+    },
+    "event_ai_wizard": {
+      "label": "AI event wizard",
+      "description": "Conversational assistant for event setup (distances, pricing, and core details)."
     }
   },
   "report": {

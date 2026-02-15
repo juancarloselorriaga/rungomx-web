@@ -44,6 +44,11 @@
     "welcomeBackPro": "Welcome back, Pro runner!"
   },
   "proFeatures": {
+    "event_ai_wizard": {
+      "title": "Setup assistant",
+      "description": "Create distances and pricing faster with an AI-guided wizard.",
+      "ctaLabel": "Upgrade to Pro"
+    },
     "event_clone": {
       "title": "Clone events",
       "description": "Clone an event edition to quickly reuse distances, pricing, and settings.",

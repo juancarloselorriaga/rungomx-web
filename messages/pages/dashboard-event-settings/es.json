@@ -9,6 +9,27 @@
       "publish": "Publica el evento para que sea visible."
     }
   },
+  "assistant": {
+    "title": "Asistente de configuración",
+    "description": "Describe tu evento en un solo mensaje. Te propondré cambios para revisar y aplicar.",
+    "placeholder": "Cuéntame de tu evento (fecha, ciudad, distancias, precios)...",
+    "empty": {
+      "heading": "Prueba con:",
+      "example": "Medio maratón en Guadalajara el 15 de marzo de 2026. Agrega 5K y 10K. Precios: 350 y 450 MXN."
+    },
+    "send": "Enviar",
+    "stop": "Detener",
+    "apply": "Aplicar cambios",
+    "applying": "Aplicando...",
+    "applied": "Aplicado",
+    "errors": {
+      "title": "Error del asistente",
+      "proRequired": "El asistente de configuración es una función Pro.",
+      "disabled": "El asistente de configuración no está disponible temporalmente.",
+      "partialApplied": "Se aplicaron algunos cambios, pero ocurrió un error. Revisa la configuración del evento.",
+      "failed": "No se pudieron aplicar los cambios. Intenta de nuevo."
+    }
+  },
   "visibility": {
     "title": "Visibilidad del Evento",
     "description": "Controla quién puede ver y acceder a tu evento. Los eventos publicados aparecen en el directorio público.",
