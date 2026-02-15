@@ -2,6 +2,7 @@ import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
+import { guardProFeaturePage } from '@/lib/pro-features/server/guard';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
@@ -10,6 +11,7 @@ import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
 import { EventSettingsForm } from './event-settings-form';
+import { EventAiWizardPanel } from './event-ai-wizard-panel';
 
 type SettingsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -61,6 +63,13 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
+  const assistantGate = wizardMode
+    ? await guardProFeaturePage('event_ai_wizard', authContext)
+    : null;
+  const showAssistantColumn =
+    !!assistantGate &&
+    (assistantGate.allowed || assistantGate.decision.status !== 'hidden');
+
   return (
     <div className="space-y-6">
       <div>
@@ -68,9 +77,24 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         <p className="text-muted-foreground">{t('description')}</p>
       </div>
 
-      <div className="max-w-4xl">
-        <EventSettingsForm event={event} wizardMode={wizardMode} />
-      </div>
+      {wizardMode && showAssistantColumn ? (
+        <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+          <div className="self-start lg:sticky lg:top-6">
+            {assistantGate.allowed ? (
+              <EventAiWizardPanel editionId={eventId} />
+            ) : (
+              <div className="max-w-md">{assistantGate.disabled ?? assistantGate.upsell}</div>
+            )}
+          </div>
+          <div className="max-w-4xl">
+            <EventSettingsForm event={event} wizardMode={wizardMode} />
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-4xl">
+          <EventSettingsForm event={event} wizardMode={wizardMode} />
+        </div>
+      )}
     </div>
   );
 }

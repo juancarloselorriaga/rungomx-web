@@ -9,6 +9,27 @@
       "publish": "Publish the event to make it visible."
     }
   },
+  "assistant": {
+    "title": "Setup assistant",
+    "description": "Describe your event in one message. I’ll propose changes you can review and apply.",
+    "placeholder": "Tell me about your event (date, city, distances, pricing)...",
+    "empty": {
+      "heading": "Try one of these:",
+      "example": "Half marathon in Guadalajara on March 15, 2026. Add a 5K and 10K. Pricing: 350 and 450 MXN."
+    },
+    "send": "Send",
+    "stop": "Stop",
+    "apply": "Apply changes",
+    "applying": "Applying...",
+    "applied": "Applied",
+    "errors": {
+      "title": "Assistant error",
+      "proRequired": "Setup assistant is a Pro feature.",
+      "disabled": "Setup assistant is temporarily unavailable.",
+      "partialApplied": "Some changes were applied, but something failed. Please review your event settings.",
+      "failed": "Could not apply changes. Please try again."
+    }
+  },
   "visibility": {
     "title": "Event Visibility",
     "description": "Control who can see and access your event. Published events appear in the public directory.",

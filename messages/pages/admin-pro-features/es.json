@@ -62,6 +62,10 @@
     "coupons": {
       "label": "Cupones",
       "description": "Crea y administra códigos de descuento."
+    },
+    "event_ai_wizard": {
+      "label": "Asistente de eventos (IA)",
+      "description": "Asistente conversacional para configurar tu evento (distancias, precios y datos principales)."
     }
   },
   "report": {

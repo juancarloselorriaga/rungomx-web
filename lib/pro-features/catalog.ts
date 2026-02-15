@@ -1,6 +1,6 @@
 import type { ProFeatureEnforcement, ProFeatureVisibility } from './types';
 
-export type ProFeatureKey = 'event_clone' | 'coupons';
+export type ProFeatureKey = 'event_clone' | 'coupons' | 'event_ai_wizard';
 
 export type ProFeatureUpsellHref = '/settings/billing';
 export type ProFeatureCommonKey = `proFeatures.${ProFeatureKey}.${'title' | 'description' | 'ctaLabel'}`;
@@ -52,6 +52,21 @@ export const PRO_FEATURE_CATALOG: Record<ProFeatureKey, ProFeatureCatalogEntry> 
     },
     owner: 'Product/Eng',
     notes: 'Stage 1 pilot: coupons management',
+  },
+  event_ai_wizard: {
+    key: 'event_ai_wizard',
+    defaultVisibility: 'locked',
+    enforcement: 'server_required',
+    upsellHref: '/settings/billing',
+    i18n: {
+      lockedTitleKey: 'proFeatures.event_ai_wizard.title',
+      lockedDescriptionKey: 'proFeatures.event_ai_wizard.description',
+      lockedCtaKey: 'proFeatures.event_ai_wizard.ctaLabel',
+      adminLabelKey: 'features.event_ai_wizard.label',
+      adminDescriptionKey: 'features.event_ai_wizard.description',
+    },
+    owner: 'Product/Eng',
+    notes: 'Conversational event creation wizard',
   },
 };
 

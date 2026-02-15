@@ -68,6 +68,16 @@ describe('Pro feature guard', () => {
         enforcement: getProFeatureMeta('coupons').enforcement,
         upsellHref: getProFeatureMeta('coupons').upsellHref,
       },
+      event_ai_wizard: {
+        id: 'cfg-3',
+        featureKey: 'event_ai_wizard',
+        enabled: true,
+        visibilityOverride: null,
+        notes: null,
+        defaultVisibility: getProFeatureMeta('event_ai_wizard').defaultVisibility,
+        enforcement: getProFeatureMeta('event_ai_wizard').enforcement,
+        upsellHref: getProFeatureMeta('event_ai_wizard').upsellHref,
+      },
     });
   });
 
