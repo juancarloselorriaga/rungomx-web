@@ -62,6 +62,18 @@ jest.mock('@/i18n/navigation', () => ({
   getPathname: jest.fn(({ href, locale }: { href: string; locale: string }) => `/${locale}${href}`),
 }));
 
+jest.mock('@/lib/billing/entitlements', () => ({
+  getProEntitlementForUser: jest.fn(async () => ({ isPro: false })),
+}));
+
+jest.mock('@/lib/pro-features/server/config', () => ({
+  getProFeatureConfigSnapshot: jest.fn(async () => ({})),
+}));
+
+jest.mock('@/components/billing/auto-claim-pending-grants-client', () => ({
+  AutoClaimPendingGrantsClient: () => null,
+}));
+
 jest.mock('next/navigation', () => ({
   redirect: jest.fn((path: string) => {
     throw new Error(`REDIRECT:${path}`);

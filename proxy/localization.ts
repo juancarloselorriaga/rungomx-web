@@ -1,6 +1,7 @@
 import { type AppLocale, routing } from '@/i18n/routing';
 import { isValidLocale } from '@/i18n/utils';
 import { NextRequest, NextResponse } from 'next/server';
+import { toInternalPathFromPathnames } from './localization-pathnames';
 
 const localesPattern = routing.locales.join('|');
 const localePrefixRegex = new RegExp(`^/(${localesPattern})(?=/|$)`);
@@ -47,64 +48,12 @@ const getLocalizedPathname = (internalPathname: string, locale: AppLocale) => {
   return entry[locale] ?? internalPathname;
 };
 
-const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const buildPathMatcher = (localizedPath: string) => {
-  if (localizedPath === '/') {
-    return { matcher: /^\/$/, paramNames: [] as string[] };
-  }
-
-  const segments = localizedPath.split('/').filter(Boolean);
-  const paramNames: string[] = [];
-  const pattern = segments
-    .map((segment) => {
-      if (segment.startsWith('[') && segment.endsWith(']')) {
-        paramNames.push(segment.slice(1, -1));
-        return '([^/]+)';
-      }
-      return escapeRegex(segment);
-    })
-    .join('/');
-
-  // Capture any remaining path so broad entries like `/dashboard` can still
-  // map `/tablero/...` to `/dashboard/...` when a more specific entry isn't declared.
-  return {
-    matcher: new RegExp(`^/${pattern}((?:/.*)?)$`),
-    paramNames,
-  };
-};
-
 const toInternalPath = (pathname: string, locale: AppLocale) => {
-  if (pathname === '/') return '/';
-
-  // Prefer the most specific matching route (e.g. `/dashboard/events/[eventId]/registrations`)
-  // over broad prefixes like `/dashboard`. This is important for correct auth guards and
-  // callback URLs on localized routes.
-  const entries = Object.entries(routing.pathnames ?? {})
-    .map(([internal, localized]) => {
-      const localizedPath = typeof localized === 'string' ? localized : localized[locale];
-      return localizedPath ? ({ internal, localizedPath } as const) : null;
-    })
-    .filter(
-      (entry): entry is NonNullable<typeof entry> => entry !== null,
-    )
-    .sort((a, b) => b.localizedPath.length - a.localizedPath.length);
-
-  for (const entry of entries) {
-    const { matcher, paramNames } = buildPathMatcher(entry.localizedPath);
-    const match = matcher.exec(pathname);
-    if (match) {
-      let resolved = entry.internal;
-      for (const [index, name] of paramNames.entries()) {
-        resolved = resolved.replace(`[${name}]`, match[index + 1]);
-      }
-
-      const rest = match[paramNames.length + 1] ?? '';
-      return `${resolved}${rest}` || '/';
-    }
-  }
-
-  return pathname;
+  return toInternalPathFromPathnames(
+    pathname,
+    locale,
+    routing.pathnames as unknown as Record<string, string | Record<string, string | undefined>>,
+  );
 };
 
 export const buildRedirectUrl = (

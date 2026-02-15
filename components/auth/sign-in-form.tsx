@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Link, useRouter } from '@/i18n/navigation';
 import { signIn } from '@/lib/auth/client';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { isSafeRedirectPath } from '@/lib/utils/redirect';
+import { isSafeRedirectPath, stripLeadingLocaleFromPath } from '@/lib/utils/redirect';
 import { Loader2, LogIn } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
@@ -26,8 +26,9 @@ export function SignInForm({ callbackPath }: SignInFormProps) {
   const t = useTranslations('auth');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const targetPath =
+  const rawTargetPath =
     callbackPath && isSafeRedirectPath(callbackPath) ? callbackPath : '/dashboard';
+  const targetPath = stripLeadingLocaleFromPath(rawTargetPath);
 
   const form = useForm<
     { email: string; password: string },
