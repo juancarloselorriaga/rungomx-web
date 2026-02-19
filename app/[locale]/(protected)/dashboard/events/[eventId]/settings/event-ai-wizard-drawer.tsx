@@ -13,6 +13,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 
+export const EVENT_AI_WIZARD_OPEN_EVENT = 'event-ai-wizard:open';
+
 type EventAiWizardDrawerProps = {
   triggerLabel: string;
   description: string;
@@ -36,6 +38,14 @@ export function EventAiWizardDrawer({
       setOpen(true);
     }
   }, [defaultOpen]);
+
+  useEffect(() => {
+    const handleOpen = () => setOpen(true);
+    window.addEventListener(EVENT_AI_WIZARD_OPEN_EVENT, handleOpen);
+    return () => {
+      window.removeEventListener(EVENT_AI_WIZARD_OPEN_EVENT, handleOpen);
+    };
+  }, []);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>

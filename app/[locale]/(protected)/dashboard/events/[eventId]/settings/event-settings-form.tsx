@@ -15,7 +15,7 @@ import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
-import { Link, useRouter } from '@/i18n/navigation';
+import { useRouter } from '@/i18n/navigation';
 import {
   updateEventEdition,
   updateEventVisibility,
@@ -61,6 +61,8 @@ import dynamic from 'next/dynamic';
 import { upload } from '@vercel/blob/client';
 import { toast } from 'sonner';
 import Image from 'next/image';
+
+import { EVENT_AI_WIZARD_OPEN_EVENT } from './event-ai-wizard-drawer';
 
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
@@ -509,16 +511,13 @@ export function EventSettingsForm({
                 <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
                 <span>{t('assistant.description')}</span>
               </div>
-              <Button type="button" size="sm" variant="outline" asChild>
-                <Link
-                  href={{
-                    pathname: '/dashboard/events/[eventId]/settings',
-                    params: { eventId: event.id },
-                    query: { wizard: '1', assistant: '1' },
-                  }}
-                >
-                  {t('assistant.title')}
-                </Link>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => window.dispatchEvent(new Event(EVENT_AI_WIZARD_OPEN_EVENT))}
+              >
+                {t('assistant.title')}
               </Button>
             </div>
           ) : null}
