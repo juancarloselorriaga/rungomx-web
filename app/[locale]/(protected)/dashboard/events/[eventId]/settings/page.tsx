@@ -11,6 +11,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { EventSettingsForm } from './event-settings-form';
 import { EventAiWizardPanel } from './event-ai-wizard-panel';
+import { EventAiWizardDrawer } from './event-ai-wizard-drawer';
 
 type SettingsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -41,6 +42,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   const authContext = await getAuthContext();
   const resolvedSearchParams = await searchParams;
   const wizardMode = resolvedSearchParams?.wizard === '1';
+  const assistantRequested = resolvedSearchParams?.assistant === '1';
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
@@ -65,35 +67,38 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   const assistantGate = wizardMode
     ? await guardProFeaturePage('event_ai_wizard', authContext)
     : null;
-  const showAssistantColumn =
-    !!assistantGate &&
-    (assistantGate.allowed || assistantGate.decision.status !== 'hidden');
+  const assistantGateForUi =
+    assistantGate && (assistantGate.allowed || assistantGate.decision.status !== 'hidden')
+      ? assistantGate
+      : null;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
-      {wizardMode && showAssistantColumn ? (
-        <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-          <div className="self-start lg:sticky lg:top-6">
-            {assistantGate.allowed ? (
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
+          <p className="text-muted-foreground">{t('description')}</p>
+        </div>
+        {wizardMode && assistantGateForUi ? (
+          <EventAiWizardDrawer
+            triggerLabel={t('assistant.title')}
+            defaultOpen={assistantRequested}
+            locked={!assistantGateForUi.allowed}
+          >
+            {assistantGateForUi.allowed ? (
               <EventAiWizardPanel editionId={eventId} />
             ) : (
-              <div className="max-w-md">{assistantGate.disabled ?? assistantGate.upsell}</div>
+              <div className="max-w-md">
+                {assistantGateForUi.disabled ?? assistantGateForUi.upsell}
+              </div>
             )}
-          </div>
-          <div className="max-w-4xl">
-            <EventSettingsForm event={event} wizardMode={wizardMode} />
-          </div>
-        </div>
-      ) : (
-        <div className="max-w-4xl">
-          <EventSettingsForm event={event} wizardMode={wizardMode} />
-        </div>
-      )}
+          </EventAiWizardDrawer>
+        ) : null}
+      </div>
+
+      <div className="max-w-4xl">
+        <EventSettingsForm event={event} wizardMode={wizardMode} />
+      </div>
     </div>
   );
 }
