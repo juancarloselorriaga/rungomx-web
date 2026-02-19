@@ -4,6 +4,8 @@
   "wizard": {
     "title": "Termina la configuración de tu evento",
     "description": "Agrega tu primera distancia y publica cuando estés listo para compartir.",
+    "assistantHint": "¿Necesitas ayuda con la configuración? Usa el asistente para proponer cambios.",
+    "assistantAction": "Abrir asistente de configuración",
     "steps": {
       "distance": "Agrega al menos una distancia con precio.",
       "publish": "Publica el evento para que sea visible."
@@ -12,6 +14,29 @@
   "assistant": {
     "title": "Asistente de configuración",
     "description": "Describe tu evento en un solo mensaje. Te propondré cambios para revisar y aplicar.",
+    "contract": "Solo propongo cambios. Nada se aplica hasta que confirmes cada propuesta.",
+    "historyLabel": "Conversación del asistente de configuración",
+    "composer": {
+      "label": "Mensaje para el asistente de configuración",
+      "hint": "Incluye fecha, ciudad, distancias y precios para generar propuestas precisas."
+    },
+    "messages": {
+      "user": "Tú",
+      "assistant": "Asistente"
+    },
+    "ops": {
+      "updateEvent": "Actualizar evento: {fields}",
+      "addDistance": "Agregar distancia: {label}{value} por {price}",
+      "updateDistancePrice": "Actualizar precio de distancia a {price}",
+      "addTier": "Agregar categoría: {label} por {price}",
+      "defaultTier": "Categoría de precios",
+      "fields": {
+        "date": "fecha",
+        "location": "ubicación",
+        "label": "etiqueta",
+        "details": "detalles"
+      }
+    },
     "placeholder": "Cuéntame de tu evento (fecha, ciudad, distancias, precios)...",
     "empty": {
       "heading": "Prueba con:",

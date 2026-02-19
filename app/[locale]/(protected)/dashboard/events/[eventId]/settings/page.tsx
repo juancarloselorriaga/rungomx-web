@@ -83,6 +83,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         {wizardMode && assistantGateForUi ? (
           <EventAiWizardDrawer
             triggerLabel={t('assistant.title')}
+            description={t('assistant.description')}
             defaultOpen={assistantRequested}
             locked={!assistantGateForUi.allowed}
           >
@@ -98,7 +99,11 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       </div>
 
       <div className="max-w-4xl">
-        <EventSettingsForm event={event} wizardMode={wizardMode} />
+        <EventSettingsForm
+          event={event}
+          wizardMode={wizardMode}
+          assistantEntryEnabled={Boolean(assistantGateForUi)}
+        />
       </div>
     </div>
   );

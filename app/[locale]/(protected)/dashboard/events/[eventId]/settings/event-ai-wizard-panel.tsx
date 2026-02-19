@@ -3,7 +3,7 @@
 import { DefaultChatTransport } from 'ai';
 import type { UIMessagePart } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Sparkles, Square, Send, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -31,49 +31,6 @@ function resolvePriceCents(data: { priceCents?: number; price?: number }): numbe
   return Math.round((data.price ?? 0) * 100);
 }
 
-function formatOpLabel(op: EventAiWizardOp, locale: string): string {
-  switch (op.type) {
-    case 'update_edition': {
-      const pieces: string[] = [];
-      if (op.data.startsAt) pieces.push('date');
-      if (op.data.locationDisplay || op.data.city || op.data.state) pieces.push('location');
-      if (op.data.editionLabel) pieces.push('label');
-      if (!pieces.length) pieces.push('details');
-      return `Update event ${pieces.join(', ')}`;
-    }
-    case 'create_distance': {
-      const unit = op.data.distanceUnit ?? 'km';
-      const value = op.data.distanceValue ? `${op.data.distanceValue}${unit}` : undefined;
-      const cents = resolvePriceCents(op.data);
-      const money = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: 'MXN',
-        maximumFractionDigits: 2,
-      }).format(cents / 100);
-      return `Add distance: ${op.data.label}${value ? ` (${value})` : ''} at ${money}`;
-    }
-    case 'update_distance_price': {
-      const cents = resolvePriceCents(op.data);
-      const money = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: 'MXN',
-        maximumFractionDigits: 2,
-      }).format(cents / 100);
-      return `Update distance price to ${money}`;
-    }
-    case 'create_pricing_tier': {
-      const cents = resolvePriceCents(op.data);
-      const money = new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: op.data.currency ?? 'MXN',
-        maximumFractionDigits: 2,
-      }).format(cents / 100);
-      const label = op.data.label ?? 'Pricing tier';
-      return `Add tier: ${label} at ${money}`;
-    }
-  }
-}
-
 function PatchCard({
   editionId,
   patchId,
@@ -92,6 +49,55 @@ function PatchCard({
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const router = useRouter();
   const [isApplying, setIsApplying] = useState(false);
+
+  function formatOpLabel(op: EventAiWizardOp): string {
+    switch (op.type) {
+      case 'update_edition': {
+        const fields: string[] = [];
+        if (op.data.startsAt) fields.push(t('ops.fields.date'));
+        if (op.data.locationDisplay || op.data.city || op.data.state) {
+          fields.push(t('ops.fields.location'));
+        }
+        if (op.data.editionLabel) fields.push(t('ops.fields.label'));
+        if (!fields.length) fields.push(t('ops.fields.details'));
+        return t('ops.updateEvent', { fields: fields.join(', ') });
+      }
+      case 'create_distance': {
+        const unit = op.data.distanceUnit ?? 'km';
+        const value = op.data.distanceValue ? `${op.data.distanceValue}${unit}` : '';
+        const cents = resolvePriceCents(op.data);
+        const money = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: 'MXN',
+          maximumFractionDigits: 2,
+        }).format(cents / 100);
+        return t('ops.addDistance', {
+          label: op.data.label,
+          value: value ? ` (${value})` : '',
+          price: money,
+        });
+      }
+      case 'update_distance_price': {
+        const cents = resolvePriceCents(op.data);
+        const money = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: 'MXN',
+          maximumFractionDigits: 2,
+        }).format(cents / 100);
+        return t('ops.updateDistancePrice', { price: money });
+      }
+      case 'create_pricing_tier': {
+        const cents = resolvePriceCents(op.data);
+        const money = new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: op.data.currency ?? 'MXN',
+          maximumFractionDigits: 2,
+        }).format(cents / 100);
+        const label = op.data.label ?? t('ops.defaultTier');
+        return t('ops.addTier', { label, price: money });
+      }
+    }
+  }
 
   async function applyPatch() {
     if (isApplying || applied) return;
@@ -134,10 +140,10 @@ function PatchCard({
   }
 
   return (
-    <div className="mt-3 rounded-lg border bg-background/60 p-3 shadow-sm animate-in fade-in slide-in-from-bottom-1">
+    <article className="mt-3 rounded-xl border border-border/70 bg-card/80 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-1">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{patch.title}</p>
+          <p className="truncate text-sm font-semibold text-foreground">{patch.title}</p>
           <p className="mt-1 text-sm text-muted-foreground">{patch.summary}</p>
         </div>
         <Button
@@ -153,21 +159,23 @@ function PatchCard({
         </Button>
       </div>
 
-      <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+      <ul className="mt-3 space-y-1 border-t border-border/60 pt-3 text-sm text-muted-foreground">
         {patch.ops.map((op, idx) => (
           <li key={`${patchId}-${idx}`} className="flex gap-2">
             <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
-            <span className="min-w-0">{formatOpLabel(op, locale)}</span>
+            <span className="min-w-0">{formatOpLabel(op)}</span>
           </li>
         ))}
       </ul>
-    </div>
+    </article>
   );
 }
 
 export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const locale = useLocale();
+  const composerId = useId();
+  const composerHintId = useId();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [input, setInput] = useState('');
   const [appliedPatchIds, setAppliedPatchIds] = useState<Set<string>>(() => new Set());
@@ -209,118 +217,154 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
   }
 
   return (
-    <section className="rounded-lg border bg-card p-4 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Sparkles className="size-4" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">{t('title')}</p>
-          <p className="text-sm text-muted-foreground">{t('description')}</p>
+    <section className="flex h-full min-h-0 flex-col">
+      <header className="border-b px-5 py-4 sm:px-6">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex size-9 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Sparkles className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground">{t('title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('description')}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t('contract')}</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 min-h-0 px-5 py-4 sm:px-6">
+        <div
+          ref={scrollRef}
+          role="log"
+          aria-live="polite"
+          aria-relevant="additions text"
+          aria-label={t('historyLabel')}
+          tabIndex={0}
+          className={cn(
+            'h-full max-h-full overflow-y-auto rounded-lg border bg-background/60 p-4 shadow-inner',
+            'scrollbar-thin',
+          )}
+        >
+          {chatError ? (
+            <div
+              role="alert"
+              className="mb-3 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              <p className="font-medium">{t('errors.title')}</p>
+              <p className="mt-1 text-xs text-destructive/80">{chatError.message}</p>
+            </div>
+          ) : null}
+
+          {renderedMessages.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">{t('empty.heading')}</p>
+              <p className="mt-1">{t('empty.example')}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {renderedMessages.map((message) => {
+                const roleLabel =
+                  message.role === 'user' ? t('messages.user') : t('messages.assistant');
+                return (
+                  <div key={message.id} className="space-y-2">
+                    <div
+                      className={cn(
+                        'max-w-[92%] rounded-2xl border px-3 py-2.5 text-sm leading-relaxed shadow-sm',
+                        message.role === 'user'
+                          ? 'ml-auto border-primary/20 bg-primary text-primary-foreground'
+                          : 'mr-auto border-border/70 bg-background text-foreground',
+                        'animate-in fade-in slide-in-from-bottom-1',
+                      )}
+                    >
+                      <p className="sr-only">{roleLabel}</p>
+                      {message.parts
+                        .filter((p) => p.type === 'text')
+                        .map((p, idx) => (
+                          <p key={`${message.id}-text-${idx}`}>{(p as { text: string }).text}</p>
+                        ))}
+                    </div>
+
+                    {message.role === 'assistant'
+                      ? message.parts
+                          .filter(isEventPatchPart)
+                          .map((p, idx) => {
+                            const patchId = p.id ?? `${message.id}-patch-${idx}`;
+                            return (
+                              <PatchCard
+                                key={patchId}
+                                editionId={editionId}
+                                patchId={patchId}
+                                patch={p.data}
+                                locale={locale}
+                                applied={appliedPatchIds.has(patchId)}
+                                onApplied={() =>
+                                  setAppliedPatchIds((prev) => new Set([...prev, patchId]))
+                                }
+                              />
+                            );
+                          })
+                      : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        className={cn(
-          'mt-4 max-h-[52vh] overflow-auto rounded-lg border bg-background/40 p-3',
-          'scrollbar-thin',
-        )}
-      >
-        {chatError ? (
-          <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
-            <p className="font-medium">{t('errors.title')}</p>
-            <p className="mt-1 text-xs text-destructive/80">{chatError.message}</p>
-          </div>
-        ) : null}
-        {renderedMessages.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">{t('empty.heading')}</p>
-            <p className="mt-1">{t('empty.example')}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {renderedMessages.map((message) => (
-              <div key={message.id} className="space-y-2">
-                <div
-                  className={cn(
-                    'max-w-[92%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm',
-                    message.role === 'user'
-                      ? 'ml-auto bg-primary text-primary-foreground'
-                      : 'mr-auto bg-muted text-foreground',
-                    'animate-in fade-in slide-in-from-bottom-1',
-                  )}
-                >
-                  {message.parts
-                    .filter((p) => p.type === 'text')
-                    .map((p, idx) => (
-                      <p key={`${message.id}-text-${idx}`}>{(p as { text: string }).text}</p>
-                    ))}
-                </div>
+      <footer className="border-t bg-card/95 px-5 py-4 sm:px-6">
+        <label htmlFor={composerId} className="sr-only">
+          {t('composer.label')}
+        </label>
+        <p id={composerHintId} className="mb-2 text-xs text-muted-foreground">
+          {t('composer.hint')}
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <textarea
+            id={composerId}
+            aria-describedby={composerHintId}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t('placeholder')}
+            disabled={isBusy}
+            rows={3}
+            className={cn(
+              'min-h-[84px] flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition',
+              'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+              'disabled:opacity-60',
+            )}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
 
-                {message.role === 'assistant'
-                  ? message.parts
-                      .filter(isEventPatchPart)
-                      .map((p, idx) => {
-                        const patchId = p.id ?? `${message.id}-patch-${idx}`;
-                        return (
-                          <PatchCard
-                            key={patchId}
-                            editionId={editionId}
-                            patchId={patchId}
-                            patch={p.data}
-                            locale={locale}
-                            applied={appliedPatchIds.has(patchId)}
-                            onApplied={() =>
-                              setAppliedPatchIds((prev) => new Set([...prev, patchId]))
-                            }
-                          />
-                        );
-                      })
-                  : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-3 flex gap-2">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t('placeholder')}
-          disabled={isBusy}
-          rows={2}
-          className={cn(
-            'min-h-[44px] flex-1 resize-none rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition',
-            'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-            'disabled:opacity-60',
+          {isBusy ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => stop()}
+              className="shrink-0 sm:min-w-28"
+            >
+              <Square className="mr-2 size-4" />
+              {t('stop')}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSend}
+              disabled={input.trim().length === 0}
+              className="shrink-0 sm:min-w-28"
+            >
+              <Send className="mr-2 size-4" />
+              {t('send')}
+            </Button>
           )}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSend();
-            }
-          }}
-        />
-
-        {isBusy ? (
-          <Button type="button" variant="secondary" onClick={() => stop()} className="shrink-0">
-            <Square className="mr-2 size-4" />
-            {t('stop')}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            onClick={handleSend}
-            disabled={input.trim().length === 0}
-            className="shrink-0"
-          >
-            <Send className="mr-2 size-4" />
-            {t('send')}
-          </Button>
-        )}
-      </div>
+        </div>
+      </footer>
     </section>
   );
 }

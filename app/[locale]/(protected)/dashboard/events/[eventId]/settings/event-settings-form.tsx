@@ -15,7 +15,7 @@ import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
-import { useRouter } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
 import {
   updateEventEdition,
   updateEventVisibility,
@@ -50,6 +50,7 @@ import {
   Plus,
   Save,
   Settings2,
+  Sparkles,
   Trash2,
   Users,
   X,
@@ -69,6 +70,7 @@ const LocationField = dynamic(
 type EventSettingsFormProps = {
   event: EventEditionDetail;
   wizardMode?: boolean;
+  assistantEntryEnabled?: boolean;
 };
 
 type VisibilityType = 'draft' | 'published' | 'unlisted' | 'archived';
@@ -90,7 +92,11 @@ const visibilityStyles: Record<VisibilityType, string> = {
   archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
-export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFormProps) {
+export function EventSettingsForm({
+  event,
+  wizardMode = false,
+  assistantEntryEnabled = false,
+}: EventSettingsFormProps) {
   const t = useTranslations('pages.dashboardEventSettings');
   const tSlug = useTranslations('pages.dashboardEvents');
   const tVis = useTranslations('pages.dashboardEvents.visibility');
@@ -497,6 +503,25 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
               <span>{t('wizard.steps.publish')}</span>
             </div>
           </div>
+          {assistantEntryEnabled ? (
+            <div className="mt-4 flex flex-col gap-2 border-t border-primary/20 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                <span>{t('assistant.description')}</span>
+              </div>
+              <Button type="button" size="sm" variant="outline" asChild>
+                <Link
+                  href={{
+                    pathname: '/dashboard/events/[eventId]/settings',
+                    params: { eventId: event.id },
+                    query: { wizard: '1', assistant: '1' },
+                  }}
+                >
+                  {t('assistant.title')}
+                </Link>
+              </Button>
+            </div>
+          ) : null}
         </section>
       )}
       {/* Visibility Section */}

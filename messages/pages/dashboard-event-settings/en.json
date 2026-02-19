@@ -4,6 +4,8 @@
   "wizard": {
     "title": "Finish setting up your event",
     "description": "Add your first distance, then publish when you are ready to share.",
+    "assistantHint": "Need help with setup? Use the assistant to draft suggested changes.",
+    "assistantAction": "Open setup assistant",
     "steps": {
       "distance": "Add at least one distance with pricing.",
       "publish": "Publish the event to make it visible."
@@ -12,6 +14,29 @@
   "assistant": {
     "title": "Setup assistant",
     "description": "Describe your event in one message. I’ll propose changes you can review and apply.",
+    "contract": "I only suggest updates. Nothing changes until you apply each proposal.",
+    "historyLabel": "Setup assistant conversation",
+    "composer": {
+      "label": "Message for setup assistant",
+      "hint": "Include date, city, distances, and pricing so I can draft accurate updates."
+    },
+    "messages": {
+      "user": "You",
+      "assistant": "Assistant"
+    },
+    "ops": {
+      "updateEvent": "Update event {fields}",
+      "addDistance": "Add distance: {label}{value} at {price}",
+      "updateDistancePrice": "Update distance price to {price}",
+      "addTier": "Add tier: {label} at {price}",
+      "defaultTier": "Pricing tier",
+      "fields": {
+        "date": "date",
+        "location": "location",
+        "label": "label",
+        "details": "details"
+      }
+    },
     "placeholder": "Tell me about your event (date, city, distances, pricing)...",
     "empty": {
       "heading": "Try one of these:",

@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { Lock, Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 
 type EventAiWizardDrawerProps = {
   triggerLabel: string;
+  description: string;
   defaultOpen?: boolean;
   locked?: boolean;
   children: React.ReactNode;
@@ -15,24 +23,46 @@ type EventAiWizardDrawerProps = {
 
 export function EventAiWizardDrawer({
   triggerLabel,
+  description,
   defaultOpen,
   locked,
   children,
 }: EventAiWizardDrawerProps) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
+  const contentId = useId();
+
+  useEffect(() => {
+    if (defaultOpen) {
+      setOpen(true);
+    }
+  }, [defaultOpen]);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button type="button" size="sm" variant="outline" className="gap-2">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          aria-expanded={open}
+          aria-controls={contentId}
+          className="gap-2 shadow-sm"
+        >
           {locked ? <Lock className="size-4" /> : <Sparkles className="size-4" />}
           <span className="truncate">{triggerLabel}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-[92vw] p-0 sm:max-w-md lg:max-w-lg">
-        <div className="h-full overflow-y-auto p-4">{children}</div>
+      <SheetContent
+        id={contentId}
+        side="right"
+        className="w-screen max-w-full overflow-hidden p-0 sm:max-w-lg lg:max-w-xl"
+      >
+        <SheetHeader className="sr-only">
+          <SheetTitle>{triggerLabel}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
+        </SheetHeader>
+        <div className="flex h-full min-h-0 flex-col bg-card">{children}</div>
       </SheetContent>
     </Sheet>
   );
 }
-
