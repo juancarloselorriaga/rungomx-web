@@ -315,10 +315,10 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
         <label htmlFor={composerId} className="sr-only">
           {t('composer.label')}
         </label>
-        <p id={composerHintId} className="mb-2 text-xs text-muted-foreground">
+        <p id={composerHintId} className="mb-3 text-xs text-muted-foreground">
           {t('composer.hint')}
         </p>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3">
           <textarea
             id={composerId}
             aria-describedby={composerHintId}
@@ -326,9 +326,9 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder={t('placeholder')}
             disabled={isBusy}
-            rows={3}
+            rows={4}
             className={cn(
-              'min-h-[84px] flex-1 resize-none rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition',
+              'min-h-[110px] w-full resize-none rounded-lg border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition',
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
               'disabled:opacity-60',
             )}
@@ -340,29 +340,31 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
             }}
           />
 
-          {isBusy ? (
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => stop()}
-              className="shrink-0 sm:min-w-28"
-            >
-              <Square className="mr-2 size-4" />
-              {t('stop')}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleSend}
-              disabled={input.trim().length === 0}
-              className="shrink-0 sm:min-w-28"
-            >
-              <Send className="mr-2 size-4" />
-              {t('send')}
-            </Button>
-          )}
+          <div className="flex justify-end">
+            {isBusy ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => stop()}
+                className="min-w-32"
+              >
+                <Square className="mr-2 size-4" />
+                {t('stop')}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleSend}
+                disabled={input.trim().length === 0}
+                className="min-w-32"
+              >
+                <Send className="mr-2 size-4" />
+                {t('send')}
+              </Button>
+            )}
+          </div>
         </div>
       </footer>
     </section>
