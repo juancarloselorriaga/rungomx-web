@@ -389,6 +389,9 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
   });
 
   test('Extends hold for claimed invites', async ({ page }) => {
+    // Includes multiple sign-in cycles plus claim + extension checks in one flow.
+    test.setTimeout(180_000);
+
     const link = await createUploadLink({
       editionId,
       createdByUserId: organizerId,

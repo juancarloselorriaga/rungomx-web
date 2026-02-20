@@ -65,6 +65,9 @@ test.describe('Athlete Registration', () => {
   let registrationId: string;
 
   test.beforeAll(async ({ browser }) => {
+    // This setup provisions users, roles, and an event end-to-end via UI.
+    test.setTimeout(180_000);
+
     const db = getTestDb();
     const context = await browser.newContext();
     const page = await context.newPage();

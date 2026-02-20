@@ -30,14 +30,9 @@ export function EventAiWizardDrawer({
   locked,
   children,
 }: EventAiWizardDrawerProps) {
-  const [open, setOpen] = useState(Boolean(defaultOpen));
+  // This prop is used as initial state only for first render/hydration.
+  const [open, setOpen] = useState(() => Boolean(defaultOpen));
   const contentId = useId();
-
-  useEffect(() => {
-    if (defaultOpen) {
-      setOpen(true);
-    }
-  }, [defaultOpen]);
 
   useEffect(() => {
     const handleOpen = () => setOpen(true);

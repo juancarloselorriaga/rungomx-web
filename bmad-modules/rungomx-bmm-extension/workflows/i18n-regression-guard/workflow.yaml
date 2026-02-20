@@ -1,0 +1,48 @@
+# RunGoMX Workflow: i18n Regression Guard
+name: i18n-regression-guard
+description: "Protect i18n integrity by running generation, locale validation, and regression gates."
+author: "RunGoMX"
+
+# Critical variables from BMM config
+config_source: "{project-root}/_bmad/bmm/config.yaml"
+output_folder: "{config_source}:output_folder"
+implementation_artifacts: "{config_source}:implementation_artifacts"
+planning_artifacts: "{config_source}:planning_artifacts"
+user_name: "{config_source}:user_name"
+communication_language: "{config_source}:communication_language"
+document_output_language: "{config_source}:document_output_language"
+date: system-generated
+
+# Workflow components
+installed_path: "{project-root}/bmad-modules/rungomx-bmm-extension/workflows/i18n-regression-guard"
+instructions: "{installed_path}/instructions.md"
+validation: "{installed_path}/checklist.md"
+template: false
+
+# Variables and outputs
+variables:
+  changed_scope: "messages/**"
+  guard_dir: "{output_folder}/i18n-regression-guard"
+  guard_report: "{output_folder}/i18n-regression-guard/i18n-regression-guard-report.md"
+
+default_output_file: "{output_folder}/i18n-regression-guard/i18n-regression-guard-report.md"
+
+required_tools:
+  - read_file
+  - write_file
+  - create_directory
+  - run_command
+  - search_repo
+
+tags:
+  - rungomx
+  - i18n
+  - regression
+  - quality-gates
+
+execution_hints:
+  interactive: true
+  autonomous: false
+  iterative: true
+
+standalone: true
