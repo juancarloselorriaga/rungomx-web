@@ -25,14 +25,16 @@
     "test:e2e:isolated:ui": "node --import tsx scripts/run-e2e-isolated.ts test:e2e:ui",
     "test:e2e:isolated:headed": "node --import tsx scripts/run-e2e-isolated.ts test:e2e:headed",
     "test:e2e:isolated:debug": "node --import tsx scripts/run-e2e-isolated.ts test:e2e:debug",
-    "test:ci": "pnpm lint && pnpm generate:i18n && pnpm type-check && pnpm validate:locales && pnpm test && pnpm test:e2e",
-    "test:ci:isolated": "pnpm lint && pnpm generate:i18n && pnpm type-check && pnpm validate:locales && pnpm test && pnpm test:e2e:isolated",
+    "test:ci": "pnpm lint && pnpm generate:i18n && pnpm type-check && pnpm validate:locales && pnpm test && pnpm test:payments-contracts && pnpm test:e2e",
+    "test:ci:isolated": "pnpm lint && pnpm generate:i18n && pnpm type-check && pnpm validate:locales && pnpm test && pnpm test:payments-contracts && pnpm test:e2e:isolated",
     "shadcn": "pnpm dlx shadcn@latest",
     "validate:locales": "node --import tsx scripts/validate-locales.ts",
     "generate:i18n": "pnpm generate:i18n-types && pnpm generate:i18n-loaders",
     "generate:i18n-types": "node --import tsx scripts/generate-i18n-types.ts",
     "generate:i18n-loaders": "node --import tsx scripts/generate-i18n-loaders.ts",
     "watch:i18n": "node --import tsx scripts/watch-i18n.ts",
+    "generate:payments-contracts": "node --import tsx scripts/payments/generate-event-registry-snapshots.ts",
+    "test:payments-contracts": "pnpm -s test:app -- __tests__/lib/payments/core/contracts/registry-contracts.server.test.ts __tests__/lib/payments/core/mutation-ingress.server.test.ts __tests__/lib/payments/core/mutation-ingress-paths.server.test.ts __tests__/lib/payments/core/replay.server.test.ts --runInBand",
     "prepare": "simple-git-hooks"
   },
   "simple-git-hooks": {

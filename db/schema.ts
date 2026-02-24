@@ -27,6 +27,34 @@ export const paymentResponsibilityEnum = pgEnum('payment_responsibility', [
   'self_pay',
   'central_pay',
 ]);
+export const moneyMutationSourceEnum = pgEnum('money_mutation_source', [
+  'api',
+  'server_action',
+  'worker',
+  'scheduler',
+]);
+export const moneyCommandIngestionStatusEnum = pgEnum('money_command_ingestion_status', [
+  'processing',
+  'completed',
+  'failed',
+  'duplicate',
+]);
+export const refundRequestStatusEnum = pgEnum('refund_request_status', [
+  'pending_organizer_decision',
+  'approved',
+  'denied',
+  'escalated_admin_review',
+  'executed',
+  'cancelled',
+]);
+export const disputeCaseStatusEnum = pgEnum('dispute_case_status', [
+  'opened',
+  'evidence_required',
+  'under_review',
+  'won',
+  'lost',
+  'cancelled',
+]);
 
 // =============================================================================
 // USER & AUTH TABLES
@@ -449,6 +477,94 @@ export const billingPendingEntitlementGrants = pgTable(
       'billing_pending_entitlement_grants_grant_exclusive_check',
       sql`(${table.grantDurationDays} is null) <> (${table.grantFixedEndsAt} is null)`,
     ),
+  ],
+);
+
+// =============================================================================
+// PAYMENTS CORE TABLES (Phase 4 - Story 1.2 foundation)
+// =============================================================================
+
+export const moneyTraces = pgTable(
+  'money_traces',
+  {
+    traceId: varchar('trace_id', { length: 128 }).primaryKey(),
+    organizerId: uuid('organizer_id'),
+    rootEntityType: varchar('root_entity_type', { length: 64 }).notNull(),
+    rootEntityId: varchar('root_entity_id', { length: 128 }).notNull(),
+    createdBySource: moneyMutationSourceEnum('created_by_source').notNull(),
+    metadataJson: jsonb('metadata_json').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('money_traces_organizer_idx')
+      .on(table.organizerId)
+      .where(sql`${table.organizerId} is not null`),
+    index('money_traces_root_entity_idx').on(table.rootEntityType, table.rootEntityId),
+  ],
+);
+
+export const moneyEvents = pgTable(
+  'money_events',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    traceId: varchar('trace_id', { length: 128 })
+      .notNull()
+      .references(() => moneyTraces.traceId, { onDelete: 'cascade' }),
+    organizerId: uuid('organizer_id'),
+    eventName: varchar('event_name', { length: 120 }).notNull(),
+    eventVersion: integer('event_version').notNull(),
+    entityType: varchar('entity_type', { length: 64 }).notNull(),
+    entityId: varchar('entity_id', { length: 128 }).notNull(),
+    source: moneyMutationSourceEnum('source').notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }),
+    occurredAt: timestamp('occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    payloadJson: jsonb('payload_json').$type<Record<string, unknown>>().notNull().default({}),
+    metadataJson: jsonb('metadata_json').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('money_events_trace_idx').on(table.traceId, table.occurredAt),
+    index('money_events_entity_idx').on(table.entityType, table.entityId),
+    index('money_events_organizer_idx')
+      .on(table.organizerId)
+      .where(sql`${table.organizerId} is not null`),
+    uniqueIndex('money_events_trace_idempotency_idx')
+      .on(table.traceId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} is not null`),
+    check('money_events_event_version_positive_chk', sql`${table.eventVersion} > 0`),
+  ],
+);
+
+export const moneyCommandIngestions = pgTable(
+  'money_command_ingestions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizerId: uuid('organizer_id').notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
+    traceId: varchar('trace_id', { length: 128 })
+      .notNull()
+      .references(() => moneyTraces.traceId, { onDelete: 'cascade' }),
+    status: moneyCommandIngestionStatusEnum('status').notNull().default('processing'),
+    eventCount: integer('event_count').notNull().default(0),
+    responseSummaryJson: jsonb('response_summary_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    firstSeenAt: timestamp('first_seen_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('money_command_ingestions_org_idempotency_idx').on(
+      table.organizerId,
+      table.idempotencyKey,
+    ),
+    index('money_command_ingestions_trace_idx').on(table.traceId),
+    index('money_command_ingestions_status_idx').on(table.status),
   ],
 );
 
@@ -1212,6 +1328,127 @@ export const eventPolicyConfigs = pgTable('event_policy_configs', {
     .notNull()
     .$onUpdate(() => new Date()),
 });
+
+// =============================================================================
+// REFUND WORKFLOW TABLES (Phase 4 - Story 3.1 foundation)
+// =============================================================================
+
+export const refundRequests = pgTable(
+  'refund_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    organizerId: uuid('organizer_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    attendeeUserId: uuid('attendee_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    requestedByUserId: uuid('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: refundRequestStatusEnum('status').notNull().default('pending_organizer_decision'),
+    reasonCode: varchar('reason_code', { length: 64 }).notNull(),
+    reasonNote: text('reason_note'),
+    eligibilitySnapshotJson: jsonb('eligibility_snapshot_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    financialSnapshotJson: jsonb('financial_snapshot_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    decisionAt: timestamp('decision_at', { withTimezone: true, mode: 'date' }),
+    decidedByUserId: uuid('decided_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    decisionReason: text('decision_reason'),
+    escalatedAt: timestamp('escalated_at', { withTimezone: true, mode: 'date' }),
+    executedAt: timestamp('executed_at', { withTimezone: true, mode: 'date' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    index('refund_requests_organizer_status_idx').on(table.organizerId, table.status, table.requestedAt),
+    index('refund_requests_attendee_idx').on(table.attendeeUserId, table.requestedAt),
+    index('refund_requests_registration_idx').on(table.registrationId),
+    index('refund_requests_edition_idx').on(table.editionId, table.requestedAt),
+    uniqueIndex('refund_requests_registration_pending_unique_idx')
+      .on(table.registrationId)
+      .where(
+        sql`${table.status} = 'pending_organizer_decision' and ${table.deletedAt} is null`,
+      ),
+  ],
+);
+
+// =============================================================================
+// DISPUTE WORKFLOW TABLES (Phase 4 - Story 4.1 foundation)
+// =============================================================================
+
+export const disputeCases = pgTable(
+  'dispute_cases',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizerId: uuid('organizer_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    registrationId: uuid('registration_id').references(() => registrations.id, {
+      onDelete: 'set null',
+    }),
+    orderId: uuid('order_id'),
+    attendeeUserId: uuid('attendee_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    openedByUserId: uuid('opened_by_user_id')
+      .notNull()
+      .references(() => users.id),
+    status: disputeCaseStatusEnum('status').notNull().default('opened'),
+    reasonCode: varchar('reason_code', { length: 64 }).notNull(),
+    reasonNote: text('reason_note'),
+    amountAtRiskMinor: integer('amount_at_risk_minor').notNull().default(0),
+    currency: varchar('currency', { length: 3 }).notNull().default('MXN'),
+    evidenceDeadlineAt: timestamp('evidence_deadline_at', { withTimezone: true, mode: 'date' })
+      .notNull(),
+    openedAt: timestamp('opened_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    lastTransitionAt: timestamp('last_transition_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
+    latestTransitionByUserId: uuid('latest_transition_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    closedAt: timestamp('closed_at', { withTimezone: true, mode: 'date' }),
+    metadataJson: jsonb('metadata_json').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    index('dispute_cases_organizer_status_idx').on(table.organizerId, table.status, table.openedAt),
+    index('dispute_cases_registration_idx').on(table.registrationId, table.openedAt),
+    index('dispute_cases_order_idx')
+      .on(table.orderId, table.openedAt)
+      .where(sql`${table.orderId} is not null`),
+    index('dispute_cases_attendee_idx')
+      .on(table.attendeeUserId, table.openedAt)
+      .where(sql`${table.attendeeUserId} is not null`),
+    check('dispute_cases_amount_at_risk_nonnegative_chk', sql`${table.amountAtRiskMinor} >= 0`),
+    check(
+      'dispute_cases_scope_required_chk',
+      sql`${table.registrationId} is not null or ${table.orderId} is not null`,
+    ),
+  ],
+);
 
 // =============================================================================
 // EVENTS PLATFORM TABLES (Phase 3)

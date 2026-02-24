@@ -1,0 +1,95 @@
+{
+  "registryVersion": 1,
+  "events": [
+    {
+      "eventName": "debt_control.pause_required",
+      "version": 1,
+      "schemaId": "payments.debt_control.pause_required.v1",
+      "schemaFile": "debt_control-pause_required.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "debt_control.resume_allowed",
+      "version": 1,
+      "schemaId": "payments.debt_control.resume_allowed.v1",
+      "schemaFile": "debt_control-resume_allowed.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "dispute.debt_posted",
+      "version": 1,
+      "schemaId": "payments.dispute.debt_posted.v1",
+      "schemaFile": "dispute-debt_posted.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "dispute.funds_released",
+      "version": 1,
+      "schemaId": "payments.dispute.funds_released.v1",
+      "schemaFile": "dispute-funds_released.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "dispute.opened",
+      "version": 1,
+      "schemaId": "payments.dispute.opened.v1",
+      "schemaFile": "dispute-opened.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "financial.adjustment_posted",
+      "version": 1,
+      "schemaId": "payments.financial.adjustment_posted.v1",
+      "schemaFile": "financial-adjustment_posted.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payment.captured",
+      "version": 1,
+      "schemaId": "payments.payment.captured.v1",
+      "schemaFile": "payment-captured.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.requested",
+      "version": 1,
+      "schemaId": "payments.payout.requested.v1",
+      "schemaFile": "payout-requested.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "refund.executed",
+      "version": 1,
+      "schemaId": "payments.refund.executed.v1",
+      "schemaFile": "refund-executed.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "subscription.renewal_failed",
+      "version": 1,
+      "schemaId": "payments.subscription.renewal_failed.v1",
+      "schemaFile": "subscription-renewal_failed.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    }
+  ]
+}
