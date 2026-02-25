@@ -143,6 +143,33 @@ export function generateTrialExpiringSoonEmailText(props: TrialExpiringSoonEmail
   return renderBillingEmailText({ ...base, bodyText: [message] });
 }
 
+type GraceReminderEmailProps = {
+  locale: AppLocale;
+  title: string;
+  greeting: string;
+  message: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  footer: string;
+};
+
+export function generateGraceReminderEmailHTML(props: GraceReminderEmailProps): string {
+  const { message, ...base } = props;
+  return renderBillingEmailHTML({
+    ...base,
+    bodyHtml: `
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        ${message}
+      </p>
+    `,
+  });
+}
+
+export function generateGraceReminderEmailText(props: GraceReminderEmailProps): string {
+  const { message, ...base } = props;
+  return renderBillingEmailText({ ...base, bodyText: [message] });
+}
+
 type SubscriptionEndedEmailProps = {
   locale: AppLocale;
   title: string;

@@ -81,6 +81,10 @@ export const routing = defineRouting({
       es: '/admin/funciones-pro',
       en: '/admin/pro-features',
     },
+    '/admin/payments': {
+      es: '/admin/pagos',
+      en: '/admin/payments',
+    },
     '/dashboard': {
       es: '/tablero',
       en: '/dashboard',

@@ -238,6 +238,18 @@
         }
       }
     },
+    "AdminPayments": {
+      "metadata": {
+        "title": "Economía de pagos | RunGoMX",
+        "description": "Monitorea comisiones netas reconocidas con contexto de ajustes financieros.",
+        "keywords": ["economía de pagos", "comisiones de plataforma", "pagos admin"],
+        "openGraph": {
+          "title": "Economía de pagos | RunGoMX",
+          "description": "Revisa comisiones netas reconocidas y contexto de ajustes.",
+          "imageAlt": "Tablero de economía de pagos"
+        }
+      }
+    },
     "Profile": {
       "metadata": {
         "title": "Perfil | RunGoMX",

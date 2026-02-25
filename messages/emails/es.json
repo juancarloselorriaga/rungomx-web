@@ -43,8 +43,17 @@
       "title": "Acceso Pro terminado",
       "greeting": "Hola {userName},",
       "messageTrial": "Tu prueba Pro ha terminado. Esperamos que hayas disfrutado la experiencia.",
+      "messageGrace": "Tu periodo de gracia Pro terminó y tu suscripción fue degradada.",
       "messageActive": "Tu suscripción Pro ha terminado.",
       "cta": "Reactivar Pro",
+      "footer": "© {year} RungoMX. Todos los derechos reservados."
+    },
+    "graceReminder": {
+      "subject": "Tu periodo de gracia Pro termina pronto — RungoMX",
+      "title": "Recordatorio de periodo de gracia",
+      "greeting": "Hola {userName},",
+      "message": "Tu acceso Pro está en gracia y vence el {graceEndsAt} (quedan {daysRemaining} día(s)). Actualiza tu pago para mantener el acceso.",
+      "cta": "Recuperar acceso Pro",
       "footer": "© {year} RungoMX. Todos los derechos reservados."
     },
     "cancelScheduled": {

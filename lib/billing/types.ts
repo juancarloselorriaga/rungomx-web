@@ -16,8 +16,11 @@ export type BillingEventEntityType =
 export type BillingEventType =
   | 'trial_started'
   | 'trial_expiring_soon_notified'
+  | 'grace_reminder_notified'
   | 'cancel_scheduled'
   | 'cancel_reverted'
+  | 'grace_expired_downgraded'
+  | 'subscription_reactivated'
   | 'subscription_ended'
   | 'override_granted'
   | 'override_extended'

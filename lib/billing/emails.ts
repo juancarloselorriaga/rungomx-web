@@ -10,6 +10,8 @@ import { sendEmail } from '@/lib/email';
 import {
   generateCancelScheduledEmailHTML,
   generateCancelScheduledEmailText,
+  generateGraceReminderEmailHTML,
+  generateGraceReminderEmailText,
   generateSubscriptionEndedEmailHTML,
   generateSubscriptionEndedEmailText,
   generateTrialExpiringSoonEmailHTML,
@@ -145,12 +147,58 @@ export async function sendTrialExpiringSoonEmail({
   }
 }
 
+export async function sendGracePeriodReminderEmail({
+  userId,
+  graceEndsAt,
+  daysRemaining,
+}: {
+  userId: string;
+  graceEndsAt: Date;
+  daysRemaining: number;
+}): Promise<void> {
+  try {
+    const context = await loadUserEmailContext(userId);
+    if (!context) {
+      console.error('[billing][email] Grace reminder email skipped: user not found', { userId });
+      return;
+    }
+
+    const { user, locale, displayName } = context;
+    const t = await getTranslations({ locale, namespace: 'emails.billing' });
+    const currentYear = new Date().getFullYear();
+    const ctaUrl = buildBillingCtaUrl(locale);
+    const formattedEndsAt = formatBillingDate(graceEndsAt, locale);
+
+    const templateProps = {
+      locale,
+      title: t('graceReminder.title'),
+      greeting: t('graceReminder.greeting', { userName: displayName }),
+      message: t('graceReminder.message', {
+        graceEndsAt: formattedEndsAt,
+        daysRemaining,
+      }),
+      ctaLabel: t('graceReminder.cta'),
+      ctaUrl,
+      footer: t('graceReminder.footer', { year: currentYear }),
+    };
+
+    await sendEmail({
+      to: { email: user.email, name: displayName },
+      subject: t('graceReminder.subject'),
+      htmlContent: generateGraceReminderEmailHTML(templateProps),
+      textContent: generateGraceReminderEmailText(templateProps),
+    });
+  } catch (error) {
+    console.error('[billing][email] Grace reminder email failed:', error);
+  }
+}
+
 export async function sendSubscriptionEndedEmail({
   userId,
   endedStatus,
 }: {
   userId: string;
-  endedStatus: 'trial' | 'active';
+  endedStatus: 'trial' | 'active' | 'grace';
 }): Promise<void> {
   try {
     const context = await loadUserEmailContext(userId);
@@ -166,7 +214,9 @@ export async function sendSubscriptionEndedEmail({
     const messageKey =
       endedStatus === 'trial'
         ? 'subscriptionEnded.messageTrial'
-        : 'subscriptionEnded.messageActive';
+        : endedStatus === 'grace'
+          ? 'subscriptionEnded.messageGrace'
+          : 'subscriptionEnded.messageActive';
 
     const templateProps = {
       locale,

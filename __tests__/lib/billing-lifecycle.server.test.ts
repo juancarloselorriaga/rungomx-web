@@ -23,6 +23,7 @@ import { billingStatusTag } from '@/lib/billing/cache-tags';
 import {
   BILLING_GRACE_PERIOD_DAYS,
   deriveRenewalFailureGraceWindow,
+  restoreSubscriptionOnRecoveryPayment,
   transitionSubscriptionToGraceFromRenewalFailedEvent,
   transitionSubscriptionToGraceOnRenewalFailure,
 } from '@/lib/billing/lifecycle';
@@ -272,6 +273,95 @@ describe('billing lifecycle renewal failure transition', () => {
         graceEndsAt,
       },
     });
+  });
+
+  it('restores ended subscriptions to active immediately on valid recovery payment and re-exposes locked data', async () => {
+    const recoveredPeriodStartsAt = new Date('2026-03-05T10:00:00.000Z');
+    const recoveredPeriodEndsAt = new Date('2026-04-05T10:00:00.000Z');
+
+    mockFindFirstBillingSubscription.mockResolvedValueOnce({
+      id: subscriptionId,
+      userId,
+      status: 'ended',
+      currentPeriodStartsAt: new Date('2026-02-25T20:00:00.000Z'),
+      currentPeriodEndsAt: new Date('2026-03-04T20:00:00.000Z'),
+    });
+    updateReturningQueue.push([
+      {
+        id: subscriptionId,
+        userId,
+        status: 'active',
+        currentPeriodStartsAt: recoveredPeriodStartsAt,
+        currentPeriodEndsAt: recoveredPeriodEndsAt,
+      },
+    ]);
+
+    const result = await restoreSubscriptionOnRecoveryPayment({
+      userId,
+      subscriptionId,
+      paymentConfirmationId: 'payment_987654321',
+      recoveredPeriodStartsAt,
+      recoveredPeriodEndsAt,
+      now,
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        subscriptionId,
+        userId,
+        previousStatus: 'ended',
+        status: 'active',
+        paymentConfirmationId: 'payment_987654321',
+        reExposedLockedData: true,
+        applied: true,
+      },
+    });
+    expect(mockUpdateSet).toHaveBeenCalledWith({
+      status: 'active',
+      currentPeriodStartsAt: recoveredPeriodStartsAt,
+      currentPeriodEndsAt: recoveredPeriodEndsAt,
+      cancelAtPeriodEnd: false,
+      canceledAt: null,
+      endedAt: null,
+      updatedAt: now,
+    });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith(billingStatusTag(userId), { expire: 0 });
+  });
+
+  it('returns idempotent no-op for duplicate recovery payment when active window already covers the period', async () => {
+    const activePeriodStart = new Date('2026-03-05T10:00:00.000Z');
+    const activePeriodEnd = new Date('2026-04-05T10:00:00.000Z');
+
+    mockFindFirstBillingSubscription.mockResolvedValueOnce({
+      id: subscriptionId,
+      userId,
+      status: 'active',
+      currentPeriodStartsAt: activePeriodStart,
+      currentPeriodEndsAt: activePeriodEnd,
+    });
+
+    const result = await restoreSubscriptionOnRecoveryPayment({
+      userId,
+      subscriptionId,
+      paymentConfirmationId: 'payment_987654321',
+      recoveredPeriodStartsAt: new Date('2026-03-06T10:00:00.000Z'),
+      recoveredPeriodEndsAt: new Date('2026-04-01T10:00:00.000Z'),
+      now,
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: {
+        subscriptionId,
+        status: 'active',
+        paymentConfirmationId: 'payment_987654321',
+        reExposedLockedData: false,
+        applied: false,
+      },
+    });
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(mockSafeRevalidateTag).not.toHaveBeenCalled();
   });
 
   it('fails fast when renewal attempt is invalid', async () => {

@@ -35,6 +35,12 @@ export function buildAdminNavSections(
 
   if (permissions.canViewStaffTools) {
     items.push({
+      href: '/admin/payments',
+      labelKey: 'adminPayments',
+      iconName: 'FileText',
+    });
+
+    items.push({
       href: '/admin/pro-features',
       labelKey: 'adminProFeatures',
       iconName: 'FileText',

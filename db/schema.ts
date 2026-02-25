@@ -582,6 +582,97 @@ export const moneyCommandIngestions = pgTable(
   ],
 );
 
+export const paymentFxRates = pgTable(
+  'payment_fx_rates',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sourceCurrency: varchar('source_currency', { length: 3 }).notNull(),
+    quoteCurrency: varchar('quote_currency', { length: 3 }).notNull().default('MXN'),
+    effectiveDate: date('effective_date', { mode: 'date' }).notNull(),
+    rateMicroMxn: integer('rate_micro_mxn').notNull(),
+    updatedReason: text('updated_reason'),
+    updatedByUserId: uuid('updated_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('payment_fx_rates_currency_date_idx').on(
+      table.sourceCurrency,
+      table.quoteCurrency,
+      table.effectiveDate,
+    ),
+    index('payment_fx_rates_currency_effective_idx').on(
+      table.sourceCurrency,
+      table.quoteCurrency,
+      table.effectiveDate,
+    ),
+    check('payment_fx_rates_rate_micro_positive_chk', sql`${table.rateMicroMxn} > 0`),
+    check('payment_fx_rates_quote_currency_mxn_chk', sql`${table.quoteCurrency} = 'MXN'`),
+  ],
+);
+
+export const paymentArtifactVersions = pgTable(
+  'payment_artifact_versions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    traceId: varchar('trace_id', { length: 128 }).notNull(),
+    artifactType: varchar('artifact_type', { length: 50 }).notNull(),
+    artifactVersion: integer('artifact_version').notNull(),
+    fingerprint: varchar('fingerprint', { length: 128 }).notNull(),
+    payloadJson: jsonb('payload_json').$type<Record<string, unknown>>().notNull().default({}),
+    rebuiltFromVersionId: uuid('rebuilt_from_version_id'),
+    reasonCode: varchar('reason_code', { length: 100 }).notNull(),
+    requestedByUserId: uuid('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('payment_artifact_versions_trace_type_version_idx').on(
+      table.traceId,
+      table.artifactType,
+      table.artifactVersion,
+    ),
+    index('payment_artifact_versions_trace_type_created_idx').on(
+      table.traceId,
+      table.artifactType,
+      table.createdAt,
+    ),
+    check('payment_artifact_versions_version_positive_chk', sql`${table.artifactVersion} > 0`),
+  ],
+);
+
+export const paymentArtifactDeliveries = pgTable(
+  'payment_artifact_deliveries',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    artifactVersionId: uuid('artifact_version_id')
+      .notNull()
+      .references(() => paymentArtifactVersions.id, { onDelete: 'cascade' }),
+    traceId: varchar('trace_id', { length: 128 }).notNull(),
+    artifactType: varchar('artifact_type', { length: 50 }).notNull(),
+    channel: varchar('channel', { length: 50 }).notNull(),
+    recipientReference: varchar('recipient_reference', { length: 255 }),
+    reasonCode: varchar('reason_code', { length: 100 }).notNull(),
+    requestedByUserId: uuid('requested_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('payment_artifact_deliveries_trace_created_idx').on(table.traceId, table.createdAt),
+    index('payment_artifact_deliveries_version_created_idx').on(
+      table.artifactVersionId,
+      table.createdAt,
+    ),
+  ],
+);
+
 // =============================================================================
 // EVENTS PLATFORM TABLES (Phase 0)
 // =============================================================================

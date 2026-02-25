@@ -238,6 +238,18 @@
         }
       }
     },
+    "AdminPayments": {
+      "metadata": {
+        "title": "Payments economics | RunGoMX",
+        "description": "Monitor net recognized platform fees with supporting adjustment context.",
+        "keywords": ["payments economics", "platform fees", "admin payments"],
+        "openGraph": {
+          "title": "Payments economics | RunGoMX",
+          "description": "Review net recognized platform fees and adjustment context.",
+          "imageAlt": "Payments economics dashboard"
+        }
+      }
+    },
     "Profile": {
       "metadata": {
         "title": "Profile | RunGoMX",

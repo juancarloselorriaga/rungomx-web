@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import {
@@ -11,8 +11,25 @@ import { safeRevalidateTag } from '@/lib/next-cache';
 
 import { billingStatusTag } from './cache-tags';
 import { BILLING_TRIAL_EXPIRING_SOON_DAYS } from './constants';
-import { sendSubscriptionEndedEmail, sendTrialExpiringSoonEmail } from './emails';
+import {
+  sendGracePeriodReminderEmail,
+  sendSubscriptionEndedEmail,
+  sendTrialExpiringSoonEmail,
+} from './emails';
 import { appendBillingEvent } from './events';
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+export const BILLING_GRACE_REMINDER_CADENCE_DAYS = [5, 2, 1] as const;
+
+function normalizeGraceReminderCadenceDays(days: readonly number[]): number[] {
+  return Array.from(
+    new Set(
+      days
+        .map((value) => Math.trunc(value))
+        .filter((value) => Number.isInteger(value) && value > 0),
+    ),
+  ).sort((a, b) => b - a);
+}
 
 export async function finalizeExpiredSubscriptions(): Promise<number> {
   const now = new Date();
@@ -173,6 +190,168 @@ export async function notifyExpiringTrials(): Promise<number> {
   return notifiedCount;
 }
 
+export async function runGraceReminderCadenceAndExpiryDowngrade({
+  now = new Date(),
+  reminderCadenceDays = BILLING_GRACE_REMINDER_CADENCE_DAYS,
+}: {
+  now?: Date;
+  reminderCadenceDays?: readonly number[];
+} = {}): Promise<{ remindersSent: number; downgradedSubscriptions: number }> {
+  const cadence = normalizeGraceReminderCadenceDays(reminderCadenceDays);
+  const subscriptionsInGrace = await db.query.billingSubscriptions.findMany({
+    where: and(
+      eq(billingSubscriptions.status, 'grace'),
+      isNotNull(billingSubscriptions.currentPeriodEndsAt),
+    ),
+    columns: {
+      id: true,
+      userId: true,
+      currentPeriodEndsAt: true,
+    },
+  });
+
+  if (subscriptionsInGrace.length === 0) {
+    return { remindersSent: 0, downgradedSubscriptions: 0 };
+  }
+
+  let remindersSent = 0;
+  let downgradedSubscriptions = 0;
+  const downgradedUserIds = new Set<string>();
+
+  for (const subscription of subscriptionsInGrace) {
+    const graceEndsAt = subscription.currentPeriodEndsAt;
+    if (!graceEndsAt) continue;
+
+    if (graceEndsAt.getTime() <= now.getTime()) {
+      const downgraded = await db.transaction(async (tx) => {
+        await tx.execute(
+          sql`SELECT id FROM ${billingSubscriptions} WHERE id = ${subscription.id} FOR UPDATE`,
+        );
+
+        const locked = await tx.query.billingSubscriptions.findFirst({
+          where: eq(billingSubscriptions.id, subscription.id),
+          columns: {
+            id: true,
+            userId: true,
+            status: true,
+            currentPeriodEndsAt: true,
+          },
+        });
+
+        if (
+          !locked ||
+          locked.status !== 'grace' ||
+          !locked.currentPeriodEndsAt ||
+          locked.currentPeriodEndsAt.getTime() > now.getTime()
+        ) {
+          return null;
+        }
+
+        const graceEndedAt = locked.currentPeriodEndsAt;
+
+        const [updated] = await tx
+          .update(billingSubscriptions)
+          .set({
+            status: 'ended',
+            endedAt: graceEndedAt,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(billingSubscriptions.id, locked.id),
+              eq(billingSubscriptions.status, 'grace'),
+              lte(billingSubscriptions.currentPeriodEndsAt, now),
+            ),
+          )
+          .returning({
+            id: billingSubscriptions.id,
+            userId: billingSubscriptions.userId,
+            endedAt: billingSubscriptions.endedAt,
+          });
+
+        if (!updated) {
+          return null;
+        }
+
+        await tx
+          .insert(billingEvents)
+          .values({
+            provider: 'system',
+            externalEventId: `grace_expired_downgraded:${updated.id}:${graceEndedAt.toISOString()}`,
+            source: 'system',
+            type: 'grace_expired_downgraded',
+            userId: updated.userId,
+            entityType: 'subscription',
+            entityId: updated.id,
+            payloadJson: {
+              graceEndedAt: graceEndedAt.toISOString(),
+              downgradedAt: now.toISOString(),
+            },
+          })
+          .onConflictDoNothing({
+            target: [billingEvents.provider, billingEvents.externalEventId],
+          });
+
+        return {
+          userId: updated.userId,
+        };
+      });
+
+      if (!downgraded) continue;
+
+      downgradedSubscriptions += 1;
+      downgradedUserIds.add(downgraded.userId);
+      continue;
+    }
+
+    for (const daysBeforeExpiry of cadence) {
+      const reminderAt = new Date(graceEndsAt.getTime() - daysBeforeExpiry * DAY_MS);
+      if (now.getTime() < reminderAt.getTime()) continue;
+
+      const [event] = await db
+        .insert(billingEvents)
+        .values({
+          provider: 'system',
+          externalEventId: `grace_reminder_notified:${subscription.id}:${daysBeforeExpiry}`,
+          source: 'system',
+          type: 'grace_reminder_notified',
+          userId: subscription.userId,
+          entityType: 'subscription',
+          entityId: subscription.id,
+          payloadJson: {
+            daysBeforeExpiry,
+            reminderAt: reminderAt.toISOString(),
+            graceEndsAt: graceEndsAt.toISOString(),
+          },
+        })
+        .onConflictDoNothing({
+          target: [billingEvents.provider, billingEvents.externalEventId],
+        })
+        .returning({ id: billingEvents.id });
+
+      if (!event) continue;
+
+      remindersSent += 1;
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil((graceEndsAt.getTime() - now.getTime()) / DAY_MS),
+      );
+      sendGracePeriodReminderEmail({
+        userId: subscription.userId,
+        graceEndsAt,
+        daysRemaining,
+      }).catch(() => {});
+    }
+  }
+
+  for (const userId of downgradedUserIds) {
+    safeRevalidateTag(billingStatusTag(userId), { expire: 0 });
+    sendSubscriptionEndedEmail({ userId, endedStatus: 'grace' }).catch(() => {});
+  }
+
+  return { remindersSent, downgradedSubscriptions };
+}
+
 export async function disableExpiredPromotions(): Promise<number> {
   const now = new Date();
   const expired = await db.query.billingPromotions.findMany({
@@ -259,13 +438,22 @@ export async function disableExpiredPendingGrants(): Promise<number> {
 
 export async function runBillingMaintenance(): Promise<{
   endedSubscriptions: number;
+  graceRemindersSent: number;
+  graceDowngradedSubscriptions: number;
   disabledPromotions: number;
   disabledPendingGrants: number;
 }> {
+  const graceLifecycle = await runGraceReminderCadenceAndExpiryDowngrade();
   const endedSubscriptions = await finalizeExpiredSubscriptions();
   await notifyExpiringTrials();
   const disabledPromotions = await disableExpiredPromotions();
   const disabledPendingGrants = await disableExpiredPendingGrants();
 
-  return { endedSubscriptions, disabledPromotions, disabledPendingGrants };
+  return {
+    endedSubscriptions,
+    graceRemindersSent: graceLifecycle.remindersSent,
+    graceDowngradedSubscriptions: graceLifecycle.downgradedSubscriptions,
+    disabledPromotions,
+    disabledPendingGrants,
+  };
 }

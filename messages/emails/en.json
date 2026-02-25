@@ -43,8 +43,17 @@
       "title": "Pro access ended",
       "greeting": "Hi {userName},",
       "messageTrial": "Your Pro trial has ended. We hope you enjoyed the experience.",
+      "messageGrace": "Your Pro grace period has ended and your subscription was downgraded.",
       "messageActive": "Your Pro subscription has ended.",
       "cta": "Reactivate Pro",
+      "footer": "© {year} RungoMX. All rights reserved."
+    },
+    "graceReminder": {
+      "subject": "Your Pro grace period ends soon — RungoMX",
+      "title": "Grace period reminder",
+      "greeting": "Hi {userName},",
+      "message": "Your Pro access is in grace and expires on {graceEndsAt} ({daysRemaining} day(s) remaining). Update billing to keep access.",
+      "cta": "Recover Pro access",
       "footer": "© {year} RungoMX. All rights reserved."
     },
     "cancelScheduled": {
