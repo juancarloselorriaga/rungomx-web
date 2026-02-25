@@ -306,11 +306,13 @@
       "description": "Cancel or resume your current period.",
       "window": {
         "trial": "trial",
+        "grace": "grace period",
         "active": "subscription"
       },
       "status": {
         "trialing": "Trialing",
         "active": "Active",
+        "grace": "Grace",
         "ended": "Ended"
       },
       "cancelScheduled": "Canceling at period end",

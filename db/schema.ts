@@ -55,6 +55,20 @@ export const disputeCaseStatusEnum = pgEnum('dispute_case_status', [
   'lost',
   'cancelled',
 ]);
+export const payoutRequestStatusEnum = pgEnum('payout_request_status', [
+  'requested',
+  'queued',
+  'processing',
+  'paused',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+export const payoutQueuedIntentStatusEnum = pgEnum('payout_queued_intent_status', [
+  'queued',
+  'activated',
+  'cancelled',
+]);
 
 // =============================================================================
 // USER & AUTH TABLES
@@ -269,7 +283,7 @@ export const billingSubscriptions = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     planKey: varchar('plan_key', { length: 50 }).notNull(),
-    status: varchar('status', { length: 20 }).notNull(), // 'trialing' | 'active' | 'ended'
+    status: varchar('status', { length: 20 }).notNull(), // 'trialing' | 'active' | 'grace' | 'ended'
     trialStartsAt: timestamp('trial_starts_at', { withTimezone: true, mode: 'date' }),
     trialEndsAt: timestamp('trial_ends_at', { withTimezone: true, mode: 'date' }),
     currentPeriodStartsAt: timestamp('current_period_starts_at', {
@@ -1446,6 +1460,203 @@ export const disputeCases = pgTable(
     check(
       'dispute_cases_scope_required_chk',
       sql`${table.registrationId} is not null or ${table.orderId} is not null`,
+    ),
+  ],
+);
+
+// =============================================================================
+// PAYOUT WORKFLOW TABLES (Phase 4 - Story 5.1 foundation)
+// =============================================================================
+
+export const payoutQuotes = pgTable(
+  'payout_quotes',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizerId: uuid('organizer_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
+    quoteFingerprint: varchar('quote_fingerprint', { length: 128 }).notNull(),
+    currency: varchar('currency', { length: 3 }).notNull().default('MXN'),
+    includedAmountMinor: integer('included_amount_minor').notNull().default(0),
+    deductionAmountMinor: integer('deduction_amount_minor').notNull().default(0),
+    maxWithdrawableAmountMinor: integer('max_withdrawable_amount_minor').notNull().default(0),
+    requestedAmountMinor: integer('requested_amount_minor').notNull().default(0),
+    eligibilitySnapshotJson: jsonb('eligibility_snapshot_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    componentBreakdownJson: jsonb('component_breakdown_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('payout_quotes_org_idempotency_unique_idx')
+      .on(table.organizerId, table.idempotencyKey)
+      .where(sql`${table.deletedAt} is null`),
+    index('payout_quotes_organizer_requested_idx').on(table.organizerId, table.requestedAt),
+    index('payout_quotes_fingerprint_idx').on(table.organizerId, table.quoteFingerprint),
+    check(
+      'payout_quotes_included_nonnegative_chk',
+      sql`${table.includedAmountMinor} >= 0`,
+    ),
+    check(
+      'payout_quotes_deduction_nonnegative_chk',
+      sql`${table.deductionAmountMinor} >= 0`,
+    ),
+    check(
+      'payout_quotes_max_withdrawable_nonnegative_chk',
+      sql`${table.maxWithdrawableAmountMinor} >= 0`,
+    ),
+    check(
+      'payout_quotes_requested_positive_chk',
+      sql`${table.requestedAmountMinor} > 0`,
+    ),
+    check(
+      'payout_quotes_requested_within_max_chk',
+      sql`${table.requestedAmountMinor} <= ${table.maxWithdrawableAmountMinor}`,
+    ),
+  ],
+);
+
+export const payoutRequests = pgTable(
+  'payout_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizerId: uuid('organizer_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    payoutQuoteId: uuid('payout_quote_id')
+      .notNull()
+      .references(() => payoutQuotes.id, { onDelete: 'cascade' }),
+    status: payoutRequestStatusEnum('status').notNull().default('requested'),
+    traceId: varchar('trace_id', { length: 128 }).notNull(),
+    requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    lifecycleContextJson: jsonb('lifecycle_context_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('payout_requests_quote_unique_idx')
+      .on(table.payoutQuoteId)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('payout_requests_trace_unique_idx')
+      .on(table.traceId)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('payout_requests_active_organizer_unique_idx').on(table.organizerId).where(
+      sql`${table.deletedAt} is null and ${table.status} in ('requested', 'processing', 'paused')`,
+    ),
+    index('payout_requests_organizer_status_idx').on(table.organizerId, table.status, table.requestedAt),
+  ],
+);
+
+export const payoutContracts = pgTable(
+  'payout_contracts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizerId: uuid('organizer_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    payoutQuoteId: uuid('payout_quote_id')
+      .notNull()
+      .references(() => payoutQuotes.id, { onDelete: 'cascade' }),
+    payoutRequestId: uuid('payout_request_id')
+      .notNull()
+      .references(() => payoutRequests.id, { onDelete: 'cascade' }),
+    policyVersion: varchar('policy_version', { length: 64 }).notNull().default('payout-contract-v1'),
+    immutableFingerprint: varchar('immutable_fingerprint', { length: 128 }).notNull(),
+    baselineSnapshotJson: jsonb('baseline_snapshot_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('payout_contracts_quote_unique_idx')
+      .on(table.payoutQuoteId)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('payout_contracts_request_unique_idx')
+      .on(table.payoutRequestId)
+      .where(sql`${table.deletedAt} is null`),
+    index('payout_contracts_organizer_created_idx').on(table.organizerId, table.createdAt),
+  ],
+);
+
+export const payoutQueuedIntents = pgTable(
+  'payout_queued_intents',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizerId: uuid('organizer_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    idempotencyKey: varchar('idempotency_key', { length: 128 }).notNull(),
+    status: payoutQueuedIntentStatusEnum('status').notNull().default('queued'),
+    requestedAmountMinor: integer('requested_amount_minor').notNull(),
+    currency: varchar('currency', { length: 3 }).notNull().default('MXN'),
+    blockedReasonCode: varchar('blocked_reason_code', { length: 64 }).notNull(),
+    criteriaFingerprint: varchar('criteria_fingerprint', { length: 128 }).notNull(),
+    queueTraceId: varchar('queue_trace_id', { length: 128 }).notNull(),
+    eligibilityCriteriaJson: jsonb('eligibility_criteria_json')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    activatedAt: timestamp('activated_at', { withTimezone: true, mode: 'date' }),
+    activatedPayoutQuoteId: uuid('activated_payout_quote_id').references(() => payoutQuotes.id, {
+      onDelete: 'set null',
+    }),
+    activatedPayoutRequestId: uuid('activated_payout_request_id').references(() => payoutRequests.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+    deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
+  },
+  (table) => [
+    uniqueIndex('payout_queued_intents_org_idempotency_unique_idx')
+      .on(table.organizerId, table.idempotencyKey)
+      .where(sql`${table.deletedAt} is null`),
+    uniqueIndex('payout_queued_intents_active_organizer_unique_idx')
+      .on(table.organizerId)
+      .where(sql`${table.deletedAt} is null and ${table.status} = 'queued'`),
+    uniqueIndex('payout_queued_intents_trace_unique_idx')
+      .on(table.queueTraceId)
+      .where(sql`${table.deletedAt} is null`),
+    index('payout_queued_intents_organizer_status_idx').on(table.organizerId, table.status, table.createdAt),
+    check(
+      'payout_queued_intents_requested_positive_chk',
+      sql`${table.requestedAmountMinor} > 0`,
     ),
   ],
 );

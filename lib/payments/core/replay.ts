@@ -68,6 +68,16 @@ function eventWalletDeltaMinor(event: CanonicalMoneyEventV1): number {
       return 0;
     case 'payout.requested':
       return -event.payload.requestedAmount.amountMinor;
+    case 'payout.processing':
+    case 'payout.paused':
+    case 'payout.resumed':
+      return 0;
+    case 'payout.completed':
+      return 0;
+    case 'payout.failed':
+      return event.payload.failedAmount.amountMinor;
+    case 'payout.adjusted':
+      return event.payload.previousRequestedAmount.amountMinor - event.payload.adjustedRequestedAmount.amountMinor;
     case 'financial.adjustment_posted':
       return event.payload.amount.amountMinor;
     case 'subscription.renewal_failed':

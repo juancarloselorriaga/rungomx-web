@@ -99,4 +99,42 @@ describe('payments wallet explainability', () => {
 
     expect(result).toBeNull();
   });
+
+  it('describes payout adjustment events with decrease-only policy wording', async () => {
+    queue.push([
+      {
+        id: '55555555-5555-4555-8555-555555555555',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        traceId: 'trace-payout-adjusted-1',
+        eventName: 'payout.adjusted',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        payloadJson: {
+          organizerId: '22222222-2222-4222-8222-222222222222',
+          payoutRequestId: 'payout-request-1',
+          previousRequestedAmount: { amountMinor: 12000, currency: 'MXN' },
+          adjustedRequestedAmount: { amountMinor: 10000, currency: 'MXN' },
+          reasonCode: 'high_risk_dispute_signal',
+        },
+      },
+    ]);
+
+    const result = await getOrganizerWalletExplainability({
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      eventId: '55555555-5555-4555-8555-555555555555',
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.eventName).toBe('payout.adjusted');
+    expect(result!.reasonText).toContain('decreased');
+    expect(result!.policyDisclosure).toContain('decrease-only');
+    expect(result!.impactedEntities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          entityType: 'payout_request',
+          entityId: 'payout-request-1',
+        }),
+      ]),
+    );
+  });
 });

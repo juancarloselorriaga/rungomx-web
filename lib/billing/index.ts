@@ -6,6 +6,7 @@ export * from './events';
 export * from './guards';
 export * from './hash';
 export * from './auto-claim';
+export * from './lifecycle';
 export * from './queries';
 export * from './serialization';
 export * from './types';

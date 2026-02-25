@@ -135,4 +135,57 @@ describe('payments wallet snapshot', () => {
     });
     expect(result.debt.repaymentAppliedMinor).toBe(900);
   });
+
+  it('applies payout decrease-only adjustment and failed-release deltas deterministically', async () => {
+    queue.push([
+      {
+        eventName: 'payment.captured',
+        occurredAt: new Date('2026-02-24T06:00:00.000Z'),
+        payloadJson: {
+          netAmount: { amountMinor: 15000, currency: 'MXN' },
+        },
+      },
+      {
+        eventName: 'payout.requested',
+        occurredAt: new Date('2026-02-24T06:10:00.000Z'),
+        payloadJson: {
+          requestedAmount: { amountMinor: 10000, currency: 'MXN' },
+        },
+      },
+      {
+        eventName: 'payout.adjusted',
+        occurredAt: new Date('2026-02-24T06:20:00.000Z'),
+        payloadJson: {
+          previousRequestedAmount: { amountMinor: 10000, currency: 'MXN' },
+          adjustedRequestedAmount: { amountMinor: 8000, currency: 'MXN' },
+          reasonCode: 'high_risk_dispute_signal',
+        },
+      },
+      {
+        eventName: 'payout.failed',
+        occurredAt: new Date('2026-02-24T06:30:00.000Z'),
+        payloadJson: {
+          failedAmount: { amountMinor: 8000, currency: 'MXN' },
+          reasonCode: 'provider_transfer_failed',
+        },
+      },
+    ]);
+
+    const result = await getOrganizerWalletBucketSnapshot({
+      organizerId: '44444444-4444-4444-8444-444444444444',
+      now: new Date('2026-02-24T07:00:00.000Z'),
+    });
+
+    expect(result.buckets).toEqual({
+      availableMinor: 15000,
+      processingMinor: 0,
+      frozenMinor: 0,
+      debtMinor: 0,
+    });
+    expect(result.debt.categoryBalancesMinor).toEqual({
+      disputes: 0,
+      refunds: 0,
+      fees: 0,
+    });
+  });
 });

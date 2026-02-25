@@ -189,4 +189,38 @@ describe('payments wallet issue activity', () => {
     expect(resumeItem.eventName).toBe('debt_control.resume_allowed');
     expect(resumeItem.recoveryGuidance?.guidanceCode).toBe('paid_registrations_resumed');
   });
+
+  it('classifies paused payouts as Action Needed and resumed payouts as In Progress', async () => {
+    queue.push([
+      {
+        id: 'event-payout-paused',
+        traceId: 'trace-payout-paused',
+        eventName: 'payout.paused',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        occurredAt: new Date('2026-02-24T11:30:00.000Z'),
+        createdAt: new Date('2026-02-24T11:30:01.000Z'),
+        payloadJson: { reasonCode: 'high_risk_dispute_signal' },
+      },
+      {
+        id: 'event-payout-resumed',
+        traceId: 'trace-payout-resumed',
+        eventName: 'payout.resumed',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        occurredAt: new Date('2026-02-24T11:00:00.000Z'),
+        createdAt: new Date('2026-02-24T11:00:01.000Z'),
+        payloadJson: { reasonCode: 'risk_conditions_resolved' },
+      },
+    ]);
+
+    const result = await getOrganizerWalletIssueActivity({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(result.actionNeededCount).toBe(1);
+    expect(result.inProgressCount).toBe(1);
+    expect(result.actionNeeded[0]!.eventName).toBe('payout.paused');
+    expect(result.inProgress[0]!.eventName).toBe('payout.resumed');
+  });
 });

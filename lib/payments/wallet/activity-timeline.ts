@@ -148,6 +148,43 @@ function eventDelta(event: PersistedWalletEvent): Omit<WalletBuckets, 'debtMinor
         frozenMinor: 0,
       };
     }
+    case 'payout.processing':
+    case 'payout.paused':
+    case 'payout.resumed':
+      return {
+        availableMinor: 0,
+        processingMinor: 0,
+        frozenMinor: 0,
+      };
+    case 'payout.completed': {
+      const settledAmountMinor = getNestedAmountMinor(payload, 'settledAmount');
+      return {
+        availableMinor: 0,
+        processingMinor: -settledAmountMinor,
+        frozenMinor: 0,
+      };
+    }
+    case 'payout.failed': {
+      const failedAmountMinor = getNestedAmountMinor(payload, 'failedAmount');
+      return {
+        availableMinor: failedAmountMinor,
+        processingMinor: -failedAmountMinor,
+        frozenMinor: 0,
+      };
+    }
+    case 'payout.adjusted': {
+      const previousRequestedAmountMinor = getNestedAmountMinor(payload, 'previousRequestedAmount');
+      const adjustedRequestedAmountMinor = getNestedAmountMinor(payload, 'adjustedRequestedAmount');
+      const releasedAmountMinor = Math.max(
+        previousRequestedAmountMinor - adjustedRequestedAmountMinor,
+        0,
+      );
+      return {
+        availableMinor: releasedAmountMinor,
+        processingMinor: -releasedAmountMinor,
+        frozenMinor: 0,
+      };
+    }
     case 'financial.adjustment_posted': {
       const amountMinor = getNestedAmountMinor(payload, 'amount');
       return {

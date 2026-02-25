@@ -128,6 +128,8 @@ export function BillingSettingsClient({
         return t('subscription.status.trialing');
       case 'active':
         return t('subscription.status.active');
+      case 'grace':
+        return t('subscription.status.grace');
       case 'ended':
         return t('subscription.status.ended');
       default:
@@ -137,14 +139,20 @@ export function BillingSettingsClient({
 
   const subscription = status.subscription;
   const subscriptionWindowLabel =
-    subscription?.status === 'trialing' ? t('subscription.window.trial') : t('subscription.window.active');
+    subscription?.status === 'trialing'
+      ? t('subscription.window.trial')
+      : subscription?.status === 'grace'
+        ? t('subscription.window.grace')
+        : t('subscription.window.active');
   const subscriptionEndsAt = subscription
     ? subscription.status === 'trialing'
       ? subscription.trialEndsAt
       : subscription.currentPeriodEndsAt
     : null;
   const hasActiveSubscription =
-    subscription?.status === 'trialing' || subscription?.status === 'active';
+    subscription?.status === 'trialing' ||
+    subscription?.status === 'active' ||
+    subscription?.status === 'grace';
 
   const trialActive = subscription?.status === 'trialing' ? subscription.trialEndsAt : null;
   const canStartTrial = status.trialEligible && emailVerified && !isInternal;

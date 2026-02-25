@@ -66,8 +66,22 @@ function buildReasonText(event: PersistedExplainabilityEvent): string {
       return 'Dispute settlement released frozen funds back into available balance according to the deterministic freeze policy.';
     case 'dispute.debt_posted':
       return 'Dispute settlement posted a debt-impacting amount after loss, preserving explicit at-risk conversion tracking.';
+    case 'payout.queued':
+      return 'A payout intent was queued because immediate eligibility was not met; it can auto-activate when deterministic conditions recover.';
     case 'payout.requested':
       return 'A payout request was created, moving funds from available balance into processing.';
+    case 'payout.processing':
+      return 'Payout processing started in the asynchronous payout lifecycle.';
+    case 'payout.paused':
+      return 'Payout processing was paused by risk policy with an explicit reason code.';
+    case 'payout.resumed':
+      return 'A paused payout resumed processing after policy conditions allowed continuation.';
+    case 'payout.completed':
+      return 'Payout processing completed and the lifecycle reached terminal settlement state.';
+    case 'payout.failed':
+      return 'Payout processing failed with explicit policy reason metadata for follow-up actions.';
+    case 'payout.adjusted':
+      return 'Payout amount was decreased by risk policy to keep payout execution within safe deterministic limits.';
     case 'subscription.renewal_failed':
       return 'A subscription renewal failed, which may trigger grace and access policy workflows.';
     case 'financial.adjustment_posted': {
@@ -95,8 +109,22 @@ function buildPolicyDisclosure(event: PersistedExplainabilityEvent): string {
       return 'Winning and settled dispute outcomes release frozen balances through explicit canonical postings.';
     case 'dispute.debt_posted':
       return 'Loss outcomes apply deterministic debt postings that remain trace-linked for repayment policy processing.';
+    case 'payout.queued':
+      return 'Queued payout intents retain eligibility criteria snapshots and activate deterministically when policy allows.';
     case 'payout.requested':
       return 'Payout requests enter an async lifecycle and can pause/adjust under risk policy controls.';
+    case 'payout.processing':
+      return 'Processing transitions are handled by async payout worker orchestration with deterministic state updates.';
+    case 'payout.paused':
+      return 'Risk pause transitions require explicit reason codes and preserve trace-linked lifecycle context.';
+    case 'payout.resumed':
+      return 'Resume transitions are policy-governed and trace-linked to prior paused state context.';
+    case 'payout.completed':
+      return 'Completion transitions finalize payout lifecycle state with immutable trace-linked history.';
+    case 'payout.failed':
+      return 'Failure transitions preserve explicit reason coding and deterministic retry/audit boundaries.';
+    case 'payout.adjusted':
+      return 'Risk adjustments are decrease-only and recorded with immutable before/after requested amounts.';
     case 'subscription.renewal_failed':
       return 'Subscription continuity follows grace, reminder, and recovery rules for your plan.';
     case 'financial.adjustment_posted':
@@ -140,6 +168,15 @@ function buildImpactedEntities(event: PersistedExplainabilityEvent): WalletExpla
       entityType: 'payout_request',
       entityId: payoutRequestId,
       label: 'Payout request',
+    });
+  }
+
+  const payoutQueuedIntentId = readPayloadId(payload, 'payoutQueuedIntentId');
+  if (payoutQueuedIntentId) {
+    entities.push({
+      entityType: 'payout_queued_intent',
+      entityId: payoutQueuedIntentId,
+      label: 'Queued payout intent',
     });
   }
 

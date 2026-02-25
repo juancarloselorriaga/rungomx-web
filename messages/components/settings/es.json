@@ -306,11 +306,13 @@
       "description": "Cancela o reanuda tu periodo actual.",
       "window": {
         "trial": "prueba",
+        "grace": "periodo de gracia",
         "active": "suscripción"
       },
       "status": {
         "trialing": "En prueba",
         "active": "Activa",
+        "grace": "En gracia",
         "ended": "Finalizada"
       },
       "cancelScheduled": "Cancelación al final del periodo",

@@ -52,7 +52,7 @@ function buildIntervals({
   overrides,
 }: {
   subscription:
-    | {
+      | {
         id: string;
         status: BillingSubscriptionStatus;
         trialStartsAt: Date | null;
@@ -84,7 +84,7 @@ function buildIntervals({
     }
 
     if (
-      subscription.status === 'active' &&
+      (subscription.status === 'active' || subscription.status === 'grace') &&
       subscription.currentPeriodStartsAt &&
       subscription.currentPeriodEndsAt
     ) {
@@ -93,7 +93,10 @@ function buildIntervals({
         startsAt: subscription.currentPeriodStartsAt,
         endsAt: subscription.currentPeriodEndsAt,
         sourceId: subscription.id,
-        meta: { subscriptionId: subscription.id },
+        meta: {
+          subscriptionId: subscription.id,
+          subscriptionStatus: subscription.status,
+        },
       });
     }
   }

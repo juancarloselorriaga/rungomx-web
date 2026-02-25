@@ -8,7 +8,14 @@ export const canonicalMoneyEventNames = [
   'dispute.debt_posted',
   'debt_control.pause_required',
   'debt_control.resume_allowed',
+  'payout.queued',
   'payout.requested',
+  'payout.processing',
+  'payout.paused',
+  'payout.resumed',
+  'payout.completed',
+  'payout.failed',
+  'payout.adjusted',
   'subscription.renewal_failed',
   'financial.adjustment_posted',
 ] as const;
@@ -126,6 +133,60 @@ export const payoutRequestedPayloadV1Schema = z.object({
   requestedAmount: canonicalMoneyAmountSchema,
 });
 
+export const payoutQueuedPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutQueuedIntentId: z.string().uuid(),
+  requestedAmount: canonicalMoneyAmountSchema,
+  blockedReasonCode: z.string().min(1),
+});
+
+export const payoutProcessingPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutRequestId: z.string().uuid(),
+  payoutQuoteId: z.string().uuid(),
+  currentRequestedAmount: canonicalMoneyAmountSchema,
+});
+
+export const payoutPausedPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutRequestId: z.string().uuid(),
+  payoutQuoteId: z.string().uuid(),
+  currentRequestedAmount: canonicalMoneyAmountSchema,
+  reasonCode: z.string().min(1),
+});
+
+export const payoutResumedPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutRequestId: z.string().uuid(),
+  payoutQuoteId: z.string().uuid(),
+  currentRequestedAmount: canonicalMoneyAmountSchema,
+  reasonCode: z.string().min(1),
+});
+
+export const payoutCompletedPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutRequestId: z.string().uuid(),
+  payoutQuoteId: z.string().uuid(),
+  settledAmount: canonicalMoneyAmountSchema,
+});
+
+export const payoutFailedPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutRequestId: z.string().uuid(),
+  payoutQuoteId: z.string().uuid(),
+  failedAmount: canonicalMoneyAmountSchema,
+  reasonCode: z.string().min(1),
+});
+
+export const payoutAdjustedPayloadV1Schema = z.object({
+  organizerId: z.string().uuid(),
+  payoutRequestId: z.string().uuid(),
+  payoutQuoteId: z.string().uuid(),
+  previousRequestedAmount: canonicalMoneyAmountSchema,
+  adjustedRequestedAmount: canonicalMoneyAmountSchema,
+  reasonCode: z.string().min(1),
+});
+
 const debtThresholdTransitionPayloadV1Schema = z.object({
   organizerId: z.string().uuid(),
   policyCode: z.string().min(1),
@@ -194,6 +255,48 @@ export const payoutRequestedV1Schema = defineCanonicalMoneyEventV1Schema(
   payoutRequestedPayloadV1Schema,
 );
 
+export const payoutQueuedV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.queued',
+  'payout',
+  payoutQueuedPayloadV1Schema,
+);
+
+export const payoutProcessingV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.processing',
+  'payout',
+  payoutProcessingPayloadV1Schema,
+);
+
+export const payoutPausedV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.paused',
+  'payout',
+  payoutPausedPayloadV1Schema,
+);
+
+export const payoutResumedV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.resumed',
+  'payout',
+  payoutResumedPayloadV1Schema,
+);
+
+export const payoutCompletedV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.completed',
+  'payout',
+  payoutCompletedPayloadV1Schema,
+);
+
+export const payoutFailedV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.failed',
+  'payout',
+  payoutFailedPayloadV1Schema,
+);
+
+export const payoutAdjustedV1Schema = defineCanonicalMoneyEventV1Schema(
+  'payout.adjusted',
+  'payout',
+  payoutAdjustedPayloadV1Schema,
+);
+
 export const debtControlPauseRequiredV1Schema = defineCanonicalMoneyEventV1Schema(
   'debt_control.pause_required',
   'debt_policy',
@@ -226,7 +329,14 @@ export const canonicalMoneyEventSchemaByNameV1 = {
   'dispute.debt_posted': disputeDebtPostedV1Schema,
   'debt_control.pause_required': debtControlPauseRequiredV1Schema,
   'debt_control.resume_allowed': debtControlResumeAllowedV1Schema,
+  'payout.queued': payoutQueuedV1Schema,
   'payout.requested': payoutRequestedV1Schema,
+  'payout.processing': payoutProcessingV1Schema,
+  'payout.paused': payoutPausedV1Schema,
+  'payout.resumed': payoutResumedV1Schema,
+  'payout.completed': payoutCompletedV1Schema,
+  'payout.failed': payoutFailedV1Schema,
+  'payout.adjusted': payoutAdjustedV1Schema,
   'subscription.renewal_failed': subscriptionRenewalFailedV1Schema,
   'financial.adjustment_posted': financialAdjustmentPostedV1Schema,
 } as const satisfies Record<CanonicalMoneyEventName, z.ZodTypeAny>;
@@ -239,7 +349,14 @@ export const canonicalMoneyEventSchemaV1 = z.discriminatedUnion('eventName', [
   disputeDebtPostedV1Schema,
   debtControlPauseRequiredV1Schema,
   debtControlResumeAllowedV1Schema,
+  payoutQueuedV1Schema,
   payoutRequestedV1Schema,
+  payoutProcessingV1Schema,
+  payoutPausedV1Schema,
+  payoutResumedV1Schema,
+  payoutCompletedV1Schema,
+  payoutFailedV1Schema,
+  payoutAdjustedV1Schema,
   subscriptionRenewalFailedV1Schema,
   financialAdjustmentPostedV1Schema,
 ]);

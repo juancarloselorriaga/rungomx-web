@@ -2,7 +2,7 @@ import type { BILLING_ENTITLEMENT_KEY } from './constants';
 
 export type BillingEntitlementKey = typeof BILLING_ENTITLEMENT_KEY;
 
-export type BillingSubscriptionStatus = 'trialing' | 'active' | 'ended';
+export type BillingSubscriptionStatus = 'trialing' | 'active' | 'grace' | 'ended';
 
 export type BillingEventSource = 'system' | 'admin' | 'provider';
 

@@ -65,10 +65,73 @@
       ]
     },
     {
+      "eventName": "payout.adjusted",
+      "version": 1,
+      "schemaId": "payments.payout.adjusted.v1",
+      "schemaFile": "payout-adjusted.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.completed",
+      "version": 1,
+      "schemaId": "payments.payout.completed.v1",
+      "schemaFile": "payout-completed.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.failed",
+      "version": 1,
+      "schemaId": "payments.payout.failed.v1",
+      "schemaFile": "payout-failed.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.paused",
+      "version": 1,
+      "schemaId": "payments.payout.paused.v1",
+      "schemaFile": "payout-paused.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.processing",
+      "version": 1,
+      "schemaId": "payments.payout.processing.v1",
+      "schemaFile": "payout-processing.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.queued",
+      "version": 1,
+      "schemaId": "payments.payout.queued.v1",
+      "schemaFile": "payout-queued.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
       "eventName": "payout.requested",
       "version": 1,
       "schemaId": "payments.payout.requested.v1",
       "schemaFile": "payout-requested.v1.schema.json",
+      "upcasterVersions": [
+        1
+      ]
+    },
+    {
+      "eventName": "payout.resumed",
+      "version": 1,
+      "schemaId": "payments.payout.resumed.v1",
+      "schemaFile": "payout-resumed.v1.schema.json",
       "upcasterVersions": [
         1
       ]

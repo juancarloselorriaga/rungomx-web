@@ -59,7 +59,14 @@ const walletRelevantEventNames = [
   'dispute.opened',
   'dispute.funds_released',
   'dispute.debt_posted',
+  'payout.queued',
   'payout.requested',
+  'payout.processing',
+  'payout.paused',
+  'payout.resumed',
+  'payout.completed',
+  'payout.failed',
+  'payout.adjusted',
   'financial.adjustment_posted',
 ] as const;
 
@@ -120,6 +127,55 @@ function eventDelta(event: PersistedWalletEvent): Omit<WalletBuckets, 'debtMinor
         frozenMinor: 0,
       };
     }
+    case 'payout.processing':
+    case 'payout.paused':
+    case 'payout.resumed':
+      return {
+        availableMinor: 0,
+        processingMinor: 0,
+        frozenMinor: 0,
+      };
+    case 'payout.completed': {
+      const settledAmountMinor = getNestedAmountMinor(event.payloadJson, 'settledAmount');
+      return {
+        availableMinor: 0,
+        processingMinor: -settledAmountMinor,
+        frozenMinor: 0,
+      };
+    }
+    case 'payout.failed': {
+      const failedAmountMinor = getNestedAmountMinor(event.payloadJson, 'failedAmount');
+      return {
+        availableMinor: failedAmountMinor,
+        processingMinor: -failedAmountMinor,
+        frozenMinor: 0,
+      };
+    }
+    case 'payout.adjusted': {
+      const previousRequestedAmountMinor = getNestedAmountMinor(
+        event.payloadJson,
+        'previousRequestedAmount',
+      );
+      const adjustedRequestedAmountMinor = getNestedAmountMinor(
+        event.payloadJson,
+        'adjustedRequestedAmount',
+      );
+      const releasedAmountMinor = Math.max(
+        previousRequestedAmountMinor - adjustedRequestedAmountMinor,
+        0,
+      );
+      return {
+        availableMinor: releasedAmountMinor,
+        processingMinor: -releasedAmountMinor,
+        frozenMinor: 0,
+      };
+    }
+    case 'payout.queued':
+      return {
+        availableMinor: 0,
+        processingMinor: 0,
+        frozenMinor: 0,
+      };
     case 'financial.adjustment_posted': {
       const amountMinor = getNestedAmountMinor(event.payloadJson, 'amount');
       return {

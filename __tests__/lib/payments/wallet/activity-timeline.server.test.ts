@@ -239,4 +239,86 @@ describe('payments wallet activity timeline', () => {
       fees: 0,
     });
   });
+
+  it('keeps payout transition events visible in timeline order with adjustment deltas', async () => {
+    queue.push([
+      {
+        id: 'event-1',
+        traceId: 'trace-1',
+        eventName: 'payment.captured',
+        entityType: 'registration',
+        entityId: 'registration-1',
+        occurredAt: new Date('2026-02-24T10:00:00.000Z'),
+        payloadJson: {
+          netAmount: { amountMinor: 15000, currency: 'MXN' },
+        },
+      },
+      {
+        id: 'event-2',
+        traceId: 'trace-2',
+        eventName: 'payout.requested',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        occurredAt: new Date('2026-02-24T10:05:00.000Z'),
+        payloadJson: {
+          requestedAmount: { amountMinor: 10000, currency: 'MXN' },
+        },
+      },
+      {
+        id: 'event-3',
+        traceId: 'trace-3',
+        eventName: 'payout.paused',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        occurredAt: new Date('2026-02-24T10:10:00.000Z'),
+        payloadJson: {
+          currentRequestedAmount: { amountMinor: 10000, currency: 'MXN' },
+          reasonCode: 'high_risk_dispute_signal',
+        },
+      },
+      {
+        id: 'event-4',
+        traceId: 'trace-4',
+        eventName: 'payout.adjusted',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        occurredAt: new Date('2026-02-24T10:11:00.000Z'),
+        payloadJson: {
+          previousRequestedAmount: { amountMinor: 10000, currency: 'MXN' },
+          adjustedRequestedAmount: { amountMinor: 8000, currency: 'MXN' },
+          reasonCode: 'high_risk_dispute_signal',
+        },
+      },
+      {
+        id: 'event-5',
+        traceId: 'trace-5',
+        eventName: 'payout.completed',
+        entityType: 'payout',
+        entityId: 'payout-1',
+        occurredAt: new Date('2026-02-24T10:15:00.000Z'),
+        payloadJson: {
+          settledAmount: { amountMinor: 8000, currency: 'MXN' },
+        },
+      },
+    ]);
+
+    const result = await getOrganizerWalletActivityTimeline({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(result.dayGroups).toHaveLength(1);
+    expect(result.dayGroups[0]!.entries.map((entry) => entry.eventName)).toEqual([
+      'payout.completed',
+      'payout.adjusted',
+      'payout.paused',
+      'payout.requested',
+      'payment.captured',
+    ]);
+    expect(result.totals).toEqual({
+      availableMinor: 7000,
+      processingMinor: 0,
+      frozenMinor: 0,
+      debtMinor: 0,
+    });
+  });
 });

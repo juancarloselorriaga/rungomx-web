@@ -8,7 +8,14 @@ export const walletIssueRelevantEventNames = [
   'dispute.opened',
   'debt_control.pause_required',
   'debt_control.resume_allowed',
+  'payout.queued',
   'payout.requested',
+  'payout.processing',
+  'payout.paused',
+  'payout.resumed',
+  'payout.completed',
+  'payout.failed',
+  'payout.adjusted',
   'subscription.renewal_failed',
 ] as const;
 
@@ -92,11 +99,36 @@ function classifyIssueState(eventName: WalletIssueEventName): {
         stateDescription:
           'Debt recovered through policy threshold and paid registrations were resumed automatically.',
       };
+    case 'payout.queued':
+      return {
+        state: 'action_needed',
+        stateLabel: 'Action Needed',
+        stateDescription:
+          'Your payout is queued because eligibility is not currently met; resolve blockers so activation can proceed.',
+      };
     case 'payout.requested':
+    case 'payout.processing':
+    case 'payout.resumed':
+    case 'payout.completed':
+    case 'payout.adjusted':
       return {
         state: 'in_progress',
         stateLabel: 'In Progress',
-        stateDescription: 'Your payout request is processing through the platform payout lifecycle.',
+        stateDescription: 'Your payout request is progressing through the platform payout lifecycle.',
+      };
+    case 'payout.paused':
+      return {
+        state: 'action_needed',
+        stateLabel: 'Action Needed',
+        stateDescription:
+          'Your payout is paused by risk policy; review reason codes and complete required remediation to continue.',
+      };
+    case 'payout.failed':
+      return {
+        state: 'action_needed',
+        stateLabel: 'Action Needed',
+        stateDescription:
+          'Your payout failed to complete and requires follow-up action before a new payout lifecycle can proceed.',
       };
     case 'refund.executed':
       return {
