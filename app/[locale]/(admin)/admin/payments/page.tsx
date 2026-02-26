@@ -218,7 +218,7 @@ export default async function AdminPaymentsEconomicsPage({
     disputeCasesHeader: t('admin.payments.exposure.disputeCasesHeader'),
     sampleTracesLabel: t('admin.payments.exposure.sampleTracesLabel'),
     sampleCasesLabel: t('admin.payments.exposure.sampleCasesLabel'),
-    currenciesLabel: t('admin.payments.exposure.currenciesLabel'),
+    currenciesLabel: (count: number) => t('admin.payments.exposure.currenciesLabel', { count }),
     emptyState: t('admin.payments.exposure.emptyState'),
   };
 

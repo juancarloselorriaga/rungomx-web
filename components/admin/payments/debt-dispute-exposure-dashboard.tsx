@@ -25,7 +25,7 @@ type DebtDisputeExposureDashboardLabels = {
   disputeCasesHeader: string;
   sampleTracesLabel: string;
   sampleCasesLabel: string;
-  currenciesLabel: string;
+  currenciesLabel: (count: number) => string;
   emptyState: string;
 };
 
@@ -104,8 +104,8 @@ function renderTableRow(params: {
       <td className="py-3 pr-4">
         <p className="font-medium">{label}</p>
         {secondaryCurrencyCount > 0 ? (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {labels.currenciesLabel.replace('{count}', String(secondaryCurrencyCount))}
+        <p className="mt-1 text-xs text-muted-foreground">
+            {labels.currenciesLabel(secondaryCurrencyCount)}
           </p>
         ) : null}
         {renderRowDetailChips({

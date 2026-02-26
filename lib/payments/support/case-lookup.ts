@@ -243,8 +243,8 @@ export async function lookupFinancialCases(params: {
           isNull(payoutRequests.deletedAt),
           isNull(payoutQuotes.deletedAt),
           or(
-            ilike(payoutRequests.id, likePattern),
-            ilike(payoutRequests.payoutQuoteId, likePattern),
+            sql`${payoutRequests.id}::text ILIKE ${likePattern}`,
+            sql`${payoutRequests.payoutQuoteId}::text ILIKE ${likePattern}`,
             ilike(payoutQuotes.idempotencyKey, likePattern),
           ),
         ),
