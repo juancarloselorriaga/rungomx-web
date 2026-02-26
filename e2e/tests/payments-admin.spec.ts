@@ -56,7 +56,7 @@ test.describe('Payments Admin E2E', () => {
     await context.close();
   });
 
-  test('staff user can access admin payments workspace and run support workflows', async ({
+  test('1.1-E2E-001 staff user can access the existing admin payments workspace', async ({
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
@@ -71,17 +71,25 @@ test.describe('Payments Admin E2E', () => {
     await expect(page.getByText('Artifact governance')).toBeVisible();
     await expect(page.getByText('Financial case lookup')).toBeVisible();
     await expect(page.getByText('Evidence pack review')).toBeVisible();
+  });
 
-    const lookupQuery = `trace:missing-${Date.now()}`;
-    await page.getByLabel('Trace or transaction identifier').fill(lookupQuery);
+  test('1.2-E2E-001 staff user can reuse the same trace identifier across support lookup and evidence review', async ({
+    page,
+  }) => {
+    await signInAsStaff(page, staffCreds);
+    await page.goto('/en/admin/payments');
+
+    await expect(page).toHaveURL(/\/en\/admin\/payments/);
+
+    const sharedTraceId = `trace:missing-${Date.now()}`;
+    await page.getByLabel('Trace or transaction identifier').fill(sharedTraceId);
     await page.getByRole('button', { name: 'Search cases' }).click();
 
     await expect(
       page.getByText('No matching financial cases were found for the provided identifier.'),
     ).toBeVisible();
 
-    const evidenceTrace = `trace:missing-evidence-${Date.now()}`;
-    await page.getByPlaceholder('trace:...', { exact: true }).fill(evidenceTrace);
+    await page.getByPlaceholder('trace:...', { exact: true }).fill(sharedTraceId);
     await page.getByRole('button', { name: 'Load evidence pack' }).click();
 
     await expect(

@@ -266,7 +266,7 @@ describe('POST /api/payments/payouts', () => {
     });
   });
 
-  it('returns 201 with payout quote and contract payload on new creation', async () => {
+  it('1.2-API-001 persists trace-linked payout command outcome with ingress metadata', async () => {
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
@@ -318,7 +318,54 @@ describe('POST /api/payments/payouts', () => {
     });
   });
 
-  it('returns 200 when idempotency key resolves to an existing payout quote', async () => {
+  it('1.2-API-003 routes payout mutation requests through ingress-backed contract service', async () => {
+    mockGetAuthContext.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockCreatePayoutQuoteAndContract.mockResolvedValue({
+      payoutQuoteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      payoutRequestId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      payoutContractId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      quoteFingerprint: 'f'.repeat(64),
+      currency: 'MXN',
+      includedAmountMinor: 12000,
+      deductionAmountMinor: 2000,
+      maxWithdrawableAmountMinor: 10000,
+      requestedAmountMinor: 9000,
+      traceId: 'payout-request:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      requestedAt: new Date('2026-02-25T18:00:00.000Z'),
+      idempotencyReused: false,
+      ingressDeduplicated: false,
+      eligibilitySnapshot: { version: 'payout-quote-eligibility-v1' },
+      componentBreakdown: { version: 'payout-quote-components-v1' },
+      contractBaseline: { version: 'payout-contract-v1' },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/payouts', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 9000,
+          idempotencyKey: 'withdrawal-1',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(201);
+    expect(mockCreatePayoutQuoteAndContract).toHaveBeenCalledTimes(1);
+    expect(mockCreatePayoutQuoteAndContract).toHaveBeenCalledWith({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      requestedByUserId: 'organizer-user-1',
+      requestedAmountMinor: 9000,
+      idempotencyKey: 'withdrawal-1',
+      activeConflictPolicy: undefined,
+    });
+  });
+
+  it('1.3-API-001 reuses canonical payout outcome for duplicate idempotency keys', async () => {
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
@@ -356,5 +403,51 @@ describe('POST /api/payments/payouts', () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.data.idempotencyReused).toBe(true);
+  });
+
+  it('1.3-API-003 keeps duplicate ingestion on the ingress-backed payout contract path', async () => {
+    mockGetAuthContext.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockCreatePayoutQuoteAndContract.mockResolvedValue({
+      payoutQuoteId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      payoutRequestId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      payoutContractId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      quoteFingerprint: 'f'.repeat(64),
+      currency: 'MXN',
+      includedAmountMinor: 12000,
+      deductionAmountMinor: 2000,
+      maxWithdrawableAmountMinor: 10000,
+      requestedAmountMinor: 9000,
+      traceId: 'payout-request:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      requestedAt: new Date('2026-02-25T18:00:00.000Z'),
+      idempotencyReused: true,
+      ingressDeduplicated: true,
+      eligibilitySnapshot: { version: 'payout-quote-eligibility-v1' },
+      componentBreakdown: { version: 'payout-quote-components-v1' },
+      contractBaseline: { version: 'payout-contract-v1' },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/payouts', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          idempotencyKey: 'withdrawal-1',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockCreatePayoutQuoteAndContract).toHaveBeenCalledTimes(1);
+    expect(mockCreatePayoutQuoteAndContract).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        requestedByUserId: 'organizer-user-1',
+        idempotencyKey: 'withdrawal-1',
+      }),
+    );
   });
 });

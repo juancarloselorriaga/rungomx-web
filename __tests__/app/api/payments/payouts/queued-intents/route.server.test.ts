@@ -208,7 +208,7 @@ describe('POST /api/payments/payouts/queued-intents', () => {
     });
   });
 
-  it('returns 201 with queued intent payload on first creation', async () => {
+  it('1.2-API-004 persists queued payout mutation metadata through ingress', async () => {
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
@@ -253,7 +253,7 @@ describe('POST /api/payments/payouts/queued-intents', () => {
     });
   });
 
-  it('returns 200 when idempotency key resolves to existing queued intent', async () => {
+  it('1.3-API-002 returns deterministic queued-intent payload for duplicate idempotency keys', async () => {
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },

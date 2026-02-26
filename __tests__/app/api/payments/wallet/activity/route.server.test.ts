@@ -85,7 +85,7 @@ describe('GET /api/payments/wallet/activity', () => {
     expect(response.status).toBe(403);
   });
 
-  it('returns organizer timeline payload when authorized', async () => {
+  it('1.2-API-002 returns trace-linked organizer timeline payload when authorized', async () => {
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'user-1' },
       permissions: { canManageEvents: false },
@@ -116,7 +116,14 @@ describe('GET /api/payments/wallet/activity', () => {
       dayGroups: [
         {
           day: '2026-02-24',
-          entries: [],
+          entries: [
+            {
+              eventId: 'event-1',
+              traceId: 'trace-refund-1',
+              eventName: 'refund.executed',
+              occurredAt: '2026-02-24T09:00:00.000Z',
+            },
+          ],
         },
       ],
       scope: 'refund.executed',
@@ -157,7 +164,14 @@ describe('GET /api/payments/wallet/activity', () => {
       dayGroups: [
         {
           day: '2026-02-24',
-          entries: [],
+          entries: [
+            {
+              eventId: 'event-1',
+              traceId: 'trace-refund-1',
+              eventName: 'refund.executed',
+              occurredAt: '2026-02-24T09:00:00.000Z',
+            },
+          ],
         },
       ],
     });
