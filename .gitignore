@@ -70,3 +70,5 @@ _bmad-output
 
 tmp/
 .tmp/
+
+.agents/
