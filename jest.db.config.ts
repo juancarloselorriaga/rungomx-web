@@ -9,6 +9,7 @@ const config: Config = {
   displayName: 'database',
   testEnvironment: 'node',
   testMatch: ['<rootDir>/**/__tests__/**/*.db.[jt]s?(x)', '<rootDir>/**/*.db.test.[jt]s?(x)'],
+  setupFiles: ['<rootDir>/tests/setup.db-env.ts'],
   setupFilesAfterEnv: ['<rootDir>/tests/setup.db.ts'],
   testTimeout: 10000, // 10 seconds for database tests
   // Run DB tests sequentially to avoid deadlocks when cleaning the shared test database

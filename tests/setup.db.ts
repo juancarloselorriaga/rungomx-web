@@ -1,13 +1,9 @@
 /**
  * Global setup for database tests
- * Loads .env.test environment variables
+ * Runs after Jest environment initialization
  */
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load test environment variables
-config({ path: resolve(__dirname, '../.env.test'), override: true });
+import { closeTestDbPool } from './helpers/db';
 
 // Verify DATABASE_URL is set
 if (!process.env.DATABASE_URL) {
@@ -16,3 +12,8 @@ if (!process.env.DATABASE_URL) {
 
 // Neon is remote and cleanup operations can be slow; avoid flaky hook timeouts.
 jest.setTimeout(20_000);
+
+// Ensure DB pool connections are closed after each test file to avoid stale clients.
+afterAll(async () => {
+  await closeTestDbPool();
+});
