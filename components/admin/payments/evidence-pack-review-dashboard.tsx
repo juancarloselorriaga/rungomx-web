@@ -67,6 +67,12 @@ function truncateJson(value: unknown, limit = 120): string {
   return `${raw.slice(0, limit)}...`;
 }
 
+function formatOwnershipState(value: string): string {
+  if (value === 'action_needed') return 'Action Needed';
+  if (value === 'in_progress') return 'In Progress';
+  return value;
+}
+
 function formatPolicyContext(value: Record<string, unknown>): Array<{ key: string; value: string }> {
   return Object.entries(value).map(([key, entry]) => ({
     key,
@@ -178,7 +184,9 @@ export function EvidencePackReviewDashboard({
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.currentStateLabel}
                 </p>
-                <p className="mt-1 text-xs">{evidencePack.ownership.currentState}</p>
+                <p className="mt-1 text-xs">
+                  {formatOwnershipState(evidencePack.ownership.currentState)}
+                </p>
               </div>
               <div className="rounded border p-3">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -238,7 +246,9 @@ export function EvidencePackReviewDashboard({
                         {event.entityType}:{event.entityId}
                       </td>
                       <td className="py-2 pr-4 text-xs">
-                        {ownershipByEventId.get(event.id)?.ownershipState ?? 'in_progress'}
+                        {formatOwnershipState(
+                          ownershipByEventId.get(event.id)?.ownershipState ?? 'in_progress',
+                        )}
                       </td>
                       <td className="py-2 pr-4 text-xs">
                         {ownershipByEventId.get(event.id)?.currentOwner ?? 'platform'}

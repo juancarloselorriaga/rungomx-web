@@ -27,6 +27,7 @@ jest.mock('@/db', () => ({
 }));
 
 import { GET } from '@/app/api/payments/wallet/route';
+import { resetWalletPerformanceSamplesForTests } from '@/lib/payments/wallet/performance-budget';
 
 describe('GET /api/payments/wallet', () => {
   beforeEach(() => {
@@ -34,6 +35,7 @@ describe('GET /api/payments/wallet', () => {
     mockGetOrgMembership.mockReset();
     mockGetOrganizerWalletBucketSnapshot.mockReset();
     mockFindOrganization.mockReset();
+    resetWalletPerformanceSamplesForTests();
   });
 
   it('returns 401 when user is not authenticated', async () => {
@@ -119,6 +121,7 @@ describe('GET /api/payments/wallet', () => {
         },
         repaymentAppliedMinor: 0,
       },
+      historyEventCount: 128,
       queryDurationMs: 12,
     });
 
@@ -150,7 +153,86 @@ describe('GET /api/payments/wallet', () => {
         repaymentAppliedMinor: 0,
       },
     });
-    expect(body.meta.queryDurationMs).toBe(12);
-    expect(body.meta.p95TargetMs).toBe(2000);
+    expect(body.meta).toEqual({
+      queryDurationMs: 12,
+      durationMs: expect.any(Number),
+      p95TargetMs: 2000,
+      p95ObservedMs: 12,
+      sampleCount: 1,
+      overBudgetSampleCount: 0,
+      sustainedDriftAlert: false,
+      historyEventCount: 128,
+      historyWindow: 'baseline',
+    });
+  });
+
+  it('emits sustained drift alert metadata and warning signal after repeated over-budget high-history samples', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+    mockGetAuthContext.mockResolvedValue({
+      user: { id: 'user-1' },
+      permissions: { canManageEvents: false },
+    });
+    mockGetOrgMembership.mockResolvedValue({
+      organizationId: '11111111-1111-4111-8111-111111111111',
+      role: 'owner',
+    });
+    mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    mockGetOrganizerWalletBucketSnapshot.mockResolvedValue({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      asOf: new Date('2026-02-23T22:00:00.000Z'),
+      buckets: {
+        availableMinor: 1200,
+        processingMinor: 0,
+        frozenMinor: 0,
+        debtMinor: 0,
+      },
+      debt: {
+        waterfallOrder: ['disputes', 'refunds', 'fees'],
+        categoryBalancesMinor: {
+          disputes: 0,
+          refunds: 0,
+          fees: 0,
+        },
+        repaymentAppliedMinor: 0,
+      },
+      historyEventCount: 900,
+      queryDurationMs: 2500,
+    });
+
+    await GET(
+      new Request('http://localhost/api/payments/wallet?organizationId=11111111-1111-4111-8111-111111111111'),
+    );
+    await GET(
+      new Request('http://localhost/api/payments/wallet?organizationId=11111111-1111-4111-8111-111111111111'),
+    );
+    const third = await GET(
+      new Request('http://localhost/api/payments/wallet?organizationId=11111111-1111-4111-8111-111111111111'),
+    );
+
+    expect(third.status).toBe(200);
+    const body = await third.json();
+    expect(body.meta).toEqual({
+      queryDurationMs: 2500,
+      durationMs: expect.any(Number),
+      p95TargetMs: 2000,
+      p95ObservedMs: 2500,
+      sampleCount: 3,
+      overBudgetSampleCount: 3,
+      sustainedDriftAlert: true,
+      historyEventCount: 900,
+      historyWindow: 'growth',
+    });
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      '[payments-wallet] Sustained p95 budget drift detected',
+      expect.objectContaining({
+        p95TargetMs: 2000,
+        p95ObservedMs: 2500,
+        overBudgetSampleCount: 3,
+        sampleCount: 3,
+      }),
+    );
+
+    consoleWarnSpy.mockRestore();
   });
 });

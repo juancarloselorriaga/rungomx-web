@@ -35,6 +35,7 @@ export type OrganizerWalletBucketSnapshot = {
   asOf: Date;
   buckets: WalletBuckets;
   debt: WalletDebtProjection;
+  historyEventCount: number;
   queryDurationMs: number;
 };
 
@@ -309,6 +310,7 @@ export async function getOrganizerWalletBucketSnapshot(params: {
       categoryBalancesMinor: debtCategoryBalances,
       repaymentAppliedMinor,
     },
+    historyEventCount: events.length,
     queryDurationMs,
   };
 }

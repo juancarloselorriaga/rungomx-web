@@ -12,6 +12,7 @@ import {
 } from '../utils/fixtures';
 
 let staffCreds: { email: string; password: string; name: string };
+let ownershipTraceId = '';
 
 async function signInAsStaff(
   page: Page,
@@ -52,6 +53,55 @@ test.describe('Payments Admin E2E', () => {
       });
     }
     await assignUserRole(db, staffUser.id, staffRole.id);
+
+    ownershipTraceId = `trace:ownership-${Date.now()}`;
+    const rootDisputeId = '55555555-5555-4555-8555-555555555555';
+    const openedAt = new Date(Date.now() - 10 * 60 * 1000);
+
+    await db.insert(schema.moneyTraces).values({
+      traceId: ownershipTraceId,
+      organizerId: null,
+      rootEntityType: 'dispute_case',
+      rootEntityId: rootDisputeId,
+      createdBySource: 'api',
+      metadataJson: {
+        seededBy: 'payments-admin-e2e',
+      },
+      createdAt: new Date(openedAt.getTime() - 60 * 1000),
+    });
+
+    await db.insert(schema.moneyEvents).values([
+      {
+        traceId: ownershipTraceId,
+        organizerId: null,
+        eventName: 'dispute.opened',
+        eventVersion: 1,
+        entityType: 'dispute_case',
+        entityId: rootDisputeId,
+        source: 'api',
+        idempotencyKey: `${ownershipTraceId}:opened`,
+        occurredAt: openedAt,
+        payloadJson: {
+          reasonCode: 'evidence_required',
+        },
+        metadataJson: {},
+      },
+      {
+        traceId: ownershipTraceId,
+        organizerId: null,
+        eventName: 'dispute.under_review',
+        eventVersion: 1,
+        entityType: 'dispute_case',
+        entityId: rootDisputeId,
+        source: 'api',
+        idempotencyKey: `${ownershipTraceId}:under-review`,
+        occurredAt: new Date(openedAt.getTime() + 60 * 1000),
+        payloadJson: {
+          reviewStage: 'platform_review',
+        },
+        metadataJson: {},
+      },
+    ]);
 
     await context.close();
   });
@@ -95,5 +145,20 @@ test.describe('Payments Admin E2E', () => {
     await expect(
       page.getByText('No evidence pack data was found for the selected trace.'),
     ).toBeVisible();
+  });
+
+  test('8.3-E2E-001 support timeline exposes ownership state, current owner, and next transition', async ({
+    page,
+  }) => {
+    await signInAsStaff(page, staffCreds);
+    await page.goto(`/en/admin/payments?evidenceTraceId=${encodeURIComponent(ownershipTraceId)}`);
+
+    await expect(page).toHaveURL(/\/en\/admin\/payments\?evidenceTraceId=/);
+    await expect(page.getByText('dispute.opened')).toBeVisible();
+    await expect(page.getByText('dispute.under_review')).toBeVisible();
+    await expect(page.getByText('Action Needed').first()).toBeVisible();
+    await expect(page.getByText('In Progress').first()).toBeVisible();
+    await expect(page.getByText('platform').first()).toBeVisible();
+    await expect(page.getByText('dispute.won_or_lost').first()).toBeVisible();
   });
 });

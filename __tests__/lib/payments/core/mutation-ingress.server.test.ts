@@ -60,6 +60,31 @@ const refundExecutedEvent = {
   },
 } as const;
 
+const financialAdjustmentSensitiveEvent = {
+  eventId: '77777777-7777-4777-8777-777777777777',
+  traceId: 'trace-redaction-1',
+  occurredAt: '2026-02-23T12:20:00.000Z',
+  recordedAt: '2026-02-23T12:20:00.000Z',
+  eventName: 'financial.adjustment_posted',
+  version: 1,
+  entityType: 'adjustment',
+  entityId: 'adjustment-1',
+  source: 'worker',
+  idempotencyKey: 'idem-redaction-1',
+  metadata: {
+    sourceSystem: 'tests',
+    internalNote: 'contains sensitive review details',
+    supportEmail: 'private@example.com',
+  },
+  payload: {
+    organizerId: '22222222-2222-4222-8222-222222222222',
+    adjustmentId: '88888888-8888-4888-8888-888888888888',
+    adjustmentCode: 'manual_adjustment',
+    amount: { amountMinor: 1200, currency: 'MXN' },
+    reason: 'Customer card details shared in free text',
+  },
+} as const;
+
 describe('money mutation ingress', () => {
   const traceInsertValues: unknown[] = [];
   const eventInsertValues: unknown[] = [];
@@ -285,5 +310,52 @@ describe('money mutation ingress', () => {
     expect(adminView).toEqual(persistedRows);
     expect(supportView).toEqual(persistedRows);
     expect(walletView).toEqual([persistedRows[0]]);
+  });
+
+  it('redacts restricted payload and metadata fields before persistence and includes policy evidence', async () => {
+    commandInsertReturningQueue.push([{ traceId: 'trace-redaction-1' }]);
+
+    const result = await moneyMutationIngress({
+      traceId: 'trace-redaction-1',
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      idempotencyKey: 'command-key-redaction',
+      source: 'worker',
+      events: [financialAdjustmentSensitiveEvent],
+    });
+
+    expect(result.deduplicated).toBe(false);
+    expect(result.persistedEvents).toHaveLength(1);
+    expect(result.persistedEvents[0]?.payload).toMatchObject({
+      reason: '[REDACTED_FREE_TEXT]',
+    });
+    expect(result.persistedEvents[0]?.metadata).toMatchObject({
+      internalNote: '[REDACTED_FREE_TEXT]',
+      supportEmail: '[REDACTED_CONTACT]',
+      payloadRedaction: {
+        policyVersion: 'v1',
+        redacted: true,
+      },
+    });
+
+    const persistedInsert = eventInsertValues[0] as Array<{
+      payloadJson: Record<string, unknown>;
+      metadataJson: Record<string, unknown>;
+    }>;
+    expect(persistedInsert[0]?.payloadJson.reason).toBe('[REDACTED_FREE_TEXT]');
+    expect(persistedInsert[0]?.metadataJson.internalNote).toBe('[REDACTED_FREE_TEXT]');
+    expect(persistedInsert[0]?.metadataJson.supportEmail).toBe('[REDACTED_CONTACT]');
+
+    const evidence = (persistedInsert[0]?.metadataJson.payloadRedaction ?? {}) as Record<
+      string,
+      unknown
+    >;
+    expect(evidence.redacted).toBe(true);
+    expect(evidence.redactedFieldCount).toBe(3);
+    expect(evidence.redactionClasses).toEqual(['contact', 'free_text']);
+    expect(evidence.redactedPaths).toEqual([
+      'metadata.internalNote',
+      'metadata.supportEmail',
+      'payload.reason',
+    ]);
   });
 });

@@ -11,6 +11,7 @@ import {
   parseCanonicalMoneyEventWithUpcasting,
   type CanonicalMoneyEventV1,
 } from '@/lib/payments/core/contracts/events';
+import { redactCanonicalEventForPersistence } from '@/lib/payments/core/payload-redaction';
 
 export const moneyMutationIngressSources = [
   'api',
@@ -73,7 +74,23 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
   duplicateOfTraceId?: string;
 }> {
   const parsedEvents = normalizeCanonicalEvents(command);
-  const rootEvent = parsedEvents[0];
+  const sanitizedEvents: CanonicalMoneyEventV1[] = parsedEvents.map((event) => {
+    const redaction = redactCanonicalEventForPersistence({
+      payload: event.payload,
+      metadata: event.metadata,
+    });
+
+    return {
+      ...event,
+      payload: redaction.payload as CanonicalMoneyEventV1['payload'],
+      metadata: {
+        ...redaction.metadata,
+        payloadRedaction: redaction.evidence,
+      },
+    } as CanonicalMoneyEventV1;
+  });
+
+  const rootEvent = sanitizedEvents[0];
 
   const result = await db.transaction(async (tx) => {
     if (command.idempotencyKey) {
@@ -88,7 +105,7 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
           idempotencyKey: command.idempotencyKey,
           traceId: command.traceId,
           status: 'processing',
-          eventCount: parsedEvents.length,
+          eventCount: sanitizedEvents.length,
           responseSummaryJson: {
             stage: 'accepted',
           },
@@ -131,7 +148,7 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
         rootEntityId: rootEvent.entityId,
         createdBySource: command.source,
         metadataJson: {
-          eventCount: parsedEvents.length,
+          eventCount: sanitizedEvents.length,
           initialEventName: rootEvent.eventName,
           initialEventVersion: rootEvent.version,
         },
@@ -139,7 +156,7 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
       .onConflictDoNothing();
 
     await tx.insert(moneyEvents).values(
-      parsedEvents.map((event) => ({
+      sanitizedEvents.map((event) => ({
         traceId: event.traceId,
         organizerId: command.organizerId ?? null,
         eventName: event.eventName,
@@ -151,7 +168,7 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
         occurredAt: new Date(event.occurredAt),
         payloadJson: event.payload as Record<string, unknown>,
         metadataJson: event.metadata,
-        })),
+      })),
     );
 
     if (command.idempotencyKey && command.organizerId) {
@@ -159,11 +176,11 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
         .update(moneyCommandIngestions)
         .set({
           status: 'completed',
-          eventCount: parsedEvents.length,
+          eventCount: sanitizedEvents.length,
           responseSummaryJson: {
             stage: 'completed',
             traceId: command.traceId,
-            eventCount: parsedEvents.length,
+            eventCount: sanitizedEvents.length,
           },
           lastSeenAt: new Date(),
         })
@@ -177,7 +194,7 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
 
     return {
       traceId: command.traceId,
-      persistedEvents: parsedEvents,
+      persistedEvents: sanitizedEvents,
       deduplicated: false,
     };
   });

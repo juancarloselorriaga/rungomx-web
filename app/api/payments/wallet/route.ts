@@ -6,6 +6,7 @@ import { db } from '@/db';
 import { organizations } from '@/db/schema';
 import { getAuthContext } from '@/lib/auth/server';
 import { getOrgMembership } from '@/lib/organizations/permissions';
+import { recordWalletPerformanceSample } from '@/lib/payments/wallet/performance-budget';
 import { getOrganizerWalletBucketSnapshot } from '@/lib/payments/wallet/snapshot';
 
 const querySchema = z.object({
@@ -13,6 +14,8 @@ const querySchema = z.object({
 });
 
 const WALLET_OVERVIEW_P95_TARGET_MS = 2000;
+const HIGH_HISTORY_EVENT_COUNT_THRESHOLD = 500;
+const WALLET_SUSTAINED_DRIFT_THRESHOLD = 3;
 
 export async function GET(request: Request): Promise<NextResponse> {
   const startedAt = Date.now();
@@ -62,6 +65,24 @@ export async function GET(request: Request): Promise<NextResponse> {
     });
 
     const durationMs = Date.now() - startedAt;
+    const performanceEvidence = recordWalletPerformanceSample({
+      queryDurationMs: snapshot.queryDurationMs,
+      budgetMs: WALLET_OVERVIEW_P95_TARGET_MS,
+      sustainedDriftThreshold: WALLET_SUSTAINED_DRIFT_THRESHOLD,
+    });
+    const historyWindow =
+      snapshot.historyEventCount > HIGH_HISTORY_EVENT_COUNT_THRESHOLD ? 'growth' : 'baseline';
+
+    if (performanceEvidence.sustainedDrift) {
+      console.warn('[payments-wallet] Sustained p95 budget drift detected', {
+        organizerId: organizationId,
+        p95TargetMs: WALLET_OVERVIEW_P95_TARGET_MS,
+        p95ObservedMs: performanceEvidence.p95QueryDurationMs,
+        overBudgetSampleCount: performanceEvidence.overBudgetSampleCount,
+        sampleCount: performanceEvidence.sampleCount,
+        historyEventCount: snapshot.historyEventCount,
+      });
+    }
 
     const response = NextResponse.json({
       data: {
@@ -74,6 +95,12 @@ export async function GET(request: Request): Promise<NextResponse> {
         queryDurationMs: snapshot.queryDurationMs,
         durationMs,
         p95TargetMs: WALLET_OVERVIEW_P95_TARGET_MS,
+        p95ObservedMs: performanceEvidence.p95QueryDurationMs,
+        sampleCount: performanceEvidence.sampleCount,
+        overBudgetSampleCount: performanceEvidence.overBudgetSampleCount,
+        sustainedDriftAlert: performanceEvidence.sustainedDrift,
+        historyEventCount: snapshot.historyEventCount,
+        historyWindow,
       },
     });
 
