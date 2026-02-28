@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import { getOrgMembership } from '@/lib/organizations/permissions';
 import { getOrganizerWalletIssueActivity } from '@/lib/payments/wallet/issue-activity';
 
@@ -13,11 +13,13 @@ const querySchema = z.object({
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   const url = new URL(request.url);
   const parseResult = querySchema.safeParse({
@@ -25,12 +27,14 @@ export async function GET(request: Request): Promise<NextResponse> {
   });
 
   if (!parseResult.success) {
-    return NextResponse.json(
-      {
-        error: 'Invalid organizationId',
-        details: parseResult.error.issues,
-      },
-      { status: 400 },
+    return withNoStore(
+      NextResponse.json(
+        {
+          error: 'Invalid organizationId',
+          details: parseResult.error.issues,
+        },
+        { status: 400 },
+      ),
     );
   }
 
@@ -39,7 +43,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!authContext.permissions.canManageEvents) {
     const membership = await getOrgMembership(authContext.user.id, organizationId);
     if (!membership) {
-      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
     }
   }
 
@@ -49,7 +53,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   });
 
   if (!organization) {
-    return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
   }
 
   try {
@@ -83,6 +87,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
     });
 
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
   }
 }

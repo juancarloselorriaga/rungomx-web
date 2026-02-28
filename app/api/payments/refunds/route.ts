@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { RegistrationOwnershipError } from '@/lib/events/registrations/ownership';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import {
   refundSubmissionReasonCodes,
   RefundRequestEligibilityError,
@@ -15,17 +15,14 @@ const createRefundRequestSchema = z.object({
   reasonNote: z.string().trim().max(2000).optional().nullable(),
 });
 
-function withNoStore(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
 export async function POST(request: Request): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return withNoStore(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   let payload: unknown;
   try {

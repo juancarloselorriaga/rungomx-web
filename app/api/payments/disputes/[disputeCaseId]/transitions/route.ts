@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import {
   disputeLifecycleStatuses,
   DisputeLifecycleError,
@@ -23,20 +23,17 @@ const transitionSchema = z.object({
   reasonNote: z.string().trim().max(2000).optional(),
 });
 
-function withNoStore(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ disputeCaseId: string }> },
 ): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return withNoStore(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {

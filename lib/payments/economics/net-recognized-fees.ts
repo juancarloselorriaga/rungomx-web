@@ -2,14 +2,13 @@
 
 import { subDays } from 'date-fns';
 import { and, asc, gte, inArray, lte } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { moneyEvents } from '@/db/schema';
+import { adminPaymentsCacheTags, withWindowTag } from './cache-tags';
 
-const economicsRelevantEventNames = [
-  'payment.captured',
-  'financial.adjustment_posted',
-] as const;
+const economicsRelevantEventNames = ['payment.captured', 'financial.adjustment_posted'] as const;
 
 type EconomicsRelevantEventName = (typeof economicsRelevantEventNames)[number];
 
@@ -201,8 +200,7 @@ export function projectNetRecognizedFeeMetrics(params: {
     return left.adjustmentCode.localeCompare(right.adjustmentCode);
   });
 
-  const headlineMetric =
-    currencies.find((entry) => entry.currency === 'MXN') ??
+  const headlineMetric = currencies.find((entry) => entry.currency === 'MXN') ??
     currencies[0] ?? {
       currency: 'MXN',
       capturedFeeMinor: 0,
@@ -217,9 +215,7 @@ export function projectNetRecognizedFeeMetrics(params: {
       ? Math.trunc(params.sampleTraceLimit)
       : 5;
 
-  const sampleTraceIds = Array.from(traceIds).sort((left, right) =>
-    left.localeCompare(right),
-  );
+  const sampleTraceIds = Array.from(traceIds).sort((left, right) => left.localeCompare(right));
 
   return {
     asOf: params.asOf ?? params.windowEnd,
@@ -276,11 +272,18 @@ export async function getAdminNetRecognizedFeeMetrics(params?: {
   days?: number;
   now?: Date;
 }): Promise<NetRecognizedFeeMetrics> {
+  'use cache: remote';
+
   const now = params?.now ?? new Date();
   const days =
     typeof params?.days === 'number' && Number.isFinite(params.days) && params.days > 0
       ? Math.trunc(params.days)
       : 30;
+  cacheTag(
+    adminPaymentsCacheTags.netRecognizedFees,
+    withWindowTag(adminPaymentsCacheTags.netRecognizedFees, days),
+  );
+  cacheLife({ expire: 180 });
 
   const windowStart = subDays(now, days - 1);
   const windowEnd = now;

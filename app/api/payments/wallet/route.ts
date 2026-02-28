@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import { getOrgMembership } from '@/lib/organizations/permissions';
 import { recordWalletPerformanceSample } from '@/lib/payments/wallet/performance-budget';
 import { getOrganizerWalletBucketSnapshot } from '@/lib/payments/wallet/snapshot';
@@ -19,11 +19,13 @@ const WALLET_SUSTAINED_DRIFT_THRESHOLD = 3;
 
 export async function GET(request: Request): Promise<NextResponse> {
   const startedAt = Date.now();
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   const url = new URL(request.url);
 
@@ -32,12 +34,14 @@ export async function GET(request: Request): Promise<NextResponse> {
   });
 
   if (!parseResult.success) {
-    return NextResponse.json(
-      {
-        error: 'Invalid organizationId',
-        details: parseResult.error.issues,
-      },
-      { status: 400 },
+    return withNoStore(
+      NextResponse.json(
+        {
+          error: 'Invalid organizationId',
+          details: parseResult.error.issues,
+        },
+        { status: 400 },
+      ),
     );
   }
 
@@ -46,7 +50,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!authContext.permissions.canManageEvents) {
     const membership = await getOrgMembership(authContext.user.id, organizationId);
     if (!membership) {
-      return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
+      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
     }
   }
 
@@ -56,7 +60,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   });
 
   if (!organization) {
-    return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
+    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
   }
 
   try {
@@ -114,6 +118,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
     });
 
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
   }
 }

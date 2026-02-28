@@ -1,3 +1,8 @@
+'use client';
+
+import { useState } from 'react';
+
+import { DatePicker } from '@/components/ui/date-picker';
 import type {
   DailyFxRateRecord,
   FxRateActionFlags,
@@ -52,6 +57,9 @@ export function FxRateManagementDashboard({
   labels,
   upsertAction,
 }: FxRateManagementDashboardProps) {
+  const [effectiveDate, setEffectiveDate] = useState('');
+  const clearDateLabel = locale === 'es' ? 'Limpiar' : 'Clear';
+
   return (
     <section className="space-y-4">
       <div>
@@ -79,7 +87,10 @@ export function FxRateManagementDashboard({
         {flags.hasActions ? (
           <div className="space-y-3 text-sm">
             {flags.missingRates.map((entry) => (
-              <div key={`missing-${entry.sourceCurrency}`} className="rounded border border-dashed p-3">
+              <div
+                key={`missing-${entry.sourceCurrency}`}
+                className="rounded border border-dashed p-3"
+              >
                 <p className="font-medium">
                   {labels.missingTitle}: {entry.sourceCurrency}
                 </p>
@@ -90,7 +101,10 @@ export function FxRateManagementDashboard({
             ))}
 
             {flags.staleRates.map((entry) => (
-              <div key={`stale-${entry.sourceCurrency}`} className="rounded border border-dashed p-3">
+              <div
+                key={`stale-${entry.sourceCurrency}`}
+                className="rounded border border-dashed p-3"
+              >
                 <p className="font-medium">
                   {labels.staleTitle}: {entry.sourceCurrency}
                 </p>
@@ -126,12 +140,13 @@ export function FxRateManagementDashboard({
             <span className="uppercase tracking-wide text-muted-foreground">
               {labels.dateFieldLabel}
             </span>
-            <input
-              name="effectiveDate"
-              required
-              type="date"
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            <DatePicker
+              value={effectiveDate}
+              onChangeAction={setEffectiveDate}
+              locale={locale}
+              clearLabel={clearDateLabel}
             />
+            <input type="hidden" name="effectiveDate" value={effectiveDate} required readOnly />
           </label>
 
           <label className="space-y-1 text-xs">
@@ -196,7 +211,9 @@ export function FxRateManagementDashboard({
                   <tr key={rate.id} className="border-t">
                     <td className="py-2 pr-4 font-medium">{rate.sourceCurrency}</td>
                     <td className="py-2 pr-4">{formatDate(rate.effectiveDate, locale)}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">{formatRate(rate.rateToMxn)}</td>
+                    <td className="py-2 pr-4 text-right tabular-nums">
+                      {formatRate(rate.rateToMxn)}
+                    </td>
                     <td className="py-2 pr-4 text-xs text-muted-foreground">
                       {rate.updatedReason ?? '—'}
                     </td>

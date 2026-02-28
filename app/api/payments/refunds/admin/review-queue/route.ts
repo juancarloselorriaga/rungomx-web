@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import { listRefundAdminReviewQueue } from '@/lib/payments/refunds/escalation-and-goodwill';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
@@ -13,17 +13,14 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 
-function withNoStore(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
 export async function GET(request: Request): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return withNoStore(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   const url = new URL(request.url);
   const parseResult = querySchema.safeParse({

@@ -19,11 +19,9 @@ export function FieldLabel({ children, required, error, actions }: FieldLabelPro
         {children}
         {required ? (
           <span
-            className="text-sm font-semibold leading-none text-destructive align-middle"
-            aria-label="required"
-          >
-            *
-          </span>
+            className="text-sm font-semibold leading-none text-destructive align-middle before:content-['*']"
+            aria-hidden="true"
+          />
         ) : null}
       </span>
       {actions ? <span className="shrink-0">{actions}</span> : null}

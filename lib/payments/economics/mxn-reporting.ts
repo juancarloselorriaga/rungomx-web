@@ -2,17 +2,16 @@
 
 import { subDays } from 'date-fns';
 import { and, asc, gte, inArray, lte } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { moneyEvents } from '@/db/schema';
+import { adminPaymentsCacheTags, withWindowTag } from './cache-tags';
 
 const MXN_CURRENCY = 'MXN';
 const NATIVE_MXN_SNAPSHOT_ID = 'native:mxn';
 
-const mxnReportingRelevantEventNames = [
-  'payment.captured',
-  'financial.adjustment_posted',
-] as const;
+const mxnReportingRelevantEventNames = ['payment.captured', 'financial.adjustment_posted'] as const;
 
 type MxnReportingRelevantEventName = (typeof mxnReportingRelevantEventNames)[number];
 
@@ -417,11 +416,15 @@ export async function getAdminMxnNetRecognizedFeeReport(params?: {
   now?: Date;
   snapshots?: MxnReportingFxSnapshot[];
 }): Promise<MxnNetRecognizedFeeReport> {
+  'use cache: remote';
+
   const now = params?.now ?? new Date();
   const days =
     typeof params?.days === 'number' && Number.isFinite(params.days) && params.days > 0
       ? Math.trunc(params.days)
       : 30;
+  cacheTag(adminPaymentsCacheTags.mxnReport, withWindowTag(adminPaymentsCacheTags.mxnReport, days));
+  cacheLife({ expire: 180 });
 
   const windowStart = subDays(now, days - 1);
   const windowEnd = now;

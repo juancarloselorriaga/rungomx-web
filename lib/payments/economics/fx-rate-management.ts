@@ -2,18 +2,17 @@
 
 import { subDays } from 'date-fns';
 import { and, asc, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { moneyEvents, paymentFxRates } from '@/db/schema';
 import { createAuditLog } from '@/lib/audit';
+import { adminPaymentsCacheTags, withWindowTag } from './cache-tags';
 
 const FX_TARGET_CURRENCY = 'MXN';
 const RATE_SCALE = 1_000_000;
 
-const fxCoverageRelevantEventNames = [
-  'payment.captured',
-  'financial.adjustment_posted',
-] as const;
+const fxCoverageRelevantEventNames = ['payment.captured', 'financial.adjustment_posted'] as const;
 
 type FxCoverageRelevantEventName = (typeof fxCoverageRelevantEventNames)[number];
 
@@ -177,8 +176,9 @@ export function projectFxRateActionFlags(params: {
   const staleRates: FxRateActionFlags['staleRates'] = [];
 
   for (const sourceCurrency of checkedCurrencies) {
-    const eventDates = Array.from(new Set(params.requiredEventDatesByCurrency[sourceCurrency] ?? []))
-      .sort((a, b) => a.localeCompare(b));
+    const eventDates = Array.from(
+      new Set(params.requiredEventDatesByCurrency[sourceCurrency] ?? []),
+    ).sort((a, b) => a.localeCompare(b));
     const rates = sortRatesByEffectiveDate(
       (params.ratesByCurrency[sourceCurrency] ?? []).map((rate, index) => ({
         id: `${sourceCurrency}-${index}`,
@@ -262,9 +262,7 @@ async function loadFxCoverageEvents(params: {
   }));
 }
 
-function collectRequiredEventDatesByCurrency(
-  events: FxCoverageEvent[],
-): Record<string, string[]> {
+function collectRequiredEventDatesByCurrency(events: FxCoverageEvent[]): Record<string, string[]> {
   const byCurrency = new Map<string, Set<string>>();
 
   for (const event of events) {
@@ -285,7 +283,9 @@ function collectRequiredEventDatesByCurrency(
   return result;
 }
 
-async function loadRatesByCurrency(currencies: string[]): Promise<Record<string, DailyFxRateRecord[]>> {
+async function loadRatesByCurrency(
+  currencies: string[],
+): Promise<Record<string, DailyFxRateRecord[]>> {
   if (currencies.length === 0) {
     return {};
   }
@@ -321,7 +321,12 @@ async function loadRatesByCurrency(currencies: string[]): Promise<Record<string,
 export async function listDailyFxRatesForAdmin(params?: {
   limit?: number;
 }): Promise<DailyFxRateRecord[]> {
+  'use cache: remote';
+
   const limit = normalizeLimit(params?.limit, 180);
+  cacheTag(adminPaymentsCacheTags.fxRates, `${adminPaymentsCacheTags.fxRates}-${limit}`);
+  cacheLife({ expire: 180 });
+
   const rows = await db
     .select()
     .from(paymentFxRates)
@@ -338,6 +343,11 @@ export async function listDailyFxRatesForAdmin(params?: {
 }
 
 export async function listEventTimeFxSnapshotsFromDailyRates(): Promise<FxSnapshotForReporting[]> {
+  'use cache: remote';
+
+  cacheTag(adminPaymentsCacheTags.fxSnapshots);
+  cacheLife({ expire: 180 });
+
   const rows = await db
     .select({
       id: paymentFxRates.id,
@@ -366,8 +376,16 @@ export async function getFxRateActionFlagsForAdmin(params?: {
   staleAfterDays?: number;
   now?: Date;
 }): Promise<FxRateActionFlags> {
+  'use cache: remote';
+
   const now = params?.now ?? new Date();
   const windowDays = normalizeLimit(params?.windowDays, 30);
+  cacheTag(
+    adminPaymentsCacheTags.fxActionFlags,
+    withWindowTag(adminPaymentsCacheTags.fxActionFlags, windowDays),
+  );
+  cacheLife({ expire: 120 });
+
   const windowStart = subDays(now, windowDays - 1);
   const windowEnd = now;
 

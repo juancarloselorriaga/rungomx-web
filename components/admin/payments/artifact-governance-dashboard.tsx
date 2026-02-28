@@ -1,16 +1,19 @@
 'use client';
 
-import { type FormEvent, useState } from 'react';
+import { useState } from 'react';
 
 import {
+  type ArtifactGovernanceActionResult,
   listArtifactGovernanceSummaryAdminAction,
   runArtifactGovernanceAdminAction,
 } from '@/app/actions/admin-payments-artifacts';
+import { Form, FormError, useForm } from '@/lib/forms';
 import type {
   ArtifactDeliveryRecord,
   ArtifactGovernanceSummary,
   ArtifactVersionRecord,
 } from '@/lib/payments/artifacts/governance';
+import { FormField } from '@/components/ui/form-field';
 
 type ArtifactGovernanceLabels = {
   sectionTitle: string;
@@ -72,6 +75,13 @@ type FeedbackState =
   | null;
 
 type GovernanceOperation = 'rebuild' | 'resend';
+type ArtifactGovernanceFormValues = {
+  operation: GovernanceOperation;
+  traceId: string;
+  artifactType: 'payout_statement';
+  artifactVersion: string;
+  reasonCode: string;
+};
 
 function normalizeDate(value: Date | string): Date | null {
   if (value instanceof Date) {
@@ -117,12 +127,6 @@ export function ArtifactGovernanceDashboard({
   labels,
 }: ArtifactGovernanceDashboardProps) {
   const [summary, setSummary] = useState<ArtifactGovernanceSummary>(initialSummary);
-  const [operation, setOperation] = useState<GovernanceOperation>('rebuild');
-  const [traceId, setTraceId] = useState('');
-  const [artifactType, setArtifactType] = useState<'payout_statement'>('payout_statement');
-  const [artifactVersion, setArtifactVersion] = useState('');
-  const [reasonCode, setReasonCode] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [feedback, setFeedback] = useState<FeedbackState>(null);
 
@@ -140,46 +144,54 @@ export function ArtifactGovernanceDashboard({
     setIsRefreshing(false);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setFeedback(null);
+  const form = useForm<ArtifactGovernanceFormValues, ArtifactGovernanceActionResult>({
+    defaultValues: {
+      operation: 'rebuild',
+      traceId: '',
+      artifactType: 'payout_statement',
+      artifactVersion: '',
+      reasonCode: '',
+    },
+    onSubmit: async (values) => {
+      setFeedback(null);
 
-    const result = await runArtifactGovernanceAdminAction({
-      operation,
-      traceId,
-      artifactType,
-      reasonCode,
-      artifactVersion: operation === 'resend' && artifactVersion.trim().length > 0
-        ? Number(artifactVersion)
-        : undefined,
-    });
-
-    if (!result.ok) {
-      const code = result.error || 'UNKNOWN_ERROR';
-      const detail = result.message || labels.genericErrorMessage;
-      setFeedback({
-        kind: 'error',
-        message: `${labels.policyDeniedPrefix}: ${code} (${detail})`,
+      const result = await runArtifactGovernanceAdminAction({
+        operation: values.operation,
+        traceId: values.traceId,
+        artifactType: values.artifactType,
+        reasonCode: values.reasonCode,
+        artifactVersion:
+          values.operation === 'resend' && values.artifactVersion.trim().length > 0
+            ? Number(values.artifactVersion)
+            : undefined,
       });
-      setIsSubmitting(false);
-      return;
-    }
 
-    const successMessage = `${labels.successPrefix}: ${renderOperationValue(labels, result.data.operation)} • ${result.data.traceId}`;
-    setFeedback({
-      kind: 'success',
-      message: successMessage,
-    });
+      if (!result.ok) {
+        const code = result.error || 'UNKNOWN_ERROR';
+        const detail = result.message || labels.genericErrorMessage;
+        return {
+          ok: false,
+          error: result.error,
+          message: `${labels.policyDeniedPrefix}: ${code} (${detail})`,
+        };
+      }
 
-    setReasonCode('');
-    if (operation === 'rebuild') {
-      setArtifactVersion('');
-    }
+      return result;
+    },
+    onSuccess: (data) => {
+      setFeedback({
+        kind: 'success',
+        message: `${labels.successPrefix}: ${renderOperationValue(labels, data.operation)} • ${data.traceId}`,
+      });
 
-    await refreshSummary();
-    setIsSubmitting(false);
-  }
+      form.setFieldValue('reasonCode', '');
+      if (data.operation === 'rebuild') {
+        form.setFieldValue('artifactVersion', '');
+      }
+
+      void refreshSummary();
+    },
+  });
 
   const sortedVersions = [...summary.versions].sort((left, right) =>
     versionSortKey(right).localeCompare(versionSortKey(left)),
@@ -199,84 +211,106 @@ export function ArtifactGovernanceDashboard({
         <h3 className="text-sm font-semibold">{labels.formTitle}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{labels.formDescription}</p>
 
-        <form onSubmit={handleSubmit} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.operationFieldLabel}
-            </span>
+        <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <FormError className="md:col-span-2 xl:col-span-5" />
+
+          <FormField
+            label={
+              <span className="uppercase tracking-wide text-muted-foreground">
+                {labels.operationFieldLabel}
+              </span>
+            }
+            className="space-y-1 text-xs"
+          >
             <select
-              value={operation}
-              onChange={(event) => setOperation(event.target.value as GovernanceOperation)}
+              {...form.register('operation')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
               <option value="rebuild">{labels.operationRebuildLabel}</option>
               <option value="resend">{labels.operationResendLabel}</option>
             </select>
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.traceFieldLabel}
-            </span>
+          <FormField
+            label={
+              <span className="uppercase tracking-wide text-muted-foreground">
+                {labels.traceFieldLabel}
+              </span>
+            }
+            required
+            error={form.errors.traceId}
+            className="space-y-1 text-xs"
+          >
             <input
+              {...form.register('traceId')}
               required
               maxLength={128}
-              value={traceId}
-              onChange={(event) => setTraceId(event.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.artifactTypeFieldLabel}
-            </span>
+          <FormField
+            label={
+              <span className="uppercase tracking-wide text-muted-foreground">
+                {labels.artifactTypeFieldLabel}
+              </span>
+            }
+            className="space-y-1 text-xs"
+          >
             <select
-              value={artifactType}
-              onChange={(event) => setArtifactType(event.target.value as 'payout_statement')}
+              {...form.register('artifactType')}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
               <option value="payout_statement">{labels.artifactTypePayoutStatementLabel}</option>
             </select>
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.artifactVersionFieldLabel}
-            </span>
+          <FormField
+            label={
+              <span className="uppercase tracking-wide text-muted-foreground">
+                {labels.artifactVersionFieldLabel}
+              </span>
+            }
+            error={form.errors.artifactVersion}
+            className="space-y-1 text-xs"
+          >
             <input
-              value={artifactVersion}
-              onChange={(event) => setArtifactVersion(event.target.value)}
-              disabled={operation !== 'resend'}
+              {...form.register('artifactVersion')}
+              disabled={form.values.operation !== 'resend'}
               min={1}
               step={1}
               type="number"
               placeholder="1"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm tabular-nums disabled:opacity-60"
             />
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.reasonFieldLabel}
-            </span>
+          <FormField
+            label={
+              <span className="uppercase tracking-wide text-muted-foreground">
+                {labels.reasonFieldLabel}
+              </span>
+            }
+            required
+            error={form.errors.reasonCode}
+            className="space-y-1 text-xs"
+          >
             <input
+              {...form.register('reasonCode')}
               required
               minLength={3}
               maxLength={100}
-              value={reasonCode}
-              onChange={(event) => setReasonCode(event.target.value)}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
-          </label>
+          </FormField>
 
           <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-5">
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={form.isSubmitting}
               className="rounded-md border bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
             >
-              {isSubmitting ? labels.submittingLabel : labels.submitLabel}
+              {form.isSubmitting ? labels.submittingLabel : labels.submitLabel}
             </button>
             <button
               type="button"
@@ -287,7 +321,7 @@ export function ArtifactGovernanceDashboard({
               {isRefreshing ? labels.refreshingLabel : labels.refreshLabel}
             </button>
           </div>
-        </form>
+        </Form>
 
         {feedback ? (
           <p

@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import {
   organizerRefundDecisionValues,
   RefundDecisionSubmissionError,
@@ -22,20 +22,17 @@ const decisionSchema = z.object({
   decisionReason: z.string().trim().min(1).max(2000),
 });
 
-function withNoStore(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ refundRequestId: string }> },
 ): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return withNoStore(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   const parsedParams = paramsSchema.safeParse(await params);
   if (!parsedParams.success) {

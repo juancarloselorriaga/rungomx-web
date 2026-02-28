@@ -2,11 +2,13 @@
 
 import { z } from 'zod';
 import { headers } from 'next/headers';
+import { revalidateTag } from 'next/cache';
 
 import { withStaffUser } from '@/lib/auth/action-wrapper';
 import { getRequestContext } from '@/lib/audit';
 import type { FormActionResult } from '@/lib/forms';
 import { validateInput } from '@/lib/forms';
+import { adminPaymentsCacheTags } from '@/lib/payments/economics/cache-tags';
 import {
   getFxRateActionFlagsForAdmin,
   listDailyFxRatesForAdmin,
@@ -44,9 +46,7 @@ function parseUtcDateOnly(dateValue: string): Date {
   return new Date(`${dateValue}T00:00:00.000Z`);
 }
 
-export const upsertDailyFxRateAdminAction = withStaffUser<
-  FormActionResult<{ rateId: string }>
->({
+export const upsertDailyFxRateAdminAction = withStaffUser<FormActionResult<{ rateId: string }>>({
   unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' }),
   forbidden: () => ({ ok: false, error: 'FORBIDDEN', message: 'FORBIDDEN' }),
 })(async (authContext, input: unknown) => {
@@ -65,6 +65,10 @@ export const upsertDailyFxRateAdminAction = withStaffUser<
       actorUserId: authContext.user.id,
       request: requestContext,
     });
+    revalidateTag(adminPaymentsCacheTags.fxRates);
+    revalidateTag(adminPaymentsCacheTags.fxActionFlags);
+    revalidateTag(adminPaymentsCacheTags.fxSnapshots);
+    revalidateTag(adminPaymentsCacheTags.mxnReport);
 
     return {
       ok: true,

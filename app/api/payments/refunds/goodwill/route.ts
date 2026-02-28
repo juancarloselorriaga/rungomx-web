@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import {
   initiateGoodwillRefundRequest,
   RefundEscalationGoodwillError,
@@ -17,17 +17,14 @@ const goodwillSchema = z.object({
   reasonNote: z.string().trim().min(1).max(2000),
 });
 
-function withNoStore(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
 export async function POST(request: Request): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return withNoStore(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   let payload: unknown;
   try {
@@ -112,10 +109,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         );
       }
 
-      if (
-        error.code === 'GOODWILL_ALREADY_OPEN' ||
-        error.code === 'GOODWILL_ATTENDEE_MISSING'
-      ) {
+      if (error.code === 'GOODWILL_ALREADY_OPEN' || error.code === 'GOODWILL_ATTENDEE_MISSING') {
         return withNoStore(
           NextResponse.json(
             {

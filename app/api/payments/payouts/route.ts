@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { db } from '@/db';
 import { organizations } from '@/db/schema';
-import { getAuthContext } from '@/lib/auth/server';
+import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
 import {
   createPayoutQuoteAndContract,
   PayoutQuoteContractError,
@@ -18,17 +18,14 @@ const createPayoutQuoteSchema = z.object({
   activeConflictPolicy: z.enum(['reject', 'queue']).optional(),
 });
 
-function withNoStore(response: NextResponse): NextResponse {
-  response.headers.set('Cache-Control', 'no-store');
-  return response;
-}
-
 export async function POST(request: Request): Promise<NextResponse> {
-  const authContext = await getAuthContext();
+  const authResult = await requireAuthenticatedPaymentsContext();
 
-  if (!authContext.user) {
-    return withNoStore(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
+  if (!authResult.ok) {
+    return authResult.response;
   }
+
+  const authContext = authResult.context;
 
   let payload: unknown;
   try {
@@ -50,7 +47,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  const { organizationId, requestedAmountMinor, idempotencyKey, activeConflictPolicy } = parseResult.data;
+  const { organizationId, requestedAmountMinor, idempotencyKey, activeConflictPolicy } =
+    parseResult.data;
 
   if (!authContext.permissions.canManageEvents) {
     const membership = await getOrgMembership(authContext.user.id, organizationId);

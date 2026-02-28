@@ -2,9 +2,11 @@
 
 import { subDays } from 'date-fns';
 import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { cacheLife, cacheTag } from 'next/cache';
 
 import { db } from '@/db';
 import { eventEditions, eventSeries, moneyEvents, organizations, registrations } from '@/db/schema';
+import { adminPaymentsCacheTags, withWindowTag } from './cache-tags';
 
 const DEFAULT_CURRENCY = 'MXN';
 const UNSCOPED_EVENT_ID = 'unscoped';
@@ -211,10 +213,7 @@ function sortEventsForProjection(
   });
 }
 
-function createGroupAccumulator(params: {
-  id: string;
-  label: string;
-}): GroupAccumulator {
+function createGroupAccumulator(params: { id: string; label: string }): GroupAccumulator {
   return {
     id: params.id,
     label: params.label,
@@ -416,7 +415,7 @@ export function projectDebtDisputeExposureMetrics(params: {
 
     const organizerId = readOrganizerId(event);
     const disputeCaseId = readDisputeCaseId(event);
-    const existingCaseState = disputeCaseId ? disputeCaseStates.get(disputeCaseId) ?? null : null;
+    const existingCaseState = disputeCaseId ? (disputeCaseStates.get(disputeCaseId) ?? null) : null;
     const eventEditionIds = resolveEventEditionIds({
       event,
       registrationToEditionId,
@@ -490,7 +489,10 @@ export function projectDebtDisputeExposureMetrics(params: {
     if (caseState.organizerId === UNSCOPED_ORGANIZER_ID && organizerId !== UNSCOPED_ORGANIZER_ID) {
       caseState.organizerId = organizerId;
     }
-    if (caseState.eventEditionId === UNSCOPED_EVENT_ID && primaryEventEditionId !== UNSCOPED_EVENT_ID) {
+    if (
+      caseState.eventEditionId === UNSCOPED_EVENT_ID &&
+      primaryEventEditionId !== UNSCOPED_EVENT_ID
+    ) {
       caseState.eventEditionId = primaryEventEditionId;
     }
     caseState.traceIds.add(event.traceId);
@@ -733,10 +735,7 @@ async function loadExposureEvents(params: {
   }));
 }
 
-function buildEventLabel(params: {
-  seriesName: string;
-  editionLabel: string;
-}): string {
+function buildEventLabel(params: { seriesName: string; editionLabel: string }): string {
   const seriesName = params.seriesName.trim();
   const editionLabel = params.editionLabel.trim();
   if (!seriesName) return editionLabel || 'Unnamed event';
@@ -748,11 +747,18 @@ export async function getAdminDebtDisputeExposureMetrics(params?: {
   days?: number;
   now?: Date;
 }): Promise<DebtDisputeExposureMetrics> {
+  'use cache: remote';
+
   const now = params?.now ?? new Date();
   const days =
     typeof params?.days === 'number' && Number.isFinite(params.days) && params.days > 0
       ? Math.trunc(params.days)
       : 30;
+  cacheTag(
+    adminPaymentsCacheTags.debtDisputeExposure,
+    withWindowTag(adminPaymentsCacheTags.debtDisputeExposure, days),
+  );
+  cacheLife({ expire: 180 });
 
   const windowStart = subDays(now, days - 1);
   const windowEnd = now;
