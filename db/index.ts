@@ -3,6 +3,7 @@
 import { neonConfig, Pool as NeonPool } from '@neondatabase/serverless';
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
+// @ts-expect-error `pg` typings are not resolved under this workspace's bundler module resolution.
 import { Pool as NodePgPool } from 'pg';
 
 import * as relations from './relations';
@@ -14,10 +15,12 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
+type DbSchema = typeof schema & typeof relations;
+type DbClient = ReturnType<typeof drizzleNeon<DbSchema>>;
 const schemaConfig = { schema: { ...schema, ...relations } };
 
 let closePoolFn: () => Promise<void>;
-let dbInternal: ReturnType<typeof drizzleNeon>;
+let dbInternal: DbClient;
 
 if (process.env.NODE_ENV === 'test') {
   // Use the native node-postgres transport for Jest DB suites.
@@ -38,7 +41,7 @@ if (process.env.NODE_ENV === 'test') {
         },
       })
     : new NodePgPool({ connectionString });
-  dbInternal = drizzleNodePg(pool, schemaConfig) as unknown as ReturnType<typeof drizzleNeon>;
+  dbInternal = drizzleNodePg<DbSchema>(pool, schemaConfig) as unknown as DbClient;
   closePoolFn = async () => {
     await pool.end();
   };
@@ -48,7 +51,7 @@ if (process.env.NODE_ENV === 'test') {
   neonConfig.webSocketConstructor = require('ws');
 
   const pool = new NeonPool({ connectionString });
-  dbInternal = drizzleNeon(pool, schemaConfig);
+  dbInternal = drizzleNeon<DbSchema>(pool, schemaConfig);
   closePoolFn = async () => {
     await pool.end();
   };

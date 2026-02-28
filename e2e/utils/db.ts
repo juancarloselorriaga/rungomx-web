@@ -10,8 +10,12 @@ import { resolve } from 'path';
 // Load test environment variables FIRST before any other imports
 config({ path: resolve(__dirname, '../../.env.test') });
 
+// Ensure the Playwright runner process uses the same DB transport as app/test code.
+// Without this, runner-side fixtures may use the serverless client and hit read-after-write races.
+(process.env as { NODE_ENV: string }).NODE_ENV = 'test';
+
 import { db as appDb } from '@/db';
-import * as schema from '@/db/schema';
+import { sql } from 'drizzle-orm';
 
 // Verify DATABASE_URL is set
 if (!process.env.DATABASE_URL) {
@@ -26,72 +30,87 @@ export function getTestDb() {
   return appDb;
 }
 
+const CLEAN_DB_MAX_RETRIES = 5;
+const CLEAN_DB_BASE_BACKOFF_MS = 250;
+
+function extractPostgresErrorCode(error: unknown) {
+  let current: unknown = error;
+
+  // Drizzle wraps driver errors, so inspect nested causes.
+  for (let depth = 0; depth < 5; depth += 1) {
+    if (typeof current !== 'object' || current === null) break;
+    const currentRecord = current as { code?: unknown; cause?: unknown };
+    if (typeof currentRecord.code === 'string' && currentRecord.code.length > 0) {
+      return currentRecord.code;
+    }
+    current = currentRecord.cause;
+  }
+
+  return undefined;
+}
+
+function isRetryableCleanupError(error: unknown) {
+  const code = extractPostgresErrorCode(error);
+  if (code === '40P01' || code === '40001' || code === '55P03') {
+    return true;
+  }
+
+  return error instanceof Error && /deadlock detected/i.test(error.message);
+}
+
+async function wait(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function cleanDatabaseOnce(db: ReturnType<typeof getTestDb>) {
+  // Truncate all public tables in one statement to avoid FK-order drift as schema evolves.
+  // Keep Drizzle migrations metadata so test schema version tracking remains intact.
+  await db.execute(sql`
+    DO $$
+    DECLARE
+      truncate_sql text;
+    BEGIN
+      SELECT
+        'TRUNCATE TABLE ' ||
+        string_agg(format('%I.%I', schemaname, tablename), ', ') ||
+        ' RESTART IDENTITY CASCADE'
+      INTO truncate_sql
+      FROM pg_tables
+      WHERE schemaname = 'public'
+        AND tablename <> '__drizzle_migrations';
+
+      IF truncate_sql IS NOT NULL THEN
+        EXECUTE truncate_sql;
+      END IF;
+    END $$;
+  `);
+}
+
 /**
  * Clean all tables in the database
- * Deletes in FK-safe order to avoid deadlocks on remote Neon instance
+ * Truncates all public tables in a single CASCADE statement
  *
  * IMPORTANT: This deletes ALL data from the test database!
  */
 export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
-  // Delete in FK-safe order to avoid violations
-  // Audit logs first (references organizations, users with onDelete: restrict)
-  await db.delete(schema.auditLogs);
-  await db.delete(schema.proFeatureUsageEvents);
+  for (let attempt = 1; attempt <= CLEAN_DB_MAX_RETRIES; attempt += 1) {
+    try {
+      await cleanDatabaseOnce(db);
+      return;
+    } catch (error) {
+      if (!isRetryableCleanupError(error) || attempt === CLEAN_DB_MAX_RETRIES) {
+        throw error;
+      }
 
-  // Event-related tables (most dependent)
-  // Phase 3 group upload / invites (must be removed before event_distances due to FK + CHECK constraint)
-  await db.delete(schema.registrationInvites); // References registrations, batches, upload_links
-  await db.delete(schema.groupRegistrationBatchRows); // References registrations, batches
-  await db.delete(schema.groupRegistrationBatches); // References event_distances with CHECK involving upload_link_id
-  await db.delete(schema.groupUploadLinks); // References event_editions, users
-
-  // Phase 3 group link (small groups)
-  await db.delete(schema.registrationGroupMembers); // References registration_groups, users
-  await db.delete(schema.registrationGroups); // References event_distances, users
-
-  await db.delete(schema.groupDiscountRules); // References event_editions
-  await db.delete(schema.eventSlugRedirects); // Independent (phase 3)
-
-  await db.delete(schema.waiverAcceptances); // References registrations
-  await db.delete(schema.registrants); // References registrations, users
-  await db.delete(schema.registrations); // References event_distances, users
-  await db.delete(schema.pricingTiers); // References event_distances
-  await db.delete(schema.eventDistances); // References event_editions
-  await db.delete(schema.eventFaqItems); // References event_editions
-  await db.delete(schema.eventWebsiteContent); // References event_editions
-  await db.delete(schema.eventEditions); // References event_series
-  await db.delete(schema.eventSeries); // References organizations
-  await db.delete(schema.organizationMemberships); // References organizations, users
-
-  // Delete audit_logs AGAIN right before organizations
-  // (in case any were created by cascade triggers during above deletions)
-  await db.delete(schema.auditLogs);
-
-  await db.delete(schema.organizations); // Root organization table
-
-  // Auth-related tables
-  await db.delete(schema.verifications); // References users (identifier)
-  await db.delete(schema.sessions); // References users
-  await db.delete(schema.accounts); // References users
-
-  // User-related tables
-  await db.delete(schema.userRoles); // References users, roles
-  await db.delete(schema.profiles); // References users
-  await db.delete(schema.contactSubmissions); // May reference users
-  await db.delete(schema.billingPromotionRedemptions);
-  await db.delete(schema.billingEntitlementOverrides);
-  await db.delete(schema.billingPendingEntitlementGrants);
-  await db.delete(schema.billingPromotions);
-  await db.delete(schema.billingSubscriptions);
-  await db.delete(schema.billingTrialUses);
-  await db.delete(schema.billingEvents);
-  await db.delete(schema.users); // Root user table
-
-  // Independent tables
-  await db.delete(schema.roles); // Root roles table
-  await db.delete(schema.media); // May be independent
-  await db.delete(schema.rateLimits); // Independent
-  await db.delete(schema.waivers); // May be independent
+      const delayMs =
+        CLEAN_DB_BASE_BACKOFF_MS * attempt + Math.floor(Math.random() * CLEAN_DB_BASE_BACKOFF_MS);
+      const code = extractPostgresErrorCode(error) ?? 'unknown';
+      console.warn(
+        `cleanDatabase retry ${attempt}/${CLEAN_DB_MAX_RETRIES} after transient DB error (${code}); waiting ${delayMs}ms`,
+      );
+      await wait(delayMs);
+    }
+  }
 }
 
 /**

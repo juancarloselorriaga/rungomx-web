@@ -6,7 +6,7 @@ import {
   createTestEventSeries,
   createTestOrganization,
   createTestProfile,
-  getUserByEmail,
+  setUserVerified,
   signUpTestUser,
 } from '../utils/fixtures';
 import { signInAsOrganizer } from '../utils/helpers';
@@ -18,7 +18,7 @@ import { signInAsOrganizer } from '../utils/helpers';
  * - Mobile results table uses the card/list layout (no hidden actions)
  */
 
-let organizerCreds: { email: string; password: string; name: string };
+let organizerCreds: { id: string; email: string; password: string; name: string };
 let eventId: string;
 
 test.describe('UI Tightening Regression', () => {
@@ -32,13 +32,9 @@ test.describe('UI Tightening Regression', () => {
     organizerCreds = await signUpTestUser(page, 'ui-tight-', {
       name: 'UI Tightening Organizer',
     });
+    await setUserVerified(db, organizerCreds.email);
 
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    if (!organizer) {
-      throw new Error(`Failed to load created test user: ${organizerCreds.email}`);
-    }
-
-    await createTestProfile(db, organizer.id, {
+    await createTestProfile(db, organizerCreds.id, {
       dateOfBirth: new Date('1990-05-15'),
       gender: 'male',
       phone: '+523312345678',
@@ -47,9 +43,9 @@ test.describe('UI Tightening Regression', () => {
       emergencyContactName: 'Test Contact',
       emergencyContactPhone: '+523387654321',
     });
-    await assignExternalRole(db, organizer.id, 'organizer');
+    await assignExternalRole(db, organizerCreds.id, 'organizer');
 
-    const organization = await createTestOrganization(db, organizer.id, {
+    const organization = await createTestOrganization(db, organizerCreds.id, {
       name: `UI Tightening Org ${Date.now()}`,
     });
     const series = await createTestEventSeries(db, organization.id, {
@@ -104,4 +100,3 @@ test.describe('UI Tightening Regression', () => {
     await expect(page.getByTestId('pro-results-grid-table')).toBeHidden();
   });
 });
-

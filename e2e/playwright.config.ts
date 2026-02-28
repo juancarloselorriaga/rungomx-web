@@ -2,6 +2,9 @@
 import { config } from 'dotenv';
 import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env.test') });
+// Ensure every Playwright worker imports app code under test mode transport.
+// This must happen at config bootstrap time, before spec/module evaluation.
+(process.env as { NODE_ENV: string }).NODE_ENV = 'test';
 
 import { defineConfig, devices } from '@playwright/test';
 import { hydratePortEnv } from './utils/port-env';

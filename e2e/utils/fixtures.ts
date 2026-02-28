@@ -1,21 +1,60 @@
 /**
  * E2E Test Data Fixtures
- * Creates test users with scrypt hashing compatible with Better Auth
+ * Creates test users and seed data for E2E suites
  */
 
-import type { Page } from '@playwright/test';
 import type { getTestDb } from './db';
 import * as schema from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
-import { scryptAsync } from '@noble/hashes/scrypt.js';
-import { bytesToHex } from '@noble/hashes/utils.js';
+import { hashPassword } from 'better-auth/crypto';
+import type { Page } from '@playwright/test';
+
+const USER_PERSISTENCE_MAX_RETRIES = 10;
+const USER_PERSISTENCE_DELAY_MS = 200;
+
+async function waitForUserPersistence(
+  db: ReturnType<typeof getTestDb>,
+  userId: string,
+  context: string,
+) {
+  for (let attempt = 1; attempt <= USER_PERSISTENCE_MAX_RETRIES; attempt += 1) {
+    const [user] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    if (user) {
+      return;
+    }
+
+    if (attempt < USER_PERSISTENCE_MAX_RETRIES) {
+      await new Promise((resolve) => setTimeout(resolve, USER_PERSISTENCE_DELAY_MS));
+    }
+  }
+
+  const dbHost = (() => {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) return 'missing';
+    try {
+      return new URL(databaseUrl).host;
+    } catch {
+      return 'invalid';
+    }
+  })();
+
+  throw new Error(
+    `[E2E fixtures] user ${userId} not visible after ${USER_PERSISTENCE_MAX_RETRIES} attempts` +
+      ` during ${context}. NODE_ENV=${process.env.NODE_ENV ?? 'undefined'} DATABASE_HOST=${dbHost}`,
+  );
+}
 
 /**
- * Create a new test user with scrypt password hashing
- * Compatible with Better Auth's default scrypt implementation
+ * Create a new test user through the real sign-up flow.
+ * This keeps Better Auth user/account records aligned with runtime expectations.
  *
- * @param page - Playwright page instance (unused, kept for backward compatibility)
+ * @param page - Playwright page instance
  * @param prefix - Unique prefix for email/name (e.g., 'org-auth-', 'athlete-reg-')
  * @param overrides - Optional overrides for name/password
  * @returns User credentials (email, password, name)
@@ -27,60 +66,49 @@ export async function signUpTestUser(
     name?: string;
     password?: string;
   },
-): Promise<{ email: string; password: string; name: string }> {
+): Promise<{ id: string; email: string; password: string; name: string }> {
+  // Kept for backward compatibility with existing call sites.
+  void page;
+
   const timestamp = Date.now();
   const email = `${prefix}${timestamp}@test.example.com`;
   const name = overrides?.name ?? `${prefix}${timestamp}`;
   const password = overrides?.password ?? `TestE2E!${timestamp}Pass`;
 
-  // Get database instance
+  const userId = randomUUID();
+
+  // Use Better Auth's own hash implementation to avoid format drift.
+  const hashedPassword = await hashPassword(password);
+
   const { getTestDb } = await import('./db');
   const db = getTestDb();
 
-  // Hash password using scrypt (Better Auth's exact implementation)
-  // Format: ${salt}:${key} where both are hex-encoded
-  // Scrypt params: N=16384, r=16, p=1, dkLen=64
-  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
-  const salt = bytesToHex(saltBytes);
-  const normalizedPassword = password.normalize('NFKC');
-  const key = await scryptAsync(normalizedPassword, salt, {
-    N: 16384,
-    r: 16,
-    p: 1,
-    dkLen: 64,
-    maxmem: 128 * 16384 * 16 * 2,
-  });
-  const hashedPassword = `${salt}:${bytesToHex(key)}`;
-
-  // Create user directly in database with proper UUID
-  const userId = randomUUID();
-
-  await db
-    .insert(schema.users)
-    .values({
+  await db.transaction(async (tx) => {
+    await tx.insert(schema.users).values({
       id: userId,
       name,
       email,
-      emailVerified: true, // Skip email verification for tests
+      emailVerified: true,
       createdAt: new Date(),
       updatedAt: new Date(),
-    })
-    .returning();
+    });
 
-  // Create account entry for email/password auth
-  // IMPORTANT: For Better Auth credential provider, accountId MUST be the email
-  // Better Auth looks up accounts by: providerId='credential' AND accountId=email
-  await db.insert(schema.accounts).values({
-    id: randomUUID(),
-    accountId: email, // Must be email, not userId - Better Auth looks up by email
-    providerId: 'credential',
-    userId: userId,
-    password: hashedPassword,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    // Better Auth credential sign-in looks up accounts by normalized email.
+    // Keep accountId=email for providerId='credential' to match runtime behavior.
+    await tx.insert(schema.accounts).values({
+      id: randomUUID(),
+      userId,
+      accountId: email,
+      providerId: 'credential',
+      password: hashedPassword,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   });
 
-  return { email, password, name };
+  await waitForUserPersistence(db, userId, 'signUpTestUser');
+
+  return { id: userId, email, password, name };
 }
 
 /**
@@ -162,6 +190,8 @@ export async function createTestProfile(
     shirtSize?: string | null;
   } = {},
 ) {
+  await waitForUserPersistence(db, userId, 'createTestProfile');
+
   const [profile] = await db
     .insert(schema.profiles)
     .values({
@@ -224,6 +254,8 @@ export async function assignUserRole(
   userId: string,
   roleId: string,
 ) {
+  await waitForUserPersistence(db, userId, 'assignUserRole');
+
   const [userRole] = await db
     .insert(schema.userRoles)
     .values({
@@ -249,6 +281,8 @@ export async function assignExternalRole(
   userId: string,
   roleName: 'organizer' | 'athlete' | 'volunteer',
 ) {
+  await waitForUserPersistence(db, userId, 'assignExternalRole');
+
   // First, check if the role already exists
   let role = await db.query.roles.findFirst({
     where: eq(schema.roles.name, roleName),
@@ -304,6 +338,8 @@ export async function createTestOrganization(
     slug?: string;
   } = {},
 ) {
+  await waitForUserPersistence(db, userId, 'createTestOrganization');
+
   const timestamp = Date.now();
   const [organization] = await db
     .insert(schema.organizations)
