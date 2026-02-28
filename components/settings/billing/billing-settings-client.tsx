@@ -161,9 +161,18 @@ export function BillingSettingsClient({
     defaultValues: { code: '' },
     onSubmit: async (values) => {
       const trimmed = values.code.trim();
+      const previousStatus = status;
+      setStatus((prev) => ({
+        ...prev,
+        isPro: true,
+        trialEligible: false,
+        effectiveSource:
+          prev.effectiveSource === 'internal_bypass' ? prev.effectiveSource : 'promotion',
+      }));
       const result = await redeemPromoCodeAction({ code: trimmed });
 
       if (!result.ok) {
+        setStatus(previousStatus);
         const message =
           result.error === 'UNAUTHENTICATED'
             ? t('promo.errors.unauthenticated')
@@ -206,6 +215,8 @@ export function BillingSettingsClient({
           isPro: true,
           trialEligible: false,
           proUntil: endsAt,
+          effectiveSource:
+            prev.effectiveSource === 'internal_bypass' ? prev.effectiveSource : 'promotion',
         }));
       }
     },
