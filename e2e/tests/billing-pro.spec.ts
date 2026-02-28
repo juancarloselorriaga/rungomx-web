@@ -3,7 +3,6 @@ import { getTestDb } from '../utils/db';
 import {
   assignExternalRole,
   createTestProfile,
-  getUserByEmail,
   setUserVerified,
   signUpTestUser,
 } from '../utils/fixtures';
@@ -17,23 +16,68 @@ import {
 import { billingEvents, billingSubscriptions } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 
-let trialCreds: { email: string; password: string; name: string };
-let promoCreds: { email: string; password: string; name: string };
-let pendingCreds: { email: string; password: string; name: string };
-let recoveryCreds: { email: string; password: string; name: string };
+let trialCreds: { id: string; email: string; password: string; name: string };
+let promoCreds: { id: string; email: string; password: string; name: string };
+let pendingCreds: { id: string; email: string; password: string; name: string };
+let recoveryCreds: { id: string; email: string; password: string; name: string };
 let promoCode = '';
+const trialProfileSeed = {
+  dateOfBirth: new Date('1995-08-20'),
+  gender: 'female',
+  phone: '+523312300001',
+  city: 'Mexico City',
+  state: 'CDMX',
+  emergencyContactName: 'Trial Contact',
+  emergencyContactPhone: '+523312300002',
+  bloodType: 'O+',
+  shirtSize: 'M',
+} as const;
+const promoProfileSeed = {
+  dateOfBirth: new Date('1995-08-20'),
+  gender: 'female',
+  phone: '+523312300101',
+  city: 'Mexico City',
+  state: 'CDMX',
+  emergencyContactName: 'Promo Contact',
+  emergencyContactPhone: '+523312300102',
+  bloodType: 'O+',
+  shirtSize: 'M',
+} as const;
+const pendingProfileSeed = {
+  dateOfBirth: new Date('1995-08-20'),
+  gender: 'female',
+  phone: '+523312300201',
+  city: 'Mexico City',
+  state: 'CDMX',
+  emergencyContactName: 'Pending Contact',
+  emergencyContactPhone: '+523312300202',
+  bloodType: 'O+',
+  shirtSize: 'M',
+} as const;
+const recoveryProfileSeed = {
+  dateOfBirth: new Date('1995-08-20'),
+  gender: 'female',
+  phone: '+523312300301',
+  city: 'Mexico City',
+  state: 'CDMX',
+  emergencyContactName: 'Recovery Contact',
+  emergencyContactPhone: '+523312300302',
+  bloodType: 'O+',
+  shirtSize: 'M',
+} as const;
 
 async function runWithNodeEnvTest<T>(operation: () => Promise<T>): Promise<T> {
-  const previousNodeEnv = process.env.NODE_ENV;
-  process.env.NODE_ENV = 'test';
+  const mutableEnv = process.env as Record<string, string | undefined>;
+  const previousNodeEnv = mutableEnv.NODE_ENV;
+  mutableEnv.NODE_ENV = 'test';
 
   try {
     return await operation();
   } finally {
     if (typeof previousNodeEnv === 'undefined') {
-      delete process.env.NODE_ENV;
+      delete mutableEnv.NODE_ENV;
     } else {
-      process.env.NODE_ENV = previousNodeEnv;
+      mutableEnv.NODE_ENV = previousNodeEnv;
     }
   }
 }
@@ -66,70 +110,19 @@ test.describe('Billing Pro flows', () => {
       setUserVerified(db, recoveryCreds.email),
     ]);
 
-    const [trialUser, promoUser, pendingUser, recoveryUser] = await Promise.all([
-      getUserByEmail(db, trialCreds.email),
-      getUserByEmail(db, promoCreds.email),
-      getUserByEmail(db, pendingCreds.email),
-      getUserByEmail(db, recoveryCreds.email),
-    ]);
-
-    if (!trialUser || !promoUser || !pendingUser || !recoveryUser) {
-      throw new Error('Failed to seed billing test users.');
-    }
-
     await Promise.all([
-      createTestProfile(db, trialUser.id, {
-        dateOfBirth: new Date('1995-08-20'),
-        gender: 'female',
-        phone: '+523312300001',
-        city: 'Mexico City',
-        state: 'CDMX',
-        emergencyContactName: 'Trial Contact',
-        emergencyContactPhone: '+523312300002',
-        bloodType: 'O+',
-        shirtSize: 'M',
-      }),
-      createTestProfile(db, promoUser.id, {
-        dateOfBirth: new Date('1995-08-20'),
-        gender: 'female',
-        phone: '+523312300101',
-        city: 'Mexico City',
-        state: 'CDMX',
-        emergencyContactName: 'Promo Contact',
-        emergencyContactPhone: '+523312300102',
-        bloodType: 'O+',
-        shirtSize: 'M',
-      }),
-      createTestProfile(db, pendingUser.id, {
-        dateOfBirth: new Date('1995-08-20'),
-        gender: 'female',
-        phone: '+523312300201',
-        city: 'Mexico City',
-        state: 'CDMX',
-        emergencyContactName: 'Pending Contact',
-        emergencyContactPhone: '+523312300202',
-        bloodType: 'O+',
-        shirtSize: 'M',
-      }),
-      createTestProfile(db, recoveryUser.id, {
-        dateOfBirth: new Date('1995-08-20'),
-        gender: 'female',
-        phone: '+523312300301',
-        city: 'Mexico City',
-        state: 'CDMX',
-        emergencyContactName: 'Recovery Contact',
-        emergencyContactPhone: '+523312300302',
-        bloodType: 'O+',
-        shirtSize: 'M',
-      }),
-      assignExternalRole(db, trialUser.id, 'athlete'),
-      assignExternalRole(db, promoUser.id, 'athlete'),
-      assignExternalRole(db, pendingUser.id, 'athlete'),
-      assignExternalRole(db, recoveryUser.id, 'athlete'),
+      createTestProfile(db, trialCreds.id, trialProfileSeed),
+      createTestProfile(db, promoCreds.id, promoProfileSeed),
+      createTestProfile(db, pendingCreds.id, pendingProfileSeed),
+      createTestProfile(db, recoveryCreds.id, recoveryProfileSeed),
+      assignExternalRole(db, trialCreds.id, 'athlete'),
+      assignExternalRole(db, promoCreds.id, 'athlete'),
+      assignExternalRole(db, pendingCreds.id, 'athlete'),
+      assignExternalRole(db, recoveryCreds.id, 'athlete'),
     ]);
 
     const promotion = await createPromotion({
-      createdByUserId: trialUser.id,
+      createdByUserId: trialCreds.id,
       grantDurationDays: 14,
       grantFixedEndsAt: null,
       validFrom: null,
@@ -147,8 +140,8 @@ test.describe('Billing Pro flows', () => {
     promoCode = promotion.data.code;
 
     const pendingGrant = await createPendingEntitlementGrant({
-      email: pendingUser.email,
-      createdByUserId: trialUser.id,
+      email: pendingCreds.email,
+      createdByUserId: trialCreds.id,
       grantDurationDays: 7,
       grantFixedEndsAt: null,
       claimValidFrom: null,
@@ -161,7 +154,7 @@ test.describe('Billing Pro flows', () => {
     }
 
     await db.insert(billingSubscriptions).values({
-      userId: recoveryUser.id,
+      userId: recoveryCreds.id,
       planKey: 'pro',
       status: 'active',
       trialStartsAt: null,
@@ -188,18 +181,13 @@ test.describe('Billing Pro flows', () => {
     await page.getByTestId('billing-cancel-subscription').click();
     await expect(page.getByText('Canceling at period end')).toBeVisible();
 
-    const trialUser = await getUserByEmail(db, trialCreds.email);
-    if (!trialUser) {
-      throw new Error('Missing trial user.');
-    }
-
     const expiredTrialEndsAt = new Date(Date.now() - 60 * 1000);
     const expiredTrialStartsAt = new Date(expiredTrialEndsAt.getTime() - 2 * 60 * 1000);
 
     await db
       .update(billingSubscriptions)
       .set({ trialStartsAt: expiredTrialStartsAt, trialEndsAt: expiredTrialEndsAt })
-      .where(eq(billingSubscriptions.userId, trialUser.id));
+      .where(eq(billingSubscriptions.userId, trialCreds.id));
 
     await page.reload();
     await expect(page.getByTestId('billing-pro-badge')).toContainText('Free');
@@ -232,13 +220,8 @@ test.describe('Billing Pro flows', () => {
     page,
   }) => {
     const db = getTestDb();
-    const recoveryUser = await getUserByEmail(db, recoveryCreds.email);
-    if (!recoveryUser) {
-      throw new Error('Missing recovery user.');
-    }
-
     const subscription = await db.query.billingSubscriptions.findFirst({
-      where: eq(billingSubscriptions.userId, recoveryUser.id),
+      where: eq(billingSubscriptions.userId, recoveryCreds.id),
       columns: { id: true },
     });
     if (!subscription) {
@@ -249,7 +232,7 @@ test.describe('Billing Pro flows', () => {
     const graceEndsAt = new Date(transitionNow.getTime() + 7 * 24 * 60 * 60 * 1000);
     const transition = await runWithNodeEnvTest(() =>
       transitionSubscriptionToGraceOnRenewalFailure({
-        userId: recoveryUser.id,
+        userId: recoveryCreds.id,
         subscriptionId: subscription.id,
         renewalAttempt: 1,
         graceEndsAt,
@@ -278,13 +261,8 @@ test.describe('Billing Pro flows', () => {
     page,
   }) => {
     const db = getTestDb();
-    const recoveryUser = await getUserByEmail(db, recoveryCreds.email);
-    if (!recoveryUser) {
-      throw new Error('Missing recovery user.');
-    }
-
     const subscription = await db.query.billingSubscriptions.findFirst({
-      where: eq(billingSubscriptions.userId, recoveryUser.id),
+      where: eq(billingSubscriptions.userId, recoveryCreds.id),
       columns: { id: true },
     });
     if (!subscription) {
@@ -378,13 +356,8 @@ test.describe('Billing Pro flows', () => {
     page,
   }) => {
     const db = getTestDb();
-    const recoveryUser = await getUserByEmail(db, recoveryCreds.email);
-    if (!recoveryUser) {
-      throw new Error('Missing recovery user.');
-    }
-
     const subscription = await db.query.billingSubscriptions.findFirst({
-      where: eq(billingSubscriptions.userId, recoveryUser.id),
+      where: eq(billingSubscriptions.userId, recoveryCreds.id),
       columns: { id: true },
     });
     if (!subscription) {
@@ -397,7 +370,7 @@ test.describe('Billing Pro flows', () => {
 
     const recovery = await runWithNodeEnvTest(() =>
       restoreSubscriptionOnRecoveryPayment({
-        userId: recoveryUser.id,
+        userId: recoveryCreds.id,
         subscriptionId: subscription.id,
         paymentConfirmationId: `payment-confirmed-${Date.now()}`,
         recoveredPeriodStartsAt,

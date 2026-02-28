@@ -6,23 +6,61 @@ import { getTestDb } from '../utils/db';
 import {
   assignUserRole,
   createTestRole,
-  getUserByEmail,
   setUserVerified,
   signUpTestUser,
 } from '../utils/fixtures';
 
-let staffCreds: { email: string; password: string; name: string };
+let staffCreds: { id: string; email: string; password: string; name: string };
 let ownershipTraceId = '';
 
 async function signInAsStaff(
   page: Page,
   credentials: { email: string; password: string },
 ) {
-  await page.goto('/en/sign-in');
-  await page.getByLabel(/email/i).fill(credentials.email);
-  await page.getByLabel(/password/i).fill(credentials.password);
-  await page.getByRole('button', { name: /sign in/i }).click();
-  await page.waitForURL(/\/(admin|dashboard|settings)/, { timeout: 45000 });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await page.goto('/en/sign-in');
+    await page.getByLabel(/email/i).fill(credentials.email);
+    await page.getByLabel(/password/i).fill(credentials.password);
+    await page.getByRole('button', { name: /sign in/i }).click();
+
+    const redirected = await page
+      .waitForURL(/\/(admin|dashboard|settings)/, { timeout: 15000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (redirected) {
+      await page.waitForLoadState('networkidle');
+      return;
+    }
+
+    if (attempt < 2) {
+      await page.waitForTimeout(1000);
+    }
+  }
+
+  throw new Error('Staff sign-in did not complete after retries');
+}
+
+async function openPaymentsWorkspace(page: Page) {
+  const targetPath = '/en/admin/payments';
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await page.goto(targetPath, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle');
+      if (new URL(page.url()).pathname === targetPath) {
+        return;
+      }
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+    }
+
+    await page.waitForTimeout(500);
+  }
+
+  await expect(page).toHaveURL(/\/en\/admin\/payments/);
 }
 
 test.describe('Payments Admin E2E', () => {
@@ -38,11 +76,6 @@ test.describe('Payments Admin E2E', () => {
     });
     await setUserVerified(db, staffCreds.email);
 
-    const staffUser = await getUserByEmail(db, staffCreds.email);
-    if (!staffUser) {
-      throw new Error('Failed to create staff test user');
-    }
-
     let staffRole = await db.query.roles.findFirst({
       where: eq(schema.roles.name, 'staff'),
     });
@@ -52,7 +85,7 @@ test.describe('Payments Admin E2E', () => {
         description: 'Internal staff role for E2E tests',
       });
     }
-    await assignUserRole(db, staffUser.id, staffRole.id);
+    await assignUserRole(db, staffCreds.id, staffRole.id);
 
     ownershipTraceId = `trace:ownership-${Date.now()}`;
     const rootDisputeId = '55555555-5555-4555-8555-555555555555';
@@ -110,7 +143,7 @@ test.describe('Payments Admin E2E', () => {
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
-    await page.goto('/en/admin/payments');
+    await openPaymentsWorkspace(page);
 
     await expect(page).toHaveURL(/\/en\/admin\/payments/);
     await expect(page.getByRole('heading', { name: 'Payments economics' })).toBeVisible();
@@ -127,7 +160,7 @@ test.describe('Payments Admin E2E', () => {
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
-    await page.goto('/en/admin/payments');
+    await openPaymentsWorkspace(page);
 
     await expect(page).toHaveURL(/\/en\/admin\/payments/);
 

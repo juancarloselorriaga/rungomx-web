@@ -22,7 +22,6 @@ import {
   createTestOrganization,
   createTestPricingTier,
   createTestProfile,
-  getUserByEmail,
   setUserVerified,
   signUpTestUser,
 } from '../utils/fixtures';
@@ -107,9 +106,9 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
 
   const db = getTestDb();
 
-  let organizerCreds: { email: string; password: string; name: string };
-  let coordinatorCreds: { email: string; password: string; name: string };
-  let athleteCreds: { email: string; password: string; name: string };
+  let organizerCreds: { id: string; email: string; password: string; name: string };
+  let coordinatorCreds: { id: string; email: string; password: string; name: string };
+  let athleteCreds: { id: string; email: string; password: string; name: string };
 
   let organizerId: string;
   let coordinatorId: string;
@@ -141,13 +140,9 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     await setUserVerified(db, coordinatorCreds.email);
     await setUserVerified(db, athleteCreds.email);
 
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    const coordinator = await getUserByEmail(db, coordinatorCreds.email);
-    const athlete = await getUserByEmail(db, athleteCreds.email);
-
-    organizerId = organizer!.id;
-    coordinatorId = coordinator!.id;
-    athleteId = athlete!.id;
+    organizerId = organizerCreds.id;
+    coordinatorId = coordinatorCreds.id;
+    athleteId = athleteCreds.id;
 
     await createTestProfile(db, organizerId, {
       dateOfBirth: new Date('1990-05-15'),
@@ -461,7 +456,21 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText(/claimed/i)).toBeVisible({ timeout: 15000 });
-    await page.getByRole('button', { name: /extend hold/i }).click();
+    const extendHoldButton = page.getByRole('button', { name: /extend hold/i }).first();
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      if (await extendHoldButton.isEnabled().catch(() => false)) {
+        break;
+      }
+      if (attempt < 2) {
+        await page.reload();
+        await page.waitForLoadState('networkidle');
+        await expect(page.getByText(/claimed/i)).toBeVisible({ timeout: 15000 });
+      }
+    }
+
+    await expect(extendHoldButton).toBeEnabled({ timeout: 10000 });
+    await extendHoldButton.click();
     await expect(page.getByText(/hold extended/i)).toBeVisible({ timeout: 15000 });
 
     const updated = await db.query.registrations.findFirst({

@@ -3,7 +3,6 @@ import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
   setUserVerified,
-  getUserByEmail,
   createTestProfile,
   assignExternalRole,
 } from '../utils/fixtures';
@@ -20,7 +19,7 @@ import {
  */
 
 // File-scoped test credentials
-let organizerCreds: { email: string; password: string; name: string };
+let organizerCreds: { id: string; email: string; password: string; name: string };
 
 test.describe('Event Creation', () => {
   test.describe.configure({ mode: 'serial' });
@@ -43,8 +42,7 @@ test.describe('Event Creation', () => {
     await setUserVerified(db, organizerCreds.email);
 
     // Create complete profile
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    await createTestProfile(db, organizer!.id, {
+    await createTestProfile(db, organizerCreds.id, {
       dateOfBirth: new Date('1990-05-15'),
       gender: 'male',
       phone: '+523312345678',
@@ -55,7 +53,7 @@ test.describe('Event Creation', () => {
     });
 
     // Assign organizer role to prevent role selection modal
-    await assignExternalRole(db, organizer!.id, 'organizer');
+    await assignExternalRole(db, organizerCreds.id, 'organizer');
 
     await context.close();
   });

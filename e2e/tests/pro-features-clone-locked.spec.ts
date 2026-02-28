@@ -3,13 +3,12 @@ import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
   setUserVerified,
-  getUserByEmail,
   createTestProfile,
   assignExternalRole,
 } from '../utils/fixtures';
 import { signInAsOrganizer, createOrganization, createEvent } from '../utils/helpers';
 
-let organizerCreds: { email: string; password: string; name: string };
+let organizerCreds: { id: string; email: string; password: string; name: string };
 let eventId: string;
 
 test.describe('Pro features - clone locked', () => {
@@ -26,8 +25,7 @@ test.describe('Pro features - clone locked', () => {
 
     await setUserVerified(db, organizerCreds.email);
 
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    await createTestProfile(db, organizer!.id, {
+    await createTestProfile(db, organizerCreds.id, {
       dateOfBirth: new Date('1990-05-15'),
       gender: 'male',
       phone: '+523312345678',
@@ -36,7 +34,7 @@ test.describe('Pro features - clone locked', () => {
       emergencyContactName: 'Test Contact',
       emergencyContactPhone: '+523387654321',
     });
-    await assignExternalRole(db, organizer!.id, 'organizer');
+    await assignExternalRole(db, organizerCreds.id, 'organizer');
 
     await signInAsOrganizer(page, organizerCreds);
     await page.goto('/en/dashboard/events/new');

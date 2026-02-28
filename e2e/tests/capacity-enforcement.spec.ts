@@ -3,7 +3,6 @@ import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
   setUserVerified,
-  getUserByEmail,
   createTestProfile,
   assignExternalRole,
 } from '../utils/fixtures';
@@ -26,8 +25,8 @@ import { DISTANCE_DATA } from '../fixtures/test-data';
  */
 
 // File-scoped test credentials
-let organizerCreds: { email: string; password: string; name: string };
-let athleteCreds: { email: string; password: string; name: string };
+let organizerCreds: { id: string; email: string; password: string; name: string };
+let athleteCreds: { id: string; email: string; password: string; name: string };
 
 test.describe('Capacity Enforcement', () => {
   test.describe.configure({ mode: 'serial' });
@@ -48,8 +47,7 @@ test.describe('Capacity Enforcement', () => {
 
     await setUserVerified(db, organizerCreds.email);
 
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    await createTestProfile(db, organizer!.id, {
+    await createTestProfile(db, organizerCreds.id, {
       dateOfBirth: new Date('1990-05-15'),
       gender: 'male',
       phone: '+523312345678',
@@ -58,7 +56,7 @@ test.describe('Capacity Enforcement', () => {
       emergencyContactName: 'Test Contact',
       emergencyContactPhone: '+523387654321',
     });
-    await assignExternalRole(db, organizer!.id, 'organizer');
+    await assignExternalRole(db, organizerCreds.id, 'organizer');
 
     // Create athlete user via signup
     athleteCreds = await signUpTestUser(page, 'athlete-capacity-', {
@@ -67,8 +65,7 @@ test.describe('Capacity Enforcement', () => {
 
     await setUserVerified(db, athleteCreds.email);
 
-    const athlete = await getUserByEmail(db, athleteCreds.email);
-    await createTestProfile(db, athlete!.id, {
+    await createTestProfile(db, athleteCreds.id, {
       dateOfBirth: new Date('1995-08-20'),
       gender: 'female',
       phone: '+523318887777',
@@ -78,7 +75,7 @@ test.describe('Capacity Enforcement', () => {
       emergencyContactPhone: '+523319998888',
       shirtSize: 'M',
     });
-    await assignExternalRole(db, athlete!.id, 'athlete');
+    await assignExternalRole(db, athleteCreds.id, 'athlete');
 
     // Sign in as organizer and create event
     await signInAsOrganizer(page, organizerCreds);

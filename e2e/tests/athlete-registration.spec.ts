@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
   setUserVerified,
-  getUserByEmail,
   createTestProfile,
   assignExternalRole,
   deleteUserRegistrations,
@@ -31,9 +31,28 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+async function openRegistrationPageAsAthlete(
+  page: Page,
+  credentials: { email: string; password: string; name: string },
+  seriesSlug: string,
+  editionSlug: string,
+) {
+  const registerPath = `/en/events/${seriesSlug}/${editionSlug}/register`;
+  await signInAsAthlete(page, credentials);
+  await page.goto(registerPath);
+
+  const signInRequiredHeading = page.getByRole('heading', { name: /sign in required/i });
+  if (await signInRequiredHeading.isVisible().catch(() => false)) {
+    await signInAsAthlete(page, credentials);
+    await page.goto(registerPath);
+  }
+
+  await expect(signInRequiredHeading).not.toBeVisible({ timeout: 10000 });
+}
+
 // File-scoped test credentials
-let organizerCreds: { email: string; password: string; name: string };
-let athleteCreds: { email: string; password: string; name: string };
+let organizerCreds: { id: string; email: string; password: string; name: string };
+let athleteCreds: { id: string; email: string; password: string; name: string };
 
 test.describe('Athlete Registration', () => {
   test.describe.configure({ mode: 'serial' });
@@ -57,8 +76,7 @@ test.describe('Athlete Registration', () => {
 
     await setUserVerified(db, organizerCreds.email);
 
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    await createTestProfile(db, organizer!.id, {
+    await createTestProfile(db, organizerCreds.id, {
       dateOfBirth: new Date('1990-05-15'),
       gender: 'male',
       phone: '+523312345678',
@@ -67,7 +85,7 @@ test.describe('Athlete Registration', () => {
       emergencyContactName: 'Test Contact',
       emergencyContactPhone: '+523387654321',
     });
-    await assignExternalRole(db, organizer!.id, 'organizer');
+    await assignExternalRole(db, organizerCreds.id, 'organizer');
 
     // Create athlete user via signup
     athleteCreds = await signUpTestUser(page, 'athlete-reg-', {
@@ -76,8 +94,7 @@ test.describe('Athlete Registration', () => {
 
     await setUserVerified(db, athleteCreds.email);
 
-    const athlete = await getUserByEmail(db, athleteCreds.email);
-    await createTestProfile(db, athlete!.id, {
+    await createTestProfile(db, athleteCreds.id, {
       dateOfBirth: new Date('1995-08-20'),
       gender: 'female',
       phone: '+523318887777',
@@ -87,7 +104,7 @@ test.describe('Athlete Registration', () => {
       emergencyContactPhone: '+523319998888',
       shirtSize: 'M',
     });
-    await assignExternalRole(db, athlete!.id, 'athlete');
+    await assignExternalRole(db, athleteCreds.id, 'athlete');
 
     // Sign in as organizer and create event
     await signInAsOrganizer(page, organizerCreds);
@@ -163,8 +180,7 @@ test.describe('Athlete Registration', () => {
   });
 
   test('Test 1.8e: Select distance', async ({ page }) => {
-    await signInAsAthlete(page, athleteCreds);
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
+    await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
     // Distance selection should be shown
     await expect(page.getByText('10K Trail Run')).toBeVisible();
@@ -187,15 +203,11 @@ test.describe('Athlete Registration', () => {
 
     // Clean up: Delete the incomplete registration so subsequent tests can start fresh
     const db = getTestDb();
-    const athlete = await getUserByEmail(db, athleteCreds.email);
-    if (athlete) {
-      await deleteUserRegistrations(db, athlete.id);
-    }
+    await deleteUserRegistrations(db, athleteCreds.id);
   });
 
   test('Test 1.8f-h: Complete registration flow (combined)', async ({ page }) => {
-    await signInAsAthlete(page, athleteCreds);
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
+    await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
     // Step 1: Select distance
     await page.getByRole('button', { name: /10K Trail Run/i }).click();
@@ -246,22 +258,19 @@ test.describe('Athlete Registration', () => {
     await expect(page.getByText(registrationId)).toBeVisible();
     await expect(page.getByText(seriesName)).toBeVisible();
 
-	    await page.getByRole('link', { name: /view details/i }).first().click();
-	    await expect(page.getByText(registrationId)).toBeVisible();
-	    await expect(page.getByText(seriesName)).toBeVisible();
-	    await expect(
-	      page.getByRole('heading', {
-	        name: new RegExp(`${escapeRegExp(seriesName)}\\s+${escapeRegExp(editionLabel)}`),
-	      }),
-	    ).toBeVisible();
-	    await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
-	  });
+    await page.getByRole('link', { name: /view details/i }).first().click();
+    await expect(page.getByText(registrationId)).toBeVisible();
+    await expect(page.getByText(seriesName)).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: new RegExp(`${escapeRegExp(seriesName)}\\s+${escapeRegExp(editionLabel)}`),
+      }),
+    ).toBeVisible();
+    await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
+  });
 
   test('Test 1.8i: Verify registration cannot be duplicated', async ({ page }) => {
-    await signInAsAthlete(page, athleteCreds);
-
-    // Try to register again for the same event
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
+    await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
     // UX: The page proactively shows "already registered" message when user is already registered.
     // Distance buttons are disabled to prevent duplicate registration attempts.
@@ -283,16 +292,10 @@ test.describe('Athlete Registration', () => {
   test('Test 1.8k: Form validation prevents incomplete submission', async ({ page }) => {
     // Clean up athlete's registrations from previous tests so they can start a new registration
     const db = getTestDb();
-    const athlete = await getUserByEmail(db, athleteCreds.email);
-    if (athlete) {
-      await deleteUserRegistrations(db, athlete.id);
-    }
+    await deleteUserRegistrations(db, athleteCreds.id);
 
-    // Sign in as athlete
-    await signInAsAthlete(page, athleteCreds);
-
-    // Navigate to registration
-    await page.goto(`/en/events/${seriesSlug}/${editionSlug}/register`);
+    // Sign in as athlete and navigate to registration
+    await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
     // Select distance
     await page.getByRole('button', { name: /10K Trail Run/i }).click();

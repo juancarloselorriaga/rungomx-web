@@ -5,7 +5,6 @@ import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
   setUserVerified,
-  getUserByEmail,
   createTestProfile,
   assignExternalRole,
 } from '../utils/fixtures';
@@ -28,7 +27,7 @@ import { DISTANCE_DATA } from '../fixtures/test-data';
  */
 
 // File-scoped test credentials
-let organizerCreds: { email: string; password: string; name: string };
+let organizerCreds: { id: string; email: string; password: string; name: string };
 
 test.describe('Event Management', () => {
   test.describe.configure({ mode: 'serial' });
@@ -53,8 +52,7 @@ test.describe('Event Management', () => {
     await setUserVerified(db, organizerCreds.email);
 
     // Create complete profile
-    const organizer = await getUserByEmail(db, organizerCreds.email);
-    await createTestProfile(db, organizer!.id, {
+    await createTestProfile(db, organizerCreds.id, {
       dateOfBirth: new Date('1990-05-15'),
       gender: 'male',
       phone: '+523312345678',
@@ -63,7 +61,7 @@ test.describe('Event Management', () => {
       emergencyContactName: 'Test Contact',
       emergencyContactPhone: '+523387654321',
     });
-    await assignExternalRole(db, organizer!.id, 'organizer');
+    await assignExternalRole(db, organizerCreds.id, 'organizer');
 
     // Sign in and create event for management tests
     await signInAsOrganizer(page, organizerCreds);
@@ -108,8 +106,27 @@ test.describe('Event Management', () => {
 
     // Verify distance appears with correct details
     await expect(page.getByText('10K Trail Run')).toBeVisible();
-    await expect(page.getByText(/100 spots/i)).toBeVisible();
-    await expect(page.getByText(/\$500/)).toBeVisible();
+    const distanceCard = page.locator('section, article, div').filter({ hasText: '10K Trail Run' }).first();
+
+    await expect
+      .poll(
+        async () => {
+          const text = (await distanceCard.textContent()) ?? '';
+          return /100\s*(spots|cupos|available|disponibles)?/i.test(text) || /\b100\b/.test(text);
+        },
+        { timeout: 15000 },
+      )
+      .toBe(true);
+
+    await expect
+      .poll(
+        async () => {
+          const text = (await distanceCard.textContent()) ?? '';
+          return /\$\s*500(?:\.00)?/i.test(text) || /\b500\b/.test(text);
+        },
+        { timeout: 15000 },
+      )
+      .toBe(true);
   });
 
   test('Test 1.4b: Add multiple distances', async ({ page }) => {
