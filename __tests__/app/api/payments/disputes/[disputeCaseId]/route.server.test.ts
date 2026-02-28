@@ -1,12 +1,23 @@
-const mockGetAuthContext = jest.fn();
+const mockRequireAuthenticatedUser = jest.fn();
 const mockGetOrgMembership = jest.fn();
 const mockRequireOrgPermission = jest.fn();
 const mockGetDisputeEvidenceWindow = jest.fn();
 const mockFindOrganization = jest.fn();
 
-jest.mock('@/lib/auth/server', () => ({
-  getAuthContext: (...args: unknown[]) => mockGetAuthContext(...args),
-}));
+jest.mock('@/lib/auth/guards', () => {
+  class MockUnauthenticatedError extends Error {}
+
+  return {
+    requireAuthenticatedUser: async (...args: unknown[]) => {
+      const value = await mockRequireAuthenticatedUser(...args);
+      if (!value?.user) {
+        throw new MockUnauthenticatedError('Authentication required');
+      }
+      return value;
+    },
+    UnauthenticatedError: MockUnauthenticatedError,
+  };
+});
 
 jest.mock('@/lib/organizations/permissions', () => ({
   getOrgMembership: (...args: unknown[]) => mockGetOrgMembership(...args),
@@ -50,7 +61,7 @@ function createRouteContext(disputeCaseId: string) {
 
 describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   beforeEach(() => {
-    mockGetAuthContext.mockReset();
+    mockRequireAuthenticatedUser.mockReset();
     mockGetOrgMembership.mockReset();
     mockRequireOrgPermission.mockReset();
     mockGetDisputeEvidenceWindow.mockReset();
@@ -63,7 +74,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('returns 401 when requester is unauthenticated', async () => {
-    mockGetAuthContext.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
+    mockRequireAuthenticatedUser.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
 
     const response = await GET(
       new Request(
@@ -77,7 +88,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('returns 400 for invalid route params', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -95,7 +106,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('returns 400 when organization query parameter is invalid', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -111,7 +122,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('returns 403 when requester lacks organizer permissions', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: false },
     });
@@ -135,7 +146,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('returns 404 when organization does not exist', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -153,7 +164,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('maps not-found dispute errors to 404', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -176,7 +187,7 @@ describe('GET /api/payments/disputes/[disputeCaseId]', () => {
   });
 
   it('returns 200 with deterministic countdown payload on success', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: false },
     });

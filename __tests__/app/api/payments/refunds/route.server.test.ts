@@ -1,9 +1,20 @@
-const mockGetAuthContext = jest.fn();
+const mockRequireAuthenticatedUser = jest.fn();
 const mockSubmitAttendeeRefundRequest = jest.fn();
 
-jest.mock('@/lib/auth/server', () => ({
-  getAuthContext: (...args: unknown[]) => mockGetAuthContext(...args),
-}));
+jest.mock('@/lib/auth/guards', () => {
+  class MockUnauthenticatedError extends Error {}
+
+  return {
+    requireAuthenticatedUser: async (...args: unknown[]) => {
+      const value = await mockRequireAuthenticatedUser(...args);
+      if (!value?.user) {
+        throw new MockUnauthenticatedError('Authentication required');
+      }
+      return value;
+    },
+    UnauthenticatedError: MockUnauthenticatedError,
+  };
+});
 
 jest.mock('@/lib/payments/refunds/request-submission', () => {
   const actual = jest.requireActual('@/lib/payments/refunds/request-submission');
@@ -19,12 +30,12 @@ import { RefundRequestEligibilityError } from '@/lib/payments/refunds/request-su
 
 describe('POST /api/payments/refunds', () => {
   beforeEach(() => {
-    mockGetAuthContext.mockReset();
+    mockRequireAuthenticatedUser.mockReset();
     mockSubmitAttendeeRefundRequest.mockReset();
   });
 
   it('returns 401 when user is not authenticated', async () => {
-    mockGetAuthContext.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
+    mockRequireAuthenticatedUser.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
 
     const response = await POST(
       new Request('http://localhost/api/payments/refunds', {
@@ -38,7 +49,7 @@ describe('POST /api/payments/refunds', () => {
   });
 
   it('returns 400 for invalid JSON body', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'attendee-1' },
       permissions: { canManageEvents: false },
     });
@@ -56,7 +67,7 @@ describe('POST /api/payments/refunds', () => {
   });
 
   it('returns 400 for payload validation errors', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'attendee-1' },
       permissions: { canManageEvents: false },
     });
@@ -76,7 +87,7 @@ describe('POST /api/payments/refunds', () => {
   });
 
   it('returns 201 with request snapshots when submission succeeds', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'attendee-1' },
       permissions: { canManageEvents: false },
     });
@@ -134,7 +145,7 @@ describe('POST /api/payments/refunds', () => {
   });
 
   it('maps ownership not-found errors to 404', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'attendee-1' },
       permissions: { canManageEvents: false },
     });
@@ -161,7 +172,7 @@ describe('POST /api/payments/refunds', () => {
   });
 
   it('maps eligibility rejection to 409 with a clear reason payload', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'attendee-1' },
       permissions: { canManageEvents: false },
     });

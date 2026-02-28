@@ -1,12 +1,23 @@
-const mockGetAuthContext = jest.fn();
+const mockRequireAuthenticatedUser = jest.fn();
 const mockGetOrgMembership = jest.fn();
 const mockRequireOrgPermission = jest.fn();
 const mockCreatePayoutQuoteAndContract = jest.fn();
 const mockFindOrganization = jest.fn();
 
-jest.mock('@/lib/auth/server', () => ({
-  getAuthContext: (...args: unknown[]) => mockGetAuthContext(...args),
-}));
+jest.mock('@/lib/auth/guards', () => {
+  class MockUnauthenticatedError extends Error {}
+
+  return {
+    requireAuthenticatedUser: async (...args: unknown[]) => {
+      const value = await mockRequireAuthenticatedUser(...args);
+      if (!value?.user) {
+        throw new MockUnauthenticatedError('Authentication required');
+      }
+      return value;
+    },
+    UnauthenticatedError: MockUnauthenticatedError,
+  };
+});
 
 jest.mock('@/lib/organizations/permissions', () => ({
   getOrgMembership: (...args: unknown[]) => mockGetOrgMembership(...args),
@@ -44,7 +55,7 @@ import { PayoutQuoteContractError } from '@/lib/payments/payouts/quote-contract'
 
 describe('POST /api/payments/payouts', () => {
   beforeEach(() => {
-    mockGetAuthContext.mockReset();
+    mockRequireAuthenticatedUser.mockReset();
     mockGetOrgMembership.mockReset();
     mockRequireOrgPermission.mockReset();
     mockCreatePayoutQuoteAndContract.mockReset();
@@ -57,7 +68,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('returns 401 when requester is unauthenticated', async () => {
-    mockGetAuthContext.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
+    mockRequireAuthenticatedUser.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
 
     const response = await POST(
       new Request('http://localhost/api/payments/payouts', {
@@ -74,7 +85,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('returns 400 for invalid payload', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -94,7 +105,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('returns 403 when requester lacks organizer permissions', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: false },
     });
@@ -121,7 +132,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('returns 404 when organization does not exist', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -142,7 +153,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('maps payout ineligibility errors to 409', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -172,7 +183,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('maps active payout lifecycle reject conflicts to 409', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -203,7 +214,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('maps queue-required active lifecycle conflicts to 409 with suggested action', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -237,7 +248,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('maps persistence failures to 500', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -267,7 +278,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('1.2-API-001 persists trace-linked payout command outcome with ingress metadata', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -319,7 +330,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('1.2-API-003 routes payout mutation requests through ingress-backed contract service', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -366,7 +377,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('1.3-API-001 reuses canonical payout outcome for duplicate idempotency keys', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -406,7 +417,7 @@ describe('POST /api/payments/payouts', () => {
   });
 
   it('1.3-API-003 keeps duplicate ingestion on the ingress-backed payout contract path', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
       permissions: { canManageEvents: true },
     });

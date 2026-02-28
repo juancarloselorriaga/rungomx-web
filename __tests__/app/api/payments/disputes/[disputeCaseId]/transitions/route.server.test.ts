@@ -1,12 +1,23 @@
-const mockGetAuthContext = jest.fn();
+const mockRequireAuthenticatedUser = jest.fn();
 const mockGetOrgMembership = jest.fn();
 const mockRequireOrgPermission = jest.fn();
 const mockTransitionDisputeCase = jest.fn();
 const mockFindOrganization = jest.fn();
 
-jest.mock('@/lib/auth/server', () => ({
-  getAuthContext: (...args: unknown[]) => mockGetAuthContext(...args),
-}));
+jest.mock('@/lib/auth/guards', () => {
+  class MockUnauthenticatedError extends Error {}
+
+  return {
+    requireAuthenticatedUser: async (...args: unknown[]) => {
+      const value = await mockRequireAuthenticatedUser(...args);
+      if (!value?.user) {
+        throw new MockUnauthenticatedError('Authentication required');
+      }
+      return value;
+    },
+    UnauthenticatedError: MockUnauthenticatedError,
+  };
+});
 
 jest.mock('@/lib/organizations/permissions', () => ({
   getOrgMembership: (...args: unknown[]) => mockGetOrgMembership(...args),
@@ -58,7 +69,7 @@ function createRouteContext(disputeCaseId: string) {
 
 describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
   beforeEach(() => {
-    mockGetAuthContext.mockReset();
+    mockRequireAuthenticatedUser.mockReset();
     mockGetOrgMembership.mockReset();
     mockRequireOrgPermission.mockReset();
     mockTransitionDisputeCase.mockReset();
@@ -71,7 +82,7 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
   });
 
   it('returns 401 when requester is unauthenticated', async () => {
-    mockGetAuthContext.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
+    mockRequireAuthenticatedUser.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
 
     const response = await POST(
       new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/transitions', {
@@ -89,7 +100,7 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
   });
 
   it('returns 400 for invalid route params', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -110,8 +121,53 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
     expect(body.error).toBe('Invalid dispute case ID');
   });
 
+  it('returns 400 for invalid JSON body', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'risk-user-1' },
+      permissions: { canManageEvents: true },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/transitions', {
+        method: 'POST',
+        body: '{invalid-json',
+      }),
+      createRouteContext('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Invalid JSON body' });
+    expect(mockFindOrganization).not.toHaveBeenCalled();
+    expect(mockTransitionDisputeCase).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for invalid transition payload', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'risk-user-1' },
+      permissions: { canManageEvents: true },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/transitions', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: 'not-a-uuid',
+          toStatus: 'under_review',
+        }),
+      }),
+      createRouteContext('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('Invalid dispute transition payload');
+    expect(body.details).toBeDefined();
+    expect(mockFindOrganization).not.toHaveBeenCalled();
+    expect(mockTransitionDisputeCase).not.toHaveBeenCalled();
+  });
+
   it('returns 403 when requester lacks organizer permissions', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: false },
     });
@@ -139,7 +195,7 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
   });
 
   it('returns 404 when organization does not exist', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -161,7 +217,7 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
   });
 
   it('maps invalid transition errors to 409', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: true },
     });
@@ -192,8 +248,96 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
     });
   });
 
+  it('maps missing dispute cases to 404', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'risk-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockTransitionDisputeCase.mockRejectedValue(
+      new DisputeLifecycleError('DISPUTE_CASE_NOT_FOUND', 'Dispute case not found.'),
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/transitions', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          toStatus: 'under_review',
+        }),
+      }),
+      createRouteContext('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      error: 'Dispute case not found',
+      code: 'DISPUTE_CASE_NOT_FOUND',
+    });
+  });
+
+  it('maps unexpected lifecycle errors to 400', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'risk-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockTransitionDisputeCase.mockRejectedValue(
+      new DisputeLifecycleError('DISPUTE_INTAKE_SCOPE_REQUIRED', 'Dispute intake scope is required.'),
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/transitions', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          toStatus: 'under_review',
+        }),
+      }),
+      createRouteContext('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: 'Invalid dispute transition request',
+      code: 'DISPUTE_INTAKE_SCOPE_REQUIRED',
+      reason: 'Dispute intake scope is required.',
+    });
+  });
+
+  it('returns 500 when transition throws a non-lifecycle error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'risk-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockTransitionDisputeCase.mockRejectedValue(new Error('Unexpected failure'));
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/transitions', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          toStatus: 'under_review',
+        }),
+      }),
+      createRouteContext('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[payments-disputes] Failed to transition dispute case',
+      expect.objectContaining({
+        disputeCaseId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        organizationId: '11111111-1111-4111-8111-111111111111',
+        actorUserId: 'risk-user-1',
+      }),
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
   it('returns 200 with deterministic transition payload on success', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },
       permissions: { canManageEvents: false },
     });
@@ -246,4 +390,3 @@ describe('POST /api/payments/disputes/[disputeCaseId]/transitions', () => {
     });
   });
 });
-

@@ -1,11 +1,22 @@
-const mockGetAuthContext = jest.fn();
+const mockRequireAuthenticatedUser = jest.fn();
 const mockGetOrgMembership = jest.fn();
 const mockGetOrganizerWalletIssueActivity = jest.fn();
 const mockFindOrganization = jest.fn();
 
-jest.mock('@/lib/auth/server', () => ({
-  getAuthContext: (...args: unknown[]) => mockGetAuthContext(...args),
-}));
+jest.mock('@/lib/auth/guards', () => {
+  class MockUnauthenticatedError extends Error {}
+
+  return {
+    requireAuthenticatedUser: async (...args: unknown[]) => {
+      const value = await mockRequireAuthenticatedUser(...args);
+      if (!value?.user) {
+        throw new MockUnauthenticatedError('Authentication required');
+      }
+      return value;
+    },
+    UnauthenticatedError: MockUnauthenticatedError,
+  };
+});
 
 jest.mock('@/lib/organizations/permissions', () => ({
   getOrgMembership: (...args: unknown[]) => mockGetOrgMembership(...args),
@@ -30,14 +41,14 @@ import { GET } from '@/app/api/payments/wallet/issues/route';
 
 describe('GET /api/payments/wallet/issues', () => {
   beforeEach(() => {
-    mockGetAuthContext.mockReset();
+    mockRequireAuthenticatedUser.mockReset();
     mockGetOrgMembership.mockReset();
     mockGetOrganizerWalletIssueActivity.mockReset();
     mockFindOrganization.mockReset();
   });
 
   it('returns 401 when user is unauthenticated', async () => {
-    mockGetAuthContext.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
+    mockRequireAuthenticatedUser.mockResolvedValue({ user: null, permissions: { canManageEvents: false } });
 
     const response = await GET(
       new Request('http://localhost/api/payments/wallet/issues?organizationId=11111111-1111-4111-8111-111111111111'),
@@ -47,7 +58,7 @@ describe('GET /api/payments/wallet/issues', () => {
   });
 
   it('returns 400 when organizationId is invalid', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },
       permissions: { canManageEvents: false },
     });
@@ -60,7 +71,7 @@ describe('GET /api/payments/wallet/issues', () => {
   });
 
   it('returns 403 when user has no organizer membership', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },
       permissions: { canManageEvents: false },
     });
@@ -74,7 +85,7 @@ describe('GET /api/payments/wallet/issues', () => {
   });
 
   it('returns grouped issue-focused activity when authorized', async () => {
-    mockGetAuthContext.mockResolvedValue({
+    mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },
       permissions: { canManageEvents: false },
     });
