@@ -65,10 +65,10 @@ export const upsertDailyFxRateAdminAction = withStaffUser<FormActionResult<{ rat
       actorUserId: authContext.user.id,
       request: requestContext,
     });
-    revalidateTag(adminPaymentsCacheTags.fxRates);
-    revalidateTag(adminPaymentsCacheTags.fxActionFlags);
-    revalidateTag(adminPaymentsCacheTags.fxSnapshots);
-    revalidateTag(adminPaymentsCacheTags.mxnReport);
+    revalidateTag(adminPaymentsCacheTags.fxRates, { expire: 0 });
+    revalidateTag(adminPaymentsCacheTags.fxActionFlags, { expire: 0 });
+    revalidateTag(adminPaymentsCacheTags.fxSnapshots, { expire: 0 });
+    revalidateTag(adminPaymentsCacheTags.mxnReport, { expire: 0 });
 
     return {
       ok: true,
