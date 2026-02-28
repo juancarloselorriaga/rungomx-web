@@ -108,7 +108,7 @@ export function EvidencePackReviewDashboard({
         <p className="mt-1 text-xs text-muted-foreground">{labels.requestDescription}</p>
         <form method="get" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="range" value={selectedRange} />
-          <input type="hidden" name="caseQuery" value={searchQuery} />
+          <input type="hidden" name="lookupQuery" value={searchQuery} />
           <label className="space-y-1 text-xs">
             <span className="uppercase tracking-wide text-muted-foreground">
               {labels.traceFieldLabel}
