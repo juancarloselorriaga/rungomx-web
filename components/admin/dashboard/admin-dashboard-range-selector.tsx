@@ -1,15 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { ChevronDownIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export type AdminDashboardRangeValue = '7d' | '14d' | '30d';
@@ -42,33 +34,26 @@ export function AdminDashboardRangeSelector({
     router.refresh();
   };
 
-  const selectedOption = options.find((option) => option.value === selected);
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <div className={cn('inline-flex flex-wrap items-center gap-1', className)} role="group">
+      {options.map((option) => (
         <Button
+          key={option.value}
           type="button"
-          variant="outline"
+          variant={option.value === selected ? 'default' : 'outline'}
           size="sm"
+          aria-pressed={option.value === selected}
+          onClick={() => handleChange(option.value)}
           className={cn(
-            'h-8 gap-2 rounded-md border-border bg-background-surface px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground',
-            className,
+            'h-8 rounded-md border-border px-3 text-xs font-medium',
+            option.value === selected
+              ? 'bg-foreground text-background hover:bg-foreground/90'
+              : 'bg-background-surface text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
-          <span className="truncate">{selectedOption?.label ?? selected}</span>
-          <ChevronDownIcon className="size-3" />
+          {option.label}
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[12rem]">
-        <DropdownMenuRadioGroup value={selected} onValueChange={handleChange}>
-          {options.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value} className="text-xs">
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      ))}
+    </div>
   );
 }
