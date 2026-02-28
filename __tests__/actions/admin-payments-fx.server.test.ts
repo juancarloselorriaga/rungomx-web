@@ -1,3 +1,5 @@
+export {};
+
 type MockAuthContext = {
   user: { id: string };
 };

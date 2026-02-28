@@ -3,6 +3,13 @@ import { EvidencePackReviewDashboard } from '@/components/admin/payments/evidenc
 import { FinancialCaseLookupDashboard } from '@/components/admin/payments/financial-case-lookup-dashboard';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
+type FinancialCaseLookupLabels = Parameters<typeof FinancialCaseLookupDashboard>[0]['labels'];
+type EvidencePackReviewLabels = Parameters<typeof EvidencePackReviewDashboard>[0]['labels'];
+type ArtifactGovernanceLabels = Parameters<typeof ArtifactGovernanceDashboard>[0]['labels'];
+type FinancialCaseLookupResult = NonNullable<
+  Parameters<typeof FinancialCaseLookupDashboard>[0]['result']
+>;
+
 const runArtifactGovernanceAdminActionMock = jest.fn();
 const listArtifactGovernanceSummaryAdminActionMock = jest.fn();
 
@@ -21,11 +28,11 @@ function createLabels<T extends Record<string, string>>(): T {
   });
 }
 
-const caseLookupLabels = createLabels<Record<string, string>>();
-const evidenceLabels = createLabels<Record<string, string>>();
-const governanceLabels = createLabels<Record<string, string>>();
+const caseLookupLabels = createLabels<FinancialCaseLookupLabels>();
+const evidenceLabels = createLabels<EvidencePackReviewLabels>();
+const governanceLabels = createLabels<ArtifactGovernanceLabels>();
 
-const financialCaseLookupResultFixture = {
+const financialCaseLookupResultFixture: FinancialCaseLookupResult = {
   query: 'trace-01',
   normalizedQuery: 'trace-01',
   totalCaseCount: 1,
@@ -50,7 +57,7 @@ const financialCaseLookupResultFixture = {
       reason: '2 traces matched this identifier',
     },
   ],
-} as const;
+};
 
 const evidencePackFixture = {
   traceId: 'trace-01',
