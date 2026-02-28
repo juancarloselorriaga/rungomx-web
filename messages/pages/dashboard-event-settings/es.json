@@ -4,6 +4,59 @@
   "wizard": {
     "title": "Termina la configuración de tu evento",
     "description": "Agrega tu primera distancia y publica cuando estés listo para compartir.",
+    "stepZeroLabel": "Paso 0",
+    "stepZeroDescription": "Elige primero cómo quieres configurar este evento. Puedes cambiar de ruta en cualquier momento.",
+    "pending": "Pendiente",
+    "switchPath": "Cambiar ruta",
+    "path": {
+      "ai": "Configuración con IA",
+      "manual": "Configuración manual"
+    },
+    "pathHint": {
+      "ai": "Ruta IA seleccionada. Usa el asistente para proponer cambios y continúa editando manualmente cuando lo necesites.",
+      "manual": "Ruta manual seleccionada. Completa cada sección directamente y cambia a IA cuando quieras."
+    },
+    "progress": {
+      "required": "Pasos requeridos",
+      "percent": "Avance",
+      "publishBlockers": "Bloqueos de publicación"
+    },
+    "registry": {
+      "choosePath": "Elegir ruta de configuración",
+      "eventDetails": "Detalles del evento",
+      "distances": "Distancias",
+      "pricing": "Precios",
+      "faq": "Preguntas frecuentes",
+      "waivers": "Exenciones",
+      "questions": "Preguntas",
+      "policies": "Políticas",
+      "website": "Sitio web",
+      "addOns": "Complementos",
+      "publish": "Preparación para publicar"
+    },
+    "issues": {
+      "missingEventDate": "Agrega una fecha de inicio del evento para continuar.",
+      "missingEventLocation": "Agrega una ubicación del evento (ciudad/estado o ubicación en mapa).",
+      "missingDistance": "Agrega al menos una distancia para esta edición.",
+      "publishMissingDistance": "Publicación bloqueada: agrega al menos una distancia antes de publicar.",
+      "publishMissingPricing": "Publicación bloqueada: cada distancia necesita al menos un nivel de precio.",
+      "recommendFaq": "Recomendado: agrega al menos una FAQ para responder dudas frecuentes.",
+      "recommendWaivers": "Recomendado: agrega una exención para que los participantes acepten términos.",
+      "recommendQuestions": "Recomendado: agrega preguntas de registro para logística y preferencias.",
+      "recommendWebsite": "Recomendado: agrega contenido del sitio para mostrar detalles del evento.",
+      "recommendAddOns": "Recomendado: configura complementos si planeas ofrecer extras.",
+      "recommendPolicies": "Recomendado: revisa políticas de reembolso/transferencia/diferimiento antes de publicar."
+    },
+    "adaptive": {
+      "title": "Siguientes pasos adaptativos",
+      "description": "Guía priorizada según el estado actual de configuración.",
+      "goToStep": "Ir al paso: {step}",
+      "severity": {
+        "blocker": "Bloqueo",
+        "required": "Requerido",
+        "optional": "Recomendado"
+      }
+    },
     "assistantHint": "¿Necesitas ayuda con la configuración? Usa el asistente para proponer cambios.",
     "assistantAction": "Abrir asistente de configuración",
     "steps": {
@@ -29,13 +82,46 @@
       "addDistance": "Agregar distancia: {label}{value} por {price}",
       "updateDistancePrice": "Actualizar precio de distancia a {price}",
       "addTier": "Agregar categoría: {label} por {price}",
+      "addFaq": "Agregar FAQ: {question}",
+      "addWaiver": "Agregar exención: {title}",
+      "addQuestion": "Agregar pregunta de registro: {prompt}",
+      "addAddOn": "Agregar complemento: {title} ({price})",
+      "appendWebsite": "Anexar sección del sitio: {section}",
+      "appendPolicy": "Anexar texto de política: {policy}",
       "defaultTier": "Categoría de precios",
+      "sections": {
+        "overview": "Resumen",
+        "course": "Ruta",
+        "schedule": "Horario"
+      },
+      "policies": {
+        "refund": "Política de reembolso",
+        "transfer": "Política de transferencia",
+        "deferral": "Política de diferimiento"
+      },
       "fields": {
         "date": "fecha",
         "location": "ubicación",
         "label": "etiqueta",
         "details": "detalles"
       }
+    },
+    "outputs": {
+      "title": "Salida de markdown propuesta",
+      "domain": {
+        "faq": "Preguntas frecuentes",
+        "waiver": "Exención",
+        "website": "Sitio web",
+        "question": "Pregunta",
+        "add_on": "Complemento",
+        "policy": "Política",
+        "summary": "Resumen"
+      }
+    },
+    "routing": {
+      "checklistTitle": "Checklist de campos faltantes",
+      "intentTitle": "Siguientes intenciones sugeridas",
+      "goToStep": "Ir al paso"
     },
     "placeholder": "Cuéntame de tu evento (fecha, ciudad, distancias, precios)...",
     "empty": {
@@ -51,6 +137,11 @@
       "title": "Error del asistente",
       "proRequired": "El asistente de configuración es una función Pro.",
       "disabled": "El asistente de configuración no está disponible temporalmente.",
+      "rateLimited": "Demasiadas solicitudes al asistente. Espera un momento e inténtalo de nuevo.",
+      "safety": {
+        "promptInjection": "Tu solicitud activó un bloqueo de seguridad por patrones de prompt injection.",
+        "policyViolation": "Tu solicitud activó un bloqueo de seguridad por política de contenido."
+      },
       "partialApplied": "Se aplicaron algunos cambios, pero ocurrió un error. Revisa la configuración del evento.",
       "failed": "No se pudieron aplicar los cambios. Intenta de nuevo."
     }

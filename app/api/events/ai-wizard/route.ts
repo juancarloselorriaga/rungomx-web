@@ -4,12 +4,16 @@ import { openai } from '@ai-sdk/openai';
 import { z } from 'zod';
 
 import { requireAuthenticatedUser } from '@/lib/auth/guards';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
+import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import { buildEventAiWizardSystemPrompt } from '@/lib/events/ai-wizard/prompt';
 import { eventAiWizardPatchSchema } from '@/lib/events/ai-wizard/schemas';
+import { evaluateAiWizardTextSafety, extractLatestUserText } from '@/lib/events/ai-wizard/safety';
 import type { EventAiWizardUIMessage } from '@/lib/events/ai-wizard/ui-types';
+import { evaluateEventWizardCompleteness } from '@/lib/events/wizard/orchestrator';
 
 export const maxDuration = 30;
 
@@ -62,6 +66,60 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
+  const streamRateLimit = await checkRateLimit(`${authContext.user.id}:${editionId}`, 'user', {
+    action: 'event_ai_wizard_stream',
+    maxRequests: 30,
+    windowMs: 5 * 60 * 1000,
+  });
+
+  if (!streamRateLimit.allowed) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'blocked',
+      meta: {
+        blockCategory: 'rate_limit',
+        endpoint: 'stream',
+        editionId,
+        resetAt: streamRateLimit.resetAt.toISOString(),
+      },
+    });
+    return NextResponse.json(
+      {
+        code: 'RATE_LIMITED',
+        category: 'rate_limit',
+        endpoint: 'stream',
+        resetAt: streamRateLimit.resetAt.toISOString(),
+      },
+      { status: 429 },
+    );
+  }
+
+  const latestUserText = extractLatestUserText(messages);
+  const safetyDecision = evaluateAiWizardTextSafety(latestUserText);
+  if (safetyDecision.blocked) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'blocked',
+      meta: {
+        blockCategory: safetyDecision.category,
+        blockReason: safetyDecision.reason,
+        endpoint: 'stream',
+        editionId,
+      },
+    });
+    return NextResponse.json(
+      {
+        code: 'SAFETY_BLOCKED',
+        category: safetyDecision.category,
+        reason: safetyDecision.reason,
+        endpoint: 'stream',
+      },
+      { status: 400 },
+    );
+  }
+
   const modelName = process.env.EVENT_AI_WIZARD_MODEL || 'gpt-4o';
 
   const stream = createUIMessageStream<EventAiWizardUIMessage>({
@@ -73,7 +131,10 @@ export async function POST(req: Request) {
         transient: true,
       });
 
-      const system = buildEventAiWizardSystemPrompt(event);
+      const completeness = evaluateEventWizardCompleteness(event, null);
+      const system = buildEventAiWizardSystemPrompt(event, {
+        checklist: completeness.prioritizedChecklist,
+      });
       const modelMessages = await convertToModelMessages(messages as EventAiWizardUIMessage[]);
 
       const result = streamText({

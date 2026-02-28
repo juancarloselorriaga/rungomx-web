@@ -4,6 +4,59 @@
   "wizard": {
     "title": "Finish setting up your event",
     "description": "Add your first distance, then publish when you are ready to share.",
+    "stepZeroLabel": "Step 0",
+    "stepZeroDescription": "Choose how you want to set up this event first. You can switch paths at any time.",
+    "pending": "Pending",
+    "switchPath": "Switch path",
+    "path": {
+      "ai": "AI Setup",
+      "manual": "Manual Setup"
+    },
+    "pathHint": {
+      "ai": "AI path selected. Use the assistant to draft updates, then continue editing manually as needed.",
+      "manual": "Manual path selected. Fill each section directly and switch to AI anytime."
+    },
+    "progress": {
+      "required": "Required steps",
+      "percent": "Completion",
+      "publishBlockers": "Publish blockers"
+    },
+    "registry": {
+      "choosePath": "Choose setup path",
+      "eventDetails": "Event details",
+      "distances": "Distances",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "waivers": "Waivers",
+      "questions": "Questions",
+      "policies": "Policies",
+      "website": "Website",
+      "addOns": "Add-ons",
+      "publish": "Publish readiness"
+    },
+    "issues": {
+      "missingEventDate": "Add an event start date to keep setup on track.",
+      "missingEventLocation": "Add an event location (city/state or map location).",
+      "missingDistance": "Add at least one distance for this edition.",
+      "publishMissingDistance": "Publish blocked: add at least one distance before publishing.",
+      "publishMissingPricing": "Publish blocked: each distance needs at least one price tier.",
+      "recommendFaq": "Recommended: add at least one FAQ item to answer common participant questions.",
+      "recommendWaivers": "Recommended: add a waiver so participants can acknowledge event terms.",
+      "recommendQuestions": "Recommended: add registration questions for logistics and participant preferences.",
+      "recommendWebsite": "Recommended: add website content so participants can review event details.",
+      "recommendAddOns": "Recommended: configure add-ons if you plan to offer extras.",
+      "recommendPolicies": "Recommended: review refund/transfer/deferral policies before publishing."
+    },
+    "adaptive": {
+      "title": "Adaptive next steps",
+      "description": "Prioritized guidance from your current setup state.",
+      "goToStep": "Go to step: {step}",
+      "severity": {
+        "blocker": "Blocker",
+        "required": "Required",
+        "optional": "Recommended"
+      }
+    },
     "assistantHint": "Need help with setup? Use the assistant to draft suggested changes.",
     "assistantAction": "Open setup assistant",
     "steps": {
@@ -29,13 +82,46 @@
       "addDistance": "Add distance: {label}{value} at {price}",
       "updateDistancePrice": "Update distance price to {price}",
       "addTier": "Add tier: {label} at {price}",
+      "addFaq": "Add FAQ item: {question}",
+      "addWaiver": "Add waiver: {title}",
+      "addQuestion": "Add registration question: {prompt}",
+      "addAddOn": "Add add-on: {title} ({price})",
+      "appendWebsite": "Append website section: {section}",
+      "appendPolicy": "Append policy text: {policy}",
       "defaultTier": "Pricing tier",
+      "sections": {
+        "overview": "Overview",
+        "course": "Course",
+        "schedule": "Schedule"
+      },
+      "policies": {
+        "refund": "Refund policy",
+        "transfer": "Transfer policy",
+        "deferral": "Deferral policy"
+      },
       "fields": {
         "date": "date",
         "location": "location",
         "label": "label",
         "details": "details"
       }
+    },
+    "outputs": {
+      "title": "Drafted markdown output",
+      "domain": {
+        "faq": "FAQ",
+        "waiver": "Waiver",
+        "website": "Website",
+        "question": "Question",
+        "add_on": "Add-on",
+        "policy": "Policy",
+        "summary": "Summary"
+      }
+    },
+    "routing": {
+      "checklistTitle": "Missing fields checklist",
+      "intentTitle": "Suggested next intents",
+      "goToStep": "Go to step"
     },
     "placeholder": "Tell me about your event (date, city, distances, pricing)...",
     "empty": {
@@ -51,6 +137,11 @@
       "title": "Assistant error",
       "proRequired": "Setup assistant is a Pro feature.",
       "disabled": "Setup assistant is temporarily unavailable.",
+      "rateLimited": "Too many assistant requests. Please wait a moment and try again.",
+      "safety": {
+        "promptInjection": "Your request triggered a safety guard for prompt-injection patterns.",
+        "policyViolation": "Your request triggered a content policy safety block."
+      },
       "partialApplied": "Some changes were applied, but something failed. Please review your event settings.",
       "failed": "Could not apply changes. Please try again."
     }

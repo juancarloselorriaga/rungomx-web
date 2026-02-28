@@ -1,0 +1,80 @@
+export type EventCreationPath = 'ai' | 'manual';
+
+export type EventWizardRegistryLabelKey =
+  | 'wizard.registry.choosePath'
+  | 'wizard.registry.eventDetails'
+  | 'wizard.registry.distances'
+  | 'wizard.registry.pricing'
+  | 'wizard.registry.faq'
+  | 'wizard.registry.waivers'
+  | 'wizard.registry.questions'
+  | 'wizard.registry.policies'
+  | 'wizard.registry.website'
+  | 'wizard.registry.addOns'
+  | 'wizard.registry.publish';
+
+export type EventWizardIssueLabelKey =
+  | 'wizard.issues.missingEventDate'
+  | 'wizard.issues.missingEventLocation'
+  | 'wizard.issues.missingDistance'
+  | 'wizard.issues.publishMissingDistance'
+  | 'wizard.issues.publishMissingPricing'
+  | 'wizard.issues.recommendFaq'
+  | 'wizard.issues.recommendWaivers'
+  | 'wizard.issues.recommendQuestions'
+  | 'wizard.issues.recommendWebsite'
+  | 'wizard.issues.recommendAddOns'
+  | 'wizard.issues.recommendPolicies';
+
+export type EventWizardStepId =
+  | 'choose_path'
+  | 'event_details'
+  | 'distances'
+  | 'pricing'
+  | 'faq'
+  | 'waivers'
+  | 'questions'
+  | 'policies'
+  | 'website'
+  | 'add_ons'
+  | 'publish';
+
+export type EventWizardStep = {
+  id: EventWizardStepId;
+  labelKey: EventWizardRegistryLabelKey;
+  href: string;
+  required: boolean;
+  paths: EventCreationPath[];
+  reuseTarget: string;
+};
+
+export type EventWizardIssue = {
+  id: string;
+  stepId: EventWizardStepId;
+  labelKey: EventWizardIssueLabelKey;
+  href: string;
+  code: string;
+  severity: 'required' | 'blocker' | 'optional';
+};
+
+export type EventWizardCompleteness = {
+  missingRequired: EventWizardIssue[];
+  publishBlockers: EventWizardIssue[];
+  optionalRecommendations: EventWizardIssue[];
+  prioritizedChecklist: EventWizardIssue[];
+  completionByStepId: Record<EventWizardStepId, boolean>;
+  progress: {
+    completedRequired: number;
+    totalRequired: number;
+    percent: number;
+  };
+};
+
+export type EventWizardStepModule = {
+  id: EventWizardStepId;
+  labelKey: EventWizardRegistryLabelKey;
+  required: boolean;
+  paths: EventCreationPath[];
+  routeSuffix: '' | '/settings' | '/pricing' | '/faq' | '/waivers' | '/questions' | '/policies' | '/website' | '/add-ons';
+  reuseTarget: string;
+};

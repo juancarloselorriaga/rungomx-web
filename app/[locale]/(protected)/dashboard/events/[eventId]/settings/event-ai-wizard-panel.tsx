@@ -9,16 +9,40 @@ import { Sparkles, Square, Send, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { EventAiWizardPatch, EventAiWizardOp } from '@/lib/events/ai-wizard/schemas';
-import type { EventAiWizardUIMessage, EventAiWizardDataTypes } from '@/lib/events/ai-wizard/ui-types';
 import { useRouter } from '@/i18n/navigation';
+import type {
+  EventAiWizardOp,
+  EventAiWizardPatch,
+  EventAiWizardMarkdownOutput,
+  EventAiWizardMissingFieldItem,
+  EventAiWizardIntentRoute,
+} from '@/lib/events/ai-wizard/schemas';
+import type { EventAiWizardDataTypes, EventAiWizardUIMessage } from '@/lib/events/ai-wizard/ui-types';
+import {
+  getWizardStepNavigationTarget,
+  type EventWizardStepId,
+} from '@/lib/events/wizard/orchestrator';
+import { cn } from '@/lib/utils';
 
 type EventAiWizardPanelProps = {
   editionId: string;
 };
 
 type UnknownUITools = Record<string, { input: unknown; output: unknown | undefined }>;
+
+const STEP_IDS: EventWizardStepId[] = [
+  'choose_path',
+  'event_details',
+  'distances',
+  'pricing',
+  'faq',
+  'waivers',
+  'questions',
+  'policies',
+  'website',
+  'add_ons',
+  'publish',
+];
 
 function isEventPatchPart(
   part: UIMessagePart<EventAiWizardDataTypes, UnknownUITools>,
@@ -29,6 +53,136 @@ function isEventPatchPart(
 function resolvePriceCents(data: { priceCents?: number; price?: number }): number {
   if (data.priceCents !== undefined) return data.priceCents;
   return Math.round((data.price ?? 0) * 100);
+}
+
+function formatCurrency(locale: string, valueCents: number, currency = 'MXN'): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 2,
+  }).format(valueCents / 100);
+}
+
+function isEventWizardStepId(value: string): value is EventWizardStepId {
+  return STEP_IDS.includes(value as EventWizardStepId);
+}
+
+function navigateToWizardStep(
+  editionId: string,
+  stepId: EventWizardStepId,
+  router: ReturnType<typeof useRouter>,
+) {
+  const target = getWizardStepNavigationTarget(editionId, stepId);
+  if (target.hardNavigation) {
+    window.location.assign(target.href);
+    return;
+  }
+  router.push({ pathname: target.pathname, params: target.params });
+}
+
+function MarkdownOutputsList({
+  outputs,
+}: {
+  outputs: EventAiWizardMarkdownOutput[];
+}) {
+  const t = useTranslations('pages.dashboardEventSettings.assistant');
+
+  if (!outputs.length) return null;
+
+  return (
+    <div className="mt-3 space-y-2 rounded-md border border-border/70 bg-background/70 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {t('outputs.title')}
+      </p>
+      <ul className="space-y-2">
+        {outputs.map((output, index) => (
+          <li key={`${output.domain}-${index}`} className="rounded border border-border/60 bg-background p-2">
+            <p className="text-xs font-medium text-foreground">
+              {output.title ?? t(`outputs.domain.${output.domain}`)}
+            </p>
+            <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-xs text-muted-foreground">
+              {output.contentMarkdown}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function RoutingCard({
+  checklist,
+  intentRouting,
+  onNavigateToStep,
+}: {
+  checklist: EventAiWizardMissingFieldItem[];
+  intentRouting: EventAiWizardIntentRoute[];
+  onNavigateToStep: (stepId: EventWizardStepId) => void;
+}) {
+  const t = useTranslations('pages.dashboardEventSettings.assistant');
+
+  if (!checklist.length && !intentRouting.length) return null;
+
+  return (
+    <div className="mt-3 space-y-3 rounded-md border border-primary/20 bg-primary/5 p-3">
+      {checklist.length ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('routing.checklistTitle')}
+          </p>
+          <div className="space-y-2">
+            {checklist.map((item, index) => (
+              <button
+                key={`${item.code}-${item.stepId}-${index}`}
+                type="button"
+                className={cn(
+                  'w-full rounded border px-2 py-1.5 text-left text-xs transition',
+                  item.severity === 'blocker'
+                    ? 'border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10'
+                    : item.severity === 'required'
+                      ? 'border-amber-300/60 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                      : 'border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10',
+                )}
+                onClick={() => onNavigateToStep(item.stepId)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {intentRouting.length ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('routing.intentTitle')}
+          </p>
+          <ul className="space-y-2">
+            {intentRouting.map((item, index) => (
+              <li
+                key={`${item.intent}-${item.stepId}-${index}`}
+                className="rounded border border-border/70 bg-background/80 px-2 py-1.5 text-xs"
+              >
+                <p className="font-medium text-foreground">{item.intent}</p>
+                {item.rationale ? (
+                  <p className="mt-1 text-muted-foreground">{item.rationale}</p>
+                ) : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="mt-1 h-7 px-2 text-xs"
+                  onClick={() => onNavigateToStep(item.stepId)}
+                >
+                  {t('routing.goToStep')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 function PatchCard({
@@ -65,12 +219,7 @@ function PatchCard({
       case 'create_distance': {
         const unit = op.data.distanceUnit ?? 'km';
         const value = op.data.distanceValue ? `${op.data.distanceValue}${unit}` : '';
-        const cents = resolvePriceCents(op.data);
-        const money = new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: 'MXN',
-          maximumFractionDigits: 2,
-        }).format(cents / 100);
+        const money = formatCurrency(locale, resolvePriceCents(op.data), 'MXN');
         return t('ops.addDistance', {
           label: op.data.label,
           value: value ? ` (${value})` : '',
@@ -78,26 +227,44 @@ function PatchCard({
         });
       }
       case 'update_distance_price': {
-        const cents = resolvePriceCents(op.data);
-        const money = new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: 'MXN',
-          maximumFractionDigits: 2,
-        }).format(cents / 100);
+        const money = formatCurrency(locale, resolvePriceCents(op.data), 'MXN');
         return t('ops.updateDistancePrice', { price: money });
       }
       case 'create_pricing_tier': {
-        const cents = resolvePriceCents(op.data);
-        const money = new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: op.data.currency ?? 'MXN',
-          maximumFractionDigits: 2,
-        }).format(cents / 100);
+        const money = formatCurrency(locale, resolvePriceCents(op.data), op.data.currency ?? 'MXN');
         const label = op.data.label ?? t('ops.defaultTier');
         return t('ops.addTier', { label, price: money });
       }
+      case 'create_faq_item':
+        return t('ops.addFaq', { question: op.data.question });
+      case 'create_waiver':
+        return t('ops.addWaiver', { title: op.data.title });
+      case 'create_question':
+        return t('ops.addQuestion', { prompt: op.data.prompt });
+      case 'create_add_on': {
+        const money = formatCurrency(
+          locale,
+          resolvePriceCents({
+            priceCents: op.data.optionPriceCents,
+            price: op.data.optionPrice,
+          }),
+          'MXN',
+        );
+        return t('ops.addAddOn', { title: op.data.title, price: money });
+      }
+      case 'append_website_section_markdown':
+        return t('ops.appendWebsite', { section: t(`ops.sections.${op.data.section}`) });
+      case 'append_policy_markdown':
+        return t('ops.appendPolicy', { policy: t(`ops.policies.${op.data.policy}`) });
     }
   }
+
+  const checklist = (patch.missingFieldsChecklist ?? []).filter((item) =>
+    isEventWizardStepId(item.stepId),
+  );
+  const intentRouting = (patch.intentRouting ?? []).filter((item) =>
+    isEventWizardStepId(item.stepId),
+  );
 
   async function applyPatch() {
     if (isApplying || applied) return;
@@ -111,7 +278,7 @@ function PatchCard({
 
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as
-          | { code?: string; applied?: unknown }
+          | { code?: string; category?: string; applied?: unknown }
           | null;
         if (data?.code === 'PRO_REQUIRED') {
           toast.error(t('errors.proRequired'));
@@ -119,6 +286,18 @@ function PatchCard({
         }
         if (data?.code === 'FEATURE_DISABLED') {
           toast.error(t('errors.disabled'));
+          return;
+        }
+        if (data?.code === 'RATE_LIMITED') {
+          toast.error(t('errors.rateLimited'));
+          return;
+        }
+        if (data?.code === 'SAFETY_BLOCKED') {
+          if (data.category === 'prompt_injection') {
+            toast.error(t('errors.safety.promptInjection'));
+            return;
+          }
+          toast.error(t('errors.safety.policyViolation'));
           return;
         }
         if (Array.isArray(data?.applied) && data.applied.length > 0) {
@@ -167,6 +346,13 @@ function PatchCard({
           </li>
         ))}
       </ul>
+
+      <MarkdownOutputsList outputs={patch.markdownOutputs ?? []} />
+      <RoutingCard
+        checklist={checklist}
+        intentRouting={intentRouting}
+        onNavigateToStep={(stepId) => navigateToWizardStep(editionId, stepId, router)}
+      />
     </article>
   );
 }
@@ -182,25 +368,21 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
 
   const { messages, sendMessage, status, stop, error: chatError, clearError } =
     useChat<EventAiWizardUIMessage>({
-    transport: new DefaultChatTransport({
-      api: '/api/events/ai-wizard',
-      body: { editionId },
-    }),
-    onData: (part) => {
-      if (part.type === 'data-notification') {
-        // transient server-side notifications
-        return;
-      }
-    },
-    onFinish: () => {
-      scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-    },
-  });
+      transport: new DefaultChatTransport({
+        api: '/api/events/ai-wizard',
+        body: { editionId },
+      }),
+      onData: (part) => {
+        if (part.type === 'data-notification') {
+          return;
+        }
+      },
+      onFinish: () => {
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+      },
+    });
 
-  const renderedMessages = useMemo(() => {
-    return messages.filter((m) => m.role !== 'system');
-  }, [messages]);
-
+  const renderedMessages = useMemo(() => messages.filter((message) => message.role !== 'system'), [messages]);
   const isBusy = status === 'submitted' || status === 'streaming';
 
   function handleSend() {
@@ -262,8 +444,7 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
           ) : (
             <div className="space-y-3">
               {renderedMessages.map((message) => {
-                const roleLabel =
-                  message.role === 'user' ? t('messages.user') : t('messages.assistant');
+                const roleLabel = message.role === 'user' ? t('messages.user') : t('messages.assistant');
                 return (
                   <div key={message.id} className="space-y-2">
                     <div
@@ -277,28 +458,26 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
                     >
                       <p className="sr-only">{roleLabel}</p>
                       {message.parts
-                        .filter((p) => p.type === 'text')
-                        .map((p, idx) => (
-                          <p key={`${message.id}-text-${idx}`}>{(p as { text: string }).text}</p>
+                        .filter((part) => part.type === 'text')
+                        .map((part, idx) => (
+                          <p key={`${message.id}-text-${idx}`}>{(part as { text: string }).text}</p>
                         ))}
                     </div>
 
                     {message.role === 'assistant'
                       ? message.parts
                           .filter(isEventPatchPart)
-                          .map((p, idx) => {
-                            const patchId = p.id ?? `${message.id}-patch-${idx}`;
+                          .map((part, idx) => {
+                            const patchId = part.id ?? `${message.id}-patch-${idx}`;
                             return (
                               <PatchCard
                                 key={patchId}
                                 editionId={editionId}
                                 patchId={patchId}
-                                patch={p.data}
+                                patch={part.data}
                                 locale={locale}
                                 applied={appliedPatchIds.has(patchId)}
-                                onApplied={() =>
-                                  setAppliedPatchIds((prev) => new Set([...prev, patchId]))
-                                }
+                                onApplied={() => setAppliedPatchIds((prev) => new Set([...prev, patchId]))}
                               />
                             );
                           })
@@ -323,7 +502,7 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
             id={composerId}
             aria-describedby={composerHintId}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(event) => setInput(event.target.value)}
             placeholder={t('placeholder')}
             disabled={isBusy}
             rows={4}
@@ -332,9 +511,9 @@ export function EventAiWizardPanel({ editionId }: EventAiWizardPanelProps) {
               'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
               'disabled:opacity-60',
             )}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 handleSend();
               }
             }}

@@ -30,6 +30,14 @@ import {
 } from '@/lib/events/actions';
 import { TERRAIN_TYPES, EVENT_VISIBILITY, type TerrainType } from '@/lib/events/constants';
 import {
+  evaluateEventWizardCompleteness,
+  getEventWizardSteps,
+  getWizardStepNavigationTarget,
+  resolveManualWizardStepTarget,
+  type EventCreationPath,
+  type EventWizardStepId,
+} from '@/lib/events/wizard/orchestrator';
+import {
   EVENT_MEDIA_BLOB_PREFIX,
   EVENT_MEDIA_IMAGE_TYPES,
   EVENT_MEDIA_MAX_FILE_SIZE,
@@ -56,7 +64,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { upload } from '@vercel/blob/client';
 import { toast } from 'sonner';
@@ -126,6 +134,32 @@ export function EventSettingsForm({
   const [isUpdatingCapacity, setIsUpdatingCapacity] = useState(false);
   const maxHeroImageSizeMb = Math.floor(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
   const tHero = useTranslations('pages.dashboardEventSettings.heroImage');
+  const wizardSessionStorageKey = `event-wizard:path:${event.id}`;
+  const [creationPath, setCreationPath] = useState<EventCreationPath | null>(null);
+
+  useEffect(() => {
+    if (!wizardMode || typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem(wizardSessionStorageKey);
+    if (raw === 'ai' || raw === 'manual') {
+      setCreationPath(raw);
+    }
+  }, [wizardMode, wizardSessionStorageKey]);
+
+  useEffect(() => {
+    if (!wizardMode || typeof window === 'undefined') return;
+    if (!creationPath) {
+      window.sessionStorage.removeItem(wizardSessionStorageKey);
+      return;
+    }
+    window.sessionStorage.setItem(wizardSessionStorageKey, creationPath);
+  }, [wizardMode, creationPath, wizardSessionStorageKey]);
+
+  const wizardSteps = useMemo(() => getEventWizardSteps(event.id), [event.id]);
+  const wizardCompleteness = useMemo(
+    () => evaluateEventWizardCompleteness(event, creationPath),
+    [event, creationPath],
+  );
+  const isWizardLockedOnStep0 = wizardMode && creationPath === null;
 
   // Event details form
   const detailsForm = useForm<{
@@ -489,40 +523,167 @@ export function EventSettingsForm({
     toast.success(tCapacity('success'));
   }
 
+  function handleCreationPathChange(nextPath: EventCreationPath) {
+    setCreationPath(nextPath);
+  }
+
+  function handleOpenAssistant() {
+    window.dispatchEvent(new Event(EVENT_AI_WIZARD_OPEN_EVENT));
+  }
+
+  function goToWizardStep(stepId: EventWizardStepId) {
+    const resolvedStepId = resolveManualWizardStepTarget(
+      wizardSteps,
+      wizardCompleteness.completionByStepId,
+      creationPath,
+      stepId,
+    );
+    const target = getWizardStepNavigationTarget(event.id, resolvedStepId);
+    if (target.hardNavigation) {
+      window.location.assign(target.href);
+      return;
+    }
+    router.push({ pathname: target.pathname, params: target.params });
+  }
+
   return (
     <div className="space-y-8">
       {wizardMode && (
         <section className="rounded-lg border border-primary/20 bg-primary/5 p-4">
           <p className="font-semibold text-sm">{t('wizard.title')}</p>
           <p className="text-sm text-muted-foreground">{t('wizard.description')}</p>
-          <div className="mt-3 flex flex-col gap-1 text-sm">
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              <span>{t('wizard.steps.distance')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Check className="h-4 w-4 text-primary" />
-              <span>{t('wizard.steps.publish')}</span>
-            </div>
-          </div>
-          {assistantEntryEnabled ? (
-            <div className="mt-4 flex flex-col gap-2 border-t border-primary/20 pt-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
-                <span>{t('assistant.description')}</span>
-              </div>
+          <div className="mt-3 rounded-md border border-primary/20 bg-background/70 p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('wizard.stepZeroLabel')}
+            </p>
+            <p className="mt-1 text-sm">{t('wizard.stepZeroDescription')}</p>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
               <Button
                 type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => window.dispatchEvent(new Event(EVENT_AI_WIZARD_OPEN_EVENT))}
+                variant={creationPath === 'ai' ? 'default' : 'outline'}
+                onClick={() => handleCreationPathChange('ai')}
+                className="justify-start"
               >
-                {t('assistant.title')}
+                <Sparkles className="mr-2 h-4 w-4" />
+                {t('wizard.path.ai')}
               </Button>
+              <Button
+                type="button"
+                variant={creationPath === 'manual' ? 'default' : 'outline'}
+                onClick={() => handleCreationPathChange('manual')}
+                className="justify-start"
+              >
+                <Settings2 className="mr-2 h-4 w-4" />
+                {t('wizard.path.manual')}
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-md border bg-background/80 p-3">
+              <p className="text-xs text-muted-foreground">{t('wizard.progress.required')}</p>
+              <p className="text-lg font-semibold">
+                {wizardCompleteness.progress.completedRequired}/{wizardCompleteness.progress.totalRequired}
+              </p>
+            </div>
+            <div className="rounded-md border bg-background/80 p-3">
+              <p className="text-xs text-muted-foreground">{t('wizard.progress.percent')}</p>
+              <p className="text-lg font-semibold">{wizardCompleteness.progress.percent}%</p>
+            </div>
+            <div className="rounded-md border bg-background/80 p-3">
+              <p className="text-xs text-muted-foreground">{t('wizard.progress.publishBlockers')}</p>
+              <p className="text-lg font-semibold">{wizardCompleteness.publishBlockers.length}</p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2 rounded-md border border-primary/20 bg-background/70 p-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('wizard.adaptive.title')}
+            </p>
+            <p className="text-xs text-muted-foreground">{t('wizard.adaptive.description')}</p>
+            <div className="grid gap-2">
+              {wizardCompleteness.prioritizedChecklist.map((issue) => {
+                const issueStep = wizardSteps.find((step) => step.id === issue.stepId);
+                return (
+                  <button
+                    key={issue.id}
+                    type="button"
+                    className={cn(
+                      'rounded-md border px-3 py-2 text-left text-sm transition',
+                      issue.severity === 'blocker'
+                        ? 'border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10'
+                        : issue.severity === 'required'
+                          ? 'border-amber-300/60 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                          : 'border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10',
+                    )}
+                    onClick={() => goToWizardStep(issue.stepId)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span>{t(issue.labelKey)}</span>
+                      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                        {t(`wizard.adaptive.severity.${issue.severity}`)}
+                      </span>
+                    </div>
+                    {issueStep ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t('wizard.adaptive.goToStep', { step: t(issueStep.labelKey) })}
+                      </p>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-1 rounded-md border bg-background/70 p-3 text-sm">
+            {wizardSteps.map((step) => (
+              <button
+                key={step.id}
+                type="button"
+                className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left transition hover:bg-muted"
+                onClick={() => goToWizardStep(step.id)}
+              >
+                <span>{t(step.labelKey)}</span>
+                {wizardCompleteness.completionByStepId[step.id] ? (
+                  <Check className="h-4 w-4 text-primary" />
+                ) : (
+                  <span className="text-xs text-muted-foreground">{t('wizard.pending')}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {creationPath !== null ? (
+            <div className="mt-4 flex flex-col gap-2 border-t border-primary/20 pt-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                {creationPath === 'ai' ? (
+                  <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
+                ) : (
+                  <Settings2 className="mt-0.5 h-4 w-4 text-primary" />
+                )}
+                <span>{t(`wizard.pathHint.${creationPath}`)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {creationPath === 'ai' && assistantEntryEnabled ? (
+                  <Button type="button" size="sm" variant="outline" onClick={handleOpenAssistant}>
+                    {t('assistant.title')}
+                  </Button>
+                ) : null}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => handleCreationPathChange(creationPath === 'ai' ? 'manual' : 'ai')}
+                >
+                  {t('wizard.switchPath')}
+                </Button>
+              </div>
             </div>
           ) : null}
         </section>
       )}
+      {!isWizardLockedOnStep0 && (
+        <>
       {/* Visibility Section */}
       <section className="rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -998,6 +1159,8 @@ export function EventSettingsForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+        </>
+      )}
     </div>
   );
 }
@@ -1077,6 +1240,7 @@ function AddDistanceForm({
       sortOrder: 0,
       priceCents: Math.round(Number(formData.get('price')) * 100),
       currency: 'MXN',
+      hasPricingTier: true,
       registrationCount: 0,
     });
   }

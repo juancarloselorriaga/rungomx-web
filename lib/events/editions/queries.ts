@@ -97,6 +97,7 @@ export type EventDistanceDetail = {
   sortOrder: number;
   priceCents: number;
   currency: string;
+  hasPricingTier?: boolean;
   registrationCount: number;
 };
 
@@ -456,6 +457,7 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
       sortOrder: d.sortOrder,
       priceCents: d.pricingTiers[0]?.priceCents ?? 0,
       currency: d.pricingTiers[0]?.currency ?? 'MXN',
+      hasPricingTier: d.pricingTiers.length > 0,
       registrationCount: registrationCountMap.get(d.id) ?? 0,
     })),
     faqItems: edition.faqItems.map((f) => ({

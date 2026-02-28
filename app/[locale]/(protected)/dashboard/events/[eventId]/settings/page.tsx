@@ -86,6 +86,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
             description={t('assistant.description')}
             defaultOpen={assistantRequested}
             locked={!assistantGateForUi.allowed}
+            hideTrigger
           >
             {assistantGateForUi.allowed ? (
               <EventAiWizardPanel editionId={eventId} />

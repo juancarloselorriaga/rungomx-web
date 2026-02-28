@@ -20,6 +20,7 @@ type EventAiWizardDrawerProps = {
   description: string;
   defaultOpen?: boolean;
   locked?: boolean;
+  hideTrigger?: boolean;
   children: React.ReactNode;
 };
 
@@ -28,6 +29,7 @@ export function EventAiWizardDrawer({
   description,
   defaultOpen,
   locked,
+  hideTrigger = false,
   children,
 }: EventAiWizardDrawerProps) {
   // This prop is used as initial state only for first render/hydration.
@@ -44,19 +46,21 @@ export function EventAiWizardDrawer({
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          aria-expanded={open}
-          aria-controls={contentId}
-          className="gap-2 shadow-sm"
-        >
-          {locked ? <Lock className="size-4" /> : <Sparkles className="size-4" />}
-          <span className="truncate">{triggerLabel}</span>
-        </Button>
-      </SheetTrigger>
+      {!hideTrigger ? (
+        <SheetTrigger asChild>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            aria-expanded={open}
+            aria-controls={contentId}
+            className="gap-2 shadow-sm"
+          >
+            {locked ? <Lock className="size-4" /> : <Sparkles className="size-4" />}
+            <span className="truncate">{triggerLabel}</span>
+          </Button>
+        </SheetTrigger>
+      ) : null}
       <SheetContent
         id={contentId}
         side="right"

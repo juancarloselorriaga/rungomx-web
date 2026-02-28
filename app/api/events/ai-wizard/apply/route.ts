@@ -4,15 +4,39 @@ import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { eventDistances } from '@/db/schema';
 import { requireAuthenticatedUser } from '@/lib/auth/guards';
-import { updateEventEdition, createDistance, updateDistancePrice } from '@/lib/events/actions';
+import {
+  createDistance,
+  createFaqItem,
+  createWaiver,
+  updateDistancePrice,
+  updateEventEdition,
+  updateEventPolicyConfig,
+} from '@/lib/events/actions';
+import { eventAiWizardApplyRequestSchema } from '@/lib/events/ai-wizard/schemas';
+import { evaluateAiWizardPatchSafety } from '@/lib/events/ai-wizard/safety';
+import { createAddOn, createAddOnOption } from '@/lib/events/add-ons/actions';
 import { createPricingTier } from '@/lib/events/pricing/actions';
 import { getEventEditionDetail } from '@/lib/events/queries';
+import { createQuestion } from '@/lib/events/questions/actions';
+import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
-import { eventAiWizardApplyRequestSchema } from '@/lib/events/ai-wizard/schemas';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 export const maxDuration = 30;
+
+type PolicyState = {
+  refundsAllowed: boolean;
+  refundPolicyText: string | null;
+  refundDeadline: string | null;
+  transfersAllowed: boolean;
+  transferPolicyText: string | null;
+  transferDeadline: string | null;
+  deferralsAllowed: boolean;
+  deferralPolicyText: string | null;
+  deferralDeadline: string | null;
+};
 
 function proFeatureErrorToResponse(error: ProFeatureAccessError) {
   if (error.decision.status === 'disabled') {
@@ -52,6 +76,30 @@ function normalizeLocalDateTime(value: string): string | null {
   )}:${pad2(date.getUTCMinutes())}:${pad2(date.getUTCSeconds())}`;
 }
 
+function appendMarkdown(existing: string | null | undefined, incoming: string): string {
+  const previous = (existing ?? '').trim();
+  const next = incoming.trim();
+
+  if (!previous) return next;
+  if (!next) return previous;
+  if (previous.includes(next)) return previous;
+  return `${previous}\n\n${next}`;
+}
+
+function initializePolicyState(event: Awaited<ReturnType<typeof getEventEditionDetail>>): PolicyState {
+  return {
+    refundsAllowed: event?.policyConfig?.refundsAllowed ?? false,
+    refundPolicyText: event?.policyConfig?.refundPolicyText ?? null,
+    refundDeadline: event?.policyConfig?.refundDeadline?.toISOString() ?? null,
+    transfersAllowed: event?.policyConfig?.transfersAllowed ?? false,
+    transferPolicyText: event?.policyConfig?.transferPolicyText ?? null,
+    transferDeadline: event?.policyConfig?.transferDeadline?.toISOString() ?? null,
+    deferralsAllowed: event?.policyConfig?.deferralsAllowed ?? false,
+    deferralPolicyText: event?.policyConfig?.deferralPolicyText ?? null,
+    deferralDeadline: event?.policyConfig?.deferralDeadline?.toISOString() ?? null,
+  };
+}
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = eventAiWizardApplyRequestSchema.safeParse(body);
@@ -87,11 +135,73 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
-  // Validate referenced distance IDs belong to this edition (server-side boundary).
-  const referencedDistanceIds = patch.ops
-    .filter((op) => op.type === 'update_distance_price' || op.type === 'create_pricing_tier')
-    .map((op) => ('distanceId' in op ? op.distanceId : null))
-    .filter((id): id is string => typeof id === 'string');
+  const applyRateLimit = await checkRateLimit(`${authContext.user.id}:${editionId}`, 'user', {
+    action: 'event_ai_wizard_apply',
+    maxRequests: 20,
+    windowMs: 5 * 60 * 1000,
+  });
+  if (!applyRateLimit.allowed) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'blocked',
+      meta: {
+        blockCategory: 'rate_limit',
+        endpoint: 'apply',
+        editionId,
+        resetAt: applyRateLimit.resetAt.toISOString(),
+      },
+    });
+    return NextResponse.json(
+      {
+        code: 'RATE_LIMITED',
+        category: 'rate_limit',
+        endpoint: 'apply',
+        resetAt: applyRateLimit.resetAt.toISOString(),
+      },
+      { status: 429 },
+    );
+  }
+
+  const patchSafety = evaluateAiWizardPatchSafety(patch);
+  if (patchSafety.blocked) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'blocked',
+      meta: {
+        blockCategory: patchSafety.category,
+        blockReason: patchSafety.reason,
+        endpoint: 'apply',
+        editionId,
+      },
+    });
+    return NextResponse.json(
+      {
+        code: 'SAFETY_BLOCKED',
+        category: patchSafety.category,
+        reason: patchSafety.reason,
+        endpoint: 'apply',
+      },
+      { status: 400 },
+    );
+  }
+
+  const referencedDistanceIds = Array.from(
+    new Set(
+      patch.ops
+        .flatMap((op) => {
+          if (op.type === 'update_distance_price' || op.type === 'create_pricing_tier') {
+            return [op.distanceId];
+          }
+          if (op.type === 'create_question' || op.type === 'create_add_on') {
+            return op.data.distanceId ? [op.data.distanceId] : [];
+          }
+          return [];
+        })
+        .filter((id): id is string => typeof id === 'string'),
+    ),
+  );
 
   if (referencedDistanceIds.length) {
     const rows = await db
@@ -104,7 +214,8 @@ export async function POST(req: Request) {
           inArray(eventDistances.id, referencedDistanceIds),
         ),
       );
-    const allowed = new Set(rows.map((r) => r.id));
+
+    const allowed = new Set(rows.map((row) => row.id));
     const invalid = referencedDistanceIds.find((id) => !allowed.has(id));
     if (invalid) {
       return NextResponse.json(
@@ -115,6 +226,7 @@ export async function POST(req: Request) {
   }
 
   const applied: Array<{ opIndex: number; type: string; result?: unknown }> = [];
+  let policyState = initializePolicyState(event);
 
   function opError(status: number, payload: Record<string, unknown>) {
     return NextResponse.json({ ...payload, applied }, { status });
@@ -123,11 +235,11 @@ export async function POST(req: Request) {
   for (let i = 0; i < patch.ops.length; i += 1) {
     const op = patch.ops[i];
 
-    if (op.type === 'update_edition') {
-      if (op.editionId !== editionId) {
-        return opError(400, { error: 'INVALID_OP', details: { opIndex: i } });
-      }
+    if ('editionId' in op && op.editionId !== editionId) {
+      return opError(400, { error: 'INVALID_OP', details: { opIndex: i, reason: 'EDITION_MISMATCH' } });
+    }
 
+    if (op.type === 'update_edition') {
       const data = op.data;
       const startsAt =
         data.startsAt === undefined
@@ -194,10 +306,6 @@ export async function POST(req: Request) {
     }
 
     if (op.type === 'create_distance') {
-      if (op.editionId !== editionId) {
-        return opError(400, { error: 'INVALID_OP', details: { opIndex: i } });
-      }
-
       const priceCents = resolvePriceCents(op.data);
       const startTimeLocal =
         op.data.startTimeLocal === undefined
@@ -285,6 +393,234 @@ export async function POST(req: Request) {
       continue;
     }
 
+    if (op.type === 'create_faq_item') {
+      const result = await createFaqItem({
+        editionId,
+        question: op.data.question,
+        answer: op.data.answerMarkdown,
+      });
+
+      if (!result.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: result.code, message: result.error },
+        });
+      }
+
+      applied.push({ opIndex: i, type: op.type, result: result.data });
+      continue;
+    }
+
+    if (op.type === 'create_waiver') {
+      const result = await createWaiver({
+        editionId,
+        title: op.data.title,
+        body: op.data.bodyMarkdown,
+        signatureType: op.data.signatureType ?? 'checkbox',
+      });
+
+      if (!result.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: result.code, message: result.error },
+        });
+      }
+
+      applied.push({ opIndex: i, type: op.type, result: result.data });
+      continue;
+    }
+
+    if (op.type === 'create_question') {
+      const result = await createQuestion({
+        editionId,
+        distanceId: op.data.distanceId ?? null,
+        type: op.data.type,
+        prompt: op.data.prompt,
+        helpText: op.data.helpTextMarkdown ?? null,
+        isRequired: op.data.isRequired ?? false,
+        options: op.data.options ?? null,
+        sortOrder: op.data.sortOrder ?? 0,
+        isActive: op.data.isActive ?? true,
+      });
+
+      if (!result.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: result.code, message: result.error },
+        });
+      }
+
+      applied.push({ opIndex: i, type: op.type, result: result.data });
+      continue;
+    }
+
+    if (op.type === 'create_add_on') {
+      const createAddOnResult = await createAddOn({
+        editionId,
+        distanceId: op.data.distanceId ?? null,
+        title: op.data.title,
+        description: op.data.descriptionMarkdown ?? null,
+        type: op.data.type ?? 'merch',
+        deliveryMethod: op.data.deliveryMethod ?? 'pickup',
+        isActive: op.data.isActive ?? true,
+        sortOrder: op.data.sortOrder ?? 0,
+      });
+
+      if (!createAddOnResult.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: createAddOnResult.code, message: createAddOnResult.error },
+        });
+      }
+
+      const createOptionResult = await createAddOnOption({
+        addOnId: createAddOnResult.data.id,
+        label: op.data.optionLabel ?? 'Standard',
+        priceCents: resolvePriceCents({
+          priceCents: op.data.optionPriceCents,
+          price: op.data.optionPrice,
+        }),
+        maxQtyPerOrder: op.data.optionMaxQtyPerOrder ?? 5,
+        isActive: true,
+        sortOrder: 0,
+      });
+
+      if (!createOptionResult.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: {
+            opIndex: i,
+            code: createOptionResult.code,
+            message: createOptionResult.error,
+            addOnId: createAddOnResult.data.id,
+          },
+        });
+      }
+
+      applied.push({
+        opIndex: i,
+        type: op.type,
+        result: {
+          addOn: createAddOnResult.data,
+          option: createOptionResult.data,
+        },
+      });
+      continue;
+    }
+
+    if (op.type === 'append_website_section_markdown') {
+      const locale = op.data.locale ?? 'es';
+      const contentResult = await getWebsiteContent({ editionId, locale });
+      if (!contentResult.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: contentResult.code, message: contentResult.error },
+        });
+      }
+
+      const blocks = { ...contentResult.data.blocks };
+
+      if (op.data.section === 'overview') {
+        const previous = blocks.overview ?? { type: 'overview' as const, enabled: true, content: '' };
+        blocks.overview = {
+          ...previous,
+          enabled: true,
+          title: previous.title ?? op.data.title,
+          content: appendMarkdown(previous.content, op.data.markdown),
+        };
+      } else if (op.data.section === 'course') {
+        const previous = blocks.course ?? { type: 'course' as const, enabled: true };
+        blocks.course = {
+          ...previous,
+          enabled: true,
+          title: previous.title ?? op.data.title,
+          description: appendMarkdown(previous.description, op.data.markdown),
+        };
+      } else if (op.data.section === 'schedule') {
+        const previous = blocks.schedule ?? { type: 'schedule' as const, enabled: true };
+        blocks.schedule = {
+          ...previous,
+          enabled: true,
+          title: previous.title ?? op.data.title,
+          raceDay: appendMarkdown(previous.raceDay, op.data.markdown),
+        };
+      }
+
+      const updateResult = await updateWebsiteContent({
+        editionId,
+        locale,
+        blocks,
+      });
+
+      if (!updateResult.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: updateResult.code, message: updateResult.error },
+        });
+      }
+
+      applied.push({
+        opIndex: i,
+        type: op.type,
+        result: { locale, section: op.data.section, contentId: updateResult.data.id },
+      });
+      continue;
+    }
+
+    if (op.type === 'append_policy_markdown') {
+      const nextPolicy = { ...policyState };
+
+      if (op.data.policy === 'refund') {
+        nextPolicy.refundsAllowed = op.data.enable ?? true;
+        nextPolicy.refundPolicyText = appendMarkdown(nextPolicy.refundPolicyText, op.data.markdown);
+      } else if (op.data.policy === 'transfer') {
+        nextPolicy.transfersAllowed = op.data.enable ?? true;
+        nextPolicy.transferPolicyText = appendMarkdown(nextPolicy.transferPolicyText, op.data.markdown);
+      } else if (op.data.policy === 'deferral') {
+        nextPolicy.deferralsAllowed = op.data.enable ?? true;
+        nextPolicy.deferralPolicyText = appendMarkdown(nextPolicy.deferralPolicyText, op.data.markdown);
+      }
+
+      const result = await updateEventPolicyConfig({
+        editionId,
+        refundsAllowed: nextPolicy.refundsAllowed,
+        refundPolicyText: nextPolicy.refundPolicyText,
+        refundDeadline: nextPolicy.refundDeadline,
+        transfersAllowed: nextPolicy.transfersAllowed,
+        transferPolicyText: nextPolicy.transferPolicyText,
+        transferDeadline: nextPolicy.transferDeadline,
+        deferralsAllowed: nextPolicy.deferralsAllowed,
+        deferralPolicyText: nextPolicy.deferralPolicyText,
+        deferralDeadline: nextPolicy.deferralDeadline,
+      });
+
+      if (!result.ok) {
+        return opError(400, {
+          error: 'OP_FAILED',
+          details: { opIndex: i, code: result.code, message: result.error },
+        });
+      }
+
+      policyState = {
+        refundsAllowed: result.data.refundsAllowed,
+        refundPolicyText: result.data.refundPolicyText,
+        refundDeadline: result.data.refundDeadline,
+        transfersAllowed: result.data.transfersAllowed,
+        transferPolicyText: result.data.transferPolicyText,
+        transferDeadline: result.data.transferDeadline,
+        deferralsAllowed: result.data.deferralsAllowed,
+        deferralPolicyText: result.data.deferralPolicyText,
+        deferralDeadline: result.data.deferralDeadline,
+      };
+
+      applied.push({
+        opIndex: i,
+        type: op.type,
+        result: { policy: op.data.policy },
+      });
+      continue;
+    }
+
     return opError(400, { error: 'UNKNOWN_OP', details: { opIndex: i } });
   }
 
@@ -292,7 +628,12 @@ export async function POST(req: Request) {
     featureKey: 'event_ai_wizard',
     userId: authContext.user.id,
     eventType: 'used',
-    meta: { editionId, opCount: patch.ops.length },
+    meta: {
+      editionId,
+      opCount: patch.ops.length,
+      missingChecklistCount: patch.missingFieldsChecklist?.length ?? 0,
+      intentRouteCount: patch.intentRouting?.length ?? 0,
+    },
   });
 
   return NextResponse.json({ ok: true, applied });
