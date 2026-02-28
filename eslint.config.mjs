@@ -26,6 +26,8 @@ const eslintConfig = defineConfig([
     'e2e/test-results/**',
     'e2e/playwright-report/**',
     '.playwright-mcp/**',
+    'tmp/**',
+    '.tmp/**',
   ]),
   // Relax specific rules for test files
   {

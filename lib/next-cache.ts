@@ -10,6 +10,11 @@ function shouldSuppressCacheError() {
   return process.env.NODE_ENV === 'test' || typeof process.env.JEST_WORKER_ID !== 'undefined';
 }
 
+function isMissingStaticGenerationStoreError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.toLowerCase().includes('static generation store missing');
+}
+
 export function safeCacheTag(...tags: string[]) {
   try {
     cacheTag(...tags);
@@ -33,7 +38,7 @@ export function safeRevalidateTag(tag: string, profile?: string | CacheLifeConfi
   try {
     revalidateTag(tag, profile ?? 'max');
   } catch (error) {
-    if (shouldSuppressCacheError()) return;
+    if (shouldSuppressCacheError() || isMissingStaticGenerationStoreError(error)) return;
     throw error;
   }
 }
