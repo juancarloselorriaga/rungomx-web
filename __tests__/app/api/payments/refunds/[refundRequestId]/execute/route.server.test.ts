@@ -115,6 +115,52 @@ describe('POST /api/payments/refunds/[refundRequestId]/execute', () => {
     expect(body.error).toBe('Invalid refund request ID');
   });
 
+  it('returns 400 for invalid JSON body', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: '{invalid-json',
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'Invalid JSON body' });
+    expect(mockFindOrganization).not.toHaveBeenCalled();
+    expect(mockExecuteRefundRequest).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for payload validation errors', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: 'not-a-uuid',
+          requestedAmountMinor: 0,
+          maxRefundableToAttendeeMinorPerRun: -1,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body.error).toBe('Invalid refund execution payload');
+    expect(body.details).toBeDefined();
+    expect(mockFindOrganization).not.toHaveBeenCalled();
+    expect(mockExecuteRefundRequest).not.toHaveBeenCalled();
+  });
+
   it('returns 403 when requester lacks organizer permission', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
@@ -199,6 +245,74 @@ describe('POST /api/payments/refunds/[refundRequestId]/execute', () => {
     });
   });
 
+  it('maps already executed errors to 409', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockExecuteRefundRequest.mockRejectedValue(
+      new RefundExecutionError(
+        'REFUND_REQUEST_ALREADY_EXECUTED',
+        'Refund request has already been executed.',
+      ),
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 500,
+          maxRefundableToAttendeeMinorPerRun: 1000,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Refund execution rejected',
+      code: 'REFUND_REQUEST_ALREADY_EXECUTED',
+      reason: 'Refund request has already been executed.',
+    });
+  });
+
+  it.each([
+    {
+      code: 'ATTENDEE_NOTIFICATION_TARGET_MISSING' as const,
+      reason: 'Attendee notification target is missing.',
+    },
+    {
+      code: 'ORGANIZER_NOTIFICATION_TARGET_MISSING' as const,
+      reason: 'Organizer notification target is missing.',
+    },
+  ])('maps $code to 409', async ({ code, reason }) => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockExecuteRefundRequest.mockRejectedValue(new RefundExecutionError(code, reason));
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 500,
+          maxRefundableToAttendeeMinorPerRun: 1000,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Refund execution rejected',
+      code,
+      reason,
+    });
+  });
+
   it('maps runtime policy blocks to 503', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
@@ -230,6 +344,74 @@ describe('POST /api/payments/refunds/[refundRequestId]/execute', () => {
       reason:
         'refund_execution_processor must run on dedicated worker runtime in production (received: web).',
     });
+  });
+
+  it('maps non-grouped RefundExecutionError codes to fallback 400', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockExecuteRefundRequest.mockRejectedValue(
+      new RefundExecutionError(
+        'INVALID_REQUESTED_AMOUNT',
+        'Refund execution could not satisfy service preconditions.',
+      ),
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 500,
+          maxRefundableToAttendeeMinorPerRun: 1000,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      error: 'Invalid refund execution request',
+      code: 'INVALID_REQUESTED_AMOUNT',
+      reason: 'Refund execution could not satisfy service preconditions.',
+    });
+  });
+
+  it('returns 500 for unexpected non-RefundExecutionError failures', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    const unexpectedError = new Error('Unexpected failure');
+    mockExecuteRefundRequest.mockRejectedValue(unexpectedError);
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 500,
+          maxRefundableToAttendeeMinorPerRun: 1000,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[payments-refunds] Failed to execute refund request',
+      expect.objectContaining({
+        refundRequestId: '22222222-2222-4222-8222-222222222222',
+        organizationId: '11111111-1111-4111-8111-111111111111',
+        actorUserId: 'organizer-user-1',
+        error: unexpectedError,
+      }),
+    );
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('returns 200 with execution payload on success', async () => {

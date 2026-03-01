@@ -89,6 +89,55 @@ describe('payments wallet explainability', () => {
     expect(result!.reasonText).toContain('balance-impacting');
   });
 
+  it('describes positive financial adjustments as balance-increasing corrections', async () => {
+    queue.push([
+      {
+        id: '66666666-6666-4666-8666-666666666666',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        traceId: 'trace-adjustment-positive-1',
+        eventName: 'financial.adjustment_posted',
+        entityType: 'adjustment',
+        entityId: 'adjustment-positive-1',
+        payloadJson: {
+          amount: { amountMinor: 250, currency: 'MXN' },
+        },
+      },
+    ]);
+
+    const result = await getOrganizerWalletExplainability({
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      eventId: '66666666-6666-4666-8666-666666666666',
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.reasonText).toContain('positive financial adjustment');
+    expect(result!.policyDisclosure).toContain('Manual adjustments');
+  });
+
+  it('describes negative financial adjustments as debt-increasing corrections', async () => {
+    queue.push([
+      {
+        id: '77777777-7777-4777-8777-777777777777',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        traceId: 'trace-adjustment-negative-1',
+        eventName: 'financial.adjustment_posted',
+        entityType: 'adjustment',
+        entityId: 'adjustment-negative-1',
+        payloadJson: {
+          amount: { amountMinor: -250, currency: 'MXN' },
+        },
+      },
+    ]);
+
+    const result = await getOrganizerWalletExplainability({
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      eventId: '77777777-7777-4777-8777-777777777777',
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.reasonText).toContain('negative financial adjustment');
+  });
+
   it('returns null when event is not found for organizer scope', async () => {
     queue.push([]);
 
@@ -136,5 +185,66 @@ describe('payments wallet explainability', () => {
         }),
       ]),
     );
+  });
+
+  it('derives and de-duplicates impacted entities from payload references', async () => {
+    queue.push([
+      {
+        id: '88888888-8888-4888-8888-888888888888',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        traceId: 'trace-entity-dedupe-1',
+        eventName: 'refund.executed',
+        entityType: 'payout_request',
+        entityId: 'payout-request-1',
+        payloadJson: {
+          registrationId: 'registration-1',
+          refundRequestId: 'refund-request-1',
+          payoutRequestId: 'payout-request-1',
+          payoutQueuedIntentId: 'queued-intent-1',
+          disputeCaseId: 'dispute-case-1',
+        },
+      },
+    ]);
+
+    const result = await getOrganizerWalletExplainability({
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      eventId: '88888888-8888-4888-8888-888888888888',
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.impactedEntities).toEqual(
+      expect.arrayContaining([
+        {
+          entityType: 'payout_request',
+          entityId: 'payout-request-1',
+          label: 'Primary financial entity',
+        },
+        {
+          entityType: 'registration',
+          entityId: 'registration-1',
+          label: 'Registration',
+        },
+        {
+          entityType: 'refund_request',
+          entityId: 'refund-request-1',
+          label: 'Refund request',
+        },
+        {
+          entityType: 'payout_queued_intent',
+          entityId: 'queued-intent-1',
+          label: 'Queued payout intent',
+        },
+        {
+          entityType: 'dispute_case',
+          entityId: 'dispute-case-1',
+          label: 'Dispute case',
+        },
+      ]),
+    );
+    expect(
+      result!.impactedEntities.filter(
+        (entity) => entity.entityType === 'payout_request' && entity.entityId === 'payout-request-1',
+      ),
+    ).toHaveLength(1);
   });
 });

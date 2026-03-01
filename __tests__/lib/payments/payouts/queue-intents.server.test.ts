@@ -314,6 +314,69 @@ describe('payout queued intents', () => {
     expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
   });
 
+  it('throws active-conflict error when insert races on active queued intent uniqueness', async () => {
+    mockFindFirstPayoutQueuedIntent
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'raced-active-intent-id',
+        status: 'queued',
+      });
+
+    mockInsert.mockImplementation(() => ({
+      values: (...valuesArgs: unknown[]) => {
+        mockInsertValues(...valuesArgs);
+        return {
+          onConflictDoNothing: (...conflictArgs: unknown[]) => {
+            mockInsertOnConflictDoNothing(...conflictArgs);
+            return {
+              returning: (...returningArgs: unknown[]) => {
+                mockInsertReturning(...returningArgs);
+                return Promise.reject({
+                  code: '23505',
+                  constraint: 'payout_queued_intents_active_organizer_unique_idx',
+                });
+              },
+            };
+          },
+        };
+      },
+    }));
+
+    await expect(
+      createQueuedPayoutIntent({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        createdByUserId: '22222222-2222-4222-8222-222222222222',
+        requestedAmountMinor: 5000,
+        idempotencyKey: 'queued-race-active-constraint',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_QUEUE_ALREADY_ACTIVE',
+    });
+  });
+
+  it('throws insert-failed error when insert returns empty and no idempotency conflict can be loaded', async () => {
+    mockFindFirstPayoutQueuedIntent
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      createQueuedPayoutIntent({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        createdByUserId: '22222222-2222-4222-8222-222222222222',
+        requestedAmountMinor: 5000,
+        idempotencyKey: 'queued-insert-empty',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_QUEUE_INSERT_FAILED',
+    });
+
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+  });
+
   it('activates queued payout intent once eligibility is restored', async () => {
     mockFindFirstPayoutQueuedIntent.mockResolvedValueOnce({
       id: 'queued-intent-id',
@@ -366,6 +429,186 @@ describe('payout queued intents', () => {
     expect(result.payoutQuoteId).toBe('quote-id');
     expect(result.payoutRequestId).toBe('request-id');
     expect(mockCreatePayoutQuoteAndContract).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws not-found when activating a missing queued intent', async () => {
+    mockFindFirstPayoutQueuedIntent.mockResolvedValueOnce(null);
+
+    await expect(
+      activateQueuedPayoutIntent({
+        payoutQueuedIntentId: 'missing-queued-intent-id',
+        activatedByUserId: '22222222-2222-4222-8222-222222222222',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_QUEUE_INTENT_NOT_FOUND',
+    });
+
+    expect(mockGetOrganizerWalletBucketSnapshot).not.toHaveBeenCalled();
+    expect(mockCreatePayoutQuoteAndContract).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('throws not-activatable when queued intent status is not queued', async () => {
+    mockFindFirstPayoutQueuedIntent.mockResolvedValueOnce({
+      id: 'cancelled-intent-id',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      status: 'cancelled',
+      requestedAmountMinor: 5000,
+      activatedAt: null,
+      activatedPayoutQuoteId: null,
+      activatedPayoutRequestId: null,
+    });
+
+    await expect(
+      activateQueuedPayoutIntent({
+        payoutQueuedIntentId: 'cancelled-intent-id',
+        activatedByUserId: '22222222-2222-4222-8222-222222222222',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_QUEUE_INTENT_NOT_ACTIVATABLE',
+    });
+
+    expect(mockGetOrganizerWalletBucketSnapshot).not.toHaveBeenCalled();
+    expect(mockCreatePayoutQuoteAndContract).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('returns already-activated without creating a payout when intent is already activated', async () => {
+    mockFindFirstPayoutQueuedIntent.mockResolvedValueOnce({
+      id: 'activated-intent-id',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      status: 'activated',
+      requestedAmountMinor: 5000,
+      activatedAt: now,
+      activatedPayoutQuoteId: 'existing-quote-id',
+      activatedPayoutRequestId: 'existing-request-id',
+    });
+
+    const result = await activateQueuedPayoutIntent({
+      payoutQueuedIntentId: 'activated-intent-id',
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      now,
+    });
+
+    expect(result.activated).toBe(true);
+    expect(result.reasonCode).toBe('already_activated');
+    expect(result.status).toBe('activated');
+    expect(result.payoutQuoteId).toBe('existing-quote-id');
+    expect(result.payoutRequestId).toBe('existing-request-id');
+    expect(mockGetOrganizerWalletBucketSnapshot).not.toHaveBeenCalled();
+    expect(mockCreatePayoutQuoteAndContract).not.toHaveBeenCalled();
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('reconciles activation race when update returns empty but refreshed intent is already activated', async () => {
+    mockFindFirstPayoutQueuedIntent
+      .mockResolvedValueOnce({
+        id: 'queued-intent-id',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        status: 'queued',
+        requestedAmountMinor: 5000,
+        activatedAt: null,
+        activatedPayoutQuoteId: null,
+        activatedPayoutRequestId: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'queued-intent-id',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        status: 'activated',
+        activatedAt: now,
+        activatedPayoutQuoteId: 'race-quote-id',
+        activatedPayoutRequestId: 'race-request-id',
+      });
+
+    mockGetOrganizerWalletBucketSnapshot.mockResolvedValueOnce({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      asOf: now,
+      buckets: {
+        availableMinor: 12000,
+        processingMinor: 0,
+        frozenMinor: 0,
+        debtMinor: 0,
+      },
+      debt: {
+        waterfallOrder: [],
+        categoryBalancesMinor: {},
+        repaymentAppliedMinor: 0,
+      },
+      queryDurationMs: 2,
+    });
+    mockCreatePayoutQuoteAndContract.mockResolvedValueOnce({
+      payoutQuoteId: 'race-quote-id',
+      payoutRequestId: 'race-request-id',
+    });
+
+    const result = await activateQueuedPayoutIntent({
+      payoutQueuedIntentId: 'queued-intent-id',
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      now,
+    });
+
+    expect(result.activated).toBe(true);
+    expect(result.reasonCode).toBe('already_activated');
+    expect(result.status).toBe('activated');
+    expect(result.payoutQuoteId).toBe('race-quote-id');
+    expect(result.payoutRequestId).toBe('race-request-id');
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws update-failed when activation update returns empty and refreshed intent is not activated', async () => {
+    mockFindFirstPayoutQueuedIntent
+      .mockResolvedValueOnce({
+        id: 'queued-intent-id',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        status: 'queued',
+        requestedAmountMinor: 5000,
+        activatedAt: null,
+        activatedPayoutQuoteId: null,
+        activatedPayoutRequestId: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'queued-intent-id',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        status: 'queued',
+        activatedAt: null,
+        activatedPayoutQuoteId: null,
+        activatedPayoutRequestId: null,
+      });
+
+    mockGetOrganizerWalletBucketSnapshot.mockResolvedValueOnce({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      asOf: now,
+      buckets: {
+        availableMinor: 12000,
+        processingMinor: 0,
+        frozenMinor: 0,
+        debtMinor: 0,
+      },
+      debt: {
+        waterfallOrder: [],
+        categoryBalancesMinor: {},
+        repaymentAppliedMinor: 0,
+      },
+      queryDurationMs: 2,
+    });
+    mockCreatePayoutQuoteAndContract.mockResolvedValueOnce({
+      payoutQuoteId: 'quote-id',
+      payoutRequestId: 'request-id',
+    });
+
+    await expect(
+      activateQueuedPayoutIntent({
+        payoutQueuedIntentId: 'queued-intent-id',
+        activatedByUserId: '22222222-2222-4222-8222-222222222222',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_QUEUE_UPDATE_FAILED',
+    });
+
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
   });
 
   it('keeps queued status when activation eligibility is still not met', async () => {

@@ -222,6 +222,42 @@ describe('payout quote + contract creation', () => {
     expect(mockIngestMoneyMutationFromApi).toHaveBeenCalledTimes(1);
   });
 
+  it('throws baseline-incomplete when idempotency quote exists but request/contract bundle is incomplete', async () => {
+    mockFindFirstPayoutQuote.mockResolvedValueOnce({
+      id: 'existing-quote-id',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      quoteFingerprint: 'f'.repeat(64),
+      currency: 'MXN',
+      includedAmountMinor: 9000,
+      deductionAmountMinor: 1000,
+      maxWithdrawableAmountMinor: 8000,
+      requestedAmountMinor: 8000,
+      eligibilitySnapshotJson: { version: 'payout-quote-eligibility-v1' },
+      componentBreakdownJson: { version: 'payout-quote-components-v1' },
+      requestedAt: now,
+    });
+    mockFindFirstPayoutRequest.mockResolvedValueOnce(null);
+    mockFindFirstPayoutContract.mockResolvedValueOnce({
+      id: 'existing-contract-id',
+      baselineSnapshotJson: {
+        version: 'payout-contract-v1',
+      },
+    });
+
+    await expect(
+      createPayoutQuoteAndContract({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        requestedByUserId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'withdrawal-baseline-incomplete',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_BASELINE_INCOMPLETE',
+    });
+
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+
   it('rejects requests above deterministic max withdrawable amount', async () => {
     await expect(
       createPayoutQuoteAndContract({
@@ -281,6 +317,115 @@ describe('payout quote + contract creation', () => {
 
     expect(mockGetOrganizerWalletBucketSnapshot).not.toHaveBeenCalled();
     expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+  });
+
+  it('throws quote-insert-failed when quote insert returns empty and conflict bundle is missing', async () => {
+    await expect(
+      createPayoutQuoteAndContract({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        requestedByUserId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'withdrawal-quote-empty',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_QUOTE_INSERT_FAILED',
+    });
+
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+  });
+
+  it('throws request-insert-failed when request insert returns empty', async () => {
+    insertReturningQueue.push([{ id: 'quote-row-id' }]);
+
+    await expect(
+      createPayoutQuoteAndContract({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        requestedByUserId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'withdrawal-request-empty',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_REQUEST_INSERT_FAILED',
+    });
+
+    expect(mockInsert).toHaveBeenCalledTimes(2);
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+  });
+
+  it('throws contract-insert-failed when contract insert returns empty', async () => {
+    insertReturningQueue.push([{ id: 'quote-row-id' }]);
+    insertReturningQueue.push([
+      {
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        traceId: 'payout-request:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      },
+    ]);
+
+    await expect(
+      createPayoutQuoteAndContract({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        requestedByUserId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'withdrawal-contract-empty',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_CONTRACT_INSERT_FAILED',
+    });
+
+    expect(mockInsert).toHaveBeenCalledTimes(3);
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+  });
+
+  it('throws active-conflict error when request insert races on active request uniqueness', async () => {
+    mockFindFirstPayoutRequest
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'raced-active-request-id',
+        status: 'paused',
+      });
+
+    insertReturningQueue.push([{ id: 'quote-row-id' }]);
+
+    mockInsert.mockImplementation((table: unknown) => ({
+      values: (...args: unknown[]) => {
+        mockValues(...args);
+
+        const executeReturning = (...returningArgs: unknown[]) => {
+          mockReturning(...returningArgs);
+          if (table === payoutRequests) {
+            return Promise.reject({
+              code: '23505',
+              constraint: 'payout_requests_active_organizer_unique_idx',
+            });
+          }
+          return Promise.resolve(insertReturningQueue.shift() ?? []);
+        };
+
+        return {
+          onConflictDoNothing: (...conflictArgs: unknown[]) => {
+            mockOnConflictDoNothing(...conflictArgs);
+            return {
+              returning: (...returningArgs: unknown[]) => executeReturning(...returningArgs),
+            };
+          },
+          returning: (...returningArgs: unknown[]) => executeReturning(...returningArgs),
+        };
+      },
+    }));
+
+    await expect(
+      createPayoutQuoteAndContract({
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        requestedByUserId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'withdrawal-request-race-unique',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_REJECTED',
+    });
+
     expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
   });
 
