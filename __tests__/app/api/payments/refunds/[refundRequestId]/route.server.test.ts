@@ -248,6 +248,29 @@ describe('PATCH /api/payments/refunds/[refundRequestId]', () => {
     });
   });
 
+  it('returns 500 when decision submission throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockSubmitOrganizerRefundDecision.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await PATCH(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          decision: 'approve',
+          decisionReason: 'Approved by organizer',
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
+
   it('returns 200 with decision payload when submission succeeds', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },

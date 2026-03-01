@@ -124,6 +124,28 @@ describe('POST /api/payments/refunds/escalations', () => {
     expect(await response.json()).toEqual({ error: 'Permission denied' });
   });
 
+  it('returns 500 when escalation service throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    mockEscalateExpiredRefundRequests.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/escalations', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedBefore: '2026-02-23T21:00:00.000Z',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
+
   it('returns escalation summary when request succeeds', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },

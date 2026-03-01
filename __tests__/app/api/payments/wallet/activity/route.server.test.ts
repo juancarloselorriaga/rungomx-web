@@ -96,6 +96,22 @@ describe('GET /api/payments/wallet/activity', () => {
     expect(response.status).toBe(403);
   });
 
+  it('returns 500 when timeline retrieval throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    mockGetOrganizerWalletActivityTimeline.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await GET(
+      new Request('http://localhost/api/payments/wallet/activity?organizationId=11111111-1111-4111-8111-111111111111'),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
+
   it('1.2-API-002 returns trace-linked organizer timeline payload when authorized', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },

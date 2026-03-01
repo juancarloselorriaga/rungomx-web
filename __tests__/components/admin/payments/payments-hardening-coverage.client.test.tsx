@@ -1,11 +1,26 @@
 import { ArtifactGovernanceDashboard } from '@/components/admin/payments/artifact-governance-dashboard';
+import { DebtDisputeExposureDashboard } from '@/components/admin/payments/debt-dispute-exposure-dashboard';
 import { EvidencePackReviewDashboard } from '@/components/admin/payments/evidence-pack-review-dashboard';
 import { FinancialCaseLookupDashboard } from '@/components/admin/payments/financial-case-lookup-dashboard';
+import { FxRateManagementDashboard } from '@/components/admin/payments/fx-rate-management-dashboard';
+import { MxnReportingDashboard } from '@/components/admin/payments/mxn-reporting-dashboard';
+import { NetRecognizedFeeDashboard } from '@/components/admin/payments/net-recognized-fee-dashboard';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { DebtDisputeExposureMetrics } from '@/lib/payments/economics/debt-dispute-exposure';
+import type {
+  DailyFxRateRecord,
+  FxRateActionFlags,
+} from '@/lib/payments/economics/fx-rate-management';
+import type { MxnNetRecognizedFeeReport } from '@/lib/payments/economics/mxn-reporting';
+import type { NetRecognizedFeeMetrics } from '@/lib/payments/economics/net-recognized-fees';
 
 type FinancialCaseLookupLabels = Parameters<typeof FinancialCaseLookupDashboard>[0]['labels'];
 type EvidencePackReviewLabels = Parameters<typeof EvidencePackReviewDashboard>[0]['labels'];
 type ArtifactGovernanceLabels = Parameters<typeof ArtifactGovernanceDashboard>[0]['labels'];
+type NetRecognizedFeeLabels = Parameters<typeof NetRecognizedFeeDashboard>[0]['labels'];
+type DebtDisputeExposureLabels = Parameters<typeof DebtDisputeExposureDashboard>[0]['labels'];
+type MxnReportingLabels = Parameters<typeof MxnReportingDashboard>[0]['labels'];
+type FxRateManagementLabels = Parameters<typeof FxRateManagementDashboard>[0]['labels'];
 type FinancialCaseLookupResult = NonNullable<
   Parameters<typeof FinancialCaseLookupDashboard>[0]['result']
 >;
@@ -20,6 +35,27 @@ jest.mock('@/app/actions/admin-payments-artifacts', () => ({
     listArtifactGovernanceSummaryAdminActionMock(...args),
 }));
 
+jest.mock('@/components/admin/dashboard/admin-dashboard-range-selector', () => ({
+  AdminDashboardRangeSelector: () => <div data-testid="admin-range-selector" />,
+}));
+
+jest.mock('@/components/ui/date-picker', () => ({
+  DatePicker: ({
+    value,
+    onChangeAction,
+  }: {
+    value?: string;
+    onChangeAction?: (value: string) => void;
+  }) => (
+    <input
+      aria-label="fxDatePicker"
+      data-testid="fx-date-picker"
+      value={value ?? ''}
+      onChange={(event) => onChangeAction?.(event.target.value)}
+    />
+  ),
+}));
+
 function createLabels<T extends Record<string, string>>(): T {
   return new Proxy({} as T, {
     get(_target, property: string | symbol) {
@@ -31,6 +67,234 @@ function createLabels<T extends Record<string, string>>(): T {
 const caseLookupLabels = createLabels<FinancialCaseLookupLabels>();
 const evidenceLabels = createLabels<EvidencePackReviewLabels>();
 const governanceLabels = createLabels<ArtifactGovernanceLabels>();
+const netRecognizedFeeLabels = createLabels<NetRecognizedFeeLabels>();
+const mxnReportingLabels = createLabels<MxnReportingLabels>();
+const fxRateManagementLabels = createLabels<FxRateManagementLabels>();
+const debtDisputeExposureLabels: DebtDisputeExposureLabels = {
+  sectionTitle: 'sectionTitle',
+  sectionDescription: 'sectionDescription',
+  summaryExposureTitle: 'summaryExposureTitle',
+  summaryOpenCasesTitle: 'summaryOpenCasesTitle',
+  summaryPolicyPausesTitle: 'summaryPolicyPausesTitle',
+  organizerTableTitle: 'organizerTableTitle',
+  organizerTableDescription: 'organizerTableDescription',
+  eventTableTitle: 'eventTableTitle',
+  eventTableDescription: 'eventTableDescription',
+  groupHeader: 'groupHeader',
+  exposureHeader: 'exposureHeader',
+  openAtRiskHeader: 'openAtRiskHeader',
+  debtPostedHeader: 'debtPostedHeader',
+  openCasesHeader: 'openCasesHeader',
+  pauseHeader: 'pauseHeader',
+  resumeHeader: 'resumeHeader',
+  tracesHeader: 'tracesHeader',
+  disputeCasesHeader: 'disputeCasesHeader',
+  sampleTracesLabel: 'sampleTracesLabel',
+  sampleCasesLabel: 'sampleCasesLabel',
+  currenciesLabel: (count) => `currenciesLabel:${count}`,
+  emptyState: 'emptyState',
+};
+
+const netRecognizedMetricsFixture: NetRecognizedFeeMetrics = {
+  asOf: new Date('2026-02-10T00:00:00.000Z'),
+  windowStart: new Date('2026-02-01T00:00:00.000Z'),
+  windowEnd: new Date('2026-02-10T00:00:00.000Z'),
+  headlineCurrency: 'MXN',
+  headlineCapturedFeeMinor: 125000,
+  headlineAdjustmentsMinor: -1500,
+  headlineNetRecognizedFeeMinor: 123500,
+  currencies: [
+    {
+      currency: 'MXN',
+      capturedFeeMinor: 125000,
+      adjustmentsMinor: -1500,
+      netRecognizedFeeMinor: 123500,
+      captureEventCount: 3,
+      adjustmentEventCount: 1,
+    },
+  ],
+  adjustments: [
+    {
+      currency: 'MXN',
+      adjustmentCode: 'manual_review',
+      amountMinor: -1500,
+      eventCount: 1,
+    },
+  ],
+  traceability: {
+    windowStart: new Date('2026-02-01T00:00:00.000Z'),
+    windowEnd: new Date('2026-02-10T00:00:00.000Z'),
+    eventCount: 4,
+    distinctTraceCount: 2,
+    firstOccurredAt: new Date('2026-02-01T10:00:00.000Z'),
+    lastOccurredAt: new Date('2026-02-09T14:00:00.000Z'),
+    sampleTraceIds: ['trace-net-1'],
+  },
+};
+
+const debtDisputeExposureMetricsFixture: DebtDisputeExposureMetrics = {
+  asOf: new Date('2026-02-10T00:00:00.000Z'),
+  windowStart: new Date('2026-02-01T00:00:00.000Z'),
+  windowEnd: new Date('2026-02-10T00:00:00.000Z'),
+  totals: {
+    openDisputeCaseCount: 2,
+    pauseRequiredCount: 1,
+    resumeAllowedCount: 1,
+    headlineCurrency: 'MXN',
+    headlineOpenDisputeAtRiskMinor: 4000,
+    headlineDebtPostedMinor: 700,
+    headlineExposureScoreMinor: 4700,
+    currencies: [
+      {
+        currency: 'MXN',
+        openDisputeAtRiskMinor: 4000,
+        debtPostedMinor: 700,
+        exposureScoreMinor: 4700,
+      },
+    ],
+  },
+  organizers: [
+    {
+      organizerId: 'org-1',
+      organizerLabel: 'Organizer One',
+      openDisputeCaseCount: 1,
+      pauseRequiredCount: 1,
+      resumeAllowedCount: 0,
+      headlineCurrency: 'MXN',
+      headlineOpenDisputeAtRiskMinor: 2500,
+      headlineDebtPostedMinor: 500,
+      headlineExposureScoreMinor: 3000,
+      currencies: [
+        {
+          currency: 'MXN',
+          openDisputeAtRiskMinor: 2500,
+          debtPostedMinor: 500,
+          exposureScoreMinor: 3000,
+        },
+      ],
+      traceability: {
+        distinctTraceCount: 1,
+        distinctDisputeCaseCount: 1,
+        sampleTraceIds: ['trace-dispute-1'],
+        sampleDisputeCaseIds: ['case-1'],
+      },
+    },
+  ],
+  events: [
+    {
+      eventEditionId: 'edition-1',
+      eventLabel: 'Main Event',
+      openDisputeCaseCount: 1,
+      pauseRequiredCount: 0,
+      resumeAllowedCount: 1,
+      headlineCurrency: 'MXN',
+      headlineOpenDisputeAtRiskMinor: 1500,
+      headlineDebtPostedMinor: 200,
+      headlineExposureScoreMinor: 1700,
+      currencies: [
+        {
+          currency: 'MXN',
+          openDisputeAtRiskMinor: 1500,
+          debtPostedMinor: 200,
+          exposureScoreMinor: 1700,
+        },
+      ],
+      traceability: {
+        distinctTraceCount: 1,
+        distinctDisputeCaseCount: 1,
+        sampleTraceIds: ['trace-dispute-2'],
+        sampleDisputeCaseIds: ['case-2'],
+      },
+    },
+  ],
+  traceability: {
+    windowStart: new Date('2026-02-01T00:00:00.000Z'),
+    windowEnd: new Date('2026-02-10T00:00:00.000Z'),
+    eventCount: 5,
+    distinctTraceCount: 2,
+    firstOccurredAt: new Date('2026-02-01T10:00:00.000Z'),
+    lastOccurredAt: new Date('2026-02-08T10:00:00.000Z'),
+    sampleTraceIds: ['trace-dispute-1', 'trace-dispute-2'],
+  },
+};
+
+const mxnReportFixture: MxnNetRecognizedFeeReport = {
+  asOf: new Date('2026-02-10T00:00:00.000Z'),
+  windowStart: new Date('2026-02-01T00:00:00.000Z'),
+  windowEnd: new Date('2026-02-10T00:00:00.000Z'),
+  headlineMxnNetRecognizedFeeMinor: 99000,
+  convertedEventCount: 3,
+  missingSnapshotEventCount: 1,
+  currencies: [
+    {
+      sourceCurrency: 'USD',
+      sourceNetRecognizedFeeMinor: 5600,
+      mxnNetRecognizedFeeMinor: 95000,
+      convertedEventCount: 2,
+      missingSnapshotEventCount: 0,
+      appliedSnapshots: [
+        {
+          snapshotId: 'fx-usd-mxn-2026-02-01',
+          sourceCurrency: 'USD',
+          rateToMxn: 17.35,
+          effectiveAt: new Date('2026-02-01T00:00:00.000Z'),
+        },
+      ],
+      sampleMissingSnapshotTraceIds: [],
+    },
+    {
+      sourceCurrency: 'CLP',
+      sourceNetRecognizedFeeMinor: 10000,
+      mxnNetRecognizedFeeMinor: null,
+      convertedEventCount: 0,
+      missingSnapshotEventCount: 1,
+      appliedSnapshots: [],
+      sampleMissingSnapshotTraceIds: ['trace-mxn-missing-1'],
+    },
+  ],
+  traceability: {
+    windowStart: new Date('2026-02-01T00:00:00.000Z'),
+    windowEnd: new Date('2026-02-10T00:00:00.000Z'),
+    eventCount: 4,
+    distinctTraceCount: 2,
+    firstOccurredAt: new Date('2026-02-01T10:00:00.000Z'),
+    lastOccurredAt: new Date('2026-02-09T10:00:00.000Z'),
+    sampleTraceIds: ['trace-mxn-1'],
+  },
+};
+
+const fxRatesFixture: DailyFxRateRecord[] = [
+  {
+    id: 'fx-rate-1',
+    sourceCurrency: 'USD',
+    quoteCurrency: 'MXN',
+    effectiveDate: new Date('2026-02-01T00:00:00.000Z'),
+    rateMicroMxn: 17_350_000,
+    rateToMxn: 17.35,
+    updatedReason: 'manual_review',
+    updatedByUserId: 'admin-1',
+    createdAt: new Date('2026-02-01T01:00:00.000Z'),
+    updatedAt: new Date('2026-02-01T02:00:00.000Z'),
+  },
+];
+
+const fxFlagsFixture: FxRateActionFlags = {
+  checkedCurrencies: ['USD'],
+  missingRates: [
+    {
+      sourceCurrency: 'USD',
+      missingEventDates: ['2026-02-05'],
+    },
+  ],
+  staleRates: [
+    {
+      sourceCurrency: 'USD',
+      latestEffectiveDate: '2026-02-01',
+      daysStale: 4,
+    },
+  ],
+  hasActions: true,
+};
 
 const financialCaseLookupResultFixture: FinancialCaseLookupResult = {
   query: 'trace-01',
@@ -242,6 +506,96 @@ describe('Payments hardening component coverage', () => {
     );
 
     expect(screen.getByText('notFoundState')).toBeInTheDocument();
+  });
+
+  it('renders net recognized fee dashboard summary and traceability details', () => {
+    render(
+      <NetRecognizedFeeDashboard
+        locale="en"
+        metrics={netRecognizedMetricsFixture}
+        labels={netRecognizedFeeLabels}
+        rangeOptions={[
+          { value: '7d', label: '7d' },
+          { value: '30d', label: '30d' },
+        ]}
+        selectedRange="30d"
+      />,
+    );
+
+    expect(screen.getByText('sectionTitle')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-range-selector')).toBeInTheDocument();
+    expect(screen.getByText('trace-net-1')).toBeInTheDocument();
+    expect(screen.getByText('manual_review')).toBeInTheDocument();
+  });
+
+  it('renders debt/dispute exposure dashboard organizer and event rows', () => {
+    render(
+      <DebtDisputeExposureDashboard
+        locale="en"
+        metrics={debtDisputeExposureMetricsFixture}
+        labels={debtDisputeExposureLabels}
+      />,
+    );
+
+    expect(screen.getByText('Organizer One')).toBeInTheDocument();
+    expect(screen.getByText('Main Event')).toBeInTheDocument();
+    expect(screen.getByText('trace-dispute-1')).toBeInTheDocument();
+    expect(screen.getByText('case-1')).toBeInTheDocument();
+  });
+
+  it('renders mxn reporting table rows and not-converted fallback label', () => {
+    render(
+      <MxnReportingDashboard
+        locale="en"
+        report={mxnReportFixture}
+        labels={mxnReportingLabels}
+      />,
+    );
+
+    expect(screen.getByText('sectionTitle')).toBeInTheDocument();
+    expect(screen.getByText(/fx-usd-mxn-2026-02-01/)).toBeInTheDocument();
+    expect(screen.getByText('trace-mxn-missing-1')).toBeInTheDocument();
+    expect(screen.getByText('notConvertedLabel')).toBeInTheDocument();
+  });
+
+  it('renders fx rate management action flags, form inputs, and rates table', () => {
+    const upsertActionMock = jest.fn();
+
+    render(
+      <FxRateManagementDashboard
+        locale="en"
+        rates={fxRatesFixture}
+        flags={fxFlagsFixture}
+        labels={fxRateManagementLabels}
+        upsertAction={upsertActionMock}
+      />,
+    );
+
+    expect(screen.getByText(/missingTitle:\s*USD/)).toBeInTheDocument();
+    expect(screen.getByText(/staleTitle:\s*USD/)).toBeInTheDocument();
+    expect(screen.getByLabelText('currencyFieldLabel')).toBeInTheDocument();
+    expect(screen.getByLabelText('fxDatePicker')).toBeInTheDocument();
+    expect(screen.getByText('manual_review')).toBeInTheDocument();
+  });
+
+  it('renders fx rate dashboard no-action and empty-rates states', () => {
+    render(
+      <FxRateManagementDashboard
+        locale="en"
+        rates={[]}
+        flags={{
+          checkedCurrencies: [],
+          missingRates: [],
+          staleRates: [],
+          hasActions: false,
+        }}
+        labels={fxRateManagementLabels}
+        upsertAction={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText('noActions')).toBeInTheDocument();
+    expect(screen.getByText('emptyRates')).toBeInTheDocument();
   });
 
   it('renders evidence summary, ownership state, and artifact rows when pack exists', () => {

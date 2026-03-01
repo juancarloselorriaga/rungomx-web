@@ -308,6 +308,28 @@ describe('POST /api/payments/disputes/[disputeCaseId]/evidence', () => {
     });
   });
 
+  it('returns 500 when dispute evidence submission throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'risk-user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockSubmitDisputeEvidence.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/disputes/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/evidence', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          evidenceNote: 'Evidence package',
+        }),
+      }),
+      createRouteContext('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
+
   it('returns 200 with deterministic accepted payload on success', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'risk-user-1' },

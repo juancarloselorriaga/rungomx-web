@@ -111,6 +111,24 @@ describe('GET /api/payments/refunds/admin/review-queue', () => {
     expect(await response.json()).toEqual({ error: 'Permission denied' });
   });
 
+  it('returns 500 when admin review queue retrieval throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    mockListRefundAdminReviewQueue.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/payments/refunds/admin/review-queue?organizationId=11111111-1111-4111-8111-111111111111',
+      ),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
+
   it('returns queue entries with deterministic metadata', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },

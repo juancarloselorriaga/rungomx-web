@@ -198,4 +198,25 @@ describe('POST /api/payments/refunds', () => {
       reason: 'Refund window closed on 2026-02-20T00:00:00.000Z.',
     });
   });
+
+  it('returns 500 when refund submission throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'attendee-1' },
+      permissions: { canManageEvents: false },
+    });
+    mockSubmitAttendeeRefundRequest.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds', {
+        method: 'POST',
+        body: JSON.stringify({
+          registrationId: '11111111-1111-4111-8111-111111111111',
+          reasonCode: 'other',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
 });

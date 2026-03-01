@@ -111,6 +111,24 @@ describe('GET /api/payments/wallet/explainability', () => {
     expect(response.status).toBe(404);
   });
 
+  it('returns 500 when explainability retrieval throws an unexpected error', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'user-1' },
+      permissions: { canManageEvents: true },
+    });
+    mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
+    mockGetOrganizerWalletExplainability.mockRejectedValue(new Error('Unexpected failure'));
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/payments/wallet/explainability?organizationId=11111111-1111-4111-8111-111111111111&eventId=22222222-2222-4222-8222-222222222222',
+      ),
+    );
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: 'Server error' });
+  });
+
   it('returns explainability payload when authorized and event exists', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },
