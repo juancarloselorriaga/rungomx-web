@@ -167,9 +167,6 @@ test.describe('Capacity Enforcement', () => {
   });
 
   test('Test 1.10: Other distances remain available when one is sold out', async ({ browser }) => {
-    // This scenario creates a second event and completes another registration flow.
-    test.setTimeout(180_000);
-
     // Use separate browser contexts for organizer and athlete to avoid sign-out issues
     const organizerContext = await browser.newContext();
     const organizerPage = await organizerContext.newPage();
