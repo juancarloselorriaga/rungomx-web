@@ -39,7 +39,7 @@
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged",
-    "commit-msg": "scripts/clean-commit-msg.sh"
+    "commit-msg": "scripts/clean-commit-msg.sh \"$1\""
   },
   "lint-staged": {
     "messages/**/*.json": [

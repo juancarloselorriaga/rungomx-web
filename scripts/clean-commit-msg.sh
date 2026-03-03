@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MSG_FILE="$1"
+# commit-msg hooks pass the commit message file path as $1.
+# Fallback keeps the script safe when invoked directly by tooling.
+MSG_FILE="${1:-.git/COMMIT_EDITMSG}"
+
+if [[ ! -f "$MSG_FILE" ]]; then
+  echo "[clean-commit-msg] Commit message file not found: $MSG_FILE" >&2
+  exit 0
+fi
 
 # Block or strip common AI attribution patterns.
 # You can choose either "strip" (default here) or "fail".
