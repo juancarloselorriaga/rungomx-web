@@ -1,7 +1,5 @@
 'server only';
 
-import { neonConfig, Pool as NeonPool } from '@neondatabase/serverless';
-import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
 import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
 // @ts-expect-error `pg` typings are not resolved under this workspace's bundler module resolution.
 import { Pool as NodePgPool } from 'pg';
@@ -16,7 +14,7 @@ if (!connectionString) {
 }
 
 type DbSchema = typeof schema & typeof relations;
-type DbClient = ReturnType<typeof drizzleNeon<DbSchema>>;
+type DbClient = ReturnType<typeof drizzleNodePg<DbSchema>>;
 const schemaConfig = { schema: { ...schema, ...relations } };
 
 let closePoolFn: () => Promise<void>;
@@ -41,17 +39,15 @@ if (process.env.NODE_ENV === 'test') {
         },
       })
     : new NodePgPool({ connectionString });
-  dbInternal = drizzleNodePg<DbSchema>(pool, schemaConfig) as unknown as DbClient;
+  dbInternal = drizzleNodePg<DbSchema>(pool, schemaConfig);
   closePoolFn = async () => {
     await pool.end();
   };
 } else {
-  // Force `ws` for server-side Neon connections for predictable Node behavior.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  neonConfig.webSocketConstructor = require('ws');
-
-  const pool = new NeonPool({ connectionString });
-  dbInternal = drizzleNeon<DbSchema>(pool, schemaConfig);
+  // Vercel Node runtime can use TCP with the Neon pooler URL (pg driver),
+  // keeping full transaction support and avoiding WebSocket transport pitfalls.
+  const pool = new NodePgPool({ connectionString });
+  dbInternal = drizzleNodePg<DbSchema>(pool, schemaConfig);
   closePoolFn = async () => {
     await pool.end();
   };
