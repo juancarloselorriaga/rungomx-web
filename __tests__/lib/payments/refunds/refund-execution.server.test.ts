@@ -218,6 +218,119 @@ describe('refund execution domain service', () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
+  it('accepts cumulative partial refunds exactly to cap and rejects one unit above cap', async () => {
+    mockFindManyMoneyEvents.mockResolvedValue([
+      {
+        payloadJson: {
+          registrationId: '33333333-3333-4333-8333-333333333333',
+          refundAmount: { amountMinor: 400 },
+        },
+      },
+      {
+        payloadJson: {
+          registrationId: '33333333-3333-4333-8333-333333333333',
+          refundAmount: { amountMinor: 500 },
+        },
+      },
+      {
+        payloadJson: {
+          registrationId: '99999999-9999-4999-8999-999999999999',
+          refundAmount: { amountMinor: 9999 },
+        },
+      },
+    ]);
+
+    const exactCapResult = await executeRefundRequest(
+      defaultParams({
+        requestedAmountMinor: 300,
+        maxRefundableToAttendeeMinorPerRun: 1200,
+      }),
+    );
+
+    expect(exactCapResult.alreadyRefundedMinor).toBe(900);
+    expect(exactCapResult.remainingRefundableBeforeMinor).toBe(300);
+    expect(exactCapResult.remainingRefundableAfterMinor).toBe(0);
+
+    await expect(
+      executeRefundRequest(
+        defaultParams({
+          requestedAmountMinor: 301,
+          maxRefundableToAttendeeMinorPerRun: 1200,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'REFUND_MAX_REFUNDABLE_EXCEEDED',
+    });
+  });
+
+  it('supports boundary amounts: exact max succeeds and max plus one fails', async () => {
+    const exactBoundaryResult = await executeRefundRequest(
+      defaultParams({
+        requestedAmountMinor: 1200,
+        maxRefundableToAttendeeMinorPerRun: 1200,
+      }),
+    );
+
+    expect(exactBoundaryResult.remainingRefundableBeforeMinor).toBe(1200);
+    expect(exactBoundaryResult.remainingRefundableAfterMinor).toBe(0);
+
+    await expect(
+      executeRefundRequest(
+        defaultParams({
+          requestedAmountMinor: 1201,
+          maxRefundableToAttendeeMinorPerRun: 1200,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'REFUND_MAX_REFUNDABLE_EXCEEDED',
+    });
+  });
+
+  it('rejects duplicate retry after a successful execution to prevent double charge', async () => {
+    mockFindFirstRefundRequest
+      .mockResolvedValueOnce({
+        id: '22222222-2222-4222-8222-222222222222',
+        registrationId: '33333333-3333-4333-8333-333333333333',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        attendeeUserId: '44444444-4444-4444-8444-444444444444',
+        status: 'approved',
+        reasonCode: 'medical',
+        eligibilitySnapshotJson: { version: 'refund-request-eligibility-v1' },
+        financialSnapshotJson: { maxRefundableToAttendeeMinor: 1400 },
+        decidedByUserId: '55555555-5555-4555-8555-555555555555',
+      })
+      .mockResolvedValueOnce({
+        id: '22222222-2222-4222-8222-222222222222',
+        registrationId: '33333333-3333-4333-8333-333333333333',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        attendeeUserId: '44444444-4444-4444-8444-444444444444',
+        status: 'executed',
+        reasonCode: 'medical',
+        eligibilitySnapshotJson: { version: 'refund-request-eligibility-v1' },
+        financialSnapshotJson: { maxRefundableToAttendeeMinor: 1400 },
+        decidedByUserId: '55555555-5555-4555-8555-555555555555',
+      });
+
+    const firstRun = await executeRefundRequest(
+      defaultParams({
+        requestedAmountMinor: 300,
+      }),
+    );
+    expect(firstRun.status).toBe('executed');
+
+    await expect(
+      executeRefundRequest(
+        defaultParams({
+          requestedAmountMinor: 300,
+        }),
+      ),
+    ).rejects.toMatchObject({
+      code: 'REFUND_REQUEST_ALREADY_EXECUTED',
+    });
+
+    expect(mockIngestMoneyMutationFromApi).toHaveBeenCalledTimes(1);
+  });
+
   it('blocks in_process execution mode in production', async () => {
     await expect(
       executeRefundRequest({

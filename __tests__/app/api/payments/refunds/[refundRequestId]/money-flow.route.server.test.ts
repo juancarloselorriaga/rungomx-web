@@ -271,4 +271,87 @@ describe('refund decision -> execution money-flow route scenario', () => {
       reason: 'Refund request cannot be executed because it is denied.',
     });
   });
+
+  it('handles near-simultaneous duplicate execution attempts with one success and one conflict', async () => {
+    mockExecuteRefundRequest
+      .mockResolvedValueOnce({
+        refundRequestId: REFUND_REQUEST_ID,
+        registrationId: REGISTRATION_ID,
+        organizerId: ORGANIZATION_ID,
+        attendeeUserId: 'attendee-1',
+        status: 'executed',
+        reasonCode: 'approved',
+        requestedAmountMinor: 250,
+        maxRefundableToAttendeeMinorPerRun: 1000,
+        effectiveMaxRefundableMinor: 1000,
+        alreadyRefundedMinor: 0,
+        remainingRefundableBeforeMinor: 1000,
+        remainingRefundableAfterMinor: 750,
+        executedAt: new Date('2026-03-03T12:00:00.000Z'),
+        executedByUserId: 'organizer-user-1',
+        traceId: `refund-execution:${REFUND_REQUEST_ID}`,
+        ingressDeduplicated: false,
+        runtime: 'web',
+        executionMode: 'in_process',
+        notifications: {
+          channels: ['in_app', 'email'],
+          policyWordingVersion: 'refund-execution-policy-v1',
+          policyWording:
+            'Refund execution is limited by remaining refundable capacity, and service fees are non-refundable.',
+          attendee: {
+            userIds: ['attendee-1'],
+            message: 'Attendee message',
+            traceId: `refund-execution:${REFUND_REQUEST_ID}`,
+            inAppStatus: 'persisted',
+            emailStatus: 'sent',
+          },
+          organizer: {
+            userIds: ['organizer-user-1'],
+            message: 'Organizer message',
+            traceId: `refund-execution:${REFUND_REQUEST_ID}`,
+            inAppStatus: 'persisted',
+            emailStatus: 'sent',
+          },
+        },
+      })
+      .mockRejectedValueOnce(
+        new RefundExecutionError(
+          'REFUND_REQUEST_ALREADY_EXECUTED',
+          'Refund request has already been executed.',
+        ),
+      );
+
+    const callExecution = () =>
+      POST(
+        new Request(`http://localhost/api/payments/refunds/${REFUND_REQUEST_ID}/execute`, {
+          method: 'POST',
+          body: JSON.stringify({
+            organizationId: ORGANIZATION_ID,
+            requestedAmountMinor: 250,
+            maxRefundableToAttendeeMinorPerRun: 1000,
+          }),
+        }),
+        createRouteContext(REFUND_REQUEST_ID),
+      );
+
+    const [firstResponse, secondResponse] = await Promise.all([callExecution(), callExecution()]);
+    const sortedStatuses = [firstResponse.status, secondResponse.status].sort((a, b) => a - b);
+    expect(sortedStatuses).toEqual([200, 409]);
+    expect(mockExecuteRefundRequest).toHaveBeenCalledTimes(2);
+
+    const [firstBody, secondBody] = await Promise.all([firstResponse.json(), secondResponse.json()]);
+    const successBody = firstResponse.status === 200 ? firstBody : secondBody;
+    const conflictBody = firstResponse.status === 409 ? firstBody : secondBody;
+
+    expect(successBody.data).toMatchObject({
+      refundRequestId: REFUND_REQUEST_ID,
+      status: 'executed',
+      requestedAmountMinor: 250,
+    });
+    expect(conflictBody).toEqual({
+      error: 'Refund execution rejected',
+      code: 'REFUND_REQUEST_ALREADY_EXECUTED',
+      reason: 'Refund request has already been executed.',
+    });
+  });
 });

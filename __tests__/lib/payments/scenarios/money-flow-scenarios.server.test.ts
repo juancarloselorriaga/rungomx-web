@@ -138,6 +138,28 @@ function payoutAdjustedEvent(params: {
   });
 }
 
+function payoutProcessingEvent(params: { sequence: number; occurredAt: string; amountMinor: number }) {
+  return parseCanonicalMoneyEventWithUpcasting({
+    eventId: deterministicUuid(params.sequence),
+    traceId: 'trace-payout-processing',
+    occurredAt: params.occurredAt,
+    recordedAt: params.occurredAt,
+    eventName: 'payout.processing',
+    version: 1,
+    entityType: 'payout',
+    entityId: PAYOUT_REQUEST_ID,
+    source: 'worker',
+    idempotencyKey: 'idem-payout-processing',
+    metadata: { scenario: 'money-flow' },
+    payload: {
+      organizerId: ORGANIZER_ID,
+      payoutRequestId: PAYOUT_REQUEST_ID,
+      payoutQuoteId: PAYOUT_QUOTE_ID,
+      currentRequestedAmount: { amountMinor: params.amountMinor, currency: 'MXN' },
+    },
+  });
+}
+
 function payoutCompletedEvent(params: { sequence: number; occurredAt: string; settledAmountMinor: number }) {
   return parseCanonicalMoneyEventWithUpcasting({
     eventId: deterministicUuid(params.sequence),
@@ -317,5 +339,91 @@ describe('payments money-flow scenarios aligned to current capabilities', () => 
     expect(replayWithFullFlow.projection.walletNetMinor).toBe(38_000);
     expect(replayWithFullFlow.projection.economicsNetFeeMinor).toBe(12_000);
     expect(replayWithCaptureOnly.projection.economicsNetFeeMinor).toBe(12_000);
+  });
+
+  it('handles refund during payout processing with adjustment and later debt repayment', async () => {
+    const baseTime = new Date('2026-03-03T10:00:00.000Z');
+    const firstBatchPayments = Array.from({ length: 20 }, (_, index) =>
+      paymentCapturedEvent({
+        sequence: 800 + index,
+        occurredAt: at(baseTime, index),
+        grossAmountMinor: 10_000,
+        feeAmountMinor: 800,
+        netAmountMinor: 9_200,
+      }),
+    );
+
+    const simulationEvents = [
+      ...firstBatchPayments,
+      payoutRequestedEvent({
+        sequence: 900,
+        occurredAt: at(baseTime, 30),
+        amountMinor: 140_000,
+      }),
+      payoutProcessingEvent({
+        sequence: 901,
+        occurredAt: at(baseTime, 31),
+        amountMinor: 140_000,
+      }),
+      refundExecutedEvent({
+        sequence: 902,
+        occurredAt: at(baseTime, 32),
+        amountMinor: 50_000,
+      }),
+      payoutAdjustedEvent({
+        sequence: 903,
+        occurredAt: at(baseTime, 33),
+        previousRequestedAmountMinor: 140_000,
+        adjustedRequestedAmountMinor: 90_000,
+      }),
+      payoutCompletedEvent({
+        sequence: 904,
+        occurredAt: at(baseTime, 34),
+        settledAmountMinor: 90_000,
+      }),
+      paymentCapturedEvent({
+        sequence: 905,
+        occurredAt: at(baseTime, 35),
+        grossAmountMinor: 21_000,
+        feeAmountMinor: 800,
+        netAmountMinor: 20_200,
+      }),
+    ];
+
+    queue.push(walletRowsFromCanonicalEvents(simulationEvents));
+    const wallet = await getOrganizerWalletBucketSnapshot({
+      organizerId: ORGANIZER_ID,
+      now: new Date('2026-03-03T12:00:00.000Z'),
+    });
+
+    expect(wallet.buckets).toEqual({
+      availableMinor: 64_200,
+      processingMinor: 0,
+      frozenMinor: 0,
+      debtMinor: 0,
+    });
+    expect(wallet.debt.categoryBalancesMinor).toEqual({
+      disputes: 0,
+      refunds: 0,
+      fees: 0,
+    });
+    expect(wallet.debt.repaymentAppliedMinor).toBe(6_000);
+
+    const replayWithFullFlow = replayCanonicalMoneyEvents({
+      events: simulationEvents,
+      mode: 'in_process',
+      nodeEnv: 'test',
+      runtime: 'web',
+    });
+    const replayWithCaptureOnly = replayCanonicalMoneyEvents({
+      events: [...firstBatchPayments, simulationEvents[simulationEvents.length - 1]!],
+      mode: 'in_process',
+      nodeEnv: 'test',
+      runtime: 'web',
+    });
+
+    expect(replayWithFullFlow.projection.walletNetMinor).toBe(64_200);
+    expect(replayWithFullFlow.projection.economicsNetFeeMinor).toBe(16_800);
+    expect(replayWithCaptureOnly.projection.economicsNetFeeMinor).toBe(16_800);
   });
 });
