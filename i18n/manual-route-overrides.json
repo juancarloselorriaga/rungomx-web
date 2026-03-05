@@ -42,6 +42,12 @@
     "selection": "protected",
     "pages": ["dashboardEvents"]
   },
+  "/dashboard/payments": { "selection": "protected", "pages": ["dashboardPayments"] },
+  "/dashboard/payments/payouts": { "selection": "protected", "pages": ["dashboardPayments"] },
+  "/dashboard/payments/payouts/[payoutRequestId]": {
+    "selection": "protected",
+    "pages": ["dashboardPayments"]
+  },
   "/results/[seriesSlug]/[editionSlug]": { "selection": "public", "pages": ["results"] },
   "/results/how-it-works": { "selection": "public", "pages": ["results"] },
   "/rankings": { "selection": "public", "pages": ["rankings"] },

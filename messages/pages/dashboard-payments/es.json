@@ -1,0 +1,123 @@
+{
+  "metadata": {
+    "title": "Espacio de pagos",
+    "description": "Sigue el estado de tu cartera, elegibilidad de retiro y ciclo de pagos."
+  },
+  "home": {
+    "title": "Pagos",
+    "description": "Revisa tu cartera, cola de acciones y elegibilidad de retiros en un solo lugar.",
+    "organization": {
+      "label": "Organización",
+      "none": "No hay organizaciones disponibles",
+      "help": "Elige la organización que quieres revisar.",
+      "invalidTitle": "Esta organización no está disponible",
+      "invalidDescription": "La organización seleccionada no se pudo cargar para tu cuenta. Elige otra organización e inténtalo de nuevo."
+    },
+    "shell": {
+      "loadingTitle": "Cargando espacio de pagos",
+      "loadingDescription": "Estamos preparando la información de cartera y retiros para esta organización.",
+      "emptyTitle": "Aún no hay cartera de organización",
+      "emptyDescription": "Crea o únete a una organización para empezar a gestionar ciclos de retiro desde este espacio.",
+      "degradedTitle": "Los datos de pagos no están disponibles temporalmente",
+      "degradedDescription": "No pudimos cargar la información más reciente de pagos. Reintenta para actualizar este espacio."
+    }
+  },
+  "actions": {
+    "retry": "Reintentar",
+    "requestPayout": "Solicitar retiro",
+    "queuePayoutRequest": "Encolar solicitud de retiro",
+    "viewPayouts": "Ver retiros",
+    "openDetails": "Abrir detalle",
+    "viewStatement": "Ver estado"
+  },
+  "wallet": {
+    "asOf": "Al corte de {timestamp}",
+    "buckets": {
+      "available": "Disponible",
+      "processing": "En proceso",
+      "frozen": "Congelado",
+      "debt": "Deuda"
+    },
+    "queue": {
+      "title": "Cola de acciones",
+      "actionNeeded": "Acción requerida",
+      "inProgress": "En progreso",
+      "actionNeededDescription": "Elementos que requieren una acción del organizador para continuar.",
+      "inProgressDescription": "Elementos actualmente gestionados por el procesamiento de plataforma.",
+      "emptyActionNeeded": "No hay elementos con acción requerida en este momento.",
+      "emptyInProgress": "No hay elementos en progreso en este momento.",
+      "whatChanged": "Qué cambió:",
+      "whyItMatters": "Por qué importa:",
+      "whatYouCanDoNow": "Qué puedes hacer ahora:",
+      "actionNeededGuidance": "Revisa este elemento antes de solicitar el siguiente ciclo de retiro.",
+      "inProgressGuidance": "Sigue monitoreando este elemento mientras continúa el procesamiento."
+    }
+  },
+  "request": {
+    "title": "Solicitud de retiro",
+    "description": "Ingresa un monto en unidades menores MXN para iniciar el siguiente ciclo de retiro.",
+    "amountLabel": "Monto solicitado (unidades menores)",
+    "amountHint": "Déjalo vacío para solicitar el máximo retirable actual.",
+    "submitHint": "Al enviar se crea una cotización de retiro y su ciclo.",
+    "queuedHint": "Si ya existe un retiro activo, puedes encolar esta solicitud como siguiente intento.",
+    "successTitle": "Solicitud de retiro creada",
+    "queueSuccessTitle": "Intento de retiro encolado",
+    "conflictTitle": "Ya existe un retiro activo",
+    "conflictDescription": "Esta organización ya tiene un ciclo de retiro activo. Encola una solicitud para ejecutarla cuando termine el ciclo actual.",
+    "errors": {
+      "invalidAmount": "Ingresa un monto positivo válido en unidades menores.",
+      "submitFailed": "No se pudo crear la solicitud de retiro en este momento.",
+      "queueRequiresAmount": "Se requiere un monto válido para encolar el intento de retiro.",
+      "queueFailed": "No se pudo crear el intento de retiro en cola en este momento."
+    },
+    "summary": {
+      "requestId": "ID de solicitud:",
+      "quoteId": "ID de cotización:",
+      "contractId": "ID de contrato:",
+      "maxWithdrawable": "Máximo retirable:",
+      "queueIntentId": "ID de intento en cola:",
+      "requestedAmount": "Monto solicitado:",
+      "blockedReason": "Razón de bloqueo:"
+    }
+  },
+  "payouts": {
+    "title": "Retiros",
+    "description": "Revisa estados actuales e históricos del ciclo de retiros.",
+    "emptyTitle": "Aún no hay historial de retiros",
+    "emptyDescription": "Tus solicitudes aparecerán aquí cuando envíes el primer ciclo de retiro.",
+    "table": {
+      "requestId": "Solicitud",
+      "status": "Estado",
+      "requested": "Solicitado",
+      "currentAmount": "Monto actual",
+      "requestedAt": "Solicitado en"
+    },
+    "statuses": {
+      "requested": "Solicitado",
+      "processing": "En proceso",
+      "paused": "Pausado",
+      "completed": "Completado",
+      "failed": "Fallido"
+    }
+  },
+  "detail": {
+    "title": "Detalle de retiro",
+    "description": "Inspecciona el progreso del ciclo, códigos de razón y disponibilidad de estado.",
+    "stateTimeline": "Línea de tiempo del ciclo",
+    "noEvents": "Aún no hay eventos de ciclo disponibles para esta solicitud.",
+    "stateReason": "Razón",
+    "amountSummary": "Resumen de montos",
+    "notFoundTitle": "No se encontró la solicitud",
+    "notFoundDescription": "La solicitud seleccionada no se encontró para esta organización.",
+    "statement": {
+      "ready": "Estado disponible",
+      "notFound": "El estado no está disponible para esta solicitud.",
+      "notTerminal": "El estado estará disponible cuando el retiro llegue a un estado terminal.",
+      "error": "No se pudo cargar el estado en este momento."
+    }
+  },
+  "nav": {
+    "backToPayments": "Volver a pagos",
+    "backToPayouts": "Volver a retiros"
+  }
+}

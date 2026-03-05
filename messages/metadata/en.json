@@ -298,6 +298,18 @@
         }
       }
     },
+    "DashboardPayments": {
+      "metadata": {
+        "title": "Payments workspace | RunGoMX",
+        "description": "Track wallet readiness, payout requests, and payout lifecycle progress.",
+        "keywords": ["organizer payouts", "payments workspace", "wallet readiness"],
+        "openGraph": {
+          "title": "Payments workspace | RunGoMX",
+          "description": "Track wallet readiness, payout requests, and payout lifecycle progress.",
+          "imageAlt": "Organizer payments workspace"
+        }
+      }
+    },
     "DashboardOrganizations": {
       "metadata": {
         "title": "Organizations | RunGoMX",

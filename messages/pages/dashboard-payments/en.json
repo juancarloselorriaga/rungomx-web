@@ -1,0 +1,123 @@
+{
+  "metadata": {
+    "title": "Payments workspace",
+    "description": "Track wallet status, payout readiness, and payout lifecycle details."
+  },
+  "home": {
+    "title": "Payments",
+    "description": "Review your wallet, action queue, and payout readiness in one place.",
+    "organization": {
+      "label": "Organization",
+      "none": "No organizations available",
+      "help": "Choose the organization wallet to review.",
+      "invalidTitle": "This organization is not available",
+      "invalidDescription": "The selected organization could not be loaded for your account. Choose another organization and retry."
+    },
+    "shell": {
+      "loadingTitle": "Loading payments workspace",
+      "loadingDescription": "We are preparing wallet and payout information for this organization.",
+      "emptyTitle": "No organization wallet available yet",
+      "emptyDescription": "Create or join an organization to start managing payout cycles from this workspace.",
+      "degradedTitle": "Payments data is temporarily unavailable",
+      "degradedDescription": "We could not load the latest payments information. Retry to refresh this workspace."
+    }
+  },
+  "actions": {
+    "retry": "Retry",
+    "requestPayout": "Request payout",
+    "queuePayoutRequest": "Queue payout request",
+    "viewPayouts": "View payouts",
+    "openDetails": "Open details",
+    "viewStatement": "View statement"
+  },
+  "wallet": {
+    "asOf": "As of {timestamp}",
+    "buckets": {
+      "available": "Available",
+      "processing": "Processing",
+      "frozen": "Frozen",
+      "debt": "Debt"
+    },
+    "queue": {
+      "title": "Action queue",
+      "actionNeeded": "Action Needed",
+      "inProgress": "In Progress",
+      "actionNeededDescription": "Items that need organizer action to continue payout readiness.",
+      "inProgressDescription": "Items currently managed by platform processing.",
+      "emptyActionNeeded": "No action-needed items right now.",
+      "emptyInProgress": "No in-progress items right now.",
+      "whatChanged": "What changed:",
+      "whyItMatters": "Why it matters:",
+      "whatYouCanDoNow": "What you can do now:",
+      "actionNeededGuidance": "Review this item before requesting the next payout cycle.",
+      "inProgressGuidance": "Keep monitoring this item while platform processing continues."
+    }
+  },
+  "request": {
+    "title": "Payout request",
+    "description": "Enter an amount in MXN minor units to request the next payout cycle.",
+    "amountLabel": "Requested amount (minor units)",
+    "amountHint": "Leave empty to request the current max withdrawable amount.",
+    "submitHint": "Submitting creates a payout quote and lifecycle request.",
+    "queuedHint": "If an active payout exists, you can queue this request as the next intent.",
+    "successTitle": "Payout request created",
+    "queueSuccessTitle": "Payout intent queued",
+    "conflictTitle": "Active payout already exists",
+    "conflictDescription": "This organizer already has an active payout lifecycle. Queue a request to run when the current cycle finishes.",
+    "errors": {
+      "invalidAmount": "Enter a valid positive amount in minor units.",
+      "submitFailed": "Payout request could not be created right now.",
+      "queueRequiresAmount": "A valid amount is required to queue a payout intent.",
+      "queueFailed": "Queued payout intent could not be created right now."
+    },
+    "summary": {
+      "requestId": "Request ID:",
+      "quoteId": "Quote ID:",
+      "contractId": "Contract ID:",
+      "maxWithdrawable": "Max withdrawable:",
+      "queueIntentId": "Queue intent ID:",
+      "requestedAmount": "Requested amount:",
+      "blockedReason": "Blocked reason:"
+    }
+  },
+  "payouts": {
+    "title": "Payouts",
+    "description": "Review current and historical payout lifecycle states.",
+    "emptyTitle": "No payout history yet",
+    "emptyDescription": "Your payout requests will appear here once you submit the first payout cycle.",
+    "table": {
+      "requestId": "Request",
+      "status": "Status",
+      "requested": "Requested",
+      "currentAmount": "Current amount",
+      "requestedAt": "Requested at"
+    },
+    "statuses": {
+      "requested": "Requested",
+      "processing": "Processing",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "detail": {
+    "title": "Payout detail",
+    "description": "Inspect lifecycle progress, reason codes, and statement availability.",
+    "stateTimeline": "Lifecycle timeline",
+    "noEvents": "No lifecycle events are available for this payout request yet.",
+    "stateReason": "Reason",
+    "amountSummary": "Amount summary",
+    "notFoundTitle": "Payout request not found",
+    "notFoundDescription": "The selected payout request could not be found for this organization.",
+    "statement": {
+      "ready": "Statement available",
+      "notFound": "Statement is not available for this payout request.",
+      "notTerminal": "Statement will be available after payout reaches a terminal status.",
+      "error": "Statement could not be loaded right now."
+    }
+  },
+  "nav": {
+    "backToPayments": "Back to payments",
+    "backToPayouts": "Back to payouts"
+  }
+}

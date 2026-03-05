@@ -35,6 +35,7 @@ export function buildProtectedNavSections(
   // Access gate: organizers and internal staff only.
   const canSeeEvents =
     permissions.canViewOrganizersDashboard ||
+    permissions.canManageEvents ||
     permissions.canAccessAdminArea;
   if (canSeeEvents) {
     items.push({
@@ -46,6 +47,11 @@ export function buildProtectedNavSections(
       href: '/dashboard/organizations',
       labelKey: 'organizations',
       iconName: 'Users',
+    });
+    items.push({
+      href: '/dashboard/payments',
+      labelKey: 'payments',
+      iconName: 'FileText',
     });
   }
 

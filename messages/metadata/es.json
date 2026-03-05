@@ -298,6 +298,18 @@
         }
       }
     },
+    "DashboardPayments": {
+      "metadata": {
+        "title": "Espacio de pagos | RunGoMX",
+        "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
+        "keywords": ["retiros organizador", "espacio de pagos", "elegibilidad cartera"],
+        "openGraph": {
+          "title": "Espacio de pagos | RunGoMX",
+          "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
+          "imageAlt": "Espacio de pagos para organizadores"
+        }
+      }
+    },
     "DashboardOrganizations": {
       "metadata": {
         "title": "Organizaciones | RunGoMX",
