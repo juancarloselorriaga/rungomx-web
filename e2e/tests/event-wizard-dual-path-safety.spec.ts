@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import { randomUUID } from 'crypto';
 import { sql } from 'drizzle-orm';
 
@@ -83,6 +83,66 @@ async function postExpectingStatusOrPersistentServerError(
   throw new Error(
     `Expected ${expectedStatus} from ${path}, but only received ${lastStatus} after ${maxAttempts} attempts.`,
   );
+}
+
+async function waitForFaqRouteReady(page: Page, question: string) {
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (await buildIndicator.isVisible().catch(() => false)) {
+    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+    await page.waitForTimeout(500);
+  }
+
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => null);
+
+  const heading = page.getByRole('heading', { name: /Frequently Asked Questions/i }).first();
+  const row = page
+    .locator('div.rounded-lg.border.bg-card', {
+      has: page.getByText(question, { exact: true }),
+    })
+    .first();
+
+  await expect(heading).toBeVisible({ timeout: 30000 });
+  await expect(row).toBeVisible({ timeout: 30000 });
+  return row;
+}
+
+async function openFaqEditor(page: Page, row: Locator) {
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  const editQuestionInput = page.getByRole('textbox', { name: /Question/i }).first();
+  const editAnswerTextarea = page.locator('textarea[name="answer"]:visible').first();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const editButton = row.getByRole('button', { name: /^Edit$/i }).first();
+    await expect(editButton).toBeVisible({ timeout: 15000 });
+    await editButton.click();
+
+    if (await buildIndicator.isVisible().catch(() => false)) {
+      await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+      await page.waitForTimeout(300);
+    }
+
+    const editorVisible = await expect
+      .poll(
+        async () => {
+          const questionVisible = await editQuestionInput.isVisible().catch(() => false);
+          const answerVisible = await editAnswerTextarea.isVisible().catch(() => false);
+          return questionVisible && answerVisible;
+        },
+        { timeout: 10000 },
+      )
+      .toBe(true)
+      .then(() => true)
+      .catch(() => false);
+
+    if (editorVisible) {
+      return { editQuestionInput, editAnswerTextarea };
+    }
+
+    await page.waitForTimeout(300);
+  }
+
+  throw new Error('FAQ editor did not become stable after clicking Edit.');
 }
 
 test.describe('Event wizard dual-path + AI safety gates', () => {
@@ -423,20 +483,12 @@ test.describe('Event wizard dual-path + AI safety gates', () => {
     if (!appliedByApi) {
       await page.reload();
     }
-    const aiFaqRow = page
-      .locator('div.rounded-lg.border.bg-card', {
-        has: page.getByText(faqQuestion, { exact: true }),
-      })
-      .first();
-    await expect(aiFaqRow).toBeVisible();
+    const aiFaqRow = await waitForFaqRouteReady(page, faqQuestion);
 
     const updatedFaqQuestion = `${faqQuestion} (edited manually)`;
     const updatedFaqAnswer = 'Updated manually after AI apply to confirm shared-module override.';
-    await aiFaqRow.getByRole('button', { name: /^Edit$/i }).click();
-    const editQuestionInput = page.getByRole('textbox', { name: /Question/i }).first();
+    const { editQuestionInput, editAnswerTextarea } = await openFaqEditor(page, aiFaqRow);
     await editQuestionInput.fill(updatedFaqQuestion);
-    const editAnswerTextarea = page.locator('textarea').first();
-    await expect(editAnswerTextarea).toBeVisible();
     await editAnswerTextarea.fill(updatedFaqAnswer);
     const saveFaqButton = page.getByRole('button', { name: /^Save$/i }).first();
     await expect(saveFaqButton).toBeVisible({ timeout: 15000 });

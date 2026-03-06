@@ -136,23 +136,27 @@ export function EventSettingsForm({
   const tHero = useTranslations('pages.dashboardEventSettings.heroImage');
   const wizardSessionStorageKey = `event-wizard:path:${event.id}`;
   const [creationPath, setCreationPath] = useState<EventCreationPath | null>(null);
+  const [hasHydratedCreationPath, setHasHydratedCreationPath] = useState(!wizardMode);
 
   useEffect(() => {
     if (!wizardMode || typeof window === 'undefined') return;
     const raw = window.sessionStorage.getItem(wizardSessionStorageKey);
     if (raw === 'ai' || raw === 'manual') {
       setCreationPath(raw);
+    } else if (event.distances.length > 0) {
+      setCreationPath('manual');
     }
-  }, [wizardMode, wizardSessionStorageKey]);
+    setHasHydratedCreationPath(true);
+  }, [event.distances.length, wizardMode, wizardSessionStorageKey]);
 
   useEffect(() => {
-    if (!wizardMode || typeof window === 'undefined') return;
+    if (!wizardMode || typeof window === 'undefined' || !hasHydratedCreationPath) return;
     if (!creationPath) {
       window.sessionStorage.removeItem(wizardSessionStorageKey);
       return;
     }
     window.sessionStorage.setItem(wizardSessionStorageKey, creationPath);
-  }, [wizardMode, creationPath, wizardSessionStorageKey]);
+  }, [wizardMode, creationPath, hasHydratedCreationPath, wizardSessionStorageKey]);
 
   const wizardSteps = useMemo(() => getEventWizardSteps(event.id), [event.id]);
   const wizardCompleteness = useMemo(
@@ -311,11 +315,14 @@ export function EventSettingsForm({
 
   useEffect(() => {
     setDistances(event.distances);
+    if (event.distances.length > 0) {
+      setShowAddDistance(false);
+    }
   }, [event.distances]);
 
   useEffect(() => {
-    setCapacityScope(event.sharedCapacity ? 'shared_pool' : 'per_distance');
-    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : '');
+    setCapacityScope(event.sharedCapacity ? shared_pool : per_distance);
+    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : );
   }, [event.sharedCapacity]);
 
   function handleEditionSlugChange(nextSlug: string) {
@@ -524,6 +531,9 @@ export function EventSettingsForm({
   }
 
   function handleCreationPathChange(nextPath: EventCreationPath) {
+    if (wizardMode && typeof window !== 'undefined') {
+      window.sessionStorage.setItem(wizardSessionStorageKey, nextPath);
+    }
     setCreationPath(nextPath);
   }
 
