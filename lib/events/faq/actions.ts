@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
-import { revalidateTag } from 'next/cache';
+import { revalidateTag, updateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -49,6 +49,24 @@ type FaqItemData = {
   sortOrder: number;
   editionId: string;
 };
+
+function invalidateEditionDetailCache(editionId: string) {
+  const detailTag = eventEditionDetailTag(editionId);
+
+  try {
+    updateTag(detailTag);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      /updateTag can only be called from within a Server Action/i.test(error.message)
+    ) {
+      revalidateTag(detailTag, { expire: 0 });
+      return;
+    }
+
+    throw error;
+  }
+}
 
 // =============================================================================
 // Actions
@@ -127,8 +145,8 @@ export const createFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
     return newItem;
   });
 
-  revalidateTag(eventEditionDetailTag(faqItem.editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  invalidateEditionDetailCache(faqItem.editionId);
+  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), 'max');
 
   return {
     ok: true,
@@ -221,8 +239,8 @@ export const updateFaqItem = withAuthenticatedUser<ActionResult<FaqItemData>>({
     return updatedItem;
   });
 
-  revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(faqItem.edition.series.slug, faqItem.edition.slug), { expire: 0 });
+  invalidateEditionDetailCache(updated.editionId);
+  revalidateTag(publicEventBySlugTag(faqItem.edition.series.slug, faqItem.edition.slug), 'max');
 
   return {
     ok: true,
@@ -295,8 +313,8 @@ export const deleteFaqItem = withAuthenticatedUser<ActionResult>({
     }
   });
 
-  revalidateTag(eventEditionDetailTag(faqItem.editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(faqItem.edition.series.slug, faqItem.edition.slug), { expire: 0 });
+  invalidateEditionDetailCache(faqItem.editionId);
+  revalidateTag(publicEventBySlugTag(faqItem.edition.series.slug, faqItem.edition.slug), 'max');
 
   return { ok: true, data: undefined };
 });
@@ -386,8 +404,8 @@ export const reorderFaqItems = withAuthenticatedUser<ActionResult>({
       }
     });
 
-    revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
-    revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+    invalidateEditionDetailCache(editionId);
+    revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), 'max');
 
     return { ok: true, data: undefined };
   } catch (error) {

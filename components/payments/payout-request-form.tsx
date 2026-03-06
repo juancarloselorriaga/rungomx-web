@@ -4,7 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 
 type PayoutRequestFormProps = {
   organizationId: string;
@@ -24,6 +24,11 @@ type QueueIntentSuccess = {
   blockedReasonCode: string;
 };
 
+type RequestedAmountParseResult =
+  | { kind: 'empty' }
+  | { kind: 'invalid' }
+  | { kind: 'valid'; value: number };
+
 function createIdempotencyKey(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}:${crypto.randomUUID()}`;
@@ -32,16 +37,16 @@ function createIdempotencyKey(prefix: string): string {
   return `${prefix}:${Date.now()}`;
 }
 
-function parseRequestedAmount(rawValue: string): number | null {
+function parseRequestedAmount(rawValue: string): RequestedAmountParseResult {
   const trimmed = rawValue.trim();
-  if (!trimmed) return null;
+  if (!trimmed) return { kind: 'empty' };
 
   const parsed = Number(trimmed);
   if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
-    return null;
+    return { kind: 'invalid' };
   }
 
-  return parsed;
+  return { kind: 'valid', value: parsed };
 }
 
 function formatMoney(minor: number): string {
@@ -65,11 +70,6 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
   const submitInFlightRef = useRef(false);
   const queueSubmitInFlightRef = useRef(false);
 
-  const requestedAmountMinor = useMemo(
-    () => parseRequestedAmount(requestedAmount),
-    [requestedAmount],
-  );
-
   const submitPayoutRequest = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -78,10 +78,18 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
       return;
     }
 
-    if (requestedAmountMinor == null) {
+    const formData = new FormData(event.currentTarget);
+    const requestedAmountResult = parseRequestedAmount(
+      String(formData.get('requestedAmountMinor') ?? ''),
+    );
+
+    if (requestedAmountResult.kind === 'invalid') {
       setErrorMessage(t('request.errors.invalidAmount'));
       return;
     }
+
+    const requestedAmountMinor =
+      requestedAmountResult.kind === 'valid' ? requestedAmountResult.value : null;
 
     submitInFlightRef.current = true;
     setErrorMessage(null);
@@ -98,7 +106,7 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
         },
         body: JSON.stringify({
           organizationId,
-          requestedAmountMinor,
+          requestedAmountMinor: requestedAmountMinor ?? undefined,
           idempotencyKey: createIdempotencyKey('organizer-request'),
           activeConflictPolicy: 'queue',
         }),
@@ -220,6 +228,7 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
         </label>
         <input
           id="requestedAmountMinor"
+          name="requestedAmountMinor"
           type="number"
           min={1}
           step={1}

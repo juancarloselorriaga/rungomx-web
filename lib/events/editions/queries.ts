@@ -12,8 +12,6 @@ import {
   pricingTiers,
   registrations,
 } from '@/db/schema';
-import { eventEditionDetailTag } from '@/lib/events/cache-tags';
-import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 
 // =============================================================================
 // Types
@@ -295,7 +293,7 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
     await connection();
   }
 
-  return getEventEditionDetailCached(eventId);
+  return getEventEditionDetailUncached(eventId);
 }
 
 export async function getSeriesEditionsForDashboard(seriesId: string): Promise<SeriesEditionListItem[]> {
@@ -337,11 +335,7 @@ export async function getSeriesEditionsForDashboard(seriesId: string): Promise<S
   }));
 }
 
-async function getEventEditionDetailCached(eventId: string): Promise<EventEditionDetail | null> {
-  'use cache: remote';
-  safeCacheTag(eventEditionDetailTag(eventId));
-  safeCacheLife({ expire: 60 });
-
+async function getEventEditionDetailUncached(eventId: string): Promise<EventEditionDetail | null> {
   const edition = await db.query.eventEditions.findFirst({
     where: and(eq(eventEditions.id, eventId), isNull(eventEditions.deletedAt)),
     with: {

@@ -23,14 +23,24 @@ async function signInAsStaff(
   });
 }
 
-async function openPaymentsWorkspace(page: Page) {
+async function openPaymentsWorkspace(
+  page: Page,
+  options?: { evidenceTraceId?: string },
+) {
   const targetPath = '/en/admin/payments';
+  const searchParams = new URLSearchParams();
+
+  if (options?.evidenceTraceId) {
+    searchParams.set('evidenceTraceId', options.evidenceTraceId);
+  }
+
+  const targetUrl = searchParams.size > 0 ? `${targetPath}?${searchParams.toString()}` : targetPath;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      await page.goto(targetPath, { waitUntil: 'domcontentloaded' });
+      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
       await page.waitForLoadState('networkidle');
-      if (new URL(page.url()).pathname === targetPath) {
+      if (page.url().startsWith(new URL(targetUrl, 'http://127.0.0.1').toString())) {
         return;
       }
     } catch (error) {
@@ -42,7 +52,7 @@ async function openPaymentsWorkspace(page: Page) {
     await page.waitForTimeout(500);
   }
 
-  await expect(page).toHaveURL(/\/en\/admin\/payments/);
+  await expect(page).toHaveURL(new RegExp(targetPath));
 }
 
 test.describe('Payments Admin E2E', () => {
@@ -166,7 +176,7 @@ test.describe('Payments Admin E2E', () => {
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
-    await page.goto(`/en/admin/payments?evidenceTraceId=${encodeURIComponent(ownershipTraceId)}`);
+    await openPaymentsWorkspace(page, { evidenceTraceId: ownershipTraceId });
 
     await expect(page).toHaveURL(/\/en\/admin\/payments\?evidenceTraceId=/);
     await expect(page.getByText('dispute.opened')).toBeVisible();

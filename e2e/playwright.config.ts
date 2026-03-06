@@ -1,7 +1,11 @@
-// Load test environment variables FIRST before any other imports
-import { config } from 'dotenv';
 import { resolve } from 'path';
-config({ path: resolve(__dirname, '../.env.test') });
+import { setupTestDatabaseEnv } from '../testing/setup-db-env';
+
+// Load test environment variables FIRST before any other imports.
+setupTestDatabaseEnv(resolve(__dirname, '../.env.test'), { override: false });
+// Playwright and pnpm can set FORCE_COLOR in child processes. Drop NO_COLOR here to avoid
+// Node's conflicting-color-env warning across the E2E runner and the web server it spawns.
+delete process.env.NO_COLOR;
 // Ensure every Playwright worker imports app code under test mode transport.
 // This must happen at config bootstrap time, before spec/module evaluation.
 (process.env as { NODE_ENV: string }).NODE_ENV = 'test';
@@ -27,11 +31,45 @@ function getRunId() {
   return raw.replace(/[^a-zA-Z0-9._-]/g, '_');
 }
 
+function createWebServerEnv(): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(process.env).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
+  );
+}
+
 const runId = getRunId();
 const repoRoot = resolve(__dirname, '..');
 const outputDir = runId ? resolve(repoRoot, 'test-results', runId) : resolve(repoRoot, 'test-results');
 const reportDir = runId ? resolve(repoRoot, 'playwright-report', runId) : resolve(repoRoot, 'playwright-report');
 const jsonResultsFile = resolve(outputDir, 'results.json');
+const webServerEnv = createWebServerEnv();
+webServerEnv.NEXT_PUBLIC_SITE_URL = origin;
+webServerEnv.PORT = String(port);
+webServerEnv.RUNGOMX_NEXT_DIST_DIR = process.env.RUNGOMX_NEXT_DIST_DIR || '.next-e2e';
+
+if (process.env.DATABASE_URL) {
+  webServerEnv.DATABASE_URL = process.env.DATABASE_URL;
+}
+
+if (process.env.DATABASE_TEST_URL) {
+  webServerEnv.DATABASE_TEST_URL = process.env.DATABASE_TEST_URL;
+}
+
+if (process.env.DATABASE_TEST_HOSTNAME) {
+  webServerEnv.DATABASE_TEST_HOSTNAME = process.env.DATABASE_TEST_HOSTNAME;
+}
+
+if (process.env.DATABASE_TEST_HOSTADDR) {
+  webServerEnv.DATABASE_TEST_HOSTADDR = process.env.DATABASE_TEST_HOSTADDR;
+}
+
+if (process.env.MAPBOX_ACCESS_TOKEN) {
+  webServerEnv.MAPBOX_ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN;
+}
+
+if (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN) {
+  webServerEnv.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
+}
 
 export default defineConfig({
   testDir: './tests',
@@ -132,20 +170,6 @@ export default defineConfig({
     stdout: 'ignore',
     stderr: 'pipe',
     timeout: 120 * 1000, // 2 minutes to start
-    env: {
-      // Ensure auth + redirects use the same origin as the test server.
-      NEXT_PUBLIC_SITE_URL: origin,
-      PORT: String(port),
-      // Avoid conflicts with a developer Next.js instance that may be running in the repo.
-      // Next.js uses a lock file under `${distDir}/dev/lock`.
-      RUNGOMX_NEXT_DIST_DIR: process.env.RUNGOMX_NEXT_DIST_DIR || '.next-e2e',
-      // Force dev server to use test database
-      ...(process.env.DATABASE_URL && { DATABASE_URL: process.env.DATABASE_URL }),
-      // Mapbox tokens for location search
-      ...(process.env.MAPBOX_ACCESS_TOKEN && { MAPBOX_ACCESS_TOKEN: process.env.MAPBOX_ACCESS_TOKEN }),
-      ...(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && {
-        NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
-      }),
-    },
+    env: webServerEnv,
   },
 });

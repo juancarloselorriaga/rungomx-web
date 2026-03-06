@@ -4,7 +4,6 @@
  * Loads .env.test for test database connection
  */
 
-import { config } from 'dotenv';
 import { resolve } from 'path';
 import {
   assertDatabaseTargetMatch,
@@ -12,9 +11,10 @@ import {
   readEnvFileValue,
 } from '@/testing/db-target';
 import { emitDiagnostic } from './diagnostics';
+import { setupTestDatabaseEnv } from '../../testing/setup-db-env';
 
 // Load test environment variables FIRST before any other imports
-config({ path: resolve(__dirname, '../../.env.test') });
+setupTestDatabaseEnv(resolve(__dirname, '../../.env.test'), { override: false });
 
 // Ensure the Playwright runner process uses the same DB transport as app/test code.
 // Without this, runner-side fixtures may use the serverless client and hit read-after-write races.

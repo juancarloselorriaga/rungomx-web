@@ -9,8 +9,7 @@ import { createFaqItem, updateFaqItem, deleteFaqItem, reorderFaqItems } from '@/
 import { cn } from '@/lib/utils';
 import { GripVertical, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { type FormEvent, useState, useTransition } from 'react';
 
 type FaqItem = {
   id: string;
@@ -26,7 +25,6 @@ type FaqManagerProps = {
 
 export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
   const t = useTranslations('pages.dashboardEvents.faq');
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [faqItems, setFaqItems] = useState(initialFaqItems);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,15 +36,21 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
   const [formAnswer, setFormAnswer] = useState('');
 
   // Handle add new FAQ
-  async function handleAdd() {
-    if (!formQuestion.trim() || !formAnswer.trim()) return;
+  async function handleAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const formData = new FormData(event.currentTarget);
+    const question = String(formData.get('question') ?? '').trim();
+    const answer = String(formData.get('answer') ?? '').trim();
+
+    if (!question || !answer) return;
     setError(null);
 
     startTransition(async () => {
       const result = await createFaqItem({
         editionId: eventId,
-        question: formQuestion.trim(),
-        answer: formAnswer.trim(),
+        question,
+        answer,
       });
 
       if (!result.ok) {
@@ -59,9 +63,9 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
         ...prev,
         {
           id: result.data.id,
-          question: formQuestion.trim(),
-          answer: formAnswer.trim(),
-          sortOrder: prev.length,
+          question: result.data.question,
+          answer: result.data.answer,
+          sortOrder: result.data.sortOrder,
         },
       ]);
 
@@ -69,7 +73,6 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       setFormQuestion('');
       setFormAnswer('');
       setIsAdding(false);
-      router.refresh();
     });
   }
 
@@ -81,15 +84,25 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
     setIsAdding(false);
   }
 
-  async function handleSaveEdit() {
-    if (!editingId || !formQuestion.trim() || !formAnswer.trim()) return;
+  async function handleSaveEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingId) return;
+
+    const formData = new FormData(event.currentTarget);
+    const question = String(formData.get('question') ?? '').trim();
+    const answer = String(formData.get('answer') ?? '').trim();
+
+    if (!question || !answer) return;
     setError(null);
+
+    const currentEditingId = editingId;
 
     startTransition(async () => {
       const result = await updateFaqItem({
-        faqItemId: editingId,
-        question: formQuestion.trim(),
-        answer: formAnswer.trim(),
+        faqItemId: currentEditingId,
+        question,
+        answer,
       });
 
       if (!result.ok) {
@@ -100,8 +113,13 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       // Update local state
       setFaqItems((prev) =>
         prev.map((item) =>
-          item.id === editingId
-            ? { ...item, question: formQuestion.trim(), answer: formAnswer.trim() }
+          item.id === currentEditingId
+            ? {
+                ...item,
+                question: result.data.question,
+                answer: result.data.answer,
+                sortOrder: result.data.sortOrder,
+              }
             : item,
         ),
       );
@@ -110,7 +128,6 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       setFormQuestion('');
       setFormAnswer('');
       setEditingId(null);
-      router.refresh();
     });
   }
 
@@ -134,7 +151,6 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
 
       // Remove from local state
       setFaqItems((prev) => prev.filter((item) => item.id !== id));
-      router.refresh();
     });
   }
 
@@ -156,7 +172,6 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       }
 
       setFaqItems(newItems.map((item, i) => ({ ...item, sortOrder: i })));
-      router.refresh();
     });
   }
 
@@ -177,7 +192,6 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       }
 
       setFaqItems(newItems.map((item, i) => ({ ...item, sortOrder: i })));
-      router.refresh();
     });
   }
 
@@ -211,9 +225,10 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
           >
             {editingId === item.id ? (
               // Editing mode
-              <div className="p-4 space-y-4">
+              <form className="p-4 space-y-4" onSubmit={handleSaveEdit}>
                 <FormField label={t('questionLabel')} required>
                   <input
+                    name="question"
                     type="text"
                     value={formQuestion}
                     onChange={(e) => setFormQuestion(e.target.value)}
@@ -228,14 +243,14 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                   onChange={setFormAnswer}
                   disabled={isPending}
                   textareaClassName="resize-none"
-                  textareaProps={{ rows: 3 }}
+                  textareaProps={{ rows: 3, name: 'answer' }}
                 />
                 <div className="flex justify-end gap-2">
-                  <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={isPending}>
+                  <Button type="button" variant="ghost" size="sm" onClick={cancelEdit} disabled={isPending}>
                     <X className="h-4 w-4 mr-1" />
                     {t('cancel')}
                   </Button>
-                  <Button size="sm" onClick={handleSaveEdit} disabled={isPending}>
+                  <Button type="submit" size="sm" disabled={isPending}>
                     {isPending ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-1" />
                     ) : (
@@ -244,7 +259,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                     {t('save')}
                   </Button>
                 </div>
-              </div>
+              </form>
             ) : (
               // View mode
               <div className="p-4">
@@ -310,9 +325,10 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
 
       {/* Add new FAQ form */}
       {isAdding && (
-        <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
+        <form className="rounded-lg border bg-card p-4 shadow-sm space-y-4" onSubmit={handleAdd}>
           <FormField label={t('questionLabel')} required>
             <input
+              name="question"
               type="text"
               value={formQuestion}
               onChange={(e) => setFormQuestion(e.target.value)}
@@ -329,12 +345,14 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
             disabled={isPending}
             textareaClassName="resize-none"
             textareaProps={{
+              name: 'answer',
               placeholder: t('answerPlaceholder'),
               rows: 3,
             }}
           />
           <div className="flex justify-end gap-2">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => {
@@ -347,7 +365,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
               <X className="h-4 w-4 mr-1" />
               {t('cancel')}
             </Button>
-            <Button size="sm" onClick={handleAdd} disabled={isPending}>
+            <Button type="submit" size="sm" disabled={isPending}>
               {isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
               ) : (
@@ -356,7 +374,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
               {t('add')}
             </Button>
           </div>
-        </div>
+        </form>
       )}
 
       {/* Add button */}

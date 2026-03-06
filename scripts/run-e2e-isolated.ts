@@ -283,10 +283,16 @@ async function main() {
   console.log(`[e2e] isolated artifactsDir=test-results/${runId}`);
   console.log(`[e2e] isolated reportDir=playwright-report/${runId}`);
 
+  const childEnv = { ...process.env };
+
+  // pnpm/playwright may set FORCE_COLOR for descendants; keeping NO_COLOR alongside it only
+  // generates Node warnings and does not change test behavior.
+  delete childEnv.NO_COLOR;
+
   const child = spawn(getPnpmCommand(), [targetScript, ...forwardArgs], {
     stdio: 'inherit',
     env: {
-      ...process.env,
+      ...childEnv,
       E2E_RUN_ID: runId,
       PLAYWRIGHT_PORT: String(port),
       PLAYWRIGHT_BASE_URL: baseUrl,

@@ -1,8 +1,8 @@
 /** @jest-environment node */
-import { config } from 'dotenv';
 import { resolve } from 'path';
+import { setupTestDatabaseEnv } from '@/testing/setup-db-env';
 
-config({ path: resolve(process.cwd(), '.env.test') });
+setupTestDatabaseEnv(resolve(process.cwd(), '.env.test'));
 
 jest.mock('@/config/url', () => ({
   siteUrl: 'http://localhost:3000',

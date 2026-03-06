@@ -670,6 +670,13 @@ export async function addDistance(
   const distanceLabel = page.getByText(label).first();
 
   const distancesHeading = () => page.getByRole('heading', { name: /distances|distancias/i }).first();
+  const distancesStepButton = () => page.getByRole('button', { name: /distances|distancias/i }).first();
+  const manualSetupButton = () =>
+    page.getByRole('button', { name: /manual setup|configuraci[oó]n manual/i }).first();
+  const manualPathHint = () =>
+    page
+      .getByText(/manual path selected|ruta manual seleccionada/i)
+      .first();
   const addDistanceBtn = () => page.getByRole('button', { name: /add distance|agregar distancia/i }).first();
   const labelInput = () => page.locator('input[name="label"]:visible').first();
   const distanceInput = () => page.locator('input[name="distanceValue"]:visible').first();
@@ -706,12 +713,33 @@ export async function addDistance(
     return !formVisible && distanceVisible;
   };
 
+  const isDistanceEditorVisible = async () =>
+    (await distancesHeading().isVisible().catch(() => false)) ||
+    (await addDistanceBtn().isVisible().catch(() => false)) ||
+    (await labelInput().isVisible().catch(() => false));
+
+  if (!(await isDistanceEditorVisible())) {
+    const manualButton = manualSetupButton();
+    if (await manualButton.isVisible().catch(() => false)) {
+      await retryOnDomDetach(async () => {
+        await manualButton.click();
+      });
+      await expect(manualPathHint()).toBeVisible({ timeout: 10000 });
+    }
+  }
+
+  if (!(await isDistanceEditorVisible())) {
+    const stepButton = distancesStepButton();
+    if (await stepButton.isVisible().catch(() => false)) {
+      await retryOnDomDetach(async () => {
+        await stepButton.click();
+      });
+    }
+  }
+
   await expect
     .poll(
-      async () =>
-        (await distancesHeading().isVisible().catch(() => false)) ||
-        (await addDistanceBtn().isVisible().catch(() => false)) ||
-        (await labelInput().isVisible().catch(() => false)),
+      async () => isDistanceEditorVisible(),
       { timeout: 30000 },
     )
     .toBe(true);
@@ -763,15 +791,10 @@ export async function addDistance(
   await expect(submitBtn()).toBeVisible({ timeout: 5000 });
   await expect(submitBtn()).toBeEnabled({ timeout: 5000 });
   await retryOnDomDetach(async () => {
-    await submitBtn().evaluate((button) => {
-      if (!(button instanceof HTMLButtonElement)) {
-        throw new Error('Distance form submit button not found');
-      }
-      button.click();
-    });
+    await submitBtn().click();
   });
 
-  // Dispatch a single browser-native submit and wait for the saved distance to render.
+  // Submit via Playwright so React handles the form through the same path as a real user.
   await expect.poll(didSubmitSucceed, { timeout: 15000 }).toBe(true);
 }
 
