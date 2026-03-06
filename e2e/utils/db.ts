@@ -6,6 +6,12 @@
 
 import { config } from 'dotenv';
 import { resolve } from 'path';
+import {
+  assertDatabaseTargetMatch,
+  describeDatabaseTarget,
+  readEnvFileValue,
+} from '@/testing/db-target';
+import { emitDiagnostic } from './diagnostics';
 
 // Load test environment variables FIRST before any other imports
 config({ path: resolve(__dirname, '../../.env.test') });
@@ -22,11 +28,30 @@ if (!process.env.DATABASE_URL) {
   throw new Error('DATABASE_URL is not set in .env.test');
 }
 
+const ENV_TEST_PATH = resolve(__dirname, '../../.env.test');
+
+function assertE2eDatabaseTarget(operationLabel: string) {
+  const target = assertDatabaseTargetMatch({
+    runtimeUrl: process.env.DATABASE_URL,
+    runtimeSource: 'DATABASE_URL',
+    expectedUrl: process.env.DATABASE_TEST_URL ?? readEnvFileValue(ENV_TEST_PATH, 'DATABASE_URL') ?? undefined,
+    expectedSource: `DATABASE_TEST_URL or ${ENV_TEST_PATH}:DATABASE_URL`,
+    operationLabel: `E2E DB (${operationLabel})`,
+  });
+
+  emitDiagnostic('db.target.validated', {
+    operationLabel,
+    target: describeDatabaseTarget(target),
+  });
+  return target;
+}
+
 /**
  * Get database instance for E2E testing
  * Uses DATABASE_URL from .env.test (should point to test branch)
  */
 export function getTestDb() {
+  assertE2eDatabaseTarget('getTestDb');
   return appDb;
 }
 
@@ -93,6 +118,8 @@ async function cleanDatabaseOnce(db: ReturnType<typeof getTestDb>) {
  * IMPORTANT: This deletes ALL data from the test database!
  */
 export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
+  const runtimeTarget = assertE2eDatabaseTarget('cleanDatabase');
+
   for (let attempt = 1; attempt <= CLEAN_DB_MAX_RETRIES; attempt += 1) {
     try {
       await cleanDatabaseOnce(db);
@@ -106,7 +133,7 @@ export async function cleanDatabase(db: ReturnType<typeof getTestDb>) {
         CLEAN_DB_BASE_BACKOFF_MS * attempt + Math.floor(Math.random() * CLEAN_DB_BASE_BACKOFF_MS);
       const code = extractPostgresErrorCode(error) ?? 'unknown';
       console.warn(
-        `cleanDatabase retry ${attempt}/${CLEAN_DB_MAX_RETRIES} after transient DB error (${code}); waiting ${delayMs}ms`,
+        `cleanDatabase retry ${attempt}/${CLEAN_DB_MAX_RETRIES} on ${describeDatabaseTarget(runtimeTarget)} after transient DB error (${code}); waiting ${delayMs}ms`,
       );
       await wait(delayMs);
     }

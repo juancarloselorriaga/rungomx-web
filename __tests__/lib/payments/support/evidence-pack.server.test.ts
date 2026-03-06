@@ -251,9 +251,9 @@ describe('buildFinancialEvidencePack DB-backed branches', () => {
 
     mockSelect.mockImplementation(() => {
       const chain = {
-        from: (..._args: unknown[]) => chain,
-        where: (..._args: unknown[]) => chain,
-        orderBy: (..._args: unknown[]) => chain,
+        from: () => chain,
+        where: () => chain,
+        orderBy: () => chain,
         limit: (value: number) => {
           selectLimitCalls.push(value);
           return Promise.resolve(selectResultQueue.shift() ?? []);

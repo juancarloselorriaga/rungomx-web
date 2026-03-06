@@ -5,13 +5,17 @@
 
 import type { getTestDb } from './db';
 import * as schema from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { hashPassword } from 'better-auth/crypto';
 import type { Page } from '@playwright/test';
 
-const USER_PERSISTENCE_MAX_RETRIES = 10;
-const USER_PERSISTENCE_DELAY_MS = 200;
+const USER_PERSISTENCE_MAX_RETRIES = 20;
+const USER_PERSISTENCE_DELAY_MS = 300;
+
+async function sleep(ms: number) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function waitForUserPersistence(
   db: ReturnType<typeof getTestDb>,
@@ -30,7 +34,7 @@ async function waitForUserPersistence(
     }
 
     if (attempt < USER_PERSISTENCE_MAX_RETRIES) {
-      await new Promise((resolve) => setTimeout(resolve, USER_PERSISTENCE_DELAY_MS));
+      await sleep(USER_PERSISTENCE_DELAY_MS);
     }
   }
 
@@ -47,6 +51,44 @@ async function waitForUserPersistence(
   throw new Error(
     `[E2E fixtures] user ${userId} not visible after ${USER_PERSISTENCE_MAX_RETRIES} attempts` +
       ` during ${context}. NODE_ENV=${process.env.NODE_ENV ?? 'undefined'} DATABASE_HOST=${dbHost}`,
+  );
+}
+
+async function waitForCredentialAccountPersistence(
+  db: ReturnType<typeof getTestDb>,
+  userId: string,
+  context: string,
+) {
+  for (let attempt = 1; attempt <= USER_PERSISTENCE_MAX_RETRIES; attempt += 1) {
+    const [user] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .limit(1);
+
+    const [account] = await db
+      .select({ id: schema.accounts.id })
+      .from(schema.accounts)
+      .where(
+        and(
+          eq(schema.accounts.userId, userId),
+          eq(schema.accounts.providerId, 'credential'),
+          eq(schema.accounts.accountId, userId),
+        ),
+      )
+      .limit(1);
+
+    if (user && account) {
+      return;
+    }
+
+    if (attempt < USER_PERSISTENCE_MAX_RETRIES) {
+      await sleep(USER_PERSISTENCE_DELAY_MS);
+    }
+  }
+
+  throw new Error(
+    `[E2E fixtures] auth records for user ${userId} not visible after ${USER_PERSISTENCE_MAX_RETRIES} attempts during ${context}`,
   );
 }
 
@@ -93,12 +135,11 @@ export async function signUpTestUser(
       updatedAt: new Date(),
     });
 
-    // Better Auth credential sign-in looks up accounts by normalized email.
-    // Keep accountId=email for providerId='credential' to match runtime behavior.
+    // Better Auth seeds credential accounts with accountId=userId.
     await tx.insert(schema.accounts).values({
       id: randomUUID(),
       userId,
-      accountId: email,
+      accountId: userId,
       providerId: 'credential',
       password: hashedPassword,
       createdAt: new Date(),
@@ -106,7 +147,7 @@ export async function signUpTestUser(
     });
   });
 
-  await waitForUserPersistence(db, userId, 'signUpTestUser');
+  await waitForCredentialAccountPersistence(db, userId, 'signUpTestUser');
 
   return { id: userId, email, password, name };
 }

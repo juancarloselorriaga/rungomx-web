@@ -7,37 +7,19 @@ config({ path: resolve(__dirname, '../.env.test') });
 (process.env as { NODE_ENV: string }).NODE_ENV = 'test';
 
 import { defineConfig, devices } from '@playwright/test';
-import { hydratePortEnv } from './utils/port-env';
+import { DEFAULT_E2E_PORT, resolvePlaywrightRuntimeTarget } from './utils/port-env';
 
 /**
  * Playwright Configuration for RunGoMX E2E Tests
  *
  * Tests Phase 0–2 (Foundations → Event Platform) features
  */
-hydratePortEnv();
-const DEFAULT_E2E_PORT = 43137;
-const baseURL =
-  process.env.PLAYWRIGHT_BASE_URL ||
-  `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT || process.env.PORT || DEFAULT_E2E_PORT}`;
-const origin = (() => {
-  try {
-    return new URL(baseURL).origin;
-  } catch {
-    return baseURL;
-  }
-})();
-const port = (() => {
-  try {
-    const url = new URL(origin);
-    if (url.port) {
-      const parsed = Number.parseInt(url.port, 10);
-      if (Number.isFinite(parsed) && parsed > 0) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return DEFAULT_E2E_PORT;
-})();
+const runtimeTarget = resolvePlaywrightRuntimeTarget({
+  defaultPort: DEFAULT_E2E_PORT,
+  applyToProcessEnv: true,
+});
+const origin = runtimeTarget.origin;
+const port = runtimeTarget.port;
 
 function getRunId() {
   const raw = process.env.E2E_RUN_ID?.trim();

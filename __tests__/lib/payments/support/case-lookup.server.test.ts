@@ -96,15 +96,15 @@ describe('lookupFinancialCases DB-backed branches', () => {
     mockSelect.mockReset();
     mockSelect.mockImplementation(() => {
       const chain = {
-        from: (..._args: unknown[]) => chain,
-        innerJoin: (..._args: unknown[]) => chain,
-        where: (..._args: unknown[]) => chain,
-        orderBy: (..._args: unknown[]) => chain,
+        from: () => chain,
+        innerJoin: () => chain,
+        where: () => chain,
+        orderBy: () => chain,
         limit: (value: number) => {
           selectLimitCalls.push(value);
           return Promise.resolve(selectResultQueue.shift() ?? []);
         },
-        groupBy: (..._args: unknown[]) => Promise.resolve(selectResultQueue.shift() ?? []),
+        groupBy: () => Promise.resolve(selectResultQueue.shift() ?? []),
       };
 
       return chain;

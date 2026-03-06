@@ -23,48 +23,6 @@ let organizationId = '';
 let terminalPayoutRequestId = '';
 let processingPayoutRequestId = '';
 
-async function ensureProfileCompletionModalClosed(page: Page) {
-  const modalTitle = page.getByText('Complete your profile to continue');
-  const isVisible = await modalTitle.isVisible({ timeout: 1500 }).catch(() => false);
-  if (!isVisible) {
-    return;
-  }
-
-  const phoneInput = page.getByLabel(/^phone$/i);
-  if (await phoneInput.isVisible().catch(() => false)) {
-    await phoneInput.fill('+523312345678');
-  }
-
-  const cityInput = page.getByLabel(/^city$/i);
-  if (await cityInput.isVisible().catch(() => false)) {
-    await cityInput.fill('Monterrey');
-  }
-
-  const stateInput = page.getByLabel(/^state$/i);
-  if (await stateInput.isVisible().catch(() => false)) {
-    await stateInput.fill('Nuevo Leon');
-  }
-
-  const emergencyNameInput = page.getByLabel(/emergency.*name/i);
-  if (await emergencyNameInput.isVisible().catch(() => false)) {
-    await emergencyNameInput.fill('Payments Contact');
-  }
-
-  const emergencyPhoneInput = page.getByLabel(/emergency.*phone/i);
-  if (await emergencyPhoneInput.isVisible().catch(() => false)) {
-    await emergencyPhoneInput.fill('+523387654321');
-  }
-
-  const shirtSizeSelect = page.getByRole('combobox', { name: /shirt size/i });
-  if (await shirtSizeSelect.isVisible().catch(() => false)) {
-    await shirtSizeSelect.selectOption('m');
-  }
-
-  const saveButton = page.getByRole('button', { name: /save|continue/i }).first();
-  await saveButton.click();
-  await expect(modalTitle).not.toBeVisible({ timeout: 15000 });
-}
-
 async function seedOrganizerPayoutRecords(params: {
   organizerId: string;
   userId: string;
@@ -426,7 +384,6 @@ test.describe('Organizer Payments E2E', () => {
     page,
   }) => {
     await signInAsOrganizer(page, organizerCreds);
-    await ensureProfileCompletionModalClosed(page);
     await mockWorkspaceApis(page, organizationId, { availableMinor: 140_000, processingMinor: 0 });
 
     await page.goto(`/en/dashboard/payments?organizationId=${organizationId}`);
@@ -449,9 +406,31 @@ test.describe('Organizer Payments E2E', () => {
     page,
   }) => {
     await signInAsOrganizer(page, organizerCreds);
-    await ensureProfileCompletionModalClosed(page);
 
+    let queuedIntentCount = 0;
+    let queuedIntentRequestedAmountMinor: number | null = null;
     await page.route('**/api/payments/payouts/queued-intents', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+
+      queuedIntentCount += 1;
+      let payload: { requestedAmountMinor?: number } | null = null;
+      try {
+        payload = route.request().postDataJSON() as { requestedAmountMinor?: number } | null;
+      } catch {
+        const rawPayload = route.request().postData();
+        if (rawPayload) {
+          try {
+            payload = JSON.parse(rawPayload) as { requestedAmountMinor?: number };
+          } catch {
+            payload = null;
+          }
+        }
+      }
+      queuedIntentRequestedAmountMinor = payload?.requestedAmountMinor ?? null;
+
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -506,23 +485,57 @@ test.describe('Organizer Payments E2E', () => {
     await expect(amountInput).toBeVisible();
 
     await amountInput.fill('50000');
-    await page.getByRole('button', { name: 'Request payout' }).click();
+    const firstPayoutSubmitCount = requestCount;
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payments/payouts') &&
+          response.request().method() === 'POST' &&
+          response.status() === 201,
+      ),
+      page.getByRole('button', { name: 'Request payout' }).click(),
+    ]);
+    await expect.poll(() => requestCount).toBe(firstPayoutSubmitCount + 1);
     await expect(page.getByText('Payout request created')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open details' })).toBeVisible();
 
     await amountInput.fill('50000');
-    await page.getByRole('button', { name: 'Request payout' }).click();
+    const secondPayoutSubmitCount = requestCount;
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payments/payouts') &&
+          response.request().method() === 'POST' &&
+          response.status() === 409,
+      ),
+      page.getByRole('button', { name: 'Request payout' }).click(),
+    ]);
+    await expect.poll(() => requestCount).toBe(secondPayoutSubmitCount + 1);
     await expect(page.getByText(/already has an active payout lifecycle/i)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Queue payout request' }).click();
+    const queueButton = page.getByRole('button', { name: 'Queue payout request' });
+    await expect(queueButton).toBeVisible();
+    const queueIntentSubmitCount = queuedIntentCount;
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.url().includes('/api/payments/payouts/queued-intents') &&
+          response.request().method() === 'POST' &&
+          response.status() === 201,
+      ),
+      queueButton.click(),
+    ]);
+
     await expect(page.getByText('Payout intent queued')).toBeVisible();
+    await expect.poll(() => requestCount).toBe(2);
+    await expect.poll(() => queuedIntentCount).toBe(queueIntentSubmitCount + 1);
+    await expect.poll(() => queuedIntentRequestedAmountMinor).toBe(50_000);
   });
 
   test('11.4-E2E-003 organizer can inspect lifecycle detail and statement availability states', async ({
     page,
   }) => {
     await signInAsOrganizer(page, organizerCreds);
-    await ensureProfileCompletionModalClosed(page);
 
     await page.goto(`/en/dashboard/payments/payouts?organizationId=${organizationId}`);
 
@@ -580,7 +593,6 @@ test.describe('Organizer Payments E2E', () => {
     page,
   }) => {
     await signInAsOrganizer(page, organizerCreds);
-    await ensureProfileCompletionModalClosed(page);
     await page.evaluate((storageKey) => {
       window.sessionStorage.removeItem(storageKey);
       (

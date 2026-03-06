@@ -5,6 +5,12 @@ import os from 'os';
 import path from 'path';
 
 import { acquireE2eRunLock, releaseE2eRunLock } from '../e2e/utils/run-lock';
+import { emitDiagnostic } from '../e2e/utils/diagnostics';
+import {
+  normalizeBaseUrl,
+  parsePortValue,
+  resolvePlaywrightRuntimeTarget,
+} from '../e2e/utils/port-env';
 
 function getPnpmCommand() {
   return process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
@@ -160,14 +166,59 @@ function reserveIsolatedPort(runId: string) {
   );
 }
 
-function getPortFromBaseUrl(baseUrl: string) {
-  try {
-    const url = new URL(baseUrl);
-    const parsed = Number.parseInt(url.port, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  } catch {
-    return null;
+function resolveExplicitTargetFromEnv() {
+  const baseUrlRaw = process.env.PLAYWRIGHT_BASE_URL?.trim();
+  const playwrightPortRaw = process.env.PLAYWRIGHT_PORT?.trim();
+  const portRaw = process.env.PORT?.trim();
+  const explicitPortValue = playwrightPortRaw
+    ? parsePortValue(playwrightPortRaw, 'PLAYWRIGHT_PORT')
+    : null;
+  const fallbackPortValue = portRaw ? parsePortValue(portRaw, 'PORT') : null;
+
+  if (
+    explicitPortValue !== null &&
+    fallbackPortValue !== null &&
+    explicitPortValue !== fallbackPortValue
+  ) {
+    throw new Error(
+      `[e2e:isolated] Conflicting ports detected: PLAYWRIGHT_PORT=${explicitPortValue} and PORT=${fallbackPortValue}. ` +
+        'Use a single consistent value.',
+    );
   }
+
+  if (baseUrlRaw) {
+    const normalized = normalizeBaseUrl(baseUrlRaw, 'PLAYWRIGHT_BASE_URL');
+    if (explicitPortValue !== null && explicitPortValue !== normalized.port) {
+      throw new Error(
+        `[e2e:isolated] Conflicting config: PLAYWRIGHT_BASE_URL uses port ${normalized.port} but PLAYWRIGHT_PORT=${explicitPortValue}.`,
+      );
+    }
+    if (fallbackPortValue !== null && fallbackPortValue !== normalized.port) {
+      throw new Error(
+        `[e2e:isolated] Conflicting config: PLAYWRIGHT_BASE_URL uses port ${normalized.port} but PORT=${fallbackPortValue}.`,
+      );
+    }
+    return { baseUrl: normalized.origin, port: normalized.port, source: 'PLAYWRIGHT_BASE_URL' as const };
+  }
+
+  if (explicitPortValue !== null) {
+    const port = explicitPortValue;
+    return { baseUrl: `http://127.0.0.1:${port}`, port, source: 'PLAYWRIGHT_PORT' as const };
+  }
+
+  if (fallbackPortValue !== null) {
+    const port = fallbackPortValue;
+    return { baseUrl: `http://127.0.0.1:${port}`, port, source: 'PORT' as const };
+  }
+
+  return null;
+}
+
+function signalToExitCode(signal: NodeJS.Signals | null) {
+  if (!signal) return 1;
+  if (signal === 'SIGINT') return 130;
+  if (signal === 'SIGTERM') return 143;
+  return 1;
 }
 
 async function main() {
@@ -176,41 +227,24 @@ async function main() {
   hydrateDatabaseUrlFromEnvTest();
 
   const runId = sanitizeRunId(process.env.E2E_RUN_ID || generateRunId());
-
-  const explicitBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
-  const explicitPort = process.env.PLAYWRIGHT_PORT;
-  const portFromBaseUrl = explicitBaseUrl ? getPortFromBaseUrl(explicitBaseUrl) : null;
-  const portFromEnv = explicitPort ? Number.parseInt(explicitPort, 10) : null;
-
-  const shouldReservePort = !portFromBaseUrl && !(Number.isFinite(portFromEnv ?? NaN) && (portFromEnv ?? 0) > 0);
-  const reserved = shouldReservePort ? reserveIsolatedPort(runId) : null;
-  const port = portFromBaseUrl || portFromEnv || reserved?.port;
-  if (!port) throw new Error('Failed to determine a Playwright port.');
-
-  const baseUrl = explicitBaseUrl || `http://127.0.0.1:${port}`;
+  const explicitTarget = resolveExplicitTargetFromEnv();
+  const reserved = explicitTarget ? null : reserveIsolatedPort(runId);
+  const resolvedTarget = explicitTarget
+    ? explicitTarget
+    : reserved
+      ? { baseUrl: `http://127.0.0.1:${reserved.port}`, port: reserved.port, source: 'reserved' as const }
+      : resolvePlaywrightRuntimeTarget({
+          applyToProcessEnv: false,
+        });
+  const baseUrl = resolvedTarget.baseUrl;
+  const port = resolvedTarget.port;
 
   process.env.E2E_RUN_ID = runId;
   process.env.PLAYWRIGHT_PORT = String(port);
   process.env.PLAYWRIGHT_BASE_URL = baseUrl;
+  process.env.PORT = String(port);
 
-  try {
-    await acquireE2eRunLock();
-  } catch (error) {
-    if (reserved) {
-      try {
-        fs.unlinkSync(reserved.lockPath);
-      } catch {
-        // ignore
-      }
-    }
-    throw error;
-  }
-
-  console.log(`[e2e] isolated runId=${runId}`);
-  console.log(`[e2e] isolated baseUrl=${baseUrl}`);
-  console.log(`[e2e] isolated artifactsDir=test-results/${runId}`);
-  console.log(`[e2e] isolated reportDir=playwright-report/${runId}`);
-
+  let cleanedUp = false;
   const releaseReservedPort = () => {
     if (!reserved) return;
     try {
@@ -219,6 +253,35 @@ async function main() {
       // ignore
     }
   };
+  const cleanup = async (reason: string) => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    emitDiagnostic('isolated_runner.cleanup.start', { reason, runId, baseUrl, port });
+    releaseReservedPort();
+    await releaseE2eRunLock();
+    emitDiagnostic('isolated_runner.cleanup.complete', { reason, runId, baseUrl, port });
+  };
+
+  emitDiagnostic('isolated_runner.start', {
+    runId,
+    targetScript,
+    baseUrl,
+    port,
+    explicitSource: explicitTarget?.source ?? 'reserved',
+    reservedPortLock: reserved?.lockPath ?? null,
+  });
+
+  try {
+    await acquireE2eRunLock();
+  } catch (error) {
+    await cleanup('acquire-lock-failure');
+    throw error;
+  }
+
+  console.log(`[e2e] isolated runId=${runId}`);
+  console.log(`[e2e] isolated baseUrl=${baseUrl}`);
+  console.log(`[e2e] isolated artifactsDir=test-results/${runId}`);
+  console.log(`[e2e] isolated reportDir=playwright-report/${runId}`);
 
   const child = spawn(getPnpmCommand(), [targetScript, ...forwardArgs], {
     stdio: 'inherit',
@@ -227,34 +290,43 @@ async function main() {
       E2E_RUN_ID: runId,
       PLAYWRIGHT_PORT: String(port),
       PLAYWRIGHT_BASE_URL: baseUrl,
+      PORT: String(port),
       // Lock is acquired by this wrapper process; avoid double-locking in Playwright globalSetup/teardown.
       E2E_SKIP_RUN_LOCK: '1',
     },
   });
 
   const forwardSignal = (signal: NodeJS.Signals) => {
+    emitDiagnostic('isolated_runner.signal.forward', { signal, childPid: child.pid, runId }, 'warn');
     if (!child.killed) child.kill(signal);
   };
+
   process.on('SIGINT', forwardSignal);
   process.on('SIGTERM', forwardSignal);
 
-  const cleanup = async () => {
-    releaseReservedPort();
-    await releaseE2eRunLock();
-  };
+  try {
+    const childExitCode = await new Promise<number>((resolve, reject) => {
+      child.once('error', reject);
+      child.once('exit', (code, signal) => {
+        emitDiagnostic('isolated_runner.child.exit', {
+          runId,
+          code,
+          signal,
+        });
+        resolve(code ?? signalToExitCode(signal));
+      });
+    }).finally(() => {
+      process.off('SIGINT', forwardSignal);
+      process.off('SIGTERM', forwardSignal);
+    });
 
-  child.on('exit', async (code) => {
-    await cleanup();
-    process.exit(code ?? 1);
-  });
-
-  child.on('error', async () => {
-    await cleanup();
-    process.exit(1);
-  });
+    process.exitCode = childExitCode;
+  } finally {
+    await cleanup('child-complete');
+  }
 }
 
 main().catch((error) => {
   console.error(error);
-  process.exit(1);
+  process.exitCode = 1;
 });

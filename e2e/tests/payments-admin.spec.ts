@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from '@/db/schema';
 
 import { getTestDb } from '../utils/db';
+import { signInAsUser } from '../utils/helpers';
 import {
   assignUserRole,
   createTestRole,
@@ -17,28 +18,9 @@ async function signInAsStaff(
   page: Page,
   credentials: { email: string; password: string },
 ) {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.goto('/en/sign-in');
-    await page.getByLabel(/email/i).fill(credentials.email);
-    await page.getByLabel(/password/i).fill(credentials.password);
-    await page.getByRole('button', { name: /sign in/i }).click();
-
-    const redirected = await page
-      .waitForURL(/\/(admin|dashboard|settings)/, { timeout: 15000 })
-      .then(() => true)
-      .catch(() => false);
-
-    if (redirected) {
-      await page.waitForLoadState('networkidle');
-      return;
-    }
-
-    if (attempt < 2) {
-      await page.waitForTimeout(1000);
-    }
-  }
-
-  throw new Error('Staff sign-in did not complete after retries');
+  await signInAsUser(page, credentials, {
+    expectedDestinations: [/\/admin(?:\/|$)/, /\/dashboard(?:\/|$)/, /\/settings(?:\/|$)/],
+  });
 }
 
 async function openPaymentsWorkspace(page: Page) {

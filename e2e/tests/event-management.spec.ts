@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 import { and, eq, isNull } from 'drizzle-orm';
-import { eventEditions } from '@/db/schema';
+import { eventDistances, eventEditions } from '@/db/schema';
 import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
@@ -28,6 +28,138 @@ import { DISTANCE_DATA } from '../fixtures/test-data';
 
 // File-scoped test credentials
 let organizerCreds: { id: string; email: string; password: string; name: string };
+let eventSeriesName: string;
+
+const isDomDetachError = (error: unknown): error is Error =>
+  error instanceof Error && /(not attached|detached|removed from the dom)/i.test(error.message);
+
+async function scrollIntoViewDetachSafe(target: () => Locator) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await target().scrollIntoViewIfNeeded();
+      return;
+    } catch (error) {
+      if (!isDomDetachError(error) || attempt === 2) {
+        throw error;
+      }
+      await expect(target()).toBeVisible({ timeout: 5000 });
+    }
+  }
+}
+
+async function ensureDistanceExists(
+  page: import('@playwright/test').Page,
+  editionId: string,
+  distance: (typeof DISTANCE_DATA)[keyof typeof DISTANCE_DATA]
+) {
+  const db = getTestDb();
+  const existingDistances = await db.query.eventDistances.findMany({
+    where: and(
+      eq(eventDistances.editionId, editionId),
+      eq(eventDistances.label, distance.label),
+      isNull(eventDistances.deletedAt),
+    ),
+    columns: { id: true },
+  });
+
+  if (existingDistances.length > 1) {
+    throw new Error(
+      `[e2e] Expected at most one active "${distance.label}" distance for edition ${editionId}, found ${existingDistances.length}.`,
+    );
+  }
+
+  if (existingDistances.length === 1) {
+    return;
+  }
+
+  await addDistance(page, distance);
+  await expect
+    .poll(
+      async () => {
+        const insertedDistances = await db.query.eventDistances.findMany({
+          where: and(
+            eq(eventDistances.editionId, editionId),
+            eq(eventDistances.label, distance.label),
+            isNull(eventDistances.deletedAt),
+          ),
+          columns: { id: true },
+        });
+        return insertedDistances.length;
+      },
+      { timeout: 15000 },
+    )
+    .toBe(1);
+}
+
+async function ensureEventPublishedInSettings(page: import('@playwright/test').Page) {
+  const publishedButton = page.getByRole('button', { name: 'Published', exact: true }).first();
+  const publishedIndicator = publishedButton.locator('svg');
+  if (await publishedIndicator.isVisible({ timeout: 1000 }).catch(() => false)) {
+    return;
+  }
+
+  await publishEvent(page);
+}
+
+async function ensureRegistrationPausedInSettings(
+  page: import('@playwright/test').Page,
+  editionId: string,
+) {
+  const db = getTestDb();
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    columns: { isRegistrationPaused: true },
+  });
+
+  if (edition?.isRegistrationPaused) {
+    await expect(page.getByText(/^Paused$/)).toBeVisible({ timeout: 15000 });
+    return;
+  }
+
+  await pauseRegistration(page);
+  await expect
+    .poll(
+      async () => {
+        const updatedEdition = await db.query.eventEditions.findFirst({
+          where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+          columns: { isRegistrationPaused: true },
+        });
+        return Boolean(updatedEdition?.isRegistrationPaused);
+      },
+      { timeout: 15000 },
+    )
+    .toBe(true);
+}
+
+async function ensureRegistrationActiveInSettings(
+  page: import('@playwright/test').Page,
+  editionId: string,
+) {
+  const db = getTestDb();
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    columns: { isRegistrationPaused: true },
+  });
+
+  if (!edition?.isRegistrationPaused) {
+    await expect(page.getByText(/^Active$/)).toBeVisible({ timeout: 15000 });
+    return;
+  }
+
+  await resumeRegistration(page);
+  await expect
+    .poll(
+      async () => {
+        const updatedEdition = await db.query.eventEditions.findFirst({
+          where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+          columns: { isRegistrationPaused: true },
+        });
+        return Boolean(updatedEdition?.isRegistrationPaused);
+      },
+      { timeout: 15000 },
+    )
+    .toBe(false);
+}
 
 test.describe('Event Management', () => {
   test.describe.configure({ mode: 'serial' });
@@ -70,6 +202,7 @@ test.describe('Event Management', () => {
     const eventData = await createEvent(page);
 
     eventId = eventData.eventId;
+    eventSeriesName = eventData.seriesName;
     // Derive slugs from the DB to avoid mismatches with any server-side slug normalization.
     const edition = await db.query.eventEditions.findFirst({
       where: and(eq(eventEditions.id, eventId), isNull(eventEditions.deletedAt)),
@@ -99,42 +232,28 @@ test.describe('Event Management', () => {
     await navigateToEventSettings(page, eventId);
 
     // Scroll to distances section
-    await page.getByRole('heading', { name: /distances/i }).scrollIntoViewIfNeeded();
+    await scrollIntoViewDetachSafe(() => page.getByRole('heading', { name: /distances/i }).first());
 
     // Add 10K distance
     await addDistance(page, DISTANCE_DATA.trail10k);
 
     // Verify distance appears with correct details
-    await expect(page.getByText('10K Trail Run')).toBeVisible();
-    const distanceCard = page.locator('section, article, div').filter({ hasText: '10K Trail Run' }).first();
+    const distanceHeading = page.getByRole('heading', { name: '10K Trail Run', exact: true });
+    await expect(distanceHeading).toBeVisible();
+    const distanceCard = distanceHeading.locator(
+      'xpath=ancestor::div[./div/h3[normalize-space()="10K Trail Run"]][1]'
+    );
 
-    await expect
-      .poll(
-        async () => {
-          const text = (await distanceCard.textContent()) ?? '';
-          return /100\s*(spots|cupos|available|disponibles)?/i.test(text) || /\b100\b/.test(text);
-        },
-        { timeout: 15000 },
-      )
-      .toBe(true);
-
-    await expect
-      .poll(
-        async () => {
-          const text = (await distanceCard.textContent()) ?? '';
-          return /\$\s*500(?:\.00)?/i.test(text) || /\b500\b/.test(text);
-        },
-        { timeout: 15000 },
-      )
-      .toBe(true);
+    await expect(distanceCard).toContainText(/100 spots/i, { timeout: 15000 });
+    await expect(distanceCard).toContainText(/\$\s*500(?:\.00)?\s*MXN/i, { timeout: 15000 });
   });
 
   test('Test 1.4b: Add multiple distances', async ({ page }) => {
     await signInAsOrganizer(page, organizerCreds);
     await navigateToEventSettings(page, eventId);
 
-    // Add 25K distance
-    await addDistance(page, DISTANCE_DATA.trail25k);
+    await ensureDistanceExists(page, eventId, DISTANCE_DATA.trail10k);
+    await ensureDistanceExists(page, eventId, DISTANCE_DATA.trail25k);
 
     // Both distances should be visible
     await expect(page.getByText('10K Trail Run')).toBeVisible();
@@ -146,7 +265,7 @@ test.describe('Event Management', () => {
     await navigateToEventSettings(page, eventId);
 
     // Scroll to visibility section
-    await page.getByRole('heading', { name: /visibility/i }).scrollIntoViewIfNeeded();
+    await scrollIntoViewDetachSafe(() => page.getByRole('heading', { name: /visibility/i }).first());
 
     // Publish event - this validates that the visibility badge shows "Published"
     await publishEvent(page);
@@ -157,22 +276,29 @@ test.describe('Event Management', () => {
   });
 
   test('Test 1.5b: Published event appears in public directory', async ({ page }) => {
+    await signInAsOrganizer(page, organizerCreds);
+    await navigateToEventSettings(page, eventId);
+    await ensureDistanceExists(page, eventId, DISTANCE_DATA.trail10k);
+    await ensureEventPublishedInSettings(page);
+
     // Navigate to public events directory
     await page.goto('/en/events');
 
     // Ensure page has rendered before asserting results
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
-    // Look for event cards (implemented as links with event data)
-    // Events are rendered as links containing the event name
-    const eventLinks = page.locator('a[href*="/en/events/"]').filter({
-      hasText: /E2E Test Event/i,
+    const eventLink = page.locator('a[href*="/en/events/"]').filter({
+      hasText: eventSeriesName,
     });
-    const eventsCount = await eventLinks.count();
-    expect(eventsCount).toBeGreaterThan(0);
+    await expect(eventLink.first()).toBeVisible();
   });
 
   test('Test 1.5c: Public event page is accessible', async ({ page }) => {
+    await signInAsOrganizer(page, organizerCreds);
+    await navigateToEventSettings(page, eventId);
+    await ensureDistanceExists(page, eventId, DISTANCE_DATA.trail10k);
+    await ensureEventPublishedInSettings(page);
+
     // Navigate to public event page
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}?tab=distances`);
 
@@ -193,7 +319,9 @@ test.describe('Event Management', () => {
     await navigateToEventSettings(page, eventId);
 
     // Scroll to registration status section
-    await page.getByRole('heading', { name: 'Registration Status' }).scrollIntoViewIfNeeded();
+    await scrollIntoViewDetachSafe(() =>
+      page.getByRole('heading', { name: 'Registration Status' }).first()
+    );
 
     // Pause registration
     await pauseRegistration(page);
@@ -217,6 +345,12 @@ test.describe('Event Management', () => {
   });
 
   test('Test 1.6b: Paused registration shows on public page', async ({ page }) => {
+    await signInAsOrganizer(page, organizerCreds);
+    await navigateToEventSettings(page, eventId);
+    await ensureDistanceExists(page, eventId, DISTANCE_DATA.trail10k);
+    await ensureEventPublishedInSettings(page);
+    await ensureRegistrationPausedInSettings(page, eventId);
+
     // Navigate to public event page
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
@@ -232,9 +366,12 @@ test.describe('Event Management', () => {
   test('Test 1.6c: Resume registration', async ({ page }) => {
     await signInAsOrganizer(page, organizerCreds);
     await navigateToEventSettings(page, eventId);
+    await ensureRegistrationPausedInSettings(page, eventId);
 
     // Scroll to registration status section
-    await page.getByRole('heading', { name: 'Registration Status' }).scrollIntoViewIfNeeded();
+    await scrollIntoViewDetachSafe(() =>
+      page.getByRole('heading', { name: 'Registration Status' }).first()
+    );
 
     // Resume registration
     await resumeRegistration(page);
@@ -244,6 +381,12 @@ test.describe('Event Management', () => {
   });
 
   test('Test 1.6d: Resumed registration shows on public page', async ({ page }) => {
+    await signInAsOrganizer(page, organizerCreds);
+    await navigateToEventSettings(page, eventId);
+    await ensureDistanceExists(page, eventId, DISTANCE_DATA.trail10k);
+    await ensureEventPublishedInSettings(page);
+    await ensureRegistrationActiveInSettings(page, eventId);
+
     // Navigate to public event page
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
 
@@ -259,7 +402,7 @@ test.describe('Event Management', () => {
     await navigateToEventSettings(page, eventId);
 
     // Scroll to details section
-    await page.getByRole('heading', { name: /details/i }).scrollIntoViewIfNeeded();
+    await scrollIntoViewDetachSafe(() => page.getByRole('heading', { name: /details/i }).first());
 
     // Update location using LocationField component
     // Click on the location field to open the dialog
@@ -291,7 +434,6 @@ test.describe('Event Management', () => {
 
     // Search for new location
     await searchInput.fill('Guadalajara, Jalisco, Mexico');
-    await page.waitForTimeout(500);
 
     // Select first result
     const firstResult = locationDialog.locator('button').filter({ hasText: /Guadalajara/i }).first();

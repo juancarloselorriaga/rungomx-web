@@ -1,5 +1,7 @@
 import { Page, expect } from '@playwright/test';
 import type { Locator } from '@playwright/test';
+import { getAuthReadinessState, type DestinationPattern } from './auth-readiness';
+import { emitDiagnostic } from './diagnostics';
 
 /**
  * Test helper utilities for RunGoMX E2E tests
@@ -13,6 +15,26 @@ async function forceSignOut(page: Page) {
   });
   await page.context().clearCookies();
 }
+
+async function waitForNextBuildToSettle(page: Page, context: string) {
+  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
+  if (!(await buildIndicator.isVisible().catch(() => false))) return;
+
+  emitDiagnostic('auth.sign_in.waiting_for_build', { context });
+  await expect(buildIndicator).not.toBeVisible({ timeout: 60_000 });
+}
+
+const DEFAULT_SIGN_IN_DESTINATIONS: DestinationPattern[] = [
+  /\/admin(?:\/|$)/,
+  /\/dashboard(?:\/|$)/,
+  /\/settings(?:\/|$)/,
+];
+
+type SignInOptions = {
+  role?: 'organizer' | 'athlete' | 'volunteer';
+  expectedDestinations?: DestinationPattern[];
+  authReadinessTimeoutMs?: number;
+};
 
 /**
  * Generate unique timestamp-based identifier
@@ -35,26 +57,83 @@ export function generateTestName(prefix: string): string {
 export async function signInAsUser(
   page: Page,
   credentials: { email: string; password: string },
-  options?: { role?: 'organizer' | 'athlete' | 'volunteer' },
+  options?: SignInOptions,
 ) {
+  const expectedDestinations = options?.expectedDestinations ?? DEFAULT_SIGN_IN_DESTINATIONS;
+  const authReadinessTimeoutMs = options?.authReadinessTimeoutMs ?? 45_000;
+  const roleModal = page.getByText('Choose your role to continue');
+
+  const waitForDestinationAndClosedModals = async (
+    context: string,
+    timeoutMs = authReadinessTimeoutMs,
+  ) => {
+    await expect
+      .poll(
+        async () => {
+          const authState = await getAuthReadinessState(page, expectedDestinations);
+          return authState.status === 'destination';
+        },
+        { timeout: timeoutMs },
+      )
+      .toBe(true);
+
+    emitDiagnostic('auth.sign_in.ready', { context, url: page.url() });
+  };
+
+  const waitForActionableAuthState = async (
+    context: string,
+    timeoutMs = authReadinessTimeoutMs,
+  ) => {
+    const startedAt = Date.now();
+    let destinationStableSince: number | null = null;
+    let lastState = await getAuthReadinessState(page, expectedDestinations);
+
+    while (Date.now() - startedAt <= timeoutMs) {
+      lastState = await getAuthReadinessState(page, expectedDestinations);
+
+      if (lastState.status === 'role-modal' || lastState.status === 'profile-modal') {
+        return lastState;
+      }
+
+      if (lastState.status === 'destination') {
+        destinationStableSince ??= Date.now();
+        if (Date.now() - destinationStableSince >= 750) {
+          return lastState;
+        }
+      } else {
+        destinationStableSince = null;
+      }
+
+      await page.waitForTimeout(200);
+    }
+
+    emitDiagnostic(
+      'auth.sign_in.wait.failed',
+      { context, timeoutMs, lastState, url: page.url() },
+      'error',
+    );
+    throw new Error(
+      `[auth] ${context} did not settle within ${timeoutMs}ms. Last URL: ${page.url()} (${lastState.status}).`,
+    );
+  };
+
   // Ensure we're on the app origin first.
   await page.goto('/en');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   // Ensure a clean session before signing in.
   await forceSignOut(page);
 
   // Navigate to sign-in page
   await page.goto('/en/sign-in');
-
-  // Wait for navigation to complete
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   // If the sign-in page redirects away, we're still signed in. Force a clean sign-out.
   if (!page.url().includes('/sign-in')) {
+    emitDiagnostic('auth.sign_in.precheck.redirected', { url: page.url() }, 'warn');
     await forceSignOut(page);
     await page.goto('/en/sign-in');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   }
 
   // Verify we're on sign-in page now
@@ -66,117 +145,42 @@ export async function signInAsUser(
   await page.getByLabel(/password/i).fill(credentials.password);
   await page.getByRole('button', { name: /sign in/i }).click();
 
-  // Wait for Next.js compilation/rendering to complete if it's running
-  const buildIndicator = page.locator('text=/Compiling|Rendering/i');
-  if (await buildIndicator.isVisible().catch(() => false)) {
-    console.log('[E2E] Waiting for Next.js build after sign-in...');
-    await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
-    await page.waitForTimeout(1000);
+  await waitForNextBuildToSettle(page, 'sign-in-submit');
+
+  for (let step = 0; step < 4; step += 1) {
+    const authState = await waitForActionableAuthState(
+      step === 0 ? 'sign-in-initial' : `sign-in-step-${step + 1}`,
+      authReadinessTimeoutMs,
+    );
+
+    if (authState.status === 'role-modal') {
+      emitDiagnostic('auth.sign_in.role_modal.visible', { role: options?.role || 'organizer' });
+      const role = options?.role || 'organizer';
+      const roleName = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+      const roleButton = page.locator('button').filter({ hasText: roleName }).first();
+      await expect(roleButton).toBeVisible({ timeout: 5000 });
+      await roleButton.click();
+      await page.getByRole('button', { name: /save roles/i }).click();
+      await expect(roleModal).not.toBeVisible({ timeout: 15000 });
+      await waitForNextBuildToSettle(page, 'role-modal-save');
+      continue;
+    }
+
+    if (authState.status === 'profile-modal') {
+      emitDiagnostic('auth.sign_in.profile_modal.visible', {});
+      const completedProfile = await completeProfileCompletionModal(page);
+      if (!completedProfile) {
+        throw new Error('[auth] Profile completion modal was visible but could not be completed.');
+      }
+      await waitForNextBuildToSettle(page, 'profile-modal-continue');
+      continue;
+    }
+
+    await waitForDestinationAndClosedModals('sign-in-final', authReadinessTimeoutMs);
+    return;
   }
 
-  // Wait for successful sign in (may go to dashboard or settings)
-  await page.waitForURL(/\/(dashboard|settings)/, { timeout: 45000 });
-
-  // Handle role selection modal for new users (may take time to appear)
-  await page.waitForTimeout(500); // Give modal time to appear
-  const roleModal = page.getByText('Choose your role to continue');
-  if (await roleModal.isVisible({ timeout: 3000 }).catch(() => false)) {
-    const role = options?.role || 'organizer';
-    // Click the role card - find the button containing the role name
-    const roleName = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
-    // The role cards are buttons with text like "Organizer" inside a span
-    const roleButton = page.locator('button').filter({ hasText: roleName }).first();
-    await roleButton.click();
-    // Wait a moment for the selection to register
-    await page.waitForTimeout(200);
-    await page.getByRole('button', { name: /save roles/i }).click();
-    // Wait for the server action to complete and modal to close
-    await page.waitForLoadState('networkidle');
-    // Allow extra time for modal to close
-    await expect(roleModal).not.toBeVisible({ timeout: 15000 });
-  }
-
-  // Handle profile completion modal if it appears
-  await page.waitForTimeout(300);
-  const profileModal = page.getByText('Complete your profile to continue');
-  if (await profileModal.isVisible({ timeout: 2000 }).catch(() => false)) {
-    // Profile data is already set via database fixtures
-    // The modal should have all fields pre-filled, just click Save
-    const saveBtn = page.getByRole('button', { name: /save/i });
-
-    // First attempt: Try clicking Save directly
-    if (await saveBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await saveBtn.click();
-      await page.waitForTimeout(500);
-
-      // Check if modal closed
-      if (!(await profileModal.isVisible({ timeout: 2000 }).catch(() => false))) {
-        await page.waitForLoadState('networkidle');
-        return; // Profile saved successfully
-      }
-    }
-
-    // If modal still visible, there might be validation errors - fill missing fields
-
-    // Fill shirt size if empty/not selected (common required field)
-    const shirtSizeSelect = page.getByRole('combobox', { name: /shirt size/i });
-    if (await shirtSizeSelect.isVisible().catch(() => false)) {
-      await shirtSizeSelect.selectOption('M');
-    }
-
-    // Fill city if empty
-    const cityInput = page.getByLabel(/^city$/i);
-    if (await cityInput.isVisible().catch(() => false)) {
-      const cityValue = await cityInput.inputValue().catch(() => '');
-      if (!cityValue) {
-        await cityInput.fill('Mexico City');
-      }
-    }
-
-    // Fill state if empty
-    const stateInput = page.getByLabel(/^state$/i);
-    if (await stateInput.isVisible().catch(() => false)) {
-      const stateValue = await stateInput.inputValue().catch(() => '');
-      if (!stateValue) {
-        await stateInput.fill('CDMX');
-      }
-    }
-
-    // Fill phone if empty
-    const phoneInput = page.getByLabel(/^phone$/i);
-    if (await phoneInput.isVisible().catch(() => false)) {
-      const phoneValue = await phoneInput.inputValue().catch(() => '');
-      if (!phoneValue) {
-        await phoneInput.fill('+523312345678');
-      }
-    }
-
-    // Fill emergency contact name if empty
-    const emergNameInput = page.getByLabel(/emergency.*name/i);
-    if (await emergNameInput.isVisible().catch(() => false)) {
-      const emergNameValue = await emergNameInput.inputValue().catch(() => '');
-      if (!emergNameValue) {
-        await emergNameInput.fill('Test Contact');
-      }
-    }
-
-    // Fill emergency contact phone if empty
-    const emergPhoneInput = page.getByLabel(/emergency.*phone/i);
-    if (await emergPhoneInput.isVisible().catch(() => false)) {
-      const emergPhoneValue = await emergPhoneInput.inputValue().catch(() => '');
-      if (!emergPhoneValue) {
-        await emergPhoneInput.fill('+523387654321');
-      }
-    }
-
-    // Submit the form again after filling fields
-    const continueBtn = page.getByRole('button', { name: /continue|save|submit/i });
-    if (await continueBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await continueBtn.click();
-      await expect(profileModal).not.toBeVisible({ timeout: 15000 });
-      await page.waitForLoadState('networkidle');
-    }
-  }
+  throw new Error('[auth] Sign-in did not settle after processing auth modals.');
 }
 
 /**
@@ -262,6 +266,138 @@ export async function fillPhoneInput(
   await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
 }
 
+async function fillPhoneInputWithin(
+  root: Page | Locator,
+  labelTextOrTestId: string | RegExp,
+  phoneNumber: string,
+) {
+  let phoneInput;
+
+  if (typeof labelTextOrTestId === 'string' && !labelTextOrTestId.startsWith('^')) {
+    phoneInput = root.getByTestId(`phone-input-${labelTextOrTestId}`);
+    try {
+      await phoneInput.waitFor({ state: 'visible', timeout: 5000 });
+      await phoneInput.click();
+      await phoneInput.clear();
+      await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
+      return;
+    } catch {
+      // testId not found, try next strategy
+    }
+  }
+
+  const labelToFind =
+    typeof labelTextOrTestId === 'string'
+      ? new RegExp(labelTextOrTestId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      : labelTextOrTestId;
+
+  const formField = root.locator('label').filter({ hasText: labelToFind }).locator('xpath=ancestor::div[1]');
+  phoneInput = formField.locator('input[type="tel"], input:not([type="hidden"])').first();
+
+  try {
+    await phoneInput.waitFor({ state: 'visible', timeout: 10000 });
+    await phoneInput.click();
+    await phoneInput.clear();
+    await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
+    return;
+  } catch {
+    // Form field approach didn't work, try fallback
+  }
+
+  phoneInput = root.getByRole('textbox', { name: labelTextOrTestId });
+  await phoneInput.click();
+  await phoneInput.clear();
+  await phoneInput.pressSequentially(phoneNumber, { delay: 50 });
+}
+
+type ProfileCompletionModalOptions = {
+  phone?: string;
+  city?: string;
+  state?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+  shirtSize?: string;
+};
+
+export async function completeProfileCompletionModal(
+  page: Page,
+  options?: ProfileCompletionModalOptions,
+) {
+  const modalTitle = page.getByText('Complete your profile to continue');
+  const isVisible = await modalTitle.isVisible({ timeout: 2000 }).catch(() => false);
+  if (!isVisible) {
+    return false;
+  }
+
+  const profileDialog = page
+    .locator('[role="dialog"], [data-slot="dialog-content"]')
+    .filter({ has: modalTitle })
+    .first();
+  const saveButton = profileDialog.getByRole('button', { name: /continue|save|submit/i }).first();
+
+  const shirtSizeSelect = profileDialog.getByRole('combobox', { name: /shirt size/i });
+  if (await shirtSizeSelect.isVisible().catch(() => false)) {
+    const shirtSizeValue = await shirtSizeSelect.inputValue().catch(() => '');
+    const nextShirtSize = (options?.shirtSize ?? shirtSizeValue) || 'm';
+    if (shirtSizeValue !== nextShirtSize) {
+      await shirtSizeSelect.selectOption(nextShirtSize);
+    }
+  }
+
+  const cityInput = profileDialog.getByLabel(/^city$/i);
+  if (await cityInput.isVisible().catch(() => false)) {
+    const cityValue = await cityInput.inputValue().catch(() => '');
+    const nextCity = (options?.city ?? cityValue) || 'Mexico City';
+    if (cityValue !== nextCity) {
+      await cityInput.fill(nextCity);
+    }
+  }
+
+  const stateInput = profileDialog.getByLabel(/^state$/i);
+  if (await stateInput.isVisible().catch(() => false)) {
+    const stateValue = await stateInput.inputValue().catch(() => '');
+    const nextState = (options?.state ?? stateValue) || 'CDMX';
+    if (stateValue !== nextState) {
+      await stateInput.fill(nextState);
+    }
+  }
+
+  const phoneInput = profileDialog.getByLabel(/^phone$/i);
+  if (await phoneInput.isVisible().catch(() => false)) {
+    const phoneValue = await phoneInput.inputValue().catch(() => '');
+    const nextPhone = (options?.phone ?? phoneValue) || '+523312345678';
+    if (options?.phone || !phoneValue) {
+      await fillPhoneInputWithin(profileDialog, /^phone$/i, nextPhone);
+    }
+  }
+
+  const emergencyNameInput = profileDialog.getByLabel(/emergency.*name/i);
+  if (await emergencyNameInput.isVisible().catch(() => false)) {
+    const emergencyNameValue = await emergencyNameInput.inputValue().catch(() => '');
+    const nextEmergencyName = (options?.emergencyName ?? emergencyNameValue) || 'Test Contact';
+    if (emergencyNameValue !== nextEmergencyName) {
+      await emergencyNameInput.fill(nextEmergencyName);
+    }
+  }
+
+  const emergencyPhoneInput = profileDialog.getByLabel(/emergency.*phone/i);
+  if (await emergencyPhoneInput.isVisible().catch(() => false)) {
+    const emergencyPhoneValue = await emergencyPhoneInput.inputValue().catch(() => '');
+    const nextEmergencyPhone = (options?.emergencyPhone ?? emergencyPhoneValue) || '+523387654321';
+    if (options?.emergencyPhone || !emergencyPhoneValue) {
+      await fillPhoneInputWithin(
+        profileDialog,
+        /emergency.*phone/i,
+        nextEmergencyPhone,
+      );
+    }
+  }
+
+  await saveButton.click();
+  await expect(modalTitle).not.toBeVisible({ timeout: 15000 });
+  return true;
+}
+
 // Profile completion functions removed - profiles are now created via DB in beforeAll hooks
 
 /**
@@ -323,6 +459,7 @@ export async function createEvent(
   options?: {
     seriesName?: string;
     editionLabel?: string;
+    eventDate?: string;
     sportType?: string;
     city?: string;
     state?: string;
@@ -332,6 +469,8 @@ export async function createEvent(
   const seriesName = options?.seriesName || `E2E Test Event ${timestamp}`;
   const seriesSlug = seriesName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const editionLabel = options?.editionLabel || '2026';
+  const eventDate =
+    options?.eventDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const city = options?.city || 'Monterrey';
   const state = options?.state || 'Nuevo León';
 
@@ -372,7 +511,6 @@ export async function createEvent(
   await searchInput.fill(`${city}, ${state}, Mexico`);
 
   // Wait for and click the first search result
-  await page.waitForTimeout(500); // Wait for debounced search
   const firstResult = locationDialog.locator('button').filter({ hasText: city }).first();
   await expect(firstResult).toBeVisible({ timeout: 10000 });
   await firstResult.click();
@@ -384,7 +522,7 @@ export async function createEvent(
   // Select future date if date field is visible
   const dateInput = page.locator('input[type="date"]');
   if (await dateInput.isVisible().catch(() => false)) {
-    await dateInput.fill('2026-06-15');
+    await dateInput.fill(eventDate);
   } else {
     // Standard UI is `DatePicker` (popover + calendar), not native input[type="date"].
     const eventDateField = page
@@ -394,7 +532,7 @@ export async function createEvent(
     const trigger = eventDateField.locator('button').first();
     if (await trigger.isVisible().catch(() => false)) {
       const localeFromUrl = new URL(page.url()).pathname.split('/')[1] || 'en';
-      await setDatePickerValue(page, trigger, '2026-06-15', localeFromUrl);
+      await setDatePickerValue(page, trigger, eventDate, localeFromUrl);
     }
   }
 
@@ -404,12 +542,7 @@ export async function createEvent(
   if (await buildIndicator.isVisible().catch(() => false)) {
     console.log('[E2E] Waiting for Next.js build to complete...');
     await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
-    // Extra wait after build completes for the page to stabilize
-    await page.waitForTimeout(1000);
   }
-
-  // Wait for form to be ready and button to be enabled
-  await page.waitForTimeout(300);
 
   // Create event - increased timeout to 30s to handle slow compilation
   await expect(page.getByRole('button', { name: /create event/i })).toBeEnabled({ timeout: 30000 });
@@ -419,7 +552,6 @@ export async function createEvent(
   if (await buildIndicator.isVisible().catch(() => false)) {
     console.log('[E2E] Waiting for Next.js build after event submit...');
     await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
-    await page.waitForTimeout(1000);
   }
 
   // Wait for redirect to event dashboard
@@ -535,60 +667,112 @@ export async function addDistance(
   },
 ) {
   const { label, distance, terrain, price, capacity } = options;
+  const distanceLabel = page.getByText(label).first();
 
-  const distancesHeading = page.getByRole('heading', { name: /distances|distancias/i }).first();
-  const addDistanceBtn = page.getByRole('button', { name: /add distance|agregar distancia/i }).first();
-  const labelInput = page.locator('input[name="label"]').first();
+  const distancesHeading = () => page.getByRole('heading', { name: /distances|distancias/i }).first();
+  const addDistanceBtn = () => page.getByRole('button', { name: /add distance|agregar distancia/i }).first();
+  const labelInput = () => page.locator('input[name="label"]:visible').first();
+  const distanceInput = () => page.locator('input[name="distanceValue"]:visible').first();
+  const terrainSelect = () => page.locator('select[name="terrain"]:visible').first();
+  const priceInput = () => page.locator('input[name="price"]:visible').first();
+  const capacityInput = () => page.locator('input[name="capacity"]:visible').first();
+  const submitBtn = () =>
+    page
+      .locator('form', { has: page.locator('input[name="label"]:visible') })
+      .first()
+      .getByRole('button', { name: /add distance|agregar distancia/i })
+      .first();
+
+  const isDomDetachError = (error: unknown): error is Error =>
+    error instanceof Error && /(not attached|detached|removed from the dom)/i.test(error.message);
+
+  const retryOnDomDetach = async (action: () => Promise<void>) => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await action();
+        return;
+      } catch (error) {
+        if (!isDomDetachError(error) || attempt === 2) {
+          throw error;
+        }
+        await page.waitForTimeout(150);
+      }
+    }
+  };
+
+  const didSubmitSucceed = async () => {
+    const formVisible = await labelInput().isVisible().catch(() => false);
+    const distanceVisible = await distanceLabel.isVisible().catch(() => false);
+    return !formVisible && distanceVisible;
+  };
 
   await expect
     .poll(
       async () =>
-        (await distancesHeading.isVisible().catch(() => false)) ||
-        (await addDistanceBtn.isVisible().catch(() => false)) ||
-        (await labelInput.isVisible().catch(() => false)),
+        (await distancesHeading().isVisible().catch(() => false)) ||
+        (await addDistanceBtn().isVisible().catch(() => false)) ||
+        (await labelInput().isVisible().catch(() => false)),
       { timeout: 30000 },
     )
     .toBe(true);
 
-  if (await distancesHeading.isVisible({ timeout: 1000 }).catch(() => false)) {
-    await distancesHeading.scrollIntoViewIfNeeded();
+  if (await distancesHeading().isVisible({ timeout: 1000 }).catch(() => false)) {
+    await retryOnDomDetach(async () => {
+      await distancesHeading().scrollIntoViewIfNeeded();
+    });
   } else {
-    await addDistanceBtn.scrollIntoViewIfNeeded();
+    await retryOnDomDetach(async () => {
+      await addDistanceBtn().scrollIntoViewIfNeeded();
+    });
   }
 
-  await page.waitForLoadState('networkidle');
-
   // Check if form is already visible using the form's input name attribute.
-  if (!(await labelInput.isVisible({ timeout: 1000 }).catch(() => false))) {
-    await expect(addDistanceBtn).toBeVisible({ timeout: 10000 });
-    await expect(addDistanceBtn).toBeEnabled({ timeout: 10000 });
-    await addDistanceBtn.click();
-    await expect(labelInput).toBeVisible({ timeout: 10000 });
+  if (!(await labelInput().isVisible({ timeout: 1000 }).catch(() => false))) {
+    await expect(addDistanceBtn()).toBeVisible({ timeout: 10000 });
+    await expect(addDistanceBtn()).toBeEnabled({ timeout: 10000 });
+    await retryOnDomDetach(async () => {
+      await addDistanceBtn().click();
+    });
+    await expect(labelInput()).toBeVisible({ timeout: 10000 });
   }
 
   // Fill the form using name attributes (most reliable selector)
-  await labelInput.fill(label);
-  await page.locator('input[name="distanceValue"]').fill(distance.toString());
+  await retryOnDomDetach(async () => {
+    await labelInput().fill(label);
+  });
+  await retryOnDomDetach(async () => {
+    await distanceInput().fill(distance.toString());
+  });
 
   if (terrain) {
-    await page.locator('select[name="terrain"]').selectOption(terrain);
+    await retryOnDomDetach(async () => {
+      await terrainSelect().selectOption(terrain);
+    });
   }
 
-  await page.locator('input[name="price"]').fill(price.toString());
-  await page.locator('input[name="capacity"]').fill(capacity.toString());
+  await retryOnDomDetach(async () => {
+    await priceInput().fill(price.toString());
+  });
+  await retryOnDomDetach(async () => {
+    await capacityInput().fill(capacity.toString());
+  });
 
-  // Submit from the form that contains the active label input.
-  const addDistanceForm = labelInput.locator('xpath=ancestor::form[1]');
-  const submitBtn = addDistanceForm.getByRole('button', { name: /add distance|agregar distancia/i });
-  await expect(submitBtn).toBeEnabled({ timeout: 5000 });
-  await submitBtn.click();
+  await retryOnDomDetach(async () => {
+    await submitBtn().scrollIntoViewIfNeeded();
+  });
+  await expect(submitBtn()).toBeVisible({ timeout: 5000 });
+  await expect(submitBtn()).toBeEnabled({ timeout: 5000 });
+  await retryOnDomDetach(async () => {
+    await submitBtn().evaluate((button) => {
+      if (!(button instanceof HTMLButtonElement)) {
+        throw new Error('Distance form submit button not found');
+      }
+      button.click();
+    });
+  });
 
-  // Wait for network response and form to process
-  await page.waitForLoadState('networkidle');
-  await expect(labelInput).toBeHidden({ timeout: 10000 });
-
-  // Wait for the distance to appear in the list (confirms successful save)
-  await expect(page.getByText(label)).toBeVisible({ timeout: 10000 });
+  // Dispatch a single browser-native submit and wait for the saved distance to render.
+  await expect.poll(didSubmitSucceed, { timeout: 15000 }).toBe(true);
 }
 
 /**

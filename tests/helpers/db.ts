@@ -1,52 +1,25 @@
 import { closeDbPool, db as appDb } from '@/db';
 import * as schema from '@/db/schema';
-import { parse } from 'dotenv';
-import { readFileSync } from 'fs';
+import { assertDatabaseTargetMatch, describeDatabaseTarget, readEnvFileValue } from '@/testing/db-target';
 import { resolve } from 'path';
 
 type TestDb = typeof appDb;
 
-function readExpectedTestHost(): string | null {
-  const explicitTestUrl = process.env.DATABASE_TEST_URL;
+const ENV_TEST_PATH = resolve(process.cwd(), '.env.test');
 
-  if (explicitTestUrl) {
-    try {
-      return new URL(explicitTestUrl).host;
-    } catch {
-      return null;
-    }
-  }
-
-  try {
-    const parsed = parse(readFileSync(resolve(process.cwd(), '.env.test')));
-    const expectedUrl = parsed.DATABASE_URL;
-
-    if (!expectedUrl) {
-      return null;
-    }
-
-    return new URL(expectedUrl).host;
-  } catch {
-    return null;
-  }
+function getExpectedTestDatabaseUrl() {
+  return process.env.DATABASE_TEST_URL ?? readEnvFileValue(ENV_TEST_PATH, 'DATABASE_URL') ?? undefined;
 }
 
-const expectedTestHost = readExpectedTestHost();
-
-function assertTestDatabaseTarget(databaseUrl: string) {
-  let runtimeHost: string;
-
-  try {
-    runtimeHost = new URL(databaseUrl).host;
-  } catch {
-    throw new Error('DATABASE_URL is not a valid URL for DB tests');
-  }
-
-  if (expectedTestHost && runtimeHost !== expectedTestHost) {
-    throw new Error(
-      `Refusing to run DB tests against non-test host. Expected ${expectedTestHost}, received ${runtimeHost}.`,
-    );
-  }
+function assertTestDatabaseTarget(operationLabel: string) {
+  const runtimeUrl = process.env.DATABASE_TEST_URL ?? process.env.DATABASE_URL;
+  return assertDatabaseTargetMatch({
+    runtimeUrl,
+    runtimeSource: 'DATABASE_TEST_URL/DATABASE_URL',
+    expectedUrl: getExpectedTestDatabaseUrl(),
+    expectedSource: `DATABASE_TEST_URL or ${ENV_TEST_PATH}:DATABASE_URL`,
+    operationLabel: `DB tests (${operationLabel})`,
+  });
 }
 
 function formatDbError(error: unknown): string {
@@ -84,13 +57,7 @@ function formatDbError(error: unknown): string {
  * Uses DATABASE_TEST_URL when available, otherwise DATABASE_URL.
  */
 export function getTestDb() {
-  const databaseUrl = process.env.DATABASE_TEST_URL ?? process.env.DATABASE_URL;
-
-  if (!databaseUrl) {
-    throw new Error('DATABASE_URL/DATABASE_TEST_URL is not set for DB tests');
-  }
-
-  assertTestDatabaseTarget(databaseUrl);
+  assertTestDatabaseTarget('getTestDb');
 
   return appDb;
 }
@@ -104,6 +71,8 @@ export async function closeTestDbPool() {
  * Useful for ensuring clean state between tests
  */
 export async function cleanDatabase(db: TestDb) {
+  const runtimeTarget = assertTestDatabaseTarget('cleanDatabase');
+
   try {
     // Keep this aligned with e2e/utils/db.ts so DB and E2E suites share a deterministic FK-safe order.
     const deleteAuditLogs = async () => {
@@ -165,10 +134,8 @@ export async function cleanDatabase(db: TestDb) {
     await db.delete(schema.rateLimits);
     await db.delete(schema.waivers);
   } catch (error) {
-    const activeUrl = process.env.DATABASE_TEST_URL ?? process.env.DATABASE_URL;
-    const activeHost = activeUrl ? new URL(activeUrl).host : 'unknown';
     throw new Error(
-      `cleanDatabase failed on host=${activeHost}. ${formatDbError(error)}`,
+      `cleanDatabase failed on target=${describeDatabaseTarget(runtimeTarget)}. ${formatDbError(error)}`,
       error instanceof Error ? { cause: error } : undefined,
     );
   }

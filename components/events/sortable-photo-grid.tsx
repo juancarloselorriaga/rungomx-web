@@ -199,6 +199,8 @@ export function SortablePhotoGrid({
   // Use virtualization only for large photo sets
   const useVirtualization = sortedPhotos.length > VIRTUALIZATION_THRESHOLD;
 
+  // TanStack Virtual intentionally returns non-memoizable helpers.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => parentRef.current,
