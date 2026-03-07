@@ -26,14 +26,28 @@ export type AuthReadinessState = {
 
 const SIGN_IN_PATH_REGEX = /\/sign-in(?:\/|$)/i;
 const DEFAULT_AUTH_READY_TIMEOUT_MS = 45_000;
+const LOCALIZED_PATH_PREFIXES: Array<[localizedPrefix: string, canonicalPrefix: string]> = [
+  ['/iniciar-sesion', '/sign-in'],
+  ['/tablero', '/dashboard'],
+  ['/configuracion', '/settings'],
+  ['/perfil', '/profile'],
+];
 
 function isReadyStatus(status: AuthReadinessPollStatus): status is AuthReadinessStatus {
   return status !== 'pending';
 }
 
 export function normalizePathname(pathname: string) {
-  const normalized = pathname.replace(/^\/[a-z]{2}(?:-[A-Z]{2})?(?=\/|$)/, '');
-  return normalized.length > 0 ? normalized : '/';
+  const withoutLocale = pathname.replace(/^\/[a-z]{2}(?:-[A-Z]{2})?(?=\/|$)/, '') || '/';
+
+  for (const [localizedPrefix, canonicalPrefix] of LOCALIZED_PATH_PREFIXES) {
+    if (withoutLocale === localizedPrefix || withoutLocale.startsWith(`${localizedPrefix}/`)) {
+      const suffix = withoutLocale.slice(localizedPrefix.length);
+      return `${canonicalPrefix}${suffix}` || canonicalPrefix;
+    }
+  }
+
+  return withoutLocale.length > 0 ? withoutLocale : '/';
 }
 
 function describeDestinationPattern(pattern: DestinationPattern) {

@@ -54,6 +54,20 @@ export type OrganizerPayoutDetail = {
   isTerminal: boolean;
 };
 
+type OrganizerPayoutDetailRow = {
+  payoutRequestId: string;
+  organizerId: string;
+  status: string;
+  traceId: string;
+  requestedAt: Date;
+  lifecycleContextJson: unknown;
+  currency: string;
+  requestedAmountMinor: number;
+  maxWithdrawableAmountMinor: number;
+  includedAmountMinor: number;
+  deductionAmountMinor: number;
+};
+
 function toRecord(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return {};
@@ -238,8 +252,46 @@ export async function getOrganizerPayoutDetail(params: {
       ),
     )
     .limit(1)
-    .then((rows) => rows[0] ?? null);
+    .then((rows) => (rows[0] ?? null) as OrganizerPayoutDetailRow | null);
 
+  return buildOrganizerPayoutDetail(payoutRequest);
+}
+
+export async function getOrganizerPayoutDetailByRequestId(
+  payoutRequestId: string,
+): Promise<OrganizerPayoutDetail | null> {
+  const payoutRequest = await db
+    .select({
+      payoutRequestId: payoutRequests.id,
+      organizerId: payoutRequests.organizerId,
+      status: payoutRequests.status,
+      traceId: payoutRequests.traceId,
+      requestedAt: payoutRequests.requestedAt,
+      lifecycleContextJson: payoutRequests.lifecycleContextJson,
+      currency: payoutQuotes.currency,
+      requestedAmountMinor: payoutQuotes.requestedAmountMinor,
+      maxWithdrawableAmountMinor: payoutQuotes.maxWithdrawableAmountMinor,
+      includedAmountMinor: payoutQuotes.includedAmountMinor,
+      deductionAmountMinor: payoutQuotes.deductionAmountMinor,
+    })
+    .from(payoutRequests)
+    .innerJoin(payoutQuotes, eq(payoutRequests.payoutQuoteId, payoutQuotes.id))
+    .where(
+      and(
+        eq(payoutRequests.id, payoutRequestId),
+        isNull(payoutRequests.deletedAt),
+        isNull(payoutQuotes.deletedAt),
+      ),
+    )
+    .limit(1)
+    .then((rows) => (rows[0] ?? null) as OrganizerPayoutDetailRow | null);
+
+  return buildOrganizerPayoutDetail(payoutRequest);
+}
+
+async function buildOrganizerPayoutDetail(
+  payoutRequest: OrganizerPayoutDetailRow | null,
+): Promise<OrganizerPayoutDetail | null> {
   if (!payoutRequest) {
     return null;
   }
@@ -254,9 +306,9 @@ export async function getOrganizerPayoutDetail(params: {
     .from(moneyEvents)
     .where(
       and(
-        eq(moneyEvents.organizerId, params.organizerId),
+        eq(moneyEvents.organizerId, payoutRequest.organizerId),
         eq(moneyEvents.entityType, 'payout'),
-        eq(moneyEvents.entityId, params.payoutRequestId),
+        eq(moneyEvents.entityId, payoutRequest.payoutRequestId),
         inArray(moneyEvents.eventName, lifecycleEventNames),
       ),
     )

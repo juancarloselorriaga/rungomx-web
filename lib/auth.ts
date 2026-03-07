@@ -42,6 +42,13 @@ export const auth = betterAuth({
       generateId: false,
     },
   },
+  rateLimit: {
+    // Keep production auth protection enabled, but allow the Playwright E2E
+    // web server to opt out explicitly when it runs against `next start`.
+    enabled:
+      process.env.E2E_DISABLE_AUTH_RATE_LIMIT !== 'true' &&
+      process.env.NODE_ENV !== 'development',
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

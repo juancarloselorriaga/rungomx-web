@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 type PayoutHistoryTableProps = {
   items: OrganizerPayoutListItem[];
   locale: 'es' | 'en';
-  organizationId: string;
 };
 
 function formatMoney(minor: number, currency: string, locale: 'es' | 'en'): string {
@@ -43,7 +42,7 @@ function badgeVariantForStatus(status: OrganizerPayoutListItem['status']) {
   }
 }
 
-export function PayoutHistoryTable({ items, locale, organizationId }: PayoutHistoryTableProps) {
+export function PayoutHistoryTable({ items, locale }: PayoutHistoryTableProps) {
   const t = useTranslations('pages.dashboardPayments');
 
   if (items.length === 0) {
@@ -78,7 +77,6 @@ export function PayoutHistoryTable({ items, locale, organizationId }: PayoutHist
                     href={{
                       pathname: '/dashboard/payments/payouts/[payoutRequestId]',
                       params: { payoutRequestId: item.payoutRequestId },
-                      query: { organizationId },
                     }}
                     className="font-medium text-primary underline-offset-2 hover:underline"
                   >

@@ -35,24 +35,10 @@ async function openPaymentsWorkspace(
   }
 
   const targetUrl = searchParams.size > 0 ? `${targetPath}?${searchParams.toString()}` : targetPath;
-
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
-      await page.waitForLoadState('networkidle');
-      if (page.url().startsWith(new URL(targetUrl, 'http://127.0.0.1').toString())) {
-        return;
-      }
-    } catch (error) {
-      if (attempt === 2) {
-        throw error;
-      }
-    }
-
-    await page.waitForTimeout(500);
-  }
-
-  await expect(page).toHaveURL(new RegExp(targetPath));
+  await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(new RegExp(`${targetPath}(?:\\?|$)`));
+  await expect(page.getByRole('heading', { name: 'Payments economics' })).toBeVisible();
+  await expect(page.getByText('Financial case lookup')).toBeVisible();
 }
 
 test.describe('Payments Admin E2E', () => {

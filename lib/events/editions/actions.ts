@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
-import { revalidateTag } from 'next/cache';
+import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -24,6 +24,7 @@ import {
 } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
+import { safeUpdateTag } from '@/lib/next-cache';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import {
@@ -835,10 +836,10 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     return updatedEdition;
   });
 
-  revalidateTag(eventEditionDetailTag(updated.id), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(updated.id));
+  safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
   if (updated.slug !== edition.slug) {
-    revalidateTag(publicEventBySlugTag(edition.series.slug, updated.slug), { expire: 0 });
+    safeUpdateTag(publicEventBySlugTag(edition.series.slug, updated.slug));
   }
 
   return {
@@ -940,8 +941,9 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
     }
   });
 
-  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(editionId));
+  safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
+  refresh();
 
   return { ok: true, data: { capacityScope, sharedCapacity: nextSharedCapacity } };
 });
@@ -1037,7 +1039,7 @@ export const updateEventPolicyConfig = withAuthenticatedUser<ActionResult<EventP
     return record;
   });
 
-  revalidateTag(eventEditionDetailTag(data.editionId), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(data.editionId));
   await revalidatePublicEventByEditionId(data.editionId);
 
   return {
@@ -1263,8 +1265,9 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
     }
   });
 
-  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(editionId));
+  safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
+  refresh();
 
   return { ok: true, data: { visibility } };
 });
@@ -1335,8 +1338,9 @@ export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused
     }
   });
 
-  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(editionId));
+  safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
+  refresh();
 
   return { ok: true, data: { paused } };
 });

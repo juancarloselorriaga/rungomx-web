@@ -2,7 +2,7 @@
 
 import { useSession } from '@/lib/auth/client';
 import { ProfileStatus } from '@/lib/profiles/types';
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 
 type OnboardingOverrides = {
   profileStatusOverride: ProfileStatus | null;
@@ -13,23 +13,70 @@ type OnboardingOverrides = {
 
 const OnboardingContext = createContext<OnboardingOverrides | null>(null);
 
-function OnboardingOverridesProviderInner({ children }: { children: ReactNode }) {
-  const [profileStatusOverride, setProfileStatusOverride] = useState<ProfileStatus | null>(null);
-  const [needsRoleAssignmentOverride, setNeedsRoleAssignmentOverride] = useState<boolean | null>(
-    null,
+function OnboardingOverridesProviderInner({
+  children,
+  resetKey,
+}: {
+  children: ReactNode;
+  resetKey: string | null;
+}) {
+  const [overrideState, setOverrideState] = useState<{
+    resetKey: string | null;
+    profileStatusOverride: ProfileStatus | null;
+    needsRoleAssignmentOverride: boolean | null;
+  }>({
+    resetKey,
+    profileStatusOverride: null,
+    needsRoleAssignmentOverride: null,
+  });
+
+  const effectiveState = useMemo(
+    () =>
+      overrideState.resetKey === resetKey
+        ? overrideState
+        : {
+            resetKey,
+            profileStatusOverride: null,
+            needsRoleAssignmentOverride: null,
+          },
+    [overrideState, resetKey],
+  );
+
+  const setProfileStatusOverride = useCallback(
+    (status: ProfileStatus | null) => {
+      setOverrideState((current) => ({
+        resetKey,
+        profileStatusOverride: status,
+        needsRoleAssignmentOverride:
+          current.resetKey === resetKey ? current.needsRoleAssignmentOverride : null,
+      }));
+    },
+    [resetKey],
+  );
+
+  const setNeedsRoleAssignmentOverride = useCallback(
+    (needsRoleAssignment: boolean | null) => {
+      setOverrideState((current) => ({
+        resetKey,
+        profileStatusOverride: current.resetKey === resetKey ? current.profileStatusOverride : null,
+        needsRoleAssignmentOverride: needsRoleAssignment,
+      }));
+    },
+    [resetKey],
+  );
+
+  const value = useMemo(
+    () => ({
+      profileStatusOverride: effectiveState.profileStatusOverride,
+      setProfileStatusOverride,
+      needsRoleAssignmentOverride: effectiveState.needsRoleAssignmentOverride,
+      setNeedsRoleAssignmentOverride,
+    }),
+    [effectiveState, setNeedsRoleAssignmentOverride, setProfileStatusOverride],
   );
 
   return (
-    <OnboardingContext.Provider
-      value={{
-        profileStatusOverride,
-        setProfileStatusOverride,
-        needsRoleAssignmentOverride,
-        setNeedsRoleAssignmentOverride,
-      }}
-    >
-      {children}
-    </OnboardingContext.Provider>
+    <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>
   );
 }
 
@@ -38,7 +85,7 @@ export function OnboardingOverridesProvider({ children }: { children: ReactNode 
   const userId = data?.user?.id ?? null;
 
   return (
-    <OnboardingOverridesProviderInner key={userId ?? 'anonymous'}>
+    <OnboardingOverridesProviderInner resetKey={userId}>
       {children}
     </OnboardingOverridesProviderInner>
   );

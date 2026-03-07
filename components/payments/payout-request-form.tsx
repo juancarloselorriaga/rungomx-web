@@ -285,7 +285,6 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
               href={{
                 pathname: '/dashboard/payments/payouts/[payoutRequestId]',
                 params: { payoutRequestId: requestSuccess.payoutRequestId },
-                query: { organizationId },
               }}
             >
               {t('actions.openDetails')}

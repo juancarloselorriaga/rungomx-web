@@ -43,7 +43,7 @@ export default async function DashboardPaymentsPayoutsPage({
 
   const authContext = await getAuthContext();
 
-  const organizations = authContext.permissions.canManageEvents
+  const organizations = authContext.permissions.canViewStaffTools
     ? await getAllOrganizations()
     : await getUserOrganizations(authContext.user!.id);
 
@@ -142,7 +142,6 @@ export default async function DashboardPaymentsPayoutsPage({
       <PayoutHistoryTable
         items={payouts}
         locale={locale as 'es' | 'en'}
-        organizationId={selectedOrganization.id}
       />
     </div>
   );

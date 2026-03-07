@@ -5,6 +5,7 @@ import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
@@ -35,6 +36,7 @@ export async function generateMetadata({ params }: SettingsPageProps): Promise<M
 export default async function EventSettingsPage({ params, searchParams }: SettingsPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/settings' });
+  await connection();
   const t = await getTranslations('pages.dashboardEventSettings');
   const authContext = await getAuthContext();
   const resolvedSearchParams = await searchParams;
@@ -53,7 +55,6 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   if (!event) {
     notFound();
   }
-
   // Check if user can access this event's series
   const canAccess = await canUserAccessSeries(authContext.user!.id, event.seriesId);
   if (!canAccess) {

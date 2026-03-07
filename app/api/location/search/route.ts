@@ -1,5 +1,6 @@
 import { getLocationProvider } from '@/lib/location/location-provider';
 import type { PublicLocationValue } from '@/types/location';
+import { unstable_rethrow } from 'next/navigation';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -81,13 +82,13 @@ function toPublicLocations(
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const rawQuery = {
-      q: url.searchParams.get('q') ?? '',
-      limit: url.searchParams.get('limit') ?? undefined,
-      language: url.searchParams.get('language') ?? undefined,
-      country: url.searchParams.get('country') ?? undefined,
-      proximity: url.searchParams.get('proximity') ?? undefined,
+      q: searchParams.get('q') ?? '',
+      limit: searchParams.get('limit') ?? undefined,
+      language: searchParams.get('language') ?? undefined,
+      country: searchParams.get('country') ?? undefined,
+      proximity: searchParams.get('proximity') ?? undefined,
     };
 
     const parsed = querySchema.safeParse(rawQuery);
@@ -125,6 +126,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ locations: publicLocations });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[location-search] Error handling request', error);
     return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }

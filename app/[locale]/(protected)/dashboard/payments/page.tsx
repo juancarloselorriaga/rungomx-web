@@ -41,7 +41,7 @@ export default async function DashboardPaymentsPage({
   const t = await getTranslations('pages.dashboardPayments');
   const authContext = await getAuthContext();
 
-  const organizations = authContext.permissions.canManageEvents
+  const organizations = authContext.permissions.canViewStaffTools
     ? await getAllOrganizations()
     : await getUserOrganizations(authContext.user!.id);
 

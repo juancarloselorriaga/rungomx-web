@@ -42,10 +42,16 @@ const repoRoot = resolve(__dirname, '..');
 const outputDir = runId ? resolve(repoRoot, 'test-results', runId) : resolve(repoRoot, 'test-results');
 const reportDir = runId ? resolve(repoRoot, 'playwright-report', runId) : resolve(repoRoot, 'playwright-report');
 const jsonResultsFile = resolve(outputDir, 'results.json');
+const nextServerMode = process.env.E2E_NEXT_SERVER_MODE?.trim() === 'dev' ? 'dev' : 'start';
 const webServerEnv = createWebServerEnv();
 webServerEnv.NEXT_PUBLIC_SITE_URL = origin;
 webServerEnv.PORT = String(port);
 webServerEnv.RUNGOMX_NEXT_DIST_DIR = process.env.RUNGOMX_NEXT_DIST_DIR || '.next-e2e';
+webServerEnv.NODE_ENV = nextServerMode === 'dev' ? 'development' : 'production';
+// Production-style E2E runs exercise repeated auth flows quickly. Disable the
+// auth limiter explicitly for the spawned app server instead of relying on
+// NODE_ENV, which Next.js normalizes to "production" under `next start`.
+webServerEnv.E2E_DISABLE_AUTH_RATE_LIMIT = 'true';
 
 if (process.env.DATABASE_URL) {
   webServerEnv.DATABASE_URL = process.env.DATABASE_URL;
@@ -84,7 +90,7 @@ export default defineConfig({
   timeout: 60 * 1000, // 60 seconds per test
 
   // Global setup/teardown timeout
-  globalTimeout: 15 * 60 * 1000, // 15 minutes for entire suite
+  globalTimeout: 30 * 60 * 1000, // 30 minutes for production-build E2E runs
 
   // Expect timeout for assertions
   expect: {
@@ -158,10 +164,13 @@ export default defineConfig({
     // },
   ],
 
-  // Run a dedicated Next.js dev server before tests
+  // Run a dedicated Next.js server before tests.
+  // Production mode is the default to avoid dev-time route compilation races during long suites.
   webServer: {
-    // Avoid file watchers (EMFILE) and bind to localhost for E2E stability.
-    command: `NODE_ENV=test pnpm exec next dev -H 127.0.0.1 -p ${port}`,
+    command:
+      nextServerMode === 'dev'
+        ? `pnpm exec next dev -H 127.0.0.1 -p ${port}`
+        : `pnpm exec next build --webpack && pnpm exec next start -H 127.0.0.1 -p ${port}`,
     cwd: repoRoot,
     url: origin,
     // Always start a fresh server for E2E to guarantee env + DB isolation.
@@ -169,7 +178,7 @@ export default defineConfig({
     reuseExistingServer: false,
     stdout: 'ignore',
     stderr: 'pipe',
-    timeout: 120 * 1000, // 2 minutes to start
+    timeout: nextServerMode === 'dev' ? 120 * 1000 : 10 * 60 * 1000,
     env: webServerEnv,
   },
 });

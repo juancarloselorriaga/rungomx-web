@@ -1,7 +1,10 @@
 import { Page, expect } from '@playwright/test';
 import type { Locator } from '@playwright/test';
+import { and, eq, isNull } from 'drizzle-orm';
+import { eventDistances, eventEditions } from '@/db/schema';
 import { getAuthReadinessState, type DestinationPattern } from './auth-readiness';
 import { emitDiagnostic } from './diagnostics';
+import { getTestDb } from './db';
 
 /**
  * Test helper utilities for RunGoMX E2E tests
@@ -554,12 +557,17 @@ export async function createEvent(
     await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
   }
 
-  // Wait for redirect to event dashboard
-  await page.waitForURL(/\/dashboard\/events\/[a-f0-9-]{36}/, { timeout: 90000 });
+  // Next App Router transitions do not guarantee a new document "load" event.
+  // Wait for the URL contract itself instead of waiting on navigation load-state semantics.
+  const eventRoutePattern =
+    /\/(?:en\/)?(?:dashboard\/events|tablero\/eventos)\/([a-f0-9-]{36})(?:\/|$)/i;
+  await expect
+    .poll(() => page.url(), { timeout: 90000 })
+    .toMatch(eventRoutePattern);
 
   // Extract event ID from URL
   const url = page.url();
-  const eventId = url.match(/\/events\/([a-f0-9-]{36})/)?.[1] || '';
+  const eventId = url.match(eventRoutePattern)?.[1] || '';
 
   return { seriesName, editionLabel, eventId };
 }
@@ -667,9 +675,10 @@ export async function addDistance(
   },
 ) {
   const { label, distance, terrain, price, capacity } = options;
-  const distanceLabel = page.getByText(label).first();
-
+  const editionId = page.url().match(/\/dashboard\/events\/([a-f0-9-]{36})(?:\/|$)/i)?.[1];
+  const db = editionId ? getTestDb() : null;
   const distancesHeading = () => page.getByRole('heading', { name: /distances|distancias/i }).first();
+  const distancesSection = () => distancesHeading().locator('xpath=ancestor::section[1]');
   const distancesStepButton = () => page.getByRole('button', { name: /distances|distancias/i }).first();
   const manualSetupButton = () =>
     page.getByRole('button', { name: /manual setup|configuraci[oó]n manual/i }).first();
@@ -677,18 +686,20 @@ export async function addDistance(
     page
       .getByText(/manual path selected|ruta manual seleccionada/i)
       .first();
-  const addDistanceBtn = () => page.getByRole('button', { name: /add distance|agregar distancia/i }).first();
-  const labelInput = () => page.locator('input[name="label"]:visible').first();
-  const distanceInput = () => page.locator('input[name="distanceValue"]:visible').first();
-  const terrainSelect = () => page.locator('select[name="terrain"]:visible').first();
-  const priceInput = () => page.locator('input[name="price"]:visible').first();
-  const capacityInput = () => page.locator('input[name="capacity"]:visible').first();
+  const addDistanceBtn = () =>
+    distancesSection().getByRole('button', { name: /add distance|agregar distancia/i }).first();
+  const labelInput = () => distancesSection().locator('input[name="label"]:visible').first();
+  const distanceInput = () => distancesSection().locator('input[name="distanceValue"]:visible').first();
+  const terrainSelect = () => distancesSection().locator('select[name="terrain"]:visible').first();
+  const priceInput = () => distancesSection().locator('input[name="price"]:visible').first();
+  const capacityInput = () => distancesSection().locator('input[name="capacity"]:visible').first();
   const submitBtn = () =>
-    page
-      .locator('form', { has: page.locator('input[name="label"]:visible') })
-      .first()
-      .getByRole('button', { name: /add distance|agregar distancia/i })
+    distancesSection()
+      .locator('button[type="submit"]')
+      .filter({ hasText: /add distance|agregar distancia/i })
       .first();
+  const distanceLabel = () =>
+    distancesSection().getByRole('heading', { name: label, exact: true }).first();
 
   const isDomDetachError = (error: unknown): error is Error =>
     error instanceof Error && /(not attached|detached|removed from the dom)/i.test(error.message);
@@ -707,16 +718,24 @@ export async function addDistance(
     }
   };
 
-  const didSubmitSucceed = async () => {
-    const formVisible = await labelInput().isVisible().catch(() => false);
-    const distanceVisible = await distanceLabel.isVisible().catch(() => false);
-    return !formVisible && distanceVisible;
-  };
+  const persistedDistanceExists = async () =>
+    db && editionId
+      ? Boolean(
+          await db.query.eventDistances.findFirst({
+            where: and(
+              eq(eventDistances.editionId, editionId),
+              eq(eventDistances.label, label),
+              isNull(eventDistances.deletedAt),
+            ),
+            columns: { id: true },
+          }),
+        )
+      : false;
 
   const isDistanceEditorVisible = async () =>
     (await distancesHeading().isVisible().catch(() => false)) ||
     (await addDistanceBtn().isVisible().catch(() => false)) ||
-    (await labelInput().isVisible().catch(() => false));
+    (await submitBtn().isVisible().catch(() => false));
 
   if (!(await isDistanceEditorVisible())) {
     const manualButton = manualSetupButton();
@@ -755,12 +774,13 @@ export async function addDistance(
   }
 
   // Check if form is already visible using the form's input name attribute.
-  if (!(await labelInput().isVisible({ timeout: 1000 }).catch(() => false))) {
+  if (!(await submitBtn().isVisible({ timeout: 1000 }).catch(() => false))) {
     await expect(addDistanceBtn()).toBeVisible({ timeout: 10000 });
     await expect(addDistanceBtn()).toBeEnabled({ timeout: 10000 });
     await retryOnDomDetach(async () => {
       await addDistanceBtn().click();
     });
+    await expect(submitBtn()).toBeVisible({ timeout: 10000 });
     await expect(labelInput()).toBeVisible({ timeout: 10000 });
   }
 
@@ -785,17 +805,21 @@ export async function addDistance(
     await capacityInput().fill(capacity.toString());
   });
 
-  await retryOnDomDetach(async () => {
-    await submitBtn().scrollIntoViewIfNeeded();
-  });
   await expect(submitBtn()).toBeVisible({ timeout: 5000 });
   await expect(submitBtn()).toBeEnabled({ timeout: 5000 });
+
   await retryOnDomDetach(async () => {
     await submitBtn().click();
   });
 
-  // Submit via Playwright so React handles the form through the same path as a real user.
-  await expect.poll(didSubmitSucceed, { timeout: 15000 }).toBe(true);
+  // Wait for the server action to persist the new distance first, then wait for
+  // the client state to render the new card before returning control to tests.
+  if (db && editionId) {
+    await expect.poll(persistedDistanceExists, { timeout: 15000 }).toBe(true);
+  }
+  await expect
+    .poll(async () => distanceLabel().isVisible().catch(() => false), { timeout: 15000 })
+    .toBe(true);
 }
 
 /**
@@ -826,20 +850,43 @@ export async function publishEvent(page: Page) {
     }
   }
 
-  // Wait for section to be fully loaded
-  await page.waitForLoadState('networkidle');
-
-  const visibilitySection = page.locator('section', { has: visibilityHeading }).first();
+  const visibilitySection = visibilityHeading.locator('xpath=ancestor::section[1]');
   const publishedBtn = visibilitySection.getByRole('button', { name: /published|publicado/i }).first();
   await expect(publishedBtn).toBeVisible({ timeout: 15000 });
+  await expect(publishedBtn).toBeEnabled({ timeout: 15000 });
 
-  // If already selected, skip the click and just assert stable selected state.
+  const editionId = page.url().match(/\/dashboard\/events\/([a-f0-9-]{36})(?:\/|$)/i)?.[1];
   const publishedSelectedIndicator = publishedBtn.locator('svg');
-  if (!(await publishedSelectedIndicator.isVisible({ timeout: 1000 }).catch(() => false))) {
-    await publishedBtn.click();
-  }
+  const db = editionId ? getTestDb() : null;
 
-  await expect(publishedSelectedIndicator).toBeVisible({ timeout: 15000 });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (!(await publishedSelectedIndicator.isVisible({ timeout: 1000 }).catch(() => false))) {
+      await publishedBtn.click();
+    }
+
+    try {
+      if (db && editionId) {
+        await expect
+          .poll(
+            async () => {
+              const edition = await db.query.eventEditions.findFirst({
+                where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+                columns: { visibility: true },
+              });
+              return edition?.visibility ?? null;
+            },
+            { timeout: 15000 },
+          )
+          .toBe('published');
+      }
+
+      await expect(publishedSelectedIndicator).toBeVisible({ timeout: 15000 });
+      return;
+    } catch (error) {
+      if (attempt === 1) throw error;
+      await page.waitForTimeout(500);
+    }
+  }
 }
 
 /**
@@ -857,7 +904,7 @@ export async function pauseRegistration(page: Page) {
   await expect(registrationHeading).toBeVisible({ timeout: 15000 });
   await registrationHeading.scrollIntoViewIfNeeded();
 
-  const registrationSection = page.locator('section', { has: registrationHeading });
+  const registrationSection = registrationHeading.locator('xpath=ancestor::section[1]');
   const pauseBtn = registrationSection.getByRole('button', { name: /pause registration/i });
   await expect(pauseBtn).toBeVisible({ timeout: 15000 });
   await expect(pauseBtn).toBeEnabled();
@@ -898,7 +945,7 @@ export async function resumeRegistration(page: Page) {
   await expect(registrationHeading).toBeVisible({ timeout: 15000 });
   await registrationHeading.scrollIntoViewIfNeeded();
 
-  const registrationSection = page.locator('section', { has: registrationHeading });
+  const registrationSection = registrationHeading.locator('xpath=ancestor::section[1]');
   const resumeBtn = registrationSection.getByRole('button', { name: /resume registration/i });
   await expect(resumeBtn).toBeVisible({ timeout: 15000 });
   await expect(resumeBtn).toBeEnabled();

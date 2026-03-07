@@ -1,7 +1,7 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
-import { revalidateTag } from 'next/cache';
+import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -20,6 +20,7 @@ import {
   DISTANCE_UNITS,
   TERRAIN_TYPES,
 } from '@/lib/events/constants';
+import { safeUpdateTag } from '@/lib/next-cache';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 import { type ActionResult, checkEventsAccess } from '@/lib/events/shared';
 
@@ -179,9 +180,10 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
     return newDistance;
   });
 
-  revalidateTag(eventEditionDetailTag(editionId), { expire: 0 });
-  revalidateTag(eventEditionPricingTag(editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(edition.series.slug, edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(editionId));
+  safeUpdateTag(eventEditionPricingTag(editionId));
+  safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
+  refresh();
 
   return {
     ok: true,
@@ -290,9 +292,10 @@ export const updateDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
     return updatedDistance;
   });
 
-  revalidateTag(eventEditionDetailTag(updated.editionId), { expire: 0 });
-  revalidateTag(eventEditionPricingTag(updated.editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(updated.editionId));
+  safeUpdateTag(eventEditionPricingTag(updated.editionId));
+  safeUpdateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug));
+  refresh();
 
   return {
     ok: true,
@@ -378,9 +381,10 @@ export const deleteDistance = withAuthenticatedUser<ActionResult>({
     }
   });
 
-  revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
-  revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(distance.editionId));
+  safeUpdateTag(eventEditionPricingTag(distance.editionId));
+  safeUpdateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug));
+  refresh();
 
   return { ok: true, data: undefined };
 });
@@ -458,9 +462,10 @@ export const updateDistancePrice = withAuthenticatedUser<ActionResult>({
     }
   });
 
-  revalidateTag(eventEditionDetailTag(distance.editionId), { expire: 0 });
-  revalidateTag(eventEditionPricingTag(distance.editionId), { expire: 0 });
-  revalidateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug), { expire: 0 });
+  safeUpdateTag(eventEditionDetailTag(distance.editionId));
+  safeUpdateTag(eventEditionPricingTag(distance.editionId));
+  safeUpdateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug));
+  refresh();
 
   return { ok: true, data: undefined };
 });

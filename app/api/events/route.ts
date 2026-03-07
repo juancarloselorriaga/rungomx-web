@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { unstable_rethrow } from 'next/navigation';
 import { z } from 'zod';
 
 import { getAuthContext } from '@/lib/auth/server';
@@ -115,26 +116,26 @@ const searchParamsSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const url = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const rawParams = {
-      q: url.searchParams.get('q') || undefined,
-      sportType: url.searchParams.get('sportType') || undefined,
-      state: url.searchParams.get('state') || undefined,
-      city: url.searchParams.get('city') || undefined,
-      distanceKind: url.searchParams.get('distanceKind') || undefined,
-      openOnly: url.searchParams.get('openOnly') || undefined,
-      isVirtual: url.searchParams.get('isVirtual') || undefined,
-      distanceMin: url.searchParams.get('distanceMin') || undefined,
-      distanceMax: url.searchParams.get('distanceMax') || undefined,
-      lat: url.searchParams.get('lat') || undefined,
-      lng: url.searchParams.get('lng') || undefined,
-      radiusKm: url.searchParams.get('radiusKm') || undefined,
-      useProfileLocation: url.searchParams.get('useProfileLocation') || undefined,
-      dateFrom: url.searchParams.get('dateFrom') || undefined,
-      dateTo: url.searchParams.get('dateTo') || undefined,
-      month: url.searchParams.get('month') || undefined,
-      page: url.searchParams.get('page') || undefined,
-      limit: url.searchParams.get('limit') || undefined,
+      q: searchParams.get('q') || undefined,
+      sportType: searchParams.get('sportType') || undefined,
+      state: searchParams.get('state') || undefined,
+      city: searchParams.get('city') || undefined,
+      distanceKind: searchParams.get('distanceKind') || undefined,
+      openOnly: searchParams.get('openOnly') || undefined,
+      isVirtual: searchParams.get('isVirtual') || undefined,
+      distanceMin: searchParams.get('distanceMin') || undefined,
+      distanceMax: searchParams.get('distanceMax') || undefined,
+      lat: searchParams.get('lat') || undefined,
+      lng: searchParams.get('lng') || undefined,
+      radiusKm: searchParams.get('radiusKm') || undefined,
+      useProfileLocation: searchParams.get('useProfileLocation') || undefined,
+      dateFrom: searchParams.get('dateFrom') || undefined,
+      dateTo: searchParams.get('dateTo') || undefined,
+      month: searchParams.get('month') || undefined,
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
     };
 
     const parsed = searchParamsSchema.safeParse(rawParams);
@@ -168,7 +169,7 @@ export async function GET(request: NextRequest) {
     } = parsed.data;
 
     const hasExplicitLocationIntent = ['lat', 'lng', 'radiusKm', 'location', 'state', 'city'].some(
-      (key) => url.searchParams.get(key) !== null,
+      (key) => searchParams.get(key) !== null,
     );
     let effectiveLat = lat;
     let effectiveLng = lng;
@@ -223,6 +224,7 @@ export async function GET(request: NextRequest) {
       pagination: result.pagination,
     });
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[events-search] Error handling request', error);
     return NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 });
   }

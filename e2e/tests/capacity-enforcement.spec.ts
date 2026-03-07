@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { and, eq, isNull } from 'drizzle-orm';
+import { eventEditions } from '@/db/schema';
 import { getTestDb } from '../utils/db';
 import {
   signUpTestUser,
@@ -27,6 +29,23 @@ import { DISTANCE_DATA } from '../fixtures/test-data';
 // File-scoped test credentials
 let organizerCreds: { id: string; email: string; password: string; name: string };
 let athleteCreds: { id: string; email: string; password: string; name: string };
+
+async function getEditionRouteSlugs(editionId: string) {
+  const db = getTestDb();
+  const edition = await db.query.eventEditions.findFirst({
+    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+    with: { series: true },
+  });
+
+  if (!edition?.series) {
+    throw new Error(`[e2e] Event edition ${editionId} not found while deriving public route slugs.`);
+  }
+
+  return {
+    seriesSlug: edition.series.slug,
+    editionSlug: edition.slug,
+  };
+}
 
 test.describe('Capacity Enforcement', () => {
   test.describe.configure({ mode: 'serial' });
@@ -84,8 +103,7 @@ test.describe('Capacity Enforcement', () => {
     const eventData = await createEvent(page);
 
     eventId = eventData.eventId;
-    seriesSlug = eventData.seriesName.toLowerCase().replace(/\s+/g, '-');
-    editionSlug = eventData.editionLabel;
+    ({ seriesSlug, editionSlug } = await getEditionRouteSlugs(eventId));
 
     // Add distance with capacity = 1
     await navigateToEventSettings(page, eventId);
@@ -161,8 +179,8 @@ test.describe('Capacity Enforcement', () => {
     const eventData = await createEvent(organizerPage);
 
     const multiEventId = eventData.eventId;
-    const multiSeriesSlug = eventData.seriesName.toLowerCase().replace(/\s+/g, '-');
-    const multiEditionSlug = eventData.editionLabel;
+    const { seriesSlug: multiSeriesSlug, editionSlug: multiEditionSlug } =
+      await getEditionRouteSlugs(multiEventId);
 
     // Add two distances: one with capacity 1, one with capacity 100
     await navigateToEventSettings(organizerPage, multiEventId);

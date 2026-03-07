@@ -191,16 +191,16 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
 
   const isEditionSlugChanged = detailsForm.values.slug.trim() !== event.slug;
 
-  const handleDetailsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
+  const handleDetailsSubmit = (formEvent: React.FormEvent<HTMLFormElement>) => {
+    formEvent.preventDefault();
+    formEvent.stopPropagation();
 
     if (isEditionSlugChanged) {
       setShowSlugConfirm(true);
       return;
     }
 
-    detailsForm.handleSubmit(event);
+    detailsForm.handleSubmit(formEvent);
   };
 
   const confirmSlugChange = () => {
@@ -221,9 +221,6 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
       });
       if (result.ok) {
         setVisibility(newVisibility);
-        startTransition(() => {
-          router.refresh();
-        });
       } else {
         const errorKey =
           result.code === 'MISSING_DISTANCE'
@@ -251,9 +248,6 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
       });
       if (result.ok) {
         setIsRegistrationPaused(!isRegistrationPaused);
-        startTransition(() => {
-          router.refresh();
-        });
       }
     } finally {
       setIsUpdatingPause(false);
@@ -264,6 +258,23 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
   const [distances, setDistances] = useState<EventDistanceDetail[]>(event.distances);
   const [showAddDistance, setShowAddDistance] = useState(wizardMode && event.distances.length === 0);
   const [editingDistanceId, setEditingDistanceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setVisibility(event.visibility as VisibilityType);
+  }, [event.visibility]);
+
+  useEffect(() => {
+    setIsRegistrationPaused(event.isRegistrationPaused);
+  }, [event.isRegistrationPaused]);
+
+  useEffect(() => {
+    setDistances(event.distances);
+  }, [event.distances]);
+
+  useEffect(() => {
+    setCapacityScope(event.sharedCapacity ? 'shared_pool' : 'per_distance');
+    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : '');
+  }, [event.sharedCapacity]);
 
   function handleEditionSlugChange(nextSlug: string) {
     const trimmed = nextSlug.trim();
@@ -468,9 +479,6 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
       prev.map((distance) => ({ ...distance, capacityScope: result.data.capacityScope })),
     );
     toast.success(tCapacity('success'));
-    startTransition(() => {
-      router.refresh();
-    });
   }
 
   return (
@@ -891,6 +899,7 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{t('distances.title')}</h2>
           <Button
+            type="button"
             variant="outline"
             size="sm"
             onClick={() => setShowAddDistance(true)}
@@ -906,11 +915,8 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
             eventId={event.id}
             sharedCapacityEnabled={sharedCapacityEnabled}
             onSuccess={(newDistance) => {
-              setDistances([...distances, newDistance]);
+              setDistances((prev) => [...prev, newDistance]);
               setShowAddDistance(false);
-              startTransition(() => {
-                router.refresh();
-              });
             }}
             onCancel={() => setShowAddDistance(false)}
           />
@@ -931,17 +937,11 @@ export function EventSettingsForm({ event, wizardMode = false }: EventSettingsFo
                 onEdit={() => setEditingDistanceId(distance.id)}
                 onCancelEdit={() => setEditingDistanceId(null)}
                 onUpdate={(updated) => {
-                  setDistances(distances.map((d) => (d.id === updated.id ? updated : d)));
+                  setDistances((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
                   setEditingDistanceId(null);
-                  startTransition(() => {
-                    router.refresh();
-                  });
                 }}
                 onDelete={() => {
-                  setDistances(distances.filter((d) => d.id !== distance.id));
-                  startTransition(() => {
-                    router.refresh();
-                  });
+                  setDistances((prev) => prev.filter((d) => d.id !== distance.id));
                 }}
               />
             ))}
@@ -1004,12 +1004,12 @@ function AddDistanceForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  async function handleSubmit(formEvent: React.FormEvent<HTMLFormElement>) {
+    formEvent.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(formEvent.currentTarget);
     const terrainValue = formData.get('terrain') as string;
     const capacityValue = sharedCapacityEnabled
       ? undefined
@@ -1046,7 +1046,7 @@ function AddDistanceForm({
       kind: result.data.kind,
       startTimeLocal: null,
       timeLimitMinutes: null,
-      terrain: null,
+      terrain: terrainValue ? (terrainValue as TerrainType) : null,
       isVirtual: result.data.isVirtual,
       capacity: result.data.capacity,
       capacityScope: result.data.capacityScope,

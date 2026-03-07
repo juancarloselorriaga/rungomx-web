@@ -543,12 +543,8 @@ test.describe('Organizer Payments E2E', () => {
     await expect(page.getByText('Processing').first()).toBeVisible();
 
     await page.getByRole('link', { name: terminalPayoutRequestId }).click();
-    await expect(
-      page,
-    ).toHaveURL(
-      new RegExp(
-        `/en/dashboard/payments/payouts/${terminalPayoutRequestId}\\?organizationId=${organizationId}`,
-      ),
+    await expect(page).toHaveURL(
+      new RegExp(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}$`),
     );
     await expect(page.getByRole('heading', { name: 'Lifecycle timeline' })).toBeVisible();
     await expect(page.getByText('risk_manual_review')).toBeVisible();
@@ -576,12 +572,8 @@ test.describe('Organizer Payments E2E', () => {
     );
 
     await page.getByRole('link', { name: processingPayoutRequestId }).click();
-    await expect(
-      page,
-    ).toHaveURL(
-      new RegExp(
-        `/en/dashboard/payments/payouts/${processingPayoutRequestId}\\?organizationId=${organizationId}`,
-      ),
+    await expect(page).toHaveURL(
+      new RegExp(`/en/dashboard/payments/payouts/${processingPayoutRequestId}$`),
     );
     await expect(
       page.getByText('Statement will be available after payout reaches a terminal status.'),
@@ -656,9 +648,7 @@ test.describe('Organizer Payments E2E', () => {
     await page.getByRole('button', { name: 'Request payout' }).click();
     await expect(page.getByText('Payout request created')).toBeVisible();
 
-    await page.goto(
-      `/en/dashboard/payments/payouts/${terminalPayoutRequestId}?organizationId=${organizationId}`,
-    );
+    await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
     await expect(page.getByRole('heading', { name: 'Payout detail' })).toBeVisible();
     await page.getByRole('button', { name: 'View statement' }).click();
     await expect(page.getByText('Statement available')).toBeVisible();
