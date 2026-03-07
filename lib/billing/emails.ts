@@ -7,6 +7,9 @@ import { billingSubscriptions, users } from '@/db/schema';
 import { getPathname } from '@/i18n/navigation';
 import { type AppLocale } from '@/i18n/routing';
 import { sendEmail } from '@/lib/email';
+import { getProfileByUserId } from '@/lib/profiles/repository';
+import enEmailMessages from '@/messages/emails/en.json';
+import esEmailMessages from '@/messages/emails/es.json';
 import {
   generateCancelScheduledEmailHTML,
   generateCancelScheduledEmailText,
@@ -23,6 +26,10 @@ import {
 import { BILLING_TRIAL_DAYS } from './constants';
 
 const DEFAULT_LOCALE: AppLocale = 'es';
+const BILLING_EMAIL_MESSAGES = {
+  en: enEmailMessages.billing,
+  es: esEmailMessages.billing,
+} as const;
 
 const formatBillingDate = (date: Date, locale: AppLocale) =>
   new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
@@ -37,6 +44,44 @@ const resolveLocale = (locale?: string | null): AppLocale => {
   return DEFAULT_LOCALE;
 };
 
+const getBillingEmailFallbackTranslator = (locale: AppLocale) =>
+  (key: string, values?: Record<string, string | number>) => {
+    const template = key
+      .split('.')
+      .reduce<unknown>(
+        (current, segment) =>
+          current && typeof current === 'object'
+            ? (current as Record<string, unknown>)[segment]
+            : undefined,
+        BILLING_EMAIL_MESSAGES[locale],
+      );
+
+    if (typeof template !== 'string') {
+      throw new Error(`Missing billing email message for key "${key}" and locale "${locale}"`);
+    }
+
+    if (!values) {
+      return template;
+    }
+
+    return template.replace(/\{(\w+)\}/g, (match, placeholder: string) => {
+      const value = values[placeholder];
+      return value === undefined ? match : String(value);
+    });
+  };
+
+async function loadBillingEmailTranslator(locale: AppLocale) {
+  try {
+    return await getTranslations({ locale, namespace: 'emails.billing' });
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not supported in Client Components')) {
+      return getBillingEmailFallbackTranslator(locale);
+    }
+
+    throw error;
+  }
+}
+
 async function loadUserEmailContext(userId: string) {
   const user = await db.query.users.findFirst({
     where: and(eq(users.id, userId), isNull(users.deletedAt)),
@@ -47,7 +92,6 @@ async function loadUserEmailContext(userId: string) {
     return null;
   }
 
-  const { getProfileByUserId } = await import('@/lib/profiles/repository');
   const profile = await getProfileByUserId(userId);
   const locale = resolveLocale(profile?.locale ?? null);
   const displayName = user.name || user.email;
@@ -79,7 +123,7 @@ export async function sendTrialStartedEmail({ userId }: { userId: string }): Pro
     }
 
     const { user, locale, displayName } = context;
-    const t = await getTranslations({ locale, namespace: 'emails.billing' });
+    const t = await loadBillingEmailTranslator(locale);
     const currentYear = new Date().getFullYear();
     const ctaUrl = buildBillingCtaUrl(locale);
     const trialEndsAt = formatBillingDate(subscription.trialEndsAt, locale);
@@ -121,7 +165,7 @@ export async function sendTrialExpiringSoonEmail({
     }
 
     const { user, locale, displayName } = context;
-    const t = await getTranslations({ locale, namespace: 'emails.billing' });
+    const t = await loadBillingEmailTranslator(locale);
     const currentYear = new Date().getFullYear();
     const ctaUrl = buildBillingCtaUrl(locale);
     const formattedEndsAt = formatBillingDate(trialEndsAt, locale);
@@ -164,7 +208,7 @@ export async function sendGracePeriodReminderEmail({
     }
 
     const { user, locale, displayName } = context;
-    const t = await getTranslations({ locale, namespace: 'emails.billing' });
+    const t = await loadBillingEmailTranslator(locale);
     const currentYear = new Date().getFullYear();
     const ctaUrl = buildBillingCtaUrl(locale);
     const formattedEndsAt = formatBillingDate(graceEndsAt, locale);
@@ -208,7 +252,7 @@ export async function sendSubscriptionEndedEmail({
     }
 
     const { user, locale, displayName } = context;
-    const t = await getTranslations({ locale, namespace: 'emails.billing' });
+    const t = await loadBillingEmailTranslator(locale);
     const currentYear = new Date().getFullYear();
     const ctaUrl = buildBillingCtaUrl(locale);
     const messageKey =
@@ -254,7 +298,7 @@ export async function sendCancelScheduledEmail({
     }
 
     const { user, locale, displayName } = context;
-    const t = await getTranslations({ locale, namespace: 'emails.billing' });
+    const t = await loadBillingEmailTranslator(locale);
     const currentYear = new Date().getFullYear();
     const ctaUrl = buildBillingCtaUrl(locale);
     const formattedEndsAt = formatBillingDate(endsAt, locale);
