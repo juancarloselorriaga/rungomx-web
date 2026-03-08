@@ -44,6 +44,14 @@ Runs the repo’s standard local CI gate and reports results:
 - Prefer `:isolated` commands by default (`test:ci:isolated`, `test:e2e:isolated`).
 - Do not run concurrent non-isolated E2E sessions against the same DB/port.
 - Avoid inventing auth/test workarounds just to make green; isolate first, then fix root cause.
+- Full green means `pnpm -s test:ci:isolated`, not a passing subset.
+- Do not treat `page.waitForLoadState('networkidle')` as a default readiness strategy.
+  Prefer visible UI, URL, or persisted-state assertions.
+- If E2E-related files changed, quickly scan the touched files for `networkidle`
+  before declaring the change safe.
+- Treat changes in `e2e/utils/helpers.ts` as shared-infrastructure changes:
+  validate the directly affected specs, then rerun isolated E2E, then rerun the
+  full isolated gate.
 - Treat noisy webserver logs (`ECONNRESET`, `Error: aborted`) as non-blocking only when tests are green.
 - If lock/port conflicts appear, stop and rerun isolated rather than forcing parallel runs.
 

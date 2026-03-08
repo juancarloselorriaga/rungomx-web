@@ -19,6 +19,12 @@
 - **Playwright E2E**: Full user flows (slower, comprehensive)
 - Both use same database utilities pattern for consistency
 
+**Reliability policy:**
+- Full green means `pnpm -s test:ci:isolated`
+- Prefer explicit readiness assertions over `networkidle`
+- Fix root causes, not test-only workarounds
+- See `prompts/standards/test-reliability.md`
+
 ---
 
 ## Test File Organization
@@ -468,7 +474,11 @@ await signUpTestUser(page, 'org-events-'); // ✅
 
 **Cause:** Network delay or database operation taking too long
 
-**Fix:** Increase timeout in playwright.config.ts:
+**Fix:** Increase timeout only when the timeout is real. First replace generic
+readiness waits with explicit URL, visible-state, enabled-control, or
+persisted-state assertions. Do not use `page.waitForLoadState('networkidle')`
+as the default fix. If the timeout is still real, then increase timeout in
+`playwright.config.ts`:
 ```typescript
 {
   timeout: 90 * 1000, // 90 seconds

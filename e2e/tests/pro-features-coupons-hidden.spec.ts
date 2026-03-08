@@ -49,7 +49,7 @@ test.describe('Pro features - coupons hidden', () => {
   test('non-Pro organizer does not see Coupons nav item', async ({ page }) => {
     await signInAsOrganizer(page, organizerCreds);
     await page.goto(`/en/dashboard/events/${eventId}`);
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('link', { name: /settings/i }).first()).toBeVisible();
 
     await expect(page.getByRole('link', { name: /coupons/i })).toHaveCount(0);
   });
@@ -57,7 +57,6 @@ test.describe('Pro features - coupons hidden', () => {
   test('direct coupons URL shows upsell UI', async ({ page }) => {
     await signInAsOrganizer(page, organizerCreds);
     await page.goto(`/en/dashboard/events/${eventId}/coupons`);
-    await page.waitForLoadState('networkidle');
 
     await expect(page.getByRole('heading', { name: 'Discount Coupons' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Upgrade to Pro' })).toBeVisible();

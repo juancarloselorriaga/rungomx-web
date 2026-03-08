@@ -235,7 +235,6 @@ test.describe('Athlete Registration', () => {
         await waiverCheckboxes.nth(i).check();
       }
       await page.getByRole('button', { name: /continue|accept/i }).click();
-      await page.waitForLoadState('networkidle');
     }
 
     // Step 4: View order summary on payment page

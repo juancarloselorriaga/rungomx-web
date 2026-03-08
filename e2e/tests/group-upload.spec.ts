@@ -33,6 +33,14 @@ type UploadLinkFixture = {
   tokenPrefix: string;
 };
 
+async function waitForGroupUploadLanding(page: import('@playwright/test').Page, distanceLabel: string) {
+  await expect(page.getByRole('button', { name: distanceLabel })).toBeVisible({ timeout: 15000 });
+}
+
+async function waitForBatchReservationActions(page: import('@playwright/test').Page) {
+  await expect(page.getByRole('button', { name: /reserve invites/i })).toBeVisible({ timeout: 15000 });
+}
+
 async function createUploadLink(params: {
   editionId: string;
   createdByUserId: string;
@@ -228,7 +236,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     await signInAsAthlete(page, coordinatorCreds);
 
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/group-upload/${link.token}`);
-    await page.waitForLoadState('networkidle');
+    await waitForGroupUploadLanding(page, distanceLabel);
 
     await page.getByRole('button', { name: distanceLabel }).click();
     await page.getByRole('button', { name: /create batch/i }).click();
@@ -253,7 +261,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     });
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await waitForBatchReservationActions(page);
 
     await page.getByRole('button', { name: /reserve invites/i }).click();
     await expect(page.getByText(/invites reserved/i)).toBeVisible({ timeout: 15000 });
@@ -277,9 +285,9 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
 
     await signInAsOrganizer(page, organizerCreds);
     await page.goto(`/en/dashboard/events/${editionId}/group-registrations`);
-    await page.waitForLoadState('networkidle');
 
     const linkRow = page.getByText(`${link.tokenPrefix}…`).locator('xpath=ancestor::tr[1]');
+    await expect(linkRow).toBeVisible({ timeout: 15000 });
     await expect(linkRow).toContainText(/active/i);
     await expect(linkRow).toContainText(/1 invites/i);
   });
@@ -294,7 +302,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
 
     await signInAsAthlete(page, coordinatorCreds);
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/group-upload/${link.token}`);
-    await page.waitForLoadState('networkidle');
+    await waitForGroupUploadLanding(page, distanceLabel);
 
     await page.getByRole('button', { name: distanceLabel }).click();
     await page.getByRole('button', { name: /create batch/i }).click();
@@ -323,7 +331,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
       .where(eq(groupUploadLinks.id, link.id));
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await waitForBatchReservationActions(page);
 
     await page.getByRole('button', { name: /reserve invites/i }).click();
     await expect(page.getByText(/invites reserved/i)).toBeVisible({ timeout: 15000 });
@@ -339,7 +347,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
 
     await signInAsAthlete(page, coordinatorCreds);
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/group-upload/${link.token}`);
-    await page.waitForLoadState('networkidle');
+    await waitForGroupUploadLanding(page, distanceLabel);
 
     await page.getByRole('button', { name: distanceLabel }).click();
     await page.getByRole('button', { name: /create batch/i }).click();
@@ -362,7 +370,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     });
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await waitForBatchReservationActions(page);
 
     await page.getByRole('button', { name: /reserve invites/i }).click();
     await expect(page.getByText(/invites reserved/i)).toBeVisible({ timeout: 15000 });
@@ -381,7 +389,6 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     await cleanupExpiredRegistrations();
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
 
     await expect(page.getByText(/expired/i)).toBeVisible();
     await page.getByRole('button', { name: /reissue/i }).click();
@@ -399,7 +406,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     // Coordinator creates the batch and reserves an invite for the athlete email.
     await signInAsAthlete(page, coordinatorCreds);
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/group-upload/${link.token}`);
-    await page.waitForLoadState('networkidle');
+    await waitForGroupUploadLanding(page, distanceLabel);
 
     await page.getByRole('button', { name: distanceLabel }).click();
     await page.getByRole('button', { name: /create batch/i }).click();
@@ -422,7 +429,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     });
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await waitForBatchReservationActions(page);
 
     await page.getByRole('button', { name: /reserve invites/i }).click();
     await expect(page.getByText(/invites reserved/i)).toBeVisible({ timeout: 15000 });
@@ -439,7 +446,7 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     // Athlete claims the invite.
     await signInAsAthlete(page, athleteCreds);
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/claim/${claimToken}`);
-    await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('button', { name: /claim and continue/i })).toBeVisible({ timeout: 15000 });
 
     await page.getByRole('button', { name: /claim and continue/i }).click();
     await page.waitForURL(/\/register\/complete\/[a-f0-9-]{36}/i, { timeout: 20000 });
@@ -453,7 +460,6 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
 
     await signInAsAthlete(page, coordinatorCreds);
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}/group-upload/${link.token}/batches/${batchId}`);
-    await page.waitForLoadState('networkidle');
 
     await expect(page.getByText(/claimed/i)).toBeVisible({ timeout: 15000 });
     const extendHoldButton = page.getByRole('button', { name: /extend hold/i }).first();
@@ -464,7 +470,6 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
       }
       if (attempt < 2) {
         await page.reload();
-        await page.waitForLoadState('networkidle');
         await expect(page.getByText(/claimed/i)).toBeVisible({ timeout: 15000 });
       }
     }

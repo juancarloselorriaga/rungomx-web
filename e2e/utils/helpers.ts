@@ -410,6 +410,8 @@ export async function createOrganization(page: Page, name?: string): Promise<str
   const timestamp = Date.now();
   const orgName = name || `Test Org ${timestamp}`;
   const orgSlug = orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const createNewOrgBtn = page.getByRole('button', { name: /create new organization/i });
+  const orgNameInput = page.getByPlaceholder(/my race organization/i);
 
   // Check if already on org step or need to navigate
   const isOnEventCreation = page.url().includes('/events/new');
@@ -417,18 +419,22 @@ export async function createOrganization(page: Page, name?: string): Promise<str
     await page.goto('/en/dashboard/events/new');
   }
 
-  // Wait for page to be fully loaded
-  await page.waitForLoadState('networkidle');
+  await expect
+    .poll(
+      async () =>
+        (await createNewOrgBtn.isVisible().catch(() => false)) ||
+        (await orgNameInput.isVisible().catch(() => false)),
+      { timeout: 15000 },
+    )
+    .toBe(true);
 
   // Check if the user already has organizations - if so, click "Create new organization"
-  const createNewOrgBtn = page.getByRole('button', { name: /create new organization/i });
   if (await createNewOrgBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
     await createNewOrgBtn.click();
     await page.waitForTimeout(300);
   }
 
   // Wait for org name input to be visible
-  const orgNameInput = page.getByPlaceholder(/my race organization/i);
   await expect(orgNameInput).toBeVisible({ timeout: 10000 });
 
   // Fill organization name
@@ -1000,6 +1006,12 @@ export async function completeRegistrationForm(
   const gender = options?.gender || 'male';
   const emergencyName = options?.emergencyName || 'Maria Lopez';
   const emergencyPhone = options?.emergencyPhone || '+523319998888';
+  const continueButton = page.getByRole('button', { name: /continue/i });
+  const phoneTextbox = page.locator('input[type="tel"]').first();
+
+  // The registration step can render before the form controls become interactive.
+  await expect(continueButton).toBeEnabled({ timeout: 15000 });
+  await expect(phoneTextbox).toBeEnabled({ timeout: 15000 });
 
   // Fill phone - use label text that matches the form field
   // The PhoneField uses "Phone number" or similar label text
@@ -1034,10 +1046,7 @@ export async function completeRegistrationForm(
   await fillPhoneInput(page, /emergency.*phone/i, emergencyPhone);
 
   // Continue
-  await page.getByRole('button', { name: /continue/i }).click();
-
-  // Wait for navigation to either waiver or payment step
-  await page.waitForLoadState('networkidle');
+  await continueButton.click();
 
   // Check for either waiver or payment heading (events may or may not have waivers)
   const waiverHeading = page.getByRole('heading', { name: /waiver/i });
@@ -1072,11 +1081,4 @@ export async function extractRegistrationId(page: Page): Promise<string> {
   }
 
   return ticketCode?.trim() || '';
-}
-
-/**
- * Wait for network idle (useful after form submissions)
- */
-export async function waitForNetworkIdle(page: Page) {
-  await page.waitForLoadState('networkidle');
 }
