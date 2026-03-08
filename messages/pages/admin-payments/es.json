@@ -1,8 +1,56 @@
 {
   "admin": {
     "payments": {
-      "title": "Economía de pagos",
-      "description": "Monitorea las comisiones netas reconocidas con trazabilidad determinística por ventana de eventos.",
+      "title": "Pagos",
+      "description": "Consulta el panorama general, revisa riesgos y abre herramientas operativas sólo cuando las necesites.",
+      "workspaceLabel": "Workspace",
+      "nav": {
+        "overviewLabel": "Resumen",
+        "overviewDescription": "Métricas generales y MXN",
+        "riskLabel": "Riesgo",
+        "riskDescription": "Deuda y disputas",
+        "fxLabel": "Tipo de cambio",
+        "fxDescription": "Cobertura y actualización",
+        "artifactsLabel": "Estados de cuenta",
+        "artifactsDescription": "Versiones y reenvíos",
+        "casesLabel": "Casos",
+        "casesDescription": "Búsqueda",
+        "evidenceLabel": "Evidencia",
+        "evidenceDescription": "Paquetes por traza"
+      },
+      "sections": {
+        "operationsNote": "Las herramientas que cambian datos están agrupadas aquí para que no compitan con la analítica.",
+        "overview": {
+          "eyebrow": "Resumen",
+          "title": "Resumen financiero",
+          "description": "Empieza aquí para entender el panorama general antes de pasar a herramientas operativas."
+        },
+        "risk": {
+          "eyebrow": "Riesgo",
+          "title": "Deuda y disputas",
+          "description": "Revisa aquí los focos que conviene atender primero cuando hay exposición o casos abiertos."
+        },
+        "fx": {
+          "eyebrow": "Operaciones",
+          "title": "Tipo de cambio",
+          "description": "Revisa tasas faltantes o desactualizadas antes de abrir el formulario de actualización."
+        },
+        "artifacts": {
+          "eyebrow": "Operaciones",
+          "title": "Estados de cuenta y reenvíos",
+          "description": "Revisa versiones y entregas recientes antes de abrir una operación manual."
+        },
+        "cases": {
+          "eyebrow": "Investigación",
+          "title": "Buscar un caso",
+          "description": "Encuentra la traza correcta antes de pasar a evidencia."
+        },
+        "evidence": {
+          "eyebrow": "Investigación",
+          "title": "Cargar evidencia",
+          "description": "Abre un paquete de evidencia sólo cuando ya tengas la traza que quieres revisar."
+        }
+      },
       "sectionTitle": "Comisiones netas reconocidas",
       "sectionDescription": "Métrica principal de economía derivada de eventos canónicos de pagos.",
       "primaryMetricTitle": "Comisiones netas reconocidas",
@@ -72,19 +120,20 @@
         "notConvertedLabel": "Sin convertir"
       },
       "fx": {
-        "sectionTitle": "Gestión diaria de FX",
-        "sectionDescription": "Mantén tasas diarias determinísticas a MXN y resuelve datos de conversión faltantes o desactualizados.",
-        "missingTitle": "Acciones por tasa faltante",
-        "staleTitle": "Acciones por tasa desactualizada",
-        "upsertTitle": "Actualizar tasa diaria FX",
-        "upsertDescription": "Las actualizaciones requieren motivo y generan registros de auditoría inmutables.",
+        "sectionTitle": "Tipo de cambio",
+        "sectionDescription": "Mantén al día las tasas a MXN y corrige fechas sin cobertura cuando haga falta.",
+        "missingTitle": "Tasas faltantes",
+        "staleTitle": "Tasas por revisar",
+        "upsertTitle": "Actualizar una tasa",
+        "upsertDescription": "Registra o corrige la tasa de un día específico.",
+        "editActionLabel": "Abrir formulario",
         "currencyFieldLabel": "Moneda origen",
         "dateFieldLabel": "Fecha efectiva",
         "rateFieldLabel": "Tasa a MXN",
         "reasonFieldLabel": "Motivo",
         "submitLabel": "Guardar tasa",
-        "ratesTableTitle": "Tasas diarias recientes",
-        "ratesTableDescription": "Tasas de referencia FX diarias configuradas más recientes.",
+        "ratesTableTitle": "Tasas registradas",
+        "ratesTableDescription": "Últimas tasas diarias registradas para las monedas activas.",
         "tableCurrencyHeader": "Moneda",
         "tableDateHeader": "Fecha efectiva",
         "tableRateHeader": "Tasa",
@@ -95,29 +144,30 @@
         "missingDatesLabel": "Fechas de evento faltantes"
       },
       "artifacts": {
-        "sectionTitle": "Gobernanza de artefactos",
-        "sectionDescription": "Ejecuta operaciones de reconstrucción y reenvío por traza con linaje inmutable y evidencia de auditoría.",
-        "formTitle": "Operación de gobernanza",
-        "formDescription": "Las operaciones son singleton en v1. Los alcances por lote y rango de fechas se rechazan por política.",
+        "sectionTitle": "Estados de cuenta y reenvíos",
+        "sectionDescription": "Revisa versiones y entregas por traza. Abre una operación manual sólo cuando la necesites.",
+        "formTitle": "Operación manual",
+        "formDescription": "Usa este formulario para reconstruir o reenviar un artefacto puntual.",
+        "operationActionLabel": "Abrir operación",
         "operationFieldLabel": "Operación",
         "operationRebuildLabel": "Reconstruir",
         "operationResendLabel": "Reenviar",
         "traceFieldLabel": "Trace ID",
         "artifactTypeFieldLabel": "Tipo de artefacto",
         "artifactTypePayoutStatementLabel": "Estado de cuenta de payout",
-        "artifactVersionFieldLabel": "Versión de artefacto (opcional para reenvío)",
-        "reasonFieldLabel": "Código de motivo",
-        "submitLabel": "Ejecutar operación de gobernanza",
+        "artifactVersionFieldLabel": "Versión del artefacto (opcional al reenviar)",
+        "reasonFieldLabel": "Motivo interno",
+        "submitLabel": "Ejecutar operación",
         "refreshLabel": "Actualizar registros",
         "refreshingLabel": "Actualizando...",
         "submittingLabel": "Enviando...",
-        "successPrefix": "Operación de gobernanza ejecutada",
-        "policyDeniedPrefix": "Política denegada",
-        "genericErrorMessage": "No se pudieron actualizar los registros de gobernanza de artefactos.",
-        "recentVersionsTitle": "Versiones recientes de artefactos",
-        "recentVersionsDescription": "Linaje inmutable de reconstrucciones por traza y versión.",
-        "recentDeliveriesTitle": "Entregas recientes de artefactos",
-        "recentDeliveriesDescription": "Intentos de entrega ligados a trazas, incluyendo reenvíos.",
+        "successPrefix": "Operación ejecutada",
+        "policyDeniedPrefix": "Operación rechazada",
+        "genericErrorMessage": "No se pudieron actualizar los registros de estados de cuenta.",
+        "recentVersionsTitle": "Versiones recientes",
+        "recentVersionsDescription": "Versiones disponibles por traza y número.",
+        "recentDeliveriesTitle": "Entregas recientes",
+        "recentDeliveriesDescription": "Intentos de envío relacionados con cada traza.",
         "versionsEmpty": "Aún no hay versiones de artefacto.",
         "deliveriesEmpty": "Aún no hay entregas de artefacto.",
         "versionTraceHeader": "Traza",

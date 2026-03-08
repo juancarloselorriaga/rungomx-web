@@ -21,10 +21,14 @@ export function PayoutStatementAction({
   const t = useTranslations('pages.dashboardPayments');
   const [status, setStatus] = useState<StatementStatus>('idle');
   const [statementFingerprint, setStatementFingerprint] = useState<string | null>(null);
+  const [isFingerprintVisible, setIsFingerprintVisible] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   const requestStatement = async () => {
     setStatus('loading');
     setStatementFingerprint(null);
+    setIsFingerprintVisible(false);
+    setCopyStatus('idle');
     emitOrganizerPaymentsTelemetry({
       eventName: 'organizer_payout_statement_requested',
       organizationId,
@@ -79,9 +83,23 @@ export function PayoutStatementAction({
             ? t('detail.statement.error')
             : null;
 
+  const copyFingerprint = async () => {
+    if (!statementFingerprint) return;
+
+    try {
+      await navigator.clipboard.writeText(statementFingerprint);
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('error');
+    }
+  };
+
   return (
-    <section className="rounded-lg border bg-card p-6 shadow-sm space-y-3">
-      <h2 className="text-lg font-semibold">{t('actions.viewStatement')}</h2>
+    <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-4">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">{t('detail.statement.title')}</h2>
+        <p className="text-sm text-muted-foreground">{t('detail.statement.description')}</p>
+      </div>
 
       {!isTerminal ? (
         <p className="text-sm text-muted-foreground">{t('detail.statement.notTerminal')}</p>
@@ -100,7 +118,45 @@ export function PayoutStatementAction({
       {statusMessage ? <p className="text-sm text-muted-foreground">{statusMessage}</p> : null}
 
       {statementFingerprint ? (
-        <p className="text-xs text-muted-foreground break-all">{statementFingerprint}</p>
+        <div className="space-y-3 rounded-lg border bg-background/80 p-4">
+          <p className="text-sm text-muted-foreground">{t('detail.statement.fingerprintDescription')}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsFingerprintVisible((current) => !current)}
+            >
+              {isFingerprintVisible
+                ? t('detail.statement.hideFingerprint')
+                : t('detail.statement.showFingerprint')}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void copyFingerprint()}
+              disabled={!isFingerprintVisible}
+            >
+              {copyStatus === 'copied'
+                ? t('detail.statement.copySuccess')
+                : t('detail.statement.copyAction')}
+            </Button>
+          </div>
+
+          {copyStatus === 'error' ? (
+            <p className="text-xs text-destructive">{t('detail.statement.copyError')}</p>
+          ) : null}
+
+          {isFingerprintVisible ? (
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {t('detail.statement.fingerprintLabel')}
+              </p>
+              <p className="break-all font-mono text-xs text-muted-foreground">
+                {statementFingerprint}
+              </p>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );

@@ -85,12 +85,16 @@ export function NetRecognizedFeeDashboard({
 
   return (
     <section className="space-y-4">
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
           <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
         </div>
-        <AdminDashboardRangeSelector options={rangeOptions} selected={selectedRange} />
+        <AdminDashboardRangeSelector
+          options={rangeOptions}
+          selected={selectedRange}
+          className="w-full sm:w-auto"
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

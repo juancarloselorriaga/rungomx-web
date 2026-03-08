@@ -2,12 +2,18 @@
 
 import { Link } from '@/i18n/navigation';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
+import {
+  getOrganizerPayoutReasonFamily,
+  humanizeTechnicalCode,
+} from '@/lib/payments/organizer/presentation';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { FormEvent, useRef, useState } from 'react';
 
 type PayoutRequestFormProps = {
   organizationId: string;
+  presentation?: 'card' | 'dialog';
 };
 
 type PayoutRequestSuccess = {
@@ -58,7 +64,10 @@ function formatMoney(minor: number): string {
   }).format(minor / 100);
 }
 
-export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
+export function PayoutRequestForm({
+  organizationId,
+  presentation = 'card',
+}: PayoutRequestFormProps) {
   const t = useTranslations('pages.dashboardPayments');
   const [requestedAmount, setRequestedAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -216,13 +225,20 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
   };
 
   return (
-    <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('request.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('request.description')}</p>
-      </div>
+    <section
+      className={cn(
+        'space-y-4',
+        presentation === 'card' ? 'rounded-xl border bg-card/80 p-6 shadow-sm' : '',
+      )}
+    >
+      {presentation === 'card' ? (
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">{t('request.title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('request.description')}</p>
+        </div>
+      ) : null}
 
-      <form className="space-y-3" onSubmit={submitPayoutRequest}>
+      <form className="space-y-4" onSubmit={submitPayoutRequest}>
         <label htmlFor="requestedAmountMinor" className="block text-sm font-medium">
           {t('request.amountLabel')}
         </label>
@@ -238,7 +254,10 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         />
 
-        <p className="text-xs text-muted-foreground">{t('request.amountHint')}</p>
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p>{t('request.amountHint')}</p>
+          <p>{t('request.amountExample')}</p>
+        </div>
 
         <div className="flex flex-wrap gap-2">
           <Button type="submit" disabled={isSubmitting || isQueueSubmitting}>
@@ -265,21 +284,32 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
       ) : null}
 
       {requestSuccess ? (
-        <div className="rounded-md border bg-background p-4 space-y-2">
+        <div className="rounded-lg border bg-background/80 p-4 space-y-3">
           <p className="font-medium">{t('request.successTitle')}</p>
+          <p className="text-sm text-muted-foreground">{t('request.successDescription')}</p>
           <p className="text-sm text-muted-foreground">
-            {t('request.summary.requestId')} {requestSuccess.payoutRequestId}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.quoteId')} {requestSuccess.payoutQuoteId}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.contractId')} {requestSuccess.payoutContractId}
+            {t('request.summary.requestedAmount')} {formatMoney(requestSuccess.requestedAmountMinor)}
           </p>
           <p className="text-sm text-muted-foreground">
             {t('request.summary.maxWithdrawable')}{' '}
             {formatMoney(requestSuccess.maxWithdrawableAmountMinor)}
           </p>
+          <details className="rounded-md border bg-muted/25 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-medium text-primary">
+              {t('request.technicalDetailsLabel')}
+            </summary>
+            <div className="mt-3 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                {t('request.summary.requestId')} <span className="font-mono text-xs">{requestSuccess.payoutRequestId}</span>
+              </p>
+              <p className="text-muted-foreground">
+                {t('request.summary.quoteId')} <span className="font-mono text-xs">{requestSuccess.payoutQuoteId}</span>
+              </p>
+              <p className="text-muted-foreground">
+                {t('request.summary.contractId')} <span className="font-mono text-xs">{requestSuccess.payoutContractId}</span>
+              </p>
+            </div>
+          </details>
           <Button asChild variant="outline">
             <Link
               href={{
@@ -294,18 +324,38 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
       ) : null}
 
       {queueSuccess ? (
-        <div className="rounded-md border bg-background p-4 space-y-2">
+        <div className="rounded-lg border bg-background/80 p-4 space-y-3">
           <p className="font-medium">{t('request.queueSuccessTitle')}</p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.queueIntentId')} {queueSuccess.payoutQueuedIntentId}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('request.queueSuccessDescription')}</p>
           <p className="text-sm text-muted-foreground">
             {t('request.summary.requestedAmount')}{' '}
             {formatMoney(queueSuccess.requestedAmountMinor)}
           </p>
           <p className="text-sm text-muted-foreground">
-            {t('request.summary.blockedReason')} {queueSuccess.blockedReasonCode}
+            {t('request.summary.blockedReasonHuman')} {' '}
+            {t(`detail.reasonFamilies.${getOrganizerPayoutReasonFamily(queueSuccess.blockedReasonCode)}`)}
           </p>
+          <details className="rounded-md border bg-muted/25 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-medium text-primary">
+              {t('request.technicalDetailsLabel')}
+            </summary>
+            <div className="mt-3 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                {t('request.summary.queueIntentId')} {' '}
+                <span className="font-mono text-xs">{queueSuccess.payoutQueuedIntentId}</span>
+              </p>
+              <p className="text-muted-foreground">
+                {t('request.summary.blockedReason')} {' '}
+                <span className="font-mono text-xs">
+                  {humanizeTechnicalCode(queueSuccess.blockedReasonCode)}
+                </span>
+              </p>
+              <p className="text-muted-foreground">
+                {t('request.summary.rawBlockedReason')} {' '}
+                <span className="font-mono text-xs">{queueSuccess.blockedReasonCode}</span>
+              </p>
+            </div>
+          </details>
         </div>
       ) : null}
     </section>

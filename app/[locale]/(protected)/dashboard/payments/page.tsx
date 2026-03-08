@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/navigation';
+import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { OrganizerPaymentsWorkspace } from '@/components/payments/organizer-payments-workspace';
 import { getAuthContext } from '@/lib/auth/server';
 import { getAllOrganizations, getUserOrganizations } from '@/lib/organizations/queries';
@@ -69,6 +70,10 @@ export default async function DashboardPaymentsPage({
   const selectedOrganization =
     organizations.find((organization) => organization.id === requestedOrganizationId) ??
     organizations[0];
+  const organizationCountLabel =
+    locale === 'es'
+      ? `${organizations.length} ${organizations.length === 1 ? 'organización disponible' : 'organizaciones disponibles'}`
+      : `${organizations.length} ${organizations.length === 1 ? 'organization available' : 'organizations available'}`;
 
   const hasInvalidSelection =
     requestedOrganizationId.length > 0 &&
@@ -81,31 +86,16 @@ export default async function DashboardPaymentsPage({
         <p className="text-muted-foreground">{t('home.description')}</p>
       </div>
 
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold">{t('home.organization.label')}</h2>
-          <p className="text-sm text-muted-foreground">{t('home.organization.help')}</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2" role="group" aria-label={t('home.organization.label')}>
-          {organizations.map((organization) => {
-            const isSelected = organization.id === selectedOrganization.id;
-
-            return (
-              <Button key={organization.id} asChild variant={isSelected ? 'default' : 'outline'}>
-                <Link
-                  href={{
-                    pathname: '/dashboard/payments',
-                    query: { organizationId: organization.id },
-                  }}
-                >
-                  {organization.name}
-                </Link>
-              </Button>
-            );
-          })}
-        </div>
-      </section>
+      <OrganizerPaymentsContextCard
+        pathname="/dashboard/payments"
+        organizations={organizations}
+        selectedOrganization={selectedOrganization}
+        title={t('home.organization.title')}
+        description={t('home.organization.help')}
+        selectorLabel={t('home.organization.label')}
+        organizationCountLabel={organizationCountLabel}
+        currentOrganizationLabel={locale === 'es' ? 'Actual' : 'Current'}
+      />
 
       {hasInvalidSelection ? (
         <section className="rounded-lg border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
@@ -128,14 +118,10 @@ export default async function DashboardPaymentsPage({
         </section>
       ) : null}
 
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-2">
-        <h2 className="text-lg font-semibold">{selectedOrganization.name}</h2>
-        <p className="text-sm text-muted-foreground">{selectedOrganization.slug}</p>
-      </section>
-
       <OrganizerPaymentsWorkspace
         locale={locale as 'es' | 'en'}
         organizationId={selectedOrganization.id}
+        organizationName={selectedOrganization.name}
       />
     </div>
   );

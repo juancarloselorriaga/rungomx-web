@@ -41,14 +41,20 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
   ] as const;
 
   return (
-    <section className="space-y-4" aria-label={t('home.title')}>
-      <p className="text-sm text-muted-foreground">
-        {t('wallet.asOf', { timestamp: formatAsOf(asOf, locale) })}
-      </p>
+    <section className="rounded-xl border bg-card/80 p-5 shadow-sm" aria-label={t('wallet.title')}>
+      <div className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight">{t('wallet.title')}</h2>
+          <p className="text-sm text-muted-foreground">{t('wallet.description')}</p>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {t('wallet.asOf', { timestamp: formatAsOf(asOf, locale) })}
+        </p>
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <article key={card.key} className="rounded-lg border bg-card p-4 shadow-sm">
+          <article key={card.key} className="rounded-lg border bg-background/80 p-4">
             <p className="text-sm text-muted-foreground">{t(`wallet.buckets.${card.key}`)}</p>
             <p className="mt-2 text-2xl font-semibold">{formatMoney(card.value, locale)}</p>
           </article>

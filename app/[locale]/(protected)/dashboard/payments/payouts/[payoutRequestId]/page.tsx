@@ -1,10 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { PayoutDetailViewTelemetry } from '@/components/payments/payout-detail-view-telemetry';
 import { PayoutLifecycleRail } from '@/components/payments/payout-lifecycle-rail';
+import { PayoutStatusBadge } from '@/components/payments/payout-status-badge';
 import { PayoutStatementAction } from '@/components/payments/payout-statement-action';
 import { Link } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getOrgMembership } from '@/lib/organizations/permissions';
+import { getOrganizationSummary } from '@/lib/organizations/queries';
+import { shortIdentifier } from '@/lib/payments/organizer/presentation';
 import { getOrganizerPayoutDetailByRequestId } from '@/lib/payments/organizer/payout-views';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -62,6 +65,10 @@ export default async function DashboardPaymentsPayoutDetailPage({
 
   const localeKey = locale as 'es' | 'en';
   const t = await getTranslations('pages.dashboardPayments');
+  const pageTitle =
+    localeKey === 'es'
+      ? `Retiro #${shortIdentifier(payoutRequestId)}`
+      : `Payout #${shortIdentifier(payoutRequestId)}`;
   const authContext = await getAuthContext();
   const detail = await getOrganizerPayoutDetailByRequestId(payoutRequestId);
   const isSupportUser = authContext.permissions.canViewStaffTools;
@@ -74,7 +81,7 @@ export default async function DashboardPaymentsPayoutDetailPage({
     return (
       <div className="space-y-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold">{t('detail.title')}</h1>
+          <h1 className="text-3xl font-semibold">{pageTitle}</h1>
           <p className="text-muted-foreground">{t('detail.description')}</p>
         </div>
 
@@ -95,6 +102,7 @@ export default async function DashboardPaymentsPayoutDetailPage({
   }
 
   const organizationId = detail.organizerId;
+  const organization = await getOrganizationSummary(organizationId);
 
   return (
     <div className="space-y-6">
@@ -103,61 +111,101 @@ export default async function DashboardPaymentsPayoutDetailPage({
         payoutRequestId={detail.payoutRequestId}
       />
 
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">{t('detail.title')}</h1>
-        <p className="text-muted-foreground">{t('detail.description')}</p>
+      <div className="space-y-3">
+        <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <Link
+            href={{
+              pathname: '/dashboard/payments',
+              query: { organizationId },
+            }}
+            className="transition hover:text-foreground"
+          >
+            {t('nav.backToPayments')}
+          </Link>
+          <span>/</span>
+          <Link
+            href={{
+              pathname: '/dashboard/payments/payouts',
+              query: { organizationId },
+            }}
+            className="transition hover:text-foreground"
+          >
+            {t('nav.backToPayouts')}
+          </Link>
+        </nav>
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-semibold">{pageTitle}</h1>
+            <PayoutStatusBadge
+              status={detail.status}
+              label={t(`payouts.statuses.${detail.status}`)}
+            />
+          </div>
+          <p className="text-muted-foreground">{t('detail.description')}</p>
+        </div>
       </div>
 
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-        <dl className="grid gap-3 text-sm md:grid-cols-2">
+      <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-5">
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold tracking-tight">{t('detail.summaryTitle')}</h2>
+          <p className="text-sm text-muted-foreground">{t('detail.summaryDescription')}</p>
+          {organization ? (
+            <p className="text-sm text-muted-foreground">{organization.name}</p>
+          ) : null}
+        </div>
+
+        <dl className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <dt className="text-muted-foreground">{t('payouts.table.requestId')}</dt>
-            <dd className="font-medium break-all">{detail.payoutRequestId}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t('payouts.table.status')}</dt>
-            <dd className="font-medium">{t(`payouts.statuses.${detail.status}`)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted-foreground">{t('payouts.table.requested')}</dt>
+            <dt className="text-muted-foreground">{t('detail.requestedAmountLabel')}</dt>
             <dd className="font-medium">
               {formatMoney(detail.requestedAmountMinor, detail.currency, localeKey)}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">{t('payouts.table.currentAmount')}</dt>
+            <dt className="text-muted-foreground">{t('detail.currentAmountLabel')}</dt>
             <dd className="font-medium">
               {formatMoney(detail.currentRequestedAmountMinor, detail.currency, localeKey)}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">{t('payouts.table.requestedAt')}</dt>
+            <dt className="text-muted-foreground">{t('detail.maxWithdrawableLabel')}</dt>
+            <dd className="font-medium">
+              {formatMoney(detail.maxWithdrawableAmountMinor, detail.currency, localeKey)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted-foreground">{t('detail.requestedAtLabel')}</dt>
             <dd className="font-medium">{formatDate(detail.requestedAt, localeKey)}</dd>
           </div>
         </dl>
 
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline">
-            <Link
-              href={{
-                pathname: '/dashboard/payments/payouts',
-                query: { organizationId },
-              }}
-            >
-              {t('nav.backToPayouts')}
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link
-              href={{
-                pathname: '/dashboard/payments',
-                query: { organizationId },
-              }}
-            >
-              {t('nav.backToPayments')}
-            </Link>
-          </Button>
-        </div>
+        <details className="rounded-lg border bg-background/70 px-4 py-3">
+          <summary className="cursor-pointer text-sm font-medium text-primary">
+            {t('detail.technicalDetailsLabel')}
+          </summary>
+          <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
+            <div>
+              <dt className="text-muted-foreground">{t('payouts.table.requestId')}</dt>
+              <dd className="font-mono text-xs break-all">{detail.payoutRequestId}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t('detail.traceIdLabel')}</dt>
+              <dd className="font-mono text-xs break-all">{detail.traceId}</dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t('detail.includedAmountLabel')}</dt>
+              <dd className="font-medium">
+                {formatMoney(detail.includedAmountMinor, detail.currency, localeKey)}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">{t('detail.deductionAmountLabel')}</dt>
+              <dd className="font-medium">
+                {formatMoney(detail.deductionAmountMinor, detail.currency, localeKey)}
+              </dd>
+            </div>
+          </dl>
+        </details>
       </section>
 
       <PayoutLifecycleRail locale={localeKey} events={detail.lifecycleEvents} />

@@ -1,7 +1,8 @@
 import { Link } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { PayoutHistoryTable } from '@/components/payments/payout-history-table';
-import { PayoutRequestForm } from '@/components/payments/payout-request-form';
+import { PayoutRequestDialog } from '@/components/payments/payout-request-dialog';
 import { getAuthContext } from '@/lib/auth/server';
 import { getAllOrganizations, getUserOrganizations } from '@/lib/organizations/queries';
 import { listOrganizerPayouts } from '@/lib/payments/organizer/payout-views';
@@ -74,6 +75,10 @@ export default async function DashboardPaymentsPayoutsPage({
   const selectedOrganization =
     organizations.find((organization) => organization.id === requestedOrganizationId) ??
     organizations[0];
+  const organizationCountLabel =
+    locale === 'es'
+      ? `${organizations.length} ${organizations.length === 1 ? 'organización disponible' : 'organizaciones disponibles'}`
+      : `${organizations.length} ${organizations.length === 1 ? 'organization available' : 'organizations available'}`;
 
   const hasInvalidSelection =
     requestedOrganizationId.length > 0 &&
@@ -85,36 +90,38 @@ export default async function DashboardPaymentsPayoutsPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">{t('payouts.title')}</h1>
-        <p className="text-muted-foreground">{t('payouts.description')}</p>
+      <div className="space-y-3">
+        <Link
+          href={{
+            pathname: '/dashboard/payments',
+            query: { organizationId: selectedOrganization.id },
+          }}
+          className="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
+        >
+          {t('nav.backToPayments')}
+        </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-semibold">{t('payouts.title')}</h1>
+            <p className="text-muted-foreground">{t('payouts.description')}</p>
+          </div>
+          <PayoutRequestDialog
+            organizationId={selectedOrganization.id}
+            triggerLabel={locale === 'es' ? 'Nuevo retiro' : 'New payout'}
+          />
+        </div>
       </div>
 
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold">{t('home.organization.label')}</h2>
-          <p className="text-sm text-muted-foreground">{t('home.organization.help')}</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2" role="group" aria-label={t('home.organization.label')}>
-          {organizations.map((organization) => {
-            const isSelected = organization.id === selectedOrganization.id;
-
-            return (
-              <Button key={organization.id} asChild variant={isSelected ? 'default' : 'outline'}>
-                <Link
-                  href={{
-                    pathname: '/dashboard/payments/payouts',
-                    query: { organizationId: organization.id },
-                  }}
-                >
-                  {organization.name}
-                </Link>
-              </Button>
-            );
-          })}
-        </div>
-      </section>
+      <OrganizerPaymentsContextCard
+        pathname="/dashboard/payments/payouts"
+        organizations={organizations}
+        selectedOrganization={selectedOrganization}
+        title={t('home.organization.title')}
+        description={t('home.organization.help')}
+        selectorLabel={t('home.organization.label')}
+        organizationCountLabel={organizationCountLabel}
+        currentOrganizationLabel={locale === 'es' ? 'Actual' : 'Current'}
+      />
 
       {hasInvalidSelection ? (
         <section className="rounded-lg border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
@@ -137,11 +144,11 @@ export default async function DashboardPaymentsPayoutsPage({
         </section>
       ) : null}
 
-      <PayoutRequestForm organizationId={selectedOrganization.id} />
-
       <PayoutHistoryTable
         items={payouts}
         locale={locale as 'es' | 'en'}
+        title={t('payouts.historyTitle')}
+        description={t('payouts.historyDescription')}
       />
     </div>
   );

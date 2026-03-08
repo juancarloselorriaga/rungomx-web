@@ -27,6 +27,7 @@ type FxRateManagementLabels = {
   tableRateHeader: string;
   tableReasonHeader: string;
   tableUpdatedHeader: string;
+  editActionLabel: string;
   emptyRates: string;
   noActions: string;
   missingDatesLabel: string;
@@ -119,9 +120,16 @@ export function FxRateManagementDashboard({
         )}
       </div>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.upsertTitle}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{labels.upsertDescription}</p>
+      <details className="rounded-xl border bg-card/80 p-4 shadow-sm" open={flags.hasActions}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">{labels.upsertTitle}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{labels.upsertDescription}</p>
+          </div>
+          <span className="inline-flex rounded-md border px-3 py-1.5 text-sm font-medium">
+            {labels.editActionLabel}
+          </span>
+        </summary>
         <form action={upsertAction} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <label className="space-y-1 text-xs">
             <span className="uppercase tracking-wide text-muted-foreground">
@@ -186,7 +194,7 @@ export function FxRateManagementDashboard({
             </button>
           </div>
         </form>
-      </div>
+      </details>
 
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{labels.ratesTableTitle}</h3>

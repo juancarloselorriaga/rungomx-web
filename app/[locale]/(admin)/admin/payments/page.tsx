@@ -1,4 +1,8 @@
 import { upsertDailyFxRateAdminAction } from '@/app/actions/admin-payments-fx';
+import {
+  AdminPaymentsWorkspaceSection,
+  AdminPaymentsWorkspaceShell,
+} from '@/components/admin/payments/admin-payments-workspace-shell';
 import { ArtifactGovernanceDashboard } from '@/components/admin/payments/artifact-governance-dashboard';
 import { DebtDisputeExposureDashboard } from '@/components/admin/payments/debt-dispute-exposure-dashboard';
 import { EvidencePackReviewDashboard } from '@/components/admin/payments/evidence-pack-review-dashboard';
@@ -257,6 +261,7 @@ export default async function AdminPaymentsEconomicsPage({
     staleTitle: tPayments('fx.staleTitle'),
     upsertTitle: tPayments('fx.upsertTitle'),
     upsertDescription: tPayments('fx.upsertDescription'),
+    editActionLabel: tPayments('fx.editActionLabel'),
     currencyFieldLabel: tPayments('fx.currencyFieldLabel'),
     dateFieldLabel: tPayments('fx.dateFieldLabel'),
     rateFieldLabel: tPayments('fx.rateFieldLabel'),
@@ -279,6 +284,7 @@ export default async function AdminPaymentsEconomicsPage({
     sectionDescription: tPayments('artifacts.sectionDescription'),
     formTitle: tPayments('artifacts.formTitle'),
     formDescription: tPayments('artifacts.formDescription'),
+    operationActionLabel: tPayments('artifacts.operationActionLabel'),
     operationFieldLabel: tPayments('artifacts.operationFieldLabel'),
     operationRebuildLabel: tPayments('artifacts.operationRebuildLabel'),
     operationResendLabel: tPayments('artifacts.operationResendLabel'),
@@ -388,50 +394,151 @@ export default async function AdminPaymentsEconomicsPage({
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="space-y-1">
         <h1 className="text-3xl font-bold">{tPayments('title')}</h1>
-        <p className="mt-2 text-muted-foreground">{tPayments('description')}</p>
+        <p className="max-w-3xl text-muted-foreground">{tPayments('description')}</p>
       </div>
-      <NetRecognizedFeeDashboard
-        locale={locale as AppLocale}
-        metrics={metrics}
-        labels={labels}
-        rangeOptions={rangeOptions}
-        selectedRange={selectedRange}
+
+      <AdminPaymentsWorkspaceShell
+        items={[
+          {
+            id: 'overview',
+            label: tPayments('nav.overviewLabel'),
+            description: tPayments('nav.overviewDescription'),
+          },
+          {
+            id: 'risk',
+            label: tPayments('nav.riskLabel'),
+            description: tPayments('nav.riskDescription'),
+          },
+          {
+            id: 'fx',
+            label: tPayments('nav.fxLabel'),
+            description: tPayments('nav.fxDescription'),
+          },
+          {
+            id: 'artifacts',
+            label: tPayments('nav.artifactsLabel'),
+            description: tPayments('nav.artifactsDescription'),
+          },
+          {
+            id: 'cases',
+            label: tPayments('nav.casesLabel'),
+            description: tPayments('nav.casesDescription'),
+          },
+          {
+            id: 'evidence',
+            label: tPayments('nav.evidenceLabel'),
+            description: tPayments('nav.evidenceDescription'),
+          },
+        ]}
       />
-      <DebtDisputeExposureDashboard
-        locale={locale as AppLocale}
-        metrics={exposureMetrics}
-        labels={exposureLabels}
-      />
-      <MxnReportingDashboard locale={locale as AppLocale} report={mxnReport} labels={mxnLabels} />
-      <FxRateManagementDashboard
-        locale={locale as AppLocale}
-        rates={fxRates}
-        flags={fxFlags}
-        labels={fxLabels}
-        upsertAction={upsertFxRateFormAction}
-      />
-      <ArtifactGovernanceDashboard
-        locale={locale as AppLocale}
-        initialSummary={artifactSummary}
-        labels={artifactLabels}
-      />
-      <FinancialCaseLookupDashboard
-        locale={locale as AppLocale}
-        selectedRange={selectedRange}
-        searchQuery={caseQuery}
-        result={caseLookupResult}
-        labels={caseLookupLabels}
-      />
-      <EvidencePackReviewDashboard
-        locale={locale as AppLocale}
-        selectedRange={selectedRange}
-        searchQuery={caseQuery}
-        selectedTraceId={evidenceTraceId}
-        evidencePack={evidencePack}
-        labels={evidenceLabels}
-      />
+
+      <AdminPaymentsWorkspaceSection
+        id="overview"
+        eyebrow={tPayments('sections.overview.eyebrow')}
+        title={tPayments('sections.overview.title')}
+        description={tPayments('sections.overview.description')}
+      >
+        <div className="space-y-6">
+          <NetRecognizedFeeDashboard
+            locale={locale as AppLocale}
+            metrics={metrics}
+            labels={labels}
+            rangeOptions={rangeOptions}
+            selectedRange={selectedRange}
+          />
+          <MxnReportingDashboard
+            locale={locale as AppLocale}
+            report={mxnReport}
+            labels={mxnLabels}
+          />
+        </div>
+      </AdminPaymentsWorkspaceSection>
+
+      <AdminPaymentsWorkspaceSection
+        id="risk"
+        eyebrow={tPayments('sections.risk.eyebrow')}
+        title={tPayments('sections.risk.title')}
+        description={tPayments('sections.risk.description')}
+      >
+        <DebtDisputeExposureDashboard
+          locale={locale as AppLocale}
+          metrics={exposureMetrics}
+          labels={exposureLabels}
+        />
+      </AdminPaymentsWorkspaceSection>
+
+      <AdminPaymentsWorkspaceSection
+        id="fx"
+        eyebrow={tPayments('sections.fx.eyebrow')}
+        title={tPayments('sections.fx.title')}
+        description={tPayments('sections.fx.description')}
+        tone="caution"
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-background/80 p-4 text-sm text-muted-foreground">
+            {tPayments('sections.operationsNote')}
+          </div>
+          <FxRateManagementDashboard
+            locale={locale as AppLocale}
+            rates={fxRates}
+            flags={fxFlags}
+            labels={fxLabels}
+            upsertAction={upsertFxRateFormAction}
+          />
+        </div>
+      </AdminPaymentsWorkspaceSection>
+
+      <AdminPaymentsWorkspaceSection
+        id="artifacts"
+        eyebrow={tPayments('sections.artifacts.eyebrow')}
+        title={tPayments('sections.artifacts.title')}
+        description={tPayments('sections.artifacts.description')}
+        tone="caution"
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-background/80 p-4 text-sm text-muted-foreground">
+            {tPayments('sections.operationsNote')}
+          </div>
+          <ArtifactGovernanceDashboard
+            locale={locale as AppLocale}
+            initialSummary={artifactSummary}
+            labels={artifactLabels}
+          />
+        </div>
+      </AdminPaymentsWorkspaceSection>
+
+      <AdminPaymentsWorkspaceSection
+        id="cases"
+        eyebrow={tPayments('sections.cases.eyebrow')}
+        title={tPayments('sections.cases.title')}
+        description={tPayments('sections.cases.description')}
+      >
+        <FinancialCaseLookupDashboard
+          locale={locale as AppLocale}
+          selectedRange={selectedRange}
+          searchQuery={caseQuery}
+          result={caseLookupResult}
+          labels={caseLookupLabels}
+        />
+      </AdminPaymentsWorkspaceSection>
+
+      <AdminPaymentsWorkspaceSection
+        id="evidence"
+        eyebrow={tPayments('sections.evidence.eyebrow')}
+        title={tPayments('sections.evidence.title')}
+        description={tPayments('sections.evidence.description')}
+      >
+        <EvidencePackReviewDashboard
+          locale={locale as AppLocale}
+          selectedRange={selectedRange}
+          searchQuery={caseQuery}
+          selectedTraceId={evidenceTraceId}
+          evidencePack={evidencePack}
+          labels={evidenceLabels}
+        />
+      </AdminPaymentsWorkspaceSection>
     </div>
   );
 }

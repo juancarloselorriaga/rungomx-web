@@ -20,6 +20,7 @@ type ArtifactGovernanceLabels = {
   sectionDescription: string;
   formTitle: string;
   formDescription: string;
+  operationActionLabel: string;
   operationFieldLabel: string;
   operationRebuildLabel: string;
   operationResendLabel: string;
@@ -207,9 +208,16 @@ export function ArtifactGovernanceDashboard({
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.formTitle}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{labels.formDescription}</p>
+      <details className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">{labels.formTitle}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{labels.formDescription}</p>
+          </div>
+          <span className="inline-flex rounded-md border px-3 py-1.5 text-sm font-medium">
+            {labels.operationActionLabel}
+          </span>
+        </summary>
 
         <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <FormError className="md:col-span-2 xl:col-span-5" />
@@ -336,7 +344,7 @@ export function ArtifactGovernanceDashboard({
             {feedback.message}
           </p>
         ) : null}
-      </div>
+      </details>
 
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{labels.recentVersionsTitle}</h3>

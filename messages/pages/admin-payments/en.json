@@ -1,8 +1,56 @@
 {
   "admin": {
     "payments": {
-      "title": "Payments economics",
-      "description": "Monitor net recognized platform fees with deterministic event-window traceability.",
+      "title": "Payments",
+      "description": "Review the overall picture, check risk, and open operational tools only when you need them.",
+      "workspaceLabel": "Workspace",
+      "nav": {
+        "overviewLabel": "Overview",
+        "overviewDescription": "Core metrics and MXN",
+        "riskLabel": "Risk",
+        "riskDescription": "Debt and disputes",
+        "fxLabel": "Exchange rates",
+        "fxDescription": "Coverage and updates",
+        "artifactsLabel": "Statements",
+        "artifactsDescription": "Versions and resends",
+        "casesLabel": "Cases",
+        "casesDescription": "Lookup",
+        "evidenceLabel": "Evidence",
+        "evidenceDescription": "Trace evidence packs"
+      },
+      "sections": {
+        "operationsNote": "Tools that change data are grouped here so they do not compete with analytics.",
+        "overview": {
+          "eyebrow": "Overview",
+          "title": "Financial overview",
+          "description": "Start here to understand the overall picture before moving into operational tools."
+        },
+        "risk": {
+          "eyebrow": "Risk",
+          "title": "Debt and disputes",
+          "description": "Review the areas that deserve attention first when exposure or open cases appear."
+        },
+        "fx": {
+          "eyebrow": "Operations",
+          "title": "Exchange rates",
+          "description": "Review missing or stale rates before opening the update form."
+        },
+        "artifacts": {
+          "eyebrow": "Operations",
+          "title": "Statements and resends",
+          "description": "Review recent versions and deliveries before opening a manual operation."
+        },
+        "cases": {
+          "eyebrow": "Investigation",
+          "title": "Find a case",
+          "description": "Find the right trace before moving into evidence."
+        },
+        "evidence": {
+          "eyebrow": "Investigation",
+          "title": "Load evidence",
+          "description": "Open an evidence pack only after you know which trace you want to inspect."
+        }
+      },
       "sectionTitle": "Net recognized fees",
       "sectionDescription": "Primary economics headline derived from canonical payment events.",
       "primaryMetricTitle": "Net recognized platform fees",
@@ -72,19 +120,20 @@
         "notConvertedLabel": "Not converted"
       },
       "fx": {
-        "sectionTitle": "Daily FX management",
-        "sectionDescription": "Maintain deterministic daily MXN rates and resolve missing or stale conversion data.",
-        "missingTitle": "Missing rate actions",
-        "staleTitle": "Stale rate actions",
-        "upsertTitle": "Update daily FX rate",
-        "upsertDescription": "Rate updates require a reason and create immutable audit records.",
+        "sectionTitle": "Exchange rates",
+        "sectionDescription": "Keep MXN rates up to date and fill gaps when coverage is missing.",
+        "missingTitle": "Missing rates",
+        "staleTitle": "Rates to review",
+        "upsertTitle": "Update a rate",
+        "upsertDescription": "Add or correct the rate for a specific day.",
+        "editActionLabel": "Open form",
         "currencyFieldLabel": "Source currency",
         "dateFieldLabel": "Effective date",
         "rateFieldLabel": "Rate to MXN",
         "reasonFieldLabel": "Reason",
         "submitLabel": "Save rate",
-        "ratesTableTitle": "Recent daily rates",
-        "ratesTableDescription": "Latest configured daily FX reference rates.",
+        "ratesTableTitle": "Saved rates",
+        "ratesTableDescription": "Latest daily rates configured for active currencies.",
         "tableCurrencyHeader": "Currency",
         "tableDateHeader": "Effective date",
         "tableRateHeader": "Rate",
@@ -95,29 +144,30 @@
         "missingDatesLabel": "Missing event dates"
       },
       "artifacts": {
-        "sectionTitle": "Artifact governance",
-        "sectionDescription": "Run trace-scoped rebuild and resend operations with immutable lineage and audit evidence.",
-        "formTitle": "Governance operation",
-        "formDescription": "Operations are singleton-only in v1. Batch and date-range scopes are policy-denied.",
+        "sectionTitle": "Statements and resends",
+        "sectionDescription": "Review statement versions and deliveries by trace. Open a manual operation only when needed.",
+        "formTitle": "Manual operation",
+        "formDescription": "Use this form to rebuild or resend a single artifact.",
+        "operationActionLabel": "Open operation",
         "operationFieldLabel": "Operation",
         "operationRebuildLabel": "Rebuild",
         "operationResendLabel": "Resend",
         "traceFieldLabel": "Trace ID",
         "artifactTypeFieldLabel": "Artifact type",
         "artifactTypePayoutStatementLabel": "Payout statement",
-        "artifactVersionFieldLabel": "Artifact version (optional for resend)",
-        "reasonFieldLabel": "Reason code",
-        "submitLabel": "Run governance operation",
+        "artifactVersionFieldLabel": "Artifact version (optional when resending)",
+        "reasonFieldLabel": "Internal reason",
+        "submitLabel": "Run operation",
         "refreshLabel": "Refresh records",
         "refreshingLabel": "Refreshing...",
         "submittingLabel": "Submitting...",
-        "successPrefix": "Governance operation executed",
-        "policyDeniedPrefix": "Policy denied",
-        "genericErrorMessage": "Failed to refresh artifact governance records.",
-        "recentVersionsTitle": "Recent artifact versions",
-        "recentVersionsDescription": "Immutable rebuild lineage by trace and artifact version.",
-        "recentDeliveriesTitle": "Recent artifact deliveries",
-        "recentDeliveriesDescription": "Trace-linked delivery attempts including resends.",
+        "successPrefix": "Operation completed",
+        "policyDeniedPrefix": "Operation blocked",
+        "genericErrorMessage": "Failed to refresh statement records.",
+        "recentVersionsTitle": "Recent versions",
+        "recentVersionsDescription": "Available versions by trace and version number.",
+        "recentDeliveriesTitle": "Recent deliveries",
+        "recentDeliveriesDescription": "Delivery attempts related to each trace.",
         "versionsEmpty": "No artifact versions found yet.",
         "deliveriesEmpty": "No artifact deliveries found yet.",
         "versionTraceHeader": "Trace",

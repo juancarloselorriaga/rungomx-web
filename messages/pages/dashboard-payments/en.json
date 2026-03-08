@@ -5,13 +5,27 @@
   },
   "home": {
     "title": "Payments",
-    "description": "Review your wallet, action queue, and payout readiness in one place.",
+    "description": "Review your balance, your payouts, and the main action for this organization.",
     "organization": {
-      "label": "Organization",
+      "title": "Active organization",
+      "label": "Switch organization",
+      "current": "Current",
+      "count": "{count, plural, one {# organization available} other {# organizations available}}",
+      "selectedBadge": "In view",
+      "slugLabel": "Slug",
       "none": "No organizations available",
-      "help": "Choose the organization wallet to review.",
+      "help": "You are viewing payments for this organization. Switch only when you need another one.",
       "invalidTitle": "This organization is not available",
       "invalidDescription": "The selected organization could not be loaded for your account. Choose another organization and retry."
+    },
+    "nextStep": {
+      "eyebrow": "Main action",
+      "requestTitle": "Request a payout",
+      "requestDescription": "{organization} already has available balance. Start the payout when you are ready.",
+      "queueTitle": "Review the current payout",
+      "queueDescription": "Before requesting another payout, review the one already in progress for {organization}.",
+      "secondaryTitle": "History and follow-up",
+      "secondaryDescription": "Use payout history to review previous requests, open details, and track status changes without losing context."
     },
     "shell": {
       "loadingTitle": "Loading payments workspace",
@@ -25,99 +39,233 @@
   "actions": {
     "retry": "Retry",
     "requestPayout": "Request payout",
-    "queuePayoutRequest": "Queue payout request",
-    "viewPayouts": "View payouts",
+    "queuePayoutRequest": "Request next payout",
+    "viewPayouts": "View history",
+    "newPayout": "New payout",
     "openDetails": "Open details",
     "viewStatement": "View statement"
   },
   "wallet": {
-    "asOf": "As of {timestamp}",
+    "title": "Wallet summary",
+    "description": "Balance grouped by payment stage.",
+    "asOf": "Updated {timestamp}",
     "buckets": {
       "available": "Available",
       "processing": "Processing",
-      "frozen": "Frozen",
+      "frozen": "Reserved",
       "debt": "Debt"
     },
     "queue": {
-      "title": "Action queue",
-      "actionNeeded": "Action Needed",
-      "inProgress": "In Progress",
-      "actionNeededDescription": "Items that need organizer action to continue payout readiness.",
-      "inProgressDescription": "Items currently managed by platform processing.",
-      "emptyActionNeeded": "No action-needed items right now.",
-      "emptyInProgress": "No in-progress items right now.",
-      "whatChanged": "What changed:",
-      "whyItMatters": "Why it matters:",
-      "whatYouCanDoNow": "What you can do now:",
-      "actionNeededGuidance": "Review this item before requesting the next payout cycle.",
-      "inProgressGuidance": "Keep monitoring this item while platform processing continues."
+      "title": "Follow-up and next steps",
+      "description": "Recent payment activity that is worth monitoring or reviewing.",
+      "actionNeeded": "Needs attention",
+      "inProgress": "Being monitored",
+      "actionNeededDescription": "Cases where the organization may need to review information or wait for validation.",
+      "inProgressDescription": "Cases that are still moving and only need monitoring for now.",
+      "emptyActionNeeded": "Nothing needs attention right now.",
+      "emptyInProgress": "Nothing is being monitored right now.",
+      "detailsLabel": "View details",
+      "technicalEventLabel": "Technical event",
+      "traceLabel": "Trace ID",
+      "entityLabel": "Reference",
+      "rawReasonLabel": "Internal code",
+      "referenceLabel": "Reference #{id}",
+      "genericDescription": "There was a recent payments update for this organization.",
+      "events": {
+        "payoutQueued": {
+          "title": "A payout is waiting to be activated",
+          "description": "The payout is queued and will activate when the current flow can continue."
+        },
+        "payoutRequested": {
+          "title": "A payout request was created",
+          "description": "The platform received your request and prepared it for the next step."
+        },
+        "payoutProcessing": {
+          "title": "The payout is in progress",
+          "description": "The request is moving through validation and internal reconciliation."
+        },
+        "payoutPaused": {
+          "title": "The payout was paused",
+          "description": "The flow stopped temporarily while the payments team reviews additional information."
+        },
+        "payoutResumed": {
+          "title": "The payout resumed",
+          "description": "The review finished and the payout flow continued."
+        },
+        "payoutCompleted": {
+          "title": "The payout completed",
+          "description": "The flow finished and the payout is now closed."
+        },
+        "payoutFailed": {
+          "title": "The payout could not complete",
+          "description": "The request needs follow-up before a new payout should be attempted."
+        },
+        "payoutAdjusted": {
+          "title": "The payout was adjusted",
+          "description": "The amount or state changed during payout review."
+        },
+        "debtPauseRequired": {
+          "title": "Debt paused part of the flow",
+          "description": "A financial rule introduced a pause and it is worth reviewing before the next payout."
+        },
+        "debtResumeAllowed": {
+          "title": "Debt conditions now allow the flow to resume",
+          "description": "Financial conditions improved and the flow can continue."
+        },
+        "disputeOpened": {
+          "title": "A dispute was opened",
+          "description": "There is a payment dispute that may need evidence or follow-up."
+        },
+        "subscriptionRenewalFailed": {
+          "title": "Subscription renewal failed",
+          "description": "Billing may need attention to avoid interruptions in payment-related tools."
+        },
+        "refundExecuted": {
+          "title": "A refund was executed",
+          "description": "A refund movement is now part of the financial history."
+        }
+      }
     }
   },
   "request": {
-    "title": "Payout request",
-    "description": "Enter an amount in MXN minor units to request the next payout cycle.",
-    "amountLabel": "Requested amount (minor units)",
-    "amountHint": "Leave empty to request the current max withdrawable amount.",
+    "title": "Request payout",
+    "description": "Start a new payout without leaving payments. If another payout is already active, you can prepare the next one here.",
+    "amountLabel": "Payout amount",
+    "amountHint": "Enter the amount in MXN cents or leave the field empty to use the current maximum available amount.",
+    "amountExample": "Example: 150000 equals MXN $1,500.00.",
     "submitHint": "Submitting creates a payout quote and lifecycle request.",
     "queuedHint": "If an active payout exists, you can queue this request as the next intent.",
-    "successTitle": "Payout request created",
-    "queueSuccessTitle": "Payout intent queued",
+    "successTitle": "Payout requested",
+    "successDescription": "The payout is registered and you can track it from the detail view.",
+    "queueSuccessTitle": "Next payout prepared",
+    "queueSuccessDescription": "The request is now set aside to run once the current payout finishes.",
     "conflictTitle": "Active payout already exists",
     "conflictDescription": "This organizer already has an active payout lifecycle. Queue a request to run when the current cycle finishes.",
+    "technicalDetailsLabel": "Technical details",
     "errors": {
-      "invalidAmount": "Enter a valid positive amount in minor units.",
+      "invalidAmount": "Enter a valid positive amount in MXN cents.",
       "submitFailed": "Payout request could not be created right now.",
-      "queueRequiresAmount": "A valid amount is required to queue a payout intent.",
-      "queueFailed": "Queued payout intent could not be created right now."
+      "queueRequiresAmount": "A valid amount is required to prepare the next payout.",
+      "queueFailed": "The next payout could not be prepared right now."
     },
     "summary": {
-      "requestId": "Request ID:",
-      "quoteId": "Quote ID:",
-      "contractId": "Contract ID:",
-      "maxWithdrawable": "Max withdrawable:",
-      "queueIntentId": "Queue intent ID:",
+      "requestId": "Request:",
+      "quoteId": "Quote:",
+      "contractId": "Contract:",
+      "maxWithdrawable": "Maximum available:",
+      "queueIntentId": "Queued intent:",
       "requestedAmount": "Requested amount:",
-      "blockedReason": "Blocked reason:"
+      "blockedReason": "Technical reason:",
+      "blockedReasonHuman": "Reason",
+      "rawBlockedReason": "Original code:"
     }
   },
   "payouts": {
     "title": "Payouts",
-    "description": "Review current and historical payout lifecycle states.",
-    "emptyTitle": "No payout history yet",
-    "emptyDescription": "Your payout requests will appear here once you submit the first payout cycle.",
+    "description": "Review your payouts and open each one only when you need more detail.",
+    "historyTitle": "History",
+    "historyDescription": "Review statuses, amounts, and dates without mixing the history with the request form.",
+    "emptyTitle": "No payouts yet",
+    "emptyDescription": "Once you submit the first payout, it will appear here with its status and request date.",
     "table": {
       "requestId": "Request",
+      "requestLabel": "Request #{id}",
       "status": "Status",
       "requested": "Requested",
       "currentAmount": "Current amount",
-      "requestedAt": "Requested at"
+      "requestedAt": "Date"
     },
     "statuses": {
       "requested": "Requested",
       "processing": "Processing",
       "paused": "Paused",
       "completed": "Completed",
-      "failed": "Failed"
+      "failed": "Not completed"
     }
   },
   "detail": {
     "title": "Payout detail",
-    "description": "Inspect lifecycle progress, reason codes, and statement availability.",
-    "stateTimeline": "Lifecycle timeline",
+    "pageTitle": "Payout #{id}",
+    "description": "Review the current status, history, and technical details only when they are needed.",
+    "summaryTitle": "Payout summary",
+    "summaryDescription": "This card shows the current status and the key amounts for this request.",
+    "organizationLabel": "Organization:",
+    "requestedAmountLabel": "Requested amount",
+    "currentAmountLabel": "Current amount",
+    "maxWithdrawableLabel": "Maximum available when requested",
+    "requestedAtLabel": "Requested on",
+    "includedAmountLabel": "Included amount",
+    "deductionAmountLabel": "Deductions",
+    "traceIdLabel": "Trace ID",
+    "stateTimeline": "Payout history",
+    "stateTimelineDescription": "Each update explains what happened and when it happened.",
     "noEvents": "No lifecycle events are available for this payout request yet.",
     "stateReason": "Reason",
-    "amountSummary": "Amount summary",
+    "amountSummary": "Related amount",
+    "technicalDetailsLabel": "Technical details",
+    "technicalEventLabel": "Technical event",
+    "rawReasonLabel": "Original code",
+    "eventReferenceLabel": "Event reference",
     "notFoundTitle": "Payout request not found",
     "notFoundDescription": "The selected payout request could not be found for this organization.",
+    "reasonFamilies": {
+      "activePayout": "Another payout is already in progress",
+      "manualReview": "Manual review is required",
+      "bankRejected": "Bank validation needs attention",
+      "processing": "The payout is still being processed",
+      "paused": "The payout is temporarily paused",
+      "failed": "The payout could not continue",
+      "genericReview": "The payments team needs to review this item"
+    },
+    "events": {
+      "genericDescription": "There was an update in this payout lifecycle.",
+      "requested": {
+        "title": "The request was created",
+        "description": "The platform registered the payout and prepared its lifecycle."
+      },
+      "processing": {
+        "title": "The payout entered processing",
+        "description": "The flow is moving through validation and reconciliation."
+      },
+      "paused": {
+        "title": "The payout was paused",
+        "description": "The platform temporarily stopped the flow while it reviews more information."
+      },
+      "resumed": {
+        "title": "The payout resumed",
+        "description": "The review finished and the payout flow continued."
+      },
+      "completed": {
+        "title": "The payout completed",
+        "description": "The lifecycle finished successfully and the payout is closed."
+      },
+      "failed": {
+        "title": "The payout could not complete",
+        "description": "The flow ended with an issue and it is worth reviewing before continuing."
+      },
+      "adjusted": {
+        "title": "The payout was adjusted",
+        "description": "The amount or payout configuration changed during review."
+      }
+    },
     "statement": {
-      "ready": "Statement available",
-      "notFound": "Statement is not available for this payout request.",
-      "notTerminal": "Statement will be available after payout reaches a terminal status.",
-      "error": "Statement could not be loaded right now."
+      "title": "Statement and proof",
+      "description": "Request the statement after the payout is complete and only reveal the fingerprint when support or verification needs it.",
+      "ready": "The statement is available.",
+      "notFound": "The statement is not available for this request yet.",
+      "notTerminal": "The statement will appear once the payout reaches a terminal state.",
+      "error": "The statement could not be loaded right now.",
+      "fingerprintLabel": "Statement fingerprint",
+      "fingerprintDescription": "The fingerprint is mainly useful for support or verification, so it stays hidden by default.",
+      "showFingerprint": "Show fingerprint",
+      "hideFingerprint": "Hide fingerprint",
+      "copyAction": "Copy fingerprint",
+      "copySuccess": "Fingerprint copied",
+      "copyError": "Fingerprint could not be copied."
     }
   },
   "nav": {
     "backToPayments": "Back to payments",
-    "backToPayouts": "Back to payouts"
+    "backToPayouts": "Back to payout history"
   }
 }

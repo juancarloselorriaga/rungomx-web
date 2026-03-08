@@ -13,10 +13,12 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { OrganizerActionQueue } from './organizer-action-queue';
 import { OrganizerWalletSummary } from './organizer-wallet-summary';
+import { PayoutRequestDialog } from './payout-request-dialog';
 
 type OrganizerPaymentsWorkspaceProps = {
   locale: 'es' | 'en';
   organizationId: string;
+  organizationName?: string;
 };
 
 type WorkspaceData = {
@@ -27,6 +29,7 @@ type WorkspaceData = {
 export function OrganizerPaymentsWorkspace({
   locale,
   organizationId,
+  organizationName = '',
 }: OrganizerPaymentsWorkspaceProps) {
   const t = useTranslations('pages.dashboardPayments');
   const [data, setData] = useState<WorkspaceData | null>(null);
@@ -101,34 +104,75 @@ export function OrganizerPaymentsWorkspace({
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-        <div className="flex flex-wrap gap-2">
-          <Button asChild data-testid="payments-primary-cta">
-            <Link
-              href={{
-                pathname: '/dashboard/payments/payouts',
-                query: { organizationId },
-              }}
-            >
-              {ctaMode === 'request' ? t('actions.requestPayout') : t('actions.queuePayoutRequest')}
-            </Link>
-          </Button>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)]">
+        <OrganizerWalletSummary asOf={data.wallet.asOf} buckets={data.wallet.buckets} locale={locale} />
 
-          <Button asChild variant="outline">
-            <Link
-              href={{
-                pathname: '/dashboard/payments/payouts',
-                query: { organizationId },
-              }}
-            >
-              {t('actions.viewPayouts')}
-            </Link>
-          </Button>
-        </div>
-      </section>
+        <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
+          <div className="space-y-5">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+                {t('home.nextStep.eyebrow')}
+              </p>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {ctaMode === 'request'
+                  ? t('home.nextStep.requestTitle')
+                  : t('home.nextStep.queueTitle')}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {ctaMode === 'request'
+                  ? t('home.nextStep.requestDescription', { organization: organizationName })
+                  : t('home.nextStep.queueDescription', { organization: organizationName })}
+              </p>
+            </div>
 
-      <OrganizerWalletSummary asOf={data.wallet.asOf} buckets={data.wallet.buckets} locale={locale} />
+            <div className="flex flex-col gap-3">
+              {ctaMode === 'request' ? (
+                <PayoutRequestDialog
+                  organizationId={organizationId}
+                  triggerLabel={t('actions.requestPayout')}
+                  triggerTestId="payments-primary-cta"
+                />
+              ) : (
+                <Button asChild variant="outline">
+                  <Link
+                    href={{
+                      pathname: '/dashboard/payments/payouts',
+                      query: { organizationId },
+                    }}
+                  >
+                    {t('actions.viewPayouts')}
+                  </Link>
+                </Button>
+              )}
+
+              <div className="flex flex-wrap gap-2">
+                {ctaMode === 'request' ? (
+                  <Button asChild variant="outline">
+                    <Link
+                      href={{
+                        pathname: '/dashboard/payments/payouts',
+                        query: { organizationId },
+                      }}
+                    >
+                      {t('actions.viewPayouts')}
+                    </Link>
+                  </Button>
+                ) : (
+                  <PayoutRequestDialog
+                    organizationId={organizationId}
+                    triggerLabel={t('actions.queuePayoutRequest')}
+                    triggerVariant="outline"
+                    triggerTestId="payments-primary-cta"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
       <OrganizerActionQueue
+        locale={locale}
         actionNeeded={data.issues.actionNeeded}
         inProgress={data.issues.inProgress}
       />
