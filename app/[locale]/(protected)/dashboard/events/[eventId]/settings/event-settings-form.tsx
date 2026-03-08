@@ -321,8 +321,8 @@ export function EventSettingsForm({
   }, [event.distances]);
 
   useEffect(() => {
-    setCapacityScope(event.sharedCapacity ? shared_pool : per_distance);
-    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : );
+    setCapacityScope(event.sharedCapacity ? "shared_pool" : "per_distance");
+    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : "");
   }, [event.sharedCapacity]);
 
   function handleEditionSlugChange(nextSlug: string) {
