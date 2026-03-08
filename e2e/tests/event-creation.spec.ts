@@ -64,9 +64,6 @@ test.describe('Event Creation', () => {
     // Navigate to event creation
     await page.goto('/en/dashboard/events/new');
 
-    // Wait for page to fully load
-    await page.waitForLoadState('networkidle');
-
     // Generate unique organization name and slug
     const timestamp = Date.now();
     organizationName = `E2E Test Org ${timestamp}`;
@@ -101,9 +98,6 @@ test.describe('Event Creation', () => {
 
     // Navigate to event creation
     await page.goto('/en/dashboard/events/new');
-
-    // Wait for the page to load
-    await page.waitForLoadState('networkidle');
 
     // Check if we're on organization selection (org already exists) or creation step
     const createNewOrgButton = page.getByRole('button', { name: /create new organization/i });
@@ -209,24 +203,30 @@ test.describe('Event Creation', () => {
 
     // Create another event with similar name
     await page.goto('/en/dashboard/events/new');
-    await page.waitForLoadState('networkidle');
 
     // Handle org selection - select existing org
-    const createNewOrgButton = page.getByRole('button', { name: /create new organization/i });
-    if (await createNewOrgButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      // Existing organizations shown - select ours
-      const existingOrgButton = page.locator('button').filter({ hasText: organizationName }).first();
-      if (await existingOrgButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await existingOrgButton.click();
-        await page.waitForTimeout(300);
-        await page.getByRole('button', { name: /continue/i }).click();
-        await expect(page.getByText(/event details/i).first()).toBeVisible({ timeout: 5000 });
-      }
+    const existingOrgButton = page.locator('button').filter({ hasText: organizationName }).first();
+    const seriesNameInput = page.getByPlaceholder(/ultra trail mexico/i);
+
+    await expect
+      .poll(
+        async () =>
+          (await existingOrgButton.isVisible().catch(() => false)) ||
+          (await seriesNameInput.isVisible().catch(() => false)),
+        { timeout: 10000 },
+      )
+      .toBe(true);
+
+    if (await existingOrgButton.isVisible().catch(() => false)) {
+      await existingOrgButton.click();
+      await page.waitForTimeout(300);
+      await page.getByRole('button', { name: /continue/i }).click();
+      await expect(page.getByText(/event details/i).first()).toBeVisible({ timeout: 5000 });
     }
 
     // Now on event details step - fill series name
     const sameName = eventData.seriesName;
-    const seriesNameInput = page.getByPlaceholder(/ultra trail mexico/i);
+    await expect(seriesNameInput).toBeVisible({ timeout: 10000 });
     await seriesNameInput.click();
     await seriesNameInput.fill(sameName);
 

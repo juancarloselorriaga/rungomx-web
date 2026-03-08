@@ -97,10 +97,10 @@ test.describe('Near Location Filter', () => {
   async function setupLocationFilter(page: import('@playwright/test').Page) {
     // Navigate to events directory
     await page.goto('/en/events');
-    await page.waitForLoadState('networkidle');
 
     // Open advanced filters by clicking the filter button
     const filterBtn = page.getByRole('button', { name: /more filters/i });
+    await expect(filterBtn).toBeVisible({ timeout: 10000 });
     await filterBtn.click();
 
     // Wait for the advanced filters panel to appear
@@ -143,10 +143,6 @@ test.describe('Near Location Filter', () => {
     const radiusSelect = page.locator('select').filter({ hasText: /km/i });
     await radiusSelect.selectOption('200');
 
-    // Wait for filter to apply
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
-
     // Verify the Saltillo event appears in results
     const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME }).first();
     await expect(eventCard).toBeVisible({ timeout: 15000 });
@@ -176,8 +172,6 @@ test.describe('Near Location Filter', () => {
     // Start with 200km radius - event should be visible
     const radiusSelect = page.locator('select').filter({ hasText: /km/i });
     await radiusSelect.selectOption('200');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
 
     // Verify event is visible at 200km
     const eventCard = page.locator('a').filter({ hasText: TEST_EVENT_NAME }).first();

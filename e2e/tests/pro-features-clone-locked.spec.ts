@@ -49,10 +49,9 @@ test.describe('Pro features - clone locked', () => {
   test('non-Pro organizer sees locked upsell on clone', async ({ page }) => {
     await signInAsOrganizer(page, organizerCreds);
     await page.goto(`/en/dashboard/events/${eventId}/editions`);
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(500);
 
     const cloneButton = page.getByRole('button', { name: 'Clone', exact: true }).first();
+    await expect(cloneButton).toBeVisible();
     await cloneButton.click();
     await expect(page.getByRole('dialog')).toBeVisible();
 

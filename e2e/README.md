@@ -185,8 +185,9 @@ Available in test output when tests fail
 
 ### Tests timing out
 - Increase timeout in `playwright.config.ts`
-- Add `await page.waitForTimeout()` for dynamic content
-- Use `await page.waitForLoadState('networkidle')`
+- Add explicit waits for the specific state you need
+- Prefer visible headings, enabled buttons, URL assertions, or persisted state
+- Avoid `await page.waitForLoadState('networkidle')` as a generic readiness check
 
 ### Phone input validation fails
 - Use `fillPhoneInput()` helper instead of `.fill()`
@@ -228,7 +229,7 @@ Available in test output when tests fail
 
 4. **Handle dynamic content:**
    ```typescript
-   await page.waitForLoadState('networkidle');
+   await expect(page).toHaveURL('/en/events');
    await expect(content).toBeVisible();
    ```
 
