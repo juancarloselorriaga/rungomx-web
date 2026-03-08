@@ -55,6 +55,27 @@ Whenever a shared E2E helper changes:
 
 Do not merge helper changes validated only by one local spec.
 
+## Stateful Mutation UIs
+
+Components that both:
+
+- trigger server mutations
+- mirror server props into local client state
+
+are high-risk for refresh races.
+
+When reviewing or changing those components:
+
+- inspect prop-sync effects for whether they can erase in-progress local UI state
+- do not assume a rebase onto a green base branch removes branch-local state bugs
+- rerun the targeted E2E specs that exercise repeated mutations in the same screen
+
+Typical danger signs:
+
+- add/edit forms closing unexpectedly after a successful mutation
+- newly created items disappearing until a hard refresh
+- local optimistic state being overwritten by a stale server payload
+
 ## Branch Hygiene
 
 Long-lived branches must be rebased onto a known-green base regularly.

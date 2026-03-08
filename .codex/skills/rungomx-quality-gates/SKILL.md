@@ -52,6 +52,10 @@ Runs the repo’s standard local CI gate and reports results:
 - Treat changes in `e2e/utils/helpers.ts` as shared-infrastructure changes:
   validate the directly affected specs, then rerun isolated E2E, then rerun the
   full isolated gate.
+- Treat client forms that both call server actions and mirror server props into
+  local state as high-risk. If they changed, rerun the targeted specs for that
+  screen before relying on the full gate, because stale prop refreshes can
+  clobber in-progress UI state without affecting unrelated branches.
 - Treat noisy webserver logs (`ECONNRESET`, `Error: aborted`) as non-blocking only when tests are green.
 - If lock/port conflicts appear, stop and rerun isolated rather than forcing parallel runs.
 
