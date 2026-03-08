@@ -159,10 +159,6 @@ export function EventSettingsForm({
   }, [wizardMode, creationPath, hasHydratedCreationPath, wizardSessionStorageKey]);
 
   const wizardSteps = useMemo(() => getEventWizardSteps(event.id), [event.id]);
-  const wizardCompleteness = useMemo(
-    () => evaluateEventWizardCompleteness(event, creationPath),
-    [event, creationPath],
-  );
   const isWizardLockedOnStep0 = wizardMode && creationPath === null;
 
   // Event details form
@@ -321,9 +317,23 @@ export function EventSettingsForm({
   }, [event.distances]);
 
   useEffect(() => {
-    setCapacityScope(event.sharedCapacity ? "shared_pool" : "per_distance");
-    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : "");
+    setCapacityScope(event.sharedCapacity ? 'shared_pool' : 'per_distance');
+    setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : '');
   }, [event.sharedCapacity]);
+
+  const wizardEvent = useMemo(
+    () => ({
+      ...event,
+      visibility,
+      isRegistrationPaused,
+      distances,
+    }),
+    [distances, event, isRegistrationPaused, visibility],
+  );
+  const wizardCompleteness = useMemo(
+    () => evaluateEventWizardCompleteness(wizardEvent, creationPath),
+    [creationPath, wizardEvent],
+  );
 
   function handleEditionSlugChange(nextSlug: string) {
     const trimmed = nextSlug.trim();
