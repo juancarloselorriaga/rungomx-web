@@ -300,6 +300,7 @@ export function EventSettingsForm({
   const [distances, setDistances] = useState<EventDistanceDetail[]>(event.distances);
   const [showAddDistance, setShowAddDistance] = useState(wizardMode && event.distances.length === 0);
   const [editingDistanceId, setEditingDistanceId] = useState<string | null>(null);
+  const pendingDistanceIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setVisibility(event.visibility as VisibilityType);
@@ -310,10 +311,22 @@ export function EventSettingsForm({
   }, [event.isRegistrationPaused]);
 
   useEffect(() => {
-    setDistances(event.distances);
-    if (event.distances.length > 0) {
-      setShowAddDistance(false);
-    }
+    setDistances((prev) => {
+      const serverIds = new Set(event.distances.map((distance) => distance.id));
+      const merged = [...event.distances];
+
+      for (const distance of prev) {
+        if (pendingDistanceIdsRef.current.has(distance.id) && !serverIds.has(distance.id)) {
+          merged.push(distance);
+        }
+      }
+
+      pendingDistanceIdsRef.current = new Set(
+        [...pendingDistanceIdsRef.current].filter((id) => !serverIds.has(id)),
+      );
+
+      return merged;
+    });
   }, [event.distances]);
 
   useEffect(() => {
@@ -1120,6 +1133,7 @@ export function EventSettingsForm({
             eventId={event.id}
             sharedCapacityEnabled={sharedCapacityEnabled}
             onSuccess={(newDistance) => {
+              pendingDistanceIdsRef.current.add(newDistance.id);
               setDistances((prev) => [...prev, newDistance]);
               setShowAddDistance(false);
             }}
@@ -1146,6 +1160,7 @@ export function EventSettingsForm({
                   setEditingDistanceId(null);
                 }}
                 onDelete={() => {
+                  pendingDistanceIdsRef.current.delete(distance.id);
                   setDistances((prev) => prev.filter((d) => d.id !== distance.id));
                 }}
               />
