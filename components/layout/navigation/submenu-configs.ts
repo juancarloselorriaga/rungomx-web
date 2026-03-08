@@ -91,6 +91,7 @@ export const eventNavigationSections: SubmenuNavigationSection[] = [
   {
     titleKey: 'management',
     items: [
+      { label: 'payments', href: '/payments', icon: 'dollarSign' },
       { label: 'results', href: '/results', icon: 'barChart3' },
       { label: 'groupRegistrations', href: '/group-registrations', icon: 'groupRegistrations' },
       { label: 'registrations', href: '/registrations', icon: 'registrations' },

@@ -34,6 +34,7 @@ describe('PayoutStatementAction', () => {
   it('shows not-terminal messaging when payout is not terminal', () => {
     render(
       <PayoutStatementAction
+        locale="en"
         organizationId="org-1"
         payoutRequestId="request-1"
         isTerminal={false}
@@ -49,13 +50,24 @@ describe('PayoutStatementAction', () => {
     fetchMock.mockResolvedValueOnce(
       mockJsonResponse({
         data: {
+          payoutStatus: 'completed',
           statementFingerprint: 'fp-statement-1',
+          originalRequestedAmountMinor: 110000,
+          currentRequestedAmountMinor: 108500,
+          terminalAmountMinor: 108500,
+          adjustmentTotalMinor: 1500,
+          generatedAt: new Date('2026-03-03T22:09:00.000Z').toISOString(),
         },
       }),
     );
 
     render(
-      <PayoutStatementAction organizationId="org-1" payoutRequestId="request-1" isTerminal />,
+      <PayoutStatementAction
+        locale="en"
+        organizationId="org-1"
+        payoutRequestId="request-1"
+        isTerminal
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'actions.viewStatement' }));
@@ -68,6 +80,8 @@ describe('PayoutStatementAction', () => {
       '/api/payments/payouts/request-1/statement?organizationId=org-1',
       { cache: 'no-store' },
     );
+    expect(screen.getByText('detail.statement.summaryTitle')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'detail.statement.copyAction' })).toBeInTheDocument();
     expect(screen.getByText('fp-statement-1')).toBeInTheDocument();
     expect(window.__RUNGO_PAYMENTS_SMOKE_TELEMETRY__).toEqual(
       expect.arrayContaining([
@@ -88,7 +102,12 @@ describe('PayoutStatementAction', () => {
       .mockResolvedValueOnce(mockJsonResponse({}, { ok: false, status: 409 }));
 
     const { rerender } = render(
-      <PayoutStatementAction organizationId="org-1" payoutRequestId="request-1" isTerminal />,
+      <PayoutStatementAction
+        locale="en"
+        organizationId="org-1"
+        payoutRequestId="request-1"
+        isTerminal
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'actions.viewStatement' }));
@@ -96,7 +115,14 @@ describe('PayoutStatementAction', () => {
       expect(screen.getByText('detail.statement.notFound')).toBeInTheDocument();
     });
 
-    rerender(<PayoutStatementAction organizationId="org-1" payoutRequestId="request-2" isTerminal />);
+    rerender(
+      <PayoutStatementAction
+        locale="en"
+        organizationId="org-1"
+        payoutRequestId="request-2"
+        isTerminal
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'actions.viewStatement' }));
     await waitFor(() => {

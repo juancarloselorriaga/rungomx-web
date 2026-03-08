@@ -120,7 +120,6 @@ export default async function DashboardPaymentsPayoutsPage({
         description={t('home.organization.help')}
         selectorLabel={t('home.organization.label')}
         organizationCountLabel={organizationCountLabel}
-        currentOrganizationLabel={locale === 'es' ? 'Actual' : 'Current'}
       />
 
       {hasInvalidSelection ? (

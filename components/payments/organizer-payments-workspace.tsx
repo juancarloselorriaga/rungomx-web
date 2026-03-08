@@ -1,9 +1,13 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
+import type { AppHref } from '@/lib/payments/organizer/hrefs';
+import {
+  getGlobalPayoutHistoryHref,
+  getPayoutDetailHref,
+} from '@/lib/payments/organizer/hrefs';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
 import {
-  resolveOrganizerPayoutCtaMode,
   type OrganizerWalletIssuesApiResponse,
   type OrganizerWalletSnapshotApiResponse,
 } from '@/lib/payments/organizer/ui';
@@ -13,12 +17,16 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { OrganizerActionQueue } from './organizer-action-queue';
 import { OrganizerWalletSummary } from './organizer-wallet-summary';
+import { PaymentsWorkspaceSkeleton } from './payments-page-skeletons';
 import { PayoutRequestDialog } from './payout-request-dialog';
 
 type OrganizerPaymentsWorkspaceProps = {
   locale: 'es' | 'en';
   organizationId: string;
   organizationName?: string;
+  historyHref?: AppHref;
+  eventId?: string;
+  showHistoryShortcut?: boolean;
 };
 
 type WorkspaceData = {
@@ -30,8 +38,12 @@ export function OrganizerPaymentsWorkspace({
   locale,
   organizationId,
   organizationName = '',
+  historyHref,
+  eventId,
+  showHistoryShortcut = true,
 }: OrganizerPaymentsWorkspaceProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const resolvedHistoryHref = historyHref ?? getGlobalPayoutHistoryHref(organizationId);
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -80,12 +92,7 @@ export function OrganizerPaymentsWorkspace({
   }, [loadWorkspaceData]);
 
   if (isLoading) {
-    return (
-      <section className="rounded-lg border bg-card p-6 shadow-sm" role="status" aria-live="polite">
-        <h2 className="text-lg font-semibold">{t('home.shell.loadingTitle')}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{t('home.shell.loadingDescription')}</p>
-      </section>
-    );
+    return <PaymentsWorkspaceSkeleton showContextCard={false} />;
   }
 
   if (hasError || !data) {
@@ -100,7 +107,19 @@ export function OrganizerPaymentsWorkspace({
     );
   }
 
-  const ctaMode = resolveOrganizerPayoutCtaMode(data.wallet.buckets);
+  const activePayoutId =
+    [...data.issues.actionNeeded, ...data.issues.inProgress].find(
+      (item) => item.entityType === 'payout',
+    )?.entityId ?? null;
+  const ctaState =
+    data.wallet.buckets.processingMinor > 0 || activePayoutId
+      ? 'active'
+      : data.wallet.buckets.availableMinor > 0
+        ? 'request'
+        : 'idle';
+  const currentPayoutHref = activePayoutId
+    ? getPayoutDetailHref(activePayoutId, { eventId })
+    : resolvedHistoryHref;
 
   return (
     <div className="space-y-6">
@@ -114,58 +133,61 @@ export function OrganizerPaymentsWorkspace({
                 {t('home.nextStep.eyebrow')}
               </p>
               <h2 className="text-2xl font-semibold tracking-tight">
-                {ctaMode === 'request'
+                {ctaState === 'request'
                   ? t('home.nextStep.requestTitle')
-                  : t('home.nextStep.queueTitle')}
+                  : ctaState === 'active'
+                    ? t('home.nextStep.queueTitle')
+                    : t('home.nextStep.idleTitle')}
               </h2>
               <p className="text-sm text-muted-foreground">
-                {ctaMode === 'request'
+                {ctaState === 'request'
                   ? t('home.nextStep.requestDescription', { organization: organizationName })
-                  : t('home.nextStep.queueDescription', { organization: organizationName })}
+                  : ctaState === 'active'
+                    ? t('home.nextStep.queueDescription', { organization: organizationName })
+                    : t('home.nextStep.idleDescription', { organization: organizationName })}
               </p>
             </div>
 
             <div className="flex flex-col gap-3">
-              {ctaMode === 'request' ? (
+              {ctaState === 'request' ? (
                 <PayoutRequestDialog
                   organizationId={organizationId}
                   triggerLabel={t('actions.requestPayout')}
                   triggerTestId="payments-primary-cta"
+                  eventId={eventId}
+                  triggerClassName="w-full justify-center"
                 />
+              ) : ctaState === 'active' ? (
+                <Button asChild className="w-full justify-center">
+                  <Link href={currentPayoutHref}>{t('actions.viewCurrentPayout')}</Link>
+                </Button>
               ) : (
-                <Button asChild variant="outline">
-                  <Link
-                    href={{
-                      pathname: '/dashboard/payments/payouts',
-                      query: { organizationId },
-                    }}
-                  >
-                    {t('actions.viewPayouts')}
-                  </Link>
+                <Button asChild className="w-full justify-center">
+                  <Link href={resolvedHistoryHref}>{t('actions.viewPayouts')}</Link>
                 </Button>
               )}
 
-              <div className="flex flex-wrap gap-2">
-                {ctaMode === 'request' ? (
-                  <Button asChild variant="outline">
-                    <Link
-                      href={{
-                        pathname: '/dashboard/payments/payouts',
-                        query: { organizationId },
-                      }}
-                    >
-                      {t('actions.viewPayouts')}
-                    </Link>
-                  </Button>
-                ) : (
-                  <PayoutRequestDialog
-                    organizationId={organizationId}
-                    triggerLabel={t('actions.queuePayoutRequest')}
-                    triggerVariant="outline"
-                    triggerTestId="payments-primary-cta"
-                  />
-                )}
-              </div>
+              {ctaState === 'active' ? (
+                <PayoutRequestDialog
+                  organizationId={organizationId}
+                  triggerLabel={t('actions.queuePayoutRequest')}
+                  triggerVariant="outline"
+                  triggerTestId="payments-primary-cta"
+                  eventId={eventId}
+                  triggerClassName="w-full justify-center"
+                />
+              ) : null}
+
+              {ctaState !== 'idle' && showHistoryShortcut ? (
+                <div className="flex items-center justify-center">
+                  <Link
+                    href={resolvedHistoryHref}
+                    className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                  >
+                    {t('actions.viewPayouts')}
+                  </Link>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>
@@ -175,6 +197,7 @@ export function OrganizerPaymentsWorkspace({
         locale={locale}
         actionNeeded={data.issues.actionNeeded}
         inProgress={data.issues.inProgress}
+        eventId={eventId}
       />
     </div>
   );

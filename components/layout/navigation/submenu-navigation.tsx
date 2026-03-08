@@ -82,6 +82,7 @@ function EventSubmenuNavigation({
     pricing: tNav('pricing'),
     addOns: tNav('addOns'),
     coupons: tNav('coupons'),
+    payments: tNav('payments'),
     results: tNav('results'),
     groupRegistrations: tNav('groupRegistrations'),
     registrations: tNav('registrations'),

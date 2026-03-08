@@ -1,6 +1,7 @@
 'use client';
 
 import { Link } from '@/i18n/navigation';
+import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
 import {
   getOrganizerPayoutReasonFamily,
@@ -14,6 +15,7 @@ import { FormEvent, useRef, useState } from 'react';
 type PayoutRequestFormProps = {
   organizationId: string;
   presentation?: 'card' | 'dialog';
+  eventId?: string;
 };
 
 type PayoutRequestSuccess = {
@@ -67,6 +69,7 @@ function formatMoney(minor: number): string {
 export function PayoutRequestForm({
   organizationId,
   presentation = 'card',
+  eventId,
 }: PayoutRequestFormProps) {
   const t = useTranslations('pages.dashboardPayments');
   const [requestedAmount, setRequestedAmount] = useState('');
@@ -311,12 +314,7 @@ export function PayoutRequestForm({
             </div>
           </details>
           <Button asChild variant="outline">
-            <Link
-              href={{
-                pathname: '/dashboard/payments/payouts/[payoutRequestId]',
-                params: { payoutRequestId: requestSuccess.payoutRequestId },
-              }}
-            >
+            <Link href={getPayoutDetailHref(requestSuccess.payoutRequestId, { eventId })}>
               {t('actions.openDetails')}
             </Link>
           </Button>

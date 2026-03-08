@@ -1,9 +1,11 @@
 'use client';
 
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
+import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerPayoutListItem } from '@/lib/payments/organizer/payout-views';
 import { shortIdentifier } from '@/lib/payments/organizer/presentation';
 import { useTranslations } from 'next-intl';
+import { ChevronRightIcon } from 'lucide-react';
 
 import { PayoutStatusBadge } from './payout-status-badge';
 
@@ -12,6 +14,7 @@ type PayoutHistoryTableProps = {
   locale: 'es' | 'en';
   title?: string;
   description?: string;
+  eventId?: string;
 };
 
 function formatMoney(minor: number, currency: string, locale: 'es' | 'en'): string {
@@ -35,8 +38,10 @@ export function PayoutHistoryTable({
   locale,
   title,
   description,
+  eventId,
 }: PayoutHistoryTableProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const router = useRouter();
 
   if (items.length === 0) {
     return (
@@ -70,38 +75,64 @@ export function PayoutHistoryTable({
               <th className="py-2 pr-4 text-right">{t('payouts.table.requested')}</th>
               <th className="py-2 pr-4 text-right">{t('payouts.table.currentAmount')}</th>
               <th className="py-2">{t('payouts.table.requestedAt')}</th>
+              <th className="w-11 text-right">{t('payouts.table.open')}</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
-              <tr key={item.payoutRequestId} className="border-t align-top transition hover:bg-muted/15">
-                <td className="py-3 pr-4">
-                  <Link
-                    href={{
-                      pathname: '/dashboard/payments/payouts/[payoutRequestId]',
-                      params: { payoutRequestId: item.payoutRequestId },
-                    }}
-                    className="font-medium text-primary underline-offset-2 hover:underline"
-                  >
-                    {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
-                  </Link>
-                  <p className="mt-1 font-mono text-xs text-muted-foreground">{item.payoutRequestId}</p>
-                </td>
-                <td className="py-3 pr-4">
-                  <PayoutStatusBadge
-                    status={item.status}
-                    label={t(`payouts.statuses.${item.status}`)}
-                  />
-                </td>
-                <td className="py-3 pr-4 text-right tabular-nums">
-                  {formatMoney(item.requestedAmountMinor, item.currency, locale)}
-                </td>
-                <td className="py-3 pr-4 text-right tabular-nums">
-                  {formatMoney(item.currentRequestedAmountMinor, item.currency, locale)}
-                </td>
-                <td className="py-3">{formatDate(item.requestedAt, locale)}</td>
-              </tr>
-            ))}
+            {items.map((item) => {
+              const detailHref = getPayoutDetailHref(item.payoutRequestId, { eventId });
+              const navigateToDetail = () =>
+                router.push(detailHref as Parameters<typeof router.push>[0]);
+
+              return (
+                <tr
+                  key={item.payoutRequestId}
+                  className="cursor-pointer border-t align-top transition hover:bg-muted/15"
+                  role="link"
+                  tabIndex={0}
+                  onClick={navigateToDetail}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigateToDetail();
+                    }
+                  }}
+                >
+                  <td className="py-3 pr-4">
+                    <Link
+                      href={detailHref}
+                      className="font-medium text-primary underline-offset-2 hover:underline"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
+                    </Link>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <PayoutStatusBadge
+                      status={item.status}
+                      label={t(`payouts.statuses.${item.status}`)}
+                    />
+                  </td>
+                  <td className="py-3 pr-4 text-right tabular-nums">
+                    {formatMoney(item.requestedAmountMinor, item.currency, locale)}
+                  </td>
+                  <td className="py-3 pr-4 text-right tabular-nums">
+                    {formatMoney(item.currentRequestedAmountMinor, item.currency, locale)}
+                  </td>
+                  <td className="py-3">{formatDate(item.requestedAt, locale)}</td>
+                  <td className="py-3 text-right">
+                    <Link
+                      href={detailHref}
+                      aria-label={t('actions.openDetails')}
+                      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <ChevronRightIcon className="size-4" />
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

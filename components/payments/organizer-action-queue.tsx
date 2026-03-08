@@ -1,17 +1,18 @@
 'use client';
 
 import { Badge } from '@/components/common/badge';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
+import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerWalletIssueActivityItem } from '@/lib/payments/organizer/ui';
-import {
-  getOrganizerPayoutReasonFamily,
-  humanizeTechnicalCode,
-} from '@/lib/payments/organizer/presentation';
+import { humanizeTechnicalCode } from '@/lib/payments/organizer/presentation';
 import { useTranslations } from 'next-intl';
 
 type OrganizerActionQueueProps = {
   locale: 'es' | 'en';
   actionNeeded: OrganizerWalletIssueActivityItem[];
   inProgress: OrganizerWalletIssueActivityItem[];
+  eventId?: string;
 };
 
 type QueueSectionProps = {
@@ -21,7 +22,15 @@ type QueueSectionProps = {
   items: OrganizerWalletIssueActivityItem[];
   badgeLabel: string;
   locale: 'es' | 'en';
+  eventId?: string;
 };
+
+function splitVisibleItems<T>(items: T[], maxVisible = 3): { visible: T[]; hidden: T[] } {
+  return {
+    visible: items.slice(0, maxVisible),
+    hidden: items.slice(maxVisible),
+  };
+}
 
 function QueueSection({
   title,
@@ -30,8 +39,10 @@ function QueueSection({
   items,
   badgeLabel,
   locale,
+  eventId,
 }: QueueSectionProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const { visible, hidden } = splitVisibleItems(items);
 
   const eventTitleMap: Record<string, string> = {
     'payout.queued': t('wallet.queue.events.payoutQueued.title'),
@@ -75,75 +86,116 @@ function QueueSection({
     }).format(dateValue);
   }
 
+  function getDetailHref(item: OrganizerWalletIssueActivityItem) {
+    if (item.entityType !== 'payout') return null;
+    return getPayoutDetailHref(item.entityId, { eventId });
+  }
+
   return (
     <section className="space-y-3 rounded-xl border bg-card/80 p-4 shadow-sm" aria-label={title}>
       <div className="space-y-1">
         <h3 className="text-base font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        <div className="rounded-lg border border-dashed bg-muted/15 px-4 py-4">
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {items.map((item) => (
-            <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="font-medium">
-                    {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
-                  </p>
+        <div className="space-y-3">
+          <ul className="space-y-3">
+            {visible.map((item) => (
+              <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-base font-semibold leading-tight">
+                      {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
+                    </p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
+                    </p>
+                  </div>
+                  <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
+                    {badgeLabel}
+                  </Badge>
                 </div>
-                <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
-                  {badgeLabel}
-                </Badge>
-              </div>
 
-              <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                <span>{formatDate(item.occurredAt)}</span>
-                <span>{t('wallet.queue.referenceLabel', { id: item.entityId.slice(0, 8) })}</span>
-                {item.recoveryGuidance?.reasonCode ? (
-                  <span>
-                    {t(
-                      `detail.reasonFamilies.${getOrganizerPayoutReasonFamily(item.recoveryGuidance.reasonCode)}`,
-                    )}
-                  </span>
-                ) : null}
-              </div>
+                <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                  <span>{formatDate(item.occurredAt)}</span>
+                </div>
 
-              <details className="mt-3 rounded-lg border bg-muted/25 px-4 py-3">
-                <summary className="cursor-pointer text-sm font-medium text-primary">
-                  {t('wallet.queue.detailsLabel')}
-                </summary>
-                <dl className="mt-3 space-y-2 text-sm">
-                  <div>
-                    <dt className="text-muted-foreground">{t('wallet.queue.technicalEventLabel')}</dt>
-                    <dd className="font-mono text-xs">{item.eventName}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">{t('wallet.queue.traceLabel')}</dt>
-                    <dd className="font-mono text-xs break-all">{item.traceId}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-muted-foreground">{t('wallet.queue.entityLabel')}</dt>
-                    <dd className="font-mono text-xs break-all">
-                      {item.entityType}:{item.entityId}
-                    </dd>
-                  </div>
-                  {item.recoveryGuidance?.reasonCode ? (
+                <div className="mt-4 space-y-2">
+                  {getDetailHref(item) ? (
                     <div>
-                      <dt className="text-muted-foreground">{t('wallet.queue.rawReasonLabel')}</dt>
-                      <dd className="font-mono text-xs">{item.recoveryGuidance.reasonCode}</dd>
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={getDetailHref(item)!}>{t('wallet.queue.openPayoutAction')}</Link>
+                      </Button>
                     </div>
                   ) : null}
-                </dl>
-              </details>
-            </li>
-          ))}
-        </ul>
+
+                  <details className="rounded-lg border bg-muted/25 px-4 py-3">
+                    <summary className="cursor-pointer text-sm font-medium text-primary">
+                      {t('wallet.queue.detailsLabel')}
+                    </summary>
+                    <dl className="mt-3 space-y-2 text-sm">
+                      <div>
+                        <dt className="text-muted-foreground">{t('wallet.queue.technicalEventLabel')}</dt>
+                        <dd className="font-mono text-xs">{item.eventName}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">{t('wallet.queue.traceLabel')}</dt>
+                        <dd className="font-mono text-xs break-all">{item.traceId}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted-foreground">{t('wallet.queue.entityLabel')}</dt>
+                        <dd className="font-mono text-xs break-all">
+                          {item.entityType}:{item.entityId}
+                        </dd>
+                      </div>
+                      {item.recoveryGuidance?.reasonCode ? (
+                        <div>
+                          <dt className="text-muted-foreground">{t('wallet.queue.rawReasonLabel')}</dt>
+                          <dd className="font-mono text-xs">{item.recoveryGuidance.reasonCode}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </details>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {hidden.length > 0 ? (
+            <details className="rounded-lg border bg-background/70 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-primary">
+                {t('wallet.queue.moreItems', { count: hidden.length })}
+              </summary>
+              <ul className="mt-3 space-y-3">
+                {hidden.map((item) => (
+                  <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="font-medium">
+                          {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
+                        </p>
+                      </div>
+                      <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
+                        {badgeLabel}
+                      </Badge>
+                    </div>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {formatDate(item.occurredAt)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </div>
       )}
     </section>
   );
@@ -153,8 +205,10 @@ export function OrganizerActionQueue({
   locale,
   actionNeeded,
   inProgress,
+  eventId,
 }: OrganizerActionQueueProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const isCompletelyEmpty = actionNeeded.length === 0 && inProgress.length === 0;
 
   return (
     <section className="space-y-4" aria-label={t('wallet.queue.title')}>
@@ -163,24 +217,35 @@ export function OrganizerActionQueue({
         <p className="text-sm text-muted-foreground">{t('wallet.queue.description')}</p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <QueueSection
-          title={t('wallet.queue.actionNeeded')}
-          description={t('wallet.queue.actionNeededDescription')}
-          emptyMessage={t('wallet.queue.emptyActionNeeded')}
-          items={actionNeeded}
-          badgeLabel={t('wallet.queue.actionNeeded')}
-          locale={locale}
-        />
-        <QueueSection
-          title={t('wallet.queue.inProgress')}
-          description={t('wallet.queue.inProgressDescription')}
-          emptyMessage={t('wallet.queue.emptyInProgress')}
-          items={inProgress}
-          badgeLabel={t('wallet.queue.inProgress')}
-          locale={locale}
-        />
-      </div>
+      {isCompletelyEmpty ? (
+        <div className="rounded-xl border border-dashed bg-muted/15 px-5 py-5">
+          <p className="font-medium">{t('wallet.queue.emptyTitle')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('wallet.queue.emptyDescription')}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <QueueSection
+            title={t('wallet.queue.actionNeeded')}
+            description={t('wallet.queue.actionNeededDescription')}
+            emptyMessage={t('wallet.queue.emptyActionNeeded')}
+            items={actionNeeded}
+            badgeLabel={t('wallet.queue.actionNeeded')}
+            locale={locale}
+            eventId={eventId}
+          />
+          <QueueSection
+            title={t('wallet.queue.inProgress')}
+            description={t('wallet.queue.inProgressDescription')}
+            emptyMessage={t('wallet.queue.emptyInProgress')}
+            items={inProgress}
+            badgeLabel={t('wallet.queue.inProgress')}
+            locale={locale}
+            eventId={eventId}
+          />
+        </div>
+      )}
     </section>
   );
 }

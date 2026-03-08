@@ -22,8 +22,10 @@
       "eyebrow": "Main action",
       "requestTitle": "Request a payout",
       "requestDescription": "{organization} already has available balance. Start the payout when you are ready.",
-      "queueTitle": "Review the current payout",
-      "queueDescription": "Before requesting another payout, review the one already in progress for {organization}.",
+      "queueTitle": "A payout is already in progress",
+      "queueDescription": "Review the active payout for {organization} first. If needed, you can also prepare the next one.",
+      "idleTitle": "Review recent activity",
+      "idleDescription": "{organization} does not have withdrawable balance yet. Use payout history to review recent movement and spot the next important change.",
       "secondaryTitle": "History and follow-up",
       "secondaryDescription": "Use payout history to review previous requests, open details, and track status changes without losing context."
     },
@@ -39,8 +41,9 @@
   "actions": {
     "retry": "Retry",
     "requestPayout": "Request payout",
-    "queuePayoutRequest": "Request next payout",
+    "queuePayoutRequest": "Prepare next payout",
     "viewPayouts": "View history",
+    "viewCurrentPayout": "View current payout",
     "newPayout": "New payout",
     "openDetails": "Open details",
     "viewStatement": "View statement"
@@ -64,7 +67,11 @@
       "inProgressDescription": "Cases that are still moving and only need monitoring for now.",
       "emptyActionNeeded": "Nothing needs attention right now.",
       "emptyInProgress": "Nothing is being monitored right now.",
-      "detailsLabel": "View details",
+      "emptyTitle": "Nothing needs follow-up right now",
+      "emptyDescription": "Validations, pauses, and meaningful payment movements will appear here with a quick summary when they happen.",
+      "moreItems": "View {count, plural, one {# more update} other {# more updates}}",
+      "detailsLabel": "Technical details",
+      "openPayoutAction": "Open payout",
       "technicalEventLabel": "Technical event",
       "traceLabel": "Trace ID",
       "entityLabel": "Reference",
@@ -86,7 +93,7 @@
         },
         "payoutPaused": {
           "title": "The payout was paused",
-          "description": "The flow stopped temporarily while the payments team reviews additional information."
+          "description": "The flow is under temporary review. If any action is needed, it will appear here."
         },
         "payoutResumed": {
           "title": "The payout resumed",
@@ -173,7 +180,8 @@
       "status": "Status",
       "requested": "Requested",
       "currentAmount": "Current amount",
-      "requestedAt": "Date"
+      "requestedAt": "Date",
+      "open": "Open"
     },
     "statuses": {
       "requested": "Requested",
@@ -229,7 +237,7 @@
       },
       "paused": {
         "title": "The payout was paused",
-        "description": "The platform temporarily stopped the flow while it reviews more information."
+        "description": "The flow is under temporary review. If follow-up is needed, it will appear here."
       },
       "resumed": {
         "title": "The payout resumed",
@@ -249,23 +257,47 @@
       }
     },
     "statement": {
-      "title": "Statement and proof",
-      "description": "Request the statement after the payout is complete and only reveal the fingerprint when support or verification needs it.",
+      "title": "Payout statement",
+      "description": "Once the payout finishes you can review its statement here and only open technical proof when support needs it.",
+      "loadingAction": "Loading statement",
       "ready": "The statement is available.",
       "notFound": "The statement is not available for this request yet.",
       "notTerminal": "The statement will appear once the payout reaches a terminal state.",
       "error": "The statement could not be loaded right now.",
-      "fingerprintLabel": "Statement fingerprint",
-      "fingerprintDescription": "The fingerprint is mainly useful for support or verification, so it stays hidden by default.",
+      "summaryTitle": "Statement summary",
+      "summaryDescription": "Use this to confirm the payout outcome without opening technical references.",
+      "finalStatusLabel": "Final status",
+      "finalAmountLabel": "Final amount",
+      "requestedAmountLabel": "Requested amount",
+      "generatedAtLabel": "Generated on",
+      "adjustedSummary": "The payout finished at {terminal} after being adjusted from {original}.",
+      "technicalDetailsLabel": "Technical statement details",
+      "fingerprintLabel": "Technical identifier",
+      "fingerprintDescription": "This identifier is only useful for support or verification. You do not need it in day-to-day operations.",
       "showFingerprint": "Show fingerprint",
       "hideFingerprint": "Hide fingerprint",
-      "copyAction": "Copy fingerprint",
-      "copySuccess": "Fingerprint copied",
-      "copyError": "Fingerprint could not be copied."
+      "copyAction": "Copy identifier",
+      "copySuccess": "Identifier copied",
+      "copyError": "The identifier could not be copied."
     }
   },
   "nav": {
     "backToPayments": "Back to payments",
     "backToPayouts": "Back to payout history"
+  },
+  "eventContext": {
+    "eyebrow": "Organization payments",
+    "note": "Payouts are managed at the organization level. This event uses the same shared balance and payout history.",
+    "organizationLabel": "Organization",
+    "scopeLabel": "How it works",
+    "viewPayoutsAction": "View payouts",
+    "homeDescription": "Review {organization}'s available balance, check the current payout, and request the next one without leaving the event workspace.",
+    "payoutsDescription": "This event uses {organization}'s payout workspace. You are viewing the organization's shared payout history here.",
+    "payoutsHistoryTitle": "Organization payouts",
+    "payoutsHistoryDescription": "Shared payout history for {organization}, so you can review statuses, amounts, and dates without leaving the event context.",
+    "detailDescription": "This payout belongs to {organization}'s finance workflow.",
+    "detailNotFoundDescription": "We could not find this payout inside the event organization's finance workflow.",
+    "backToEvent": "Back to event",
+    "backToOverview": "Overview"
   }
 }

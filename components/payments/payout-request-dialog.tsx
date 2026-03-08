@@ -2,6 +2,7 @@
 
 import { PayoutRequestForm } from '@/components/payments/payout-request-form';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,8 @@ type PayoutRequestDialogProps = {
   triggerLabel: string;
   triggerVariant?: 'default' | 'outline';
   triggerTestId?: string;
+  eventId?: string;
+  triggerClassName?: string;
 };
 
 export function PayoutRequestDialog({
@@ -24,13 +27,19 @@ export function PayoutRequestDialog({
   triggerLabel,
   triggerVariant = 'default',
   triggerTestId,
+  eventId,
+  triggerClassName,
 }: PayoutRequestDialogProps) {
   const t = useTranslations('pages.dashboardPayments');
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant={triggerVariant} data-testid={triggerTestId} className="whitespace-nowrap">
+        <Button
+          variant={triggerVariant}
+          data-testid={triggerTestId}
+          className={cn('whitespace-nowrap', triggerClassName)}
+        >
           {triggerLabel}
         </Button>
       </DialogTrigger>
@@ -39,7 +48,11 @@ export function PayoutRequestDialog({
           <DialogTitle>{t('request.title')}</DialogTitle>
           <DialogDescription>{t('request.description')}</DialogDescription>
         </DialogHeader>
-        <PayoutRequestForm organizationId={organizationId} presentation="dialog" />
+        <PayoutRequestForm
+          organizationId={organizationId}
+          presentation="dialog"
+          eventId={eventId}
+        />
       </DialogContent>
     </Dialog>
   );
