@@ -1,5 +1,10 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { FinancialEvidencePack } from '@/lib/payments/support/evidence-pack';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
 
 type EvidencePackReviewLabels = {
   sectionTitle: string;
@@ -103,6 +108,10 @@ export function EvidencePackReviewDashboard({
   workspace,
   investigationTool,
 }: EvidencePackReviewDashboardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const traceInput = selectedTraceId.trim();
   const hasTrace = traceInput.length > 0;
 
@@ -111,8 +120,31 @@ export function EvidencePackReviewDashboard({
     evidencePack?.ownership.timeline.map((entry) => [entry.eventId, entry]) ?? [],
   );
 
+  function handleSubmit(formData: FormData): void {
+    const nextTraceId = String(formData.get('evidenceTraceId') ?? '').trim();
+    const next = new URLSearchParams(searchParams?.toString());
+    next.set('range', selectedRange);
+    if (workspace) next.set('workspace', workspace);
+    if (investigationTool) next.set('investigationTool', investigationTool);
+    if (searchQuery.trim()) {
+      next.set('caseQuery', searchQuery);
+    } else {
+      next.delete('caseQuery');
+    }
+    next.delete('lookupQuery');
+    if (nextTraceId) {
+      next.set('evidenceTraceId', nextTraceId);
+    } else {
+      next.delete('evidenceTraceId');
+    }
+
+    startTransition(() => {
+      router.replace(`${pathname}?${next.toString()}`);
+    });
+  }
+
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" aria-busy={isPending}>
       <div>
         <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
@@ -121,7 +153,7 @@ export function EvidencePackReviewDashboard({
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{labels.requestTitle}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{labels.requestDescription}</p>
-        <form method="get" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+        <form action={handleSubmit} className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="range" value={selectedRange} />
           <input type="hidden" name="lookupQuery" value={searchQuery} />
           {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
@@ -137,18 +169,35 @@ export function EvidencePackReviewDashboard({
               defaultValue={selectedTraceId}
               maxLength={128}
               placeholder={labels.tracePlaceholder}
+              disabled={isPending}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
           </label>
           <div className="self-end">
-            <Button type="submit" className="w-full md:w-auto">
+            <Button type="submit" disabled={isPending} className="w-full md:w-auto">
               {labels.loadButtonLabel}
             </Button>
           </div>
         </form>
       </div>
 
-      {!hasTrace ? (
+      {isPending ? (
+        <div className="space-y-4">
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="mt-2 h-3 w-72" />
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={`evidence-summary-pending-${index}`} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="mt-4 h-48 w-full rounded-xl" />
+          </div>
+        </div>
+      ) : !hasTrace ? (
         <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
           <p className="text-sm font-medium">{labels.noTraceTitle}</p>
           <p className="mt-2 text-sm text-muted-foreground">{labels.noTraceState}</p>

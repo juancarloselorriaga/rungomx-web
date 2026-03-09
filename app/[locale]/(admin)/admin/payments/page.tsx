@@ -3,6 +3,10 @@ import {
   AdminPaymentsWorkspaceId,
   AdminPaymentsWorkspaceShell,
 } from '@/components/admin/payments/admin-payments-workspace-shell';
+import {
+  AdminInvestigationOpenTraceButton,
+  AdminInvestigationToolSwitcher,
+} from '@/components/admin/payments/admin-investigation-controls';
 import { ArtifactGovernanceDashboard } from '@/components/admin/payments/artifact-governance-dashboard';
 import {
   AdminDashboardRangeSelector,
@@ -871,6 +875,27 @@ export default async function AdminPaymentsEconomicsPage({
       </div>
     );
   } else if (activeWorkspace === 'investigation') {
+    const investigationTools = [
+      {
+        id: 'lookup' as const,
+        title: tPayments('investigation.tools.lookup.title'),
+        description: tPayments('investigation.tools.lookup.description'),
+        status:
+          caseQuery.trim().length > 0
+            ? tPayments('investigation.tools.lookup.activeState')
+            : tPayments('investigation.tools.lookup.idleState'),
+      },
+      {
+        id: 'trace' as const,
+        title: tPayments('investigation.tools.trace.title'),
+        description: tPayments('investigation.tools.trace.description'),
+        status:
+          evidenceTraceId.trim().length > 0
+            ? tPayments('investigation.tools.trace.activeState')
+            : tPayments('investigation.tools.trace.idleState'),
+      },
+    ];
+
     workspaceContent = (
       <div className="space-y-6">
         <section className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
@@ -886,63 +911,10 @@ export default async function AdminPaymentsEconomicsPage({
             </p>
           </div>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-2">
-            {(
-              [
-                {
-                  id: 'lookup' as const,
-                  title: tPayments('investigation.tools.lookup.title'),
-                  description: tPayments('investigation.tools.lookup.description'),
-                  status:
-                    caseQuery.trim().length > 0
-                      ? tPayments('investigation.tools.lookup.activeState')
-                      : tPayments('investigation.tools.lookup.idleState'),
-                },
-                {
-                  id: 'trace' as const,
-                  title: tPayments('investigation.tools.trace.title'),
-                  description: tPayments('investigation.tools.trace.description'),
-                  status:
-                    evidenceTraceId.trim().length > 0
-                      ? tPayments('investigation.tools.trace.activeState')
-                      : tPayments('investigation.tools.trace.idleState'),
-                },
-              ] satisfies Array<{
-                id: 'lookup' | 'trace';
-                title: string;
-                description: string;
-                status: string;
-              }>
-            ).map((tool) => {
-              const isActive = tool.id === activeInvestigationTool;
-              const nextParams = new URLSearchParams();
-              nextParams.set('workspace', activeWorkspace);
-              nextParams.set('investigationTool', tool.id);
-              nextParams.set('range', selectedRange);
-              if (caseQuery.trim()) nextParams.set('caseQuery', caseQuery);
-              if (evidenceTraceId.trim()) nextParams.set('evidenceTraceId', evidenceTraceId);
-
-              return (
-                <a
-                  key={tool.id}
-                  href={`?${nextParams.toString()}`}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={[
-                    'rounded-2xl border px-4 py-4 shadow-sm transition',
-                    isActive
-                      ? 'border-primary/40 bg-primary/10'
-                      : 'bg-background/50 hover:border-primary/30 hover:bg-card',
-                  ].join(' ')}
-                >
-                  <p className="text-sm font-semibold">{tool.title}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
-                  <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                    {tool.status}
-                  </p>
-                </a>
-              );
-            })}
-          </div>
+          <AdminInvestigationToolSwitcher
+            items={investigationTools}
+            activeTool={activeInvestigationTool}
+          />
         </section>
 
         <details className="rounded-2xl border bg-card/70 p-4 shadow-sm">
@@ -995,18 +967,11 @@ export default async function AdminPaymentsEconomicsPage({
                       {tPayments('investigation.evidenceReadyDescription')}
                     </p>
                   </div>
-                  <a
-                    href={`?${new URLSearchParams({
-                      workspace: activeWorkspace,
-                      investigationTool: 'trace',
-                      range: selectedRange,
-                      ...(caseQuery.trim() ? { caseQuery } : {}),
-                      evidenceTraceId,
-                    }).toString()}`}
-                    className="inline-flex h-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-4 text-sm font-medium text-foreground transition hover:bg-primary/15"
-                  >
-                    {tPayments('investigation.openTraceLabel')}
-                  </a>
+                  <AdminInvestigationOpenTraceButton
+                    label={tPayments('investigation.openTraceLabel')}
+                    caseQuery={caseQuery}
+                    evidenceTraceId={evidenceTraceId}
+                  />
                 </div>
               </section>
             ) : null}

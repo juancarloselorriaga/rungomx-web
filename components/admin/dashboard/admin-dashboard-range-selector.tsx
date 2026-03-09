@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
 
 export type AdminDashboardRangeValue = '7d' | '14d' | '30d';
 
@@ -25,22 +26,26 @@ export function AdminDashboardRangeSelector({
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
 
   const handleChange = (value: string) => {
     const next = new URLSearchParams(searchParams?.toString());
     next.set('range', value);
     const href = `${pathname}?${next.toString()}`;
-    router.replace(href);
-    router.refresh();
+    startTransition(() => {
+      router.replace(href);
+    });
   };
 
   return (
     <div
       className={cn(
         'grid w-full grid-cols-1 gap-2 rounded-2xl border bg-muted/25 p-1 sm:grid-cols-3',
+        isPending ? 'opacity-80' : '',
         className,
       )}
       role="group"
+      aria-busy={isPending}
     >
       {options.map((option) => (
         <Button
@@ -49,6 +54,7 @@ export function AdminDashboardRangeSelector({
           variant={option.value === selected ? 'default' : 'outline'}
           size="sm"
           aria-pressed={option.value === selected}
+          disabled={isPending}
           onClick={() => handleChange(option.value)}
           className={cn(
             'h-10 w-full rounded-xl border-transparent px-4 text-sm font-medium whitespace-nowrap shadow-none',

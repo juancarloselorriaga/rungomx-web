@@ -1,6 +1,10 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { FinancialCaseLookupResult } from '@/lib/payments/support/case-lookup';
-import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTransition } from 'react';
 
 type FinancialCaseLookupLabels = {
   sectionTitle: string;
@@ -69,11 +73,49 @@ export function FinancialCaseLookupDashboard({
   selectedTraceId,
   investigationTool,
 }: FinancialCaseLookupDashboardProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const hasQuery = searchQuery.trim().length > 0;
   const hasResults = (result?.cases.length ?? 0) > 0;
 
+  function navigateWithParams(mutator: (params: URLSearchParams) => void): void {
+    const next = new URLSearchParams(searchParams?.toString());
+    mutator(next);
+    startTransition(() => {
+      router.replace(`${pathname}?${next.toString()}`);
+    });
+  }
+
+  function handleSearchSubmit(formData: FormData): void {
+    const submittedQuery = String(formData.get('caseQuery') ?? '').trim();
+    navigateWithParams((params) => {
+      params.set('range', selectedRange);
+      if (workspace) params.set('workspace', workspace);
+      if (investigationTool) params.set('investigationTool', investigationTool);
+      params.delete('lookupQuery');
+      params.delete('evidenceTraceId');
+      if (submittedQuery) {
+        params.set('caseQuery', submittedQuery);
+      } else {
+        params.delete('caseQuery');
+      }
+    });
+  }
+
+  function handleLoadEvidence(traceId: string): void {
+    navigateWithParams((params) => {
+      params.set('range', selectedRange);
+      params.set('caseQuery', searchQuery);
+      params.set('evidenceTraceId', traceId);
+      params.set('investigationTool', 'trace');
+      if (workspace) params.set('workspace', workspace);
+    });
+  }
+
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" aria-busy={isPending}>
       <div>
         <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
@@ -82,7 +124,10 @@ export function FinancialCaseLookupDashboard({
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{labels.searchTitle}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{labels.searchDescription}</p>
-        <form method="get" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+        <form
+          action={handleSearchSubmit}
+          className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]"
+        >
           <input type="hidden" name="range" value={selectedRange} />
           {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
           {investigationTool ? (
@@ -97,18 +142,43 @@ export function FinancialCaseLookupDashboard({
               defaultValue={searchQuery}
               maxLength={128}
               placeholder={labels.queryPlaceholder}
+              disabled={isPending}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             />
           </label>
           <div className="self-end">
-            <Button type="submit" className="w-full md:w-auto">
+            <Button type="submit" disabled={isPending} className="w-full md:w-auto">
               {labels.searchButtonLabel}
             </Button>
           </div>
         </form>
       </div>
 
-      {!hasQuery ? (
+      {isPending ? (
+        <div className="space-y-4">
+          <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="mt-2 h-4 w-72" />
+          </div>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <Skeleton className="h-4 w-44" />
+            <Skeleton className="mt-2 h-3 w-80" />
+            <div className="mt-4 space-y-3">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={`case-lookup-pending-${index}`} className="rounded-xl border p-4">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="mt-3 h-3 w-64" />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Skeleton className="h-7 w-24 rounded-full" />
+                    <Skeleton className="h-7 w-28 rounded-full" />
+                    <Skeleton className="h-7 w-32 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : !hasQuery ? (
         <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
           <p className="text-sm font-medium">{labels.noQueryTitle}</p>
           <p className="mt-2 text-sm text-muted-foreground">{labels.noQueryState}</p>
@@ -189,10 +259,13 @@ export function FinancialCaseLookupDashboard({
                         </div>
                       </div>
 
-                      <Button asChild size="sm" variant={isSelected ? 'secondary' : 'outline'}>
-                        <Link href={`?${href.toString()}`}>
-                          {isSelected ? labels.evidenceLoadedLabel : labels.loadEvidenceLabel}
-                        </Link>
+                      <Button
+                        size="sm"
+                        variant={isSelected ? 'secondary' : 'outline'}
+                        onClick={() => handleLoadEvidence(entry.traceId)}
+                        disabled={isPending}
+                      >
+                        {isSelected ? labels.evidenceLoadedLabel : labels.loadEvidenceLabel}
                       </Button>
                     </div>
 

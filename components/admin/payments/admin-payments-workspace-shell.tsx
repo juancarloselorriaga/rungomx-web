@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { useTransition, type ReactNode } from 'react';
 
 export type AdminPaymentsWorkspaceId =
   | 'overview'
@@ -37,16 +37,18 @@ export function AdminPaymentsWorkspaceShell({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   function handleSelect(nextWorkspace: AdminPaymentsWorkspaceId): void {
     const next = new URLSearchParams(searchParams?.toString());
     next.set('workspace', nextWorkspace);
-    router.replace(`${pathname}?${next.toString()}`);
-    router.refresh();
+    startTransition(() => {
+      router.replace(`${pathname}?${next.toString()}`);
+    });
   }
 
   return (
-    <section className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+    <section className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6" aria-busy={isPending}>
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
@@ -72,9 +74,11 @@ export function AdminPaymentsWorkspaceShell({
               key={item.id}
               type="button"
               variant={isActive ? 'default' : 'outline'}
+              disabled={isPending}
               onClick={() => handleSelect(item.id)}
               className={cn(
                 'h-auto min-h-28 justify-start rounded-2xl px-4 py-4 text-left shadow-none',
+                isPending ? 'opacity-80' : '',
                 isActive
                   ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/12'
                   : 'bg-background/80 hover:border-primary/30 hover:bg-card',
