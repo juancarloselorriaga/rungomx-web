@@ -104,7 +104,7 @@ function formatDate(value: Date | string, locale: 'es' | 'en'): string {
 }
 
 function formatLineageValue(row: ArtifactVersionRecord): string {
-  return row.rebuiltFromVersionId ? `from ${row.rebuiltFromVersionId}` : 'root';
+  return row.rebuiltFromVersionId ? `from ${truncateMiddle(row.rebuiltFromVersionId)}` : 'root';
 }
 
 function renderOperationValue(
@@ -120,6 +120,12 @@ function versionSortKey(value: ArtifactVersionRecord): string {
 
 function deliverySortKey(value: ArtifactDeliveryRecord): string {
   return `${value.traceId}:${value.id}`;
+}
+
+function truncateMiddle(value: string | null | undefined, start = 10, end = 6): string {
+  if (!value) return '—';
+  if (value.length <= start + end + 1) return value;
+  return `${value.slice(0, start)}…${value.slice(-end)}`;
 }
 
 export function ArtifactGovernanceDashboard({
@@ -219,8 +225,8 @@ export function ArtifactGovernanceDashboard({
           </span>
         </summary>
 
-        <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <FormError className="md:col-span-2 xl:col-span-5" />
+        <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2">
+          <FormError className="md:col-span-2" />
 
           <FormField
             label={
@@ -249,7 +255,7 @@ export function ArtifactGovernanceDashboard({
             }
             required
             error={form.errors.traceId}
-            className="space-y-1 text-xs"
+            className="space-y-1 text-xs md:col-span-2"
           >
             <input
               {...form.register('traceId')}
@@ -303,7 +309,7 @@ export function ArtifactGovernanceDashboard({
             }
             required
             error={form.errors.reasonCode}
-            className="space-y-1 text-xs"
+            className="space-y-1 text-xs md:col-span-2"
           >
             <input
               {...form.register('reasonCode')}
@@ -314,7 +320,7 @@ export function ArtifactGovernanceDashboard({
             />
           </FormField>
 
-          <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-5">
+          <div className="flex flex-wrap gap-2 md:col-span-2">
             <button
               type="submit"
               disabled={form.isSubmitting}
@@ -368,14 +374,32 @@ export function ArtifactGovernanceDashboard({
               <tbody>
                 {sortedVersions.map((version) => (
                   <tr key={version.id} className="border-t align-top">
-                    <td className="py-2 pr-4 font-mono text-xs">{version.traceId}</td>
+                    <td
+                      className="py-2 pr-4 font-mono text-xs"
+                      title={version.traceId}
+                    >
+                      {truncateMiddle(version.traceId)}
+                    </td>
                     <td className="py-2 pr-4 tabular-nums">{version.artifactVersion}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{version.fingerprint}</td>
-                    <td className="py-2 pr-4 text-xs text-muted-foreground">
+                    <td
+                      className="py-2 pr-4 font-mono text-xs"
+                      title={version.fingerprint}
+                    >
+                      {truncateMiddle(version.fingerprint)}
+                    </td>
+                    <td
+                      className="py-2 pr-4 text-xs text-muted-foreground"
+                      title={version.rebuiltFromVersionId ?? 'root'}
+                    >
                       {formatLineageValue(version)}
                     </td>
                     <td className="py-2 pr-4 text-xs">{version.reasonCode}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{version.requestedByUserId}</td>
+                    <td
+                      className="py-2 pr-4 font-mono text-xs"
+                      title={version.requestedByUserId}
+                    >
+                      {truncateMiddle(version.requestedByUserId)}
+                    </td>
                     <td className="py-2 text-xs text-muted-foreground">
                       {formatDate(version.createdAt, locale)}
                     </td>
@@ -409,14 +433,29 @@ export function ArtifactGovernanceDashboard({
               <tbody>
                 {sortedDeliveries.map((delivery) => (
                   <tr key={delivery.id} className="border-t align-top">
-                    <td className="py-2 pr-4 font-mono text-xs">{delivery.traceId}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{delivery.artifactVersionId}</td>
+                    <td
+                      className="py-2 pr-4 font-mono text-xs"
+                      title={delivery.traceId}
+                    >
+                      {truncateMiddle(delivery.traceId)}
+                    </td>
+                    <td
+                      className="py-2 pr-4 font-mono text-xs"
+                      title={delivery.artifactVersionId}
+                    >
+                      {truncateMiddle(delivery.artifactVersionId)}
+                    </td>
                     <td className="py-2 pr-4 text-xs">{delivery.channel}</td>
                     <td className="py-2 pr-4 text-xs text-muted-foreground">
-                      {delivery.recipientReference || '—'}
+                      {truncateMiddle(delivery.recipientReference, 14, 6)}
                     </td>
                     <td className="py-2 pr-4 text-xs">{delivery.reasonCode}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{delivery.requestedByUserId}</td>
+                    <td
+                      className="py-2 pr-4 font-mono text-xs"
+                      title={delivery.requestedByUserId}
+                    >
+                      {truncateMiddle(delivery.requestedByUserId)}
+                    </td>
                     <td className="py-2 text-xs text-muted-foreground">
                       {formatDate(delivery.createdAt, locale)}
                     </td>

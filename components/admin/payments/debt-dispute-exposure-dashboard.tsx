@@ -33,6 +33,7 @@ type DebtDisputeExposureDashboardProps = {
   locale: 'es' | 'en';
   metrics: DebtDisputeExposureMetrics;
   labels: DebtDisputeExposureDashboardLabels;
+  hideSummaryCards?: boolean;
 };
 
 function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
@@ -176,6 +177,7 @@ export function DebtDisputeExposureDashboard({
   locale,
   metrics,
   labels,
+  hideSummaryCards = false,
 }: DebtDisputeExposureDashboardProps) {
   const summaryExposure = formatMoney(
     metrics.totals.headlineExposureScoreMinor,
@@ -190,32 +192,34 @@ export function DebtDisputeExposureDashboard({
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.summaryExposureTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{summaryExposure}</p>
-        </div>
+      {hideSummaryCards ? null : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.summaryExposureTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{summaryExposure}</p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.summaryOpenCasesTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {metrics.totals.openDisputeCaseCount}
-          </p>
-        </div>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.summaryOpenCasesTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {metrics.totals.openDisputeCaseCount}
+            </p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.summaryPolicyPausesTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {metrics.totals.pauseRequiredCount}
-          </p>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.summaryPolicyPausesTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {metrics.totals.pauseRequiredCount}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{labels.organizerTableTitle}</h3>

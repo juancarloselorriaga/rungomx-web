@@ -1,71 +1,100 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+export type AdminPaymentsWorkspaceId =
+  | 'overview'
+  | 'risk'
+  | 'operations'
+  | 'investigation';
+
 type AdminPaymentsNavItem = {
-  id: string;
+  id: AdminPaymentsWorkspaceId;
   label: string;
   description: string;
 };
 
 type AdminPaymentsWorkspaceShellProps = {
-  items: AdminPaymentsNavItem[];
-};
-
-type AdminPaymentsSectionProps = {
-  id: string;
-  eyebrow: string;
   title: string;
   description: string;
-  children: ReactNode;
-  tone?: 'default' | 'caution';
+  workspaceLabel: string;
+  activeItemId: AdminPaymentsWorkspaceId;
+  items: AdminPaymentsNavItem[];
+  toolbar?: ReactNode;
 };
 
-export function AdminPaymentsWorkspaceShell({ items }: AdminPaymentsWorkspaceShellProps) {
-  return (
-    <nav className="rounded-2xl border bg-card/70 p-3 shadow-sm">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {items.map((item) => (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            className="rounded-xl border bg-background/80 px-4 py-3 text-left transition hover:border-primary/40 hover:bg-card"
-          >
-            <p className="text-sm font-semibold">{item.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{item.description}</p>
-          </a>
-        ))}
-      </div>
-    </nav>
-  );
-}
-
-export function AdminPaymentsWorkspaceSection({
-  id,
-  eyebrow,
+export function AdminPaymentsWorkspaceShell({
   title,
   description,
-  children,
-  tone = 'default',
-}: AdminPaymentsSectionProps) {
+  workspaceLabel,
+  activeItemId,
+  items,
+  toolbar,
+}: AdminPaymentsWorkspaceShellProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  function handleSelect(nextWorkspace: AdminPaymentsWorkspaceId): void {
+    const next = new URLSearchParams(searchParams?.toString());
+    next.set('workspace', nextWorkspace);
+    router.replace(`${pathname}?${next.toString()}`);
+    router.refresh();
+  }
+
   return (
-    <section
-      id={id}
-      className={cn(
-        'scroll-mt-24 rounded-2xl border p-5 shadow-sm',
-        tone === 'caution'
-          ? 'border-amber-200/80 bg-amber-50/40'
-          : 'bg-card/70',
-      )}
-    >
-      <div className="space-y-1 border-b border-border/70 pb-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-          {eyebrow}
-        </p>
-        <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
+    <section className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+            {workspaceLabel}
+          </p>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+            <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
+              {description}
+            </p>
+          </div>
+        </div>
+
+        {toolbar ? <div className="w-full xl:w-auto">{toolbar}</div> : null}
       </div>
 
-      <div className="pt-5">{children}</div>
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {items.map((item) => {
+          const isActive = item.id === activeItemId;
+
+          return (
+            <Button
+              key={item.id}
+              type="button"
+              variant={isActive ? 'default' : 'outline'}
+              onClick={() => handleSelect(item.id)}
+              className={cn(
+                'h-auto min-h-28 justify-start rounded-2xl px-4 py-4 text-left shadow-none',
+                isActive
+                  ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/12'
+                  : 'bg-background/80 hover:border-primary/30 hover:bg-card',
+              )}
+            >
+              <div className="space-y-1.5">
+                <p className="text-sm font-semibold">{item.label}</p>
+                <p
+                  className={cn(
+                    'text-xs leading-5',
+                    isActive ? 'text-muted-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  {item.description}
+                </p>
+              </div>
+            </Button>
+          );
+        })}
+      </div>
     </section>
   );
 }

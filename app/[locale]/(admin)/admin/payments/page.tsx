@@ -1,9 +1,12 @@
 import { upsertDailyFxRateAdminAction } from '@/app/actions/admin-payments-fx';
 import {
-  AdminPaymentsWorkspaceSection,
+  AdminPaymentsWorkspaceId,
   AdminPaymentsWorkspaceShell,
 } from '@/components/admin/payments/admin-payments-workspace-shell';
 import { ArtifactGovernanceDashboard } from '@/components/admin/payments/artifact-governance-dashboard';
+import {
+  AdminDashboardRangeSelector,
+} from '@/components/admin/dashboard/admin-dashboard-range-selector';
 import { DebtDisputeExposureDashboard } from '@/components/admin/payments/debt-dispute-exposure-dashboard';
 import { EvidencePackReviewDashboard } from '@/components/admin/payments/evidence-pack-review-dashboard';
 import { FinancialCaseLookupDashboard } from '@/components/admin/payments/financial-case-lookup-dashboard';
@@ -30,6 +33,7 @@ import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -73,6 +77,40 @@ function rangeToDays(range: '7d' | '14d' | '30d'): number {
   }
 }
 
+function normalizeWorkspace(
+  rawWorkspace: string | undefined,
+): AdminPaymentsWorkspaceId {
+  if (
+    rawWorkspace === 'overview' ||
+    rawWorkspace === 'risk' ||
+    rawWorkspace === 'operations' ||
+    rawWorkspace === 'investigation'
+  ) {
+    return rawWorkspace;
+  }
+
+  return 'overview';
+}
+
+function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(valueMinor / 100);
+}
+
+function formatDateTime(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
+  if (!value) return '—';
+  const normalized = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(normalized.getTime())) return '—';
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(normalized);
+}
+
 export default async function AdminPaymentsEconomicsPage({
   params,
   searchParams,
@@ -99,11 +137,18 @@ export default async function AdminPaymentsEconomicsPage({
   const caseQueryParam = resolvedSearchParams.caseQuery;
   const lookupQueryParam = resolvedSearchParams.lookupQuery;
   const evidenceTraceIdParam = resolvedSearchParams.evidenceTraceId;
+  const workspaceParam = resolvedSearchParams.workspace;
   const rawRange =
     typeof rangeParam === 'string'
       ? rangeParam
       : Array.isArray(rangeParam)
         ? rangeParam[0]
+        : undefined;
+  const rawWorkspace =
+    typeof workspaceParam === 'string'
+      ? workspaceParam
+      : Array.isArray(workspaceParam)
+        ? workspaceParam[0]
         : undefined;
   const primaryCaseQuery =
     typeof caseQueryParam === 'string'
@@ -128,6 +173,7 @@ export default async function AdminPaymentsEconomicsPage({
     ? 'admin'
     : 'support';
   const selectedRange = normalizeRange(rawRange);
+  const activeWorkspace = normalizeWorkspace(rawWorkspace);
   const rangeDays = rangeToDays(selectedRange);
   const [
     metrics,
@@ -209,6 +255,8 @@ export default async function AdminPaymentsEconomicsPage({
     { value: '14d' as const, label: tDashboardRanges('last14days') },
     { value: '30d' as const, label: tDashboardRanges('last30days') },
   ];
+  const selectedRangeLabel =
+    rangeOptions.find((option) => option.value === selectedRange)?.label ?? rangeOptions[2].label;
 
   const exposureLabels = {
     sectionTitle: tPayments('exposure.sectionTitle'),
@@ -330,7 +378,9 @@ export default async function AdminPaymentsEconomicsPage({
     queryFieldLabel: tPayments('caseLookup.queryFieldLabel'),
     queryPlaceholder: tPayments('caseLookup.queryPlaceholder'),
     searchButtonLabel: tPayments('caseLookup.searchButtonLabel'),
+    noQueryTitle: tPayments('caseLookup.noQueryTitle'),
     noQueryState: tPayments('caseLookup.noQueryState'),
+    noResultsTitle: tPayments('caseLookup.noResultsTitle'),
     noResultsState: tPayments('caseLookup.noResultsState'),
     disambiguationTitle: tPayments('caseLookup.disambiguationTitle'),
     disambiguationDescription: tPayments('caseLookup.disambiguationDescription'),
@@ -338,6 +388,8 @@ export default async function AdminPaymentsEconomicsPage({
     resultsTitle: tPayments('caseLookup.resultsTitle'),
     resultsDescription: tPayments('caseLookup.resultsDescription'),
     summaryLabel: tPayments('caseLookup.summaryLabel'),
+    loadEvidenceLabel: tPayments('caseLookup.loadEvidenceLabel'),
+    evidenceLoadedLabel: tPayments('caseLookup.evidenceLoadedLabel'),
     traceHeader: tPayments('caseLookup.traceHeader'),
     rootEntityHeader: tPayments('caseLookup.rootEntityHeader'),
     organizerHeader: tPayments('caseLookup.organizerHeader'),
@@ -356,7 +408,9 @@ export default async function AdminPaymentsEconomicsPage({
     traceFieldLabel: tPayments('evidence.traceFieldLabel'),
     tracePlaceholder: tPayments('evidence.tracePlaceholder'),
     loadButtonLabel: tPayments('evidence.loadButtonLabel'),
+    noTraceTitle: tPayments('evidence.noTraceTitle'),
     noTraceState: tPayments('evidence.noTraceState'),
+    notFoundTitle: tPayments('evidence.notFoundTitle'),
     notFoundState: tPayments('evidence.notFoundState'),
     summaryTitle: tPayments('evidence.summaryTitle'),
     summaryDescription: tPayments('evidence.summaryDescription'),
@@ -392,14 +446,389 @@ export default async function AdminPaymentsEconomicsPage({
     deliveryCreatedHeader: tPayments('evidence.deliveryCreatedHeader'),
   };
 
+  const hasOverviewActivity =
+    metrics.traceability.eventCount > 0 ||
+    metrics.headlineNetRecognizedFeeMinor !== 0 ||
+    mxnReport.convertedEventCount > 0;
+  const hasOverviewBreakdown =
+    hasOverviewActivity || metrics.currencies.length > 0 || mxnReport.currencies.length > 0;
+  const hasRiskAttention =
+    exposureMetrics.totals.pauseRequiredCount > 0 ||
+    exposureMetrics.totals.openDisputeCaseCount > 0 ||
+    exposureMetrics.totals.headlineExposureScoreMinor > 0;
+  const hasRiskBreakdown =
+    hasRiskAttention ||
+    exposureMetrics.organizers.length > 0 ||
+    exposureMetrics.events.length > 0;
+
+  let workspaceContent: ReactNode = null;
+
+  if (activeWorkspace === 'overview') {
+    workspaceContent = (
+      <div className="space-y-6">
+        <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+              {tPayments('overview.heroEyebrow')}
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+              {formatMoney(
+                metrics.headlineNetRecognizedFeeMinor,
+                metrics.headlineCurrency,
+                locale as AppLocale,
+              )}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {hasOverviewActivity
+                ? tPayments('overview.heroActiveDescription', { range: selectedRangeLabel })
+                : tPayments('overview.heroIdleDescription', { range: selectedRangeLabel })}
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border bg-background/60 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {labels.capturedFeesLabel}
+                </p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {formatMoney(
+                    metrics.headlineCapturedFeeMinor,
+                    metrics.headlineCurrency,
+                    locale as AppLocale,
+                  )}
+                </p>
+              </div>
+              <div className="rounded-2xl border bg-background/60 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {mxnLabels.headlineTitle}
+                </p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {formatMoney(
+                    mxnReport.headlineMxnNetRecognizedFeeMinor,
+                    'MXN',
+                    locale as AppLocale,
+                  )}
+                </p>
+              </div>
+              <div className="rounded-2xl border bg-background/60 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {mxnLabels.convertedEventsTitle}
+                </p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {mxnReport.convertedEventCount.toLocaleString(locale as AppLocale)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('overview.windowTitle')}
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {tPayments('overview.windowDescription', { range: selectedRangeLabel })}
+              </p>
+              <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {labels.traceabilityWindowLabel}
+                  </dt>
+                  <dd className="mt-1">
+                    {formatDateTime(metrics.traceability.windowStart, locale as AppLocale)} -{' '}
+                    {formatDateTime(metrics.traceability.windowEnd, locale as AppLocale)}
+                  </dd>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {labels.traceabilityEventsLabel}
+                    </dt>
+                    <dd className="mt-1 tabular-nums">{metrics.traceability.eventCount}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {labels.traceabilityTracesLabel}
+                    </dt>
+                    <dd className="mt-1 tabular-nums">{metrics.traceability.distinctTraceCount}</dd>
+                  </div>
+                </div>
+              </dl>
+            </div>
+
+            <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('overview.statusTitle')}
+              </p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {hasOverviewActivity
+                  ? tPayments('overview.statusActive')
+                  : tPayments('overview.statusIdle')}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {hasOverviewBreakdown ? (
+          <div className="grid gap-6 2xl:grid-cols-[1.15fr_0.85fr]">
+            <NetRecognizedFeeDashboard
+              locale={locale as AppLocale}
+              metrics={metrics}
+              labels={labels}
+              hideSummaryCards
+            />
+            <MxnReportingDashboard
+              locale={locale as AppLocale}
+              report={mxnReport}
+              labels={mxnLabels}
+              hideSummaryCards
+            />
+          </div>
+        ) : (
+          <section className="grid gap-4 xl:grid-cols-2">
+            <div className="rounded-3xl border border-dashed bg-card/50 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {labels.sectionTitle}
+              </p>
+              <h3 className="mt-3 text-lg font-semibold">
+                {tPayments('overview.revenueIdleTitle')}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {tPayments('overview.revenueIdleDescription')}
+              </p>
+            </div>
+            <div className="rounded-3xl border border-dashed bg-card/50 p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {mxnLabels.sectionTitle}
+              </p>
+              <h3 className="mt-3 text-lg font-semibold">
+                {tPayments('overview.conversionIdleTitle')}
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {tPayments('overview.conversionIdleDescription')}
+              </p>
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  } else if (activeWorkspace === 'risk') {
+    workspaceContent = (
+      <div className="space-y-6">
+        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+              {tPayments('risk.heroEyebrow')}
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight">
+              {hasRiskAttention
+                ? tPayments('risk.heroAttentionTitle')
+                : tPayments('risk.heroQuietTitle')}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {hasRiskAttention
+                ? tPayments('risk.heroAttentionDescription')
+                : tPayments('risk.heroQuietDescription')}
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border bg-background/60 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {exposureLabels.summaryExposureTitle}
+                </p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {formatMoney(
+                    exposureMetrics.totals.headlineExposureScoreMinor,
+                    exposureMetrics.totals.headlineCurrency,
+                    locale as AppLocale,
+                  )}
+                </p>
+              </div>
+              <div className="rounded-2xl border bg-background/60 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {exposureLabels.summaryOpenCasesTitle}
+                </p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {exposureMetrics.totals.openDisputeCaseCount.toLocaleString(locale as AppLocale)}
+                </p>
+              </div>
+              <div className="rounded-2xl border bg-background/60 p-4">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  {exposureLabels.summaryPolicyPausesTitle}
+                </p>
+                <p className="mt-2 text-xl font-semibold tabular-nums">
+                  {exposureMetrics.totals.pauseRequiredCount.toLocaleString(locale as AppLocale)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('risk.reviewTitle')}
+            </p>
+            <div className="mt-4 space-y-4 text-sm text-muted-foreground">
+              <div>
+                <p className="font-medium text-foreground">{tPayments('risk.reviewExposureTitle')}</p>
+                <p className="mt-1">{tPayments('risk.reviewExposureDescription')}</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">{tPayments('risk.reviewCasesTitle')}</p>
+                <p className="mt-1">{tPayments('risk.reviewCasesDescription')}</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">{tPayments('risk.reviewPausesTitle')}</p>
+                <p className="mt-1">{tPayments('risk.reviewPausesDescription')}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        {hasRiskBreakdown ? (
+          <DebtDisputeExposureDashboard
+            locale={locale as AppLocale}
+            metrics={exposureMetrics}
+            labels={exposureLabels}
+            hideSummaryCards
+          />
+        ) : (
+          <section className="rounded-3xl border border-dashed bg-card/50 p-5 shadow-sm sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {exposureLabels.sectionTitle}
+            </p>
+            <h3 className="mt-3 text-lg font-semibold">
+              {tPayments('risk.detailIdleTitle')}
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+              {tPayments('risk.detailIdleDescription')}
+            </p>
+          </section>
+        )}
+      </div>
+    );
+  } else if (activeWorkspace === 'operations') {
+    workspaceContent = (
+      <div className="space-y-6">
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {fxLabels.missingTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {fxFlags.missingRates.length.toLocaleString(locale as AppLocale)}
+            </p>
+          </div>
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {fxLabels.staleTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {fxFlags.staleRates.length.toLocaleString(locale as AppLocale)}
+            </p>
+          </div>
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {artifactLabels.recentVersionsTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {artifactSummary.versions.length.toLocaleString(locale as AppLocale)}
+            </p>
+          </div>
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {artifactLabels.recentDeliveriesTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {artifactSummary.deliveries.length.toLocaleString(locale as AppLocale)}
+            </p>
+          </div>
+        </section>
+
+        <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+          {tPayments('sections.operationsNote')}
+        </div>
+
+        <div className="space-y-6">
+          <FxRateManagementDashboard
+            locale={locale as AppLocale}
+            rates={fxRates}
+            flags={fxFlags}
+            labels={fxLabels}
+            upsertAction={upsertFxRateFormAction}
+            hideSummaryCards
+          />
+          <ArtifactGovernanceDashboard
+            locale={locale as AppLocale}
+            initialSummary={artifactSummary}
+            labels={artifactLabels}
+          />
+        </div>
+      </div>
+    );
+  } else if (activeWorkspace === 'investigation') {
+    workspaceContent = (
+      <div className="space-y-6">
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+              {tPayments('investigation.lookupStepEyebrow')}
+            </p>
+            <h3 className="mt-3 text-lg font-semibold">{caseLookupLabels.sectionTitle}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {caseQuery.trim().length > 0
+                ? tPayments('investigation.lookupActive')
+                : tPayments('investigation.lookupIdle')}
+            </p>
+          </div>
+          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+              {tPayments('investigation.evidenceStepEyebrow')}
+            </p>
+            <h3 className="mt-3 text-lg font-semibold">{evidenceLabels.sectionTitle}</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {evidenceTraceId.trim().length > 0
+                ? tPayments('investigation.evidenceActive')
+                : tPayments('investigation.evidenceIdle')}
+            </p>
+          </div>
+        </section>
+
+        <div className="grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
+          <FinancialCaseLookupDashboard
+            locale={locale as AppLocale}
+            selectedRange={selectedRange}
+            searchQuery={caseQuery}
+            result={caseLookupResult}
+            labels={caseLookupLabels}
+            workspace={activeWorkspace}
+            selectedTraceId={evidenceTraceId}
+          />
+          <EvidencePackReviewDashboard
+            locale={locale as AppLocale}
+            selectedRange={selectedRange}
+            searchQuery={caseQuery}
+            selectedTraceId={evidenceTraceId}
+            evidencePack={evidencePack}
+            labels={evidenceLabels}
+            workspace={activeWorkspace}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold">{tPayments('title')}</h1>
-        <p className="max-w-3xl text-muted-foreground">{tPayments('description')}</p>
-      </div>
-
       <AdminPaymentsWorkspaceShell
+        title={tPayments('title')}
+        description={tPayments('description')}
+        workspaceLabel={tPayments('workspaceLabel')}
+        activeItemId={activeWorkspace}
+        toolbar={
+          (activeWorkspace === 'overview' || activeWorkspace === 'risk') ? (
+            <AdminDashboardRangeSelector
+              options={rangeOptions}
+              selected={selectedRange}
+              className="w-full sm:w-auto"
+            />
+          ) : null
+        }
         items={[
           {
             id: 'overview',
@@ -412,133 +841,18 @@ export default async function AdminPaymentsEconomicsPage({
             description: tPayments('nav.riskDescription'),
           },
           {
-            id: 'fx',
-            label: tPayments('nav.fxLabel'),
-            description: tPayments('nav.fxDescription'),
+            id: 'operations',
+            label: tPayments('nav.operationsLabel'),
+            description: tPayments('nav.operationsDescription'),
           },
           {
-            id: 'artifacts',
-            label: tPayments('nav.artifactsLabel'),
-            description: tPayments('nav.artifactsDescription'),
-          },
-          {
-            id: 'cases',
-            label: tPayments('nav.casesLabel'),
-            description: tPayments('nav.casesDescription'),
-          },
-          {
-            id: 'evidence',
-            label: tPayments('nav.evidenceLabel'),
-            description: tPayments('nav.evidenceDescription'),
+            id: 'investigation',
+            label: tPayments('nav.investigationLabel'),
+            description: tPayments('nav.investigationDescription'),
           },
         ]}
       />
-
-      <AdminPaymentsWorkspaceSection
-        id="overview"
-        eyebrow={tPayments('sections.overview.eyebrow')}
-        title={tPayments('sections.overview.title')}
-        description={tPayments('sections.overview.description')}
-      >
-        <div className="space-y-6">
-          <NetRecognizedFeeDashboard
-            locale={locale as AppLocale}
-            metrics={metrics}
-            labels={labels}
-            rangeOptions={rangeOptions}
-            selectedRange={selectedRange}
-          />
-          <MxnReportingDashboard
-            locale={locale as AppLocale}
-            report={mxnReport}
-            labels={mxnLabels}
-          />
-        </div>
-      </AdminPaymentsWorkspaceSection>
-
-      <AdminPaymentsWorkspaceSection
-        id="risk"
-        eyebrow={tPayments('sections.risk.eyebrow')}
-        title={tPayments('sections.risk.title')}
-        description={tPayments('sections.risk.description')}
-      >
-        <DebtDisputeExposureDashboard
-          locale={locale as AppLocale}
-          metrics={exposureMetrics}
-          labels={exposureLabels}
-        />
-      </AdminPaymentsWorkspaceSection>
-
-      <AdminPaymentsWorkspaceSection
-        id="fx"
-        eyebrow={tPayments('sections.fx.eyebrow')}
-        title={tPayments('sections.fx.title')}
-        description={tPayments('sections.fx.description')}
-        tone="caution"
-      >
-        <div className="space-y-4">
-          <div className="rounded-xl border border-amber-200 bg-background/80 p-4 text-sm text-muted-foreground">
-            {tPayments('sections.operationsNote')}
-          </div>
-          <FxRateManagementDashboard
-            locale={locale as AppLocale}
-            rates={fxRates}
-            flags={fxFlags}
-            labels={fxLabels}
-            upsertAction={upsertFxRateFormAction}
-          />
-        </div>
-      </AdminPaymentsWorkspaceSection>
-
-      <AdminPaymentsWorkspaceSection
-        id="artifacts"
-        eyebrow={tPayments('sections.artifacts.eyebrow')}
-        title={tPayments('sections.artifacts.title')}
-        description={tPayments('sections.artifacts.description')}
-        tone="caution"
-      >
-        <div className="space-y-4">
-          <div className="rounded-xl border border-amber-200 bg-background/80 p-4 text-sm text-muted-foreground">
-            {tPayments('sections.operationsNote')}
-          </div>
-          <ArtifactGovernanceDashboard
-            locale={locale as AppLocale}
-            initialSummary={artifactSummary}
-            labels={artifactLabels}
-          />
-        </div>
-      </AdminPaymentsWorkspaceSection>
-
-      <AdminPaymentsWorkspaceSection
-        id="cases"
-        eyebrow={tPayments('sections.cases.eyebrow')}
-        title={tPayments('sections.cases.title')}
-        description={tPayments('sections.cases.description')}
-      >
-        <FinancialCaseLookupDashboard
-          locale={locale as AppLocale}
-          selectedRange={selectedRange}
-          searchQuery={caseQuery}
-          result={caseLookupResult}
-          labels={caseLookupLabels}
-        />
-      </AdminPaymentsWorkspaceSection>
-
-      <AdminPaymentsWorkspaceSection
-        id="evidence"
-        eyebrow={tPayments('sections.evidence.eyebrow')}
-        title={tPayments('sections.evidence.title')}
-        description={tPayments('sections.evidence.description')}
-      >
-        <EvidencePackReviewDashboard
-          locale={locale as AppLocale}
-          selectedRange={selectedRange}
-          searchQuery={caseQuery}
-          selectedTraceId={evidenceTraceId}
-          evidencePack={evidencePack}
-          labels={evidenceLabels}
-        />
-      </AdminPaymentsWorkspaceSection>
+      {workspaceContent}
     </div>
   );
 }

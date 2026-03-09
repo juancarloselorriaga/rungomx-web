@@ -1,9 +1,4 @@
 import type { NetRecognizedFeeMetrics } from '@/lib/payments/economics/net-recognized-fees';
-import {
-  type AdminDashboardRangeOption,
-  AdminDashboardRangeSelector,
-  type AdminDashboardRangeValue,
-} from '@/components/admin/dashboard/admin-dashboard-range-selector';
 
 type NetRecognizedFeeDashboardLabels = {
   sectionTitle: string;
@@ -38,8 +33,9 @@ type NetRecognizedFeeDashboardProps = {
   locale: 'es' | 'en';
   metrics: NetRecognizedFeeMetrics;
   labels: NetRecognizedFeeDashboardLabels;
-  rangeOptions: AdminDashboardRangeOption[];
-  selectedRange: AdminDashboardRangeValue;
+  rangeOptions?: Array<{ value: string; label: string }>;
+  selectedRange?: string;
+  hideSummaryCards?: boolean;
 };
 
 function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
@@ -51,21 +47,22 @@ function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'):
   }).format(valueMinor / 100);
 }
 
-function formatDateTime(value: Date | null, locale: 'es' | 'en'): string {
+function formatDateTime(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
   if (!value) return '—';
+  const normalized = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(normalized.getTime())) return '—';
 
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(value);
+  }).format(normalized);
 }
 
 export function NetRecognizedFeeDashboard({
   locale,
   metrics,
   labels,
-  rangeOptions,
-  selectedRange,
+  hideSummaryCards = false,
 }: NetRecognizedFeeDashboardProps) {
   const headlineValue = formatMoney(
     metrics.headlineNetRecognizedFeeMinor,
@@ -85,45 +82,40 @@ export function NetRecognizedFeeDashboard({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
-        </div>
-        <AdminDashboardRangeSelector
-          options={rangeOptions}
-          selected={selectedRange}
-          className="w-full sm:w-auto"
-        />
+      <div>
+        <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.primaryMetricTitle}
-          </p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums">{headlineValue}</p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {labels.primaryMetricDescription}
-          </p>
-        </div>
+      {hideSummaryCards ? null : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.primaryMetricTitle}
+            </p>
+            <p className="mt-2 text-3xl font-semibold tabular-nums">{headlineValue}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {labels.primaryMetricDescription}
+            </p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.capturedFeesLabel}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{capturedValue}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{labels.currenciesDescription}</p>
-        </div>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.capturedFeesLabel}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{capturedValue}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{labels.currenciesDescription}</p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.adjustmentsLabel}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{adjustmentsValue}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{labels.adjustmentsDescription}</p>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.adjustmentsLabel}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{adjustmentsValue}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{labels.adjustmentsDescription}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="rounded-xl border bg-card/80 p-4 shadow-sm">

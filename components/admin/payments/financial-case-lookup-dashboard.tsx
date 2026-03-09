@@ -1,4 +1,6 @@
+import { Button } from '@/components/ui/button';
 import type { FinancialCaseLookupResult } from '@/lib/payments/support/case-lookup';
+import Link from 'next/link';
 
 type FinancialCaseLookupLabels = {
   sectionTitle: string;
@@ -8,7 +10,9 @@ type FinancialCaseLookupLabels = {
   queryFieldLabel: string;
   queryPlaceholder: string;
   searchButtonLabel: string;
+  noQueryTitle: string;
   noQueryState: string;
+  noResultsTitle: string;
   noResultsState: string;
   disambiguationTitle: string;
   disambiguationDescription: string;
@@ -16,6 +20,8 @@ type FinancialCaseLookupLabels = {
   resultsTitle: string;
   resultsDescription: string;
   summaryLabel: string;
+  loadEvidenceLabel: string;
+  evidenceLoadedLabel: string;
   traceHeader: string;
   rootEntityHeader: string;
   organizerHeader: string;
@@ -32,14 +38,24 @@ type FinancialCaseLookupDashboardProps = {
   searchQuery: string;
   result: FinancialCaseLookupResult | null;
   labels: FinancialCaseLookupLabels;
+  workspace?: string;
+  selectedTraceId?: string;
 };
 
-function formatDate(value: Date | null, locale: 'es' | 'en'): string {
+function formatDate(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
   if (!value) return '—';
+  const normalized = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(normalized.getTime())) return '—';
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(value);
+  }).format(normalized);
+}
+
+function truncateMiddle(value: string | null | undefined, start = 10, end = 6): string {
+  if (!value) return '—';
+  if (value.length <= start + end + 1) return value;
+  return `${value.slice(0, start)}…${value.slice(-end)}`;
 }
 
 export function FinancialCaseLookupDashboard({
@@ -48,6 +64,8 @@ export function FinancialCaseLookupDashboard({
   searchQuery,
   result,
   labels,
+  workspace,
+  selectedTraceId,
 }: FinancialCaseLookupDashboardProps) {
   const hasQuery = searchQuery.trim().length > 0;
   const hasResults = (result?.cases.length ?? 0) > 0;
@@ -64,6 +82,7 @@ export function FinancialCaseLookupDashboard({
         <p className="mt-1 text-xs text-muted-foreground">{labels.searchDescription}</p>
         <form method="get" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="range" value={selectedRange} />
+          {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
           <label className="space-y-1 text-xs">
             <span className="uppercase tracking-wide text-muted-foreground">
               {labels.queryFieldLabel}
@@ -77,23 +96,22 @@ export function FinancialCaseLookupDashboard({
             />
           </label>
           <div className="self-end">
-            <button
-              type="submit"
-              className="rounded-md border bg-foreground px-4 py-2 text-sm font-medium text-background"
-            >
+            <Button type="submit" className="w-full md:w-auto">
               {labels.searchButtonLabel}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
 
       {!hasQuery ? (
-        <div className="rounded-xl border bg-card/80 p-4 text-sm text-muted-foreground shadow-sm">
-          {labels.noQueryState}
+        <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
+          <p className="text-sm font-medium">{labels.noQueryTitle}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{labels.noQueryState}</p>
         </div>
       ) : !hasResults ? (
-        <div className="rounded-xl border bg-card/80 p-4 text-sm text-muted-foreground shadow-sm">
-          {labels.noResultsState}
+        <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
+          <p className="text-sm font-medium">{labels.noResultsTitle}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{labels.noResultsState}</p>
         </div>
       ) : (
         <>
@@ -124,45 +142,109 @@ export function FinancialCaseLookupDashboard({
               {labels.summaryLabel}: {result?.totalCaseCount ?? 0}
             </p>
 
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[72rem] text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="pb-2 pr-4">{labels.traceHeader}</th>
-                    <th className="pb-2 pr-4">{labels.rootEntityHeader}</th>
-                    <th className="pb-2 pr-4">{labels.organizerHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.eventCountHeader}</th>
-                    <th className="pb-2 pr-4">{labels.firstEventHeader}</th>
-                    <th className="pb-2 pr-4">{labels.lastEventHeader}</th>
-                    <th className="pb-2 pr-4">{labels.identifiersHeader}</th>
-                    <th className="pb-2">{labels.sourcesHeader}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result?.cases.map((entry) => (
-                    <tr key={entry.traceId} className="border-t align-top">
-                      <td className="py-2 pr-4 font-mono text-xs">{entry.traceId}</td>
-                      <td className="py-2 pr-4 text-xs">
-                        {entry.rootEntityType}:{entry.rootEntityId}
-                      </td>
-                      <td className="py-2 pr-4 font-mono text-xs">
-                        {entry.organizerId ?? '—'}
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums">{entry.eventCount}</td>
-                      <td className="py-2 pr-4 text-xs text-muted-foreground">
-                        {formatDate(entry.firstOccurredAt, locale)}
-                      </td>
-                      <td className="py-2 pr-4 text-xs text-muted-foreground">
-                        {formatDate(entry.lastOccurredAt, locale)}
-                      </td>
-                      <td className="py-2 pr-4 text-xs">{entry.matchedIdentifiers.join(', ')}</td>
-                      <td className="py-2 text-xs text-muted-foreground">
-                        {entry.matchSources.join(', ')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mt-4 space-y-3">
+              {result?.cases.map((entry) => {
+                const isSelected = selectedTraceId === entry.traceId;
+                const href = new URLSearchParams({
+                  range: selectedRange,
+                  caseQuery: searchQuery,
+                  evidenceTraceId: entry.traceId,
+                });
+
+                if (workspace) {
+                  href.set('workspace', workspace);
+                }
+
+                return (
+                  <article
+                    key={entry.traceId}
+                    className="rounded-xl border bg-background/40 p-4 shadow-sm"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-2">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                            {labels.traceHeader}
+                          </p>
+                          <p className="mt-1 font-mono text-sm" title={entry.traceId}>
+                            {truncateMiddle(entry.traceId, 18, 10)}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+                            {labels.eventCountHeader}: {entry.eventCount}
+                          </span>
+                          <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+                            {labels.firstEventHeader}: {formatDate(entry.firstOccurredAt, locale)}
+                          </span>
+                          <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
+                            {labels.lastEventHeader}: {formatDate(entry.lastOccurredAt, locale)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <Button asChild size="sm" variant={isSelected ? 'secondary' : 'outline'}>
+                        <Link href={`?${href.toString()}`}>
+                          {isSelected ? labels.evidenceLoadedLabel : labels.loadEvidenceLabel}
+                        </Link>
+                      </Button>
+                    </div>
+
+                    <dl className="mt-4 grid gap-4 md:grid-cols-2">
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {labels.rootEntityHeader}
+                        </dt>
+                        <dd className="mt-1 text-sm">
+                          {entry.rootEntityType}:{truncateMiddle(entry.rootEntityId, 18, 10)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {labels.organizerHeader}
+                        </dt>
+                        <dd className="mt-1 font-mono text-sm" title={entry.organizerId ?? ''}>
+                          {truncateMiddle(entry.organizerId, 12, 8)}
+                        </dd>
+                      </div>
+                    </dl>
+
+                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {labels.identifiersHeader}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {entry.matchedIdentifiers.map((identifier) => (
+                            <span
+                              key={`${entry.traceId}:${identifier}`}
+                              className="rounded-full border px-2.5 py-1 text-xs"
+                              title={identifier}
+                            >
+                              {truncateMiddle(identifier, 12, 8)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          {labels.sourcesHeader}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {entry.matchSources.map((source) => (
+                            <span
+                              key={`${entry.traceId}:${source}`}
+                              className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground"
+                            >
+                              {source}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           </div>
         </>

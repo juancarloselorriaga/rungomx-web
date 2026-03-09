@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import type { FinancialEvidencePack } from '@/lib/payments/support/evidence-pack';
 
 type EvidencePackReviewLabels = {
@@ -8,7 +9,9 @@ type EvidencePackReviewLabels = {
   traceFieldLabel: string;
   tracePlaceholder: string;
   loadButtonLabel: string;
+  noTraceTitle: string;
   noTraceState: string;
+  notFoundTitle: string;
   notFoundState: string;
   summaryTitle: string;
   summaryDescription: string;
@@ -51,14 +54,17 @@ type EvidencePackReviewDashboardProps = {
   selectedTraceId: string;
   evidencePack: FinancialEvidencePack | null;
   labels: EvidencePackReviewLabels;
+  workspace?: string;
 };
 
-function formatDate(value: Date | null, locale: 'es' | 'en'): string {
+function formatDate(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
   if (!value) return '—';
+  const normalized = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(normalized.getTime())) return '—';
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
-  }).format(value);
+  }).format(normalized);
 }
 
 function truncateJson(value: unknown, limit = 120): string {
@@ -67,9 +73,15 @@ function truncateJson(value: unknown, limit = 120): string {
   return `${raw.slice(0, limit)}...`;
 }
 
-function formatOwnershipState(value: string): string {
-  if (value === 'action_needed') return 'Action Needed';
-  if (value === 'in_progress') return 'In Progress';
+function truncateMiddle(value: string | null | undefined, start = 10, end = 6): string {
+  if (!value) return '—';
+  if (value.length <= start + end + 1) return value;
+  return `${value.slice(0, start)}…${value.slice(-end)}`;
+}
+
+function formatOwnershipState(value: string, locale: 'es' | 'en'): string {
+  if (value === 'action_needed') return locale === 'es' ? 'Acción requerida' : 'Action needed';
+  if (value === 'in_progress') return locale === 'es' ? 'En progreso' : 'In progress';
   return value;
 }
 
@@ -87,6 +99,7 @@ export function EvidencePackReviewDashboard({
   selectedTraceId,
   evidencePack,
   labels,
+  workspace,
 }: EvidencePackReviewDashboardProps) {
   const traceInput = selectedTraceId.trim();
   const hasTrace = traceInput.length > 0;
@@ -109,6 +122,7 @@ export function EvidencePackReviewDashboard({
         <form method="get" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="range" value={selectedRange} />
           <input type="hidden" name="lookupQuery" value={searchQuery} />
+          {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
           <label className="space-y-1 text-xs">
             <span className="uppercase tracking-wide text-muted-foreground">
               {labels.traceFieldLabel}
@@ -122,23 +136,22 @@ export function EvidencePackReviewDashboard({
             />
           </label>
           <div className="self-end">
-            <button
-              type="submit"
-              className="rounded-md border bg-foreground px-4 py-2 text-sm font-medium text-background"
-            >
+            <Button type="submit" className="w-full md:w-auto">
               {labels.loadButtonLabel}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
 
       {!hasTrace ? (
-        <div className="rounded-xl border bg-card/80 p-4 text-sm text-muted-foreground shadow-sm">
-          {labels.noTraceState}
+        <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
+          <p className="text-sm font-medium">{labels.noTraceTitle}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{labels.noTraceState}</p>
         </div>
       ) : !evidencePack ? (
-        <div className="rounded-xl border bg-card/80 p-4 text-sm text-muted-foreground shadow-sm">
-          {labels.notFoundState}
+        <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
+          <p className="text-sm font-medium">{labels.notFoundTitle}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{labels.notFoundState}</p>
         </div>
       ) : (
         <>
@@ -169,7 +182,8 @@ export function EvidencePackReviewDashboard({
                   {labels.rootEntityLabel}
                 </p>
                 <p className="mt-1 text-xs font-mono">
-                  {evidencePack.rootEntity.entityType}:{evidencePack.rootEntity.entityId}
+                  {evidencePack.rootEntity.entityType}:
+                  {truncateMiddle(evidencePack.rootEntity.entityId)}
                 </p>
               </div>
               <div className="rounded border p-3">
@@ -185,7 +199,7 @@ export function EvidencePackReviewDashboard({
                   {labels.currentStateLabel}
                 </p>
                 <p className="mt-1 text-xs">
-                  {formatOwnershipState(evidencePack.ownership.currentState)}
+                  {formatOwnershipState(evidencePack.ownership.currentState, locale)}
                 </p>
               </div>
               <div className="rounded border p-3">
@@ -248,6 +262,7 @@ export function EvidencePackReviewDashboard({
                       <td className="py-2 pr-4 text-xs">
                         {formatOwnershipState(
                           ownershipByEventId.get(event.id)?.ownershipState ?? 'in_progress',
+                          locale,
                         )}
                       </td>
                       <td className="py-2 pr-4 text-xs">
@@ -284,9 +299,16 @@ export function EvidencePackReviewDashboard({
                     {evidencePack.artifacts.versions.map((version) => (
                       <tr key={version.id} className="border-t align-top">
                         <td className="py-2 pr-4 tabular-nums">{version.artifactVersion}</td>
-                        <td className="py-2 pr-4 font-mono text-xs">{version.fingerprint}</td>
+                        <td
+                          className="py-2 pr-4 font-mono text-xs"
+                          title={version.fingerprint}
+                        >
+                          {truncateMiddle(version.fingerprint)}
+                        </td>
                         <td className="py-2 pr-4 text-xs text-muted-foreground">
-                          {version.rebuiltFromVersionId ?? 'root'}
+                          {version.rebuiltFromVersionId
+                            ? truncateMiddle(version.rebuiltFromVersionId)
+                            : 'root'}
                         </td>
                         <td className="py-2 pr-4 text-xs">{version.reasonCode}</td>
                         <td className="py-2 text-xs text-muted-foreground">
@@ -316,7 +338,7 @@ export function EvidencePackReviewDashboard({
                       <tr key={delivery.id} className="border-t align-top">
                         <td className="py-2 pr-4 text-xs">{delivery.channel}</td>
                         <td className="py-2 pr-4 text-xs text-muted-foreground">
-                          {delivery.recipientReference ?? '—'}
+                          {truncateMiddle(delivery.recipientReference, 14, 6)}
                         </td>
                         <td className="py-2 pr-4 text-xs">{delivery.reasonCode}</td>
                         <td className="py-2 text-xs text-muted-foreground">

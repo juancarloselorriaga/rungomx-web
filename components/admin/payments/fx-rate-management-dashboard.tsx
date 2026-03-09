@@ -39,6 +39,7 @@ type FxRateManagementDashboardProps = {
   flags: FxRateActionFlags;
   labels: FxRateManagementLabels;
   upsertAction: (formData: FormData) => void | Promise<void>;
+  hideSummaryCards?: boolean;
 };
 
 function formatDate(value: Date, locale: 'es' | 'en'): string {
@@ -57,6 +58,7 @@ export function FxRateManagementDashboard({
   flags,
   labels,
   upsertAction,
+  hideSummaryCards = false,
 }: FxRateManagementDashboardProps) {
   const [effectiveDate, setEffectiveDate] = useState('');
   const clearDateLabel = locale === 'es' ? 'Limpiar' : 'Clear';
@@ -68,21 +70,23 @@ export function FxRateManagementDashboard({
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.missingTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{flags.missingRates.length}</p>
-        </div>
+      {hideSummaryCards ? null : (
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.missingTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{flags.missingRates.length}</p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.staleTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{flags.staleRates.length}</p>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.staleTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{flags.staleRates.length}</p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         {flags.hasActions ? (

@@ -23,6 +23,7 @@ type MxnReportingDashboardProps = {
   locale: 'es' | 'en';
   report: MxnNetRecognizedFeeReport;
   labels: MxnReportingDashboardLabels;
+  hideSummaryCards?: boolean;
 };
 
 function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
@@ -35,17 +36,26 @@ function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'):
 }
 
 function formatSnapshotReference(
-  effectiveAt: Date,
+  effectiveAt: Date | string,
   rateToMxn: number,
   locale: 'es' | 'en',
 ): string {
+  const normalized = effectiveAt instanceof Date ? effectiveAt : new Date(effectiveAt);
+  if (Number.isNaN(normalized.getTime())) {
+    return rateToMxn.toFixed(4);
+  }
   const dateLabel = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
-  }).format(effectiveAt);
+  }).format(normalized);
   return `${dateLabel} · ${rateToMxn.toFixed(4)}`;
 }
 
-export function MxnReportingDashboard({ locale, report, labels }: MxnReportingDashboardProps) {
+export function MxnReportingDashboard({
+  locale,
+  report,
+  labels,
+  hideSummaryCards = false,
+}: MxnReportingDashboardProps) {
   return (
     <section className="space-y-4">
       <div>
@@ -53,32 +63,34 @@ export function MxnReportingDashboard({ locale, report, labels }: MxnReportingDa
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.headlineTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {formatMoney(report.headlineMxnNetRecognizedFeeMinor, 'MXN', locale)}
-          </p>
-        </div>
+      {hideSummaryCards ? null : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.headlineTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {formatMoney(report.headlineMxnNetRecognizedFeeMinor, 'MXN', locale)}
+            </p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.convertedEventsTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{report.convertedEventCount}</p>
-        </div>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.convertedEventsTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">{report.convertedEventCount}</p>
+          </div>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.missingSnapshotsTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {report.missingSnapshotEventCount}
-          </p>
+          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {labels.missingSnapshotsTitle}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {report.missingSnapshotEventCount}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
         <h3 className="text-sm font-semibold">{labels.tableTitle}</h3>
