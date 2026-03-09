@@ -19,16 +19,36 @@
         "description": "We found {payoutCount} payout lifecycle events in the selected period, but no captured charges or financial adjustments. That is why Overview and Risk are showing zeros."
       },
       "investigation": {
+        "eyebrow": "Casework",
+        "title": "Cases and evidence",
+        "description": "Use one of these entry points depending on what you already have. Search first if you only know a payout ID or another technical identifier. Open a trace directly if support already gave you the trace.",
+        "helpTitle": "Where do these IDs come from?",
+        "evidenceReadyEyebrow": "Ready to review",
+        "evidenceReadyTitle": "Evidence is ready for this trace",
+        "evidenceReadyDescription": "You already identified a matching trace. Open the trace view to review events, policy context, and statement records.",
+        "openTraceLabel": "Open trace view",
         "lookupActive": "A lookup is currently active.",
         "lookupIdle": "Start with a payout ID, a trace, or another technical identifier.",
-        "lookupStepEyebrow": "Step 1",
         "evidenceActive": "An evidence pack is currently loaded.",
         "evidenceIdle": "Load a trace when you need to review evidence.",
-        "evidenceStepEyebrow": "Step 2",
         "guidanceTitle": "What you can search here",
         "guidanceDescription": "This works with payout IDs, traces, and other technical identifiers shared by support or engineering. If you do not have one of those identifiers yet, this view will not help much.",
         "whereToFindIdsTitle": "Where those IDs usually come from",
-        "whereToFindIdsDescription": "Payout IDs come from organizer payments. Traces come from Cases, Evidence, or support tooling. Idempotency keys are usually shared only by support or engineering."
+        "whereToFindIdsDescription": "Payout IDs usually come from organizer payments. Trace IDs usually come from a previous support case, evidence review, or an internal escalation. Idempotency keys are normally shared only by support or engineering.",
+        "tools": {
+          "lookup": {
+            "title": "Find by identifier",
+            "description": "Use this when you have a payout ID or another shared technical reference, but not the trace yet.",
+            "activeState": "Search in progress",
+            "idleState": "Best when you do not have the trace yet"
+          },
+          "trace": {
+            "title": "Open a trace",
+            "description": "Use this when support or engineering already gave you the trace and you want to inspect evidence directly.",
+            "activeState": "Trace loaded",
+            "idleState": "Best when you already know the trace"
+          }
+        }
       },
       "overview": {
         "heroEyebrow": "Fees in scope",

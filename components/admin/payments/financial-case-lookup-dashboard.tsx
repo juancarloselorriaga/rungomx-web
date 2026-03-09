@@ -40,6 +40,7 @@ type FinancialCaseLookupDashboardProps = {
   labels: FinancialCaseLookupLabels;
   workspace?: string;
   selectedTraceId?: string;
+  investigationTool?: 'lookup' | 'trace';
 };
 
 function formatDate(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
@@ -66,6 +67,7 @@ export function FinancialCaseLookupDashboard({
   labels,
   workspace,
   selectedTraceId,
+  investigationTool,
 }: FinancialCaseLookupDashboardProps) {
   const hasQuery = searchQuery.trim().length > 0;
   const hasResults = (result?.cases.length ?? 0) > 0;
@@ -83,6 +85,9 @@ export function FinancialCaseLookupDashboard({
         <form method="get" className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="range" value={selectedRange} />
           {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
+          {investigationTool ? (
+            <input type="hidden" name="investigationTool" value={investigationTool} />
+          ) : null}
           <label className="space-y-1 text-xs">
             <span className="uppercase tracking-wide text-muted-foreground">
               {labels.queryFieldLabel}
@@ -149,6 +154,7 @@ export function FinancialCaseLookupDashboard({
                   range: selectedRange,
                   caseQuery: searchQuery,
                   evidenceTraceId: entry.traceId,
+                  investigationTool: 'trace',
                 });
 
                 if (workspace) {

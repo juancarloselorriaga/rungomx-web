@@ -95,6 +95,17 @@ function normalizeWorkspace(
   return 'overview';
 }
 
+function normalizeInvestigationTool(
+  rawTool: string | undefined,
+  hasSelectedTrace: boolean,
+): 'lookup' | 'trace' {
+  if (rawTool === 'lookup' || rawTool === 'trace') {
+    return rawTool;
+  }
+
+  return hasSelectedTrace ? 'trace' : 'lookup';
+}
+
 function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -211,6 +222,7 @@ export default async function AdminPaymentsEconomicsPage({
       : Array.isArray(workspaceParam)
         ? workspaceParam[0]
         : undefined;
+  const investigationToolParam = resolvedSearchParams.investigationTool;
   const primaryCaseQuery =
     typeof caseQueryParam === 'string'
       ? caseQueryParam
@@ -230,11 +242,21 @@ export default async function AdminPaymentsEconomicsPage({
       : Array.isArray(evidenceTraceIdParam)
         ? evidenceTraceIdParam[0] ?? ''
         : '';
+  const rawInvestigationTool =
+    typeof investigationToolParam === 'string'
+      ? investigationToolParam
+      : Array.isArray(investigationToolParam)
+        ? investigationToolParam[0]
+        : undefined;
   const evidenceViewRole: EvidencePackViewRole = authContext.permissions.canManageUsers
     ? 'admin'
     : 'support';
   const selectedRange = normalizeRange(rawRange);
   const activeWorkspace = normalizeWorkspace(rawWorkspace);
+  const activeInvestigationTool = normalizeInvestigationTool(
+    rawInvestigationTool,
+    evidenceTraceId.trim().length > 0,
+  );
   const rangeDays = rangeToDays(selectedRange);
   const [
     metrics,
@@ -851,60 +873,145 @@ export default async function AdminPaymentsEconomicsPage({
   } else if (activeWorkspace === 'investigation') {
     workspaceContent = (
       <div className="space-y-6">
-        <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
+        <section className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+          <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-              {tPayments('investigation.lookupStepEyebrow')}
+              {tPayments('investigation.eyebrow')}
             </p>
-            <h3 className="mt-3 text-lg font-semibold">{caseLookupLabels.sectionTitle}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {caseQuery.trim().length > 0
-                ? tPayments('investigation.lookupActive')
-                : tPayments('investigation.lookupIdle')}
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {tPayments('investigation.title')}
+            </h2>
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              {tPayments('investigation.description')}
             </p>
           </div>
-          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-              {tPayments('investigation.evidenceStepEyebrow')}
-            </p>
-            <h3 className="mt-3 text-lg font-semibold">{evidenceLabels.sectionTitle}</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {evidenceTraceId.trim().length > 0
-                ? tPayments('investigation.evidenceActive')
-                : tPayments('investigation.evidenceIdle')}
-            </p>
+
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            {(
+              [
+                {
+                  id: 'lookup' as const,
+                  title: tPayments('investigation.tools.lookup.title'),
+                  description: tPayments('investigation.tools.lookup.description'),
+                  status:
+                    caseQuery.trim().length > 0
+                      ? tPayments('investigation.tools.lookup.activeState')
+                      : tPayments('investigation.tools.lookup.idleState'),
+                },
+                {
+                  id: 'trace' as const,
+                  title: tPayments('investigation.tools.trace.title'),
+                  description: tPayments('investigation.tools.trace.description'),
+                  status:
+                    evidenceTraceId.trim().length > 0
+                      ? tPayments('investigation.tools.trace.activeState')
+                      : tPayments('investigation.tools.trace.idleState'),
+                },
+              ] satisfies Array<{
+                id: 'lookup' | 'trace';
+                title: string;
+                description: string;
+                status: string;
+              }>
+            ).map((tool) => {
+              const isActive = tool.id === activeInvestigationTool;
+              const nextParams = new URLSearchParams();
+              nextParams.set('workspace', activeWorkspace);
+              nextParams.set('investigationTool', tool.id);
+              nextParams.set('range', selectedRange);
+              if (caseQuery.trim()) nextParams.set('caseQuery', caseQuery);
+              if (evidenceTraceId.trim()) nextParams.set('evidenceTraceId', evidenceTraceId);
+
+              return (
+                <a
+                  key={tool.id}
+                  href={`?${nextParams.toString()}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={[
+                    'rounded-2xl border px-4 py-4 shadow-sm transition',
+                    isActive
+                      ? 'border-primary/40 bg-primary/10'
+                      : 'bg-background/50 hover:border-primary/30 hover:bg-card',
+                  ].join(' ')}
+                >
+                  <p className="text-sm font-semibold">{tool.title}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
+                  <p className="mt-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                    {tool.status}
+                  </p>
+                </a>
+              );
+            })}
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {tPayments('investigation.guidanceTitle')}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {tPayments('investigation.guidanceDescription')}
-            </p>
+        <details className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+          <summary className="cursor-pointer list-none text-sm font-semibold">
+            {tPayments('investigation.helpTitle')}
+          </summary>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('investigation.guidanceTitle')}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {tPayments('investigation.guidanceDescription')}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('investigation.whereToFindIdsTitle')}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {tPayments('investigation.whereToFindIdsDescription')}
+              </p>
+            </div>
           </div>
-          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {tPayments('investigation.whereToFindIdsTitle')}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {tPayments('investigation.whereToFindIdsDescription')}
-            </p>
-          </div>
-        </section>
+        </details>
 
-        <div className="grid gap-6 2xl:grid-cols-[0.95fr_1.05fr]">
-          <FinancialCaseLookupDashboard
-            locale={locale as AppLocale}
-            selectedRange={selectedRange}
-            searchQuery={caseQuery}
-            result={caseLookupResult}
-            labels={caseLookupLabels}
-            workspace={activeWorkspace}
-            selectedTraceId={evidenceTraceId}
-          />
+        {activeInvestigationTool === 'lookup' ? (
+          <div className="space-y-6">
+            <FinancialCaseLookupDashboard
+              locale={locale as AppLocale}
+              selectedRange={selectedRange}
+              searchQuery={caseQuery}
+              result={caseLookupResult}
+              labels={caseLookupLabels}
+              workspace={activeWorkspace}
+              selectedTraceId={evidenceTraceId}
+              investigationTool={activeInvestigationTool}
+            />
+            {evidenceTraceId.trim().length > 0 ? (
+              <section className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  {tPayments('investigation.evidenceReadyEyebrow')}
+                </p>
+                <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      {tPayments('investigation.evidenceReadyTitle')}
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {tPayments('investigation.evidenceReadyDescription')}
+                    </p>
+                  </div>
+                  <a
+                    href={`?${new URLSearchParams({
+                      workspace: activeWorkspace,
+                      investigationTool: 'trace',
+                      range: selectedRange,
+                      ...(caseQuery.trim() ? { caseQuery } : {}),
+                      evidenceTraceId,
+                    }).toString()}`}
+                    className="inline-flex h-10 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 px-4 text-sm font-medium text-foreground transition hover:bg-primary/15"
+                  >
+                    {tPayments('investigation.openTraceLabel')}
+                  </a>
+                </div>
+              </section>
+            ) : null}
+          </div>
+        ) : (
           <EvidencePackReviewDashboard
             locale={locale as AppLocale}
             selectedRange={selectedRange}
@@ -913,8 +1020,9 @@ export default async function AdminPaymentsEconomicsPage({
             evidencePack={evidencePack}
             labels={evidenceLabels}
             workspace={activeWorkspace}
+            investigationTool={activeInvestigationTool}
           />
-        </div>
+        )}
       </div>
     );
   }
@@ -931,7 +1039,7 @@ export default async function AdminPaymentsEconomicsPage({
             <AdminDashboardRangeSelector
               options={rangeOptions}
               selected={selectedRange}
-              className="w-full sm:w-auto"
+              className="w-full max-w-[38rem]"
             />
           ) : null
         }

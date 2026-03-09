@@ -37,7 +37,7 @@ export function AdminDashboardRangeSelector({
   return (
     <div
       className={cn(
-        'inline-flex w-full flex-wrap gap-1 rounded-2xl border bg-muted/25 p-1 sm:w-auto',
+        'grid w-full grid-cols-1 gap-2 rounded-2xl border bg-muted/25 p-1 sm:grid-cols-3',
         className,
       )}
       role="group"
@@ -51,7 +51,7 @@ export function AdminDashboardRangeSelector({
           aria-pressed={option.value === selected}
           onClick={() => handleChange(option.value)}
           className={cn(
-            'h-9 min-w-[5.5rem] flex-1 rounded-xl border-transparent px-3 text-xs font-medium whitespace-nowrap shadow-none sm:flex-none',
+            'h-10 w-full rounded-xl border-transparent px-4 text-sm font-medium whitespace-nowrap shadow-none',
             option.value === selected
               ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/12'
               : 'bg-transparent text-muted-foreground hover:bg-background hover:text-foreground',

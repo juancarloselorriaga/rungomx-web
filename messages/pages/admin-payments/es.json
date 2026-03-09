@@ -19,16 +19,36 @@
         "description": "En el periodo revisado encontramos {payoutCount} movimientos de retiro, pero ningún cobro capturado ni ningún ajuste financiero. Por eso Resumen y Riesgo aparecen en cero."
       },
       "investigation": {
+        "eyebrow": "Casos",
+        "title": "Casos y evidencia",
+        "description": "Usa una de estas dos entradas según lo que ya tengas. Busca primero si sólo conoces el ID del retiro u otro identificador técnico. Abre una traza directo si soporte ya te compartió la traza.",
+        "helpTitle": "¿De dónde salen estos identificadores?",
+        "evidenceReadyEyebrow": "Listo para revisar",
+        "evidenceReadyTitle": "Ya hay evidencia lista para esta traza",
+        "evidenceReadyDescription": "Ya identificaste una traza coincidente. Abre la vista de traza para revisar eventos, contexto de política y registros del comprobante.",
+        "openTraceLabel": "Abrir vista de traza",
         "lookupActive": "Hay una búsqueda activa en curso.",
         "lookupIdle": "Empieza con un ID de retiro, una traza o una llave técnica.",
-        "lookupStepEyebrow": "Paso 1",
         "evidenceActive": "Hay un paquete de evidencia cargado.",
         "evidenceIdle": "Carga una traza cuando necesites revisar evidencia.",
-        "evidenceStepEyebrow": "Paso 2",
         "guidanceTitle": "Qué puedes buscar aquí",
         "guidanceDescription": "Sirven el ID de retiro, la traza técnica y algunas llaves internas que soporte o ingeniería compartan contigo. Si no tienes uno de esos datos, esta vista no te va a ayudar todavía.",
         "whereToFindIdsTitle": "Dónde suelen salir esos IDs",
-        "whereToFindIdsDescription": "El ID de retiro sale en pagos del organizador. La traza sale en Casos, Evidencia o soporte técnico. Las llaves de idempotencia normalmente sólo las comparte soporte o ingeniería."
+        "whereToFindIdsDescription": "El ID del retiro normalmente sale en pagos del organizador. La traza normalmente sale de un caso previo de soporte, de una revisión de evidencia o de una escalación interna. Las llaves de idempotencia casi siempre las comparte soporte o ingeniería.",
+        "tools": {
+          "lookup": {
+            "title": "Buscar por identificador",
+            "description": "Úsalo cuando tienes un ID de retiro u otra referencia técnica compartida, pero todavía no la traza.",
+            "activeState": "Búsqueda en curso",
+            "idleState": "Útil cuando todavía no tienes la traza"
+          },
+          "trace": {
+            "title": "Abrir una traza",
+            "description": "Úsalo cuando soporte o ingeniería ya te compartieron la traza y quieres revisar la evidencia directo.",
+            "activeState": "Traza cargada",
+            "idleState": "Útil cuando ya conoces la traza"
+          }
+        }
       },
       "overview": {
         "heroEyebrow": "Comisiones consideradas",

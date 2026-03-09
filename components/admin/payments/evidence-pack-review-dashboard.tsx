@@ -55,6 +55,7 @@ type EvidencePackReviewDashboardProps = {
   evidencePack: FinancialEvidencePack | null;
   labels: EvidencePackReviewLabels;
   workspace?: string;
+  investigationTool?: 'lookup' | 'trace';
 };
 
 function formatDate(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
@@ -100,6 +101,7 @@ export function EvidencePackReviewDashboard({
   evidencePack,
   labels,
   workspace,
+  investigationTool,
 }: EvidencePackReviewDashboardProps) {
   const traceInput = selectedTraceId.trim();
   const hasTrace = traceInput.length > 0;
@@ -123,6 +125,9 @@ export function EvidencePackReviewDashboard({
           <input type="hidden" name="range" value={selectedRange} />
           <input type="hidden" name="lookupQuery" value={searchQuery} />
           {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
+          {investigationTool ? (
+            <input type="hidden" name="investigationTool" value={investigationTool} />
+          ) : null}
           <label className="space-y-1 text-xs">
             <span className="uppercase tracking-wide text-muted-foreground">
               {labels.traceFieldLabel}
