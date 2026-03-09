@@ -64,7 +64,6 @@ async function main() {
   }
 
   if (changed.length > 0) {
-    // eslint-disable-next-line no-console
     console.log(`[e2e] Patched next-intl for Node ESM: ${changed.length} file(s) updated`);
   }
 }

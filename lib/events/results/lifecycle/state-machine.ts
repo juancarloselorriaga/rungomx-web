@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { resultVersions } from '@/db/schema';
+import { toResultVersionRecord } from '@/lib/events/results/shared/mappers';
 import type {
   ResultVersionRecord,
   ResultVersionStatus,
@@ -21,27 +22,6 @@ const ALLOWED_TRANSITIONS: Record<ResultVersionStatus, readonly ResultVersionSta
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
-}
-
-function toResultVersionRecord(
-  row: typeof resultVersions.$inferSelect,
-): ResultVersionRecord {
-  return {
-    id: row.id,
-    editionId: row.editionId,
-    status: row.status,
-    source: row.source,
-    versionNumber: row.versionNumber,
-    parentVersionId: row.parentVersionId,
-    createdByUserId: row.createdByUserId,
-    finalizedByUserId: row.finalizedByUserId,
-    finalizedAt: row.finalizedAt,
-    sourceFileChecksum: row.sourceFileChecksum,
-    sourceReference: row.sourceReference,
-    provenanceJson: row.provenanceJson,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
 }
 
 function canTransitionResultVersionLifecycle(

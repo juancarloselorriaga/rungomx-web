@@ -6,6 +6,8 @@ import type { AuthContext } from '@/lib/auth/server';
 import { canUserAccessEvent, requireOrgPermission } from '@/lib/organizations/permissions';
 import { getUploadLinkByToken } from './queries';
 
+type AccessError = { error: string; code: 'FORBIDDEN' };
+
 export type BatchAccessResult = {
   batch: typeof groupRegistrationBatches.$inferSelect;
   uploadLink: NonNullable<Awaited<ReturnType<typeof getUploadLinkByToken>>['link']>;
@@ -19,6 +21,44 @@ export class BatchAccessError extends Error {
   constructor(code: 'NOT_FOUND' | 'FORBIDDEN' | 'LINK_INVALID', message: string) {
     super(message);
     this.code = code;
+  }
+}
+
+export function getOrganizerGroupUploadAccessError(
+  authContext: AuthContext,
+): AccessError | null {
+  if (authContext.permissions.canManageEvents) {
+    return null;
+  }
+
+  if (!authContext.permissions.canViewOrganizersDashboard) {
+    return {
+      error: 'You do not have permission to manage events',
+      code: 'FORBIDDEN',
+    };
+  }
+
+  return null;
+}
+
+export async function getEditionGroupUploadPermissionError(params: {
+  authContext: AuthContext;
+  editionId: string;
+}): Promise<AccessError | null> {
+  if (params.authContext.permissions.canManageEvents) {
+    return null;
+  }
+
+  const membership = await canUserAccessEvent(
+    params.authContext.user!.id,
+    params.editionId,
+  );
+
+  try {
+    requireOrgPermission(membership, 'canEditRegistrationSettings');
+    return null;
+  } catch {
+    return { error: 'Permission denied', code: 'FORBIDDEN' };
   }
 }
 

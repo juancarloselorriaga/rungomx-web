@@ -1,12 +1,14 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { organizations } from '@/db/schema';
-import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
+import {
+  findActivePaymentsOrganization,
+  parsePaymentsQuery,
+  requireAuthenticatedPaymentsContext,
+  requireOrganizerWriteAccess,
+  withNoStore,
+} from '@/app/api/payments/_shared';
 import { listRefundAdminReviewQueue } from '@/lib/payments/refunds/escalation-and-goodwill';
-import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
 const querySchema = z.object({
   organizationId: z.string().uuid(),
@@ -22,11 +24,10 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const authContext = authResult.context;
 
-  const url = new URL(request.url);
-  const parseResult = querySchema.safeParse({
-    organizationId: url.searchParams.get('organizationId'),
-    limit: url.searchParams.get('limit') ?? undefined,
-  });
+  const parseResult = parsePaymentsQuery(request, querySchema, (searchParams) => ({
+    organizationId: searchParams.get('organizationId'),
+    limit: searchParams.get('limit') ?? undefined,
+  }));
 
   if (!parseResult.success) {
     return withNoStore(
@@ -42,22 +43,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const { organizationId, limit } = parseResult.data;
 
-  if (!authContext.permissions.canManageEvents) {
-    const membership = await getOrgMembership(authContext.user.id, organizationId);
-    try {
-      requireOrgPermission(membership, 'canEditRegistrationSettings');
-    } catch {
-      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
-    }
+  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  if (!accessResult.ok) {
+    return accessResult.response;
   }
 
-  const organization = await db.query.organizations.findFirst({
-    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
-    columns: { id: true },
-  });
-
-  if (!organization) {
-    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
+  const organizationResult = await findActivePaymentsOrganization(organizationId);
+  if (!organizationResult.ok) {
+    return organizationResult.response;
   }
 
   try {
