@@ -13,6 +13,7 @@ import type {
   ArtifactGovernanceSummary,
   ArtifactVersionRecord,
 } from '@/lib/payments/artifacts/governance';
+import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 
 type ArtifactGovernanceLabels = {
@@ -321,21 +322,17 @@ export function ArtifactGovernanceDashboard({
           </FormField>
 
           <div className="flex flex-wrap gap-2 md:col-span-2">
-            <button
-              type="submit"
-              disabled={form.isSubmitting}
-              className="rounded-md border bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
-            >
+            <Button type="submit" disabled={form.isSubmitting}>
               {form.isSubmitting ? labels.submittingLabel : labels.submitLabel}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               disabled={isRefreshing}
               onClick={refreshSummary}
-              className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-60"
             >
               {isRefreshing ? labels.refreshingLabel : labels.refreshLabel}
-            </button>
+            </Button>
           </div>
         </Form>
 

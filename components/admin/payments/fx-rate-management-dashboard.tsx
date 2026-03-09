@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import type {
   DailyFxRateRecord,
@@ -190,12 +191,9 @@ export function FxRateManagementDashboard({
           </label>
 
           <div className="md:col-span-2 xl:col-span-4">
-            <button
-              type="submit"
-              className="rounded-md border bg-foreground px-4 py-2 text-sm font-medium text-background"
-            >
+            <Button type="submit">
               {labels.submitLabel}
-            </button>
+            </Button>
           </div>
         </form>
       </details>

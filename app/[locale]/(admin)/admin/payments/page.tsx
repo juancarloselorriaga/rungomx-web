@@ -15,6 +15,8 @@ import { MxnReportingDashboard } from '@/components/admin/payments/mxn-reporting
 import { NetRecognizedFeeDashboard } from '@/components/admin/payments/net-recognized-fee-dashboard';
 import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
+import { db } from '@/db';
+import { moneyEvents } from '@/db/schema';
 import { getArtifactGovernanceSummary } from '@/lib/payments/artifacts/governance';
 import { getAdminDebtDisputeExposureMetrics } from '@/lib/payments/economics/debt-dispute-exposure';
 import {
@@ -30,6 +32,7 @@ import { type AppLocale } from '@/i18n/routing';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { and, gte, inArray, lte, sql } from 'drizzle-orm';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -109,6 +112,64 @@ function formatDateTime(value: Date | string | null | undefined, locale: 'es' | 
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(normalized);
+}
+
+const adminPaymentsContextEventNames = [
+  'payment.captured',
+  'financial.adjustment_posted',
+  'payout.requested',
+  'payout.processing',
+  'payout.paused',
+  'payout.resumed',
+  'payout.completed',
+  'payout.failed',
+] as const;
+
+type AdminPaymentsContextSummary = {
+  capturedCount: number;
+  adjustmentCount: number;
+  payoutLifecycleCount: number;
+};
+
+async function getAdminPaymentsContextSummary(params: {
+  windowStart: Date;
+  windowEnd: Date;
+}): Promise<AdminPaymentsContextSummary> {
+  const rows = await db
+    .select({
+      eventName: moneyEvents.eventName,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(moneyEvents)
+    .where(
+      and(
+        inArray(moneyEvents.eventName, adminPaymentsContextEventNames),
+        gte(moneyEvents.occurredAt, params.windowStart),
+        lte(moneyEvents.occurredAt, params.windowEnd),
+      ),
+    )
+    .groupBy(moneyEvents.eventName);
+
+  let capturedCount = 0;
+  let adjustmentCount = 0;
+  let payoutLifecycleCount = 0;
+
+  for (const row of rows) {
+    const count = Number(row.count);
+    if (row.eventName === 'payment.captured') {
+      capturedCount += count;
+    } else if (row.eventName === 'financial.adjustment_posted') {
+      adjustmentCount += count;
+    } else {
+      payoutLifecycleCount += count;
+    }
+  }
+
+  return {
+    capturedCount,
+    adjustmentCount,
+    payoutLifecycleCount,
+  };
 }
 
 export default async function AdminPaymentsEconomicsPage({
@@ -219,6 +280,10 @@ export default async function AdminPaymentsEconomicsPage({
   const mxnReport = await getAdminMxnNetRecognizedFeeReport({
     days: rangeDays,
     snapshots: fxSnapshots,
+  });
+  const contextSummary = await getAdminPaymentsContextSummary({
+    windowStart: metrics.windowStart,
+    windowEnd: metrics.windowEnd,
   });
 
   const labels = {
@@ -460,6 +525,9 @@ export default async function AdminPaymentsEconomicsPage({
     hasRiskAttention ||
     exposureMetrics.organizers.length > 0 ||
     exposureMetrics.events.length > 0;
+  const hasEconomicsData =
+    contextSummary.capturedCount > 0 || contextSummary.adjustmentCount > 0;
+  const hasPayoutOnlyContext = !hasEconomicsData && contextSummary.payoutLifecycleCount > 0;
 
   let workspaceContent: ReactNode = null;
 
@@ -744,6 +812,25 @@ export default async function AdminPaymentsEconomicsPage({
           {tPayments('sections.operationsNote')}
         </div>
 
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('operationsGuidance.fxTitle')}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tPayments('operationsGuidance.fxDescription')}
+            </p>
+          </div>
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('operationsGuidance.artifactsTitle')}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tPayments('operationsGuidance.artifactsDescription')}
+            </p>
+          </div>
+        </section>
+
         <div className="space-y-6">
           <FxRateManagementDashboard
             locale={locale as AppLocale}
@@ -785,6 +872,25 @@ export default async function AdminPaymentsEconomicsPage({
               {evidenceTraceId.trim().length > 0
                 ? tPayments('investigation.evidenceActive')
                 : tPayments('investigation.evidenceIdle')}
+            </p>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('investigation.guidanceTitle')}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tPayments('investigation.guidanceDescription')}
+            </p>
+          </div>
+          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('investigation.whereToFindIdsTitle')}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tPayments('investigation.whereToFindIdsDescription')}
             </p>
           </div>
         </section>
@@ -852,6 +958,16 @@ export default async function AdminPaymentsEconomicsPage({
           },
         ]}
       />
+      {hasPayoutOnlyContext ? (
+        <section className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">{tPayments('contextBanner.title')}</p>
+          <p className="mt-1">
+            {tPayments('contextBanner.description', {
+              payoutCount: contextSummary.payoutLifecycleCount,
+            })}
+          </p>
+        </section>
+      ) : null}
       {workspaceContent}
     </div>
   );
