@@ -662,7 +662,7 @@ export default async function AdminPaymentsEconomicsPage({
         </section>
 
         {hasOverviewBreakdown ? (
-          <div className="grid gap-6 2xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-6">
             <NetRecognizedFeeDashboard
               locale={locale as AppLocale}
               metrics={metrics}
