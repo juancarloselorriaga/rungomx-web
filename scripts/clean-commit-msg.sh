@@ -18,14 +18,12 @@ MODE="${CLEAN_COMMIT_MODE:-strip}"  # set to "fail" to hard-block
 PATTERNS=(
   'Generated with'
   'Claude Code'
-  'Anthropic'
-  'Codex'
   '^Co-Authored-By:.*'
   '^Co-authored-by:.*'
 )
 
 if [[ "$MODE" == "strip" ]]; then
-  # Remove matching lines
+  # Remove attribution/footer lines without stripping normal tool-name mentions.
   for p in "${PATTERNS[@]}"; do
     # macOS and Linux compatible sed
     perl -0777 -i -pe "s/^.*$p.*\n//gmi" "$MSG_FILE"
