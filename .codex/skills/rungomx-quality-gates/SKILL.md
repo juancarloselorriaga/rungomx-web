@@ -29,6 +29,7 @@ Runs the repo’s standard local CI gate and reports results:
 3. Preflight for any run that includes E2E:
    - Ensure `.env.test` exists.
    - Ensure `DATABASE_URL` is available (from shell env or `.env.test`).
+   - In Codex or similar sandboxed environments, be ready to rerun isolated E2E commands with escalated permissions because they spawn a local web server, reserve ports, and write temporary lock/artifact files.
 4. Default run (recommended):
    - `pnpm test:ci:isolated`
 5. If the user requests a smaller check, run only that script (prefer isolated E2E variants).
@@ -64,3 +65,4 @@ Runs the repo’s standard local CI gate and reports results:
 - Do not modify code while running checks unless the user asks.
 - Do not delete files or change lockfiles unless the user asks.
 - If a command requires env vars (for example DB), stop and ask what to use.
+- In Codex sandboxed sessions, `pnpm test:e2e:isolated` and `pnpm test:ci:isolated` may require escalated permissions. If they fail due to sandbox restrictions, request escalation and rerun instead of switching to non-isolated commands.
