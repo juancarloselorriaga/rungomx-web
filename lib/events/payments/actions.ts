@@ -1,5 +1,6 @@
 'use server';
 
+import { randomUUID } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
@@ -18,6 +19,7 @@ import {
   RegistrationOwnershipError,
 } from '@/lib/events/registrations/ownership';
 import { revalidatePublicEventByEditionId, type ActionResult } from '@/lib/events/shared/action-helpers';
+import { ingestMoneyMutationFromServerActionInTransaction } from '@/lib/payments/core/mutation-ingress-paths';
 
 const demoPayRegistrationSchema = z.object({
   registrationId: z.string().uuid(),
@@ -41,6 +43,53 @@ function isDemoPaymentsEnabled(): boolean {
   if (isProduction && !allowInProduction) return false;
 
   return true;
+}
+
+const DEMO_CAPTURE_CURRENCY = 'MXN';
+
+function toNonNegativeMinor(value: number | null | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(Math.trunc(value), 0);
+}
+
+function buildDemoCaptureTraceId(registrationId: string): string {
+  return `payment-capture:${registrationId}`.slice(0, 128);
+}
+
+function buildPaymentCapturedEvent(params: {
+  registrationId: string;
+  organizerId: string;
+  occurredAt: Date;
+  grossAmountMinor: number;
+  feeAmountMinor: number;
+  netAmountMinor: number;
+  idempotencyKey: string;
+  traceId: string;
+}) {
+  const occurredAtIso = params.occurredAt.toISOString();
+
+  return {
+    eventId: randomUUID(),
+    traceId: params.traceId,
+    occurredAt: occurredAtIso,
+    recordedAt: occurredAtIso,
+    eventName: 'payment.captured' as const,
+    version: 1 as const,
+    entityType: 'registration' as const,
+    entityId: params.registrationId,
+    source: 'api' as const,
+    idempotencyKey: params.idempotencyKey,
+    metadata: {
+      simulationMode: 'demo_pay',
+    },
+    payload: {
+      organizerId: params.organizerId,
+      registrationId: params.registrationId,
+      grossAmount: { amountMinor: params.grossAmountMinor, currency: DEMO_CAPTURE_CURRENCY },
+      feeAmount: { amountMinor: params.feeAmountMinor, currency: DEMO_CAPTURE_CURRENCY },
+      netAmount: { amountMinor: params.netAmountMinor, currency: DEMO_CAPTURE_CURRENCY },
+    },
+  };
 }
 
 /**
@@ -106,6 +155,26 @@ export const demoPayRegistration = withAuthenticatedUser<ActionResult<DemoPayReg
   }
 
   const updated = await db.transaction(async (tx) => {
+    const edition = await tx.query.eventEditions.findFirst({
+      where: and(eq(eventEditions.id, registration.editionId), isNull(eventEditions.deletedAt)),
+      with: { series: { columns: { organizationId: true } } },
+    });
+
+    const organizationId = edition?.series?.organizationId;
+    if (!organizationId) {
+      throw new Error('ORGANIZATION_NOT_FOUND');
+    }
+
+    const grossAmountMinor =
+      registration.totalCents == null
+        ? toNonNegativeMinor(registration.basePriceCents) +
+          toNonNegativeMinor(registration.feesCents) +
+          toNonNegativeMinor(registration.taxCents)
+        : toNonNegativeMinor(registration.totalCents);
+    const feeAmountMinor = toNonNegativeMinor(registration.feesCents);
+    const netAmountMinor = Math.max(grossAmountMinor - feeAmountMinor, 0);
+    const traceId = buildDemoCaptureTraceId(registration.id);
+
     const [updatedRegistration] = await tx
       .update(registrations)
       .set({ status: 'confirmed', expiresAt: null })
@@ -122,28 +191,38 @@ export const demoPayRegistration = withAuthenticatedUser<ActionResult<DemoPayReg
       throw new Error('INVALID_STATE_TRANSITION');
     }
 
-    try {
-      const edition = await tx.query.eventEditions.findFirst({
-        where: and(eq(eventEditions.id, registration.editionId), isNull(eventEditions.deletedAt)),
-        with: { series: { columns: { organizationId: true } } },
-      });
+    await ingestMoneyMutationFromServerActionInTransaction(tx, {
+      traceId,
+      organizerId: organizationId,
+      idempotencyKey: traceId,
+      events: [
+        buildPaymentCapturedEvent({
+          registrationId: registration.id,
+          organizerId: organizationId,
+          occurredAt: now,
+          grossAmountMinor,
+          feeAmountMinor,
+          netAmountMinor,
+          idempotencyKey: traceId,
+          traceId,
+        }),
+      ],
+    });
 
-      const organizationId = edition?.series?.organizationId;
-      if (organizationId) {
-        const requestContext = await getRequestContext(await headers());
-        await createAuditLog(
-          {
-            organizationId,
-            actorUserId: authContext.user.id,
-            action: 'registration.demo_pay',
-            entityType: 'registration',
-            entityId: registration.id,
-            after: { mode: 'demo', fromStatus: 'payment_pending', toStatus: 'confirmed' },
-            request: requestContext,
-          },
-          tx,
-        );
-      }
+    try {
+      const requestContext = await getRequestContext(await headers());
+      await createAuditLog(
+        {
+          organizationId,
+          actorUserId: authContext.user.id,
+          action: 'registration.demo_pay',
+          entityType: 'registration',
+          entityId: registration.id,
+          after: { mode: 'demo', fromStatus: 'payment_pending', toStatus: 'confirmed' },
+          request: requestContext,
+        },
+        tx,
+      );
     } catch (error) {
       console.warn('[demo-payments] Failed to write audit log:', error);
     }
