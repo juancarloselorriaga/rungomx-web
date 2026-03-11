@@ -3,6 +3,7 @@ import type {
   DebtDisputeExposureMetrics,
   DebtDisputeOrganizerExposureRow,
 } from '@/lib/payments/economics/debt-dispute-exposure';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
 type DebtDisputeExposureDashboardLabels = {
   sectionTitle: string;
@@ -35,15 +36,6 @@ type DebtDisputeExposureDashboardProps = {
   labels: DebtDisputeExposureDashboardLabels;
   hideSummaryCards?: boolean;
 };
-
-function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valueMinor / 100);
-}
 
 function renderRowDetailChips(params: {
   sampleTraceIds: string[];
@@ -116,13 +108,17 @@ function renderTableRow(params: {
         })}
       </td>
       <td className="py-3 pr-4 text-right tabular-nums">
-        {formatMoney(row.headlineExposureScoreMinor, row.headlineCurrency, locale)}
+        {formatMoneyFromMinor(row.headlineExposureScoreMinor, row.headlineCurrency, locale)}
       </td>
       <td className="py-3 pr-4 text-right tabular-nums">
-        {formatMoney(row.headlineOpenDisputeAtRiskMinor, row.headlineCurrency, locale)}
+        {formatMoneyFromMinor(
+          row.headlineOpenDisputeAtRiskMinor,
+          row.headlineCurrency,
+          locale,
+        )}
       </td>
       <td className="py-3 pr-4 text-right tabular-nums">
-        {formatMoney(row.headlineDebtPostedMinor, row.headlineCurrency, locale)}
+        {formatMoneyFromMinor(row.headlineDebtPostedMinor, row.headlineCurrency, locale)}
       </td>
       <td className="py-3 pr-4 text-right tabular-nums">{row.openDisputeCaseCount}</td>
       <td className="py-3 pr-4 text-right tabular-nums">{row.pauseRequiredCount}</td>
@@ -179,7 +175,7 @@ export function DebtDisputeExposureDashboard({
   labels,
   hideSummaryCards = false,
 }: DebtDisputeExposureDashboardProps) {
-  const summaryExposure = formatMoney(
+  const summaryExposure = formatMoneyFromMinor(
     metrics.totals.headlineExposureScoreMinor,
     metrics.totals.headlineCurrency,
     locale,

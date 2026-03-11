@@ -1,15 +1,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { type AdminPaymentsWorkspaceId } from '@/lib/payments/admin/workspaces';
 import { cn } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTransition, type ReactNode } from 'react';
 
-export type AdminPaymentsWorkspaceId =
-  | 'overview'
-  | 'risk'
-  | 'operations'
-  | 'investigation';
+export type { AdminPaymentsWorkspaceId } from '@/lib/payments/admin/workspaces';
 
 type AdminPaymentsNavItem = {
   id: AdminPaymentsWorkspaceId;
@@ -65,7 +62,7 @@ export function AdminPaymentsWorkspaceShell({
         {toolbar ? <div className="w-full xl:w-auto">{toolbar}</div> : null}
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         {items.map((item) => {
           const isActive = item.id === activeItemId;
 

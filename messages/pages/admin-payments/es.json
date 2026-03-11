@@ -2,11 +2,13 @@
   "admin": {
     "payments": {
       "title": "Pagos",
-      "description": "Empieza por comisiones capturadas y ajustes. Este espacio no muestra el saldo de las organizaciones ni el estado de los retiros por sí solos.",
+      "description": "Usa los espacios de trabajo para moverte entre volumen de pagos, economía de la plataforma, riesgo, operaciones e investigación. Economía no muestra por sí sola el saldo de las organizaciones ni el estado de los retiros.",
       "workspaceLabel": "Espacios de trabajo",
       "nav": {
-        "overviewLabel": "Resumen",
-        "overviewDescription": "Comisiones capturadas y conversión a MXN",
+        "volumeLabel": "Volumen",
+        "volumeDescription": "Flujo de pagos a partir de cobros capturados",
+        "economicsLabel": "Economía",
+        "economicsDescription": "Reconocimiento de comisiones y conversión a MXN",
         "riskLabel": "Riesgo",
         "riskDescription": "Exposición, deuda y disputas activas",
         "operationsLabel": "Operaciones",
@@ -16,7 +18,63 @@
       },
       "contextBanner": {
         "title": "Aquí sí hay retiros, pero todavía no hay cobros capturados",
-        "description": "En el periodo revisado encontramos {payoutCount} movimientos de retiro, pero ningún cobro capturado ni ningún ajuste financiero. Por eso Resumen y Riesgo aparecen en cero."
+        "description": "En el periodo revisado encontramos {payoutCount} movimientos de retiro, pero ningún cobro capturado ni ningún ajuste financiero. Por eso Economía y Riesgo aparecen en cero."
+      },
+      "volume": {
+        "sectionTitle": "Volumen de cobros capturados",
+        "sectionDescription": "Lectura principal del flujo de pagos a partir de cobros capturados canónicos en el periodo revisado.",
+        "mixedCurrencyNotice": "Las tarjetas principales usan la moneda origen dominante ({currency}) en esta ventana. Usa el desglose de abajo para revisar periodos con varias monedas.",
+        "grossProcessedLabel": "Bruto procesado",
+        "grossProcessedDescription": "Volumen capturado antes de separar la comisión de la plataforma.",
+        "grossTitle": "Bruto procesado",
+        "grossDescription": "Volumen total de cobros capturados antes de separar la comisión de la plataforma.",
+        "platformFeesLabel": "Comisiones capturadas",
+        "platformFeesDescription": "Componente de comisión registrado al momento del cobro.",
+        "feesTitle": "Comisiones capturadas",
+        "feesDescription": "Comisión capturada por la plataforma a partir de esos cobros.",
+        "organizerProceedsLabel": "Neto para organizadores al cobrar",
+        "organizerProceedsDescription": "Monto del lado del organizador al momento del cobro, antes de eventos posteriores de retiro o riesgo.",
+        "proceedsTitle": "Neto para organizadores al capturar",
+        "proceedsDescription": "Monto para organizadores al momento de la captura, antes de operaciones posteriores de retiro.",
+        "capturedPaymentsLabel": "Cobros capturados",
+        "capturedPaymentsDescription": "Cobros canónicos aceptados dentro de esta ventana.",
+        "capturesTitle": "Pagos capturados",
+        "capturesDescription": "Eventos canónicos de cobro capturado considerados en esta vista.",
+        "currenciesTitle": "Volumen por moneda origen",
+        "currenciesDescription": "Totales capturados agrupados por la moneda del cobro.",
+        "currencyHeader": "Moneda",
+        "grossHeader": "Bruto procesado",
+        "feesHeader": "Comisiones de plataforma",
+        "proceedsHeader": "Neto para organizadores",
+        "countHeader": "Cobros",
+        "emptyCurrencies": "No se encontró volumen de cobros capturados para la ventana seleccionada.",
+        "emptyState": "No se encontró volumen de cobros capturados para la ventana seleccionada.",
+        "traceabilityTitle": "Trazabilidad de la ventana",
+        "traceabilityDescription": "Periodo de referencia y muestras de trazas usadas para construir esta lectura.",
+        "traceabilityWindowLabel": "Periodo",
+        "traceabilityEventsLabel": "Eventos considerados",
+        "traceabilityTracesLabel": "Trazas consideradas",
+        "traceabilityExcludedLabel": "Cobros excluidos",
+        "traceabilityFirstEventLabel": "Primer evento",
+        "traceabilityLastEventLabel": "Último evento",
+        "sampleTracesTitle": "Referencias de trazas",
+        "sampleTracesEmpty": "No se encontraron referencias de trazas en la ventana seleccionada.",
+        "topOrganizersTitle": "Organizadores principales en esta ventana",
+        "topOrganizersDescription": "Un recorte limitado de organizadores priorizado para revisión sin cargar toda la población.",
+        "organizerHeader": "Organizador",
+        "organizerGrossHeader": "Bruto procesado",
+        "organizerFeesHeader": "Comisiones de plataforma",
+        "organizerProceedsHeader": "Neto para organizadores",
+        "organizerCountHeader": "Cobros",
+        "organizerActionHeader": "Investigación",
+        "organizerEmpty": "No se encontró ranking de organizadores para la ventana seleccionada.",
+        "organizerPageSummary": "Mostrando {start}-{end} de {total} organizadores",
+        "previousPageLabel": "Anterior",
+        "nextPageLabel": "Siguiente",
+        "investigationTitle": "¿Necesitas evidencia a nivel traza?",
+        "investigationDescription": "Usa el workspace de investigación para búsqueda técnica y revisión de evidencia en lugar de abrir trazas crudas dentro del ranking de volumen.",
+        "investigationActionLabel": "Abrir workspace de investigación",
+        "organizerActionLabel": "Abrir en investigación"
       },
       "investigation": {
         "eyebrow": "Casos",
@@ -51,9 +109,9 @@
         }
       },
       "overview": {
-        "heroEyebrow": "Comisiones consideradas",
+        "heroEyebrow": "Economía de la plataforma",
         "heroActiveDescription": "Aquí se resume la comisión capturada por la plataforma y los ajustes financieros del periodo.",
-        "heroIdleDescription": "En este periodo no hay cobros capturados ni ajustes financieros para proyectar.",
+        "heroIdleDescription": "En esta ventana de economía no hay cobros capturados ni ajustes financieros para proyectar.",
         "windowTitle": "Periodo revisado",
         "windowDescription": "Todo lo que ves abajo usa este periodo de referencia.",
         "statusTitle": "Estado",
@@ -89,9 +147,9 @@
       "sections": {
         "operationsNote": "Las acciones manuales quedan aquí para no mezclarse con la lectura del estado general.",
         "overview": {
-          "eyebrow": "Resumen",
-          "title": "Resumen financiero",
-          "description": "Empieza aquí para entender el panorama general antes de pasar a herramientas operativas."
+          "eyebrow": "Economía",
+          "title": "Economía de la plataforma",
+          "description": "Empieza aquí para entender el reconocimiento de comisiones de la plataforma antes de pasar a herramientas operativas."
         },
         "risk": {
           "eyebrow": "Riesgo",
@@ -119,8 +177,8 @@
           "description": "Abre un paquete de evidencia sólo cuando ya tengas la traza que quieres revisar."
         }
       },
-      "sectionTitle": "Comisiones capturadas y ajustes",
-      "sectionDescription": "Vista principal de comisiones capturadas por la plataforma y ajustes financieros.",
+      "sectionTitle": "Comisiones de la plataforma y ajustes",
+      "sectionDescription": "Vista principal de economía para comisiones capturadas por la plataforma y ajustes financieros.",
       "primaryMetricTitle": "Comisión neta del periodo",
       "primaryMetricDescription": "Suma de comisiones capturadas y ajustes financieros del periodo revisado.",
       "capturedFeesLabel": "Comisiones capturadas",

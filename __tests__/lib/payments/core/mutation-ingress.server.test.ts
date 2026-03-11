@@ -1,11 +1,20 @@
 const mockTransaction = jest.fn();
 const mockSelect = jest.fn();
+const mockUpsertPaymentCaptureVolumeRollupsInTransaction = jest.fn();
+const mockRevalidateAdminPaymentCaptureVolumeCaches = jest.fn();
 
 jest.mock('@/db', () => ({
   db: {
     transaction: (...args: unknown[]) => mockTransaction(...args),
     select: (...args: unknown[]) => mockSelect(...args),
   },
+}));
+
+jest.mock('@/lib/payments/volume/payment-capture-volume-rollups', () => ({
+  upsertPaymentCaptureVolumeRollupsInTransaction: (...args: unknown[]) =>
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction(...args),
+  revalidateAdminPaymentCaptureVolumeCaches: (...args: unknown[]) =>
+    mockRevalidateAdminPaymentCaptureVolumeCaches(...args),
 }));
 
 import { moneyCommandIngestions, moneyEvents, moneyTraces } from '@/db/schema';
@@ -85,6 +94,17 @@ const financialAdjustmentSensitiveEvent = {
   },
 } as const;
 
+const malformedPaymentCapturedEvent = {
+  ...paymentCapturedEvent,
+  traceId: 'trace-malformed-capture-1',
+  eventId: '99999999-9999-4999-8999-999999999999',
+  idempotencyKey: 'idem-malformed-1',
+  payload: {
+    ...paymentCapturedEvent.payload,
+    netAmount: { amountMinor: 9000, currency: 'MXN' },
+  },
+} as const;
+
 describe('money mutation ingress', () => {
   const traceInsertValues: unknown[] = [];
   const eventInsertValues: unknown[] = [];
@@ -108,6 +128,9 @@ describe('money mutation ingress', () => {
     commandInsertReturningQueue.length = 0;
     commandLookupQueue.length = 0;
     traceInsertReturningQueue.length = 0;
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction.mockReset();
+    mockRevalidateAdminPaymentCaptureVolumeCaches.mockReset();
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction.mockResolvedValue({ wroteRollups: true });
 
     mockTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
@@ -193,6 +216,16 @@ describe('money mutation ingress', () => {
     expect(eventInsertValues).toHaveLength(1);
     expect(commandUpdateValues).toHaveLength(1);
     expect(operationOrder.slice(0, 3)).toEqual(['trace-insert', 'command-insert', 'event-insert']);
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventName: 'payment.captured',
+        }),
+      ]),
+    );
+    expect(mockRevalidateAdminPaymentCaptureVolumeCaches).toHaveBeenCalledTimes(1);
 
     expect(traceInsertValues[0]).toMatchObject({
       traceId: 'trace-shared-1',
@@ -230,6 +263,27 @@ describe('money mutation ingress', () => {
     expect(eventInsertValues).toHaveLength(0);
     expect(commandUpdateValues).toHaveLength(0);
     expect(deletedTraceIds).toHaveLength(0);
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).not.toHaveBeenCalled();
+    expect(mockRevalidateAdminPaymentCaptureVolumeCaches).not.toHaveBeenCalled();
+  });
+
+  it('invalidates volume caches when reconciliation rollups are written for malformed captures', async () => {
+    traceInsertReturningQueue.push([{ traceId: 'trace-malformed-capture-1' }]);
+    commandInsertReturningQueue.push([{ traceId: 'trace-malformed-capture-1' }]);
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction.mockResolvedValueOnce({
+      wroteRollups: true,
+    });
+
+    await moneyMutationIngress({
+      traceId: 'trace-malformed-capture-1',
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      idempotencyKey: 'command-key-malformed',
+      source: 'api',
+      events: [malformedPaymentCapturedEvent],
+    });
+
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockRevalidateAdminPaymentCaptureVolumeCaches).toHaveBeenCalledTimes(1);
   });
 
   it('cleans up a newly inserted trace when a duplicate idempotency key resolves to another trace', async () => {

@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useSession } from '@/lib/auth/client';
 import { DEFAULT_PROFILE_NEARBY_RADIUS_KM, SPORT_TYPES, type SportType } from '@/lib/events/constants';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 import type { ProfileRecord } from '@/lib/profiles/types';
 import type { PublicLocationValue } from '@/types/location';
@@ -1193,12 +1194,10 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
 
   // Format price
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
+    return formatMoneyFromMinor(cents, currency, locale, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(cents / 100);
+    });
   };
 
   // Location display

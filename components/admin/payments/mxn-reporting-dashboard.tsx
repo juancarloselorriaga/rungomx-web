@@ -1,4 +1,5 @@
 import type { MxnNetRecognizedFeeReport } from '@/lib/payments/economics/mxn-reporting';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
 type MxnReportingDashboardLabels = {
   sectionTitle: string;
@@ -25,15 +26,6 @@ type MxnReportingDashboardProps = {
   labels: MxnReportingDashboardLabels;
   hideSummaryCards?: boolean;
 };
-
-function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valueMinor / 100);
-}
 
 function formatSnapshotReference(
   effectiveAt: Date | string,
@@ -70,7 +62,7 @@ export function MxnReportingDashboard({
               {labels.headlineTitle}
             </p>
             <p className="mt-2 text-2xl font-semibold tabular-nums">
-              {formatMoney(report.headlineMxnNetRecognizedFeeMinor, 'MXN', locale)}
+              {formatMoneyFromMinor(report.headlineMxnNetRecognizedFeeMinor, 'MXN', locale)}
             </p>
           </div>
 
@@ -117,12 +109,16 @@ export function MxnReportingDashboard({
                   <tr key={row.sourceCurrency} className="border-t align-top">
                     <td className="py-3 pr-4 font-medium">{row.sourceCurrency}</td>
                     <td className="py-3 pr-4 text-right tabular-nums">
-                      {formatMoney(row.sourceNetRecognizedFeeMinor, row.sourceCurrency, locale)}
+                      {formatMoneyFromMinor(
+                        row.sourceNetRecognizedFeeMinor,
+                        row.sourceCurrency,
+                        locale,
+                      )}
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">
                       {row.mxnNetRecognizedFeeMinor === null
                         ? labels.notConvertedLabel
-                        : formatMoney(row.mxnNetRecognizedFeeMinor, 'MXN', locale)}
+                        : formatMoneyFromMinor(row.mxnNetRecognizedFeeMinor, 'MXN', locale)}
                     </td>
                     <td className="py-3 pr-4 text-right tabular-nums">{row.convertedEventCount}</td>
                     <td className="py-3 pr-4 text-right tabular-nums">

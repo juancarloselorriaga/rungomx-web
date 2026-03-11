@@ -1,12 +1,11 @@
-import { Badge } from '@/components/common/badge';
-import { DemoPayButton } from '@/components/dashboard/demo-pay-button';
-import { PrintButton } from '@/components/dashboard/print-button';
+import { RegistrationTicketStatus } from '@/components/dashboard/registration-ticket-status';
 import { Button } from '@/components/ui/button';
 import { getPathname, Link } from '@/i18n/navigation';
 import { DEFAULT_TIMEZONE } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
 import { getMyRegistrationDetail } from '@/lib/events/queries';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -42,12 +41,10 @@ function formatDateTime(date: Date | null, locale: string, timezone?: string | n
 }
 
 function formatCurrency(cents: number, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: CURRENCY,
+  return formatMoneyFromMinor(cents, CURRENCY, locale, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cents / 100);
+  });
 }
 
 export default async function MyRegistrationDetailPage({ params }: RegistrationDetailPageProps) {
@@ -99,9 +96,6 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
   } as const;
   type StatusKey = keyof typeof statusLabels;
   const statusKey = (isExpired ? 'expired' : registration.status) as StatusKey;
-  const statusVariant = statusLabels[statusKey] ?? 'default';
-  const statusLabel = statusCopy[statusKey];
-
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
   const hasPriceDetails =
     registration.basePriceCents !== null ||
@@ -147,38 +141,21 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
       <div className="rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-xl font-semibold">{t('labels.ticket')}</h2>
-              <Badge variant={statusVariant}>{statusLabel}</Badge>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t('labels.ticketCode')}</p>
-              <p className="text-2xl font-bold tracking-widest">{ticketCode}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('labels.supportId')}: {registration.id}
-              </p>
-            </div>
-            <p className="text-sm text-muted-foreground">{t('detail.ticketNote')}</p>
-            {registration.status === 'payment_pending' ? (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">{t('detail.paymentPendingNote')}</p>
-                {demoPaymentsEnabled ? (
-                  <p className="text-xs text-muted-foreground">{t('detail.demoPayNote')}</p>
-                ) : null}
-              </div>
-            ) : null}
-            <div className="flex flex-wrap gap-3">
-              <PrintButton label={t('actions.print')} />
-              {registration.status === 'payment_pending' ? (
-                demoPaymentsEnabled ? (
-                  <DemoPayButton registrationId={registration.id} />
-                ) : (
-                  <Button type="button" disabled>
-                    {t('actions.payNow')}
-                  </Button>
-                )
-              ) : null}
-            </div>
+            <RegistrationTicketStatus
+              registrationId={registration.id}
+              initialStatus={statusKey}
+              statusLabels={statusCopy}
+              ticketTitle={t('labels.ticket')}
+              ticketCodeLabel={t('labels.ticketCode')}
+              ticketCode={ticketCode}
+              supportIdLabel={t('labels.supportId')}
+              ticketNote={t('detail.ticketNote')}
+              paymentPendingNote={t('detail.paymentPendingNote')}
+              demoPayNote={t('detail.demoPayNote')}
+              demoPaymentsEnabled={demoPaymentsEnabled}
+              printLabel={t('actions.print')}
+              payNowLabel={t('actions.payNow')}
+            />
           </div>
           <div className="flex items-center justify-center rounded-lg border bg-muted/20 p-4">
             <Image

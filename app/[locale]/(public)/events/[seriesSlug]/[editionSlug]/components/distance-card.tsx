@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import type { PublicDistanceInfo } from '@/lib/events/queries';
 import type { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
@@ -40,12 +41,10 @@ export async function DistanceCard({
   const t = await getTranslations({ locale: locale as 'es' | 'en', namespace: 'pages.events.detail' });
 
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
+    return formatMoneyFromMinor(cents, currency, locale, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(cents / 100);
+    });
   };
 
   const formatTierDate = (value: Date) =>

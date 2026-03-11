@@ -9,6 +9,7 @@ import {
 } from '@/lib/payments/organizer/presentation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 import { FormEvent, useRef, useState } from 'react';
 
@@ -55,15 +56,6 @@ function parseRequestedAmount(rawValue: string): RequestedAmountParseResult {
   }
 
   return { kind: 'valid', value: parsed };
-}
-
-function formatMoney(minor: number): string {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
 }
 
 export function PayoutRequestForm({
@@ -291,11 +283,12 @@ export function PayoutRequestForm({
           <p className="font-medium">{t('request.successTitle')}</p>
           <p className="text-sm text-muted-foreground">{t('request.successDescription')}</p>
           <p className="text-sm text-muted-foreground">
-            {t('request.summary.requestedAmount')} {formatMoney(requestSuccess.requestedAmountMinor)}
+            {t('request.summary.requestedAmount')}{' '}
+            {formatMoneyFromMinor(requestSuccess.requestedAmountMinor, 'MXN', 'es')}
           </p>
           <p className="text-sm text-muted-foreground">
             {t('request.summary.maxWithdrawable')}{' '}
-            {formatMoney(requestSuccess.maxWithdrawableAmountMinor)}
+            {formatMoneyFromMinor(requestSuccess.maxWithdrawableAmountMinor, 'MXN', 'es')}
           </p>
           <details className="rounded-md border bg-muted/25 px-3 py-2">
             <summary className="cursor-pointer text-sm font-medium text-primary">
@@ -327,7 +320,7 @@ export function PayoutRequestForm({
           <p className="text-sm text-muted-foreground">{t('request.queueSuccessDescription')}</p>
           <p className="text-sm text-muted-foreground">
             {t('request.summary.requestedAmount')}{' '}
-            {formatMoney(queueSuccess.requestedAmountMinor)}
+            {formatMoneyFromMinor(queueSuccess.requestedAmountMinor, 'MXN', 'es')}
           </p>
           <p className="text-sm text-muted-foreground">
             {t('request.summary.blockedReasonHuman')} {' '}

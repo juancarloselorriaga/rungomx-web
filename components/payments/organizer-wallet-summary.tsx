@@ -1,6 +1,7 @@
 'use client';
 
 import type { OrganizerWalletBuckets } from '@/lib/payments/organizer/ui';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 
 type OrganizerWalletSummaryProps = {
@@ -8,15 +9,6 @@ type OrganizerWalletSummaryProps = {
   buckets: OrganizerWalletBuckets;
   locale: 'es' | 'en';
 };
-
-function formatMoney(minor: number, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
-}
 
 function formatAsOf(value: string, locale: 'es' | 'en'): string {
   const asOfDate = new Date(value);
@@ -56,7 +48,9 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
         {cards.map((card) => (
           <article key={card.key} className="rounded-lg border bg-background/80 p-4">
             <p className="text-sm text-muted-foreground">{t(`wallet.buckets.${card.key}`)}</p>
-            <p className="mt-2 text-2xl font-semibold">{formatMoney(card.value, locale)}</p>
+            <p className="mt-2 text-2xl font-semibold">
+              {formatMoneyFromMinor(card.value, 'MXN', locale)}
+            </p>
           </article>
         ))}
       </div>

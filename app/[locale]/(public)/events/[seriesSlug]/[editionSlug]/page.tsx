@@ -14,6 +14,7 @@ import {
 import type { SportType } from '@/lib/events/constants';
 import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { generateAlternateMetadata } from '@/utils/seo';
 import { FileText, Image as ImageIcon, Info, Users } from 'lucide-react';
@@ -180,7 +181,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
   const minPrice = event.distances.reduce((min, d) => (d.priceCents < min ? d.priceCents : min), event.distances[0]?.priceCents ?? 0);
   const formatPrice = (cents: number, currency: string) =>
-    new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(cents / 100);
+    formatMoneyFromMinor(cents, currency, locale, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
   const formattedMinPrice = minPrice > 0 ? formatPrice(minPrice, event.distances[0]?.currency ?? 'MXN') : null;
 
   const bestGroupDiscount = event.groupDiscountRules.reduce<

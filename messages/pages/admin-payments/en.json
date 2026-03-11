@@ -2,11 +2,13 @@
   "admin": {
     "payments": {
       "title": "Payments",
-      "description": "Start with captured fees and adjustments. This workspace does not show organizer balances or payout status by itself.",
+      "description": "Use workspaces to move between payment volume, platform economics, risk, operations, and investigation. Economics does not show organizer balances or payout status by itself.",
       "workspaceLabel": "Workspaces",
       "nav": {
-        "overviewLabel": "Overview",
-        "overviewDescription": "Captured fees and MXN conversion",
+        "volumeLabel": "Volume",
+        "volumeDescription": "Payment throughput from captured charges",
+        "economicsLabel": "Economics",
+        "economicsDescription": "Platform fee recognition and MXN conversion",
         "riskLabel": "Risk",
         "riskDescription": "Exposure, debt, and active disputes",
         "operationsLabel": "Operations",
@@ -16,7 +18,63 @@
       },
       "contextBanner": {
         "title": "There are payouts here, but no captured charges yet",
-        "description": "We found {payoutCount} payout lifecycle events in the selected period, but no captured charges or financial adjustments. That is why Overview and Risk are showing zeros."
+        "description": "We found {payoutCount} payout lifecycle events in the selected period, but no captured charges or financial adjustments. That is why Economics and Risk are showing zeros."
+      },
+      "volume": {
+        "sectionTitle": "Captured payment volume",
+        "sectionDescription": "Headline payment throughput from canonical payment captures in the reviewed period.",
+        "mixedCurrencyNotice": "Headline money cards use the dominant source currency ({currency}) for this window. Use the breakdown below for mixed-currency detail.",
+        "grossProcessedLabel": "Gross processed",
+        "grossProcessedDescription": "Captured payment volume before platform fees are separated.",
+        "grossTitle": "Gross processed",
+        "grossDescription": "Total captured charge volume before platform fees are separated.",
+        "platformFeesLabel": "Platform fees captured",
+        "platformFeesDescription": "Fee component recorded at capture time.",
+        "feesTitle": "Platform fees captured",
+        "feesDescription": "Fees captured by the platform from those charges.",
+        "organizerProceedsLabel": "Organizer proceeds at capture",
+        "organizerProceedsDescription": "Organizer-side amount at capture time before later payout or risk events.",
+        "proceedsTitle": "Organizer proceeds at capture",
+        "proceedsDescription": "Organizer-side proceeds at capture before later payout operations.",
+        "capturedPaymentsLabel": "Captured payments",
+        "capturedPaymentsDescription": "Accepted canonical payment captures in this window.",
+        "capturesTitle": "Captured payments",
+        "capturesDescription": "Canonical captured-charge events considered in this view.",
+        "currenciesTitle": "Volume by source currency",
+        "currenciesDescription": "Captured payment totals grouped by payment currency.",
+        "currencyHeader": "Currency",
+        "grossHeader": "Gross processed",
+        "feesHeader": "Platform fees",
+        "proceedsHeader": "Organizer proceeds",
+        "countHeader": "Captures",
+        "emptyCurrencies": "No captured payment volume was found for the selected window.",
+        "emptyState": "No captured payment volume was found for the selected window.",
+        "traceabilityTitle": "Window traceability",
+        "traceabilityDescription": "Reference period and sampled traces used to build this readout.",
+        "traceabilityWindowLabel": "Period",
+        "traceabilityEventsLabel": "Events considered",
+        "traceabilityTracesLabel": "Traces considered",
+        "traceabilityExcludedLabel": "Excluded captures",
+        "traceabilityFirstEventLabel": "First event",
+        "traceabilityLastEventLabel": "Last event",
+        "sampleTracesTitle": "Sample trace references",
+        "sampleTracesEmpty": "No trace references were found in the selected window.",
+        "topOrganizersTitle": "Top organizers in this window",
+        "topOrganizersDescription": "A limited organizer slice ranked for review without loading the full organizer population.",
+        "organizerHeader": "Organizer",
+        "organizerGrossHeader": "Gross processed",
+        "organizerFeesHeader": "Platform fees",
+        "organizerProceedsHeader": "Organizer proceeds",
+        "organizerCountHeader": "Captures",
+        "organizerActionHeader": "Investigation",
+        "organizerEmpty": "No organizer ranking was found for the selected window.",
+        "organizerPageSummary": "Showing {start}-{end} of {total} organizers",
+        "previousPageLabel": "Previous",
+        "nextPageLabel": "Next",
+        "investigationTitle": "Need trace-level evidence?",
+        "investigationDescription": "Use the investigation workspace for technical lookup and evidence review instead of opening raw traces in the volume ranking.",
+        "investigationActionLabel": "Open investigation workspace",
+        "organizerActionLabel": "Open in investigation"
       },
       "investigation": {
         "eyebrow": "Casework",
@@ -51,9 +109,9 @@
         }
       },
       "overview": {
-        "heroEyebrow": "Fees in scope",
-        "heroActiveDescription": "This summarizes platform fees captured in the selected period and any financial adjustments applied to them.",
-        "heroIdleDescription": "There are no captured charges or financial adjustments in this period.",
+        "heroEyebrow": "Platform economics",
+        "heroActiveDescription": "This workspace summarizes platform fees captured in the selected period and any financial adjustments applied to them.",
+        "heroIdleDescription": "There are no captured charges or financial adjustments in this economics window.",
         "windowTitle": "Reviewed period",
         "windowDescription": "Everything below uses this period as the reference window.",
         "statusTitle": "Status",
@@ -89,9 +147,9 @@
       "sections": {
         "operationsNote": "Manual actions stay here so they do not compete with the overall readout.",
         "overview": {
-          "eyebrow": "Overview",
-          "title": "Financial overview",
-          "description": "Start here to understand the overall picture before moving into operational tools."
+          "eyebrow": "Economics",
+          "title": "Platform economics",
+          "description": "Start here to understand platform fee recognition before moving into operational tools."
         },
         "risk": {
           "eyebrow": "Risk",
@@ -119,8 +177,8 @@
           "description": "Open an evidence pack only after you know which trace you want to inspect."
         }
       },
-      "sectionTitle": "Captured fees and adjustments",
-      "sectionDescription": "Primary readout of platform fees captured and financial adjustments applied to them.",
+      "sectionTitle": "Platform fees and adjustments",
+      "sectionDescription": "Primary economics readout of platform fees captured and financial adjustments applied to them.",
       "primaryMetricTitle": "Net fee total",
       "primaryMetricDescription": "Captured platform fees plus financial adjustments in the reviewed period.",
       "capturedFeesLabel": "Captured fees",

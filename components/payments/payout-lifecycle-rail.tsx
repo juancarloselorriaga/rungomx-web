@@ -5,6 +5,7 @@ import {
   getOrganizerPayoutReasonFamily,
   humanizeTechnicalCode,
 } from '@/lib/payments/organizer/presentation';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 
 import { PayoutStatusBadge } from './payout-status-badge';
@@ -23,12 +24,7 @@ function formatDate(value: Date, locale: 'es' | 'en'): string {
 
 function formatAmount(amountMinor: number | null, locale: 'es' | 'en'): string | null {
   if (amountMinor == null) return null;
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amountMinor / 100);
+  return formatMoneyFromMinor(amountMinor, 'MXN', locale);
 }
 
 function shouldSurfaceReasonFamily(reasonCode: string | null): boolean {

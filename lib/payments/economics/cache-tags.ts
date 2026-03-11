@@ -2,6 +2,8 @@ export const adminPaymentsCacheTags = {
   netRecognizedFees: 'admin-payments-net-recognized-fees',
   debtDisputeExposure: 'admin-payments-debt-dispute-exposure',
   mxnReport: 'admin-payments-mxn-report',
+  paymentCaptureVolume: 'admin-payments-volume',
+  paymentCaptureVolumeOrganizers: 'admin-payments-volume-organizers',
   fxRates: 'admin-payments-fx-rates',
   fxActionFlags: 'admin-payments-fx-action-flags',
   fxSnapshots: 'admin-payments-fx-snapshots',

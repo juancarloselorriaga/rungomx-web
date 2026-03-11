@@ -5,6 +5,7 @@ import { PayoutDetailViewTelemetry } from '@/components/payments/payout-detail-v
 import { PayoutLifecycleRail } from '@/components/payments/payout-lifecycle-rail';
 import { PayoutStatementAction } from '@/components/payments/payout-statement-action';
 import { PayoutStatusBadge } from '@/components/payments/payout-status-badge';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
 type BreadcrumbItem = {
   label: string;
@@ -34,15 +35,6 @@ type PayoutDetailScreenProps = {
     deductionAmount: string;
   };
 };
-
-function formatMoney(minor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
-}
 
 function formatDate(value: Date, locale: 'es' | 'en'): string {
   return new Intl.DateTimeFormat(locale === 'es' ? 'es-MX' : 'en-US', {
@@ -99,19 +91,23 @@ export function PayoutDetailScreen({
           <div>
             <dt className="text-muted-foreground">{labels.requestedAmount}</dt>
             <dd className="font-medium">
-              {formatMoney(detail.requestedAmountMinor, detail.currency, locale)}
+              {formatMoneyFromMinor(detail.requestedAmountMinor, detail.currency, locale)}
             </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">{labels.currentAmount}</dt>
             <dd className="font-medium">
-              {formatMoney(detail.currentRequestedAmountMinor, detail.currency, locale)}
+              {formatMoneyFromMinor(
+                detail.currentRequestedAmountMinor,
+                detail.currency,
+                locale,
+              )}
             </dd>
           </div>
           <div>
             <dt className="text-muted-foreground">{labels.maxWithdrawable}</dt>
             <dd className="font-medium">
-              {formatMoney(detail.maxWithdrawableAmountMinor, detail.currency, locale)}
+              {formatMoneyFromMinor(detail.maxWithdrawableAmountMinor, detail.currency, locale)}
             </dd>
           </div>
           <div>
@@ -136,13 +132,13 @@ export function PayoutDetailScreen({
             <div>
               <dt className="text-muted-foreground">{labels.includedAmount}</dt>
               <dd className="font-medium">
-                {formatMoney(detail.includedAmountMinor, detail.currency, locale)}
+                {formatMoneyFromMinor(detail.includedAmountMinor, detail.currency, locale)}
               </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{labels.deductionAmount}</dt>
               <dd className="font-medium">
-                {formatMoney(detail.deductionAmountMinor, detail.currency, locale)}
+                {formatMoneyFromMinor(detail.deductionAmountMinor, detail.currency, locale)}
               </dd>
             </div>
           </dl>

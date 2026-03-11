@@ -2,7 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
-import { revalidateTag } from 'next/cache';
+import { refresh, revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -20,6 +20,7 @@ import {
 } from '@/lib/events/registrations/ownership';
 import { revalidatePublicEventByEditionId, type ActionResult } from '@/lib/events/shared/action-helpers';
 import { ingestMoneyMutationFromServerActionInTransaction } from '@/lib/payments/core/mutation-ingress-paths';
+import { revalidateAdminPaymentCaptureVolumeCaches } from '@/lib/payments/volume/payment-capture-volume-rollups';
 
 const demoPayRegistrationSchema = z.object({
   registrationId: z.string().uuid(),
@@ -232,20 +233,20 @@ export const demoPayRegistration = withAuthenticatedUser<ActionResult<DemoPayReg
 
   revalidateTag(eventEditionDetailTag(registration.editionId), { expire: 0 });
   revalidateTag(eventEditionRegistrationsTag(registration.editionId), { expire: 0 });
+  revalidateAdminPaymentCaptureVolumeCaches();
   await revalidatePublicEventByEditionId(registration.editionId);
+  refresh();
 
-  try {
-    await sendRegistrationCompletionEmail({
-      registrationId: updated.id,
-      userId: authContext.user.id,
-      status: 'confirmed',
-      userEmail: authContext.user.email,
-      userName: authContext.user.name,
-      locale: authContext.profile?.locale as AppLocale | undefined,
-    });
-  } catch (error) {
+  void sendRegistrationCompletionEmail({
+    registrationId: updated.id,
+    userId: authContext.user.id,
+    status: 'confirmed',
+    userEmail: authContext.user.email,
+    userName: authContext.user.name,
+    locale: authContext.profile?.locale as AppLocale | undefined,
+  }).catch((error) => {
     console.error('[demo-payments] Failed to send confirmation email:', error);
-  }
+  });
 
   return { ok: true, data: { id: updated.id, status: updated.status } };
 });

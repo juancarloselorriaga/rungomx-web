@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
@@ -23,15 +24,6 @@ type StatementResponse = {
   adjustmentTotalMinor: number;
   generatedAt: string;
 };
-
-function formatMoney(minor: number, locale: string) {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
-}
 
 function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale === 'es' ? 'es-MX' : 'en-US', {
@@ -155,12 +147,14 @@ export function PayoutStatementAction({
             </div>
             <div>
               <dt className="text-muted-foreground">{t('detail.statement.finalAmountLabel')}</dt>
-              <dd className="font-medium">{formatMoney(statement.terminalAmountMinor, locale)}</dd>
+              <dd className="font-medium">
+                {formatMoneyFromMinor(statement.terminalAmountMinor, 'MXN', locale)}
+              </dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{t('detail.statement.requestedAmountLabel')}</dt>
               <dd className="font-medium">
-                {formatMoney(statement.originalRequestedAmountMinor, locale)}
+                {formatMoneyFromMinor(statement.originalRequestedAmountMinor, 'MXN', locale)}
               </dd>
             </div>
             <div>
@@ -172,8 +166,8 @@ export function PayoutStatementAction({
           {statement.originalRequestedAmountMinor !== statement.terminalAmountMinor ? (
             <p className="text-sm text-muted-foreground">
               {t('detail.statement.adjustedSummary', {
-                original: formatMoney(statement.originalRequestedAmountMinor, locale),
-                terminal: formatMoney(statement.terminalAmountMinor, locale),
+                original: formatMoneyFromMinor(statement.originalRequestedAmountMinor, 'MXN', locale),
+                terminal: formatMoneyFromMinor(statement.terminalAmountMinor, 'MXN', locale),
               })}
             </p>
           ) : null}

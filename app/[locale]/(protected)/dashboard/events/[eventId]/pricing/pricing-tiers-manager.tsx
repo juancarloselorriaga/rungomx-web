@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
 import {
@@ -63,10 +64,7 @@ const EMPTY_TIER: TierFormData = {
 };
 
 function formatPrice(cents: number, currency: string, locale: string): string {
-  return (cents / 100).toLocaleString(locale, {
-    style: 'currency',
-    currency,
-  });
+  return formatMoneyFromMinor(cents, currency, locale);
 }
 
 function getTierStatus(tier: PricingTierData): 'current' | 'upcoming' | 'expired' {

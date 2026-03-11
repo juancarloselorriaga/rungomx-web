@@ -12,6 +12,10 @@ import {
   type CanonicalMoneyEventV1,
 } from '@/lib/payments/core/contracts/events';
 import { redactCanonicalEventForPersistence } from '@/lib/payments/core/payload-redaction';
+import {
+  revalidateAdminPaymentCaptureVolumeCaches,
+  upsertPaymentCaptureVolumeRollupsInTransaction,
+} from '@/lib/payments/volume/payment-capture-volume-rollups';
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type DbClient = typeof db | DbTransaction;
@@ -99,6 +103,7 @@ async function persistMoneyMutation(params: {
   persistedEvents: CanonicalMoneyEventV1[];
   deduplicated: boolean;
   duplicateOfTraceId?: string;
+  volumeRollupsWritten: boolean;
 }> {
   const { dbClient, command, sanitizedEvents } = params;
   const rootEvent = sanitizedEvents[0];
@@ -167,6 +172,7 @@ async function persistMoneyMutation(params: {
         persistedEvents: [] as CanonicalMoneyEventV1[],
         deduplicated: true,
         duplicateOfTraceId: duplicateTraceId,
+        volumeRollupsWritten: false,
       };
     }
   }
@@ -186,6 +192,8 @@ async function persistMoneyMutation(params: {
       metadataJson: event.metadata,
     })),
   );
+
+  const rollupResult = await upsertPaymentCaptureVolumeRollupsInTransaction(dbClient, sanitizedEvents);
 
   if (command.idempotencyKey && command.organizerId) {
     await dbClient
@@ -212,6 +220,7 @@ async function persistMoneyMutation(params: {
     traceId: command.traceId,
     persistedEvents: sanitizedEvents,
     deduplicated: false,
+    volumeRollupsWritten: rollupResult.wroteRollups,
   };
 }
 
@@ -222,13 +231,22 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
   duplicateOfTraceId?: string;
 }> {
   const sanitizedEvents = sanitizeCanonicalEvents(command);
-  return db.transaction((tx) =>
+  const result = await db.transaction((tx) =>
     persistMoneyMutation({
       dbClient: tx,
       command,
       sanitizedEvents,
     }),
   );
+
+  if (
+    !result.deduplicated &&
+    result.volumeRollupsWritten
+  ) {
+    revalidateAdminPaymentCaptureVolumeCaches();
+  }
+
+  return result;
 }
 
 export async function moneyMutationIngressInTransaction(

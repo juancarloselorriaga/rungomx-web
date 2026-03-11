@@ -34,6 +34,7 @@ import { submitAnswers, type RegistrationQuestionData } from '@/lib/events/quest
 import type { ActiveRegistrationInfo, PublicEventDetail } from '@/lib/events/queries';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { cn } from '@/lib/utils';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import {
   ArrowLeft,
   ArrowRight,
@@ -495,12 +496,10 @@ export function RegistrationFlow({
 
   // Format price
   const formatPrice = (cents: number, currency: string) => {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
+    return formatMoneyFromMinor(cents, currency, locale, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(cents / 100);
+    });
   };
 
   // Step handlers

@@ -6,6 +6,7 @@ const mockGetRequestContext = jest.fn();
 const mockSendRegistrationCompletionEmail = jest.fn();
 const mockRevalidatePublicEventByEditionId = jest.fn();
 const mockRevalidateTag = jest.fn();
+const mockRefresh = jest.fn();
 const mockHeaders = jest.fn();
 
 const mockAuthContext = {
@@ -65,6 +66,7 @@ jest.mock('@/lib/events/shared/action-helpers', () => ({
 
 jest.mock('next/cache', () => ({
   revalidateTag: (...args: unknown[]) => mockRevalidateTag(...args),
+  refresh: (...args: unknown[]) => mockRefresh(...args),
 }));
 
 jest.mock('next/headers', () => ({
@@ -132,6 +134,7 @@ describe('demoPayRegistration', () => {
     mockSendRegistrationCompletionEmail.mockReset();
     mockRevalidatePublicEventByEditionId.mockReset();
     mockRevalidateTag.mockReset();
+    mockRefresh.mockReset();
     mockHeaders.mockReset();
 
     mockCreateAuditLog.mockResolvedValue({ ok: true, auditLogId: 'audit-1' });
@@ -207,6 +210,39 @@ describe('demoPayRegistration', () => {
       userName: mockAuthContext.user.name,
       locale: 'en',
     });
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not wait for the confirmation email before returning success', async () => {
+    const registration = buildRegistration();
+    const { tx } = buildTransactionMocks();
+
+    mockGetRegistrationForOwnerOrThrow.mockResolvedValue(registration);
+    mockTransaction.mockImplementation(async (callback: (input: unknown) => Promise<unknown>) =>
+      callback(tx),
+    );
+
+    let resolveEmail: (() => void) | undefined;
+    mockSendRegistrationCompletionEmail.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveEmail = resolve;
+        }),
+    );
+
+    const resultPromise = demoPayRegistration({ registrationId: registration.id });
+    await expect(resultPromise).resolves.toEqual({
+      ok: true,
+      data: {
+        id: registration.id,
+        status: 'confirmed',
+      },
+    });
+
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
+    expect(mockSendRegistrationCompletionEmail).toHaveBeenCalledTimes(1);
+
+    resolveEmail?.();
   });
 
   it('returns early for already confirmed registrations without appending capture events', async () => {
@@ -225,6 +261,7 @@ describe('demoPayRegistration', () => {
     expect(mockTransaction).not.toHaveBeenCalled();
     expect(mockIngestMoneyMutationFromServerActionInTransaction).not.toHaveBeenCalled();
     expect(mockSendRegistrationCompletionEmail).not.toHaveBeenCalled();
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 
   it('rolls back the transaction when capture ingress fails', async () => {
@@ -243,5 +280,6 @@ describe('demoPayRegistration', () => {
 
     expect(mockCreateAuditLog).not.toHaveBeenCalled();
     expect(mockSendRegistrationCompletionEmail).not.toHaveBeenCalled();
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 });

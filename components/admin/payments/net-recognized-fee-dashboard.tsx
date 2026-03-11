@@ -1,4 +1,5 @@
 import type { NetRecognizedFeeMetrics } from '@/lib/payments/economics/net-recognized-fees';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
 type NetRecognizedFeeDashboardLabels = {
   sectionTitle: string;
@@ -38,15 +39,6 @@ type NetRecognizedFeeDashboardProps = {
   hideSummaryCards?: boolean;
 };
 
-function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valueMinor / 100);
-}
-
 function formatDateTime(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
   if (!value) return '—';
   const normalized = value instanceof Date ? value : new Date(value);
@@ -64,17 +56,17 @@ export function NetRecognizedFeeDashboard({
   labels,
   hideSummaryCards = false,
 }: NetRecognizedFeeDashboardProps) {
-  const headlineValue = formatMoney(
+  const headlineValue = formatMoneyFromMinor(
     metrics.headlineNetRecognizedFeeMinor,
     metrics.headlineCurrency,
     locale,
   );
-  const capturedValue = formatMoney(
+  const capturedValue = formatMoneyFromMinor(
     metrics.headlineCapturedFeeMinor,
     metrics.headlineCurrency,
     locale,
   );
-  const adjustmentsValue = formatMoney(
+  const adjustmentsValue = formatMoneyFromMinor(
     metrics.headlineAdjustmentsMinor,
     metrics.headlineCurrency,
     locale,
@@ -137,13 +129,13 @@ export function NetRecognizedFeeDashboard({
                   <tr key={row.currency} className="border-t">
                     <td className="py-2 pr-4 font-medium">{row.currency}</td>
                     <td className="py-2 pr-4 text-right tabular-nums">
-                      {formatMoney(row.netRecognizedFeeMinor, row.currency, locale)}
+                      {formatMoneyFromMinor(row.netRecognizedFeeMinor, row.currency, locale)}
                     </td>
                     <td className="py-2 pr-4 text-right tabular-nums">
-                      {formatMoney(row.capturedFeeMinor, row.currency, locale)}
+                      {formatMoneyFromMinor(row.capturedFeeMinor, row.currency, locale)}
                     </td>
                     <td className="py-2 pr-4 text-right tabular-nums">
-                      {formatMoney(row.adjustmentsMinor, row.currency, locale)}
+                      {formatMoneyFromMinor(row.adjustmentsMinor, row.currency, locale)}
                     </td>
                     <td className="py-2 text-right tabular-nums">
                       {row.captureEventCount + row.adjustmentEventCount}
@@ -177,7 +169,7 @@ export function NetRecognizedFeeDashboard({
                       <td className="py-2 pr-4 font-medium">{row.currency}</td>
                       <td className="py-2 pr-4 font-mono text-xs">{row.adjustmentCode}</td>
                       <td className="py-2 pr-4 text-right tabular-nums">
-                        {formatMoney(row.amountMinor, row.currency, locale)}
+                        {formatMoneyFromMinor(row.amountMinor, row.currency, locale)}
                       </td>
                       <td className="py-2 text-right tabular-nums">{row.eventCount}</td>
                     </tr>

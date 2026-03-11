@@ -4,6 +4,7 @@ import { Link, useRouter } from '@/i18n/navigation';
 import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerPayoutListItem } from '@/lib/payments/organizer/payout-views';
 import { shortIdentifier } from '@/lib/payments/organizer/presentation';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 import { ChevronRightIcon } from 'lucide-react';
 
@@ -16,15 +17,6 @@ type PayoutHistoryTableProps = {
   description?: string;
   eventId?: string;
 };
-
-function formatMoney(minor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
-}
 
 function formatDate(value: Date, locale: 'es' | 'en'): string {
   return new Intl.DateTimeFormat(locale === 'es' ? 'es-MX' : 'en-US', {
@@ -114,10 +106,14 @@ export function PayoutHistoryTable({
                     />
                   </td>
                   <td className="py-3 pr-4 text-right tabular-nums">
-                    {formatMoney(item.requestedAmountMinor, item.currency, locale)}
+                    {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
                   </td>
                   <td className="py-3 pr-4 text-right tabular-nums">
-                    {formatMoney(item.currentRequestedAmountMinor, item.currency, locale)}
+                    {formatMoneyFromMinor(
+                      item.currentRequestedAmountMinor,
+                      item.currency,
+                      locale,
+                    )}
                   </td>
                   <td className="py-3">{formatDate(item.requestedAt, locale)}</td>
                   <td className="py-3 text-right">

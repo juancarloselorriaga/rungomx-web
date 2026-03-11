@@ -17,10 +17,15 @@ import { FinancialCaseLookupDashboard } from '@/components/admin/payments/financ
 import { FxRateManagementDashboard } from '@/components/admin/payments/fx-rate-management-dashboard';
 import { MxnReportingDashboard } from '@/components/admin/payments/mxn-reporting-dashboard';
 import { NetRecognizedFeeDashboard } from '@/components/admin/payments/net-recognized-fee-dashboard';
+import { PaymentCaptureVolumeDashboard } from '@/components/admin/payments/payment-capture-volume-dashboard';
 import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { db } from '@/db';
 import { moneyEvents } from '@/db/schema';
+import {
+  adminPaymentsRangeSelectorWorkspaceIds,
+  normalizeAdminPaymentsWorkspace,
+} from '@/lib/payments/admin/workspaces';
 import { getArtifactGovernanceSummary } from '@/lib/payments/artifacts/governance';
 import { getAdminDebtDisputeExposureMetrics } from '@/lib/payments/economics/debt-dispute-exposure';
 import {
@@ -32,8 +37,10 @@ import { getAdminMxnNetRecognizedFeeReport } from '@/lib/payments/economics/mxn-
 import { getAdminNetRecognizedFeeMetrics } from '@/lib/payments/economics/net-recognized-fees';
 import { lookupFinancialCases } from '@/lib/payments/support/case-lookup';
 import { buildFinancialEvidencePack, type EvidencePackViewRole } from '@/lib/payments/support/evidence-pack';
+import { getAdminPaymentCaptureVolumeMetrics } from '@/lib/payments/volume/payment-capture-volume';
 import { type AppLocale } from '@/i18n/routing';
 import { LocalePageProps } from '@/types/next';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import { and, gte, inArray, lte, sql } from 'drizzle-orm';
@@ -84,19 +91,30 @@ function rangeToDays(range: '7d' | '14d' | '30d'): number {
   }
 }
 
-function normalizeWorkspace(
-  rawWorkspace: string | undefined,
-): AdminPaymentsWorkspaceId {
-  if (
-    rawWorkspace === 'overview' ||
-    rawWorkspace === 'risk' ||
-    rawWorkspace === 'operations' ||
-    rawWorkspace === 'investigation'
-  ) {
-    return rawWorkspace;
+function normalizePositivePage(rawValue: string | undefined): number {
+  if (!rawValue) return 1;
+  const parsed = Number.parseInt(rawValue, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return 1;
   }
+  return parsed;
+}
 
-  return 'overview';
+function toSingleValueSearchParamMap(
+  searchParams: AdminPaymentsSearchParams,
+): Record<string, string> {
+  return Object.entries(searchParams).reduce<Record<string, string>>((accumulator, [key, value]) => {
+    if (typeof value === 'string') {
+      accumulator[key] = value;
+      return accumulator;
+    }
+
+    if (Array.isArray(value) && value[0]) {
+      accumulator[key] = value[0];
+    }
+
+    return accumulator;
+  }, {});
 }
 
 function normalizeInvestigationTool(
@@ -108,15 +126,6 @@ function normalizeInvestigationTool(
   }
 
   return hasSelectedTrace ? 'trace' : 'lookup';
-}
-
-function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valueMinor / 100);
 }
 
 function formatDateTime(value: Date | string | null | undefined, locale: 'es' | 'en'): string {
@@ -206,6 +215,12 @@ export default async function AdminPaymentsEconomicsPage({
 
   const tDashboardRanges = await getTranslations('pages.dashboard.admin.metrics.ranges');
   const tPayments = await getTranslations('pages.adminPayments.admin.payments');
+  const rawVolumeLabel = (
+    key: 'volume.mixedCurrencyNotice' | 'volume.organizerPageSummary',
+  ) => {
+    const value = tPayments.raw(key);
+    return typeof value === 'string' ? value : String(value ?? '');
+  };
   const resolvedSearchParams: AdminPaymentsSearchParams = searchParams
     ? await searchParams
     : {};
@@ -226,6 +241,7 @@ export default async function AdminPaymentsEconomicsPage({
       : Array.isArray(workspaceParam)
         ? workspaceParam[0]
         : undefined;
+  const organizerPageParam = resolvedSearchParams.organizerPage;
   const investigationToolParam = resolvedSearchParams.investigationTool;
   const primaryCaseQuery =
     typeof caseQueryParam === 'string'
@@ -256,12 +272,154 @@ export default async function AdminPaymentsEconomicsPage({
     ? 'admin'
     : 'support';
   const selectedRange = normalizeRange(rawRange);
-  const activeWorkspace = normalizeWorkspace(rawWorkspace);
+  const activeWorkspace = normalizeAdminPaymentsWorkspace(rawWorkspace);
+  const organizerPage =
+    typeof organizerPageParam === 'string'
+      ? normalizePositivePage(organizerPageParam)
+      : Array.isArray(organizerPageParam)
+        ? normalizePositivePage(organizerPageParam[0])
+        : 1;
   const activeInvestigationTool = normalizeInvestigationTool(
     rawInvestigationTool,
     evidenceTraceId.trim().length > 0,
   );
   const rangeDays = rangeToDays(selectedRange);
+  const volumeQueryState = toSingleValueSearchParamMap(resolvedSearchParams);
+  const rangeOptions = [
+    { value: '7d' as const, label: tDashboardRanges('last7days') },
+    { value: '14d' as const, label: tDashboardRanges('last14days') },
+    { value: '30d' as const, label: tDashboardRanges('last30days') },
+  ];
+  const workspaceItems = [
+    {
+      id: 'volume' as const,
+      label: tPayments('nav.volumeLabel'),
+      description: tPayments('nav.volumeDescription'),
+    },
+    {
+      id: 'economics' as const,
+      label: tPayments('nav.economicsLabel'),
+      description: tPayments('nav.economicsDescription'),
+    },
+    {
+      id: 'risk' as const,
+      label: tPayments('nav.riskLabel'),
+      description: tPayments('nav.riskDescription'),
+    },
+    {
+      id: 'operations' as const,
+      label: tPayments('nav.operationsLabel'),
+      description: tPayments('nav.operationsDescription'),
+    },
+    {
+      id: 'investigation' as const,
+      label: tPayments('nav.investigationLabel'),
+      description: tPayments('nav.investigationDescription'),
+    },
+  ] satisfies Array<{
+    id: AdminPaymentsWorkspaceId;
+    label: string;
+    description: string;
+  }>;
+
+  if (activeWorkspace === 'volume') {
+    const volumeMetrics = await getAdminPaymentCaptureVolumeMetrics({
+      days: rangeDays,
+      organizerPage,
+      organizerPageSize: 5,
+    });
+    const contextSummary = await getAdminPaymentsContextSummary({
+      windowStart: volumeMetrics.windowStart,
+      windowEnd: volumeMetrics.windowEnd,
+    });
+    const hasPayoutOnlyContext =
+      contextSummary.capturedCount === 0 &&
+      contextSummary.adjustmentCount === 0 &&
+      contextSummary.payoutLifecycleCount > 0;
+    const volumeLabels = {
+      sectionTitle: tPayments('volume.sectionTitle'),
+      sectionDescription: tPayments('volume.sectionDescription'),
+      mixedCurrencyNotice: rawVolumeLabel('volume.mixedCurrencyNotice'),
+      grossProcessedLabel: tPayments('volume.grossProcessedLabel'),
+      grossProcessedDescription: tPayments('volume.grossProcessedDescription'),
+      platformFeesLabel: tPayments('volume.platformFeesLabel'),
+      platformFeesDescription: tPayments('volume.platformFeesDescription'),
+      organizerProceedsLabel: tPayments('volume.organizerProceedsLabel'),
+      organizerProceedsDescription: tPayments('volume.organizerProceedsDescription'),
+      capturedPaymentsLabel: tPayments('volume.capturedPaymentsLabel'),
+      capturedPaymentsDescription: tPayments('volume.capturedPaymentsDescription'),
+      currenciesTitle: tPayments('volume.currenciesTitle'),
+      currenciesDescription: tPayments('volume.currenciesDescription'),
+      currencyHeader: tPayments('volume.currencyHeader'),
+      grossHeader: tPayments('volume.grossHeader'),
+      feesHeader: tPayments('volume.feesHeader'),
+      proceedsHeader: tPayments('volume.proceedsHeader'),
+      countHeader: tPayments('volume.countHeader'),
+      emptyCurrencies: tPayments('volume.emptyCurrencies'),
+      traceabilityTitle: tPayments('volume.traceabilityTitle'),
+      traceabilityDescription: tPayments('volume.traceabilityDescription'),
+      traceabilityWindowLabel: tPayments('volume.traceabilityWindowLabel'),
+      traceabilityEventsLabel: tPayments('volume.traceabilityEventsLabel'),
+      traceabilityTracesLabel: tPayments('volume.traceabilityTracesLabel'),
+      traceabilityExcludedLabel: tPayments('volume.traceabilityExcludedLabel'),
+      traceabilityFirstEventLabel: tPayments('volume.traceabilityFirstEventLabel'),
+      traceabilityLastEventLabel: tPayments('volume.traceabilityLastEventLabel'),
+      sampleTracesTitle: tPayments('volume.sampleTracesTitle'),
+      sampleTracesEmpty: tPayments('volume.sampleTracesEmpty'),
+      topOrganizersTitle: tPayments('volume.topOrganizersTitle'),
+      topOrganizersDescription: tPayments('volume.topOrganizersDescription'),
+      organizerHeader: tPayments('volume.organizerHeader'),
+      organizerGrossHeader: tPayments('volume.organizerGrossHeader'),
+      organizerFeesHeader: tPayments('volume.organizerFeesHeader'),
+      organizerProceedsHeader: tPayments('volume.organizerProceedsHeader'),
+      organizerCountHeader: tPayments('volume.organizerCountHeader'),
+      organizerActionHeader: tPayments('volume.organizerActionHeader'),
+      organizerEmpty: tPayments('volume.organizerEmpty'),
+      organizerPageSummary: rawVolumeLabel('volume.organizerPageSummary'),
+      previousPageLabel: tPayments('volume.previousPageLabel'),
+      nextPageLabel: tPayments('volume.nextPageLabel'),
+      investigationTitle: tPayments('volume.investigationTitle'),
+      investigationDescription: tPayments('volume.investigationDescription'),
+      investigationActionLabel: tPayments('volume.investigationActionLabel'),
+      organizerActionLabel: tPayments('volume.organizerActionLabel'),
+    };
+
+    return (
+      <div className="space-y-6">
+        <AdminPaymentsWorkspaceShell
+          title={tPayments('title')}
+          description={tPayments('description')}
+          workspaceLabel={tPayments('workspaceLabel')}
+          activeItemId={activeWorkspace}
+          toolbar={
+            <AdminDashboardRangeSelector
+              options={rangeOptions}
+              selected={selectedRange}
+              className="w-full max-w-[38rem]"
+            />
+          }
+          items={workspaceItems}
+        />
+        {hasPayoutOnlyContext ? (
+          <section className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">{tPayments('contextBanner.title')}</p>
+            <p className="mt-1">
+              {tPayments('contextBanner.description', {
+                payoutCount: contextSummary.payoutLifecycleCount,
+              })}
+            </p>
+          </section>
+        ) : null}
+        <PaymentCaptureVolumeDashboard
+          locale={locale as AppLocale}
+          metrics={volumeMetrics}
+          labels={volumeLabels}
+          queryState={volumeQueryState}
+        />
+      </div>
+    );
+  }
+
   const [
     metrics,
     exposureMetrics,
@@ -341,11 +499,6 @@ export default async function AdminPaymentsEconomicsPage({
     emptyAdjustments: tPayments('emptyAdjustments'),
   };
 
-  const rangeOptions = [
-    { value: '7d' as const, label: tDashboardRanges('last7days') },
-    { value: '14d' as const, label: tDashboardRanges('last14days') },
-    { value: '30d' as const, label: tDashboardRanges('last30days') },
-  ];
   const selectedRangeLabel =
     rangeOptions.find((option) => option.value === selectedRange)?.label ?? rangeOptions[2].label;
 
@@ -557,7 +710,7 @@ export default async function AdminPaymentsEconomicsPage({
 
   let workspaceContent: ReactNode = null;
 
-  if (activeWorkspace === 'overview') {
+  if (activeWorkspace === 'economics') {
     workspaceContent = (
       <div className="space-y-6">
         <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
@@ -566,7 +719,7 @@ export default async function AdminPaymentsEconomicsPage({
               {tPayments('overview.heroEyebrow')}
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-              {formatMoney(
+              {formatMoneyFromMinor(
                 metrics.headlineNetRecognizedFeeMinor,
                 metrics.headlineCurrency,
                 locale as AppLocale,
@@ -583,7 +736,7 @@ export default async function AdminPaymentsEconomicsPage({
                   {labels.capturedFeesLabel}
                 </p>
                 <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {formatMoney(
+                  {formatMoneyFromMinor(
                     metrics.headlineCapturedFeeMinor,
                     metrics.headlineCurrency,
                     locale as AppLocale,
@@ -595,7 +748,7 @@ export default async function AdminPaymentsEconomicsPage({
                   {mxnLabels.headlineTitle}
                 </p>
                 <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {formatMoney(
+                  {formatMoneyFromMinor(
                     mxnReport.headlineMxnNetRecognizedFeeMinor,
                     'MXN',
                     locale as AppLocale,
@@ -728,7 +881,7 @@ export default async function AdminPaymentsEconomicsPage({
                   {exposureLabels.summaryExposureTitle}
                 </p>
                 <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {formatMoney(
+                  {formatMoneyFromMinor(
                     exposureMetrics.totals.headlineExposureScoreMinor,
                     exposureMetrics.totals.headlineCurrency,
                     locale as AppLocale,
@@ -1000,7 +1153,9 @@ export default async function AdminPaymentsEconomicsPage({
         workspaceLabel={tPayments('workspaceLabel')}
         activeItemId={activeWorkspace}
         toolbar={
-          (activeWorkspace === 'overview' || activeWorkspace === 'risk') ? (
+          (adminPaymentsRangeSelectorWorkspaceIds as readonly AdminPaymentsWorkspaceId[]).includes(
+            activeWorkspace,
+          ) ? (
             <AdminDashboardRangeSelector
               options={rangeOptions}
               selected={selectedRange}
@@ -1008,28 +1163,7 @@ export default async function AdminPaymentsEconomicsPage({
             />
           ) : null
         }
-        items={[
-          {
-            id: 'overview',
-            label: tPayments('nav.overviewLabel'),
-            description: tPayments('nav.overviewDescription'),
-          },
-          {
-            id: 'risk',
-            label: tPayments('nav.riskLabel'),
-            description: tPayments('nav.riskDescription'),
-          },
-          {
-            id: 'operations',
-            label: tPayments('nav.operationsLabel'),
-            description: tPayments('nav.operationsDescription'),
-          },
-          {
-            id: 'investigation',
-            label: tPayments('nav.investigationLabel'),
-            description: tPayments('nav.investigationDescription'),
-          },
-        ]}
+        items={workspaceItems}
       />
       {hasPayoutOnlyContext ? (
         <section className="rounded-2xl border bg-muted/20 p-4 text-sm text-muted-foreground">
