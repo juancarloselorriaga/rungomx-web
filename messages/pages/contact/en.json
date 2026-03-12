@@ -73,7 +73,7 @@
       "events": {
         "href": "/events",
         "title": "Browse events",
-        "description": "Review public event pages, registration status, and organizer-published event details."
+        "description": "Review public event pages, registration status, and event details published by the Race Director."
       },
       "results": {
         "href": "/results",

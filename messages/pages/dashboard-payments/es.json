@@ -42,7 +42,7 @@
       "title": "Cola de acciones",
       "actionNeeded": "Acción requerida",
       "inProgress": "En progreso",
-      "actionNeededDescription": "Elementos que requieren una acción del organizador para continuar.",
+      "actionNeededDescription": "Elementos que requieren acción del Director de Carrera para seguir avanzando.",
       "inProgressDescription": "Elementos actualmente gestionados por el procesamiento de plataforma.",
       "emptyActionNeeded": "No hay elementos con acción requerida en este momento.",
       "emptyInProgress": "No hay elementos en progreso en este momento.",

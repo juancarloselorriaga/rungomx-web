@@ -301,7 +301,7 @@
       "metadata": {
         "title": "Manage Events | RunGoMX",
         "description": "Create, manage, and publish your running events and races with RunGoMX.",
-        "keywords": ["event management", "race organizer", "event dashboard"],
+        "keywords": ["event management", "race director", "event dashboard"],
         "openGraph": {
           "title": "Manage Events | RunGoMX",
           "description": "Create and manage your running events with RunGoMX.",
@@ -313,11 +313,11 @@
       "metadata": {
         "title": "Payments workspace | RunGoMX",
         "description": "Track wallet readiness, payout requests, and payout lifecycle progress.",
-        "keywords": ["organizer payouts", "payments workspace", "wallet readiness"],
+        "keywords": ["race director payouts", "payments workspace", "wallet readiness"],
         "openGraph": {
           "title": "Payments workspace | RunGoMX",
           "description": "Track wallet readiness, payout requests, and payout lifecycle progress.",
-          "imageAlt": "Organizer payments workspace"
+          "imageAlt": "Race Director payments workspace"
         }
       }
     },

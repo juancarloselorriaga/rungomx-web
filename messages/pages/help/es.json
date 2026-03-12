@@ -18,7 +18,7 @@
       },
       "eventInformation": {
         "title": "Información del evento",
-        "description": "Ubica dónde suelen aparecer horarios, instrucciones para participantes, contexto de precios y detalles publicados por el organizador.",
+        "description": "Ubica dónde suelen aparecer horarios, instrucciones para participantes, contexto de precios y actualizaciones del Director de Carrera.",
         "linkLabel": "Ir a respuestas sobre el evento"
       },
       "results": {
@@ -46,7 +46,7 @@
   "faqGroups": {
     "eyebrow": "Preguntas frecuentes",
     "title": "Respuestas claras para las dudas más comunes",
-    "description": "Cuando algo depende de las reglas del organizador o de una inscripción específica, te lo decimos tal cual.",
+    "description": "Cuando algo depende de las reglas del Director de Carrera o de una inscripción específica, te lo decimos tal cual.",
     "groups": {
       "registrations": {
         "title": "Inscripciones",
@@ -56,7 +56,7 @@
             "question": "¿Cómo sé si la inscripción está abierta para un evento?",
             "paragraphs": [
               "Empieza en la página del evento. RunGoMX muestra ahí el estado de la inscripción, incluyendo si está abierta, cerrada, aún no inicia o está pausada para ese evento específico.",
-              "Esa misma vista del evento también es el lugar correcto para revisar la edición actual, el contexto de fechas y cualquier instrucción publicada por el organizador antes de comenzar."
+              "Esa misma vista del evento también es el lugar correcto para revisar la edición actual, el contexto de fechas y cualquier instrucción publicada por el Director de Carrera antes de empezar."
             ],
             "links": [
               {
@@ -86,7 +86,7 @@
       },
       "eventInformation": {
         "title": "Información del evento",
-        "description": "Las páginas públicas del evento son el punto de partida para los detalles prácticos, pero algunas políticas siguen siendo del organizador.",
+        "description": "Las páginas públicas del evento son el punto de partida para los detalles prácticos, pero algunas políticas siguen siendo del organizador del evento.",
         "items": {
           "findEventDetails": {
             "question": "¿Dónde debo revisar detalles del evento, horarios e instrucciones para participantes?",
@@ -104,7 +104,7 @@
           "organizerPolicies": {
             "question": "¿Quién controla precios, deslindes, cancelaciones u otras reglas específicas del evento?",
             "paragraphs": [
-              "Normalmente esas decisiones específicas del evento las controla el organizador. RunGoMX impulsa la experiencia de plataforma, pero precios, deslindes, condiciones de cancelación y reglas del día del evento pueden venir del organizador responsable.",
+              "Normalmente esas decisiones específicas del evento las toma el Director de Carrera. RunGoMX impulsa la experiencia de plataforma, pero precios, deslindes, condiciones de cancelación y reglas del día del evento pueden venir del organizador responsable del evento.",
               "Si algo en la plataforma parece inconsistente con el contexto del evento, contacta soporte con el evento y los detalles de la inscripción para que el caso pueda revisarse."
             ],
             "links": [
@@ -118,7 +118,7 @@
       },
       "results": {
         "title": "Resultados",
-        "description": "Los resultados son información deportiva pública y todavía pueden actualizarse cuando un organizador o un flujo de cronometraje publica cambios.",
+        "description": "Los resultados son información deportiva pública y todavía pueden actualizarse cuando un Director de Carrera o un flujo de cronometraje publica cambios.",
         "items": {
           "findOfficialResults": {
             "question": "¿Dónde encuentro resultados oficiales en RunGoMX?",
@@ -136,7 +136,7 @@
           "unexpectedResult": {
             "question": "¿Por qué un resultado podría verse distinto de lo que esperaba?",
             "paragraphs": [
-              "Los resultados pueden cambiar cuando se revisan y republican correcciones, clasificaciones o datos de cronometraje proporcionados por el organizador. Eso significa que un resultado público no siempre queda congelado desde la primera publicación.",
+              "Los resultados pueden cambiar cuando se revisan y republican correcciones, clasificaciones o datos de cronometraje compartidos por el Director de Carrera. Eso significa que un resultado público no siempre queda congelado desde la primera publicación.",
               "Si algo sigue viéndose mal después de revisar la página publicada de resultados, contacta soporte con el nombre del evento y el contexto de la persona participante para que la solicitud llegue a la ruta correcta."
             ],
             "links": [
@@ -216,7 +216,7 @@
           "refundsCharges": {
             "question": "¿Quién atiende reembolsos, cargos o disputas de pago?",
             "paragraphs": [
-              "Esos resultados pueden depender de reglas del organizador, del contexto del pago y del estado de la inscripción. RunGoMX no trata todas las dudas de pago como si fueran una acción simple de autoservicio.",
+              "Esos resultados pueden depender de reglas del Director de Carrera, del contexto del pago y del estado de la inscripción. RunGoMX no trata todas las dudas de pago como si fueran una acción simple de autoservicio.",
               "Revisa primero el contexto del evento y después contacta soporte con los detalles de la inscripción y del pago si algo sigue viéndose mal."
             ],
             "links": [
@@ -287,7 +287,7 @@
       "events": {
         "href": "/events",
         "title": "Eventos",
-        "description": "Explora páginas públicas de eventos y revisa el estado de inscripción o los detalles publicados por el organizador."
+        "description": "Explora páginas públicas de eventos y revisa el estado de inscripción o los detalles publicados por el Director de Carrera."
       },
       "results": {
         "href": "/results",

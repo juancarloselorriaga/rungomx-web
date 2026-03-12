@@ -31,7 +31,7 @@
     "panel": {
       "title": "How it works",
       "description": "A quick explanation of how official results and rankings work.",
-      "point1": "Official means the organizer has published the results for that edition.",
+      "point1": "Official means the Race Director has published the results for that edition.",
       "point2": "If a correction is made, a new version is published with visible history.",
       "point3": "Rankings use published official versions only.",
       "cta": "Read the full explainer"
@@ -42,7 +42,7 @@
       "description": "This page explains what “Official” means, how corrections are published, and how rankings use those results.",
       "officialMeaning": {
         "title": "What “Official” means",
-        "point1": "Official results are published by the event organizer as the accountable source for that edition.",
+        "point1": "Official results are published by the Race Director for that edition.",
         "point2": "Draft data is not presented as official public record."
       },
       "correctionProcess": {
@@ -69,7 +69,7 @@
       "versionTransition": "Version transition"
     },
     "fallback": {
-      "unknownApprover": "Organizer",
+      "unknownApprover": "Race Director",
       "unknownTime": "Not available",
       "noChanges": "No detailed field changes were provided."
     }
@@ -98,7 +98,7 @@
       "description": "Key details for this official publication.",
       "scopeValue": "Official results for this edition",
       "fields": {
-        "organizer": "Organizer",
+        "organizer": "Race Director",
         "scope": "Scope",
         "version": "Version",
         "updatedAt": "Last update",

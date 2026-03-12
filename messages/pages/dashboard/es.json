@@ -145,7 +145,7 @@
         "description": "Distribución de altas nuevas por rol externo en el periodo seleccionado.",
         "totalLabel": "{count, number} asignaciones de rol",
         "roles": {
-          "organizer": "Directores de carrera",
+          "organizer": "Directores de Carrera",
           "athlete": "Atletas",
           "volunteer": "Voluntarios"
         }

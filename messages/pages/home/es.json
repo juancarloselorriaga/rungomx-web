@@ -6,14 +6,14 @@
     "browseEvents": "Explorar eventos",
     "viewResults": "Ver resultados",
     "viewRankings": "Ver rankings",
-    "organizeEvent": "Organizar un evento",
+    "organizeEvent": "Para Directores de Carrera",
     "learnAboutRunGoMx": "Conocer RunGoMX",
     "seeHowItWorks": "Ver cómo funciona"
   },
   "hero": {
     "eyebrow": "Hecho para dar confianza el día de la carrera",
     "title": "Eventos, inscripciones, resultados y rankings en un solo lugar",
-    "description": "RunGoMX ayuda a los organizadores a mostrar sus eventos y a los corredores a encontrar carreras, inscribirse y ver resultados oficiales.",
+    "description": "RunGoMX ayuda a los corredores a encontrar carreras, inscribirse y revisar resultados oficiales, mientras les da a los Directores de Carrera páginas públicas en las que la gente sí confía.",
     "primaryCta": "Explorar eventos",
     "secondaryCta": "Ver resultados"
   },
@@ -41,18 +41,18 @@
   },
   "eventPages": {
     "eyebrow": "Páginas de evento",
-    "title": "Páginas que ayudan a convertir visitas en inscripciones",
-    "description": "Reúne fechas, distancias, políticas y acceso al registro en un formato claro tanto en móvil como en escritorio.",
+    "title": "Páginas de evento pensadas para Directores de Carrera",
+    "description": "Publica fechas, distancias, políticas y registro en un solo lugar, con una experiencia clara tanto en móvil como en escritorio.",
     "highlights": {
-      "clarity": "Muestra lo importante sin hacer que la gente ande buscando respuestas.",
-      "trust": "Dale a cada evento una página pública que se sienta seria y confiable.",
-      "conversion": "Haz que el paso de entrar al sitio a inscribirse sea fácil de seguir."
+      "clarity": "Pon a la vista lo que los corredores necesitan saber.",
+      "trust": "Dale a cada evento una página pública que se sienta oficial desde la primera visita.",
+      "conversion": "Haz que el paso de llegar al sitio a inscribirse sea fácil de seguir."
     }
   },
   "participation": {
     "eyebrow": "Participación",
     "title": "Un camino más claro desde el primer clic hasta la confirmación",
-    "description": "La experiencia pública debe hacer más fácil la inscripción para los corredores sin quitarle control al organizador.",
+    "description": "Haz más fácil la inscripción para los corredores sin quitarles control a los Directores de Carrera.",
     "highlights": {
       "discover": "Ayuda a entender rápido de qué va el evento y si es para esa persona.",
       "decide": "Haz que precios, fechas y detalles clave sean fáciles de comparar.",
@@ -62,7 +62,7 @@
   "resultsRankings": {
     "eyebrow": "Resultados y rankings",
     "title": "Sigue siendo útil después de la carrera",
-    "description": "Los resultados y rankings hacen que la gente vuelva, compare su progreso y siga conectada con el deporte.",
+    "description": "Los resultados y rankings hacen que la gente vuelva y ayudan a los Directores de Carrera a seguir presentes después de la meta.",
     "highlights": {
       "results": "Publica resultados claros, oficiales y fáciles de volver a consultar.",
       "rankings": "Mantén el interés más allá de una sola carrera con rankings ligados a resultados reales.",
@@ -72,14 +72,14 @@
   "aboutBridge": {
     "eyebrow": "Por qué RunGoMX",
     "title": "Conoce qué hace RunGoMX y por qué importa",
-    "description": "Ayuda a que la gente entienda cómo RunGoMX conecta páginas de eventos, inscripciones, resultados oficiales, rankings y soporte en una sola experiencia pública.",
+    "description": "Mira cómo RunGoMX conecta páginas de eventos, inscripciones, resultados oficiales, rankings y soporte para corredores y Directores de Carrera.",
     "cta": "Conocer RunGoMX"
   },
   "finalCta": {
-    "eyebrow": "¿Listo para tu próximo evento?",
-    "title": "Dale a tu evento una mejor presencia pública",
-    "description": "Ayuda a los corredores a encontrar el evento correcto, inscribirse con confianza y volver por resultados oficiales después de la carrera.",
-    "primaryCta": "Organizar un evento",
+    "eyebrow": "Para Directores de Carrera",
+    "title": "Dale a tu carrera una mejor presencia pública",
+    "description": "Reúne página del evento, inscripciones, resultados oficiales y rankings en una experiencia que los corredores entienden rápido.",
+    "primaryCta": "Para Directores de Carrera",
     "secondaryCta": "Ver cómo funciona"
   }
 }

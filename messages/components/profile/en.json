@@ -52,8 +52,8 @@
     },
     "roles": {
       "organizer": {
-        "title": "Organizer",
-        "description": "Manage races, teams, and events."
+        "title": "Race Director",
+        "description": "Manage races, events, and runner-facing details."
       },
       "athlete": {
         "title": "Athlete",

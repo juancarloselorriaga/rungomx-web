@@ -42,7 +42,7 @@
       "title": "Action queue",
       "actionNeeded": "Action Needed",
       "inProgress": "In Progress",
-      "actionNeededDescription": "Items that need organizer action to continue payout readiness.",
+      "actionNeededDescription": "Items that need Race Director action to keep payout readiness moving.",
       "inProgressDescription": "Items currently managed by platform processing.",
       "emptyActionNeeded": "No action-needed items right now.",
       "emptyInProgress": "No in-progress items right now.",
@@ -63,7 +63,7 @@
     "successTitle": "Payout request created",
     "queueSuccessTitle": "Payout intent queued",
     "conflictTitle": "Active payout already exists",
-    "conflictDescription": "This organizer already has an active payout lifecycle. Queue a request to run when the current cycle finishes.",
+    "conflictDescription": "This Race Director workspace already has an active payout lifecycle. Queue a request to run when the current cycle finishes.",
     "errors": {
       "invalidAmount": "Enter a valid positive amount in minor units.",
       "submitFailed": "Payout request could not be created right now.",

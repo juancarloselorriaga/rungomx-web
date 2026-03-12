@@ -11,11 +11,11 @@
     "title": "A running platform should make the important things easy to verify",
     "description": "RunGoMX is built around the public pages people actually use before and after race day.",
     "paragraph1": "That includes finding events, checking registration details, reviewing official results, following rankings, and getting practical help before signing in.",
-    "paragraph2": "Our job is to make it easy for runners and organizers to move between the pages that matter most: event pages, results, rankings, and support.",
+    "paragraph2": "Our job is to make it easy for runners and Race Directors to move between the pages that matter most: event pages, results, rankings, and support.",
     "cardTitle": "What visitors can do on RunGoMX",
     "highlights": {
       "eventDiscovery": "Explore public event listings and live event pages.",
-      "registrationContext": "Check registration status, payment context, and organizer-published event details.",
+      "registrationContext": "Check registration status, payment context, and event details published by the Race Director.",
       "officialResults": "Review official results tied to published race outcomes.",
       "rankings": "Follow rankings built from published results.",
       "helpAndTrust": "Reach support, privacy, and terms when you need more context."
@@ -23,8 +23,8 @@
   },
   "focus": {
     "eyebrow": "Who these pages are for",
-    "title": "RunGoMX helps runners move from interest to proof",
-    "description": "Each public page should make the next step obvious instead of pushing people into sign-in too early.",
+    "title": "RunGoMX helps runners and Race Directors move from interest to proof",
+    "description": "Each public page should make the next step obvious, whether someone is choosing a race or managing one.",
     "items": {
       "discover": {
         "title": "Discover events",

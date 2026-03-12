@@ -18,7 +18,7 @@
       },
       "eventInformation": {
         "title": "Event information",
-        "description": "See where schedules, participant instructions, pricing context, and organizer-provided details usually live.",
+        "description": "See where schedules, participant instructions, pricing context, and Race Director updates usually live.",
         "linkLabel": "Jump to event info answers"
       },
       "results": {
@@ -46,7 +46,7 @@
   "faqGroups": {
     "eyebrow": "Frequently asked questions",
     "title": "Clear answers to the questions we get most",
-    "description": "When something depends on organizer rules or a specific registration, we say that plainly.",
+    "description": "When something depends on Race Director rules or a specific registration, we say that plainly.",
     "groups": {
       "registrations": {
         "title": "Registrations",
@@ -56,7 +56,7 @@
             "question": "How do I know whether registration is open for an event?",
             "paragraphs": [
               "Start from the event page. RunGoMX shows the registration state there, including whether registration is open, closed, not open yet, or paused for that specific event.",
-              "That same event view is also the right place to review the current edition, date context, and any organizer-provided instructions before you begin."
+              "That same event view is also the right place to review the current edition, date context, and any instructions published by the Race Director before you begin."
             ],
             "links": [
               {
@@ -86,12 +86,12 @@
       },
       "eventInformation": {
         "title": "Event information",
-        "description": "Public event pages are the starting point for practical event details, but some policies still belong to the organizer.",
+        "description": "Public event pages are the starting point for practical event details, but some policies still belong to the event organizer.",
         "items": {
           "findEventDetails": {
             "question": "Where should I look for event details, schedules, and participant instructions?",
             "paragraphs": [
-              "Use the event listing and the event page first. That is where runners should expect the most current public event information, including registration context and organizer-facing details already published to participants.",
+              "Use the event listing and the event page first. That is where runners should expect the most current public event information, including registration context and Race Director updates already published to participants.",
               "If a detail is missing or unclear, the event page is still the best starting point before you escalate to support."
             ],
             "links": [
@@ -104,7 +104,7 @@
           "organizerPolicies": {
             "question": "Who controls pricing, waivers, cancellations, or other event-specific rules?",
             "paragraphs": [
-              "Organizers usually control those event-specific decisions. RunGoMX powers the platform experience, but pricing, waivers, cancellation terms, and race-day rules can still come from the organizer responsible for that event.",
+              "The Race Director usually handles those event-specific decisions. RunGoMX powers the platform experience, but pricing, waivers, cancellation terms, and race-day rules can still come from the event organizer responsible for that event.",
               "If something on the platform appears inconsistent with the event context, contact support with the event and registration details so the issue can be reviewed."
             ],
             "links": [
@@ -118,7 +118,7 @@
       },
       "results": {
         "title": "Results",
-        "description": "Results are public sports information, and they can still be updated when an organizer or timing workflow publishes changes.",
+        "description": "Results are public sports information, and they can still be updated when a Race Director or timing workflow publishes changes.",
         "items": {
           "findOfficialResults": {
             "question": "Where do I find official results on RunGoMX?",
@@ -136,7 +136,7 @@
           "unexpectedResult": {
             "question": "Why might a result look different from what I expected?",
             "paragraphs": [
-              "Results can change when corrections, classifications, or organizer-provided timing data are reviewed and republished. That means a public result is not always frozen the first time it appears.",
+              "Results can change when corrections, classifications, or timing data from the Race Director are reviewed and republished. That means a public result is not always frozen the first time it appears.",
               "If something still looks wrong after checking the published result page, contact support with the event name and participant context so the request can be routed correctly."
             ],
             "links": [
@@ -216,7 +216,7 @@
           "refundsCharges": {
             "question": "Who handles refunds, charge questions, or payment disputes?",
             "paragraphs": [
-              "Those outcomes can depend on organizer rules, the payment context, and the state of the registration. RunGoMX does not treat every payment question as a simple self-service action.",
+              "Those outcomes can depend on Race Director rules, the payment context, and the state of the registration. RunGoMX does not treat every payment question as a simple self-service action.",
               "Review the event context first, then contact support with the registration and payment details if something still looks wrong."
             ],
             "links": [
@@ -287,7 +287,7 @@
       "events": {
         "href": "/events",
         "title": "Events",
-        "description": "Browse public event pages and review registration status or organizer-provided event details."
+        "description": "Browse public event pages and review registration status or event details published by the Race Director."
       },
       "results": {
         "href": "/results",

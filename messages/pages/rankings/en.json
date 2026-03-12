@@ -3,9 +3,9 @@
   "description": "See the latest national rankings built from published official results.",
   "scope": {
     "national": "National scope",
-    "organizer": "Organizer scope",
+    "organizer": "Race Director scope",
     "default": "National view",
-    "contextOrg": "Organizer context: {organization}"
+    "contextOrg": "Race Director context: {organization}"
   },
   "snapshot": {
     "summary": "Ruleset {ruleset} · {rows} ranked runners",
@@ -26,7 +26,7 @@
   },
   "filters": {
     "scope": "Scope",
-    "organization": "Organizer",
+    "organization": "Race Director",
     "snapshot": "Snapshot history",
     "discipline": "Discipline",
     "gender": "Gender",

@@ -2,18 +2,18 @@
   "hero": {
     "badge": "Términos y condiciones",
     "title": "Términos para usar RunGoMX",
-    "description": "Estos términos explican las reglas principales para usar las páginas públicas, las inscripciones, las cuentas, los flujos para organizadores, los resultados y otras funciones de RunGoMX.",
+    "description": "Estos términos explican las reglas principales para usar las páginas públicas, las inscripciones, las cuentas, los flujos para Directores de Carrera, los resultados y otras funciones de RunGoMX.",
     "primaryCta": "Contactar soporte",
     "secondaryCta": "Revisar privacidad"
   },
   "summary": {
     "eyebrow": "Resumen en lenguaje claro",
     "title": "Qué buscan cubrir estos términos",
-    "description": "RunGoMX impulsa páginas públicas de eventos, inscripciones, pagos, resultados, rankings y herramientas para organizadores. Estos términos explican cómo funciona esa relación sin sustituir las reglas específicas de cada evento.",
+    "description": "RunGoMX impulsa páginas públicas de eventos, inscripciones, pagos, resultados, rankings y herramientas para Directores de Carrera. Estos términos explican cómo funciona esa relación sin sustituir las reglas específicas de cada evento.",
     "highlights": [
-      "Usa la plataforma con información correcta y de maneras que no dañen el servicio, a los organizadores ni a otros usuarios.",
-      "Los detalles del evento, precios, responsivas, cancelaciones y logística del día de la carrera pueden venir de los organizadores, no solo de RunGoMX.",
-      "Las inscripciones, pagos, reembolsos y disponibilidad del evento pueden depender de los términos del organizador, del procesamiento de pagos y de condiciones operativas.",
+      "Usa la plataforma con información correcta y de maneras que no dañen el servicio, a los organizadores del evento ni a otros usuarios.",
+      "Los detalles del evento, precios, deslindes, cancelaciones y logística del día de la carrera pueden venir del organizador del evento, no solo de RunGoMX.",
+      "Las inscripciones, pagos, reembolsos y disponibilidad del evento pueden depender de los términos del organizador del evento, del procesamiento de pagos y de condiciones operativas.",
       "Los resultados, rankings y la información pública del evento pueden permanecer visibles como parte del contexto deportivo público normal de la plataforma."
     ]
   },
@@ -26,8 +26,8 @@
         "title": "Uso de la plataforma",
         "intro": "RunGoMX ofrece páginas públicas y flujos de plataforma para carreras y eventos deportivos.",
         "paragraphs": [
-          "Puedes usar RunGoMX para explorar información pública de eventos, crear una cuenta, inscribirte a eventos, revisar resultados, seguir rankings, contactar soporte y participar en flujos administrados por organizadores disponibles en la plataforma.",
-          "Usar la plataforma implica aceptar estos términos, cualquier condición específica del evento presentada en contexto y cualquier regla razonable necesaria para proteger el servicio, a los organizadores, a los participantes y a los visitantes públicos."
+          "Puedes usar RunGoMX para explorar información pública de eventos, crear una cuenta, inscribirte a eventos, revisar resultados, seguir rankings, contactar soporte y participar en flujos para Directores de Carrera disponibles en la plataforma.",
+          "Usar la plataforma implica aceptar estos términos, cualquier condición específica del evento presentada en contexto y cualquier regla razonable necesaria para proteger el servicio, a los organizadores del evento, a los participantes y a los visitantes públicos."
         ],
         "bullets": [
           "Usa RunGoMX solo para actividad legítima relacionada con eventos y la plataforma",
@@ -39,7 +39,7 @@
         "intro": "Si creas o usas una cuenta, eres responsable de la exactitud de la información ligada a ella.",
         "paragraphs": [
           "Proporciona información correcta de contacto, participante y transacciones cuando la plataforma la solicite. Mantén tus credenciales bajo tu control y notifica a soporte si crees que una cuenta se está usando de forma indebida.",
-          "Eres responsable de las acciones realizadas a través de tu cuenta o de la información que envías, especialmente cuando esa información afecta inscripciones, operaciones del organizador, comunicaciones, resultados o pagos."
+          "Eres responsable de las acciones realizadas a través de tu cuenta o de la información que envías, especialmente cuando esa información afecta inscripciones, operaciones del evento, comunicaciones, resultados o pagos."
         ],
         "bullets": [
           "Usa información correcta",
@@ -48,14 +48,14 @@
         ]
       },
       "eventInformationAndOrganizerContent": {
-        "title": "Información del evento y contenido provisto por organizadores",
-        "intro": "RunGoMX aloja y presenta información relacionada con eventos, pero los organizadores suelen controlar el evento en sí.",
+        "title": "Información del evento y contenido del organizador del evento",
+        "intro": "RunGoMX aloja y presenta información relacionada con eventos, pero el organizador del evento suele controlar el evento en sí.",
         "paragraphs": [
-          "Los nombres del evento, descripciones, precios, fechas, horarios, políticas, logística, responsivas, detalles de ruta, instrucciones para participantes y disponibilidad pueden ser provistos o controlados por el organizador responsable de ese evento.",
-          "RunGoMX es la plataforma para mostrar eventos, gestionar inscripciones, operar flujos clave y publicar información deportiva, pero los organizadores siguen siendo responsables de sus decisiones, declaraciones y políticas específicas de cada evento."
+          "Los nombres del evento, descripciones, precios, fechas, horarios, políticas, logística, deslindes, detalles de ruta, instrucciones para participantes y disponibilidad pueden ser provistos o controlados por el organizador responsable de ese evento.",
+          "RunGoMX es la plataforma para mostrar eventos, gestionar inscripciones, operar flujos clave y publicar información deportiva, pero los organizadores del evento siguen siendo responsables de sus decisiones, declaraciones y políticas específicas."
         ],
         "bullets": [
-          "Los organizadores pueden definir reglas o requisitos específicos de su evento",
+          "Los organizadores del evento pueden definir reglas o requisitos específicos de su evento",
           "Los usuarios deben revisar cuidadosamente los detalles del evento antes de inscribirse o participar"
         ]
       },
@@ -63,12 +63,12 @@
         "title": "Inscripciones, pagos y expectativas de transacción",
         "intro": "Las inscripciones y los pagos son flujos operativos, no solo contenido estático.",
         "paragraphs": [
-          "Enviar una solicitud de inscripción o de pago a través de RunGoMX no elimina reglas del organizador, límites de cupo, criterios de elegibilidad, condiciones de cancelación o revisión operativa. La confirmación depende de que el flujo completo termine correctamente.",
-          "El procesamiento de pagos, los reembolsos, las disputas de cargos y los cambios del evento pueden involucrar a organizadores o a servicios de pago de terceros. Los tiempos y resultados pueden variar según el evento, las reglas del organizador y el contexto del pago."
+          "Enviar una solicitud de inscripción o de pago a través de RunGoMX no elimina reglas del organizador del evento, límites de cupo, criterios de elegibilidad, condiciones de cancelación o revisión operativa. La confirmación depende de que el flujo completo termine correctamente.",
+          "El procesamiento de pagos, los reembolsos, las disputas de cargos y los cambios del evento pueden involucrar al organizador del evento o a servicios de pago de terceros. Los tiempos y resultados pueden variar según el evento, las reglas del organizador del evento y el contexto del pago."
         ],
         "bullets": [
           "El estado de la inscripción depende de que el flujo correspondiente se complete con éxito",
-          "Las expectativas de reembolso o cancelación pueden estar controladas por el organizador o por el contexto del pago"
+          "Las expectativas de reembolso o cancelación pueden estar controladas por el organizador del evento o por el contexto del pago"
         ]
       },
       "resultsRankingsAndPublicInfo": {
@@ -76,18 +76,18 @@
         "intro": "RunGoMX soporta información deportiva pública como parte de la experiencia de la plataforma.",
         "paragraphs": [
           "Los resultados oficiales, rankings, páginas de eventos y otra información pública relacionada pueden ser visibles para otros usuarios o visitantes. Esa visibilidad forma parte del contexto normal deportivo y de eventos que la plataforma soporta.",
-          "Buscamos presentar la información con claridad, pero los resultados, clasificaciones, actualizaciones de organizadores y detalles del evento pueden cambiar, corregirse o depender de datos provistos por organizadores y del tiempo operativo."
+          "Buscamos presentar la información con claridad, pero los resultados, clasificaciones, actualizaciones del organizador del evento y detalles del evento pueden cambiar, corregirse o depender de datos provistos por el organizador del evento y del tiempo operativo."
         ],
         "bullets": [
           "La información deportiva pública puede permanecer visible como parte del historial del evento",
-          "Las correcciones o controversias pueden requerir revisión del organizador o seguimiento de soporte"
+          "Las correcciones o controversias pueden requerir revisión del organizador del evento o seguimiento de soporte"
         ]
       },
       "acceptableUse": {
         "title": "Uso aceptable",
         "intro": "La plataforma debe seguir siendo confiable y usable para todas las personas involucradas.",
         "paragraphs": [
-          "No puedes usar RunGoMX para enviar información falsa, interferir con las operaciones de la plataforma, intentar accesos no autorizados, abusar de flujos del evento, copiar o extraer áreas protegidas de forma dañina ni interrumpir la experiencia de organizadores, corredores o visitantes.",
+          "No puedes usar RunGoMX para enviar información falsa, interferir con las operaciones de la plataforma, intentar accesos no autorizados, abusar de flujos del evento, copiar o extraer áreas protegidas de forma dañina ni interrumpir la experiencia de organizadores del evento, corredores o visitantes.",
           "Podemos limitar o suspender acceso cuando sea razonablemente necesario para proteger la plataforma, investigar usos indebidos, hacer valer reglas de la plataforma o responder a problemas de seguridad, fraude o legales."
         ],
         "bullets": [
@@ -100,7 +100,7 @@
         "title": "Cambios de plataforma, interrupciones y limitaciones",
         "intro": "Una plataforma viva para eventos cambia con el tiempo.",
         "paragraphs": [
-          "RunGoMX puede actualizar, mejorar, pausar o retirar funciones, flujos o contenido público a medida que el producto evoluciona. La disponibilidad también puede verse afectada por decisiones del organizador, mantenimiento, incidentes operativos o dependencias de terceros.",
+          "RunGoMX puede actualizar, mejorar, pausar o retirar funciones, flujos o contenido público a medida que el producto evoluciona. La disponibilidad también puede verse afectada por decisiones del organizador del evento, mantenimiento, incidentes operativos o dependencias de terceros.",
           "Aunque trabajamos para mantener el servicio confiable, la disponibilidad de la plataforma, la exactitud del evento y el acceso ininterrumpido no pueden garantizarse en toda situación. El uso de la plataforma sigue sujeto a realidades operativas y a la ley aplicable."
         ],
         "bullets": [
@@ -113,7 +113,7 @@
         "intro": "Las preguntas deben tener una ruta clara.",
         "paragraphs": [
           "Si tienes una pregunta sobre estos términos, necesitas soporte relacionado con un flujo del evento o quieres plantear una inquietud legal, contacta al equipo de RunGoMX a través de la página pública de contacto.",
-          "Incluye suficiente detalle para identificar el evento, el contexto del organizador, la cuenta, la inscripción o el problema involucrado para que la solicitud pueda canalizarse correctamente."
+          "Incluye suficiente detalle para identificar el evento, el contexto del organizador del evento, la cuenta, la inscripción o el problema involucrado para que la solicitud pueda canalizarse correctamente."
         ],
         "bullets": [
           "Usa la página de contacto para preguntas legales o de soporte",
@@ -124,7 +124,7 @@
   },
   "cta": {
     "title": "¿Necesitas ayuda con estos términos o con un tema del evento?",
-    "description": "Envíanos los datos del evento, organizador, cuenta o inscripción para revisar tu caso con precisión.",
+    "description": "Envíanos los datos del evento, organizador del evento, cuenta o inscripción para revisar tu caso con precisión.",
     "primaryActionLabel": "Ir a contacto"
   },
   "relatedLinks": {

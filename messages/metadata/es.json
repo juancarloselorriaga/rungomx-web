@@ -311,7 +311,7 @@
       "metadata": {
         "title": "Gestionar Eventos | RunGoMX",
         "description": "Crea, administra y publica tus eventos de running y carreras con RunGoMX.",
-        "keywords": ["gestión de eventos", "organizador de carreras", "dashboard de eventos"],
+        "keywords": ["gestión de eventos", "director de carrera", "dashboard de eventos"],
         "openGraph": {
           "title": "Gestionar Eventos | RunGoMX",
           "description": "Crea y administra tus eventos de running con RunGoMX.",
@@ -323,11 +323,11 @@
       "metadata": {
         "title": "Espacio de pagos | RunGoMX",
         "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
-        "keywords": ["retiros organizador", "espacio de pagos", "elegibilidad cartera"],
+        "keywords": ["retiros director de carrera", "espacio de pagos", "elegibilidad cartera"],
         "openGraph": {
           "title": "Espacio de pagos | RunGoMX",
           "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
-          "imageAlt": "Espacio de pagos para organizadores"
+          "imageAlt": "Espacio de pagos para Directores de Carrera"
         }
       }
     },

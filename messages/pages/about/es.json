@@ -11,11 +11,11 @@
     "title": "Una plataforma de running debe hacer fácil verificar lo importante",
     "description": "RunGoMX está construido alrededor de las páginas públicas que la gente realmente usa antes y después de una carrera.",
     "paragraph1": "Eso incluye encontrar eventos, revisar detalles de inscripción, ver resultados oficiales, seguir rankings y resolver dudas sin tener que iniciar sesión desde el principio.",
-    "paragraph2": "La idea es simple: ayudar a corredores y organizadores a moverse entre las páginas que más importan, como eventos, resultados, rankings y soporte.",
+    "paragraph2": "La idea es simple: ayudar a corredores y Directores de Carrera a moverse entre las páginas que más importan, como eventos, resultados, rankings y soporte.",
     "cardTitle": "Lo que puedes hacer en RunGoMX",
     "highlights": {
       "eventDiscovery": "Explorar listados públicos y páginas activas de eventos.",
-      "registrationContext": "Revisar el estado de inscripción, el contexto de pago y los detalles publicados por el organizador.",
+      "registrationContext": "Revisar el estado de inscripción, el contexto de pago y los detalles que publica el Director de Carrera.",
       "officialResults": "Consultar resultados oficiales ligados a resultados publicados del evento.",
       "rankings": "Seguir rankings construidos con resultados publicados.",
       "helpAndTrust": "Ir a ayuda, contacto, privacidad y términos cuando hace falta más contexto."
@@ -23,8 +23,8 @@
   },
   "focus": {
     "eyebrow": "Para quién son estas páginas",
-    "title": "RunGoMX ayuda a pasar del interés a la confianza",
-    "description": "Cada página pública debe dejar claro cuál es el siguiente paso sin mandar a todos a iniciar sesión demasiado pronto.",
+    "title": "RunGoMX ayuda a corredores y Directores de Carrera a pasar del interés a la confianza",
+    "description": "Cada página pública debe dejar claro cuál es el siguiente paso, ya sea elegir una carrera o gestionarla.",
     "items": {
       "discover": {
         "title": "Descubrir eventos",

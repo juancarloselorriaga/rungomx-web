@@ -31,7 +31,7 @@
     "panel": {
       "title": "Cómo funciona",
       "description": "Una explicación rápida de cómo funcionan los resultados y rankings oficiales.",
-      "point1": "Oficial significa que el organizador ya publicó los resultados de esa edición.",
+      "point1": "Oficial significa que el Director de Carrera ya publicó los resultados de esa edición.",
       "point2": "Si hay una corrección, se publica una nueva versión con historial visible.",
       "point3": "Los rankings solo usan versiones oficiales publicadas.",
       "cta": "Leer el explicador completo"
@@ -42,7 +42,7 @@
       "description": "Aquí te explicamos qué significa “Oficial”, cómo se publican correcciones y cómo los rankings usan esos resultados.",
       "officialMeaning": {
         "title": "Qué significa “Oficial”",
-        "point1": "Los resultados oficiales los publica el organizador como fuente responsable de esa edición.",
+        "point1": "Los resultados oficiales los publica el Director de Carrera de esa edición.",
         "point2": "Los datos de borrador no se presentan como registro público oficial."
       },
       "correctionProcess": {
@@ -69,7 +69,7 @@
       "versionTransition": "Transición de versión"
     },
     "fallback": {
-      "unknownApprover": "Organizador",
+      "unknownApprover": "Director de Carrera",
       "unknownTime": "No disponible",
       "noChanges": "No se proporcionaron cambios detallados por campo."
     }
@@ -98,7 +98,7 @@
       "description": "Datos clave de esta publicación oficial.",
       "scopeValue": "Resultados oficiales de esta edición",
       "fields": {
-        "organizer": "Organizador",
+        "organizer": "Director de Carrera",
         "scope": "Alcance",
         "version": "Versión",
         "updatedAt": "Última actualización",

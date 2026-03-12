@@ -3,9 +3,9 @@
   "description": "Consulta los rankings nacionales más recientes con base en resultados oficiales publicados.",
   "scope": {
     "national": "Vista nacional",
-    "organizer": "Vista por organizador",
+    "organizer": "Alcance de Director de Carrera",
     "default": "Vista nacional",
-    "contextOrg": "Contexto del organizador: {organization}"
+    "contextOrg": "Contexto de Director de Carrera: {organization}"
   },
   "snapshot": {
     "summary": "Ruleset {ruleset} · {rows} posiciones",
@@ -26,7 +26,7 @@
   },
   "filters": {
     "scope": "Alcance",
-    "organization": "Organizador",
+    "organization": "Director de Carrera",
     "snapshot": "Historial de snapshots",
     "discipline": "Disciplina",
     "gender": "Género",

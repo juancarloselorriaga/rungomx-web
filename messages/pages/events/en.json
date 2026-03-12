@@ -27,7 +27,7 @@
     },
     "registrationOpen": "Registration open",
     "registrationClosed": "Registration closed",
-    "registrationDetails": "Registration details",
+    "registrationDetails": "Registration",
     "registrationOpens": "Opens {date}",
     "registrationCloses": "Closes {date}",
     "registrationPaused": "Registration is paused",
@@ -35,10 +35,10 @@
     "registerWithFriends": "Register with friends",
     "selectDistance": "Select distance",
     "eventDate": "Event date",
-    "eventDetails": "Event details",
-    "infoButtonLabel": "Event details",
+    "eventDetails": "Event info",
+    "infoButtonLabel": "Event info",
     "location": "Location",
-    "organizer": "Organized by",
+    "organizer": "Race Director",
     "officialWebsite": "Official website",
     "about": "About the event",
     "distances": "Distances",
@@ -79,7 +79,7 @@
       "title": "Group discounts",
       "description": "Save up to {percent}% with a group.",
       "tierLine": "{minParticipants}+ participants: {percent}% off",
-      "howTo": "Use the organizer's group invite link to get the discount.",
+      "howTo": "Use the Race Director's invite link to get the discount.",
       "lockNote": "Discount locks when group spots are reserved."
     },
     "virtualEvent": "Virtual event",
@@ -105,7 +105,7 @@
       "always": "Always"
     },
     "website": {
-      "noAdditionalContent": "More event details will be added soon.",
+      "noAdditionalContent": "More event details coming soon.",
       "documents": "Documents",
       "photos": "Photos",
       "terrain": "Terrain",
@@ -168,7 +168,7 @@
     },
     "questions": {
       "title": "Additional questions",
-      "description": "Answer the organizer's questions.",
+      "description": "Answer the Race Director's questions.",
       "required": "Required",
       "optional": "Optional",
       "continue": "Continue",
@@ -240,8 +240,8 @@
       "tax": "Tax",
       "total": "Total",
       "paymentMethods": "Payment methods",
-      "comingSoon": "Online payment coming soon. For now, please contact the organizer to complete your registration.",
-      "contactOrganizer": "Contact organizer",
+      "comingSoon": "Online payment is coming soon. For now, contact the Race Director to finish registration.",
+      "contactOrganizer": "Contact Race Director",
       "complete": "Complete registration"
     },
     "confirmation": {
@@ -255,7 +255,7 @@
       "transferPolicy": "Transfer policy",
       "deferralPolicy": "Deferral policy",
       "whatNext": "What's next?",
-      "nextSteps": "You will receive a confirmation email with more details about the event. Check your inbox for further instructions.",
+      "nextSteps": "You will receive a confirmation email with event details and next steps.",
       "viewEvent": "View event details",
       "backToEvents": "Browse more events"
     },
@@ -307,7 +307,7 @@
       },
       "EXPIRED": {
         "title": "Invite expired",
-        "description": "This reservation has expired. Contact the organizer for a new invite."
+        "description": "This reservation expired. Contact the Race Director for a new invite."
       },
       "CANCELLED": {
         "title": "Invite cancelled",
@@ -321,7 +321,7 @@
     "errors": {
       "dobRequired": "Please enter your date of birth to claim.",
       "EMAIL_MISMATCH": "This invite was sent to a different email address. Sign in with the invited email to claim it.",
-      "DOB_MISMATCH": "The date of birth doesn't match this invite. Ask the coordinator to resend your invite or contact the organizer.",
+      "DOB_MISMATCH": "This invite doesn't match that date of birth. Ask the coordinator to resend it or contact the Race Director.",
       "DOB_REQUIRED": "Date of birth is required to claim this invite.",
       "INVITE_EXPIRED": "This invite has expired.",
       "INVITE_INVALID": "This invite is no longer active.",
