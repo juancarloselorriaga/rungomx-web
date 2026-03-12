@@ -65,7 +65,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   return createLocalizedPageMetadata(
     locale,
     '/rankings',
-    (messages) => messages.Pages?.Results?.metadata,
+    (messages) => messages.Pages?.Rankings?.metadata,
   );
 }
 

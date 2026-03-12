@@ -22,6 +22,11 @@ export const publicNavItems = [
     iconName: 'Info' as const,
   },
   {
+    href: '/news',
+    labelKey: 'news' as const,
+    iconName: 'Newspaper' as const,
+  },
+  {
     href: '/help',
     labelKey: 'help' as const,
     iconName: 'CircleHelp' as const,

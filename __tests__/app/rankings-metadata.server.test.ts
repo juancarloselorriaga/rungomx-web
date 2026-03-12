@@ -11,7 +11,7 @@ jest.mock('@/i18n/navigation', () => ({
 }));
 
 jest.mock('@/lib/events/results/rankings', () => ({
-  getPublicNationalRankingLeaderboard: jest.fn(),
+  getPublicRankingLeaderboard: jest.fn(),
 }));
 
 jest.mock('@/i18n/routing', () => {
@@ -43,13 +43,20 @@ jest.mock('next-intl/server', () => ({
 }));
 
 import { generateMetadata } from '@/app/[locale]/(public)/rankings/page';
+import { getMetadataMessages } from '@/utils/staticMessages';
 
 describe('rankings page metadata', () => {
-  it('generates localized canonical and alternates for rankings route', async () => {
+  it('uses rankings-specific metadata while preserving localized canonical and alternates', async () => {
     const metadata = await generateMetadata({
       params: Promise.resolve({ locale: 'es' }),
     });
+    const messages = getMetadataMessages('es');
 
+    expect(metadata.title).toBe(messages.Pages.Rankings.metadata.title);
+    expect(metadata.description).toBe(messages.Pages.Rankings.metadata.description);
+    expect(metadata.openGraph?.title).toBe(messages.Pages.Rankings.metadata.openGraph.title);
+    expect(metadata.title).not.toBe(messages.Pages.Results.metadata.title);
+    expect(metadata.description).not.toBe(messages.Pages.Results.metadata.description);
     expect(metadata.alternates?.canonical).toBe('https://example.com/clasificaciones');
     expect(metadata.alternates?.languages?.en).toBe('https://example.com/en/rankings');
     expect(metadata.robots).toBeUndefined();

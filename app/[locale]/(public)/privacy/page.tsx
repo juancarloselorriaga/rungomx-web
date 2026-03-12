@@ -16,14 +16,7 @@ import { getMessages } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return createLocalizedPageMetadata(
-    locale,
-    '/privacy',
-    (messages) => messages.Pages?.Privacy?.metadata,
-    {
-      robots: { index: false, follow: false },
-    },
-  );
+  return createLocalizedPageMetadata(locale, '/privacy', (messages) => messages.Pages?.Privacy?.metadata);
 }
 
 type PrivacySectionKey =

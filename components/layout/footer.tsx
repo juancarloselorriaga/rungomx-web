@@ -23,6 +23,14 @@ export default function Footer() {
                   {t('links.aboutUs')}
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/news"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {t('links.news')}
+                </Link>
+              </li>
             </ul>
           </div>
 

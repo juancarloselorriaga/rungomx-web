@@ -16,14 +16,7 @@ import { getMessages } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return createLocalizedPageMetadata(
-    locale,
-    '/terms',
-    (messages) => messages.Pages?.Terms?.metadata,
-    {
-      robots: { index: false, follow: false },
-    },
-  );
+  return createLocalizedPageMetadata(locale, '/terms', (messages) => messages.Pages?.Terms?.metadata);
 }
 
 type TermsSectionKey =

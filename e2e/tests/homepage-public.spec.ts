@@ -8,8 +8,8 @@ type LocaleSpec = {
   expandMenuLabel: string;
   heroHeading: string;
   sectionLabels: string[];
-  navLabels: [string, string, string, string];
-  footerLabels: [string, string, string, string, string];
+  navLabels: [string, string, string, string, string];
+  footerLabels: [string, string, string, string, string, string];
   ctas: {
     events: string;
     results: string;
@@ -53,8 +53,8 @@ const locales: readonly LocaleSpec[] = [
       'Conecta el valor del producto con la credibilidad de la plataforma',
       'Lanza una experiencia pública más sólida para tu próximo evento',
     ],
-    navLabels: ['Eventos', 'Resultados', 'Clasificaciones', 'Acerca'],
-    footerLabels: ['Acerca de', 'Contacto', 'Ayuda', 'Privacidad', 'Términos'],
+    navLabels: ['Eventos', 'Resultados', 'Clasificaciones', 'Acerca', 'Noticias'],
+    footerLabels: ['Acerca de', 'Noticias', 'Contacto', 'Ayuda', 'Privacidad', 'Términos'],
     ctas: {
       events: 'Explorar eventos',
       results: 'Ver resultados',
@@ -90,8 +90,8 @@ const locales: readonly LocaleSpec[] = [
       'Bridge product value with platform credibility',
       'Launch a stronger public experience for your next event',
     ],
-    navLabels: ['Events', 'Results', 'Rankings', 'About'],
-    footerLabels: ['About', 'Contact', 'Help', 'Privacy', 'Terms'],
+    navLabels: ['Events', 'Results', 'Rankings', 'About', 'News'],
+    footerLabels: ['About', 'News', 'Contact', 'Help', 'Privacy', 'Terms'],
     ctas: {
       events: 'Explore events',
       results: 'View results',
