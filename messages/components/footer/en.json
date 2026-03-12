@@ -7,12 +7,13 @@
   },
   "links": {
     "aboutUs": "About",
+    "news": "News",
     "contact": "Contact",
     "helpCenter": "Help",
     "privacy": "Privacy",
     "terms": "Terms"
   },
-  "companyText": "Find upcoming events, official results, and participant-first race information in one place.",
-  "trustLine": "Built for real event participation and official outcomes runners can verify.",
+  "companyText": "Find events, registrations, official results, and runner-friendly race information in one place.",
+  "trustLine": "Built around real events, official results, and public pages runners can trust.",
   "copyright": "© {year} RunGoMX. All rights reserved."
 }

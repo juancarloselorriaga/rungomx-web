@@ -35,11 +35,15 @@
     "registerWithFriends": "Inscribirme con amigos",
     "selectDistance": "Seleccionar distancia",
     "eventDate": "Fecha del evento",
+    "eventDetails": "Detalles del evento",
+    "infoButtonLabel": "Detalles del evento",
     "location": "Ubicación",
     "organizer": "Organizado por",
+    "officialWebsite": "Sitio oficial",
     "about": "Acerca del evento",
     "distances": "Distancias",
     "faq": "Preguntas Frecuentes",
+    "tba": "Por anunciar",
     "policies": {
       "title": "Políticas",
       "refund": {
@@ -101,9 +105,22 @@
       "always": "Siempre"
     },
     "website": {
+      "noAdditionalContent": "Pronto habrá más información del evento.",
       "documents": "Documentos",
       "photos": "Fotos",
       "terrain": "Terreno",
+      "elevationGain": "Desnivel acumulado",
+      "elevationProfile": "Perfil de elevación",
+      "viewElevationProfile": "Ver perfil de elevación",
+      "courseMap": "Mapa del recorrido",
+      "viewCourseMap": "Ver mapa del recorrido",
+      "aidStations": "Puntos de abastecimiento",
+      "distance": "Distancia",
+      "cutoff": "Hora límite",
+      "packetPickup": "Entrega de paquetes",
+      "parking": "Estacionamiento",
+      "raceDay": "Día de la carrera",
+      "startTimes": "Horarios de salida",
       "download": "Descargar",
       "sponsors": "Patrocinadores",
       "gallery": {

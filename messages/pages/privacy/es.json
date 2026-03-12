@@ -2,14 +2,14 @@
   "hero": {
     "badge": "Aviso de privacidad",
     "title": "Cómo maneja RunGoMX tu información",
-    "description": "Esta página explica, en términos prácticos, qué información puede recibir RunGoMX, por qué se usa, cuándo puede compartirse y cómo contactarnos con preguntas de privacidad.",
+    "description": "Aquí te explicamos qué información puede recibir RunGoMX, por qué se usa, cuándo puede compartirse y cómo contactarnos si tienes dudas de privacidad.",
     "primaryCta": "Contactar soporte",
     "secondaryCta": "Revisar términos"
   },
   "summary": {
     "eyebrow": "Resumen en lenguaje claro",
     "title": "La versión corta",
-    "description": "RunGoMX da soporte a descubrimiento de carreras, inscripciones, pagos, resultados, rankings y operaciones para organizadores. Las decisiones de privacidad están ligadas a esos flujos del producto y al hecho de que parte de la información del evento la proveen los organizadores.",
+    "description": "RunGoMX conecta páginas de eventos, inscripciones, pagos, resultados, rankings y herramientas para organizadores. La forma en que manejamos datos sigue esos flujos, y parte de la información del evento la publican los organizadores.",
     "highlights": [
       "Recopilamos la información necesaria para operar cuentas, inscripciones, conversaciones de soporte y flujos relacionados con eventos.",
       "Usamos la información para operar la plataforma, confirmar transacciones, comunicarnos sobre eventos o soporte y proteger el servicio.",
@@ -20,7 +20,7 @@
   "sections": {
     "eyebrow": "Detalles de la política",
     "title": "Detalles de privacidad para corredores, organizadores y visitantes",
-    "description": "Estas secciones están redactadas para ser concretas y legibles. Describen las formas normales en que la información se mueve dentro de la experiencia pública de RunGoMX.",
+    "description": "Estas secciones están escritas para que se entiendan fácil. Explican cómo suele moverse la información dentro de RunGoMX.",
     "items": {
       "informationWeCollect": {
         "title": "Información que recopilamos",
@@ -72,7 +72,7 @@
         ],
         "bullets": [
           "Los organizadores suelen ser responsables de los detalles y decisiones específicas de su evento",
-          "RunGoMX opera la capa de plataforma que impulsa inscripciones, descubrimiento, resultados, rankings y flujos relacionados"
+          "RunGoMX opera la plataforma que hace posibles las inscripciones, la búsqueda de eventos, los resultados, los rankings y otros flujos relacionados"
         ]
       },
       "communicationsAndSupport": {
@@ -116,7 +116,7 @@
   },
   "cta": {
     "title": "¿Preguntas sobre privacidad o tu cuenta?",
-    "description": "Envía al equipo de RunGoMX los detalles necesarios para entender el evento, la cuenta o la transacción involucrada.",
+    "description": "Envíale al equipo de RunGoMX los datos necesarios para ubicar el evento, la cuenta o la transacción relacionada.",
     "primaryActionLabel": "Ir a contacto"
   },
   "relatedLinks": {

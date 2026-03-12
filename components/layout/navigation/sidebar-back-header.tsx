@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ChevronLeft } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 type SidebarBackHeaderProps = {
   /** Title to display next to the back button */
@@ -35,6 +36,7 @@ export function SidebarBackHeader({
   className,
   variant = 'sidebar',
 }: SidebarBackHeaderProps) {
+  const tNavigation = useTranslations('navigation');
   const badgeToneClasses: Record<
     NonNullable<SidebarBackHeaderProps['metaBadge']>['tone'],
     string
@@ -58,7 +60,7 @@ export function SidebarBackHeader({
         size="sm"
         onClick={onClick}
         className="nav-chevron-back group -ml-1 flex h-auto w-full items-center justify-start gap-2 px-2 py-2 text-left hover:bg-accent"
-        aria-label="Go back to main menu"
+        aria-label={tNavigation('backToMainMenu')}
       >
         <ChevronLeft
           className="nav-chevron h-4 w-4 flex-shrink-0 text-muted-foreground group-hover:text-foreground"

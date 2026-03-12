@@ -1,4 +1,103 @@
 {
-  "title": "News",
-  "description": "Stay updated with the latest sprint news and announcements."
+  "hero": {
+    "badge": "RunGoMX updates",
+    "title": "What’s new on RunGoMX",
+    "description": "This page shares practical updates to public event pages, help content, results, rankings, and other changes visitors may notice.",
+    "primaryCta": "Browse events",
+    "secondaryCta": "Visit help center"
+  },
+  "updates": {
+    "eyebrow": "Recent updates",
+    "title": "Useful updates, not filler",
+    "description": "These notes focus on changes that affect the public site and the people using it.",
+    "items": {
+      "registrations": {
+        "badge": "Platform",
+        "title": "Event pages now do a better job of guiding registration",
+        "summary": "RunGoMX puts more weight on public event pages so visitors can see where registration, payment context, and official event information live before they sign up.",
+        "points": {
+          "point1": "The public event directory is the main place to start browsing races.",
+          "point2": "Event pages remain the best place to check whether registration is open and what details are already published.",
+          "point3": "Official results and rankings stay easy to reach as their own proof surfaces."
+        },
+        "links": {
+          "primary": {
+            "href": "/events",
+            "label": "Open events"
+          },
+          "secondary": {
+            "href": "/results",
+            "label": "Review results"
+          }
+        }
+      },
+      "help": {
+        "badge": "Support",
+        "title": "Help is clearer about what you can solve on your own",
+        "summary": "The help center now does a better job of pointing visitors to self-serve answers first and making it clear when support is actually needed.",
+        "points": {
+          "point1": "Help content stays focused on registrations, event details, results, rankings, and account access.",
+          "point2": "Contact is still the right path for issues tied to a real event, registration, or account.",
+          "point3": "The goal is faster answers, not more content for the sake of content."
+        },
+        "links": {
+          "primary": {
+            "href": "/help",
+            "label": "Go to help"
+          },
+          "secondary": {
+            "href": "/contact",
+            "label": "Contact the team"
+          }
+        }
+      },
+      "trust": {
+        "badge": "Trust",
+        "title": "Trust pages stay focused on useful information",
+        "summary": "Privacy, terms, official results, and rankings are treated as practical references people can actually use.",
+        "points": {
+          "point1": "Official results remain one of the clearest public proof points on the site.",
+          "point2": "Rankings keep their link to published result data visible.",
+          "point3": "Support and policy pages are written to answer real questions, not pad the site."
+        },
+        "links": {
+          "primary": {
+            "href": "/rankings",
+            "label": "See rankings"
+          },
+          "secondary": {
+            "href": "/contact",
+            "label": "Ask a question"
+          }
+        }
+      }
+    }
+  },
+  "relatedLinks": {
+    "eyebrow": "Go to the live pages",
+    "title": "See the parts of the site these updates affect",
+    "description": "Every update here should point back to a real public page in the product.",
+    "items": {
+      "events": {
+        "href": "/events",
+        "title": "Events",
+        "description": "Browse live public event listings and continue into event pages."
+      },
+      "results": {
+        "href": "/results",
+        "title": "Official results",
+        "description": "Verify published event outcomes through the results page."
+      },
+      "help": {
+        "href": "/help",
+        "title": "Help center",
+        "description": "Start with self-serve guidance before opening a support request."
+      },
+      "contact": {
+        "href": "/contact",
+        "title": "Contact RunGoMX",
+        "description": "Reach the team when your question depends on a real event, result, or account."
+      }
+    }
+  }
 }

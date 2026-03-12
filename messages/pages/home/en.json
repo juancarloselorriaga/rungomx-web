@@ -7,78 +7,78 @@
     "viewResults": "View results",
     "viewRankings": "See rankings",
     "organizeEvent": "Organize an event",
-    "learnAboutRunGoMx": "Learn about RunGoMx",
+    "learnAboutRunGoMx": "Learn about RunGoMX",
     "seeHowItWorks": "See how it works"
   },
   "hero": {
     "eyebrow": "Built for race-day trust",
-    "title": "Event pages, registrations, results, and rankings in one place",
-    "description": "RunGoMx gives organizers a professional public presence and gives runners a clear path from discovery to results.",
+    "title": "Find events, register, and check official results in one place",
+    "description": "RunGoMX helps runners find races and see official results, while giving organizers clear public pages people can trust.",
     "primaryCta": "Explore events",
     "secondaryCta": "View results"
   },
   "proofPaths": {
-    "eyebrow": "Proof paths",
-    "title": "Three public entry points that keep visitors moving",
-    "description": "Whether someone arrives to discover a race, verify an outcome, or compare performance, the homepage can direct them to the right destination fast.",
+    "eyebrow": "Start here",
+    "title": "Three clear ways to explore RunGoMX",
+    "description": "Whether someone wants to find a race, confirm a result, or compare performance, these paths get them where they need to go fast.",
     "items": {
       "events": {
         "title": "Upcoming events",
-        "description": "Open current event pages with the details runners need before they commit.",
+        "description": "Browse live event pages with the details runners need before they sign up.",
         "cta": "Explore events"
       },
       "results": {
         "title": "Official results",
-        "description": "Find searchable, trustworthy outcomes that are easy to review and share.",
+        "description": "Find official results that are easy to search, review, and share.",
         "cta": "View results"
       },
       "rankings": {
         "title": "Active rankings",
-        "description": "Keep athletes engaged between race days with standings that reward consistency.",
+        "description": "See rankings that keep runners engaged between race days.",
         "cta": "See rankings"
       }
     }
   },
   "eventPages": {
     "eyebrow": "Event pages",
-    "title": "Pages that turn interest into registrations",
-    "description": "Bring schedules, distances, policies, and registration entry points together in a format that feels clear on both mobile and desktop.",
+    "title": "Event pages that help people sign up",
+    "description": "Bring dates, distances, policies, and registration links together in a format that feels clear on both mobile and desktop.",
     "highlights": {
-      "clarity": "Present key event information without forcing runners to hunt for answers.",
-      "trust": "Show a polished public face that makes an event feel legitimate and ready to join.",
-      "conversion": "Keep the path from discovery to registration visible at every step."
+      "clarity": "Show the details runners care about without making them dig for answers.",
+      "trust": "Give every event a public page that feels official and ready for participants.",
+      "conversion": "Keep the path from landing on the page to registering easy to follow."
     }
   },
   "participation": {
     "eyebrow": "Participation",
-    "title": "A smoother path from discovery to confirmation",
-    "description": "The public experience should reduce friction for runners while keeping organizers in control of the registration journey.",
+    "title": "A smoother path from first click to confirmation",
+    "description": "The public experience should make registration feel simple for runners while keeping organizers in control.",
     "highlights": {
-      "discover": "Help runners quickly understand what the event is and who it is for.",
-      "decide": "Keep pricing, dates, and participation details easy to compare.",
-      "commit": "Guide people toward registration with confidence instead of guesswork."
+      "discover": "Help runners understand the event quickly and decide if it is for them.",
+      "decide": "Make pricing, dates, and key details easy to compare.",
+      "commit": "Move people toward registration with confidence, not guesswork."
     }
   },
   "resultsRankings": {
     "eyebrow": "Results and rankings",
-    "title": "Keep the platform useful after race day",
-    "description": "Results and rankings give runners a reason to return, compare progress, and stay connected to the broader event ecosystem.",
+    "title": "Stay useful after race day",
+    "description": "Results and rankings give runners a reason to come back, track progress, and stay connected to the sport.",
     "highlights": {
-      "results": "Publish outcomes that feel official, clear, and easy to revisit.",
-      "rankings": "Extend engagement beyond a single event with standings that reward repeat participation.",
-      "retention": "Turn one-time visitors into returning athletes, supporters, and organizers."
+      "results": "Publish results that feel official, clear, and easy to revisit.",
+      "rankings": "Keep people engaged beyond one event with rankings tied to real results.",
+      "retention": "Turn one visit into an ongoing relationship with the platform."
     }
   },
   "aboutBridge": {
-    "eyebrow": "Why RunGoMx",
-    "title": "Bridge product value with platform credibility",
-    "description": "Use the homepage to connect the event experience with the story behind RunGoMx, so visitors understand both what the platform does and why it matters.",
-    "cta": "Learn about RunGoMx"
+    "eyebrow": "Why RunGoMX",
+    "title": "Learn what RunGoMX does and why it matters",
+    "description": "Show visitors how RunGoMX connects event pages, registrations, official results, rankings, and support in one public experience.",
+    "cta": "Learn about RunGoMX"
   },
   "finalCta": {
-    "eyebrow": "Ready to move forward?",
-    "title": "Launch a stronger public experience for your next event",
-    "description": "Give runners a clearer path into your events and give your organization a platform that still works after registrations close.",
+    "eyebrow": "Ready for your next event?",
+    "title": "Give your event a stronger public home",
+    "description": "Help runners find the right event, register with confidence, and come back for official results after race day.",
     "primaryCta": "Organize an event",
     "secondaryCta": "See how it works"
   }

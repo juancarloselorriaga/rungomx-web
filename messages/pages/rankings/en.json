@@ -1,27 +1,27 @@
 {
   "title": "National Rankings",
-  "description": "Official national leaderboard computed from promoted official result snapshots.",
+  "description": "See the latest national rankings built from published official results.",
   "scope": {
     "national": "National scope",
     "organizer": "Organizer scope",
-    "default": "National by default",
+    "default": "National view",
     "contextOrg": "Organizer context: {organization}"
   },
   "snapshot": {
-    "summary": "Ruleset {ruleset} · {rows} rows",
-    "current": "Current snapshot",
-    "historical": "Historical snapshot"
+    "summary": "Ruleset {ruleset} · {rows} ranked runners",
+    "current": "Current update",
+    "historical": "Past update"
   },
   "reproducibility": {
-    "summary": "Reproducibility context",
+    "summary": "Ranking reference",
     "notAvailable": "Not available",
-    "referenceLink": "Open ruleset reference",
+    "referenceLink": "Open rules reference",
     "referenceMissing": "No ruleset reference is linked for this snapshot.",
     "fields": {
-      "ruleset": "Ruleset version",
-      "generatedAt": "Snapshot generated",
-      "promotedAt": "Snapshot promoted",
-      "snapshotId": "Snapshot ID"
+      "ruleset": "Rules version",
+      "generatedAt": "Generated",
+      "promotedAt": "Published",
+      "snapshotId": "Update ID"
     }
   },
   "filters": {
@@ -38,8 +38,8 @@
     "reset": "Reset"
   },
   "table": {
-    "title": "National leaderboard",
-    "description": "Current promoted national snapshot.",
+    "title": "National rankings",
+    "description": "Current published national update.",
     "headers": {
       "rank": "Rank",
       "runner": "Runner",
@@ -51,9 +51,9 @@
     }
   },
   "empty": {
-    "noSnapshot": "No promoted national snapshot is available yet.",
-    "noRows": "No ranking rows are available yet.",
-    "noMatch": "No ranking rows match the selected filters."
+    "noSnapshot": "No national ranking update has been published yet.",
+    "noRows": "No rankings are available yet.",
+    "noMatch": "No rankings match the selected filters."
   },
   "discipline": {
     "trail_running": "Trail running",

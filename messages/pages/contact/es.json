@@ -1,15 +1,15 @@
 {
   "hero": {
     "badge": "Contacto RunGoMX",
-    "title": "Escribe al equipo de RunGoMX cuando necesites soporte o una respuesta real",
-    "description": "Usa esta página para preguntas de soporte, problemas de cuenta o de eventos, alianzas y consultas generales. Los mensajes enviados aquí llegan al equipo de RunGoMX a través del flujo de contacto existente.",
+    "title": "Escríbele al equipo de RunGoMX cuando necesites ayuda",
+    "description": "Usa esta página para soporte, problemas con eventos o cuentas, alianzas y consultas generales. Los mensajes que envías aquí llegan directo al equipo de RunGoMX.",
     "primaryCta": "Ir al centro de ayuda",
     "secondaryCta": "Ver eventos"
   },
   "triage": {
     "eyebrow": "¿Cómo podemos ayudarte?",
-    "title": "Elige la vía que más se parezca a tu pregunta",
-    "description": "El formulario es compartido, pero estos ejemplos te ayudan a decidir cuándo esta página es el mejor punto de partida.",
+    "title": "Elige la opción que mejor se parezca a tu caso",
+    "description": "El formulario es el mismo para todos, pero estos ejemplos te ayudan a decidir si esta página es el mejor punto de partida.",
     "items": {
       "support": {
         "title": "Soporte",
@@ -28,13 +28,13 @@
   "form": {
     "eyebrow": "Formulario de contacto",
     "title": "Envía un mensaje al equipo",
-    "description": "Mantén el mensaje práctico e incluye el contexto necesario para identificar el evento, la cuenta o el problema involucrado.",
+    "description": "Escribe tu mensaje de forma clara e incluye los datos necesarios para ubicar el evento, la cuenta o el problema.",
     "expectation": "Si tu pregunta es sobre una inscripción, un resultado o un problema de evento, incluye el nombre del evento y cualquier código de boleto, ID de inscripción o dato de participante que ayude a identificar el registro correcto.",
     "signedInNote": "Has iniciado sesión, así que puedes dejar como están los datos de contacto precargados o actualizarlos antes de enviar tu mensaje.",
     "signedOutNote": "Si no has iniciado sesión, incluye un correo electrónico si quieres que el equipo pueda responderte directamente.",
     "cardTitle": "Escribe tu mensaje",
-    "signedInHelper": "Esto usa el flujo de contacto existente de RunGoMX y conserva el contexto de tu cuenta cuando está disponible.",
-    "signedOutHelper": "Esto usa el flujo de contacto existente de RunGoMX. Agrega un correo si quieres seguimiento directo.",
+    "signedInHelper": "Cuando está disponible, se envía también el contexto de tu cuenta para poder canalizar mejor el mensaje.",
+    "signedOutHelper": "Agrega un correo si quieres que el equipo te responda directamente.",
     "fields": {
       "name": {
         "label": "Nombre",
@@ -46,8 +46,8 @@
       },
       "message": {
         "label": "Mensaje",
-        "placeholder": "Cuéntanos en qué necesitas ayuda.",
-        "hint": "Sé específico sobre la página, el evento, la inscripción o el problema de cuenta para que el equipo pueda canalizarlo más rápido."
+        "placeholder": "Cuéntanos qué pasó y cómo te podemos ayudar.",
+        "hint": "Menciona la página, el evento, la inscripción o el problema de cuenta para que podamos canalizarlo más rápido."
       },
       "honeypot": {
         "label": "Sitio web"
@@ -55,7 +55,7 @@
     },
     "submit": "Enviar mensaje",
     "submitting": "Enviando...",
-    "submitNote": "Para respuestas más rápidas, revisa primero el centro de ayuda antes de enviar una solicitud de soporte.",
+    "submitNote": "Si tu duda es sobre inscripciones, resultados o acceso a tu cuenta, primero revisa el centro de ayuda para encontrar una respuesta más rápido.",
     "success": "Tu mensaje fue enviado al equipo de RunGoMX.",
     "errors": {
       "invalidInput": "Revisa los campos del formulario de contacto e inténtalo de nuevo.",
@@ -67,8 +67,8 @@
   },
   "directLinks": {
     "eyebrow": "Rutas útiles",
-    "title": "A veces la respuesta más rápida ya está en el sitio público",
-    "description": "Usa estas rutas directas antes de enviar un mensaje si tu pregunta realmente es sobre una página de evento, un resultado publicado, un ranking o una guía de soporte.",
+    "title": "A veces la respuesta más rápida ya está en el sitio",
+    "description": "Antes de mandar un mensaje, revisa estas páginas si tu duda es sobre un evento, un resultado publicado, un ranking o ayuda general.",
     "items": {
       "events": {
         "href": "/events",
@@ -88,13 +88,13 @@
       "help": {
         "href": "/help",
         "title": "Ir al centro de ayuda",
-        "description": "Empieza con respuestas aterrizadas sobre inscripciones, información del evento, cuenta básica y preguntas de soporte."
+        "description": "Empieza con respuestas claras sobre inscripciones, información del evento, cuenta y soporte."
       }
     }
   },
   "trustBlock": {
-    "title": "¿También necesitas la parte de políticas?",
-    "description": "Para preguntas de privacidad o términos, revisa primero las páginas legales. Algunas dudas de soporte se resuelven más rápido con ayuda autogestionada antes de requerir seguimiento.",
+    "title": "¿También necesitas revisar políticas?",
+    "description": "Si tu duda es sobre privacidad o términos, empieza por las páginas legales. Algunos casos también se resuelven más rápido desde ayuda antes de requerir seguimiento.",
     "primaryActionLabel": "Revisar privacidad",
     "secondaryActionLabel": "Revisar términos"
   }

@@ -35,11 +35,15 @@
     "registerWithFriends": "Register with friends",
     "selectDistance": "Select distance",
     "eventDate": "Event date",
+    "eventDetails": "Event details",
+    "infoButtonLabel": "Event details",
     "location": "Location",
     "organizer": "Organized by",
+    "officialWebsite": "Official website",
     "about": "About the event",
     "distances": "Distances",
     "faq": "Frequently Asked Questions",
+    "tba": "To be announced",
     "policies": {
       "title": "Policies",
       "refund": {
@@ -101,9 +105,22 @@
       "always": "Always"
     },
     "website": {
+      "noAdditionalContent": "More event details will be added soon.",
       "documents": "Documents",
       "photos": "Photos",
       "terrain": "Terrain",
+      "elevationGain": "Elevation gain",
+      "elevationProfile": "Elevation profile",
+      "viewElevationProfile": "View elevation profile",
+      "courseMap": "Course map",
+      "viewCourseMap": "View course map",
+      "aidStations": "Aid stations",
+      "distance": "Distance",
+      "cutoff": "Cutoff",
+      "packetPickup": "Packet pickup",
+      "parking": "Parking",
+      "raceDay": "Race day",
+      "startTimes": "Start times",
       "download": "Download",
       "sponsors": "Sponsors",
       "gallery": {

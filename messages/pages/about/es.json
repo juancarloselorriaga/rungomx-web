@@ -2,111 +2,98 @@
   "hero": {
     "badge": "Acerca de RunGoMX",
     "title": "Quiénes somos",
-    "description": "RunGoMX nace en México para transformar la manera en que directores de carrera y corredores viven el running. Somos una plataforma end-to-end que simplifica inscripciones, pagos, cronometraje, resultados y rankings, todo en un solo lugar.",
-    "primaryCta": "Comenzar",
-    "secondaryCta": "Crear Cuenta"
+    "description": "RunGoMX reúne páginas de eventos, inscripciones, resultados oficiales, rankings y ayuda para que los corredores siempre sepan a dónde ir.",
+    "primaryCta": "Explorar eventos",
+    "secondaryCta": "Ver resultados oficiales"
   },
-  "vision": {
-    "eyebrow": "Nuestra Visión",
-    "title": "Nuestra visión",
-    "paragraph1": "Queremos que México sea referente en innovación deportiva en Latinoamérica. Que cada carrera, sin importar su tamaño, tenga acceso a herramientas de clase mundial sin pagar precios de clase mundial.",
-    "paragraph2": "Creemos que la tecnología debe servir al deporte, no complicarlo. Por eso construimos soluciones pensadas para el contexto mexicano: simples, accesibles y poderosas."
+  "story": {
+    "eyebrow": "Lo que ya puedes hacer aquí",
+    "title": "Una plataforma de running debe hacer fácil verificar lo importante",
+    "description": "RunGoMX está construido alrededor de las páginas públicas que la gente realmente usa antes y después de una carrera.",
+    "paragraph1": "Eso incluye encontrar eventos, revisar detalles de inscripción, ver resultados oficiales, seguir rankings y resolver dudas sin tener que iniciar sesión desde el principio.",
+    "paragraph2": "La idea es simple: ayudar a corredores y organizadores a moverse entre las páginas que más importan, como eventos, resultados, rankings y soporte.",
+    "cardTitle": "Lo que puedes hacer en RunGoMX",
+    "highlights": {
+      "eventDiscovery": "Explorar listados públicos y páginas activas de eventos.",
+      "registrationContext": "Revisar el estado de inscripción, el contexto de pago y los detalles publicados por el organizador.",
+      "officialResults": "Consultar resultados oficiales ligados a resultados publicados del evento.",
+      "rankings": "Seguir rankings construidos con resultados publicados.",
+      "helpAndTrust": "Ir a ayuda, contacto, privacidad y términos cuando hace falta más contexto."
+    }
   },
-  "whyWeExist": {
-    "eyebrow": "El Reto",
-    "title": "Por qué existimos",
-    "intro": "El running en México ha crecido enormemente, pero la infraestructura digital no ha crecido al mismo ritmo. Los directores de carrera y corredores enfrentan problemas recurrentes:",
-    "butText": "Pero eso está cambiando.",
-    "problems": [
-      "Sitios complicados para inscribirse",
-      "Pagos inseguros o confusos",
-      "Resultados dispersos o lentos",
-      "Cero data para directores de carrera",
-      "Herramientas de marketing mínimas",
-      "Sistemas que no hablan entre ellos"
-    ],
-    "solution": "RunGoMX llega para resolver eso."
-  },
-  "whatWeDo": {
-    "eyebrow": "Nuestra Plataforma",
-    "title": "Qué hacemos",
-    "subtitle": "Creamos un ecosistema completo para el running en México:",
-    "forRunners": {
-      "title": "Para corredores",
-      "features": [
-        "Inscripciones súper simples en cualquier carrera",
-        "Pagos seguros con cualquier método (tarjeta, transferencia, efectivo)",
-        "Resultados en tiempo real el día del evento",
-        "Rankings personales y nacionales automáticos",
-        "Recomendaciones de carreras según tu nivel y ubicación"
-      ]
-    },
-    "forOrganizers": {
-      "title": "Para directores de carrera",
-      "features": [
-        "Gestión integral del evento (inscripciones, pagos, comunicación)",
-        "Pagos automatizados y conciliación bancaria",
-        "Cronometraje integrado con chips profesionales",
-        "Marketing y comunicación con tus corredores",
-        "Analytics en tiempo real de tu evento",
-        "Soporte técnico local en español"
-      ]
-    },
-    "tagline": "Una sola plataforma para todo el ciclo de vida de tu carrera."
-  },
-  "philosophy": {
-    "eyebrow": "Nuestros Valores",
-    "title": "Nuestra filosofía",
-    "intro": "Somos un equipo de tecnólogos mexicanos apasionados por el running y la innovación. No copiamos modelos extranjeros; construimos desde cero con mentalidad local.",
-    "believeIn": "Creemos en:",
-    "values": [
-      {
-        "title": "Simplicidad",
-        "description": "La tecnología debe ser invisible. Que el corredor se concentre en correr y el director de carrera en crear experiencias."
+  "focus": {
+    "eyebrow": "Para quién son estas páginas",
+    "title": "RunGoMX ayuda a pasar del interés a la confianza",
+    "description": "Cada página pública debe dejar claro cuál es el siguiente paso sin mandar a todos a iniciar sesión demasiado pronto.",
+    "items": {
+      "discover": {
+        "title": "Descubrir eventos",
+        "description": "La gente puede empezar en el directorio y en las páginas de eventos para ver qué hay, cuándo es y si la inscripción sigue abierta."
       },
-      {
-        "title": "Transparencia",
-        "description": "Precios claros, sin sorpresas. Data abierta para todos. Código confiable y auditable."
+      "follow": {
+        "title": "Seguir resultados oficiales",
+        "description": "Resultados y rankings les dan a los corredores un lugar público para confirmar resultados oficiales y ver cómo van."
       },
-      {
-        "title": "Calidad",
-        "description": "No lanzamos features a medias. Cada funcionalidad pasa por pruebas rigurosas antes de llegar a producción."
-      },
-      {
-        "title": "Comunidad",
-        "description": "El running es comunidad. Escuchamos a directores de carrera y corredores para construir lo que realmente necesitan."
-      },
-      {
-        "title": "Innovación constante",
-        "description": "El mercado evoluciona rápido. Nosotros evolucionamos más rápido. Releases semanales, features nuevas cada mes."
+      "support": {
+        "title": "Recibir soporte práctico",
+        "description": "Ayuda, contacto, privacidad y términos dan una ruta clara cuando alguien necesita soporte o contexto sobre un evento o una inscripción real."
       }
-    ]
+    }
   },
-  "mexicanTechnology": {
-    "title": "Somos tecnología mexicana para el running mexicano",
-    "subtitle": "No somos una adaptación de algo que funciona en Estados Unidos o Europa. RunGoMX nace y crece en México, con profundo conocimiento del mercado local.",
-    "weKnow": "Conocemos:",
-    "knowledge": [
-      "Las zonas donde se corre (CDMX, Guadalajara, Monterrey, Puebla, Querétaro...)",
-      "Los métodos de pago que funcionan (OXXO, transferencias, tarjetas, meses sin intereses)",
-      "Las regulaciones locales (permisos, seguros, vialidad)",
-      "El idioma y la cultura (comunicación clara en español mexicano)",
-      "Los retos operativos reales (logística, clima, altitud, tráfico)"
-    ],
-    "tagline": "Por eso nuestra plataforma no solo funciona técnicamente: funciona para el contexto real de México."
+  "proof": {
+    "eyebrow": "De dónde sale la confianza",
+    "title": "La mejor prueba está en las páginas reales",
+    "description": "RunGoMX se siente más confiable cuando lleva a la gente a páginas de eventos, resultados oficiales y rankings reales, no a promesas generales.",
+    "items": {
+      "events": {
+        "title": "Eventos y páginas de carrera",
+        "description": "La sección de eventos es el punto de partida para buscar carreras, revisar ediciones y abrir la página de un evento."
+      },
+      "registration": {
+        "title": "Contexto de inscripción y pago",
+        "description": "Las páginas públicas del evento muestran el estado de la inscripción y los detalles clave antes de pasar a pasos ligados a la cuenta."
+      },
+      "results": {
+        "title": "Resultados oficiales",
+        "description": "Las páginas de resultados publican resultados oficiales y hacen fácil verificarlos."
+      },
+      "rankings": {
+        "title": "Rankings ligados a resultados",
+        "description": "Los rankings se alimentan de resultados publicados, así que se sienten como parte real del producto."
+      }
+    }
   },
-  "commitment": {
-    "eyebrow": "Nuestro Compromiso",
-    "title": "Nuestro compromiso",
-    "goals": [
-      "RunGoMX no es solo software. Es un compromiso de largo plazo con la comunidad del running en México.",
-      "Trabajamos codo a codo con directores de carrera para entender sus necesidades reales. Escuchamos corredores para mejorar su experiencia. Invertimos en tecnología de punta para mantenernos siempre adelante.",
-      "Innovamos constantemente. Lo que hoy es la plataforma más completa del mercado, mañana será aún mejor.",
-      "Porque al final del día, nuestro éxito se mide en carreras exitosas, corredores felices y una comunidad de running cada vez más fuerte."
-    ],
-    "mission": "Nuestra misión es clara:",
-    "tagline": "Tecnología mexicana. Running mexicano.",
-    "primaryCta": "Comenzar",
-    "secondaryCta": "Contáctanos"
+  "relatedLinks": {
+    "eyebrow": "Empieza en una página real",
+    "title": "Ve a donde la prueba ya existe",
+    "description": "Estas rutas muestran mejor lo que RunGoMX ya hace hoy que cualquier promesa amplia sobre la plataforma.",
+    "items": {
+      "events": {
+        "href": "/events",
+        "title": "Explorar eventos",
+        "description": "Abre el directorio público y entra a páginas activas de eventos."
+      },
+      "results": {
+        "href": "/results",
+        "title": "Revisar resultados oficiales",
+        "description": "Consulta resultados publicados y confirma el resultado oficial de una carrera."
+      },
+      "rankings": {
+        "href": "/rankings",
+        "title": "Ver rankings",
+        "description": "Sigue rankings que se actualizan con resultados publicados."
+      },
+      "contact": {
+        "href": "/contact",
+        "title": "Contactar al equipo",
+        "description": "Escríbele al equipo cuando necesites ayuda con un evento, una cuenta o el sitio público."
+      }
+    }
+  },
+  "cta": {
+    "title": "¿Quieres empezar por algo concreto?",
+    "description": "Explora eventos si apenas estás conociendo la plataforma, o contacta al equipo si tu duda depende de un evento o una inscripción real.",
+    "primaryActionLabel": "Explorar eventos",
+    "secondaryActionLabel": "Contactar a RunGoMX"
   }
 }

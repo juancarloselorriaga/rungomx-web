@@ -2,14 +2,14 @@
   "hero": {
     "badge": "Centro de ayuda",
     "title": "Encuentra ayuda práctica antes de contactar soporte",
-    "description": "Usa esta página para resolver preguntas comunes sobre páginas de eventos, inscripciones, resultados, rankings, pagos y acceso a la cuenta con guía basada en flujos reales de RunGoMX.",
-    "primaryCta": "Ver eventos",
+    "description": "Empieza aquí si necesitas ayuda con páginas de eventos, inscripciones, resultados, rankings, pagos o acceso a tu cuenta.",
+    "primaryCta": "Explorar eventos",
     "secondaryCta": "Contactar soporte"
   },
   "categories": {
     "eyebrow": "Respuestas rápidas",
     "title": "Empieza por el tema que mejor coincide con tu pregunta",
-    "description": "Estas categorías apuntan a las respuestas más confiables que podemos dar desde el sitio público hoy. Son intencionalmente curadas, no una base de conocimiento gigante.",
+    "description": "Empieza por la sección que más se parezca a tu duda. Esta página está pensada para resolver cosas reales de RunGoMX, sin rodeos.",
     "items": {
       "registrations": {
         "title": "Inscripciones",
@@ -37,7 +37,7 @@
         "linkLabel": "Ir a respuestas sobre pagos"
       },
       "accountBasics": {
-        "title": "Cuenta básica",
+        "title": "Cuenta",
         "description": "Usa la ruta correcta para iniciar sesión y entiende cómo el acceso a la cuenta se conecta con la gestión de inscripciones.",
         "linkLabel": "Ir a respuestas sobre cuenta"
       }
@@ -45,8 +45,8 @@
   },
   "faqGroups": {
     "eyebrow": "Preguntas frecuentes",
-    "title": "Respuestas aterrizadas para los flujos que más preguntan",
-    "description": "Estas respuestas se mantienen cerca de lo que la plataforma ya soporta. Cuando una pregunta depende de la política del organizador o de un registro específico, lo decimos de forma directa.",
+    "title": "Respuestas claras para las dudas más comunes",
+    "description": "Cuando algo depende de las reglas del organizador o de una inscripción específica, te lo decimos tal cual.",
     "groups": {
       "registrations": {
         "title": "Inscripciones",
@@ -233,7 +233,7 @@
         }
       },
       "accountBasics": {
-        "title": "Cuenta básica",
+        "title": "Cuenta",
         "description": "Las páginas públicas están abiertas para todas las personas, pero la gestión de inscripciones y los detalles ligados a la cuenta viven detrás de inicio de sesión.",
         "items": {
           "needAccount": {
@@ -276,13 +276,13 @@
   },
   "cta": {
     "title": "¿Aún necesitas ayuda?",
-    "description": "Usa la página de contacto e incluye el nombre del evento, el correo ligado a la cuenta si lo conoces y cualquier identificador de inscripción o boleto para que la solicitud se canalice más rápido.",
+    "description": "Usa la página de contacto e incluye el nombre del evento, el correo ligado a la cuenta si lo conoces y cualquier ID de inscripción o boleto para que podamos canalizarlo más rápido.",
     "primaryActionLabel": "Ir a contacto"
   },
   "relatedLinks": {
     "eyebrow": "Enlaces útiles",
-    "title": "Ve directo a las superficies públicas principales",
-    "description": "Si tu pregunta realmente es sobre una página o un registro, estos enlaces suelen ser el siguiente paso más rápido.",
+    "title": "Ve directo a las páginas públicas principales",
+    "description": "Si tu duda realmente es sobre una página o un registro, estos enlaces suelen ser el siguiente paso más rápido.",
     "items": {
       "events": {
         "href": "/events",

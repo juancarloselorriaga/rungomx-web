@@ -6,13 +6,14 @@
     "connect": "Confianza"
   },
   "links": {
-    "aboutUs": "Acerca de",
+    "aboutUs": "Nosotros",
+    "news": "Noticias",
     "contact": "Contacto",
     "helpCenter": "Ayuda",
     "privacy": "Privacidad",
     "terms": "Términos"
   },
-  "companyText": "Encuentra próximos eventos, resultados oficiales e información clara para participantes en un solo lugar.",
-  "trustLine": "Hecho para participación real en eventos y resultados oficiales que los corredores puedan verificar.",
+  "companyText": "Encuentra eventos, inscripciones, resultados oficiales e información útil para corredores en un solo lugar.",
+  "trustLine": "Hecho para eventos reales, resultados oficiales y páginas públicas en las que sí puedes confiar.",
   "copyright": "© {year} RunGoMX. Todos los derechos reservados."
 }

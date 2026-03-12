@@ -7,78 +7,78 @@
     "viewResults": "Ver resultados",
     "viewRankings": "Ver rankings",
     "organizeEvent": "Organizar un evento",
-    "learnAboutRunGoMx": "Conocer RunGoMx",
+    "learnAboutRunGoMx": "Conocer RunGoMX",
     "seeHowItWorks": "Ver cómo funciona"
   },
   "hero": {
-    "eyebrow": "Diseñado para generar confianza el día del evento",
-    "title": "Páginas de evento, inscripciones, resultados y rankings en un solo lugar",
-    "description": "RunGoMx da a los organizadores una presencia pública profesional y a los corredores un camino claro desde el descubrimiento hasta los resultados.",
+    "eyebrow": "Hecho para dar confianza el día de la carrera",
+    "title": "Eventos, inscripciones, resultados y rankings en un solo lugar",
+    "description": "RunGoMX ayuda a los organizadores a mostrar sus eventos y a los corredores a encontrar carreras, inscribirse y ver resultados oficiales.",
     "primaryCta": "Explorar eventos",
     "secondaryCta": "Ver resultados"
   },
   "proofPaths": {
-    "eyebrow": "Rutas de prueba",
-    "title": "Tres puntos de entrada públicos que mantienen el avance",
-    "description": "Ya sea para descubrir una carrera, validar un resultado o comparar rendimiento, la homepage puede dirigir rápidamente a cada visitante al destino correcto.",
+    "eyebrow": "Empieza aquí",
+    "title": "Tres caminos claros para entrar a RunGoMX",
+    "description": "Ya sea para encontrar una carrera, confirmar un resultado o comparar desempeño, aquí está el camino más rápido para seguir.",
     "items": {
       "events": {
         "title": "Próximos eventos",
-        "description": "Abre páginas de evento vigentes con la información que los corredores necesitan antes de decidirse.",
+        "description": "Explora páginas de eventos con la información que un corredor necesita antes de inscribirse.",
         "cta": "Explorar eventos"
       },
       "results": {
         "title": "Resultados oficiales",
-        "description": "Encuentra resultados confiables, fáciles de buscar y listos para revisar o compartir.",
+        "description": "Encuentra resultados oficiales fáciles de buscar, revisar y compartir.",
         "cta": "Ver resultados"
       },
       "rankings": {
-        "title": "Rankings activos",
-        "description": "Mantén a los atletas conectados entre carreras con clasificaciones que premian la constancia.",
+        "title": "Rankings",
+        "description": "Sigue rankings que mantienen a la comunidad conectada entre una carrera y otra.",
         "cta": "Ver rankings"
       }
     }
   },
   "eventPages": {
     "eyebrow": "Páginas de evento",
-    "title": "Páginas que convierten el interés en inscripciones",
-    "description": "Reúne horarios, distancias, políticas y accesos de inscripción en un formato claro tanto en móvil como en escritorio.",
+    "title": "Páginas que ayudan a convertir visitas en inscripciones",
+    "description": "Reúne fechas, distancias, políticas y acceso al registro en un formato claro tanto en móvil como en escritorio.",
     "highlights": {
-      "clarity": "Presenta la información clave del evento sin obligar a los corredores a buscar respuestas.",
-      "trust": "Muestra una cara pública cuidada que hace que el evento se perciba legítimo y listo para recibir participantes.",
-      "conversion": "Mantén visible el camino desde el descubrimiento hasta la inscripción en cada paso."
+      "clarity": "Muestra lo importante sin hacer que la gente ande buscando respuestas.",
+      "trust": "Dale a cada evento una página pública que se sienta seria y confiable.",
+      "conversion": "Haz que el paso de entrar al sitio a inscribirse sea fácil de seguir."
     }
   },
   "participation": {
     "eyebrow": "Participación",
-    "title": "Un camino más fluido desde el descubrimiento hasta la confirmación",
-    "description": "La experiencia pública debe reducir fricción para los corredores mientras los organizadores conservan control sobre el proceso de inscripción.",
+    "title": "Un camino más claro desde el primer clic hasta la confirmación",
+    "description": "La experiencia pública debe hacer más fácil la inscripción para los corredores sin quitarle control al organizador.",
     "highlights": {
-      "discover": "Ayuda a los corredores a entender rápidamente de qué trata el evento y para quién es.",
-      "decide": "Mantén precios, fechas y detalles de participación fáciles de comparar.",
-      "commit": "Guía a las personas hacia la inscripción con confianza y no con suposiciones."
+      "discover": "Ayuda a entender rápido de qué va el evento y si es para esa persona.",
+      "decide": "Haz que precios, fechas y detalles clave sean fáciles de comparar.",
+      "commit": "Lleva a la gente a inscribirse con confianza, no con dudas."
     }
   },
   "resultsRankings": {
     "eyebrow": "Resultados y rankings",
-    "title": "Haz que la plataforma siga siendo útil después del día de carrera",
-    "description": "Los resultados y rankings dan a los corredores una razón para volver, comparar su progreso y seguir conectados con el ecosistema del evento.",
+    "title": "Sigue siendo útil después de la carrera",
+    "description": "Los resultados y rankings hacen que la gente vuelva, compare su progreso y siga conectada con el deporte.",
     "highlights": {
-      "results": "Publica resultados que se sientan oficiales, claros y fáciles de consultar de nuevo.",
-      "rankings": "Extiende la participación más allá de un solo evento con clasificaciones que premian la recurrencia.",
-      "retention": "Convierte visitantes ocasionales en atletas, acompañantes y organizadores que regresan."
+      "results": "Publica resultados claros, oficiales y fáciles de volver a consultar.",
+      "rankings": "Mantén el interés más allá de una sola carrera con rankings ligados a resultados reales.",
+      "retention": "Convierte una visita en una relación continua con la plataforma."
     }
   },
   "aboutBridge": {
-    "eyebrow": "Por qué RunGoMx",
-    "title": "Conecta el valor del producto con la credibilidad de la plataforma",
-    "description": "Usa la homepage para unir la experiencia del evento con la historia detrás de RunGoMx, de modo que los visitantes entiendan qué hace la plataforma y por qué importa.",
-    "cta": "Conocer RunGoMx"
+    "eyebrow": "Por qué RunGoMX",
+    "title": "Conoce qué hace RunGoMX y por qué importa",
+    "description": "Ayuda a que la gente entienda cómo RunGoMX conecta páginas de eventos, inscripciones, resultados oficiales, rankings y soporte en una sola experiencia pública.",
+    "cta": "Conocer RunGoMX"
   },
   "finalCta": {
-    "eyebrow": "¿Listo para avanzar?",
-    "title": "Lanza una experiencia pública más sólida para tu próximo evento",
-    "description": "Da a los corredores un camino más claro hacia tus eventos y a tu organización una plataforma que sigue funcionando después del cierre de inscripciones.",
+    "eyebrow": "¿Listo para tu próximo evento?",
+    "title": "Dale a tu evento una mejor presencia pública",
+    "description": "Ayuda a los corredores a encontrar el evento correcto, inscribirse con confianza y volver por resultados oficiales después de la carrera.",
     "primaryCta": "Organizar un evento",
     "secondaryCta": "Ver cómo funciona"
   }

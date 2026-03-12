@@ -2,14 +2,14 @@
   "hero": {
     "badge": "Términos y condiciones",
     "title": "Términos para usar RunGoMX",
-    "description": "Estos términos explican las expectativas prácticas para usar las páginas públicas, las inscripciones, las cuentas, los flujos para organizadores, los resultados y otras funciones relacionadas de RunGoMX.",
+    "description": "Estos términos explican las reglas principales para usar las páginas públicas, las inscripciones, las cuentas, los flujos para organizadores, los resultados y otras funciones de RunGoMX.",
     "primaryCta": "Contactar soporte",
     "secondaryCta": "Revisar privacidad"
   },
   "summary": {
     "eyebrow": "Resumen en lenguaje claro",
     "title": "Qué buscan cubrir estos términos",
-    "description": "RunGoMX impulsa experiencias públicas de eventos, inscripciones, pagos, resultados, rankings y operaciones para organizadores. Estos términos fijan expectativas para esa relación de plataforma sin sustituir reglas específicas de cada evento que puedan venir de los organizadores.",
+    "description": "RunGoMX impulsa páginas públicas de eventos, inscripciones, pagos, resultados, rankings y herramientas para organizadores. Estos términos explican cómo funciona esa relación sin sustituir las reglas específicas de cada evento.",
     "highlights": [
       "Usa la plataforma con información correcta y de maneras que no dañen el servicio, a los organizadores ni a otros usuarios.",
       "Los detalles del evento, precios, responsivas, cancelaciones y logística del día de la carrera pueden venir de los organizadores, no solo de RunGoMX.",
@@ -20,7 +20,7 @@
   "sections": {
     "eyebrow": "Detalles de los términos",
     "title": "Términos para páginas públicas, inscripciones y operaciones del evento",
-    "description": "Estas secciones están diseñadas para ser legibles y concretas. Se enfocan en los flujos reales de plataforma visibles hoy en RunGoMX.",
+    "description": "Estas secciones están escritas para ser claras y directas. Se enfocan en los flujos reales que hoy existen en RunGoMX.",
     "items": {
       "usingThePlatform": {
         "title": "Uso de la plataforma",
@@ -52,7 +52,7 @@
         "intro": "RunGoMX aloja y presenta información relacionada con eventos, pero los organizadores suelen controlar el evento en sí.",
         "paragraphs": [
           "Los nombres del evento, descripciones, precios, fechas, horarios, políticas, logística, responsivas, detalles de ruta, instrucciones para participantes y disponibilidad pueden ser provistos o controlados por el organizador responsable de ese evento.",
-          "RunGoMX es la capa de plataforma para descubrimiento, inscripción, flujos operativos e información deportiva pública, pero los organizadores siguen siendo responsables de sus decisiones, declaraciones y políticas específicas de cada evento."
+          "RunGoMX es la plataforma para mostrar eventos, gestionar inscripciones, operar flujos clave y publicar información deportiva, pero los organizadores siguen siendo responsables de sus decisiones, declaraciones y políticas específicas de cada evento."
         ],
         "bullets": [
           "Los organizadores pueden definir reglas o requisitos específicos de su evento",
@@ -124,7 +124,7 @@
   },
   "cta": {
     "title": "¿Necesitas ayuda con estos términos o con un tema del evento?",
-    "description": "Envíanos el contexto del evento, organizador, cuenta o inscripción para revisar la solicitud con precisión.",
+    "description": "Envíanos los datos del evento, organizador, cuenta o inscripción para revisar tu caso con precisión.",
     "primaryActionLabel": "Ir a contacto"
   },
   "relatedLinks": {

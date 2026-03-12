@@ -3,6 +3,7 @@
 import { Link, usePathname } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { MouseEventHandler } from 'react';
 import { useSlidingNavOptional } from './sliding-nav-context';
 import type { NavItem } from './types';
@@ -40,6 +41,7 @@ export function NavLink({
   showIndicator = true,
   onClick,
 }: NavLinkProps) {
+  const tNavigation = useTranslations('navigation');
   const pathname = usePathname();
   const slidingNav = useSlidingNavOptional();
   const itemHref = typeof href === 'string' ? href : (href.pathname ?? '/');
@@ -113,7 +115,7 @@ export function NavLink({
           type="button"
           onClick={handleChevronClick}
           className="absolute right-1 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          aria-label={`Open ${label} submenu`}
+          aria-label={tNavigation('openSubmenu', { label })}
         >
           <ChevronRight className="nav-chevron h-4 w-4" aria-hidden="true" />
         </button>

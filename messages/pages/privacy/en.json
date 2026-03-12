@@ -2,14 +2,14 @@
   "hero": {
     "badge": "Privacy Policy",
     "title": "How RunGoMX handles your information",
-    "description": "This page explains, in practical terms, what information RunGoMX may receive, why it is used, when it may be shared, and how to reach us with privacy questions.",
+    "description": "This page explains what information RunGoMX may receive, why it is used, when it may be shared, and how to contact us with privacy questions.",
     "primaryCta": "Contact support",
     "secondaryCta": "Review terms"
   },
   "summary": {
     "eyebrow": "Plain-language summary",
     "title": "The short version",
-    "description": "RunGoMX supports race discovery, registrations, payments, results, rankings, and organizer operations. Privacy decisions are shaped by those product flows and by the fact that some event information is provided by organizers.",
+    "description": "RunGoMX supports event pages, registrations, payments, results, rankings, and organizer workflows. Privacy decisions follow those flows, and some event information is provided by organizers.",
     "highlights": [
       "We collect the information needed to run accounts, registrations, support conversations, and related event workflows.",
       "We use information to operate the platform, confirm transactions, communicate about events or support, and protect the service.",
@@ -20,7 +20,7 @@
   "sections": {
     "eyebrow": "Policy details",
     "title": "Privacy details for runners, organizers, and visitors",
-    "description": "These sections are written to stay concrete and readable. They describe the normal ways information moves through the public RunGoMX experience.",
+    "description": "These sections are written to be clear and readable. They describe the usual ways information moves through RunGoMX.",
     "items": {
       "informationWeCollect": {
         "title": "Information we collect",
@@ -116,7 +116,7 @@
   },
   "cta": {
     "title": "Questions about privacy or your account?",
-    "description": "Send the RunGoMX team the details we need to understand the event, account, or transaction involved.",
+    "description": "Send the RunGoMX team the details needed to identify the event, account, or transaction involved.",
     "primaryActionLabel": "Go to contact"
   },
   "relatedLinks": {

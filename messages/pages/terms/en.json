@@ -2,14 +2,14 @@
   "hero": {
     "badge": "Terms of Service",
     "title": "Terms for using RunGoMX",
-    "description": "These terms explain the practical expectations for using RunGoMX public pages, registrations, accounts, organizer workflows, results, and related platform features.",
+    "description": "These terms explain the main expectations for using RunGoMX public pages, registrations, accounts, organizer workflows, results, and related features.",
     "primaryCta": "Contact support",
     "secondaryCta": "Review privacy"
   },
   "summary": {
     "eyebrow": "Plain-language summary",
     "title": "What these terms are meant to cover",
-    "description": "RunGoMX powers public event experiences, registrations, payments, results, rankings, and organizer operations. These terms set expectations for that platform relationship without replacing event-specific rules that may come from organizers.",
+    "description": "RunGoMX powers public event pages, registrations, payments, results, rankings, and organizer workflows. These terms explain how that platform relationship works without replacing event-specific rules set by organizers.",
     "highlights": [
       "Use the platform with accurate information and in ways that do not harm the service, organizers, or other users.",
       "Event details, pricing, waivers, cancellations, and race-day logistics may come from organizers, not only from RunGoMX.",
@@ -20,7 +20,7 @@
   "sections": {
     "eyebrow": "Terms details",
     "title": "Terms for public pages, registrations, and event operations",
-    "description": "These sections are designed to be readable and concrete. They focus on the real platform flows visible in RunGoMX today.",
+    "description": "These sections are written to be clear and practical. They focus on the real platform flows visible in RunGoMX today.",
     "items": {
       "usingThePlatform": {
         "title": "Using the platform",
@@ -124,7 +124,7 @@
   },
   "cta": {
     "title": "Need help with terms or an event-related issue?",
-    "description": "Send us the event, organizer, account, or registration context so the request can be reviewed accurately.",
+    "description": "Send us the event, organizer, account, or registration details so we can review the request accurately.",
     "primaryActionLabel": "Go to contact"
   },
   "relatedLinks": {

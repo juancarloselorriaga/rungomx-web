@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: RegisterPageProps): Promise<M
 
   if (!event) {
     return {
-      title: 'Registration | RunGoMX',
+      title: `${t('title')} | RunGoMX`,
       robots: { index: false, follow: false },
     };
   }

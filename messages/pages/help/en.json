@@ -2,14 +2,14 @@
   "hero": {
     "badge": "Help Center",
     "title": "Find practical help before you contact support",
-    "description": "Use this page to resolve common questions about event pages, registrations, results, rankings, payments, and account access with guidance tied to real RunGoMX flows.",
+    "description": "Start here for help with event pages, registrations, results, rankings, payments, and account access.",
     "primaryCta": "Browse events",
     "secondaryCta": "Contact support"
   },
   "categories": {
     "eyebrow": "Quick answers",
     "title": "Start with the topic that matches your question",
-    "description": "These categories point to the most dependable answers we can give from the public site today. They are intentionally curated, not a giant knowledge base.",
+    "description": "Start with the section that matches your question. We keep this page practical and focused on real RunGoMX flows.",
     "items": {
       "registrations": {
         "title": "Registrations",
@@ -45,8 +45,8 @@
   },
   "faqGroups": {
     "eyebrow": "Frequently asked questions",
-    "title": "Grounded answers for the flows people ask about most",
-    "description": "These answers stay close to what the platform already supports. When a question depends on organizer policy or a specific registration record, we say that directly.",
+    "title": "Clear answers to the questions we get most",
+    "description": "When something depends on organizer rules or a specific registration, we say that plainly.",
     "groups": {
       "registrations": {
         "title": "Registrations",
@@ -276,13 +276,13 @@
   },
   "cta": {
     "title": "Still need help?",
-    "description": "Use the contact page and include the event name, the email tied to the account if you know it, and any registration or ticket identifier so the request can be routed faster.",
+    "description": "Use the contact page and include the event name, the email tied to the account if you know it, and any registration or ticket ID so we can route the request faster.",
     "primaryActionLabel": "Go to contact"
   },
   "relatedLinks": {
     "eyebrow": "Helpful links",
-    "title": "Go straight to the main public surfaces",
-    "description": "If your question is really about a page or record, these links are usually the fastest next step.",
+    "title": "Go straight to the main public pages",
+    "description": "If your question is really about a page or a record, these links are usually the fastest next step.",
     "items": {
       "events": {
         "href": "/events",

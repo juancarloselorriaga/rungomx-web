@@ -2,15 +2,15 @@
   "SEO": {
     "default": {
       "title": "RunGoMX",
-      "description": "RunGoMX is the all-in-one platform to create, manage, and promote races and sporting events in Mexico.",
+      "description": "RunGoMX helps runners find events, register, and check official results in Mexico.",
       "openGraph": {
         "title": "RunGoMX",
-        "description": "All-in-one platform to organize and promote races in Mexico: registrations, payments, results, rankings and more.",
+        "description": "Find events, registrations, official results, and rankings on RunGoMX.",
         "imageAlt": "RunGoMX - Platform for races in Mexico"
       },
       "twitter": {
         "title": "RunGoMX",
-        "description": "All-in-one platform to organize and promote races in Mexico."
+        "description": "Find events, register, and check official results on RunGoMX."
       },
       "applicationName": "RunGoMX"
     }
@@ -19,7 +19,7 @@
     "Home": {
       "metadata": {
         "title": "Races and sporting events in Mexico | RunGoMX",
-        "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with RunGoMX.",
+        "description": "Find races in Mexico, register online, and check official results and rankings with RunGoMX.",
         "keywords": [
           "races in Mexico",
           "running Mexico",
@@ -32,28 +32,27 @@
         ],
         "openGraph": {
           "title": "Races and sporting events in Mexico | RunGoMX",
-          "description": "Discover the best races in Mexico. Online registrations, secure payments, results, rankings, CDMX events and more with RunGoMX.",
+          "description": "Find races in Mexico, register online, and check official results and rankings with RunGoMX.",
           "imageAlt": "RunGoMX - Platform for races in Mexico"
         }
       }
     },
     "About": {
       "metadata": {
-        "title": "About RunGoMX | Who we are and what we do",
-        "description": "Learn about RunGoMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
+        "title": "About RunGoMX | Events, registrations, results, and support",
+        "description": "Learn how RunGoMX connects public event pages, registrations, official results, rankings, and support.",
         "keywords": [
           "about RunGoMX",
-          "who we are",
-          "Mexican running platform",
-          "Mexican technology",
-          "race director",
-          "registration system",
-          "RunGoMX Mexico",
-          "timing and results"
+          "running events Mexico",
+          "race discovery platform",
+          "official race results",
+          "rankings and support",
+          "RunGoMX public pages",
+          "event registration context"
         ],
         "openGraph": {
-          "title": "About RunGoMX | Who we are",
-          "description": "Learn about RunGoMX, the Mexican platform that transforms the way races are organized and run. Local technology, local running.",
+          "title": "About RunGoMX | Events, results, and support",
+          "description": "See how RunGoMX brings together event pages, registrations, official results, rankings, and support.",
           "imageAlt": "About RunGoMX"
         }
       }
@@ -73,24 +72,24 @@
     "Help": {
       "metadata": {
         "title": "Help Center | RunGoMX",
-        "description": "Find answers to common questions about registrations, payments, and race management on RunGoMX.",
+        "description": "Find help with registrations, results, rankings, payments, and account access on RunGoMX.",
         "keywords": ["help", "support"],
         "openGraph": {
           "title": "Help Center | RunGoMX",
-          "description": "Get help with RunGoMX registrations, payments, and race management.",
+          "description": "Get help with RunGoMX registrations, results, payments, and account access.",
           "imageAlt": "Help resources"
         }
       }
     },
     "News": {
       "metadata": {
-        "title": "Running News | RunGoMX",
-        "description": "Stay updated with the latest running news, tips, and race announcements in Mexico.",
-        "keywords": ["running news", "race updates"],
+        "title": "RunGoMX Updates | What’s new on the public site",
+        "description": "See practical RunGoMX updates across event pages, help content, results, rankings, and other public-facing changes.",
+        "keywords": ["rungomx updates", "platform updates", "help updates", "trust updates"],
         "openGraph": {
-          "title": "Running News | RunGoMX",
-          "description": "Latest running news and race updates from RunGoMX.",
-          "imageAlt": "Running news"
+          "title": "RunGoMX Updates | Public site changes",
+          "description": "Practical updates across public event pages, help content, results, rankings, and support.",
+          "imageAlt": "RunGoMX updates"
         }
       }
     },
@@ -109,12 +108,24 @@
     "Results": {
       "metadata": {
         "title": "Race Results | RunGoMX",
-        "description": "View official race results, rankings, and performance insights powered by RunGoMX.",
+        "description": "View official race results and check the latest published standings on RunGoMX.",
         "keywords": ["race results", "rankings"],
         "openGraph": {
           "title": "Race Results | RunGoMX",
-          "description": "Check official race results and rankings on RunGoMX.",
+          "description": "Check official race results and the latest published standings on RunGoMX.",
           "imageAlt": "Race results"
+        }
+      }
+    },
+    "Rankings": {
+      "metadata": {
+        "title": "National Rankings | RunGoMX",
+        "description": "Explore national rankings built from published official race results on RunGoMX.",
+        "keywords": ["national rankings", "race leaderboard", "official rankings", "RunGoMX rankings"],
+        "openGraph": {
+          "title": "National Rankings | RunGoMX",
+          "description": "Explore national rankings built from published official results on RunGoMX.",
+          "imageAlt": "National rankings"
         }
       }
     },

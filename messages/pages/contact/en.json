@@ -1,15 +1,15 @@
 {
   "hero": {
     "badge": "Contact RunGoMX",
-    "title": "Reach the RunGoMX team when you need support or a real answer",
-    "description": "Use this page for support questions, account or event issues, partnerships, and general inquiries. Messages submitted here go to the RunGoMX team through the existing contact workflow.",
+    "title": "Talk to the RunGoMX team when you need help",
+    "description": "Use this page for support questions, event or account issues, partnerships, and general inquiries. Messages sent here go straight to the RunGoMX team.",
     "primaryCta": "Visit help center",
     "secondaryCta": "Browse events"
   },
   "triage": {
     "eyebrow": "How can we help?",
-    "title": "Choose the lane that best matches your question",
-    "description": "The form is shared, but these examples help you decide when this page is the right place to start.",
+    "title": "Pick the option that best fits your question",
+    "description": "The form is the same for everyone, but these examples help you decide when this page is the right place to start.",
     "items": {
       "support": {
         "title": "Support",
@@ -28,13 +28,13 @@
   "form": {
     "eyebrow": "Contact form",
     "title": "Send a message to the team",
-    "description": "Keep the message practical and include the context needed to identify the event, account, or issue involved.",
+    "description": "Keep your message clear and include the details we need to identify the event, account, or issue.",
     "expectation": "If your question is about a registration, result, or event issue, include the event name and any ticket code, registration ID, or participant detail that helps us identify the right record.",
     "signedInNote": "You are signed in, so you can leave the prefilled contact details as they are or update them before sending your message.",
     "signedOutNote": "If you are not signed in, include an email address if you want the team to reply directly.",
     "cardTitle": "Write your message",
-    "signedInHelper": "This uses the existing RunGoMX contact submission flow and keeps your account context attached when available.",
-    "signedOutHelper": "This uses the existing RunGoMX contact submission flow. Add an email if you want a direct follow-up.",
+    "signedInHelper": "Your account context is included when it is available, which helps us route the message faster.",
+    "signedOutHelper": "Add an email address if you want a direct reply from the team.",
     "fields": {
       "name": {
         "label": "Name",
@@ -46,8 +46,8 @@
       },
       "message": {
         "label": "Message",
-        "placeholder": "Tell us what you need help with.",
-        "hint": "Be specific about the page, event, registration, or account issue so the team can route it faster."
+        "placeholder": "Tell us what happened and how we can help.",
+        "hint": "Mention the page, event, registration, or account issue so we can route it faster."
       },
       "honeypot": {
         "label": "Website"
@@ -55,7 +55,7 @@
     },
     "submit": "Send message",
     "submitting": "Sending...",
-    "submitNote": "For faster answers, check the help center for self-serve guidance before sending a support request.",
+    "submitNote": "For a faster answer, check the help center first if your question is about registrations, results, or account access.",
     "success": "Your message was sent to the RunGoMX team.",
     "errors": {
       "invalidInput": "Please review the contact form fields and try again.",
@@ -67,8 +67,8 @@
   },
   "directLinks": {
     "eyebrow": "Helpful direct paths",
-    "title": "Sometimes the fastest answer is already on the public site",
-    "description": "Use these direct paths before sending a message if your question is really about an event page, published result, ranking, or support guidance.",
+    "title": "Sometimes the fastest answer is already on the site",
+    "description": "Try these pages before sending a message if your question is really about an event, a published result, a ranking, or help guidance.",
     "items": {
       "events": {
         "href": "/events",
@@ -88,13 +88,13 @@
       "help": {
         "href": "/help",
         "title": "Go to help center",
-        "description": "Start with grounded answers for registrations, event information, account basics, and support questions."
+        "description": "Start with clear answers for registrations, event information, account basics, and support questions."
       }
     }
   },
   "trustBlock": {
-    "title": "Need the policy side too?",
-    "description": "For privacy or terms questions, review the legal pages first. Some support questions are resolved faster through self-serve help before a message needs follow-up.",
+    "title": "Need policy details too?",
+    "description": "If your question is about privacy or terms, start with the legal pages. Some issues are also faster to solve through help before they need follow-up.",
     "primaryActionLabel": "Review privacy",
     "secondaryActionLabel": "Review terms"
   }
