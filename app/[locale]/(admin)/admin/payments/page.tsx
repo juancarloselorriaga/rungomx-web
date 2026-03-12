@@ -215,12 +215,6 @@ export default async function AdminPaymentsEconomicsPage({
 
   const tDashboardRanges = await getTranslations('pages.dashboard.admin.metrics.ranges');
   const tPayments = await getTranslations('pages.adminPayments.admin.payments');
-  const rawVolumeLabel = (
-    key: 'volume.mixedCurrencyNotice' | 'volume.organizerPageSummary',
-  ) => {
-    const value = tPayments.raw(key);
-    return typeof value === 'string' ? value : String(value ?? '');
-  };
   const resolvedSearchParams: AdminPaymentsSearchParams = searchParams
     ? await searchParams
     : {};
@@ -339,7 +333,10 @@ export default async function AdminPaymentsEconomicsPage({
     const volumeLabels = {
       sectionTitle: tPayments('volume.sectionTitle'),
       sectionDescription: tPayments('volume.sectionDescription'),
-      mixedCurrencyNotice: rawVolumeLabel('volume.mixedCurrencyNotice'),
+      mixedCurrencyNotice: (currency: string) =>
+        tPayments('volume.mixedCurrencyNotice', {
+          currency,
+        }),
       grossProcessedLabel: tPayments('volume.grossProcessedLabel'),
       grossProcessedDescription: tPayments('volume.grossProcessedDescription'),
       platformFeesLabel: tPayments('volume.platformFeesLabel'),
@@ -366,6 +363,15 @@ export default async function AdminPaymentsEconomicsPage({
       traceabilityLastEventLabel: tPayments('volume.traceabilityLastEventLabel'),
       sampleTracesTitle: tPayments('volume.sampleTracesTitle'),
       sampleTracesEmpty: tPayments('volume.sampleTracesEmpty'),
+      sampleTracesScopeLabel: (shown: number, total: number) =>
+        tPayments('sampledReferences.traceScope', {
+          shown,
+          total,
+        }),
+      sampleTracesMoreLabel: (count: number) =>
+        tPayments('sampledReferences.moreLabel', {
+          count,
+        }),
       topOrganizersTitle: tPayments('volume.topOrganizersTitle'),
       topOrganizersDescription: tPayments('volume.topOrganizersDescription'),
       organizerHeader: tPayments('volume.organizerHeader'),
@@ -375,9 +381,29 @@ export default async function AdminPaymentsEconomicsPage({
       organizerCountHeader: tPayments('volume.organizerCountHeader'),
       organizerActionHeader: tPayments('volume.organizerActionHeader'),
       organizerEmpty: tPayments('volume.organizerEmpty'),
-      organizerPageSummary: rawVolumeLabel('volume.organizerPageSummary'),
+      organizerPageSummary: ({
+        start,
+        end,
+        total,
+      }: {
+        start: number;
+        end: number;
+        total: number;
+      }) =>
+        tPayments('volume.organizerPageSummary', {
+          start,
+          end,
+          total,
+        }),
+      organizerPageStatus: ({ page, pageCount }: { page: number; pageCount: number }) =>
+        tPayments('volume.organizerPageStatus', {
+          page,
+          pageCount,
+        }),
+      firstPageLabel: tPayments('volume.firstPageLabel'),
       previousPageLabel: tPayments('volume.previousPageLabel'),
       nextPageLabel: tPayments('volume.nextPageLabel'),
+      lastPageLabel: tPayments('volume.lastPageLabel'),
       investigationTitle: tPayments('volume.investigationTitle'),
       investigationDescription: tPayments('volume.investigationDescription'),
       investigationActionLabel: tPayments('volume.investigationActionLabel'),
@@ -490,6 +516,15 @@ export default async function AdminPaymentsEconomicsPage({
     traceabilityLastEventLabel: tPayments('traceabilityLastEventLabel'),
     sampleTracesTitle: tPayments('sampleTracesTitle'),
     sampleTracesEmpty: tPayments('sampleTracesEmpty'),
+    sampleTracesScopeLabel: (shown: number, total: number) =>
+      tPayments('sampledReferences.traceScope', {
+        shown,
+        total,
+      }),
+    sampleTracesMoreLabel: (count: number) =>
+      tPayments('sampledReferences.moreLabel', {
+        count,
+      }),
     currencyHeader: tPayments('currencyHeader'),
     netHeader: tPayments('netHeader'),
     capturedHeader: tPayments('capturedHeader'),
@@ -523,6 +558,18 @@ export default async function AdminPaymentsEconomicsPage({
     disputeCasesHeader: tPayments('exposure.disputeCasesHeader'),
     sampleTracesLabel: tPayments('exposure.sampleTracesLabel'),
     sampleCasesLabel: tPayments('exposure.sampleCasesLabel'),
+    sampledTraceCountLabel: (count: number) =>
+      tPayments('sampledReferences.traceCount', {
+        count,
+      }),
+    sampledCaseCountLabel: (count: number) =>
+      tPayments('sampledReferences.caseCount', {
+        count,
+      }),
+    sampledMoreLabel: (count: number) =>
+      tPayments('sampledReferences.moreLabel', {
+        count,
+      }),
     currenciesLabel: (count: number) => tPayments('exposure.currenciesLabel', { count }),
     emptyState: tPayments('exposure.emptyState'),
   };
@@ -558,6 +605,7 @@ export default async function AdminPaymentsEconomicsPage({
     dateFieldLabel: tPayments('fx.dateFieldLabel'),
     rateFieldLabel: tPayments('fx.rateFieldLabel'),
     reasonFieldLabel: tPayments('fx.reasonFieldLabel'),
+    clearDateLabel: tPayments('fx.clearDateLabel'),
     submitLabel: tPayments('fx.submitLabel'),
     ratesTableTitle: tPayments('fx.ratesTableTitle'),
     ratesTableDescription: tPayments('fx.ratesTableDescription'),
@@ -602,6 +650,8 @@ export default async function AdminPaymentsEconomicsPage({
     versionNumberHeader: tPayments('artifacts.versionNumberHeader'),
     versionFingerprintHeader: tPayments('artifacts.versionFingerprintHeader'),
     versionLineageHeader: tPayments('artifacts.versionLineageHeader'),
+    versionLineageRootLabel: tPayments('artifacts.versionLineageRootLabel'),
+    versionLineageFromPrefixLabel: tPayments('artifacts.versionLineageFromPrefixLabel'),
     versionReasonHeader: tPayments('artifacts.versionReasonHeader'),
     versionRequestedByHeader: tPayments('artifacts.versionRequestedByHeader'),
     versionCreatedAtHeader: tPayments('artifacts.versionCreatedAtHeader'),
@@ -612,6 +662,7 @@ export default async function AdminPaymentsEconomicsPage({
     deliveryReasonHeader: tPayments('artifacts.deliveryReasonHeader'),
     deliveryRequestedByHeader: tPayments('artifacts.deliveryRequestedByHeader'),
     deliveryCreatedAtHeader: tPayments('artifacts.deliveryCreatedAtHeader'),
+    operationSelectAriaLabel: tPayments('artifacts.operationSelectAriaLabel'),
   };
 
   const caseLookupLabels = {
@@ -631,7 +682,6 @@ export default async function AdminPaymentsEconomicsPage({
     disambiguationEmpty: tPayments('caseLookup.disambiguationEmpty'),
     resultsTitle: tPayments('caseLookup.resultsTitle'),
     resultsDescription: tPayments('caseLookup.resultsDescription'),
-    summaryLabel: tPayments('caseLookup.summaryLabel'),
     loadEvidenceLabel: tPayments('caseLookup.loadEvidenceLabel'),
     evidenceLoadedLabel: tPayments('caseLookup.evidenceLoadedLabel'),
     traceHeader: tPayments('caseLookup.traceHeader'),
@@ -643,6 +693,18 @@ export default async function AdminPaymentsEconomicsPage({
     identifiersHeader: tPayments('caseLookup.identifiersHeader'),
     sourcesHeader: tPayments('caseLookup.sourcesHeader'),
   };
+  const caseLookupSummaryLabel = caseLookupResult
+    ? tPayments('caseLookup.summaryLabel', {
+        shown: caseLookupResult.returnedCaseCount,
+        total: caseLookupResult.totalCaseCount,
+      })
+    : null;
+  const caseLookupSummaryLimitedHint = caseLookupResult?.isResultLimitApplied
+    ? tPayments('caseLookup.summaryLimitedHint', {
+        shown: caseLookupResult.returnedCaseCount,
+        total: caseLookupResult.totalCaseCount,
+      })
+    : null;
 
   const evidenceLabels = {
     sectionTitle: tPayments('evidence.sectionTitle'),
@@ -677,11 +739,14 @@ export default async function AdminPaymentsEconomicsPage({
     eventOwnershipOwnerHeader: tPayments('evidence.eventOwnershipOwnerHeader'),
     eventOwnershipNextHeader: tPayments('evidence.eventOwnershipNextHeader'),
     eventPayloadHeader: tPayments('evidence.eventPayloadHeader'),
+    ownershipStateActionNeededLabel: tPayments('evidence.ownershipStateActionNeededLabel'),
+    ownershipStateInProgressLabel: tPayments('evidence.ownershipStateInProgressLabel'),
     artifactsVersionsTitle: tPayments('evidence.artifactsVersionsTitle'),
     artifactsDeliveriesTitle: tPayments('evidence.artifactsDeliveriesTitle'),
     artifactVersionHeader: tPayments('evidence.artifactVersionHeader'),
     artifactFingerprintHeader: tPayments('evidence.artifactFingerprintHeader'),
     artifactLineageHeader: tPayments('evidence.artifactLineageHeader'),
+    artifactLineageRootLabel: tPayments('evidence.artifactLineageRootLabel'),
     artifactReasonHeader: tPayments('evidence.artifactReasonHeader'),
     artifactCreatedHeader: tPayments('evidence.artifactCreatedHeader'),
     deliveryChannelHeader: tPayments('evidence.deliveryChannelHeader'),
@@ -860,91 +925,71 @@ export default async function AdminPaymentsEconomicsPage({
   } else if (activeWorkspace === 'risk') {
     workspaceContent = (
       <div className="space-y-6">
-        <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+        {hasRiskBreakdown ? (
+          <>
+            <section className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+                {tPayments('risk.heroEyebrow')}
+              </p>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {hasRiskAttention
+                  ? tPayments('risk.heroAttentionTitle')
+                  : tPayments('risk.heroQuietTitle')}
+              </h2>
+              <p className="max-w-3xl text-sm text-muted-foreground">
+                {hasRiskAttention
+                  ? tPayments('risk.heroAttentionDescription')
+                  : tPayments('risk.heroQuietDescription')}
+              </p>
+            </section>
+            <DebtDisputeExposureDashboard
+              locale={locale as AppLocale}
+              metrics={exposureMetrics}
+              labels={exposureLabels}
+            />
+            <section className="rounded-2xl border bg-card/60 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('risk.reviewTitle')}
+              </p>
+              <div className="mt-3 grid gap-4 md:grid-cols-3">
+                <div>
+                  <p className="font-medium text-foreground">{tPayments('risk.reviewExposureTitle')}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tPayments('risk.reviewExposureDescription')}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{tPayments('risk.reviewCasesTitle')}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tPayments('risk.reviewCasesDescription')}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">{tPayments('risk.reviewPausesTitle')}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {tPayments('risk.reviewPausesDescription')}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : (
+          <section className="rounded-3xl border border-dashed bg-card/50 p-5 shadow-sm sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
               {tPayments('risk.heroEyebrow')}
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight">
-              {hasRiskAttention
-                ? tPayments('risk.heroAttentionTitle')
-                : tPayments('risk.heroQuietTitle')}
+              {tPayments('risk.heroQuietTitle')}
             </h2>
-            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              {hasRiskAttention
-                ? tPayments('risk.heroAttentionDescription')
-                : tPayments('risk.heroQuietDescription')}
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border bg-background/60 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {exposureLabels.summaryExposureTitle}
-                </p>
-                <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {formatMoneyFromMinor(
-                    exposureMetrics.totals.headlineExposureScoreMinor,
-                    exposureMetrics.totals.headlineCurrency,
-                    locale as AppLocale,
-                  )}
-                </p>
-              </div>
-              <div className="rounded-2xl border bg-background/60 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {exposureLabels.summaryOpenCasesTitle}
-                </p>
-                <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {exposureMetrics.totals.openDisputeCaseCount.toLocaleString(locale as AppLocale)}
-                </p>
-              </div>
-              <div className="rounded-2xl border bg-background/60 p-4">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {exposureLabels.summaryPolicyPausesTitle}
-                </p>
-                <p className="mt-2 text-xl font-semibold tabular-nums">
-                  {exposureMetrics.totals.pauseRequiredCount.toLocaleString(locale as AppLocale)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border bg-card/70 p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {tPayments('risk.reviewTitle')}
-            </p>
-            <div className="mt-4 space-y-4 text-sm text-muted-foreground">
-              <div>
-                <p className="font-medium text-foreground">{tPayments('risk.reviewExposureTitle')}</p>
-                <p className="mt-1">{tPayments('risk.reviewExposureDescription')}</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{tPayments('risk.reviewCasesTitle')}</p>
-                <p className="mt-1">{tPayments('risk.reviewCasesDescription')}</p>
-              </div>
-              <div>
-                <p className="font-medium text-foreground">{tPayments('risk.reviewPausesTitle')}</p>
-                <p className="mt-1">{tPayments('risk.reviewPausesDescription')}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-        {hasRiskBreakdown ? (
-          <DebtDisputeExposureDashboard
-            locale={locale as AppLocale}
-            metrics={exposureMetrics}
-            labels={exposureLabels}
-            hideSummaryCards
-          />
-        ) : (
-          <section className="rounded-3xl border border-dashed bg-card/50 p-5 shadow-sm sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {exposureLabels.sectionTitle}
-            </p>
-            <h3 className="mt-3 text-lg font-semibold">
-              {tPayments('risk.detailIdleTitle')}
-            </h3>
             <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              {tPayments('risk.detailIdleDescription')}
+              {tPayments('risk.heroQuietDescription')}
             </p>
+            <div className="mt-5 rounded-2xl border border-dashed bg-background/70 p-4">
+              <p className="font-medium">{tPayments('risk.detailIdleTitle')}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {tPayments('risk.detailIdleDescription')}
+              </p>
+            </div>
           </section>
         )}
       </div>
@@ -987,29 +1032,6 @@ export default async function AdminPaymentsEconomicsPage({
           </div>
         </section>
 
-        <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
-          {tPayments('sections.operationsNote')}
-        </div>
-
-        <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {tPayments('operationsGuidance.fxTitle')}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {tPayments('operationsGuidance.fxDescription')}
-            </p>
-          </div>
-          <div className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {tPayments('operationsGuidance.artifactsTitle')}
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {tPayments('operationsGuidance.artifactsDescription')}
-            </p>
-          </div>
-        </section>
-
         <div className="space-y-6">
           <FxRateManagementDashboard
             locale={locale as AppLocale}
@@ -1025,6 +1047,29 @@ export default async function AdminPaymentsEconomicsPage({
             labels={artifactLabels}
           />
         </div>
+
+        <div className="rounded-2xl border border-border/70 bg-muted/20 p-4 text-sm text-muted-foreground">
+          {tPayments('sections.operationsNote')}
+        </div>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border bg-card/60 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('operationsGuidance.fxTitle')}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tPayments('operationsGuidance.fxDescription')}
+            </p>
+          </div>
+          <div className="rounded-2xl border bg-card/60 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {tPayments('operationsGuidance.artifactsTitle')}
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {tPayments('operationsGuidance.artifactsDescription')}
+            </p>
+          </div>
+        </section>
       </div>
     );
   } else if (activeWorkspace === 'investigation') {
@@ -1051,7 +1096,7 @@ export default async function AdminPaymentsEconomicsPage({
 
     workspaceContent = (
       <div className="space-y-6">
-        <section className="rounded-3xl border bg-card/70 p-5 shadow-sm sm:p-6">
+        <section className="space-y-3">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
               {tPayments('investigation.eyebrow')}
@@ -1070,30 +1115,6 @@ export default async function AdminPaymentsEconomicsPage({
           />
         </section>
 
-        <details className="rounded-2xl border bg-card/70 p-4 shadow-sm">
-          <summary className="cursor-pointer list-none text-sm font-semibold">
-            {tPayments('investigation.helpTitle')}
-          </summary>
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {tPayments('investigation.guidanceTitle')}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {tPayments('investigation.guidanceDescription')}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                {tPayments('investigation.whereToFindIdsTitle')}
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {tPayments('investigation.whereToFindIdsDescription')}
-              </p>
-            </div>
-          </div>
-        </details>
-
         {activeInvestigationTool === 'lookup' ? (
           <div className="space-y-6">
             <FinancialCaseLookupDashboard
@@ -1102,6 +1123,8 @@ export default async function AdminPaymentsEconomicsPage({
               searchQuery={caseQuery}
               result={caseLookupResult}
               labels={caseLookupLabels}
+              summaryLabel={caseLookupSummaryLabel}
+              summaryLimitedHint={caseLookupSummaryLimitedHint}
               workspace={activeWorkspace}
               selectedTraceId={evidenceTraceId}
               investigationTool={activeInvestigationTool}
@@ -1141,6 +1164,30 @@ export default async function AdminPaymentsEconomicsPage({
             investigationTool={activeInvestigationTool}
           />
         )}
+
+        <details className="rounded-2xl border bg-card/60 p-4 shadow-sm">
+          <summary className="cursor-pointer list-none text-sm font-semibold">
+            {tPayments('investigation.helpTitle')}
+          </summary>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('investigation.guidanceTitle')}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {tPayments('investigation.guidanceDescription')}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {tPayments('investigation.whereToFindIdsTitle')}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {tPayments('investigation.whereToFindIdsDescription')}
+              </p>
+            </div>
+          </div>
+        </details>
       </div>
     );
   }

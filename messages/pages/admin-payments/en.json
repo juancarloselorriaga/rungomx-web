@@ -2,7 +2,7 @@
   "admin": {
     "payments": {
       "title": "Payments",
-      "description": "Use workspaces to move between payment volume, platform economics, risk, operations, and investigation. Economics does not show organizer balances or payout status by itself.",
+      "description": "Use workspaces to move between volume, economics, risk, operations, and investigation. Economics does not show organizer balances or payout status on its own.",
       "workspaceLabel": "Workspaces",
       "nav": {
         "volumeLabel": "Volume",
@@ -18,30 +18,36 @@
       },
       "contextBanner": {
         "title": "There are payouts here, but no captured charges yet",
-        "description": "We found {payoutCount} payout lifecycle events in the selected period, but no captured charges or financial adjustments. That is why Economics and Risk are showing zeros."
+        "description": "We found {payoutCount} payout lifecycle events in the selected period, but no captured payments or financial adjustments. That is why Economics and Risk show zeros."
+      },
+      "sampledReferences": {
+        "traceScope": "Showing {shown} sampled {shown, plural, one {trace} other {traces}} out of {total} {total, plural, one {trace} other {traces}} in this window.",
+        "traceCount": "{count} sampled {count, plural, one {trace} other {traces}}",
+        "caseCount": "{count} sampled {count, plural, one {case ID} other {case IDs}}",
+        "moreLabel": "Show {count} more"
       },
       "volume": {
         "sectionTitle": "Captured payment volume",
-        "sectionDescription": "Headline payment throughput from canonical payment captures in the reviewed period.",
+        "sectionDescription": "Headline payment throughput from canonical captures in the reviewed period.",
         "mixedCurrencyNotice": "Headline money cards use the dominant source currency ({currency}) for this window. Use the breakdown below for mixed-currency detail.",
         "grossProcessedLabel": "Gross processed",
-        "grossProcessedDescription": "Captured payment volume before platform fees are separated.",
+        "grossProcessedDescription": "Captured payment volume before platform fees.",
         "grossTitle": "Gross processed",
-        "grossDescription": "Total captured charge volume before platform fees are separated.",
+        "grossDescription": "Total captured payment volume before platform fees.",
         "platformFeesLabel": "Platform fees captured",
-        "platformFeesDescription": "Fee component recorded at capture time.",
+        "platformFeesDescription": "Fee component recorded at capture.",
         "feesTitle": "Platform fees captured",
-        "feesDescription": "Fees captured by the platform from those charges.",
+        "feesDescription": "Fees captured by the platform from those payments.",
         "organizerProceedsLabel": "Organizer proceeds at capture",
-        "organizerProceedsDescription": "Organizer-side amount at capture time before later payout or risk events.",
+        "organizerProceedsDescription": "Organizer amount at capture before later payout or risk events.",
         "proceedsTitle": "Organizer proceeds at capture",
-        "proceedsDescription": "Organizer-side proceeds at capture before later payout operations.",
+        "proceedsDescription": "Organizer proceeds at capture before later payout operations.",
         "capturedPaymentsLabel": "Captured payments",
         "capturedPaymentsDescription": "Accepted canonical payment captures in this window.",
         "capturesTitle": "Captured payments",
-        "capturesDescription": "Canonical captured-charge events considered in this view.",
+        "capturesDescription": "Canonical captured-payment events considered in this view.",
         "currenciesTitle": "Volume by source currency",
-        "currenciesDescription": "Captured payment totals grouped by payment currency.",
+        "currenciesDescription": "Captured payment totals grouped by currency.",
         "currencyHeader": "Currency",
         "grossHeader": "Gross processed",
         "feesHeader": "Platform fees",
@@ -60,7 +66,7 @@
         "sampleTracesTitle": "Sample trace references",
         "sampleTracesEmpty": "No trace references were found in the selected window.",
         "topOrganizersTitle": "Top organizers in this window",
-        "topOrganizersDescription": "A limited organizer slice ranked for review without loading the full organizer population.",
+        "topOrganizersDescription": "A limited organizer slice ranked for review without loading the full population.",
         "organizerHeader": "Organizer",
         "organizerGrossHeader": "Gross processed",
         "organizerFeesHeader": "Platform fees",
@@ -68,18 +74,21 @@
         "organizerCountHeader": "Captures",
         "organizerActionHeader": "Investigation",
         "organizerEmpty": "No organizer ranking was found for the selected window.",
-        "organizerPageSummary": "Showing {start}-{end} of {total} organizers",
+        "organizerPageSummary": "Showing {start}-{end} of {total} {total, plural, one {organizer} other {organizers}}",
+        "organizerPageStatus": "Page {page} of {pageCount}",
+        "firstPageLabel": "First",
         "previousPageLabel": "Previous",
         "nextPageLabel": "Next",
+        "lastPageLabel": "Last",
         "investigationTitle": "Need trace-level evidence?",
-        "investigationDescription": "Use the investigation workspace for technical lookup and evidence review instead of opening raw traces in the volume ranking.",
+        "investigationDescription": "Use investigation for technical lookup and evidence review instead of opening raw traces in the ranking.",
         "investigationActionLabel": "Open investigation workspace",
         "organizerActionLabel": "Open in investigation"
       },
       "investigation": {
         "eyebrow": "Casework",
         "title": "Cases and evidence",
-        "description": "Use one of these entry points depending on what you already have. Search first if you only know a payout ID or another technical identifier. Open a trace directly if support already gave you the trace.",
+        "description": "Use the entry point that matches what you already have. Search first if you only know a payout ID or another technical identifier. Open a trace directly if support already gave you the trace.",
         "helpTitle": "Where do these IDs come from?",
         "evidenceReadyEyebrow": "Ready to review",
         "evidenceReadyTitle": "Evidence is ready for this trace",
@@ -90,13 +99,13 @@
         "evidenceActive": "An evidence pack is currently loaded.",
         "evidenceIdle": "Load a trace when you need to review evidence.",
         "guidanceTitle": "What you can search here",
-        "guidanceDescription": "This works with payout IDs, traces, and other technical identifiers shared by support or engineering. If you do not have one of those identifiers yet, this view will not help much.",
+        "guidanceDescription": "This works with payout IDs, traces, and other technical identifiers shared by support or engineering. Without one of those identifiers, this view will not help much.",
         "whereToFindIdsTitle": "Where those IDs usually come from",
-        "whereToFindIdsDescription": "Payout IDs usually come from organizer payments. Trace IDs usually come from a previous support case, evidence review, or an internal escalation. Idempotency keys are normally shared only by support or engineering.",
+        "whereToFindIdsDescription": "Payout IDs usually come from organizer payments. Trace IDs usually come from support, evidence review, or an internal escalation. Idempotency keys are usually shared only by support or engineering.",
         "tools": {
           "lookup": {
             "title": "Find by identifier",
-            "description": "Use this when you have a payout ID or another shared technical reference, but not the trace yet.",
+            "description": "Use this when you have a payout ID or another technical reference, but not the trace yet.",
             "activeState": "Search in progress",
             "idleState": "Best when you do not have the trace yet"
           },
@@ -149,7 +158,7 @@
         "overview": {
           "eyebrow": "Economics",
           "title": "Platform economics",
-          "description": "Start here to understand platform fee recognition before moving into operational tools."
+          "description": "Start here to understand platform fee recognition before moving into operations."
         },
         "risk": {
           "eyebrow": "Risk",
@@ -164,7 +173,7 @@
         "artifacts": {
           "eyebrow": "Operations",
           "title": "Statements and resends",
-          "description": "Review recent versions and deliveries before opening a manual operation."
+          "description": "Review recent versions and deliveries before opening a manual action."
         },
         "cases": {
           "eyebrow": "Investigation",
@@ -174,11 +183,11 @@
         "evidence": {
           "eyebrow": "Investigation",
           "title": "Load evidence",
-          "description": "Open an evidence pack only after you know which trace you want to inspect."
+          "description": "Open an evidence pack only after you know which trace to inspect."
         }
       },
       "sectionTitle": "Platform fees and adjustments",
-      "sectionDescription": "Primary economics readout of platform fees captured and financial adjustments applied to them.",
+      "sectionDescription": "Primary economics readout of captured platform fees and financial adjustments.",
       "primaryMetricTitle": "Net fee total",
       "primaryMetricDescription": "Captured platform fees plus financial adjustments in the reviewed period.",
       "capturedFeesLabel": "Captured fees",
@@ -205,7 +214,7 @@
       "emptyAdjustments": "No financial adjustments were found for the selected window.",
       "exposure": {
         "sectionTitle": "Debt and dispute concentration",
-        "sectionDescription": "Helps identify where staff should intervene first when captured charges accumulate debt or disputes.",
+        "sectionDescription": "Helps identify where staff should intervene first when captured payments accumulate debt or disputes.",
         "summaryExposureTitle": "Headline exposure",
         "summaryOpenCasesTitle": "Open dispute cases",
         "summaryPolicyPausesTitle": "Debt-policy pauses",
@@ -224,7 +233,7 @@
         "disputeCasesHeader": "Case refs",
         "sampleTracesLabel": "Sample traces",
         "sampleCasesLabel": "Sample case IDs",
-        "currenciesLabel": "+{count} additional currencies",
+        "currenciesLabel": "+{count} {count, plural, one {additional currency} other {additional currencies}}",
         "emptyState": "No debt or dispute exposure data was found for the selected window."
       },
       "mxn": {
@@ -247,16 +256,17 @@
       },
       "fx": {
         "sectionTitle": "Exchange rates for reporting",
-        "sectionDescription": "Register the reference rate used to convert captured fees into MXN when the original charge happened in another currency.",
+        "sectionDescription": "Register the reference rate used to convert captured fees into MXN when the original payment happened in another currency.",
         "missingTitle": "Currencies missing a rate",
         "staleTitle": "Rates to review",
         "upsertTitle": "Add or correct a rate",
-        "upsertDescription": "Use this when a day is missing its reference rate or when support needs to correct an existing one.",
+        "upsertDescription": "Use this when a day is missing its reference rate or when support needs to correct one.",
         "editActionLabel": "Open form",
         "currencyFieldLabel": "Source currency",
         "dateFieldLabel": "Effective date",
         "rateFieldLabel": "Rate to MXN",
         "reasonFieldLabel": "Reason",
+        "clearDateLabel": "Clear",
         "submitLabel": "Save rate",
         "ratesTableTitle": "Saved rates",
         "ratesTableDescription": "Latest daily rates configured for active currencies.",
@@ -300,6 +310,8 @@
         "versionNumberHeader": "Version",
         "versionFingerprintHeader": "Fingerprint",
         "versionLineageHeader": "Lineage",
+        "versionLineageRootLabel": "root",
+        "versionLineageFromPrefixLabel": "from",
         "versionReasonHeader": "Reason",
         "versionRequestedByHeader": "Requested by",
         "versionCreatedAtHeader": "Created",
@@ -309,7 +321,8 @@
         "deliveryRecipientHeader": "Recipient ref",
         "deliveryReasonHeader": "Reason",
         "deliveryRequestedByHeader": "Requested by",
-        "deliveryCreatedAtHeader": "Created"
+        "deliveryCreatedAtHeader": "Created",
+        "operationSelectAriaLabel": "Artifact operation select"
       },
       "caseLookup": {
         "sectionTitle": "Cases by technical ID",
@@ -328,7 +341,8 @@
         "disambiguationEmpty": "No ambiguous matches were detected for this lookup.",
         "resultsTitle": "Matched financial cases",
         "resultsDescription": "Cases are grouped by trace with normalized identifier evidence and role-appropriate metadata.",
-        "summaryLabel": "Cases",
+        "summaryLabel": "Showing {shown} of {total} matching {total, plural, one {case} other {cases}}",
+        "summaryLimitedHint": "This list is capped to the newest {shown} cases in the current query window. Refine the identifier to narrow the result set.",
         "loadEvidenceLabel": "Load evidence",
         "evidenceLoadedLabel": "Evidence loaded",
         "traceHeader": "Trace",
@@ -373,11 +387,14 @@
         "eventOwnershipOwnerHeader": "Owner",
         "eventOwnershipNextHeader": "Next transition",
         "eventPayloadHeader": "Payload",
+        "ownershipStateActionNeededLabel": "Action needed",
+        "ownershipStateInProgressLabel": "In progress",
         "artifactsVersionsTitle": "Artifact versions",
         "artifactsDeliveriesTitle": "Artifact deliveries",
         "artifactVersionHeader": "Version",
         "artifactFingerprintHeader": "Fingerprint",
         "artifactLineageHeader": "Lineage",
+        "artifactLineageRootLabel": "root",
         "artifactReasonHeader": "Reason",
         "artifactCreatedHeader": "Created",
         "deliveryChannelHeader": "Channel",

@@ -16,9 +16,16 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 
 import { OrganizerActionQueue } from './organizer-action-queue';
+import { PaymentsStatePanel } from './payments-state-panel';
 import { OrganizerWalletSummary } from './organizer-wallet-summary';
 import { PaymentsWorkspaceSkeleton } from './payments-page-skeletons';
 import { PayoutRequestDialog } from './payout-request-dialog';
+import { PaymentsInsetPanel, PaymentsMutedPanel, PaymentsPanel } from './payments-surfaces';
+import {
+  PaymentsEyebrow,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
 
 type OrganizerPaymentsWorkspaceProps = {
   locale: 'es' | 'en';
@@ -30,9 +37,11 @@ type OrganizerPaymentsWorkspaceProps = {
 };
 
 type WorkspaceData = {
-  wallet: OrganizerWalletSnapshotApiResponse['data'];
-  issues: OrganizerWalletIssuesApiResponse['data'];
+  wallet: OrganizerWalletSnapshotApiResponse['data'] | null;
+  issues: OrganizerWalletIssuesApiResponse['data'] | null;
 };
+
+type WorkspaceStatus = 'ready' | 'partial' | 'error';
 
 export function OrganizerPaymentsWorkspace({
   locale,
@@ -46,41 +55,59 @@ export function OrganizerPaymentsWorkspace({
   const resolvedHistoryHref = historyHref ?? getGlobalPayoutHistoryHref(organizationId);
   const [data, setData] = useState<WorkspaceData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
+  const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus>('ready');
 
   const loadWorkspaceData = useCallback(async () => {
     setIsLoading(true);
-    setHasError(false);
+    setWorkspaceStatus('ready');
 
     try {
-      const [walletResponse, issuesResponse] = await Promise.all([
-        fetch(`/api/payments/wallet?organizationId=${encodeURIComponent(organizationId)}`, {
-          cache: 'no-store',
-        }),
-        fetch(`/api/payments/wallet/issues?organizationId=${encodeURIComponent(organizationId)}`, {
-          cache: 'no-store',
-        }),
+      const [walletResult, issuesResult] = await Promise.allSettled([
+        (async () => {
+          const walletResponse = await fetch(
+            `/api/payments/wallet?organizationId=${encodeURIComponent(organizationId)}`,
+            {
+              cache: 'no-store',
+            },
+          );
+          if (!walletResponse.ok) {
+            throw new Error('payments_workspace_wallet_fetch_failed');
+          }
+          return (await walletResponse.json()) as OrganizerWalletSnapshotApiResponse;
+        })(),
+        (async () => {
+          const issuesResponse = await fetch(
+            `/api/payments/wallet/issues?organizationId=${encodeURIComponent(organizationId)}`,
+            {
+              cache: 'no-store',
+            },
+          );
+          if (!issuesResponse.ok) {
+            throw new Error('payments_workspace_issues_fetch_failed');
+          }
+          return (await issuesResponse.json()) as OrganizerWalletIssuesApiResponse;
+        })(),
       ]);
 
-      if (!walletResponse.ok || !issuesResponse.ok) {
-        throw new Error('payments_workspace_fetch_failed');
+      const nextData: WorkspaceData = {
+        wallet: walletResult.status === 'fulfilled' ? walletResult.value.data : null,
+        issues: issuesResult.status === 'fulfilled' ? issuesResult.value.data : null,
+      };
+
+      if (!nextData.wallet && !nextData.issues) {
+        setData(null);
+        setWorkspaceStatus('error');
+        return;
       }
 
-      const [walletPayload, issuesPayload] = (await Promise.all([
-        walletResponse.json(),
-        issuesResponse.json(),
-      ])) as [OrganizerWalletSnapshotApiResponse, OrganizerWalletIssuesApiResponse];
-
-      setData({
-        wallet: walletPayload.data,
-        issues: issuesPayload.data,
-      });
+      setData(nextData);
+      setWorkspaceStatus(nextData.wallet && nextData.issues ? 'ready' : 'partial');
       emitOrganizerPaymentsTelemetry({
         eventName: 'organizer_payments_workspace_viewed',
         organizationId,
       });
     } catch {
-      setHasError(true);
+      setWorkspaceStatus('error');
       setData(null);
     } finally {
       setIsLoading(false);
@@ -92,29 +119,38 @@ export function OrganizerPaymentsWorkspace({
   }, [loadWorkspaceData]);
 
   if (isLoading) {
-    return <PaymentsWorkspaceSkeleton showContextCard={false} />;
+    return (
+      <PaymentsWorkspaceSkeleton
+        showContextCard={false}
+        loadingAriaLabel={t('home.shell.loadingAriaLabel')}
+      />
+    );
   }
 
-  if (hasError || !data) {
+  if (workspaceStatus === 'error' || !data) {
     return (
-      <section className="rounded-lg border border-amber-200 bg-amber-50/60 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">{t('home.shell.degradedTitle')}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">{t('home.shell.degradedDescription')}</p>
-        <div className="mt-4">
-          <Button onClick={() => void loadWorkspaceData()}>{t('actions.retry')}</Button>
-        </div>
-      </section>
+      <PaymentsStatePanel
+        title={t('home.shell.degradedTitle')}
+        description={t('home.shell.degradedDescription')}
+        tone="warning"
+        action={<Button onClick={() => void loadWorkspaceData()}>{t('actions.retry')}</Button>}
+      />
     );
   }
 
   const activePayoutId =
-    [...data.issues.actionNeeded, ...data.issues.inProgress].find(
-      (item) => item.entityType === 'payout',
-    )?.entityId ?? null;
+    data.issues
+      ? [...data.issues.actionNeeded, ...data.issues.inProgress].find(
+          (item) => item.entityType === 'payout',
+        )?.entityId ?? null
+      : null;
+  const isPartial = workspaceStatus === 'partial';
+  const isWalletUnavailable = data.wallet == null;
+  const isQueueUnavailable = data.issues == null;
   const ctaState =
-    data.wallet.buckets.processingMinor > 0 || activePayoutId
+    data.wallet && (data.wallet.buckets.processingMinor > 0 || activePayoutId)
       ? 'active'
-      : data.wallet.buckets.availableMinor > 0
+      : data.wallet && data.wallet.buckets.availableMinor > 0
         ? 'request'
         : 'idle';
   const currentPayoutHref = activePayoutId
@@ -123,33 +159,66 @@ export function OrganizerPaymentsWorkspace({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)]">
-        <OrganizerWalletSummary asOf={data.wallet.asOf} buckets={data.wallet.buckets} locale={locale} />
+      {isPartial ? (
+        <PaymentsStatePanel
+          title={t('home.shell.partialTitle')}
+          description={
+            isWalletUnavailable
+              ? t('home.shell.partialWalletDescription')
+              : t('home.shell.partialQueueDescription')
+          }
+          tone="warning"
+          action={
+            <Button variant="outline" onClick={() => void loadWorkspaceData()}>
+              {t('actions.retry')}
+            </Button>
+          }
+        />
+      ) : null}
 
-        <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)]">
+        {data.wallet ? (
+          <OrganizerWalletSummary
+            asOf={data.wallet.asOf}
+            buckets={data.wallet.buckets}
+            locale={locale}
+          />
+        ) : (
+          <PaymentsStatePanel
+            eyebrow={t('wallet.title')}
+            title={t('home.shell.partialTitle')}
+            description={t('home.shell.partialWalletDescription')}
+            dashed
+            className="bg-card/70"
+          />
+        )}
+
+        <PaymentsPanel>
           <div className="space-y-5">
             <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-                {t('home.nextStep.eyebrow')}
-              </p>
-              <h2 className="text-2xl font-semibold tracking-tight">
+              <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>
+              <PaymentsSectionTitle>
                 {ctaState === 'request'
                   ? t('home.nextStep.requestTitle')
                   : ctaState === 'active'
                     ? t('home.nextStep.queueTitle')
                     : t('home.nextStep.idleTitle')}
-              </h2>
-              <p className="text-sm text-muted-foreground">
+              </PaymentsSectionTitle>
+              <PaymentsSectionDescription>
                 {ctaState === 'request'
                   ? t('home.nextStep.requestDescription', { organization: organizationName })
                   : ctaState === 'active'
                     ? t('home.nextStep.queueDescription', { organization: organizationName })
                     : t('home.nextStep.idleDescription', { organization: organizationName })}
-              </p>
+              </PaymentsSectionDescription>
             </div>
 
             <div className="flex flex-col gap-3">
-              {ctaState === 'request' ? (
+              {isWalletUnavailable ? (
+                <PaymentsMutedPanel className="border-dashed py-4 text-sm text-muted-foreground">
+                  {t('home.shell.partialWalletDescription')}
+                </PaymentsMutedPanel>
+              ) : ctaState === 'request' ? (
                 <PayoutRequestDialog
                   organizationId={organizationId}
                   triggerLabel={t('actions.requestPayout')}
@@ -167,7 +236,7 @@ export function OrganizerPaymentsWorkspace({
                 </Button>
               )}
 
-              {ctaState === 'active' ? (
+              {!isWalletUnavailable && ctaState === 'active' ? (
                 <PayoutRequestDialog
                   organizationId={organizationId}
                   triggerLabel={t('actions.queuePayoutRequest')}
@@ -178,27 +247,41 @@ export function OrganizerPaymentsWorkspace({
                 />
               ) : null}
 
-              {ctaState !== 'idle' && showHistoryShortcut ? (
-                <div className="flex items-center justify-center">
+              {!isWalletUnavailable && ctaState !== 'idle' && showHistoryShortcut ? (
+                <PaymentsInsetPanel className="flex items-center justify-center py-3">
                   <Link
                     href={resolvedHistoryHref}
                     className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
                   >
                     {t('actions.viewPayouts')}
                   </Link>
-                </div>
+                </PaymentsInsetPanel>
               ) : null}
             </div>
           </div>
-        </section>
+        </PaymentsPanel>
       </div>
 
-      <OrganizerActionQueue
-        locale={locale}
-        actionNeeded={data.issues.actionNeeded}
-        inProgress={data.issues.inProgress}
-        eventId={eventId}
-      />
+      {data.issues ? (
+        <OrganizerActionQueue
+          locale={locale}
+          actionNeeded={data.issues.actionNeeded}
+          inProgress={data.issues.inProgress}
+          eventId={eventId}
+        />
+      ) : (
+        <PaymentsStatePanel
+          title={t('wallet.queue.title')}
+          description={t('home.shell.partialQueueDescription')}
+          dashed
+          className="bg-card/70"
+          action={
+            <Button variant="outline" onClick={() => void loadWorkspaceData()}>
+              {t('actions.retry')}
+            </Button>
+          }
+        />
+      )}
     </div>
   );
 }

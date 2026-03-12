@@ -1,6 +1,7 @@
 'use client';
 
 import { Link, useRouter } from '@/i18n/navigation';
+import { Button } from '@/components/ui/button';
 import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerPayoutListItem } from '@/lib/payments/organizer/payout-views';
 import { shortIdentifier } from '@/lib/payments/organizer/presentation';
@@ -8,7 +9,23 @@ import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 import { ChevronRightIcon } from 'lucide-react';
 
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableMeta,
+  PaymentsDataTableRow,
+} from './payments-data-table';
+import { PaymentsStatePanel } from './payments-state-panel';
 import { PayoutStatusBadge } from './payout-status-badge';
+import { PaymentsMutedPanel, PaymentsPanel } from './payments-surfaces';
+import {
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
+
+type PayoutHistoryHref = Parameters<typeof Link>[0]['href'];
 
 type PayoutHistoryTableProps = {
   items: OrganizerPayoutListItem[];
@@ -16,6 +33,17 @@ type PayoutHistoryTableProps = {
   title?: string;
   description?: string;
   eventId?: string;
+  scopeSummary?: string;
+  scopeHint?: string;
+  pageStatus?: string;
+  firstPageHref?: PayoutHistoryHref | null;
+  previousPageHref?: PayoutHistoryHref | null;
+  nextPageHref?: PayoutHistoryHref | null;
+  lastPageHref?: PayoutHistoryHref | null;
+  firstPageLabel?: string;
+  previousPageLabel?: string;
+  nextPageLabel?: string;
+  lastPageLabel?: string;
 };
 
 function formatDate(value: Date, locale: 'es' | 'en'): string {
@@ -31,45 +59,75 @@ export function PayoutHistoryTable({
   title,
   description,
   eventId,
+  scopeSummary,
+  scopeHint,
+  pageStatus,
+  firstPageHref,
+  previousPageHref,
+  nextPageHref,
+  lastPageHref,
+  firstPageLabel,
+  previousPageLabel,
+  nextPageLabel,
+  lastPageLabel,
 }: PayoutHistoryTableProps) {
   const t = useTranslations('pages.dashboardPayments');
   const router = useRouter();
 
   if (items.length === 0) {
     return (
-      <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-2">
-        {title ? <h2 className="text-lg font-semibold">{title}</h2> : null}
-        <p className="text-sm text-muted-foreground">
-          {description ?? t('payouts.emptyDescription')}
-        </p>
+      <PaymentsStatePanel
+        title={title ?? t('payouts.historyTitle')}
+        description={description ?? t('payouts.emptyDescription')}
+        dashed
+        className="bg-card/80"
+      >
         <div className="rounded-lg border border-dashed bg-background/70 p-6 text-sm text-muted-foreground">
           {t('payouts.emptyTitle')}
         </div>
-      </section>
+      </PaymentsStatePanel>
     );
   }
 
   return (
-    <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-4">
-      {title || description ? (
-        <div className="space-y-1">
-          {title ? <h2 className="text-lg font-semibold">{title}</h2> : null}
-          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+    <PaymentsPanel className="space-y-4">
+      {title || description || scopeSummary || pageStatus || scopeHint ? (
+        <div className="space-y-3">
+          {title || description ? (
+            <div className="space-y-1.5">
+              {title ? <PaymentsSectionTitle compact>{title}</PaymentsSectionTitle> : null}
+              {description ? <PaymentsSectionDescription>{description}</PaymentsSectionDescription> : null}
+            </div>
+          ) : null}
+          {scopeSummary || pageStatus || scopeHint ? (
+            <PaymentsMutedPanel className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                {scopeSummary ? <p className="font-medium text-foreground">{scopeSummary}</p> : null}
+                {scopeHint ? <p>{scopeHint}</p> : null}
+              </div>
+              {pageStatus ? <p className="text-xs uppercase tracking-[0.16em]">{pageStatus}</p> : null}
+            </PaymentsMutedPanel>
+          ) : null}
         </div>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="text-muted-foreground">
+      <PaymentsDataTable minWidthClassName="min-w-[48rem]">
+          <PaymentsDataTableHead>
             <tr>
-              <th className="py-2 pr-4">{t('payouts.table.requestId')}</th>
-              <th className="py-2 pr-4">{t('payouts.table.status')}</th>
-              <th className="py-2 pr-4 text-right">{t('payouts.table.requested')}</th>
-              <th className="py-2 pr-4 text-right">{t('payouts.table.currentAmount')}</th>
-              <th className="py-2">{t('payouts.table.requestedAt')}</th>
-              <th className="w-11 text-right">{t('payouts.table.open')}</th>
+              <PaymentsDataTableHeader>{t('payouts.table.requestId')}</PaymentsDataTableHeader>
+              <PaymentsDataTableHeader>{t('payouts.table.status')}</PaymentsDataTableHeader>
+              <PaymentsDataTableHeader align="right">
+                {t('payouts.table.requested')}
+              </PaymentsDataTableHeader>
+              <PaymentsDataTableHeader align="right">
+                {t('payouts.table.currentAmount')}
+              </PaymentsDataTableHeader>
+              <PaymentsDataTableHeader>{t('payouts.table.requestedAt')}</PaymentsDataTableHeader>
+              <PaymentsDataTableHeader align="right" className="w-12">
+                {t('payouts.table.open')}
+              </PaymentsDataTableHeader>
             </tr>
-          </thead>
+          </PaymentsDataTableHead>
           <tbody>
             {items.map((item) => {
               const detailHref = getPayoutDetailHref(item.payoutRequestId, { eventId });
@@ -77,9 +135,9 @@ export function PayoutHistoryTable({
                 router.push(detailHref as Parameters<typeof router.push>[0]);
 
               return (
-                <tr
+                <PaymentsDataTableRow
                   key={item.payoutRequestId}
-                  className="cursor-pointer border-t align-top transition hover:bg-muted/15"
+                  className="cursor-pointer transition hover:bg-muted/15"
                   role="link"
                   tabIndex={0}
                   onClick={navigateToDetail}
@@ -90,7 +148,7 @@ export function PayoutHistoryTable({
                     }
                   }}
                 >
-                  <td className="py-3 pr-4">
+                  <PaymentsDataTableCell>
                     <Link
                       href={detailHref}
                       className="font-medium text-primary underline-offset-2 hover:underline"
@@ -98,25 +156,30 @@ export function PayoutHistoryTable({
                     >
                       {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
                     </Link>
-                  </td>
-                  <td className="py-3 pr-4">
+                    <PaymentsDataTableMeta className="font-mono">
+                      {shortIdentifier(item.payoutRequestId)}
+                    </PaymentsDataTableMeta>
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell>
                     <PayoutStatusBadge
                       status={item.status}
                       label={t(`payouts.statuses.${item.status}`)}
                     />
-                  </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                     {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
-                  </td>
-                  <td className="py-3 pr-4 text-right tabular-nums">
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                     {formatMoneyFromMinor(
                       item.currentRequestedAmountMinor,
                       item.currency,
                       locale,
                     )}
-                  </td>
-                  <td className="py-3">{formatDate(item.requestedAt, locale)}</td>
-                  <td className="py-3 text-right">
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell className="whitespace-nowrap">
+                    {formatDate(item.requestedAt, locale)}
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell align="right">
                     <Link
                       href={detailHref}
                       aria-label={t('actions.openDetails')}
@@ -125,13 +188,38 @@ export function PayoutHistoryTable({
                     >
                       <ChevronRightIcon className="size-4" />
                     </Link>
-                  </td>
-                </tr>
+                  </PaymentsDataTableCell>
+                </PaymentsDataTableRow>
               );
             })}
           </tbody>
-        </table>
-      </div>
-    </section>
+      </PaymentsDataTable>
+
+      {firstPageLabel && previousPageLabel && nextPageLabel && lastPageLabel ? (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button asChild={Boolean(firstPageHref)} variant="outline" size="sm" disabled={!firstPageHref}>
+            {firstPageHref ? <Link href={firstPageHref}>{firstPageLabel}</Link> : <span>{firstPageLabel}</span>}
+          </Button>
+          <Button
+            asChild={Boolean(previousPageHref)}
+            variant="outline"
+            size="sm"
+            disabled={!previousPageHref}
+          >
+            {previousPageHref ? (
+              <Link href={previousPageHref}>{previousPageLabel}</Link>
+            ) : (
+              <span>{previousPageLabel}</span>
+            )}
+          </Button>
+          <Button asChild={Boolean(nextPageHref)} variant="outline" size="sm" disabled={!nextPageHref}>
+            {nextPageHref ? <Link href={nextPageHref}>{nextPageLabel}</Link> : <span>{nextPageLabel}</span>}
+          </Button>
+          <Button asChild={Boolean(lastPageHref)} variant="outline" size="sm" disabled={!lastPageHref}>
+            {lastPageHref ? <Link href={lastPageHref}>{lastPageLabel}</Link> : <span>{lastPageLabel}</span>}
+          </Button>
+        </div>
+      ) : null}
+    </PaymentsPanel>
   );
 }

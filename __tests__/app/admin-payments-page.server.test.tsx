@@ -256,6 +256,9 @@ describe('admin payments page workspace semantics', () => {
       query: '',
       normalizedQuery: '',
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: 20,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     });
@@ -321,7 +324,7 @@ describe('admin payments page workspace semantics', () => {
   it('renders navigation in the expected visible order', async () => {
     await renderPage({ workspace: 'volume' });
 
-    expect(screen.getAllByText(/^nav\..*Label$/).map((node) => node.textContent)).toEqual([
+    expect(screen.getAllByRole('button').map((node) => node.textContent)).toEqual([
       'nav.volumeLabel',
       'nav.economicsLabel',
       'nav.riskLabel',
@@ -357,5 +360,93 @@ describe('admin payments page workspace semantics', () => {
     expect(screen.getByText('net-recognized-fee-dashboard')).toBeInTheDocument();
     expect(screen.getByText('mxn-reporting-dashboard')).toBeInTheDocument();
     expect(screen.getByTestId('admin-range-selector')).toBeInTheDocument();
+  });
+
+  it('renders risk breakdown before passive review guidance', async () => {
+    mockGetAdminDebtDisputeExposureMetrics.mockResolvedValueOnce({
+      asOf: new Date('2026-03-10T00:00:00.000Z'),
+      windowStart: new Date('2026-03-01T00:00:00.000Z'),
+      windowEnd: new Date('2026-03-10T00:00:00.000Z'),
+      totals: {
+        openDisputeCaseCount: 2,
+        pauseRequiredCount: 1,
+        resumeAllowedCount: 0,
+        headlineCurrency: 'MXN',
+        headlineOpenDisputeAtRiskMinor: 1000,
+        headlineDebtPostedMinor: 2000,
+        headlineExposureScoreMinor: 3000,
+        currencies: [
+          {
+            currency: 'MXN',
+            openDisputeAtRiskMinor: 1000,
+            debtPostedMinor: 2000,
+            exposureScoreMinor: 3000,
+          },
+        ],
+      },
+      organizers: [
+        {
+          organizerId: 'org-1',
+          organizerLabel: 'Organizer 1',
+          headlineCurrency: 'MXN',
+          headlineExposureScoreMinor: 3000,
+          headlineOpenDisputeAtRiskMinor: 1000,
+          headlineDebtPostedMinor: 2000,
+          openDisputeCaseCount: 2,
+          pauseRequiredCount: 1,
+          resumeAllowedCount: 0,
+          traceability: {
+            distinctTraceCount: 1,
+            distinctDisputeCaseCount: 1,
+            sampleTraceIds: ['trace-1'],
+            sampleDisputeCaseIds: ['case-1'],
+          },
+          currencies: [
+            {
+              currency: 'MXN',
+              openDisputeAtRiskMinor: 1000,
+              debtPostedMinor: 2000,
+              exposureScoreMinor: 3000,
+            },
+          ],
+        },
+      ],
+      events: [],
+      traceability: {
+        windowStart: new Date('2026-03-01T00:00:00.000Z'),
+        windowEnd: new Date('2026-03-10T00:00:00.000Z'),
+        eventCount: 1,
+        distinctTraceCount: 1,
+        firstOccurredAt: new Date('2026-03-05T10:00:00.000Z'),
+        lastOccurredAt: new Date('2026-03-05T10:00:00.000Z'),
+        sampleTraceIds: ['trace-1'],
+      },
+    });
+
+    const view = await renderPage({ workspace: 'risk' });
+
+    expect(screen.getByText('debt-dispute-exposure-dashboard')).toBeInTheDocument();
+    expect(view.container.innerHTML.indexOf('debt-dispute-exposure-dashboard')).toBeLessThan(
+      view.container.innerHTML.indexOf('risk.reviewTitle'),
+    );
+  });
+
+  it('renders operations tools before passive guidance', async () => {
+    const view = await renderPage({ workspace: 'operations' });
+
+    expect(screen.getByText('fx-rate-management-dashboard')).toBeInTheDocument();
+    expect(screen.getByText('artifact-governance-dashboard')).toBeInTheDocument();
+    expect(view.container.innerHTML.indexOf('fx-rate-management-dashboard')).toBeLessThan(
+      view.container.innerHTML.indexOf('sections.operationsNote'),
+    );
+  });
+
+  it('renders investigation lookup before help content', async () => {
+    const view = await renderPage({ workspace: 'investigation' });
+
+    expect(screen.getByText('financial-case-lookup-dashboard')).toBeInTheDocument();
+    expect(view.container.innerHTML.indexOf('financial-case-lookup-dashboard')).toBeLessThan(
+      view.container.innerHTML.indexOf('investigation.helpTitle'),
+    );
   });
 });

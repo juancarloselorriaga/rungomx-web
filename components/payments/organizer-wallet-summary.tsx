@@ -3,6 +3,14 @@
 import type { OrganizerWalletBuckets } from '@/lib/payments/organizer/ui';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
+import {
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+  PaymentsTimestamp,
+} from './payments-typography';
+import { PaymentsInsetPanel, PaymentsPanel } from './payments-surfaces';
 
 type OrganizerWalletSummaryProps = {
   asOf: string;
@@ -33,27 +41,27 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
   ] as const;
 
   return (
-    <section className="rounded-xl border bg-card/80 p-5 shadow-sm" aria-label={t('wallet.title')}>
+    <PaymentsPanel aria-label={t('wallet.title')}>
       <div className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight">{t('wallet.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('wallet.description')}</p>
+          <PaymentsSectionTitle>{t('wallet.title')}</PaymentsSectionTitle>
+          <PaymentsSectionDescription>{t('wallet.description')}</PaymentsSectionDescription>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <PaymentsTimestamp>
           {t('wallet.asOf', { timestamp: formatAsOf(asOf, locale) })}
-        </p>
+        </PaymentsTimestamp>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <article key={card.key} className="rounded-lg border bg-background/80 p-4">
-            <p className="text-sm text-muted-foreground">{t(`wallet.buckets.${card.key}`)}</p>
-            <p className="mt-2 text-2xl font-semibold">
+          <PaymentsInsetPanel key={card.key} className="space-y-2">
+            <PaymentsMetricLabel>{t(`wallet.buckets.${card.key}`)}</PaymentsMetricLabel>
+            <PaymentsMetricValue>
               {formatMoneyFromMinor(card.value, 'MXN', locale)}
-            </p>
-          </article>
+            </PaymentsMetricValue>
+          </PaymentsInsetPanel>
         ))}
       </div>
-    </section>
+    </PaymentsPanel>
   );
 }

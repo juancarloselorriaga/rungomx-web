@@ -1,3 +1,18 @@
+import { SampledReferenceList } from '@/components/admin/payments/sampled-reference-list';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+} from '@/components/payments/payments-data-table';
+import {
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from '@/components/payments/payments-typography';
+import { PaymentsInsetPanel, PaymentsMutedPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import type { NetRecognizedFeeMetrics } from '@/lib/payments/economics/net-recognized-fees';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
@@ -21,6 +36,8 @@ type NetRecognizedFeeDashboardLabels = {
   traceabilityLastEventLabel: string;
   sampleTracesTitle: string;
   sampleTracesEmpty: string;
+  sampleTracesScopeLabel: (shown: number, total: number) => string;
+  sampleTracesMoreLabel: (count: number) => string;
   currencyHeader: string;
   netHeader: string;
   capturedHeader: string;
@@ -75,116 +92,111 @@ export function NetRecognizedFeeDashboard({
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
+        <PaymentsSectionTitle compact>{labels.sectionTitle}</PaymentsSectionTitle>
+        <PaymentsSectionDescription className="mt-1">{labels.sectionDescription}</PaymentsSectionDescription>
       </div>
 
       {hideSummaryCards ? null : (
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {labels.primaryMetricTitle}
-            </p>
-            <p className="mt-2 text-3xl font-semibold tabular-nums">{headlineValue}</p>
-            <p className="mt-2 text-sm text-muted-foreground">
+          <PaymentsInsetPanel className="space-y-2">
+            <PaymentsMetricLabel>{labels.primaryMetricTitle}</PaymentsMetricLabel>
+            <PaymentsMetricValue className="text-3xl sm:text-[2rem]">{headlineValue}</PaymentsMetricValue>
+            <p className="text-sm text-muted-foreground">
               {labels.primaryMetricDescription}
             </p>
-          </div>
+          </PaymentsInsetPanel>
 
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {labels.capturedFeesLabel}
-            </p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">{capturedValue}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{labels.currenciesDescription}</p>
-          </div>
+          <PaymentsInsetPanel className="space-y-2">
+            <PaymentsMetricLabel>{labels.capturedFeesLabel}</PaymentsMetricLabel>
+            <PaymentsMetricValue compact>{capturedValue}</PaymentsMetricValue>
+            <p className="text-sm text-muted-foreground">{labels.currenciesDescription}</p>
+          </PaymentsInsetPanel>
 
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {labels.adjustmentsLabel}
-            </p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">{adjustmentsValue}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{labels.adjustmentsDescription}</p>
-          </div>
+          <PaymentsInsetPanel className="space-y-2">
+            <PaymentsMetricLabel>{labels.adjustmentsLabel}</PaymentsMetricLabel>
+            <PaymentsMetricValue compact>{adjustmentsValue}</PaymentsMetricValue>
+            <p className="text-sm text-muted-foreground">{labels.adjustmentsDescription}</p>
+          </PaymentsInsetPanel>
         </div>
       )}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <h3 className="text-sm font-semibold">{labels.currenciesTitle}</h3>
+        <PaymentsPanel>
+          <PaymentsSectionTitle compact className="text-base">{labels.currenciesTitle}</PaymentsSectionTitle>
           <p className="mt-1 text-xs text-muted-foreground">{labels.currenciesDescription}</p>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <PaymentsDataTable minWidthClassName="min-w-[28rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.currencyHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.netHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.capturedHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.adjustmentHeader}</th>
-                  <th className="pb-2 text-right">{labels.countHeader}</th>
+                  <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.netHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.capturedHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.adjustmentHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.countHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {metrics.currencies.map((row) => (
-                  <tr key={row.currency} className="border-t">
-                    <td className="py-2 pr-4 font-medium">{row.currency}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
+                  <PaymentsDataTableRow key={row.currency}>
+                    <PaymentsDataTableCell className="font-medium">{row.currency}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {formatMoneyFromMinor(row.netRecognizedFeeMinor, row.currency, locale)}
-                    </td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {formatMoneyFromMinor(row.capturedFeeMinor, row.currency, locale)}
-                    </td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {formatMoneyFromMinor(row.adjustmentsMinor, row.currency, locale)}
-                    </td>
-                    <td className="py-2 text-right tabular-nums">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {row.captureEventCount + row.adjustmentEventCount}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
-        </div>
+            </PaymentsDataTable>
+        </PaymentsPanel>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <h3 className="text-sm font-semibold">{labels.adjustmentsTitle}</h3>
+        <PaymentsPanel>
+          <PaymentsSectionTitle compact className="text-base">{labels.adjustmentsTitle}</PaymentsSectionTitle>
           <p className="mt-1 text-xs text-muted-foreground">{labels.adjustmentsDescription}</p>
           {metrics.adjustments.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{labels.emptyAdjustments}</p>
           ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[28rem] text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <PaymentsDataTable minWidthClassName="min-w-[28rem]">
+                <PaymentsDataTableHead>
                   <tr>
-                    <th className="pb-2 pr-4">{labels.currencyHeader}</th>
-                    <th className="pb-2 pr-4">{labels.adjustmentCodeHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.adjustmentHeader}</th>
-                    <th className="pb-2 text-right">{labels.countHeader}</th>
+                    <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.adjustmentCodeHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.adjustmentHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.countHeader}</PaymentsDataTableHeader>
                   </tr>
-                </thead>
+                </PaymentsDataTableHead>
                 <tbody>
                   {metrics.adjustments.map((row) => (
-                    <tr key={`${row.currency}:${row.adjustmentCode}`} className="border-t">
-                      <td className="py-2 pr-4 font-medium">{row.currency}</td>
-                      <td className="py-2 pr-4 font-mono text-xs">{row.adjustmentCode}</td>
-                      <td className="py-2 pr-4 text-right tabular-nums">
+                    <PaymentsDataTableRow key={`${row.currency}:${row.adjustmentCode}`}>
+                      <PaymentsDataTableCell className="font-medium">{row.currency}</PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap">
+                        {row.adjustmentCode}
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                         {formatMoneyFromMinor(row.amountMinor, row.currency, locale)}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">{row.eventCount}</td>
-                    </tr>
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+                        {row.eventCount}
+                      </PaymentsDataTableCell>
+                    </PaymentsDataTableRow>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </PaymentsDataTable>
           )}
-        </div>
+        </PaymentsPanel>
       </div>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.traceabilityTitle}</h3>
+      <PaymentsPanel>
+        <PaymentsSectionTitle compact className="text-base">{labels.traceabilityTitle}</PaymentsSectionTitle>
         <p className="mt-1 text-xs text-muted-foreground">{labels.traceabilityDescription}</p>
-        <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
+        <PaymentsMutedPanel className="mt-4">
+        <dl className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-3">
           <div>
             <dt className="text-xs uppercase tracking-wide text-muted-foreground">
               {labels.traceabilityWindowLabel}
@@ -219,27 +231,19 @@ export function NetRecognizedFeeDashboard({
             <dd className="mt-1">{formatDateTime(metrics.traceability.lastOccurredAt, locale)}</dd>
           </div>
         </dl>
+        </PaymentsMutedPanel>
 
-        <div className="mt-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {labels.sampleTracesTitle}
-          </h4>
-          {metrics.traceability.sampleTraceIds.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">{labels.sampleTracesEmpty}</p>
-          ) : (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {metrics.traceability.sampleTraceIds.map((traceId) => (
-                <code
-                  key={traceId}
-                  className="rounded bg-muted px-2 py-1 text-xs text-foreground"
-                >
-                  {traceId}
-                </code>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+        <PaymentsInsetPanel className="mt-4">
+          <SampledReferenceList
+            title={labels.sampleTracesTitle}
+            items={metrics.traceability.sampleTraceIds}
+            emptyLabel={labels.sampleTracesEmpty}
+            totalCount={metrics.traceability.distinctTraceCount}
+            scopeLabel={labels.sampleTracesScopeLabel}
+            moreLabel={labels.sampleTracesMoreLabel}
+          />
+        </PaymentsInsetPanel>
+      </PaymentsPanel>
     </section>
   );
 }

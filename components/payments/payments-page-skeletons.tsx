@@ -2,13 +2,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 type PaymentsWorkspaceSkeletonProps = {
   showContextCard?: boolean;
+  loadingAriaLabel: string;
 };
 
 export function PaymentsWorkspaceSkeleton({
   showContextCard = true,
+  loadingAriaLabel,
 }: PaymentsWorkspaceSkeletonProps) {
   return (
-    <div className="space-y-6" role="status" aria-live="polite" aria-label="Loading payments">
+    <div className="space-y-6" role="status" aria-live="polite" aria-label={loadingAriaLabel}>
       {showContextCard ? (
         <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -118,9 +120,13 @@ export function PayoutHistorySkeleton() {
   );
 }
 
-export function PayoutDetailSkeleton() {
+type PayoutDetailSkeletonProps = {
+  loadingAriaLabel: string;
+};
+
+export function PayoutDetailSkeleton({ loadingAriaLabel }: PayoutDetailSkeletonProps) {
   return (
-    <div className="space-y-6" role="status" aria-live="polite" aria-label="Loading payout detail">
+    <div className="space-y-6" role="status" aria-live="polite" aria-label={loadingAriaLabel}>
       <div className="space-y-3">
         <div className="flex gap-2">
           <Skeleton className="h-4 w-24" />

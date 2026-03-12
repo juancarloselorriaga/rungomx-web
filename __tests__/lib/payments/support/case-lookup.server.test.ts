@@ -120,6 +120,9 @@ describe('lookupFinancialCases DB-backed branches', () => {
       query: '',
       normalizedQuery: '',
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: 20,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     });
@@ -140,6 +143,9 @@ describe('lookupFinancialCases DB-backed branches', () => {
       query: 'missing-identifier',
       normalizedQuery: 'missing-identifier',
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: 20,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     });
@@ -205,6 +211,8 @@ describe('lookupFinancialCases DB-backed branches', () => {
     expect(mockSelect).toHaveBeenCalledTimes(8);
     expect(selectLimitCalls).toEqual([80, 80, 80, 80, 80, 80, 20]);
     expect(result.totalCaseCount).toBe(2);
+    expect(result.returnedCaseCount).toBe(2);
+    expect(result.isResultLimitApplied).toBe(false);
     expect(result.cases.map((entry) => entry.traceId)).toEqual([
       'trace-from-quote',
       'trace-from-request',
@@ -332,7 +340,8 @@ describe('lookupFinancialCases DB-backed branches', () => {
     });
 
     expect(selectLimitCalls).toEqual([80, 80, 80, 80, 2]);
-    expect(result.totalCaseCount).toBe(1);
+    expect(result.totalCaseCount).toBe(2);
+    expect(result.returnedCaseCount).toBe(1);
     expect(result.cases).toHaveLength(1);
     expect(result.cases[0]?.traceId).toBe('trace-two');
   });

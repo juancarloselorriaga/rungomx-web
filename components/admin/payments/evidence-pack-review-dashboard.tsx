@@ -1,6 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+} from '@/components/payments/payments-data-table';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { FinancialEvidencePack } from '@/lib/payments/support/evidence-pack';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -39,11 +46,14 @@ type EvidencePackReviewLabels = {
   eventOwnershipOwnerHeader: string;
   eventOwnershipNextHeader: string;
   eventPayloadHeader: string;
+  ownershipStateActionNeededLabel: string;
+  ownershipStateInProgressLabel: string;
   artifactsVersionsTitle: string;
   artifactsDeliveriesTitle: string;
   artifactVersionHeader: string;
   artifactFingerprintHeader: string;
   artifactLineageHeader: string;
+  artifactLineageRootLabel: string;
   artifactReasonHeader: string;
   artifactCreatedHeader: string;
   deliveryChannelHeader: string;
@@ -85,9 +95,9 @@ function truncateMiddle(value: string | null | undefined, start = 10, end = 6): 
   return `${value.slice(0, start)}…${value.slice(-end)}`;
 }
 
-function formatOwnershipState(value: string, locale: 'es' | 'en'): string {
-  if (value === 'action_needed') return locale === 'es' ? 'Acción requerida' : 'Action needed';
-  if (value === 'in_progress') return locale === 'es' ? 'En progreso' : 'In progress';
+function formatOwnershipState(value: string, labels: EvidencePackReviewLabels): string {
+  if (value === 'action_needed') return labels.ownershipStateActionNeededLabel;
+  if (value === 'in_progress') return labels.ownershipStateInProgressLabel;
   return value;
 }
 
@@ -253,7 +263,7 @@ export function EvidencePackReviewDashboard({
                   {labels.currentStateLabel}
                 </p>
                 <p className="mt-1 text-xs">
-                  {formatOwnershipState(evidencePack.ownership.currentState, locale)}
+                  {formatOwnershipState(evidencePack.ownership.currentState, labels)}
                 </p>
               </div>
               <div className="rounded border p-3">
@@ -290,119 +300,110 @@ export function EvidencePackReviewDashboard({
           <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
             <h3 className="text-sm font-semibold">{labels.eventsTitle}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{labels.eventsDescription}</p>
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[72rem] text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <PaymentsDataTable minWidthClassName="min-w-[72rem]">
+                <PaymentsDataTableHead>
                   <tr>
-                    <th className="pb-2 pr-4">{labels.eventTimeHeader}</th>
-                    <th className="pb-2 pr-4">{labels.eventNameHeader}</th>
-                    <th className="pb-2 pr-4">{labels.eventEntityHeader}</th>
-                    <th className="pb-2 pr-4">{labels.eventOwnershipStateHeader}</th>
-                    <th className="pb-2 pr-4">{labels.eventOwnershipOwnerHeader}</th>
-                    <th className="pb-2 pr-4">{labels.eventOwnershipNextHeader}</th>
-                    <th className="pb-2">{labels.eventPayloadHeader}</th>
+                    <PaymentsDataTableHeader>{labels.eventTimeHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.eventNameHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.eventEntityHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.eventOwnershipStateHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.eventOwnershipOwnerHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.eventOwnershipNextHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>{labels.eventPayloadHeader}</PaymentsDataTableHeader>
                   </tr>
-                </thead>
+                </PaymentsDataTableHead>
                 <tbody>
                   {evidencePack.lifecycleEvents.map((event) => (
-                    <tr key={event.id} className="border-t align-top">
-                      <td className="py-2 pr-4 text-xs text-muted-foreground">
+                    <PaymentsDataTableRow key={event.id}>
+                      <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(event.occurredAt, locale)}
-                      </td>
-                      <td className="py-2 pr-4 text-xs">{event.eventName}</td>
-                      <td className="py-2 pr-4 text-xs">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs whitespace-nowrap">{event.eventName}</PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs whitespace-nowrap">
                         {event.entityType}:{event.entityId}
-                      </td>
-                      <td className="py-2 pr-4 text-xs">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs">
                         {formatOwnershipState(
                           ownershipByEventId.get(event.id)?.ownershipState ?? 'in_progress',
-                          locale,
+                          labels,
                         )}
-                      </td>
-                      <td className="py-2 pr-4 text-xs">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs">
                         {ownershipByEventId.get(event.id)?.currentOwner ?? 'platform'}
-                      </td>
-                      <td className="py-2 pr-4 text-xs text-muted-foreground">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs text-muted-foreground">
                         {ownershipByEventId.get(event.id)?.nextExpectedTransition ?? 'platform.lifecycle_update'}
-                      </td>
-                      <td className="py-2 text-xs font-mono">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs font-mono">
                         {truncateJson(event.payloadJson, 180)}
-                      </td>
-                    </tr>
+                      </PaymentsDataTableCell>
+                    </PaymentsDataTableRow>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </PaymentsDataTable>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-2">
             <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
               <h3 className="text-sm font-semibold">{labels.artifactsVersionsTitle}</h3>
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[34rem] text-sm">
-                  <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <PaymentsDataTable minWidthClassName="min-w-[34rem]">
+                  <PaymentsDataTableHead>
                     <tr>
-                      <th className="pb-2 pr-4">{labels.artifactVersionHeader}</th>
-                      <th className="pb-2 pr-4">{labels.artifactFingerprintHeader}</th>
-                      <th className="pb-2 pr-4">{labels.artifactLineageHeader}</th>
-                      <th className="pb-2 pr-4">{labels.artifactReasonHeader}</th>
-                      <th className="pb-2">{labels.artifactCreatedHeader}</th>
+                      <PaymentsDataTableHeader>{labels.artifactVersionHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.artifactFingerprintHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.artifactLineageHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.artifactReasonHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.artifactCreatedHeader}</PaymentsDataTableHeader>
                     </tr>
-                  </thead>
+                  </PaymentsDataTableHead>
                   <tbody>
                     {evidencePack.artifacts.versions.map((version) => (
-                      <tr key={version.id} className="border-t align-top">
-                        <td className="py-2 pr-4 tabular-nums">{version.artifactVersion}</td>
-                        <td
-                          className="py-2 pr-4 font-mono text-xs"
-                          title={version.fingerprint}
-                        >
+                      <PaymentsDataTableRow key={version.id}>
+                        <PaymentsDataTableCell className="tabular-nums whitespace-nowrap">{version.artifactVersion}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.fingerprint}>
                           {truncateMiddle(version.fingerprint)}
-                        </td>
-                        <td className="py-2 pr-4 text-xs text-muted-foreground">
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs text-muted-foreground">
                           {version.rebuiltFromVersionId
                             ? truncateMiddle(version.rebuiltFromVersionId)
-                            : 'root'}
-                        </td>
-                        <td className="py-2 pr-4 text-xs">{version.reasonCode}</td>
-                        <td className="py-2 text-xs text-muted-foreground">
+                            : labels.artifactLineageRootLabel}
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs">{version.reasonCode}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(version.createdAt, locale)}
-                        </td>
-                      </tr>
+                        </PaymentsDataTableCell>
+                      </PaymentsDataTableRow>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </PaymentsDataTable>
             </div>
 
             <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
               <h3 className="text-sm font-semibold">{labels.artifactsDeliveriesTitle}</h3>
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[34rem] text-sm">
-                  <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+              <PaymentsDataTable minWidthClassName="min-w-[34rem]">
+                  <PaymentsDataTableHead>
                     <tr>
-                      <th className="pb-2 pr-4">{labels.deliveryChannelHeader}</th>
-                      <th className="pb-2 pr-4">{labels.deliveryRecipientHeader}</th>
-                      <th className="pb-2 pr-4">{labels.deliveryReasonHeader}</th>
-                      <th className="pb-2">{labels.deliveryCreatedHeader}</th>
+                      <PaymentsDataTableHeader>{labels.deliveryChannelHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.deliveryRecipientHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.deliveryReasonHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>{labels.deliveryCreatedHeader}</PaymentsDataTableHeader>
                     </tr>
-                  </thead>
+                  </PaymentsDataTableHead>
                   <tbody>
                     {evidencePack.artifacts.deliveries.map((delivery) => (
-                      <tr key={delivery.id} className="border-t align-top">
-                        <td className="py-2 pr-4 text-xs">{delivery.channel}</td>
-                        <td className="py-2 pr-4 text-xs text-muted-foreground">
+                      <PaymentsDataTableRow key={delivery.id}>
+                        <PaymentsDataTableCell className="text-xs whitespace-nowrap">{delivery.channel}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {truncateMiddle(delivery.recipientReference, 14, 6)}
-                        </td>
-                        <td className="py-2 pr-4 text-xs">{delivery.reasonCode}</td>
-                        <td className="py-2 text-xs text-muted-foreground">
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs">{delivery.reasonCode}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(delivery.createdAt, locale)}
-                        </td>
-                      </tr>
+                        </PaymentsDataTableCell>
+                      </PaymentsDataTableRow>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </PaymentsDataTable>
             </div>
           </div>
         </>

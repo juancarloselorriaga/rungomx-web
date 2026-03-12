@@ -7,6 +7,14 @@ import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerWalletIssueActivityItem } from '@/lib/payments/organizer/ui';
 import { humanizeTechnicalCode } from '@/lib/payments/organizer/presentation';
 import { useTranslations } from 'next-intl';
+import {
+  PaymentsMetaLabel,
+  PaymentsMetadataText,
+  PaymentsMonoValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+  PaymentsTimestamp,
+} from './payments-typography';
 
 type OrganizerActionQueueProps = {
   locale: 'es' | 'en';
@@ -94,8 +102,8 @@ function QueueSection({
   return (
     <section className="space-y-3 rounded-xl border bg-card/80 p-4 shadow-sm" aria-label={title}>
       <div className="space-y-1">
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+        <PaymentsSectionTitle compact className="text-base sm:text-lg">{title}</PaymentsSectionTitle>
+        <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
       </div>
 
       {items.length === 0 ? (
@@ -112,17 +120,17 @@ function QueueSection({
                     <p className="text-base font-semibold leading-tight">
                       {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
                     </p>
-                    <p className="text-sm leading-6 text-muted-foreground">
+                    <PaymentsMetadataText>
                       {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
-                    </p>
+                    </PaymentsMetadataText>
                   </div>
                   <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
                     {badgeLabel}
                   </Badge>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  <span>{formatDate(item.occurredAt)}</span>
+                <div className="mt-3 flex flex-wrap gap-4">
+                  <PaymentsTimestamp>{formatDate(item.occurredAt)}</PaymentsTimestamp>
                 </div>
 
                 <div className="mt-4 space-y-2">
@@ -140,23 +148,23 @@ function QueueSection({
                     </summary>
                     <dl className="mt-3 space-y-2 text-sm">
                       <div>
-                        <dt className="text-muted-foreground">{t('wallet.queue.technicalEventLabel')}</dt>
-                        <dd className="font-mono text-xs">{item.eventName}</dd>
+                        <PaymentsMetaLabel>{t('wallet.queue.technicalEventLabel')}</PaymentsMetaLabel>
+                        <PaymentsMonoValue>{item.eventName}</PaymentsMonoValue>
                       </div>
                       <div>
-                        <dt className="text-muted-foreground">{t('wallet.queue.traceLabel')}</dt>
-                        <dd className="font-mono text-xs break-all">{item.traceId}</dd>
+                        <PaymentsMetaLabel>{t('wallet.queue.traceLabel')}</PaymentsMetaLabel>
+                        <PaymentsMonoValue>{item.traceId}</PaymentsMonoValue>
                       </div>
                       <div>
-                        <dt className="text-muted-foreground">{t('wallet.queue.entityLabel')}</dt>
-                        <dd className="font-mono text-xs break-all">
+                        <PaymentsMetaLabel>{t('wallet.queue.entityLabel')}</PaymentsMetaLabel>
+                        <PaymentsMonoValue>
                           {item.entityType}:{item.entityId}
-                        </dd>
+                        </PaymentsMonoValue>
                       </div>
                       {item.recoveryGuidance?.reasonCode ? (
                         <div>
-                          <dt className="text-muted-foreground">{t('wallet.queue.rawReasonLabel')}</dt>
-                          <dd className="font-mono text-xs">{item.recoveryGuidance.reasonCode}</dd>
+                          <PaymentsMetaLabel>{t('wallet.queue.rawReasonLabel')}</PaymentsMetaLabel>
+                          <PaymentsMonoValue>{item.recoveryGuidance.reasonCode}</PaymentsMonoValue>
                         </div>
                       ) : null}
                     </dl>
@@ -179,17 +187,15 @@ function QueueSection({
                         <p className="font-medium">
                           {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <PaymentsMetadataText>
                           {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
-                        </p>
+                        </PaymentsMetadataText>
                       </div>
                       <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
                         {badgeLabel}
                       </Badge>
                     </div>
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {formatDate(item.occurredAt)}
-                    </p>
+                    <PaymentsTimestamp className="mt-3">{formatDate(item.occurredAt)}</PaymentsTimestamp>
                   </li>
                 ))}
               </ul>
@@ -213,8 +219,8 @@ export function OrganizerActionQueue({
   return (
     <section className="space-y-4" aria-label={t('wallet.queue.title')}>
       <div className="space-y-1">
-        <h2 className="text-2xl font-semibold tracking-tight">{t('wallet.queue.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('wallet.queue.description')}</p>
+        <PaymentsSectionTitle>{t('wallet.queue.title')}</PaymentsSectionTitle>
+        <PaymentsSectionDescription>{t('wallet.queue.description')}</PaymentsSectionDescription>
       </div>
 
       {isCompletelyEmpty ? (

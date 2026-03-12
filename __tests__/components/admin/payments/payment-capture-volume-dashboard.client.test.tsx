@@ -9,8 +9,8 @@ type PaymentCaptureVolumeDashboardLabels =
 const labels: PaymentCaptureVolumeDashboardLabels = {
   sectionTitle: 'Captured payment volume',
   sectionDescription: 'Headline payment throughput from canonical captures.',
-  mixedCurrencyNotice:
-    'Headline money cards use the dominant source currency ({currency}) for this window.',
+  mixedCurrencyNotice: (currency) =>
+    `Headline money cards use the dominant source currency (${currency}) for this window.`,
   grossProcessedLabel: 'Gross processed',
   grossProcessedDescription: 'Before platform fees are separated.',
   platformFeesLabel: 'Platform fees captured',
@@ -37,6 +37,9 @@ const labels: PaymentCaptureVolumeDashboardLabels = {
   traceabilityLastEventLabel: 'Last event',
   sampleTracesTitle: 'Sample trace references',
   sampleTracesEmpty: 'No trace references were found in the selected window.',
+  sampleTracesScopeLabel: (shown, total) =>
+    `Showing ${shown} sampled ${shown === 1 ? 'trace' : 'traces'} out of ${total}.`,
+  sampleTracesMoreLabel: (count) => `Show ${count} more`,
   topOrganizersTitle: 'Top organizers in this window',
   topOrganizersDescription:
     'A limited organizer slice ranked for review without loading the full organizer population.',
@@ -47,9 +50,13 @@ const labels: PaymentCaptureVolumeDashboardLabels = {
   organizerCountHeader: 'Captures',
   organizerActionHeader: 'Investigation',
   organizerEmpty: 'No organizer ranking was found for the selected window.',
-  organizerPageSummary: 'Showing {start}-{end} of {total} organizers',
+  organizerPageSummary: ({ start, end, total }) =>
+    `Showing ${start}-${end} of ${total} ${total === 1 ? 'organizer' : 'organizers'}`,
+  organizerPageStatus: ({ page, pageCount }) => `Page ${page} of ${pageCount}`,
+  firstPageLabel: 'First',
   previousPageLabel: 'Previous',
   nextPageLabel: 'Next',
+  lastPageLabel: 'Last',
   investigationTitle: 'Need trace-level evidence?',
   investigationDescription:
     'Use the investigation workspace for technical lookup and evidence review instead of opening raw traces in the volume ranking.',
@@ -205,11 +212,18 @@ describe('payment capture volume dashboard', () => {
     expect(screen.getAllByText('USD')).not.toHaveLength(0);
     expect(screen.getAllByText(formatMoneyFromMinor(25_000, 'USD', 'en'))).not.toHaveLength(0);
     expect(screen.getAllByText(formatMoneyFromMinor(24_000, 'USD', 'en'))).not.toHaveLength(0);
+    expect(
+      screen.getAllByRole('columnheader', { name: labels.currencyHeader })[0],
+    ).toHaveClass('whitespace-nowrap');
+    expect(
+      screen.getAllByRole('columnheader', { name: labels.organizerGrossHeader })[0],
+    ).toHaveClass('whitespace-nowrap');
 
     expect(screen.getByText(labels.traceabilityTitle)).toBeInTheDocument();
     expect(screen.getByText(labels.traceabilityExcludedLabel)).toBeInTheDocument();
     expect(screen.getAllByText('4')).not.toHaveLength(0);
     expect(screen.getAllByText('1')).not.toHaveLength(0);
+    expect(screen.getByText('Showing 3 sampled traces out of 4.')).toBeInTheDocument();
     expect(screen.getByText('trace-1')).toBeInTheDocument();
     expect(screen.getByText('trace-bad-1')).toBeInTheDocument();
 
@@ -217,11 +231,20 @@ describe('payment capture volume dashboard', () => {
     expect(screen.getByText('Organizer One')).toBeInTheDocument();
     expect(screen.getByText('Organizer Two')).toBeInTheDocument();
     expect(screen.getByText('Showing 3-4 of 5 organizers')).toBeInTheDocument();
+    expect(screen.getByText('Page 2 of 3')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: labels.firstPageLabel })).toHaveAttribute(
+      'href',
+      '?workspace=volume&range=30d&organizerPage=1',
+    );
     expect(screen.getByRole('link', { name: labels.previousPageLabel })).toHaveAttribute(
       'href',
       '?workspace=volume&range=30d&organizerPage=1',
     );
     expect(screen.getByRole('link', { name: labels.nextPageLabel })).toHaveAttribute(
+      'href',
+      '?workspace=volume&range=30d&organizerPage=3',
+    );
+    expect(screen.getByRole('link', { name: labels.lastPageLabel })).toHaveAttribute(
       'href',
       '?workspace=volume&range=30d&organizerPage=3',
     );

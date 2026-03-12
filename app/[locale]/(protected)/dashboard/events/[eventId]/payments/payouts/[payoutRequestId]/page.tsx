@@ -48,10 +48,7 @@ export default async function EventPaymentsPayoutDetailPage({
   const localeKey = locale as 'es' | 'en';
   const tPayments = await getTranslations('pages.dashboardPayments');
   const tEvents = await getTranslations('pages.dashboardEvents.detail.nav');
-  const pageTitle =
-    localeKey === 'es'
-      ? `Retiro #${shortIdentifier(payoutRequestId)}`
-      : `Payout #${shortIdentifier(payoutRequestId)}`;
+  const pageTitle = tPayments('detail.pageTitle', { id: shortIdentifier(payoutRequestId) });
   const event = await getEventEditionDetail(eventId);
 
   if (!event) {

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'en',
 }));
 
 jest.mock('@/i18n/navigation', () => ({
@@ -66,6 +67,10 @@ describe('PayoutRequestForm', () => {
     );
 
     render(<PayoutRequestForm organizationId="org-1" />);
+
+    expect(screen.getByPlaceholderText('request.amountPlaceholder')).toBeInTheDocument();
+    expect(screen.getByText('request.submitHint')).toBeInTheDocument();
+    expect(screen.getByText('request.queuedHint')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('request.amountLabel'), {
       target: { value: '50000' },

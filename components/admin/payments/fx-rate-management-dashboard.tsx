@@ -4,6 +4,13 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+} from '@/components/payments/payments-data-table';
 import type {
   DailyFxRateRecord,
   FxRateActionFlags,
@@ -20,6 +27,7 @@ type FxRateManagementLabels = {
   dateFieldLabel: string;
   rateFieldLabel: string;
   reasonFieldLabel: string;
+  clearDateLabel: string;
   submitLabel: string;
   ratesTableTitle: string;
   ratesTableDescription: string;
@@ -62,7 +70,6 @@ export function FxRateManagementDashboard({
   hideSummaryCards = false,
 }: FxRateManagementDashboardProps) {
   const [effectiveDate, setEffectiveDate] = useState('');
-  const clearDateLabel = locale === 'es' ? 'Limpiar' : 'Clear';
 
   return (
     <section className="space-y-4">
@@ -157,7 +164,7 @@ export function FxRateManagementDashboard({
               value={effectiveDate}
               onChangeAction={setEffectiveDate}
               locale={locale}
-              clearLabel={clearDateLabel}
+              clearLabel={labels.clearDateLabel}
             />
             <input type="hidden" name="effectiveDate" value={effectiveDate} required readOnly />
           </label>
@@ -205,36 +212,36 @@ export function FxRateManagementDashboard({
         {rates.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">{labels.emptyRates}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[48rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <PaymentsDataTable minWidthClassName="min-w-[48rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.tableCurrencyHeader}</th>
-                  <th className="pb-2 pr-4">{labels.tableDateHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.tableRateHeader}</th>
-                  <th className="pb-2 pr-4">{labels.tableReasonHeader}</th>
-                  <th className="pb-2">{labels.tableUpdatedHeader}</th>
+                  <PaymentsDataTableHeader>{labels.tableCurrencyHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.tableDateHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.tableRateHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.tableReasonHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.tableUpdatedHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {rates.map((rate) => (
-                  <tr key={rate.id} className="border-t">
-                    <td className="py-2 pr-4 font-medium">{rate.sourceCurrency}</td>
-                    <td className="py-2 pr-4">{formatDate(rate.effectiveDate, locale)}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">
+                  <PaymentsDataTableRow key={rate.id}>
+                    <PaymentsDataTableCell className="font-medium">{rate.sourceCurrency}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="whitespace-nowrap">
+                      {formatDate(rate.effectiveDate, locale)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {formatRate(rate.rateToMxn)}
-                    </td>
-                    <td className="py-2 pr-4 text-xs text-muted-foreground">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground">
                       {rate.updatedReason ?? '—'}
-                    </td>
-                    <td className="py-2 text-xs text-muted-foreground">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(rate.updatedAt, locale)}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </PaymentsDataTable>
         )}
       </div>
     </section>

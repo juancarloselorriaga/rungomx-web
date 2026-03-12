@@ -96,6 +96,15 @@ const issuesResponse = {
   },
 };
 
+const requestEligibleIssuesResponse = {
+  data: {
+    organizerId: 'org-1',
+    asOf: '2026-03-03T12:00:00.000Z',
+    actionNeeded: [],
+    inProgress: [],
+  },
+};
+
 function mockJsonResponse(body: unknown, ok = true): Response {
   return {
     ok,
@@ -122,7 +131,7 @@ describe('OrganizerPaymentsWorkspace', () => {
     const fetchMock = global.fetch as jest.Mock;
     fetchMock
       .mockResolvedValueOnce(mockJsonResponse(walletResponse))
-      .mockResolvedValueOnce(mockJsonResponse(issuesResponse));
+      .mockResolvedValueOnce(mockJsonResponse(requestEligibleIssuesResponse));
 
     render(<OrganizerPaymentsWorkspace locale="en" organizationId="org-1" />);
 
@@ -130,10 +139,7 @@ describe('OrganizerPaymentsWorkspace', () => {
       expect(screen.getByText('wallet.buckets.available')).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('heading', { name: 'wallet.queue.actionNeeded' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'wallet.queue.inProgress' })).toBeInTheDocument();
-    expect(screen.getAllByText('payout.paused').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('payout.processing').length).toBeGreaterThan(0);
+    expect(screen.getByText('wallet.queue.emptyTitle')).toBeInTheDocument();
     expect(screen.getByText(/1,200\.00/)).toBeInTheDocument();
     expect(screen.getByTestId('payments-primary-cta')).toHaveTextContent('actions.requestPayout');
     expect(window.__RUNGO_PAYMENTS_SMOKE_TELEMETRY__).toEqual(
@@ -168,7 +174,7 @@ describe('OrganizerPaymentsWorkspace', () => {
 
     fetchMock
       .mockResolvedValueOnce(mockJsonResponse({ error: 'failed' }, false))
-      .mockResolvedValueOnce(mockJsonResponse(issuesResponse))
+      .mockResolvedValueOnce(mockJsonResponse({ error: 'failed' }, false))
       .mockResolvedValueOnce(mockJsonResponse(walletResponse))
       .mockResolvedValueOnce(mockJsonResponse(issuesResponse));
 
@@ -183,5 +189,24 @@ describe('OrganizerPaymentsWorkspace', () => {
     await waitFor(() => {
       expect(screen.getByTestId('payments-primary-cta')).toBeInTheDocument();
     });
+  });
+
+  it('preserves wallet context when follow-up activity fails to load', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+
+    fetchMock
+      .mockResolvedValueOnce(mockJsonResponse(walletResponse))
+      .mockResolvedValueOnce(mockJsonResponse({ error: 'failed' }, false));
+
+    render(<OrganizerPaymentsWorkspace locale="en" organizationId="org-1" />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('home.shell.partialTitle').length).toBeGreaterThan(0);
+    });
+
+    expect(screen.getAllByText('home.shell.partialQueueDescription').length).toBeGreaterThan(0);
+    expect(screen.getByText('wallet.buckets.available')).toBeInTheDocument();
+    expect(screen.getByTestId('payments-primary-cta')).toHaveTextContent('actions.requestPayout');
+    expect(screen.getByRole('heading', { name: 'wallet.queue.title' })).toBeInTheDocument();
   });
 });

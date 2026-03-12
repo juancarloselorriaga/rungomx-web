@@ -1,3 +1,10 @@
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+} from '@/components/payments/payments-data-table';
 import type { MxnNetRecognizedFeeReport } from '@/lib/payments/economics/mxn-reporting';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
@@ -91,40 +98,41 @@ export function MxnReportingDashboard({
         {report.currencies.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">{labels.emptyState}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[72rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <PaymentsDataTable minWidthClassName="min-w-[72rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.currencyHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.sourceHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.mxnHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.convertedEventsHeader}</th>
-                  <th className="pb-2 pr-4 text-right">{labels.missingSnapshotsHeader}</th>
-                  <th className="pb-2 pr-4">{labels.snapshotsHeader}</th>
-                  <th className="pb-2">{labels.missingTraceHeader}</th>
+                  <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.sourceHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.mxnHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.convertedEventsHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader align="right">{labels.missingSnapshotsHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.snapshotsHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.missingTraceHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {report.currencies.map((row) => (
-                  <tr key={row.sourceCurrency} className="border-t align-top">
-                    <td className="py-3 pr-4 font-medium">{row.sourceCurrency}</td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
+                  <PaymentsDataTableRow key={row.sourceCurrency}>
+                    <PaymentsDataTableCell className="font-medium">{row.sourceCurrency}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {formatMoneyFromMinor(
                         row.sourceNetRecognizedFeeMinor,
                         row.sourceCurrency,
                         locale,
                       )}
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {row.mxnNetRecognizedFeeMinor === null
                         ? labels.notConvertedLabel
                         : formatMoneyFromMinor(row.mxnNetRecognizedFeeMinor, 'MXN', locale)}
-                    </td>
-                    <td className="py-3 pr-4 text-right tabular-nums">{row.convertedEventCount}</td>
-                    <td className="py-3 pr-4 text-right tabular-nums">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+                      {row.convertedEventCount}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                       {row.missingSnapshotEventCount}
-                    </td>
-                    <td className="py-3 pr-4">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell>
                       {row.appliedSnapshots.length === 0 ? (
                         <p className="text-xs text-muted-foreground">—</p>
                       ) : (
@@ -145,8 +153,8 @@ export function MxnReportingDashboard({
                           ))}
                         </div>
                       )}
-                    </td>
-                    <td className="py-3">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell>
                       {row.sampleMissingSnapshotTraceIds.length === 0 ? (
                         <p className="text-xs text-muted-foreground">—</p>
                       ) : (
@@ -161,12 +169,11 @@ export function MxnReportingDashboard({
                           ))}
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </PaymentsDataTable>
         )}
       </div>
     </section>

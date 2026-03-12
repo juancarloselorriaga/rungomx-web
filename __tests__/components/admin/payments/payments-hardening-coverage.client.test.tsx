@@ -27,6 +27,8 @@ type FinancialCaseLookupResult = NonNullable<
 
 const runArtifactGovernanceAdminActionMock = jest.fn();
 const listArtifactGovernanceSummaryAdminActionMock = jest.fn();
+const routerReplaceMock = jest.fn();
+const routerRefreshMock = jest.fn();
 
 jest.mock('@/app/actions/admin-payments-artifacts', () => ({
   runArtifactGovernanceAdminAction: (...args: unknown[]) =>
@@ -37,6 +39,15 @@ jest.mock('@/app/actions/admin-payments-artifacts', () => ({
 
 jest.mock('@/components/admin/dashboard/admin-dashboard-range-selector', () => ({
   AdminDashboardRangeSelector: () => <div data-testid="admin-range-selector" />,
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    replace: routerReplaceMock,
+    refresh: routerRefreshMock,
+  }),
+  usePathname: () => '/admin/payments',
+  useSearchParams: () => new URLSearchParams('range=30d'),
 }));
 
 jest.mock('@/components/ui/date-picker', () => ({
@@ -56,9 +67,12 @@ jest.mock('@/components/ui/date-picker', () => ({
   ),
 }));
 
-function createLabels<T extends Record<string, string>>(): T {
+function createLabels<T extends Record<string, unknown>>(): T {
   return new Proxy({} as T, {
-    get(_target, property: string | symbol) {
+    get(target, property: string | symbol) {
+      if (typeof property === 'string' && property in target) {
+        return target[property as keyof T];
+      }
       return typeof property === 'string' ? property : '';
     },
   });
@@ -67,7 +81,11 @@ function createLabels<T extends Record<string, string>>(): T {
 const caseLookupLabels = createLabels<FinancialCaseLookupLabels>();
 const evidenceLabels = createLabels<EvidencePackReviewLabels>();
 const governanceLabels = createLabels<ArtifactGovernanceLabels>();
-const netRecognizedFeeLabels = createLabels<NetRecognizedFeeLabels>();
+const netRecognizedFeeLabels = Object.assign(createLabels<NetRecognizedFeeLabels>(), {
+  sampleTracesScopeLabel: (shown: number, total: number) =>
+    `sampleTracesScopeLabel:${shown}:${total}`,
+  sampleTracesMoreLabel: (count: number) => `sampleTracesMoreLabel:${count}`,
+});
 const mxnReportingLabels = createLabels<MxnReportingLabels>();
 const fxRateManagementLabels = createLabels<FxRateManagementLabels>();
 const debtDisputeExposureLabels: DebtDisputeExposureLabels = {
@@ -91,6 +109,9 @@ const debtDisputeExposureLabels: DebtDisputeExposureLabels = {
   disputeCasesHeader: 'disputeCasesHeader',
   sampleTracesLabel: 'sampleTracesLabel',
   sampleCasesLabel: 'sampleCasesLabel',
+  sampledTraceCountLabel: (count) => `sampledTraceCountLabel:${count}`,
+  sampledCaseCountLabel: (count) => `sampledCaseCountLabel:${count}`,
+  sampledMoreLabel: (count) => `sampledMoreLabel:${count}`,
   currenciesLabel: (count) => `currenciesLabel:${count}`,
   emptyState: 'emptyState',
 };
@@ -299,7 +320,10 @@ const fxFlagsFixture: FxRateActionFlags = {
 const financialCaseLookupResultFixture: FinancialCaseLookupResult = {
   query: 'trace-01',
   normalizedQuery: 'trace-01',
-  totalCaseCount: 1,
+  totalCaseCount: 3,
+  returnedCaseCount: 1,
+  resultLimit: 1,
+  isResultLimitApplied: true,
   cases: [
     {
       traceId: 'trace-01',
@@ -428,6 +452,8 @@ const governanceSummaryFixture = {
 describe('Payments hardening component coverage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    routerReplaceMock.mockReset();
+    routerRefreshMock.mockReset();
   });
 
   it('shows empty query state in financial case lookup dashboard', () => {
@@ -438,6 +464,8 @@ describe('Payments hardening component coverage', () => {
         searchQuery=""
         result={null}
         labels={caseLookupLabels}
+        summaryLabel={null}
+        summaryLimitedHint={null}
       />,
     );
 
@@ -454,10 +482,15 @@ describe('Payments hardening component coverage', () => {
           query: 'trace-missing',
           normalizedQuery: 'trace-missing',
           totalCaseCount: 0,
+          returnedCaseCount: 0,
+          resultLimit: 20,
+          isResultLimitApplied: false,
           cases: [],
           disambiguationGroups: [],
         }}
         labels={caseLookupLabels}
+        summaryLabel="summaryLabel:0:0"
+        summaryLimitedHint={null}
       />,
     );
 
@@ -472,12 +505,15 @@ describe('Payments hardening component coverage', () => {
         searchQuery="trace-01"
         result={financialCaseLookupResultFixture}
         labels={caseLookupLabels}
+        summaryLabel="summaryLabel:1:3"
+        summaryLimitedHint="summaryLimitedHint:1:3"
       />,
     );
 
     expect(screen.getAllByText('trace-01').length).toBeGreaterThan(0);
     expect(screen.getByText('2 traces matched this identifier')).toBeInTheDocument();
-    expect(screen.getByText(/summaryLabel:\s*1/)).toBeInTheDocument();
+    expect(screen.getByText('summaryLabel:1:3')).toBeInTheDocument();
+    expect(screen.getByText('summaryLimitedHint:1:3')).toBeInTheDocument();
   });
 
   it('renders no-trace and not-found states in evidence pack review dashboard', () => {
@@ -523,7 +559,7 @@ describe('Payments hardening component coverage', () => {
     );
 
     expect(screen.getByText('sectionTitle')).toBeInTheDocument();
-    expect(screen.getByTestId('admin-range-selector')).toBeInTheDocument();
+    expect(screen.getByText('sampleTracesScopeLabel:1:2')).toBeInTheDocument();
     expect(screen.getByText('trace-net-1')).toBeInTheDocument();
     expect(screen.getByText('manual_review')).toBeInTheDocument();
   });
@@ -539,6 +575,8 @@ describe('Payments hardening component coverage', () => {
 
     expect(screen.getByText('Organizer One')).toBeInTheDocument();
     expect(screen.getByText('Main Event')).toBeInTheDocument();
+    expect(screen.getAllByText('sampledTraceCountLabel:1')).not.toHaveLength(0);
+    expect(screen.getAllByText('sampledCaseCountLabel:1')).not.toHaveLength(0);
     expect(screen.getByText('trace-dispute-1')).toBeInTheDocument();
     expect(screen.getByText('case-1')).toBeInTheDocument();
   });
@@ -610,7 +648,7 @@ describe('Payments hardening component coverage', () => {
       />,
     );
 
-    expect(screen.getAllByText('Action Needed').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('ownershipStateActionNeededLabel').length).toBeGreaterThan(0);
     expect(screen.getAllByText('support.review_complete').length).toBeGreaterThan(0);
     expect(screen.getAllByText('payout_request:payout-001').length).toBeGreaterThan(0);
     expect(screen.getByText('fp-v2')).toBeInTheDocument();

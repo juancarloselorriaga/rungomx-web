@@ -23,7 +23,6 @@ type FinancialCaseLookupLabels = {
   disambiguationEmpty: string;
   resultsTitle: string;
   resultsDescription: string;
-  summaryLabel: string;
   loadEvidenceLabel: string;
   evidenceLoadedLabel: string;
   traceHeader: string;
@@ -42,6 +41,8 @@ type FinancialCaseLookupDashboardProps = {
   searchQuery: string;
   result: FinancialCaseLookupResult | null;
   labels: FinancialCaseLookupLabels;
+  summaryLabel: string | null;
+  summaryLimitedHint: string | null;
   workspace?: string;
   selectedTraceId?: string;
   investigationTool?: 'lookup' | 'trace';
@@ -69,6 +70,8 @@ export function FinancialCaseLookupDashboard({
   searchQuery,
   result,
   labels,
+  summaryLabel,
+  summaryLimitedHint,
   workspace,
   selectedTraceId,
   investigationTool,
@@ -213,9 +216,14 @@ export function FinancialCaseLookupDashboard({
           <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
             <h3 className="text-sm font-semibold">{labels.resultsTitle}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{labels.resultsDescription}</p>
-            <p className="mt-3 text-xs text-muted-foreground">
-              {labels.summaryLabel}: {result?.totalCaseCount ?? 0}
-            </p>
+            {summaryLabel ? (
+              <p className="mt-3 text-xs text-muted-foreground">{summaryLabel}</p>
+            ) : null}
+            {result?.isResultLimitApplied && summaryLimitedHint ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {summaryLimitedHint}
+              </p>
+            ) : null}
 
             <div className="mt-4 space-y-3">
               {result?.cases.map((entry) => {

@@ -38,21 +38,27 @@ export function PayoutRequestDialog({
         <Button
           variant={triggerVariant}
           data-testid={triggerTestId}
-          className={cn('whitespace-nowrap', triggerClassName)}
+          className={cn('whitespace-nowrap rounded-xl', triggerClassName)}
         >
           {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{t('request.title')}</DialogTitle>
-          <DialogDescription>{t('request.description')}</DialogDescription>
+      <DialogContent className="overflow-hidden rounded-2xl border border-border/80 bg-background/98 p-0 shadow-2xl sm:max-w-[40rem]">
+        <DialogHeader className="border-b border-border/70 bg-muted/20 px-5 py-4 sm:px-6">
+          <DialogTitle className="text-xl font-semibold tracking-tight">
+            {t('request.title')}
+          </DialogTitle>
+          <DialogDescription className="max-w-2xl text-sm leading-6">
+            {t('request.description')}
+          </DialogDescription>
         </DialogHeader>
-        <PayoutRequestForm
-          organizationId={organizationId}
-          presentation="dialog"
-          eventId={eventId}
-        />
+        <div className="px-5 py-5 sm:px-6 sm:py-6">
+          <PayoutRequestForm
+            organizationId={organizationId}
+            presentation="dialog"
+            eventId={eventId}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   );

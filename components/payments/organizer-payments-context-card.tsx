@@ -12,6 +12,11 @@ import {
 import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
+import {
+  PaymentsEyebrow,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
 
 type OrganizationOption = {
   id: string;
@@ -40,17 +45,19 @@ export function OrganizerPaymentsContextCard({
   const router = useRouter();
 
   return (
-    <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
-            {title}
-          </p>
-          <h2 className="text-2xl font-semibold tracking-tight">{selectedOrganization.name}</h2>
-          <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
-          {organizations.length > 1 ? (
-            <p className="text-xs text-muted-foreground">{organizationCountLabel}</p>
-          ) : null}
+    <section className="rounded-xl border bg-card/60 p-4 shadow-sm">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 space-y-1">
+          <PaymentsEyebrow>{title}</PaymentsEyebrow>
+          <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-3">
+            <PaymentsSectionTitle compact className="truncate">
+              {selectedOrganization.name}
+            </PaymentsSectionTitle>
+            {organizations.length > 1 ? (
+              <p className="text-xs text-muted-foreground">{organizationCountLabel}</p>
+            ) : null}
+          </div>
+          <PaymentsSectionDescription className="max-w-2xl">{description}</PaymentsSectionDescription>
         </div>
 
         {organizations.length > 1 ? (
@@ -58,7 +65,7 @@ export function OrganizerPaymentsContextCard({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between gap-3 whitespace-nowrap md:w-auto"
+                className="w-full justify-between gap-3 whitespace-nowrap lg:w-auto lg:min-w-[15rem]"
               >
                 {selectorLabel}
                 <ChevronDownIcon className="size-4 text-muted-foreground" />

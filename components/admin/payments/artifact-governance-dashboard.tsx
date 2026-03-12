@@ -13,6 +13,13 @@ import type {
   ArtifactGovernanceSummary,
   ArtifactVersionRecord,
 } from '@/lib/payments/artifacts/governance';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+} from '@/components/payments/payments-data-table';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 
@@ -47,6 +54,8 @@ type ArtifactGovernanceLabels = {
   versionNumberHeader: string;
   versionFingerprintHeader: string;
   versionLineageHeader: string;
+  versionLineageRootLabel: string;
+  versionLineageFromPrefixLabel: string;
   versionReasonHeader: string;
   versionRequestedByHeader: string;
   versionCreatedAtHeader: string;
@@ -57,6 +66,7 @@ type ArtifactGovernanceLabels = {
   deliveryReasonHeader: string;
   deliveryRequestedByHeader: string;
   deliveryCreatedAtHeader: string;
+  operationSelectAriaLabel: string;
 };
 
 type ArtifactGovernanceDashboardProps = {
@@ -104,8 +114,16 @@ function formatDate(value: Date | string, locale: 'es' | 'en'): string {
   }).format(dateValue);
 }
 
-function formatLineageValue(row: ArtifactVersionRecord): string {
-  return row.rebuiltFromVersionId ? `from ${truncateMiddle(row.rebuiltFromVersionId)}` : 'root';
+function formatLineageValue(
+  row: ArtifactVersionRecord,
+  labels: Pick<
+    ArtifactGovernanceLabels,
+    'versionLineageFromPrefixLabel' | 'versionLineageRootLabel'
+  >,
+): string {
+  return row.rebuiltFromVersionId
+    ? `${labels.versionLineageFromPrefixLabel} ${truncateMiddle(row.rebuiltFromVersionId)}`
+    : labels.versionLineageRootLabel;
 }
 
 function renderOperationValue(
@@ -239,7 +257,7 @@ export function ArtifactGovernanceDashboard({
           >
             <select
               {...form.register('operation')}
-              aria-label="Artifact operation select"
+              aria-label={labels.operationSelectAriaLabel}
               data-testid="artifact-operation-select"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
@@ -355,56 +373,47 @@ export function ArtifactGovernanceDashboard({
         {sortedVersions.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{labels.versionsEmpty}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[64rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <PaymentsDataTable minWidthClassName="min-w-[64rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.versionTraceHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionNumberHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionFingerprintHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionLineageHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionReasonHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionRequestedByHeader}</th>
-                  <th className="pb-2">{labels.versionCreatedAtHeader}</th>
+                  <PaymentsDataTableHeader>{labels.versionTraceHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionNumberHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionFingerprintHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionLineageHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionReasonHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionRequestedByHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionCreatedAtHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {sortedVersions.map((version) => (
-                  <tr key={version.id} className="border-t align-top">
-                    <td
-                      className="py-2 pr-4 font-mono text-xs"
-                      title={version.traceId}
-                    >
+                  <PaymentsDataTableRow key={version.id}>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.traceId}>
                       {truncateMiddle(version.traceId)}
-                    </td>
-                    <td className="py-2 pr-4 tabular-nums">{version.artifactVersion}</td>
-                    <td
-                      className="py-2 pr-4 font-mono text-xs"
-                      title={version.fingerprint}
-                    >
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="tabular-nums whitespace-nowrap">
+                      {version.artifactVersion}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.fingerprint}>
                       {truncateMiddle(version.fingerprint)}
-                    </td>
-                    <td
-                      className="py-2 pr-4 text-xs text-muted-foreground"
-                      title={version.rebuiltFromVersionId ?? 'root'}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell
+                      className="text-xs text-muted-foreground"
+                      title={version.rebuiltFromVersionId ?? labels.versionLineageRootLabel}
                     >
-                      {formatLineageValue(version)}
-                    </td>
-                    <td className="py-2 pr-4 text-xs">{version.reasonCode}</td>
-                    <td
-                      className="py-2 pr-4 font-mono text-xs"
-                      title={version.requestedByUserId}
-                    >
+                      {formatLineageValue(version, labels)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs">{version.reasonCode}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.requestedByUserId}>
                       {truncateMiddle(version.requestedByUserId)}
-                    </td>
-                    <td className="py-2 text-xs text-muted-foreground">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(version.createdAt, locale)}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </PaymentsDataTable>
         )}
       </div>
 
@@ -414,53 +423,42 @@ export function ArtifactGovernanceDashboard({
         {sortedDeliveries.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{labels.deliveriesEmpty}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[64rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <PaymentsDataTable minWidthClassName="min-w-[64rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.deliveryTraceHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryVersionHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryChannelHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryRecipientHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryReasonHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryRequestedByHeader}</th>
-                  <th className="pb-2">{labels.deliveryCreatedAtHeader}</th>
+                  <PaymentsDataTableHeader>{labels.deliveryTraceHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryVersionHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryChannelHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryRecipientHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryReasonHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryRequestedByHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryCreatedAtHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {sortedDeliveries.map((delivery) => (
-                  <tr key={delivery.id} className="border-t align-top">
-                    <td
-                      className="py-2 pr-4 font-mono text-xs"
-                      title={delivery.traceId}
-                    >
+                  <PaymentsDataTableRow key={delivery.id}>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={delivery.traceId}>
                       {truncateMiddle(delivery.traceId)}
-                    </td>
-                    <td
-                      className="py-2 pr-4 font-mono text-xs"
-                      title={delivery.artifactVersionId}
-                    >
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={delivery.artifactVersionId}>
                       {truncateMiddle(delivery.artifactVersionId)}
-                    </td>
-                    <td className="py-2 pr-4 text-xs">{delivery.channel}</td>
-                    <td className="py-2 pr-4 text-xs text-muted-foreground">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs whitespace-nowrap">{delivery.channel}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {truncateMiddle(delivery.recipientReference, 14, 6)}
-                    </td>
-                    <td className="py-2 pr-4 text-xs">{delivery.reasonCode}</td>
-                    <td
-                      className="py-2 pr-4 font-mono text-xs"
-                      title={delivery.requestedByUserId}
-                    >
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs">{delivery.reasonCode}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={delivery.requestedByUserId}>
                       {truncateMiddle(delivery.requestedByUserId)}
-                    </td>
-                    <td className="py-2 text-xs text-muted-foreground">
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(delivery.createdAt, locale)}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </PaymentsDataTable>
         )}
       </div>
     </section>

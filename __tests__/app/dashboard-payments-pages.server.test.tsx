@@ -4,8 +4,13 @@ import DashboardPaymentsPayoutsPage from '@/app/[locale]/(protected)/dashboard/p
 import { getAuthContext } from '@/lib/auth/server';
 import type { PermissionSet } from '@/lib/auth/roles';
 import { getOrgMembership } from '@/lib/organizations/permissions';
-import { getAllOrganizations, getUserOrganizations } from '@/lib/organizations/queries';
 import {
+  getAllOrganizations,
+  getOrganizationSummary,
+  getUserOrganizations,
+} from '@/lib/organizations/queries';
+import {
+  countOrganizerPayouts,
   getOrganizerPayoutDetailByRequestId,
   listOrganizerPayouts,
 } from '@/lib/payments/organizer/payout-views';
@@ -21,7 +26,33 @@ jest.mock('@/utils/seo', () => ({
 }));
 
 jest.mock('next-intl/server', () => ({
-  getTranslations: jest.fn(async () => (key: string) => key),
+  getTranslations: jest.fn(async (namespace?: string) => (key: string, values?: Record<string, unknown>) => {
+    if (namespace === 'pages.dashboardPayments') {
+      if (key === 'home.organization.count') {
+        return `${values?.count} organizations available`;
+      }
+      if (key === 'actions.newPayout') {
+        return 'New payout';
+      }
+      if (key === 'detail.pageTitle') {
+        return `Payout #${values?.id}`;
+      }
+      if (key === 'home.shell.loadingAriaLabel') {
+        return 'Loading payments';
+      }
+      if (key === 'detail.loadingAriaLabel') {
+        return 'Loading payout detail';
+      }
+      if (key === 'payouts.scopeSummary') {
+        return `Showing ${values?.start}-${values?.end} of ${values?.total} payouts`;
+      }
+      if (key === 'payouts.pageStatus') {
+        return `Page ${values?.page} of ${values?.pageCount}`;
+      }
+    }
+
+    return key;
+  }),
 }));
 
 jest.mock('@/i18n/navigation', () => ({
@@ -75,6 +106,7 @@ jest.mock('@/lib/auth/server', () => ({
 
 jest.mock('@/lib/organizations/queries', () => ({
   getAllOrganizations: jest.fn(),
+  getOrganizationSummary: jest.fn(),
   getUserOrganizations: jest.fn(),
 }));
 
@@ -83,6 +115,7 @@ jest.mock('@/lib/organizations/permissions', () => ({
 }));
 
 jest.mock('@/lib/payments/organizer/payout-views', () => ({
+  countOrganizerPayouts: jest.fn(),
   listOrganizerPayouts: jest.fn(),
   getOrganizerPayoutDetailByRequestId: jest.fn(),
 }));
@@ -91,6 +124,36 @@ jest.mock('@/components/payments/organizer-payments-workspace', () => ({
   OrganizerPaymentsWorkspace: ({ organizationId }: { organizationId: string }) => (
     <div data-testid="workspace" data-organization-id={organizationId}>
       organizer-workspace
+    </div>
+  ),
+}));
+
+jest.mock('@/components/payments/organizer-payments-context-card', () => ({
+  OrganizerPaymentsContextCard: ({
+    organizationCountLabel,
+  }: {
+    organizationCountLabel: string;
+  }) => (
+    <div data-testid="organization-context-card" data-organization-count-label={organizationCountLabel}>
+      organization-context-card
+    </div>
+  ),
+}));
+
+jest.mock('@/components/payments/payout-request-dialog', () => ({
+  PayoutRequestDialog: ({
+    organizationId,
+    triggerLabel,
+  }: {
+    organizationId: string;
+    triggerLabel: string;
+  }) => (
+    <div
+      data-testid="payout-request-dialog"
+      data-organization-id={organizationId}
+      data-trigger-label={triggerLabel}
+    >
+      payout-request-dialog
     </div>
   ),
 }));
@@ -104,8 +167,18 @@ jest.mock('@/components/payments/payout-request-form', () => ({
 }));
 
 jest.mock('@/components/payments/payout-history-table', () => ({
-  PayoutHistoryTable: () => (
-    <div data-testid="payout-history">
+  PayoutHistoryTable: ({
+    scopeSummary,
+    pageStatus,
+  }: {
+    scopeSummary?: string;
+    pageStatus?: string;
+  }) => (
+    <div
+      data-testid="payout-history"
+      data-scope-summary={scopeSummary}
+      data-page-status={pageStatus}
+    >
       payout-history
     </div>
   ),
@@ -156,11 +229,15 @@ jest.mock('@/components/payments/payout-lifecycle-rail', () => ({
 
 const mockGetAuthContext = getAuthContext as jest.MockedFunction<typeof getAuthContext>;
 const mockGetAllOrganizations = getAllOrganizations as jest.MockedFunction<typeof getAllOrganizations>;
+const mockGetOrganizationSummary =
+  getOrganizationSummary as jest.MockedFunction<typeof getOrganizationSummary>;
 const mockGetUserOrganizations =
   getUserOrganizations as jest.MockedFunction<typeof getUserOrganizations>;
 const mockGetOrgMembership = getOrgMembership as jest.MockedFunction<typeof getOrgMembership>;
 const mockListOrganizerPayouts =
   listOrganizerPayouts as jest.MockedFunction<typeof listOrganizerPayouts>;
+const mockCountOrganizerPayouts =
+  countOrganizerPayouts as jest.MockedFunction<typeof countOrganizerPayouts>;
 const mockGetOrganizerPayoutDetailByRequestId =
   getOrganizerPayoutDetailByRequestId as jest.MockedFunction<
     typeof getOrganizerPayoutDetailByRequestId
@@ -179,8 +256,10 @@ const basePermissions: PermissionSet = {
 describe('dashboard payments pages', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCountOrganizerPayouts.mockResolvedValue(0);
     mockListOrganizerPayouts.mockResolvedValue([]);
     mockGetOrgMembership.mockResolvedValue(null);
+    mockGetOrganizationSummary.mockResolvedValue(null);
   });
 
   it('uses user organizations for external organizers on the payments home page', async () => {
@@ -218,9 +297,12 @@ describe('dashboard payments pages', () => {
 
     expect(mockGetUserOrganizations).toHaveBeenCalledWith('organizer-user');
     expect(mockGetAllOrganizations).not.toHaveBeenCalled();
-    expect(html).toContain('Organizer Org');
+    expect(html).toContain('data-organization-count-label="1 organizations available"');
     expect(html).not.toContain('Staff Org');
     expect(html).toContain('data-organization-id="org-user-1"');
+    expect(html.indexOf('data-testid="workspace"')).toBeLessThan(
+      html.indexOf('data-testid="organization-context-card"'),
+    );
   });
 
   it('uses user organizations for external organizers on the payouts page', async () => {
@@ -250,9 +332,20 @@ describe('dashboard payments pages', () => {
 
     expect(mockGetUserOrganizations).toHaveBeenCalledWith('organizer-user');
     expect(mockGetAllOrganizations).not.toHaveBeenCalled();
-    expect(mockListOrganizerPayouts).toHaveBeenCalledWith({ organizerId: 'org-user-1' });
-    expect(html).toContain('Organizer Org');
+    expect(mockCountOrganizerPayouts).toHaveBeenCalledWith({ organizerId: 'org-user-1' });
+    expect(mockListOrganizerPayouts).toHaveBeenCalledWith({
+      organizerId: 'org-user-1',
+      limit: 25,
+      offset: 0,
+    });
+    expect(html).toContain('data-organization-count-label="1 organizations available"');
     expect(html).toContain('data-organization-id="org-user-1"');
+    expect(html).toContain('data-trigger-label="New payout"');
+    expect(html).toContain('data-scope-summary="Showing 0-0 of 0 payouts"');
+    expect(html).toContain('data-page-status="Page 0 of 0"');
+    expect(html.indexOf('data-testid="payout-history"')).toBeLessThan(
+      html.indexOf('data-testid="organization-context-card"'),
+    );
   });
 
   it('uses all organizations only for staff users on the payouts page', async () => {
@@ -289,9 +382,13 @@ describe('dashboard payments pages', () => {
 
     expect(mockGetAllOrganizations).toHaveBeenCalled();
     expect(mockGetUserOrganizations).not.toHaveBeenCalled();
-    expect(mockListOrganizerPayouts).toHaveBeenCalledWith({ organizerId: 'org-staff-2' });
-    expect(html).toContain('Staff Org One');
-    expect(html).toContain('Staff Org Two');
+    expect(mockCountOrganizerPayouts).toHaveBeenCalledWith({ organizerId: 'org-staff-2' });
+    expect(mockListOrganizerPayouts).toHaveBeenCalledWith({
+      organizerId: 'org-staff-2',
+      limit: 25,
+      offset: 0,
+    });
+    expect(html).toContain('data-organization-count-label="2 organizations available"');
     expect(html).toContain('data-organization-id="org-staff-2"');
   });
 
@@ -334,8 +431,10 @@ describe('dashboard payments pages', () => {
 
     expect(mockGetOrganizerPayoutDetailByRequestId).toHaveBeenCalledWith('payout-123');
     expect(mockGetOrgMembership).toHaveBeenCalledWith('organizer-user', 'org-user-1');
+    expect(mockGetOrganizationSummary).toHaveBeenCalledWith('org-user-1');
     expect(html).toContain('data-testid="detail-telemetry"');
     expect(html).toContain('data-organization-id="org-user-1"');
     expect(html).toContain('/dashboard/payments/payouts?organizationId=org-user-1');
+    expect(html).toContain('Payout #payout-1');
   });
 });

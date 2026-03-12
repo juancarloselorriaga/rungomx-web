@@ -2,7 +2,7 @@
   "admin": {
     "payments": {
       "title": "Pagos",
-      "description": "Usa los espacios de trabajo para moverte entre volumen de pagos, economía de la plataforma, riesgo, operaciones e investigación. Economía no muestra por sí sola el saldo de las organizaciones ni el estado de los retiros.",
+      "description": "Usa los espacios de trabajo para moverte entre volumen, economía, riesgo, operaciones e investigación. Economía no muestra por sí sola el saldo de las organizaciones ni el estado de los retiros.",
       "workspaceLabel": "Espacios de trabajo",
       "nav": {
         "volumeLabel": "Volumen",
@@ -18,30 +18,36 @@
       },
       "contextBanner": {
         "title": "Aquí sí hay retiros, pero todavía no hay cobros capturados",
-        "description": "En el periodo revisado encontramos {payoutCount} movimientos de retiro, pero ningún cobro capturado ni ningún ajuste financiero. Por eso Economía y Riesgo aparecen en cero."
+        "description": "En el periodo revisado encontramos {payoutCount} movimientos de retiro, pero ningún pago capturado ni ajuste financiero. Por eso Economía y Riesgo aparecen en cero."
+      },
+      "sampledReferences": {
+        "traceScope": "Mostrando {shown} {shown, plural, one {traza de muestra} other {trazas de muestra}} de {total} {total, plural, one {traza} other {trazas}} en esta ventana.",
+        "traceCount": "{count} {count, plural, one {traza de muestra} other {trazas de muestra}}",
+        "caseCount": "{count} {count, plural, one {ID de caso de muestra} other {IDs de caso de muestra}}",
+        "moreLabel": "Ver {count} más"
       },
       "volume": {
         "sectionTitle": "Volumen de cobros capturados",
-        "sectionDescription": "Lectura principal del flujo de pagos a partir de cobros capturados canónicos en el periodo revisado.",
+        "sectionDescription": "Lectura principal del flujo de pagos a partir de capturas canónicas en el periodo revisado.",
         "mixedCurrencyNotice": "Las tarjetas principales usan la moneda origen dominante ({currency}) en esta ventana. Usa el desglose de abajo para revisar periodos con varias monedas.",
         "grossProcessedLabel": "Bruto procesado",
         "grossProcessedDescription": "Volumen capturado antes de separar la comisión de la plataforma.",
         "grossTitle": "Bruto procesado",
-        "grossDescription": "Volumen total de cobros capturados antes de separar la comisión de la plataforma.",
+        "grossDescription": "Volumen total de pagos capturados antes de separar la comisión de la plataforma.",
         "platformFeesLabel": "Comisiones capturadas",
-        "platformFeesDescription": "Componente de comisión registrado al momento del cobro.",
+        "platformFeesDescription": "Componente de comisión registrado al capturar.",
         "feesTitle": "Comisiones capturadas",
-        "feesDescription": "Comisión capturada por la plataforma a partir de esos cobros.",
+        "feesDescription": "Comisión capturada por la plataforma a partir de esos pagos.",
         "organizerProceedsLabel": "Neto para organizadores al cobrar",
-        "organizerProceedsDescription": "Monto del lado del organizador al momento del cobro, antes de eventos posteriores de retiro o riesgo.",
+        "organizerProceedsDescription": "Monto del organizador al cobrar, antes de eventos posteriores de retiro o riesgo.",
         "proceedsTitle": "Neto para organizadores al capturar",
-        "proceedsDescription": "Monto para organizadores al momento de la captura, antes de operaciones posteriores de retiro.",
+        "proceedsDescription": "Monto para organizadores al capturar, antes de operaciones posteriores de retiro.",
         "capturedPaymentsLabel": "Cobros capturados",
         "capturedPaymentsDescription": "Cobros canónicos aceptados dentro de esta ventana.",
         "capturesTitle": "Pagos capturados",
-        "capturesDescription": "Eventos canónicos de cobro capturado considerados en esta vista.",
+        "capturesDescription": "Eventos canónicos de pago capturado considerados en esta vista.",
         "currenciesTitle": "Volumen por moneda origen",
-        "currenciesDescription": "Totales capturados agrupados por la moneda del cobro.",
+        "currenciesDescription": "Totales capturados agrupados por moneda.",
         "currencyHeader": "Moneda",
         "grossHeader": "Bruto procesado",
         "feesHeader": "Comisiones de plataforma",
@@ -68,18 +74,21 @@
         "organizerCountHeader": "Cobros",
         "organizerActionHeader": "Investigación",
         "organizerEmpty": "No se encontró ranking de organizadores para la ventana seleccionada.",
-        "organizerPageSummary": "Mostrando {start}-{end} de {total} organizadores",
+        "organizerPageSummary": "Mostrando {start}-{end} de {total} {total, plural, one {organizador} other {organizadores}}",
+        "organizerPageStatus": "Página {page} de {pageCount}",
+        "firstPageLabel": "Primera",
         "previousPageLabel": "Anterior",
         "nextPageLabel": "Siguiente",
+        "lastPageLabel": "Última",
         "investigationTitle": "¿Necesitas evidencia a nivel traza?",
-        "investigationDescription": "Usa el workspace de investigación para búsqueda técnica y revisión de evidencia en lugar de abrir trazas crudas dentro del ranking de volumen.",
+        "investigationDescription": "Usa investigación para búsqueda técnica y revisión de evidencia en lugar de abrir trazas crudas dentro del ranking.",
         "investigationActionLabel": "Abrir workspace de investigación",
         "organizerActionLabel": "Abrir en investigación"
       },
       "investigation": {
         "eyebrow": "Casos",
         "title": "Casos y evidencia",
-        "description": "Usa una de estas dos entradas según lo que ya tengas. Busca primero si sólo conoces el ID del retiro u otro identificador técnico. Abre una traza directo si soporte ya te compartió la traza.",
+        "description": "Usa la entrada que corresponda a lo que ya tienes. Busca primero si sólo conoces el ID del retiro u otro identificador técnico. Abre una traza directo si soporte ya te compartió la traza.",
         "helpTitle": "¿De dónde salen estos identificadores?",
         "evidenceReadyEyebrow": "Listo para revisar",
         "evidenceReadyTitle": "Ya hay evidencia lista para esta traza",
@@ -90,13 +99,13 @@
         "evidenceActive": "Hay un paquete de evidencia cargado.",
         "evidenceIdle": "Carga una traza cuando necesites revisar evidencia.",
         "guidanceTitle": "Qué puedes buscar aquí",
-        "guidanceDescription": "Sirven el ID de retiro, la traza técnica y algunas llaves internas que soporte o ingeniería compartan contigo. Si no tienes uno de esos datos, esta vista no te va a ayudar todavía.",
+        "guidanceDescription": "Sirven el ID de retiro, la traza técnica y algunas llaves internas que soporte o ingeniería compartan contigo. Sin uno de esos datos, esta vista no te va a ayudar todavía.",
         "whereToFindIdsTitle": "Dónde suelen salir esos IDs",
-        "whereToFindIdsDescription": "El ID del retiro normalmente sale en pagos del organizador. La traza normalmente sale de un caso previo de soporte, de una revisión de evidencia o de una escalación interna. Las llaves de idempotencia casi siempre las comparte soporte o ingeniería.",
+        "whereToFindIdsDescription": "El ID del retiro normalmente sale en pagos del organizador. La traza suele salir de soporte, una revisión de evidencia o una escalación interna. Las llaves de idempotencia casi siempre las comparte soporte o ingeniería.",
         "tools": {
           "lookup": {
             "title": "Buscar por identificador",
-            "description": "Úsalo cuando tienes un ID de retiro u otra referencia técnica compartida, pero todavía no la traza.",
+            "description": "Úsalo cuando tienes un ID de retiro u otra referencia técnica, pero todavía no la traza.",
             "activeState": "Búsqueda en curso",
             "idleState": "Útil cuando todavía no tienes la traza"
           },
@@ -149,7 +158,7 @@
         "overview": {
           "eyebrow": "Economía",
           "title": "Economía de la plataforma",
-          "description": "Empieza aquí para entender el reconocimiento de comisiones de la plataforma antes de pasar a herramientas operativas."
+          "description": "Empieza aquí para entender el reconocimiento de comisiones antes de pasar a operaciones."
         },
         "risk": {
           "eyebrow": "Riesgo",
@@ -164,7 +173,7 @@
         "artifacts": {
           "eyebrow": "Operaciones",
           "title": "Estados de cuenta y reenvíos",
-          "description": "Revisa versiones y entregas recientes antes de abrir una operación manual."
+          "description": "Revisa versiones y entregas recientes antes de abrir una acción manual."
         },
         "cases": {
           "eyebrow": "Investigación",
@@ -174,11 +183,11 @@
         "evidence": {
           "eyebrow": "Investigación",
           "title": "Cargar evidencia",
-          "description": "Abre un paquete de evidencia sólo cuando ya tengas la traza que quieres revisar."
+          "description": "Abre un paquete de evidencia sólo cuando ya tengas la traza a revisar."
         }
       },
       "sectionTitle": "Comisiones de la plataforma y ajustes",
-      "sectionDescription": "Vista principal de economía para comisiones capturadas por la plataforma y ajustes financieros.",
+      "sectionDescription": "Vista principal de economía para comisiones capturadas y ajustes financieros.",
       "primaryMetricTitle": "Comisión neta del periodo",
       "primaryMetricDescription": "Suma de comisiones capturadas y ajustes financieros del periodo revisado.",
       "capturedFeesLabel": "Comisiones capturadas",
@@ -205,7 +214,7 @@
       "emptyAdjustments": "No se encontraron ajustes financieros para la ventana seleccionada.",
       "exposure": {
         "sectionTitle": "Concentración de deuda y disputas",
-        "sectionDescription": "Ayuda a detectar dónde conviene intervenir primero cuando ya existen cobros con deuda o disputas.",
+        "sectionDescription": "Ayuda a detectar dónde conviene intervenir primero cuando ya existen pagos con deuda o disputas.",
         "summaryExposureTitle": "Exposición principal",
         "summaryOpenCasesTitle": "Casos de disputa abiertos",
         "summaryPolicyPausesTitle": "Pausas por política de deuda",
@@ -224,7 +233,7 @@
         "disputeCasesHeader": "Referencias de caso",
         "sampleTracesLabel": "Trazas de muestra",
         "sampleCasesLabel": "IDs de caso de muestra",
-        "currenciesLabel": "+{count} monedas adicionales",
+        "currenciesLabel": "+{count} {count, plural, one {moneda adicional} other {monedas adicionales}}",
         "emptyState": "No se encontraron datos de exposición de deuda o disputas para la ventana seleccionada."
       },
       "mxn": {
@@ -247,7 +256,7 @@
       },
       "fx": {
         "sectionTitle": "Tipo de cambio para reportes",
-        "sectionDescription": "Aquí registras la tasa de referencia usada para convertir comisiones capturadas a MXN cuando el cobro original fue en otra moneda.",
+        "sectionDescription": "Aquí registras la tasa de referencia usada para convertir comisiones capturadas a MXN cuando el pago original fue en otra moneda.",
         "missingTitle": "Monedas sin tasa",
         "staleTitle": "Tasas por revisar",
         "upsertTitle": "Registrar o corregir una tasa",
@@ -257,6 +266,7 @@
         "dateFieldLabel": "Fecha efectiva",
         "rateFieldLabel": "Tasa a MXN",
         "reasonFieldLabel": "Motivo",
+        "clearDateLabel": "Limpiar",
         "submitLabel": "Guardar tasa",
         "ratesTableTitle": "Tasas registradas",
         "ratesTableDescription": "Últimas tasas diarias registradas para las monedas activas.",
@@ -300,6 +310,8 @@
         "versionNumberHeader": "Versión",
         "versionFingerprintHeader": "Huella",
         "versionLineageHeader": "Linaje",
+        "versionLineageRootLabel": "raíz",
+        "versionLineageFromPrefixLabel": "desde",
         "versionReasonHeader": "Motivo",
         "versionRequestedByHeader": "Solicitado por",
         "versionCreatedAtHeader": "Creado",
@@ -309,7 +321,8 @@
         "deliveryRecipientHeader": "Referencia destino",
         "deliveryReasonHeader": "Motivo",
         "deliveryRequestedByHeader": "Solicitado por",
-        "deliveryCreatedAtHeader": "Creado"
+        "deliveryCreatedAtHeader": "Creado",
+        "operationSelectAriaLabel": "Selector de operación del comprobante"
       },
       "caseLookup": {
         "sectionTitle": "Casos por ID técnico",
@@ -328,7 +341,8 @@
         "disambiguationEmpty": "No se detectaron coincidencias ambiguas para esta búsqueda.",
         "resultsTitle": "Casos financieros coincidentes",
         "resultsDescription": "Los casos se agrupan por traza con evidencia de identificadores normalizados y metadatos según rol.",
-        "summaryLabel": "Casos",
+        "summaryLabel": "Mostrando {shown} de {total} {total, plural, one {caso coincidente} other {casos coincidentes}}",
+        "summaryLimitedHint": "Esta lista se limita a los {shown} casos más recientes dentro de la ventana actual. Refina el identificador para reducir el resultado.",
         "loadEvidenceLabel": "Cargar evidencia",
         "evidenceLoadedLabel": "Evidencia cargada",
         "traceHeader": "Traza",
@@ -373,11 +387,14 @@
         "eventOwnershipOwnerHeader": "Responsable",
         "eventOwnershipNextHeader": "Siguiente transición",
         "eventPayloadHeader": "Payload",
+        "ownershipStateActionNeededLabel": "Acción requerida",
+        "ownershipStateInProgressLabel": "En progreso",
         "artifactsVersionsTitle": "Versiones de artefacto",
         "artifactsDeliveriesTitle": "Entregas de artefacto",
         "artifactVersionHeader": "Versión",
         "artifactFingerprintHeader": "Huella",
         "artifactLineageHeader": "Linaje",
+        "artifactLineageRootLabel": "raíz",
         "artifactReasonHeader": "Motivo",
         "artifactCreatedHeader": "Creado",
         "deliveryChannelHeader": "Canal",

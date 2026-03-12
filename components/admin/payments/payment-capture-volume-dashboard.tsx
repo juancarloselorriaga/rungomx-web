@@ -1,11 +1,31 @@
 import { Button } from '@/components/ui/button';
+import { SampledReferenceList } from '@/components/admin/payments/sampled-reference-list';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableMeta,
+  PaymentsDataTableRow,
+} from '@/components/payments/payments-data-table';
+import {
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from '@/components/payments/payments-typography';
+import {
+  PaymentsInsetPanel,
+  PaymentsMutedPanel,
+  PaymentsPanel,
+} from '@/components/payments/payments-surfaces';
 import type { PaymentCaptureVolumeMetrics } from '@/lib/payments/volume/payment-capture-volume';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
 type PaymentCaptureVolumeDashboardLabels = {
   sectionTitle: string;
   sectionDescription: string;
-  mixedCurrencyNotice: string;
+  mixedCurrencyNotice: (currency: string) => string;
   grossProcessedLabel: string;
   grossProcessedDescription: string;
   platformFeesLabel: string;
@@ -32,6 +52,8 @@ type PaymentCaptureVolumeDashboardLabels = {
   traceabilityLastEventLabel: string;
   sampleTracesTitle: string;
   sampleTracesEmpty: string;
+  sampleTracesScopeLabel: (shown: number, total: number) => string;
+  sampleTracesMoreLabel: (count: number) => string;
   topOrganizersTitle: string;
   topOrganizersDescription: string;
   organizerHeader: string;
@@ -41,9 +63,12 @@ type PaymentCaptureVolumeDashboardLabels = {
   organizerCountHeader: string;
   organizerActionHeader: string;
   organizerEmpty: string;
-  organizerPageSummary: string;
+  organizerPageSummary: (params: { start: number; end: number; total: number }) => string;
+  organizerPageStatus: (params: { page: number; pageCount: number }) => string;
+  firstPageLabel: string;
   previousPageLabel: string;
   nextPageLabel: string;
+  lastPageLabel: string;
   investigationTitle: string;
   investigationDescription: string;
   investigationActionLabel: string;
@@ -135,11 +160,26 @@ export function PaymentCaptureVolumeDashboard({
           organizerPage: String(metrics.organizerPagination.page - 1),
         })
       : null;
+  const firstOrganizerHref =
+    metrics.organizerPagination.page > 1
+      ? buildQueryHref({
+          workspace: 'volume',
+          organizerPage: '1',
+        })
+      : null;
   const nextOrganizerHref =
     metrics.organizerPagination.page < metrics.organizerPagination.pageCount
       ? buildQueryHref({
           workspace: 'volume',
           organizerPage: String(metrics.organizerPagination.page + 1),
+        })
+      : null;
+  const lastOrganizerHref =
+    metrics.organizerPagination.pageCount > 0 &&
+    metrics.organizerPagination.page < metrics.organizerPagination.pageCount
+      ? buildQueryHref({
+          workspace: 'volume',
+          organizerPage: String(metrics.organizerPagination.pageCount),
         })
       : null;
   const investigationWorkspaceHref = buildQueryHref({
@@ -152,142 +192,129 @@ export function PaymentCaptureVolumeDashboard({
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
+        <PaymentsSectionTitle compact>{labels.sectionTitle}</PaymentsSectionTitle>
+        <PaymentsSectionDescription className="mt-1">{labels.sectionDescription}</PaymentsSectionDescription>
         {showMixedCurrencyNotice ? (
-          <p className="mt-2 text-xs text-muted-foreground">
-            {labels.mixedCurrencyNotice.replace('{currency}', headlineCurrency)}
-          </p>
+          <p className="mt-2 text-xs text-muted-foreground">{labels.mixedCurrencyNotice(headlineCurrency)}</p>
         ) : null}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => (
-          <div key={card.label} className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {card.label}
-            </p>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">{card.value}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{card.description}</p>
-          </div>
+          <PaymentsInsetPanel key={card.label} className="space-y-2">
+            <PaymentsMetricLabel>{card.label}</PaymentsMetricLabel>
+            <PaymentsMetricValue compact>{card.value}</PaymentsMetricValue>
+            <p className="text-sm text-muted-foreground">{card.description}</p>
+          </PaymentsInsetPanel>
         ))}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <PaymentsPanel>
           <h3 className="text-sm font-semibold">{labels.currenciesTitle}</h3>
           <p className="mt-1 text-xs text-muted-foreground">{labels.currenciesDescription}</p>
           {metrics.currencies.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{labels.emptyCurrencies}</p>
           ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[34rem] text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <PaymentsDataTable minWidthClassName="min-w-[34rem]">
+                <PaymentsDataTableHead>
                   <tr>
-                    <th className="pb-2 pr-4">{labels.currencyHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.grossHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.feesHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.proceedsHeader}</th>
-                    <th className="pb-2 text-right">{labels.countHeader}</th>
+                    <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.grossHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.feesHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.proceedsHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.countHeader}</PaymentsDataTableHeader>
                   </tr>
-                </thead>
+                </PaymentsDataTableHead>
                 <tbody>
                   {metrics.currencies.map((row) => (
-                    <tr key={row.sourceCurrency} className="border-t">
-                      <td className="py-2 pr-4 font-medium">{row.sourceCurrency}</td>
-                      <td className="py-2 pr-4 text-right tabular-nums">
+                    <PaymentsDataTableRow key={row.sourceCurrency}>
+                      <PaymentsDataTableCell className="font-medium">{row.sourceCurrency}</PaymentsDataTableCell>
+                      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                         {formatMoneyFromMinor(row.grossProcessedMinor, row.sourceCurrency, locale)}
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                         {formatMoneyFromMinor(row.platformFeeMinor, row.sourceCurrency, locale)}
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                         {formatMoneyFromMinor(
                           row.organizerProceedsMinor,
                           row.sourceCurrency,
                           locale,
                         )}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">
+                      </PaymentsDataTableCell>
+                      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                         {row.captureCount.toLocaleString(locale)}
-                      </td>
-                    </tr>
+                      </PaymentsDataTableCell>
+                    </PaymentsDataTableRow>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </PaymentsDataTable>
           )}
-        </div>
+        </PaymentsPanel>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <PaymentsPanel>
           <h3 className="text-sm font-semibold">{labels.traceabilityTitle}</h3>
           <p className="mt-1 text-xs text-muted-foreground">{labels.traceabilityDescription}</p>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <div className="sm:col-span-2">
+          <PaymentsMutedPanel className="mt-4">
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div className="sm:col-span-2 space-y-1">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 {labels.traceabilityWindowLabel}
               </dt>
-              <dd className="mt-1">
+              <dd>
                 {formatDateTime(metrics.traceability.windowStart, locale)} -{' '}
                 {formatDateTime(metrics.traceability.windowEnd, locale)}
               </dd>
             </div>
-            <div>
+            <div className="space-y-1">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 {labels.traceabilityEventsLabel}
               </dt>
-              <dd className="mt-1 tabular-nums">{metrics.traceability.eventCount}</dd>
+              <dd className="tabular-nums">{metrics.traceability.eventCount}</dd>
             </div>
-            <div>
+            <div className="space-y-1">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 {labels.traceabilityTracesLabel}
               </dt>
-              <dd className="mt-1 tabular-nums">{metrics.traceability.distinctTraceCount}</dd>
+              <dd className="tabular-nums">{metrics.traceability.distinctTraceCount}</dd>
             </div>
-            <div>
+            <div className="space-y-1">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 {labels.traceabilityExcludedLabel}
               </dt>
-              <dd className="mt-1 tabular-nums">{metrics.traceability.excludedEventCount}</dd>
+              <dd className="tabular-nums">{metrics.traceability.excludedEventCount}</dd>
             </div>
-            <div>
+            <div className="space-y-1">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 {labels.traceabilityFirstEventLabel}
               </dt>
-              <dd className="mt-1">{formatDateTime(metrics.traceability.firstOccurredAt, locale)}</dd>
+              <dd>{formatDateTime(metrics.traceability.firstOccurredAt, locale)}</dd>
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 space-y-1">
               <dt className="text-xs uppercase tracking-wide text-muted-foreground">
                 {labels.traceabilityLastEventLabel}
               </dt>
-              <dd className="mt-1">{formatDateTime(metrics.traceability.lastOccurredAt, locale)}</dd>
+              <dd>{formatDateTime(metrics.traceability.lastOccurredAt, locale)}</dd>
             </div>
           </dl>
+          </PaymentsMutedPanel>
 
-          <div className="mt-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {labels.sampleTracesTitle}
-            </h4>
-            {metrics.traceability.sampleTraceIds.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">{labels.sampleTracesEmpty}</p>
-            ) : (
-              <div className="mt-2 flex flex-wrap gap-2">
-                {metrics.traceability.sampleTraceIds.map((traceId) => (
-                  <code
-                    key={traceId}
-                    className="rounded bg-muted px-2 py-1 text-xs text-foreground"
-                  >
-                    {traceId}
-                  </code>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <PaymentsInsetPanel className="mt-4">
+          <SampledReferenceList
+            title={labels.sampleTracesTitle}
+            items={metrics.traceability.sampleTraceIds}
+            emptyLabel={labels.sampleTracesEmpty}
+            totalCount={metrics.traceability.distinctTraceCount}
+            scopeLabel={labels.sampleTracesScopeLabel}
+            moreLabel={labels.sampleTracesMoreLabel}
+          />
+        </PaymentsInsetPanel>
+      </PaymentsPanel>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <PaymentsPanel>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="text-sm font-semibold">{labels.topOrganizersTitle}</h3>
@@ -296,28 +323,36 @@ export function PaymentCaptureVolumeDashboard({
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              {labels.organizerPageSummary
-                .replace('{start}', organizerStart.toLocaleString(locale))
-                .replace('{end}', organizerEnd.toLocaleString(locale))
-                .replace('{total}', metrics.organizerPagination.total.toLocaleString(locale))}
+              {labels.organizerPageSummary({
+                start: organizerStart,
+                end: organizerEnd,
+                total: metrics.organizerPagination.total,
+              })}
             </p>
           </div>
+          {metrics.organizerPagination.pageCount > 0 ? (
+            <PaymentsMutedPanel className="mt-3 py-2.5 text-xs text-muted-foreground">
+              {labels.organizerPageStatus({
+                page: metrics.organizerPagination.page,
+                pageCount: metrics.organizerPagination.pageCount,
+              })}
+            </PaymentsMutedPanel>
+          ) : null}
 
           {metrics.organizers.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{labels.organizerEmpty}</p>
           ) : (
-            <div className="mt-4 overflow-x-auto">
-              <table className="w-full min-w-[40rem] text-sm">
-                <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <PaymentsDataTable minWidthClassName="min-w-[40rem]">
+                <PaymentsDataTableHead>
                   <tr>
-                    <th className="pb-2 pr-4">{labels.organizerHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.organizerGrossHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.organizerFeesHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.organizerProceedsHeader}</th>
-                    <th className="pb-2 pr-4 text-right">{labels.organizerCountHeader}</th>
-                    <th className="pb-2 text-right">{labels.organizerActionHeader}</th>
+                    <PaymentsDataTableHeader>{labels.organizerHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.organizerGrossHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.organizerFeesHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.organizerProceedsHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.organizerCountHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader align="right">{labels.organizerActionHeader}</PaymentsDataTableHeader>
                   </tr>
-                </thead>
+                </PaymentsDataTableHead>
                 <tbody>
                   {metrics.organizers.map((row) => {
                     const traceId = row.traceability.sampleTraceIds[0] ?? null;
@@ -329,51 +364,57 @@ export function PaymentCaptureVolumeDashboard({
                     });
 
                     return (
-                      <tr key={row.organizerId ?? row.organizerLabel} className="border-t">
-                        <td className="py-2 pr-4 align-top">
+                      <PaymentsDataTableRow key={row.organizerId ?? row.organizerLabel}>
+                        <PaymentsDataTableCell>
                           <p className="font-medium">{row.organizerLabel}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
+                          <PaymentsDataTableMeta>
                             {row.headlineCurrency}
-                          </p>
-                        </td>
-                        <td className="py-2 pr-4 text-right tabular-nums">
+                          </PaymentsDataTableMeta>
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                           {formatMoneyFromMinor(
                             row.headlineGrossProcessedMinor,
                             row.headlineCurrency,
                             locale,
                           )}
-                        </td>
-                        <td className="py-2 pr-4 text-right tabular-nums">
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                           {formatMoneyFromMinor(
                             row.headlinePlatformFeeMinor,
                             row.headlineCurrency,
                             locale,
                           )}
-                        </td>
-                        <td className="py-2 pr-4 text-right tabular-nums">
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                           {formatMoneyFromMinor(
                             row.headlineOrganizerProceedsMinor,
                             row.headlineCurrency,
                             locale,
                           )}
-                        </td>
-                        <td className="py-2 pr-4 text-right tabular-nums">
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
                           {row.captureCount.toLocaleString(locale)}
-                        </td>
-                        <td className="py-2 text-right">
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell align="right">
                           <Button asChild variant="outline" size="sm" className="rounded-xl">
                             <a href={investigationHref}>{labels.organizerActionLabel}</a>
                           </Button>
-                        </td>
-                      </tr>
+                        </PaymentsDataTableCell>
+                      </PaymentsDataTableRow>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
+              </PaymentsDataTable>
           )}
 
           <div className="mt-4 flex items-center justify-end gap-2">
+            <Button asChild={Boolean(firstOrganizerHref)} variant="outline" size="sm" disabled={!firstOrganizerHref}>
+              {firstOrganizerHref ? (
+                <a href={firstOrganizerHref}>{labels.firstPageLabel}</a>
+              ) : (
+                <span>{labels.firstPageLabel}</span>
+              )}
+            </Button>
             <Button
               asChild={Boolean(previousOrganizerHref)}
               variant="outline"
@@ -398,10 +439,17 @@ export function PaymentCaptureVolumeDashboard({
                 <span>{labels.nextPageLabel}</span>
               )}
             </Button>
+            <Button asChild={Boolean(lastOrganizerHref)} variant="outline" size="sm" disabled={!lastOrganizerHref}>
+              {lastOrganizerHref ? (
+                <a href={lastOrganizerHref}>{labels.lastPageLabel}</a>
+              ) : (
+                <span>{labels.lastPageLabel}</span>
+              )}
+            </Button>
           </div>
-        </div>
+        </PaymentsPanel>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <PaymentsPanel className="flex h-full flex-col">
           <h3 className="text-sm font-semibold">{labels.investigationTitle}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{labels.investigationDescription}</p>
           <div className="mt-4">
@@ -409,7 +457,7 @@ export function PaymentCaptureVolumeDashboard({
               <a href={investigationWorkspaceHref}>{labels.investigationActionLabel}</a>
             </Button>
           </div>
-        </div>
+        </PaymentsPanel>
       </div>
     </section>
   );

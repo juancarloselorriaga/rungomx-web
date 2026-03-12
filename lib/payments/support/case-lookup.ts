@@ -57,6 +57,9 @@ export type FinancialCaseLookupResult = {
   query: string;
   normalizedQuery: string;
   totalCaseCount: number;
+  returnedCaseCount: number;
+  resultLimit: number;
+  isResultLimitApplied: boolean;
   cases: FinancialCaseLookupCase[];
   disambiguationGroups: FinancialCaseDisambiguationGroup[];
 };
@@ -166,6 +169,16 @@ function containsNormalized(haystack: string | null, normalizedNeedle: string): 
   return haystack.toLowerCase().includes(normalizedNeedle);
 }
 
+function dateLikeToEpoch(value: Date | string | null | undefined): number {
+  if (!value) return 0;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? 0 : value.getTime();
+  }
+
+  const normalized = new Date(value);
+  return Number.isNaN(normalized.getTime()) ? 0 : normalized.getTime();
+}
+
 export async function lookupFinancialCases(params: {
   query: string;
   limit?: number;
@@ -181,6 +194,9 @@ export async function lookupFinancialCases(params: {
       query: rawQuery,
       normalizedQuery,
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: limit,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     };
@@ -388,6 +404,9 @@ export async function lookupFinancialCases(params: {
       query: rawQuery,
       normalizedQuery,
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: limit,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     };
@@ -437,6 +456,7 @@ export async function lookupFinancialCases(params: {
     evidenceByTraceId.get(row.traceId)!.push(row);
   }
 
+  const totalCaseCount = traceDetailsRows.length;
   const cases: FinancialCaseLookupCase[] = traceDetailsRows
     .map((row) => {
       const aggregate = aggregateByTraceId.get(row.traceId);
@@ -461,8 +481,8 @@ export async function lookupFinancialCases(params: {
       };
     })
     .sort((left, right) => {
-      const leftTime = left.lastOccurredAt?.getTime() ?? 0;
-      const rightTime = right.lastOccurredAt?.getTime() ?? 0;
+      const leftTime = dateLikeToEpoch(left.lastOccurredAt);
+      const rightTime = dateLikeToEpoch(right.lastOccurredAt);
       if (leftTime !== rightTime) return rightTime - leftTime;
       return left.traceId.localeCompare(right.traceId);
     })
@@ -486,7 +506,10 @@ export async function lookupFinancialCases(params: {
   return {
     query: rawQuery,
     normalizedQuery,
-    totalCaseCount: cases.length,
+    totalCaseCount,
+    returnedCaseCount: cases.length,
+    resultLimit: limit,
+    isResultLimitApplied: totalCaseCount > cases.length,
     cases,
     disambiguationGroups,
   };

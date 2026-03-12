@@ -3,10 +3,11 @@ import { PayoutHistoryTable } from '@/components/payments/payout-history-table';
 import { PayoutRequestDialog } from '@/components/payments/payout-request-dialog';
 import { Link } from '@/i18n/navigation';
 import { getEventEditionDetail } from '@/lib/events/queries';
+import { getEventPaymentsHomeHref } from '@/lib/payments/organizer/hrefs';
 import {
-  getEventPaymentsHomeHref,
-} from '@/lib/payments/organizer/hrefs';
-import { listOrganizerPayouts } from '@/lib/payments/organizer/payout-views';
+  countOrganizerPayouts,
+  listOrganizerPayouts,
+} from '@/lib/payments/organizer/payout-views';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -16,7 +17,23 @@ import { notFound } from 'next/navigation';
 
 type EventPaymentsPayoutsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function readSingleSearchValue(value: string | string[] | undefined): string {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) return value[0] ?? '';
+  return '';
+}
+
+function normalizePositiveInt(value: string, fallback: number): number {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+
+  return parsed;
+}
 
 export async function generateMetadata({
   params,
@@ -32,6 +49,7 @@ export async function generateMetadata({
 
 export default async function EventPaymentsPayoutsPage({
   params,
+  searchParams,
 }: EventPaymentsPayoutsPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/payments/payouts' });
@@ -43,9 +61,39 @@ export default async function EventPaymentsPayoutsPage({
     notFound();
   }
 
-  const payouts = await listOrganizerPayouts({
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const requestedPage = normalizePositiveInt(
+    readSingleSearchValue(resolvedSearchParams.page).trim(),
+    1,
+  );
+  const payoutPageSize = 25;
+  const payoutTotal = await countOrganizerPayouts({
     organizerId: event.organizationId,
   });
+  const payoutPageCount = payoutTotal === 0 ? 0 : Math.ceil(payoutTotal / payoutPageSize);
+  const payoutPage = payoutPageCount === 0 ? 1 : Math.min(requestedPage, payoutPageCount);
+  const payoutOffset = (payoutPage - 1) * payoutPageSize;
+  const payouts = await listOrganizerPayouts({
+    organizerId: event.organizationId,
+    limit: payoutPageSize,
+    offset: payoutOffset,
+  });
+  const payoutStart = payoutTotal === 0 ? 0 : payoutOffset + 1;
+  const payoutEnd = payoutTotal === 0 ? 0 : Math.min(payoutTotal, payoutOffset + payouts.length);
+
+  function buildPayoutHistoryHref(page: number): {
+    pathname: '/dashboard/events/[eventId]/payments/payouts';
+    params: { eventId: string };
+    query: Record<string, string>;
+  } {
+    return {
+      pathname: '/dashboard/events/[eventId]/payments/payouts',
+      params: { eventId },
+      query: {
+        page: String(page),
+      },
+    };
+  }
 
   return (
     <div className="space-y-6">
@@ -84,6 +132,32 @@ export default async function EventPaymentsPayoutsPage({
           organization: event.organizationName,
         })}
         eventId={eventId}
+        scopeSummary={tPayments('payouts.scopeSummary', {
+          start: payoutStart,
+          end: payoutEnd,
+          total: payoutTotal,
+        })}
+        scopeHint={tPayments('payouts.scopeHint', {
+          pageSize: payoutPageSize,
+        })}
+        pageStatus={tPayments('payouts.pageStatus', {
+          page: payoutPageCount === 0 ? 0 : payoutPage,
+          pageCount: payoutPageCount,
+        })}
+        firstPageHref={payoutPage > 1 ? buildPayoutHistoryHref(1) : null}
+        previousPageHref={payoutPage > 1 ? buildPayoutHistoryHref(payoutPage - 1) : null}
+        nextPageHref={
+          payoutPage < payoutPageCount ? buildPayoutHistoryHref(payoutPage + 1) : null
+        }
+        lastPageHref={
+          payoutPageCount > 0 && payoutPage < payoutPageCount
+            ? buildPayoutHistoryHref(payoutPageCount)
+            : null
+        }
+        firstPageLabel={tPayments('payouts.firstPageLabel')}
+        previousPageLabel={tPayments('payouts.previousPageLabel')}
+        nextPageLabel={tPayments('payouts.nextPageLabel')}
+        lastPageLabel={tPayments('payouts.lastPageLabel')}
       />
     </div>
   );

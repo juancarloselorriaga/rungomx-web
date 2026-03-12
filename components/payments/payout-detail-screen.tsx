@@ -6,6 +6,13 @@ import { PayoutLifecycleRail } from '@/components/payments/payout-lifecycle-rail
 import { PayoutStatementAction } from '@/components/payments/payout-statement-action';
 import { PayoutStatusBadge } from '@/components/payments/payout-status-badge';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
+import {
+  PaymentsMetaLabel,
+  PaymentsMetricValue,
+  PaymentsMonoValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
 
 type BreadcrumbItem = {
   label: string;
@@ -76,42 +83,46 @@ export function PayoutDetailScreen({
             <h1 className="text-3xl font-semibold">{pageTitle}</h1>
             <PayoutStatusBadge status={detail.status} label={labels.status} />
           </div>
-          <p className="text-muted-foreground">{description}</p>
+          <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
         </div>
       </div>
 
       <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-5">
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold tracking-tight">{labels.summaryTitle}</h2>
-          <p className="text-sm text-muted-foreground">{labels.summaryDescription}</p>
-          {organizationName ? <p className="text-sm text-muted-foreground">{organizationName}</p> : null}
+          <PaymentsSectionTitle>{labels.summaryTitle}</PaymentsSectionTitle>
+          <PaymentsSectionDescription>{labels.summaryDescription}</PaymentsSectionDescription>
+          {organizationName ? <PaymentsSectionDescription>{organizationName}</PaymentsSectionDescription> : null}
         </div>
 
         <dl className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
           <div>
-            <dt className="text-muted-foreground">{labels.requestedAmount}</dt>
-            <dd className="font-medium">
+            <PaymentsMetaLabel>{labels.requestedAmount}</PaymentsMetaLabel>
+            <dd>
+              <PaymentsMetricValue compact>
               {formatMoneyFromMinor(detail.requestedAmountMinor, detail.currency, locale)}
+              </PaymentsMetricValue>
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">{labels.currentAmount}</dt>
-            <dd className="font-medium">
+            <PaymentsMetaLabel>{labels.currentAmount}</PaymentsMetaLabel>
+            <dd>
+              <PaymentsMetricValue compact>
               {formatMoneyFromMinor(
                 detail.currentRequestedAmountMinor,
                 detail.currency,
                 locale,
               )}
+              </PaymentsMetricValue>
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">{labels.maxWithdrawable}</dt>
+            <PaymentsMetaLabel>{labels.maxWithdrawable}</PaymentsMetaLabel>
             <dd className="font-medium">
               {formatMoneyFromMinor(detail.maxWithdrawableAmountMinor, detail.currency, locale)}
             </dd>
           </div>
           <div>
-            <dt className="text-muted-foreground">{labels.requestedAt}</dt>
+            <PaymentsMetaLabel>{labels.requestedAt}</PaymentsMetaLabel>
             <dd className="font-medium">{formatDate(detail.requestedAt, locale)}</dd>
           </div>
         </dl>
@@ -122,21 +133,21 @@ export function PayoutDetailScreen({
           </summary>
           <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
             <div>
-              <dt className="text-muted-foreground">{labels.requestId}</dt>
-              <dd className="font-mono text-xs break-all">{detail.payoutRequestId}</dd>
+              <PaymentsMetaLabel>{labels.requestId}</PaymentsMetaLabel>
+              <PaymentsMonoValue>{detail.payoutRequestId}</PaymentsMonoValue>
             </div>
             <div>
-              <dt className="text-muted-foreground">{labels.traceId}</dt>
-              <dd className="font-mono text-xs break-all">{detail.traceId}</dd>
+              <PaymentsMetaLabel>{labels.traceId}</PaymentsMetaLabel>
+              <PaymentsMonoValue>{detail.traceId}</PaymentsMonoValue>
             </div>
             <div>
-              <dt className="text-muted-foreground">{labels.includedAmount}</dt>
+              <PaymentsMetaLabel>{labels.includedAmount}</PaymentsMetaLabel>
               <dd className="font-medium">
                 {formatMoneyFromMinor(detail.includedAmountMinor, detail.currency, locale)}
               </dd>
             </div>
             <div>
-              <dt className="text-muted-foreground">{labels.deductionAmount}</dt>
+              <PaymentsMetaLabel>{labels.deductionAmount}</PaymentsMetaLabel>
               <dd className="font-medium">
                 {formatMoneyFromMinor(detail.deductionAmountMinor, detail.currency, locale)}
               </dd>

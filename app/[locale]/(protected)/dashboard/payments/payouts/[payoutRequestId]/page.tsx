@@ -50,10 +50,7 @@ export default async function DashboardPaymentsPayoutDetailPage({
 
   const localeKey = locale as 'es' | 'en';
   const t = await getTranslations('pages.dashboardPayments');
-  const pageTitle =
-    localeKey === 'es'
-      ? `Retiro #${shortIdentifier(payoutRequestId)}`
-      : `Payout #${shortIdentifier(payoutRequestId)}`;
+  const pageTitle = t('detail.pageTitle', { id: shortIdentifier(payoutRequestId) });
   const authContext = await getAuthContext();
   const detail = await getOrganizerPayoutDetailByRequestId(payoutRequestId);
   const isSupportUser = authContext.permissions.canViewStaffTools;

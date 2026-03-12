@@ -10,8 +10,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { FormEvent, useRef, useState } from 'react';
+import {
+  PaymentsEyebrow,
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsMonoValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
 
 type PayoutRequestFormProps = {
   organizationId: string;
@@ -64,6 +72,7 @@ export function PayoutRequestForm({
   eventId,
 }: PayoutRequestFormProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const locale = useLocale() as 'en' | 'es';
   const [requestedAmount, setRequestedAmount] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isQueueSubmitting, setIsQueueSubmitting] = useState(false);
@@ -222,40 +231,66 @@ export function PayoutRequestForm({
   return (
     <section
       className={cn(
-        'space-y-4',
-        presentation === 'card' ? 'rounded-xl border bg-card/80 p-6 shadow-sm' : '',
+        'space-y-5',
+        presentation === 'card' ? 'rounded-2xl border bg-card/80 p-5 shadow-sm sm:p-6' : '',
       )}
     >
       {presentation === 'card' ? (
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">{t('request.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('request.description')}</p>
+        <div className="space-y-2">
+          <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>
+          <PaymentsSectionTitle compact>{t('request.title')}</PaymentsSectionTitle>
+          <PaymentsSectionDescription>{t('request.description')}</PaymentsSectionDescription>
         </div>
       ) : null}
 
       <form className="space-y-4" onSubmit={submitPayoutRequest}>
-        <label htmlFor="requestedAmountMinor" className="block text-sm font-medium">
-          {t('request.amountLabel')}
-        </label>
-        <input
-          id="requestedAmountMinor"
-          name="requestedAmountMinor"
-          type="number"
-          min={1}
-          step={1}
-          value={requestedAmount}
-          onChange={(event) => setRequestedAmount(event.target.value)}
-          placeholder="150000"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-        />
+        <div
+          className={cn(
+            'grid gap-4',
+            presentation === 'dialog'
+              ? 'lg:grid-cols-[minmax(0,1fr)_16rem]'
+              : 'xl:grid-cols-[minmax(0,1fr)_16rem]',
+          )}
+        >
+          <div className="space-y-3">
+            <label htmlFor="requestedAmountMinor" className="block space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {t('request.amountLabel')}
+              </span>
+              <input
+                id="requestedAmountMinor"
+                name="requestedAmountMinor"
+                type="number"
+                min={1}
+                step={1}
+                value={requestedAmount}
+                onChange={(event) => setRequestedAmount(event.target.value)}
+                placeholder={t('request.amountPlaceholder')}
+                className="h-14 w-full rounded-xl border bg-background px-4 text-2xl font-semibold tracking-tight tabular-nums shadow-sm"
+              />
+            </label>
 
-        <div className="space-y-1 text-xs text-muted-foreground">
-          <p>{t('request.amountHint')}</p>
-          <p>{t('request.amountExample')}</p>
+            <div className="rounded-xl border bg-muted/20 px-4 py-3">
+              <p className="text-sm text-foreground">{t('request.amountHint')}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('request.amountExample')}</p>
+            </div>
+          </div>
+
+          <aside className="rounded-xl border bg-muted/25 px-4 py-4">
+            <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>
+            <div className="mt-3 space-y-3">
+              <p className="text-sm font-medium text-foreground">{t('request.submitHint')}</p>
+              <p className="text-sm text-muted-foreground">{t('request.queuedHint')}</p>
+            </div>
+          </aside>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={isSubmitting || isQueueSubmitting}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="submit"
+            disabled={isSubmitting || isQueueSubmitting}
+            className="w-full sm:w-auto"
+          >
             {isSubmitting ? t('home.shell.loadingTitle') : t('actions.requestPayout')}
           </Button>
 
@@ -265,6 +300,7 @@ export function PayoutRequestForm({
               variant="outline"
               onClick={() => void submitQueueIntent()}
               disabled={isSubmitting || isQueueSubmitting}
+              className="w-full sm:w-auto"
             >
               {isQueueSubmitting ? t('home.shell.loadingTitle') : t('actions.queuePayoutRequest')}
             </Button>
@@ -279,34 +315,42 @@ export function PayoutRequestForm({
       ) : null}
 
       {requestSuccess ? (
-        <div className="rounded-lg border bg-background/80 p-4 space-y-3">
-          <p className="font-medium">{t('request.successTitle')}</p>
-          <p className="text-sm text-muted-foreground">{t('request.successDescription')}</p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.requestedAmount')}{' '}
-            {formatMoneyFromMinor(requestSuccess.requestedAmountMinor, 'MXN', 'es')}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.maxWithdrawable')}{' '}
-            {formatMoneyFromMinor(requestSuccess.maxWithdrawableAmountMinor, 'MXN', 'es')}
-          </p>
-          <details className="rounded-md border bg-muted/25 px-3 py-2">
+        <div className="space-y-4 rounded-xl border bg-background/80 p-4 sm:p-5">
+          <div className="space-y-1">
+            <p className="font-medium">{t('request.successTitle')}</p>
+            <p className="text-sm text-muted-foreground">{t('request.successDescription')}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.requestedAmount')}</PaymentsMetricLabel>
+              <PaymentsMetricValue className="mt-2">
+                {formatMoneyFromMinor(requestSuccess.requestedAmountMinor, 'MXN', locale)}
+              </PaymentsMetricValue>
+            </div>
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.maxWithdrawable')}</PaymentsMetricLabel>
+              <PaymentsMetricValue compact className="mt-2">
+                {formatMoneyFromMinor(requestSuccess.maxWithdrawableAmountMinor, 'MXN', locale)}
+              </PaymentsMetricValue>
+            </div>
+          </div>
+          <details className="rounded-lg border bg-muted/25 px-3 py-3">
             <summary className="cursor-pointer text-sm font-medium text-primary">
               {t('request.technicalDetailsLabel')}
             </summary>
             <div className="mt-3 space-y-2 text-sm">
               <p className="text-muted-foreground">
-                {t('request.summary.requestId')} <span className="font-mono text-xs">{requestSuccess.payoutRequestId}</span>
+                {t('request.summary.requestId')} <PaymentsMonoValue as="span">{requestSuccess.payoutRequestId}</PaymentsMonoValue>
               </p>
               <p className="text-muted-foreground">
-                {t('request.summary.quoteId')} <span className="font-mono text-xs">{requestSuccess.payoutQuoteId}</span>
+                {t('request.summary.quoteId')} <PaymentsMonoValue as="span">{requestSuccess.payoutQuoteId}</PaymentsMonoValue>
               </p>
               <p className="text-muted-foreground">
-                {t('request.summary.contractId')} <span className="font-mono text-xs">{requestSuccess.payoutContractId}</span>
+                {t('request.summary.contractId')} <PaymentsMonoValue as="span">{requestSuccess.payoutContractId}</PaymentsMonoValue>
               </p>
             </div>
           </details>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href={getPayoutDetailHref(requestSuccess.payoutRequestId, { eventId })}>
               {t('actions.openDetails')}
             </Link>
@@ -315,35 +359,43 @@ export function PayoutRequestForm({
       ) : null}
 
       {queueSuccess ? (
-        <div className="rounded-lg border bg-background/80 p-4 space-y-3">
-          <p className="font-medium">{t('request.queueSuccessTitle')}</p>
-          <p className="text-sm text-muted-foreground">{t('request.queueSuccessDescription')}</p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.requestedAmount')}{' '}
-            {formatMoneyFromMinor(queueSuccess.requestedAmountMinor, 'MXN', 'es')}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.blockedReasonHuman')} {' '}
-            {t(`detail.reasonFamilies.${getOrganizerPayoutReasonFamily(queueSuccess.blockedReasonCode)}`)}
-          </p>
-          <details className="rounded-md border bg-muted/25 px-3 py-2">
+        <div className="space-y-4 rounded-xl border bg-background/80 p-4 sm:p-5">
+          <div className="space-y-1">
+            <p className="font-medium">{t('request.queueSuccessTitle')}</p>
+            <p className="text-sm text-muted-foreground">{t('request.queueSuccessDescription')}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.requestedAmount')}</PaymentsMetricLabel>
+              <PaymentsMetricValue className="mt-2">
+                {formatMoneyFromMinor(queueSuccess.requestedAmountMinor, 'MXN', locale)}
+              </PaymentsMetricValue>
+            </div>
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.blockedReasonHuman')}</PaymentsMetricLabel>
+              <p className="mt-2 text-sm font-medium leading-6">
+                {t(`detail.reasonFamilies.${getOrganizerPayoutReasonFamily(queueSuccess.blockedReasonCode)}`)}
+              </p>
+            </div>
+          </div>
+          <details className="rounded-lg border bg-muted/25 px-3 py-3">
             <summary className="cursor-pointer text-sm font-medium text-primary">
               {t('request.technicalDetailsLabel')}
             </summary>
             <div className="mt-3 space-y-2 text-sm">
               <p className="text-muted-foreground">
                 {t('request.summary.queueIntentId')} {' '}
-                <span className="font-mono text-xs">{queueSuccess.payoutQueuedIntentId}</span>
+                <PaymentsMonoValue as="span">{queueSuccess.payoutQueuedIntentId}</PaymentsMonoValue>
               </p>
               <p className="text-muted-foreground">
                 {t('request.summary.blockedReason')} {' '}
-                <span className="font-mono text-xs">
+                <PaymentsMonoValue as="span">
                   {humanizeTechnicalCode(queueSuccess.blockedReasonCode)}
-                </span>
+                </PaymentsMonoValue>
               </p>
               <p className="text-muted-foreground">
                 {t('request.summary.rawBlockedReason')} {' '}
-                <span className="font-mono text-xs">{queueSuccess.blockedReasonCode}</span>
+                <PaymentsMonoValue as="span">{queueSuccess.blockedReasonCode}</PaymentsMonoValue>
               </p>
             </div>
           </details>

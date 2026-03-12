@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { moneyEvents, payoutQuotes, payoutRequests } from '@/db/schema';
@@ -27,6 +27,13 @@ export type OrganizerPayoutListItem = {
   requestedAmountMinor: number;
   currentRequestedAmountMinor: number;
   maxWithdrawableAmountMinor: number;
+};
+
+export type OrganizerPayoutPagination = {
+  page: number;
+  pageSize: number;
+  total: number;
+  pageCount: number;
 };
 
 export type OrganizerPayoutLifecycleEvent = {
@@ -180,8 +187,13 @@ function extractReasonCode(payload: Record<string, unknown>): string | null {
 export async function listOrganizerPayouts(params: {
   organizerId: string;
   limit?: number;
+  offset?: number;
 }): Promise<OrganizerPayoutListItem[]> {
   const limit = params.limit ?? 25;
+  const offset =
+    typeof params.offset === 'number' && Number.isFinite(params.offset) && params.offset > 0
+      ? Math.trunc(params.offset)
+      : 0;
 
   const rows = await db
     .select({
@@ -205,6 +217,7 @@ export async function listOrganizerPayouts(params: {
       ),
     )
     .orderBy(desc(payoutRequests.requestedAt), desc(payoutRequests.createdAt))
+    .offset(offset)
     .limit(limit);
 
   return rows.map((row) => ({
@@ -221,6 +234,26 @@ export async function listOrganizerPayouts(params: {
     }),
     maxWithdrawableAmountMinor: row.maxWithdrawableAmountMinor,
   }));
+}
+
+export async function countOrganizerPayouts(params: {
+  organizerId: string;
+}): Promise<number> {
+  const [row] = await db
+    .select({
+      count: sql<number>`count(*)::int`,
+    })
+    .from(payoutRequests)
+    .innerJoin(payoutQuotes, eq(payoutRequests.payoutQuoteId, payoutQuotes.id))
+    .where(
+      and(
+        eq(payoutRequests.organizerId, params.organizerId),
+        isNull(payoutRequests.deletedAt),
+        isNull(payoutQuotes.deletedAt),
+      ),
+    );
+
+  return row?.count ?? 0;
 }
 
 export async function getOrganizerPayoutDetail(params: {
