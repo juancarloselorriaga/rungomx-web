@@ -1,4 +1,309 @@
 {
-  "title": "Help Center",
-  "description": "Find answers to your questions. Help center."
+  "hero": {
+    "badge": "Help Center",
+    "title": "Find practical help before you contact support",
+    "description": "Use this page to resolve common questions about event pages, registrations, results, rankings, payments, and account access with guidance tied to real RunGoMX flows.",
+    "primaryCta": "Browse events",
+    "secondaryCta": "Contact support"
+  },
+  "categories": {
+    "eyebrow": "Quick answers",
+    "title": "Start with the topic that matches your question",
+    "description": "These categories point to the most dependable answers we can give from the public site today. They are intentionally curated, not a giant knowledge base.",
+    "items": {
+      "registrations": {
+        "title": "Registrations",
+        "description": "Check whether registration is open and where to continue or review a registration that already started.",
+        "linkLabel": "Jump to registration answers"
+      },
+      "eventInformation": {
+        "title": "Event information",
+        "description": "See where schedules, participant instructions, pricing context, and organizer-provided details usually live.",
+        "linkLabel": "Jump to event info answers"
+      },
+      "results": {
+        "title": "Results",
+        "description": "Find official result pages and understand why a result may still change after review.",
+        "linkLabel": "Jump to results answers"
+      },
+      "rankings": {
+        "title": "Rankings",
+        "description": "Learn where standings appear and why rankings can move after new or corrected results are published.",
+        "linkLabel": "Jump to rankings answers"
+      },
+      "payments": {
+        "title": "Payments and confirmations",
+        "description": "Get practical guidance when a payment, confirmation, or registration state does not look right.",
+        "linkLabel": "Jump to payment answers"
+      },
+      "accountBasics": {
+        "title": "Account basics",
+        "description": "Use the right sign-in route and understand how account access connects to registration management.",
+        "linkLabel": "Jump to account answers"
+      }
+    }
+  },
+  "faqGroups": {
+    "eyebrow": "Frequently asked questions",
+    "title": "Grounded answers for the flows people ask about most",
+    "description": "These answers stay close to what the platform already supports. When a question depends on organizer policy or a specific registration record, we say that directly.",
+    "groups": {
+      "registrations": {
+        "title": "Registrations",
+        "description": "Registration questions usually start on the public event page, then continue in the account flow once someone signs in.",
+        "items": {
+          "checkStatus": {
+            "question": "How do I know whether registration is open for an event?",
+            "paragraphs": [
+              "Start from the event page. RunGoMX shows the registration state there, including whether registration is open, closed, not open yet, or paused for that specific event.",
+              "That same event view is also the right place to review the current edition, date context, and any organizer-provided instructions before you begin."
+            ],
+            "links": [
+              {
+                "href": "/events",
+                "label": "Browse events"
+              }
+            ]
+          },
+          "continueRegistration": {
+            "question": "Where do I continue a started registration or review my registration details?",
+            "paragraphs": [
+              "Sign in with the same account used for the registration, then open My Registrations. That is the real flow for continuing an in-progress registration and reviewing registration details that are already attached to your account.",
+              "If a registration should exist but you cannot find it, contact support with the event name and any registration identifier you have."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Sign in"
+              },
+              {
+                "href": "/dashboard/my-registrations",
+                "label": "My registrations"
+              }
+            ]
+          }
+        }
+      },
+      "eventInformation": {
+        "title": "Event information",
+        "description": "Public event pages are the starting point for practical event details, but some policies still belong to the organizer.",
+        "items": {
+          "findEventDetails": {
+            "question": "Where should I look for event details, schedules, and participant instructions?",
+            "paragraphs": [
+              "Use the event listing and the event page first. That is where runners should expect the most current public event information, including registration context and organizer-facing details already published to participants.",
+              "If a detail is missing or unclear, the event page is still the best starting point before you escalate to support."
+            ],
+            "links": [
+              {
+                "href": "/events",
+                "label": "Go to events"
+              }
+            ]
+          },
+          "organizerPolicies": {
+            "question": "Who controls pricing, waivers, cancellations, or other event-specific rules?",
+            "paragraphs": [
+              "Organizers usually control those event-specific decisions. RunGoMX powers the platform experience, but pricing, waivers, cancellation terms, and race-day rules can still come from the organizer responsible for that event.",
+              "If something on the platform appears inconsistent with the event context, contact support with the event and registration details so the issue can be reviewed."
+            ],
+            "links": [
+              {
+                "href": "/contact",
+                "label": "Contact support"
+              }
+            ]
+          }
+        }
+      },
+      "results": {
+        "title": "Results",
+        "description": "Results are public sports information, and they can still be updated when an organizer or timing workflow publishes changes.",
+        "items": {
+          "findOfficialResults": {
+            "question": "Where do I find official results on RunGoMX?",
+            "paragraphs": [
+              "Use the public results area. It is the right starting point for official result pages and related event result views published through the platform.",
+              "If you already know the event, check the relevant result page for the most recent published state."
+            ],
+            "links": [
+              {
+                "href": "/results",
+                "label": "View results"
+              }
+            ]
+          },
+          "unexpectedResult": {
+            "question": "Why might a result look different from what I expected?",
+            "paragraphs": [
+              "Results can change when corrections, classifications, or organizer-provided timing data are reviewed and republished. That means a public result is not always frozen the first time it appears.",
+              "If something still looks wrong after checking the published result page, contact support with the event name and participant context so the request can be routed correctly."
+            ],
+            "links": [
+              {
+                "href": "/results",
+                "label": "Check results"
+              },
+              {
+                "href": "/contact",
+                "label": "Report an issue"
+              }
+            ]
+          }
+        }
+      },
+      "rankings": {
+        "title": "Rankings",
+        "description": "Rankings depend on published results, so the ranking view and the results view often need to be checked together.",
+        "items": {
+          "howRankingsUpdate": {
+            "question": "How do rankings get updated?",
+            "paragraphs": [
+              "Rankings reflect the result data currently published on the platform. When new results are added or an existing result is corrected, rankings can change as that public information changes.",
+              "If you are checking a recent performance, review both the ranking view and the related result page before assuming something is missing."
+            ],
+            "links": [
+              {
+                "href": "/rankings",
+                "label": "View rankings"
+              },
+              {
+                "href": "/results",
+                "label": "View results"
+              }
+            ]
+          },
+          "missingRanking": {
+            "question": "What should I do if I am missing from a ranking?",
+            "paragraphs": [
+              "First confirm that the relevant result is already published and looks correct. Rankings depend on that published event result context, so a missing or updated result can affect the ranking view.",
+              "If the result is already present and the ranking still looks wrong, contact support with the event and participant details so the record can be reviewed."
+            ],
+            "links": [
+              {
+                "href": "/rankings",
+                "label": "Check rankings"
+              },
+              {
+                "href": "/contact",
+                "label": "Contact support"
+              }
+            ]
+          }
+        }
+      },
+      "payments": {
+        "title": "Payments and confirmations",
+        "description": "The safest answer is usually to verify the registration state first, then escalate with the exact transaction context if needed.",
+        "items": {
+          "paymentNoConfirmation": {
+            "question": "I started a payment or registration but did not get the confirmation I expected. What should I check first?",
+            "paragraphs": [
+              "Sign in and review My Registrations first. That is where you can confirm whether a registration is still in progress, waiting on payment, or already attached to your account.",
+              "If the state still does not make sense, contact support with the event name, the email used for the registration, and any ticket code or registration identifier you have."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Sign in"
+              },
+              {
+                "href": "/dashboard/my-registrations",
+                "label": "Review my registrations"
+              }
+            ]
+          },
+          "refundsCharges": {
+            "question": "Who handles refunds, charge questions, or payment disputes?",
+            "paragraphs": [
+              "Those outcomes can depend on organizer rules, the payment context, and the state of the registration. RunGoMX does not treat every payment question as a simple self-service action.",
+              "Review the event context first, then contact support with the registration and payment details if something still looks wrong."
+            ],
+            "links": [
+              {
+                "href": "/events",
+                "label": "Review event pages"
+              },
+              {
+                "href": "/contact",
+                "label": "Get payment help"
+              }
+            ]
+          }
+        }
+      },
+      "accountBasics": {
+        "title": "Account basics",
+        "description": "Public pages are open to everyone, but registration management and account-linked details live behind sign-in.",
+        "items": {
+          "needAccount": {
+            "question": "Do I need an account to use RunGoMX?",
+            "paragraphs": [
+              "You can browse public pages like events, results, rankings, and help without signing in. You do need the right account context to manage registrations and see account-linked registration details.",
+              "If you are trying to continue a registration or view your registration history, start with the sign-in flow tied to the account you used."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Sign in"
+              },
+              {
+                "href": "/sign-up",
+                "label": "Create account"
+              }
+            ]
+          },
+          "accessProblem": {
+            "question": "What if I cannot access the account connected to my registration?",
+            "paragraphs": [
+              "Start from the public sign-in page so you are using the correct account entry point. If you still cannot reach the registration tied to your event activity, contact support with the event name, participant name, and the email you may have used.",
+              "That context helps the team identify the right record without guessing."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Go to sign in"
+              },
+              {
+                "href": "/contact",
+                "label": "Contact support"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "cta": {
+    "title": "Still need help?",
+    "description": "Use the contact page and include the event name, the email tied to the account if you know it, and any registration or ticket identifier so the request can be routed faster.",
+    "primaryActionLabel": "Go to contact"
+  },
+  "relatedLinks": {
+    "eyebrow": "Helpful links",
+    "title": "Go straight to the main public surfaces",
+    "description": "If your question is really about a page or record, these links are usually the fastest next step.",
+    "items": {
+      "events": {
+        "href": "/events",
+        "title": "Events",
+        "description": "Browse public event pages and review registration status or organizer-provided event details."
+      },
+      "results": {
+        "href": "/results",
+        "title": "Results",
+        "description": "Find official result pages and verify the latest published state for an event."
+      },
+      "rankings": {
+        "href": "/rankings",
+        "title": "Rankings",
+        "description": "Review public standings that reflect currently published result data."
+      },
+      "home": {
+        "href": "/",
+        "title": "Homepage",
+        "description": "Return to the public RunGoMX homepage and start again from the main navigation."
+      }
+    }
+  }
 }

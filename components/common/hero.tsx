@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
+import { Link } from '@/i18n/navigation';
 import { cva, type VariantProps } from 'class-variance-authority';
-import Link from 'next/link';
 import * as React from 'react';
 
 import { Badge, type BadgeProps } from './badge';
@@ -51,6 +51,8 @@ export interface HeroAction {
   href: string;
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
 }
+
+type LocalizedLinkHref = React.ComponentProps<typeof Link>['href'];
 
 export interface HeroProps
   extends React.HTMLAttributes<HTMLElement>,
@@ -134,7 +136,7 @@ export function Hero({
                   size="lg"
                   asChild
                 >
-                  <Link href={action.href}>{action.label}</Link>
+                  <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
                 </Button>
               ))}
             </div>

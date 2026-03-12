@@ -1,17 +1,18 @@
 {
   "sections": {
-    "about": "Acerca de",
-    "resources": "Recursos",
+    "about": "RunGoMX",
+    "resources": "Soporte",
     "legal": "Legal",
-    "connect": "Conectar"
+    "connect": "Confianza"
   },
   "links": {
-    "aboutUs": "Nosotros",
+    "aboutUs": "Acerca de",
     "contact": "Contacto",
-    "helpCenter": "Centro de ayuda",
-    "privacy": "Política de privacidad",
-    "terms": "Términos de servicio"
+    "helpCenter": "Ayuda",
+    "privacy": "Privacidad",
+    "terms": "Términos"
   },
-  "connectText": "Mantente actualizado con nuestras últimas noticias y actualizaciones.",
+  "companyText": "Encuentra próximos eventos, resultados oficiales e información clara para participantes en un solo lugar.",
+  "trustLine": "Hecho para participación real en eventos y resultados oficiales que los corredores puedan verificar.",
   "copyright": "© {year} RunGoMX. Todos los derechos reservados."
 }
