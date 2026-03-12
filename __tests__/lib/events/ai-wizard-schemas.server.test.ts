@@ -45,7 +45,7 @@ describe('ai wizard patch schema', () => {
         },
         {
           code: 'RECOMMEND_FAQ',
-          stepId: 'faq',
+          stepId: 'content',
           label: 'Add FAQ copy for common participant questions.',
           severity: 'optional',
         },
@@ -58,6 +58,11 @@ describe('ai wizard patch schema', () => {
         },
       ],
       markdownOutputs: [
+        {
+          domain: 'faq',
+          title: 'Packet pickup answer',
+          contentMarkdown: 'Packet pickup is available on Friday from 4-8 PM.',
+        },
         {
           domain: 'website',
           title: 'Overview copy',
@@ -107,6 +112,32 @@ describe('ai wizard patch schema', () => {
         {
           intent: 'Go to unknown step',
           stepId: 'core.details',
+        },
+      ],
+    });
+
+    expect(parsed.success).toBe(false);
+  });
+
+  it('rejects markdown previews that do not exactly match markdown-bearing ops', () => {
+    const parsed = eventAiWizardPatchSchema.safeParse({
+      title: 'Invalid markdown preview',
+      summary: 'Preview must match what apply writes',
+      ops: [
+        {
+          type: 'create_faq_item',
+          editionId: EDITION_ID,
+          data: {
+            question: 'Where is packet pickup?',
+            answerMarkdown: 'Packet pickup is available on Friday from 4-8 PM.',
+          },
+        },
+      ],
+      markdownOutputs: [
+        {
+          domain: 'faq',
+          title: 'FAQ answer',
+          contentMarkdown: 'Packet pickup is available all weekend.',
         },
       ],
     });

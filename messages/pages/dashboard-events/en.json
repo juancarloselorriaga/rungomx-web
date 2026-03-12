@@ -28,7 +28,17 @@
       "backToList": "Back to organizations",
       "nameLabel": "Organization name",
       "namePlaceholder": "My Race Organization",
-      "slugLabel": "URL slug"
+      "slugLabel": "URL slug",
+      "slugPlaceholder": "my-organization",
+      "seriesCount": "{count, plural, one {# series} other {# series}}",
+      "errors": {
+        "createFailed": "Failed to create organization",
+        "required": "Organization required",
+        "slugTaken": "This organization URL is already in use. Try a different slug.",
+        "forbidden": "You don't have permission to create an organization here.",
+        "unauthenticated": "Your session expired. Sign in again and try once more.",
+        "validationFailed": "Review the organization details and try again."
+      }
     },
     "event": {
       "title": "Event details",
@@ -41,19 +51,36 @@
       "seriesNameLabel": "Series name",
       "seriesNamePlaceholder": "Ultra Trail Mexico",
       "seriesSlugLabel": "Series URL slug",
+      "seriesSlugPlaceholder": "ultra-trail-mx",
       "sportTypeLabel": "Sport type",
       "editionDetails": "Edition details",
       "editionLabelLabel": "Edition label",
       "editionSlugLabel": "Edition URL slug",
       "descriptionLabel": "Event description",
       "descriptionPlaceholder": "Share what makes this event special...",
+      "descriptionHelper": "A short draft is enough for now. Cover the format, location, and what makes it special. Example: \"Trail half marathon in Valle de Bravo with forest routes, live timing, and a family-friendly finish festival.\"",
+      "aiContextTrigger": "Add AI context",
+      "aiContextDescription": "Optional for Pro. Share organizer-only notes so the wizard can draft with better context later.",
+      "aiContextLabel": "Organizer brief for AI",
+      "aiContextPlaceholder": "Example: Boutique trail weekend in Valle de Bravo for intermediate runners. We want a premium feel, partner activations, camping, and polished website copy.",
+      "aiContextHelper": "Internal notes are fine. This field is not public and can be messy.",
       "dateLabel": "Event date",
       "clearDate": "Clear",
       "locationLabel": "Event location",
       "cityLabel": "City",
       "cityPlaceholder": "Mexico City",
       "stateLabel": "State",
-      "statePlaceholder": "CDMX"
+      "statePlaceholder": "CDMX",
+      "errors": {
+        "seriesCreateFailed": "We couldn't create the event series. Try again in a moment.",
+        "editionCreateFailed": "We couldn't create the event draft. Try again in a moment.",
+        "seriesSlugTaken": "This series URL is already in use. Choose a different slug.",
+        "editionSlugTaken": "This edition URL is already in use. Choose a different slug.",
+        "editionLabelTaken": "This edition label is already being used in the selected series.",
+        "forbidden": "You don't have permission to create this event.",
+        "unauthenticated": "Your session expired. Sign in again and try once more.",
+        "validationFailed": "Review the event details and try again."
+      }
     }
   },
   "registrationCount": "registrations",

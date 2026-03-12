@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { headers } from 'next/headers';
+import { z } from 'zod';
 
 import { db } from '@/db';
-import { eventDistances } from '@/db/schema';
+import { addOnOptions, addOns, eventDistances, eventEditions, pricingTiers } from '@/db/schema';
 import { requireAuthenticatedUser } from '@/lib/auth/guards';
+import { createAuditLog, getRequestContext } from '@/lib/audit';
 import {
   createDistance,
   createFaqItem,
@@ -14,17 +17,19 @@ import {
 } from '@/lib/events/actions';
 import { eventAiWizardApplyRequestSchema } from '@/lib/events/ai-wizard/schemas';
 import { evaluateAiWizardPatchSafety } from '@/lib/events/ai-wizard/safety';
-import { createAddOn, createAddOnOption } from '@/lib/events/add-ons/actions';
 import { createPricingTier } from '@/lib/events/pricing/actions';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { createQuestion } from '@/lib/events/questions/actions';
 import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
-import { canUserAccessSeries } from '@/lib/organizations/permissions';
+import { canUserAccessSeries, hasOrgPermission } from '@/lib/organizations/permissions';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { findConflictingPricingTier } from '@/lib/events/pricing/contracts';
 
 export const maxDuration = 30;
+
+type EventAiWizardApplyPatch = z.infer<typeof eventAiWizardApplyRequestSchema>['patch'];
 
 type PolicyState = {
   refundsAllowed: boolean;
@@ -43,6 +48,28 @@ function proFeatureErrorToResponse(error: ProFeatureAccessError) {
     return NextResponse.json({ code: 'FEATURE_DISABLED' }, { status: 503 });
   }
   return NextResponse.json({ code: 'PRO_REQUIRED' }, { status: 403 });
+}
+
+function canUseAssistantWithMembership(role: Parameters<typeof hasOrgPermission>[0]) {
+  return (
+    hasOrgPermission(role, 'canEditEventConfig') &&
+    hasOrgPermission(role, 'canEditRegistrationSettings')
+  );
+}
+
+function mapApplyFailure(code?: string) {
+  switch (code) {
+    case 'FORBIDDEN':
+      return { status: 403, code: 'READ_ONLY' as const };
+    case 'VALIDATION_ERROR':
+    case 'DATE_OVERLAP':
+    case 'INVALID_DISTANCE':
+    case 'SLUG_TAKEN':
+    case 'NOT_FOUND':
+      return { status: 400, code: 'INVALID_PATCH' as const };
+    default:
+      return { status: 503, code: 'RETRY_LATER' as const };
+  }
 }
 
 function resolvePriceCents(data: { priceCents?: number; price?: number }): number {
@@ -100,6 +127,132 @@ function initializePolicyState(event: Awaited<ReturnType<typeof getEventEditionD
   };
 }
 
+async function preflightPatch(
+  editionId: string,
+  patch: EventAiWizardApplyPatch,
+  event: NonNullable<Awaited<ReturnType<typeof getEventEditionDetail>>>,
+) {
+  const pricingDistanceIds: string[] = Array.from(
+    new Set(
+      patch.ops
+        .filter(
+          (
+            op,
+          ): op is Extract<EventAiWizardApplyPatch['ops'][number], { type: 'create_pricing_tier' }> =>
+            op.type === 'create_pricing_tier',
+        )
+        .map((op) => op.distanceId),
+    ),
+  );
+
+  const tiersByDistanceId = new Map<
+    string,
+    Array<{
+      id: string;
+      distanceId: string;
+      label: string | null;
+      startsAt: Date | null;
+      endsAt: Date | null;
+      priceCents: number;
+      currency: string;
+      sortOrder: number;
+    }>
+  >();
+
+  if (pricingDistanceIds.length) {
+    const existingTiers = await db.query.pricingTiers.findMany({
+      where: and(inArray(pricingTiers.distanceId, pricingDistanceIds), isNull(pricingTiers.deletedAt)),
+    });
+    for (const tier of existingTiers) {
+      const existing = tiersByDistanceId.get(tier.distanceId) ?? [];
+      existing.push({
+        id: tier.id,
+        distanceId: tier.distanceId,
+        label: tier.label,
+        startsAt: tier.startsAt,
+        endsAt: tier.endsAt,
+        priceCents: tier.priceCents,
+        currency: tier.currency,
+        sortOrder: tier.sortOrder,
+      });
+      tiersByDistanceId.set(tier.distanceId, existing);
+    }
+  }
+
+  for (let i = 0; i < patch.ops.length; i += 1) {
+    const op = patch.ops[i];
+
+    if ('editionId' in op && op.editionId !== editionId) {
+      return { status: 400, code: 'INVALID_PATCH' as const, details: { opIndex: i, reason: 'EDITION_MISMATCH' } };
+    }
+
+    if (op.type === 'update_edition') {
+      if (
+        (op.data.startsAt && !normalizeIsoDateTime(op.data.startsAt)) ||
+        (op.data.endsAt && !normalizeIsoDateTime(op.data.endsAt)) ||
+        (op.data.registrationOpensAt && !normalizeIsoDateTime(op.data.registrationOpensAt)) ||
+        (op.data.registrationClosesAt && !normalizeIsoDateTime(op.data.registrationClosesAt))
+      ) {
+        return { status: 400, code: 'INVALID_PATCH' as const, details: { opIndex: i, reason: 'INVALID_DATETIME' } };
+      }
+
+      if (op.data.slug && op.data.slug !== event.slug) {
+        const existingEdition = await db.query.eventEditions.findFirst({
+          where: and(
+            eq(eventEditions.seriesId, event.seriesId),
+            eq(eventEditions.slug, op.data.slug),
+            isNull(eventEditions.deletedAt),
+          ),
+        });
+        if (existingEdition) {
+          return { status: 400, code: 'INVALID_PATCH' as const, details: { opIndex: i, reason: 'SLUG_TAKEN' } };
+        }
+      }
+    }
+
+    if (op.type === 'create_distance' && op.data.startTimeLocal && !normalizeIsoDateTime(op.data.startTimeLocal)) {
+      return { status: 400, code: 'INVALID_PATCH' as const, details: { opIndex: i, reason: 'INVALID_DATETIME' } };
+    }
+
+    if (op.type === 'create_pricing_tier') {
+      const startsAt =
+        op.data.startsAt === undefined || op.data.startsAt === null
+          ? null
+          : normalizeLocalDateTime(op.data.startsAt);
+      const endsAt =
+        op.data.endsAt === undefined || op.data.endsAt === null
+          ? null
+          : normalizeLocalDateTime(op.data.endsAt);
+
+      if ((op.data.startsAt && !startsAt) || (op.data.endsAt && !endsAt)) {
+        return { status: 400, code: 'INVALID_PATCH' as const, details: { opIndex: i, reason: 'INVALID_DATETIME' } };
+      }
+
+      const existingTiers = tiersByDistanceId.get(op.distanceId) ?? [];
+      const conflictingTier = findConflictingPricingTier({ startsAt: startsAt ? new Date(startsAt) : null, endsAt: endsAt ? new Date(endsAt) : null }, existingTiers);
+      if (conflictingTier) {
+        return { status: 400, code: 'INVALID_PATCH' as const, details: { opIndex: i, reason: 'DATE_OVERLAP' } };
+      }
+
+      tiersByDistanceId.set(op.distanceId, [
+        ...existingTiers,
+        {
+          id: `preflight-${i}`,
+          distanceId: op.distanceId,
+          label: op.data.label ?? null,
+          startsAt: startsAt ? new Date(startsAt) : null,
+          endsAt: endsAt ? new Date(endsAt) : null,
+          priceCents: resolvePriceCents(op.data),
+          currency: op.data.currency ?? 'MXN',
+          sortOrder: existingTiers.length,
+        },
+      ]);
+    }
+  }
+
+  return null;
+}
+
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = eventAiWizardApplyRequestSchema.safeParse(body);
@@ -123,16 +276,19 @@ export async function POST(req: Request) {
     throw error;
   }
 
-  const { editionId, patch } = parsed.data;
+  const { editionId, locale: requestLocale, patch } = parsed.data;
 
   const event = await getEventEditionDetail(editionId);
   if (!event) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
 
-  const canAccess = await canUserAccessSeries(authContext.user.id, event.seriesId);
-  if (!canAccess) {
+  const membership = await canUserAccessSeries(authContext.user.id, event.seriesId);
+  if (!membership) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+  if (!canUseAssistantWithMembership(membership.role)) {
+    return NextResponse.json({ code: 'READ_ONLY' }, { status: 403 });
   }
 
   const applyRateLimit = await checkRateLimit(`${authContext.user.id}:${editionId}`, 'user', {
@@ -225,8 +381,21 @@ export async function POST(req: Request) {
     }
   }
 
+  const preflightFailure = await preflightPatch(editionId, patch, event);
+  if (preflightFailure) {
+    return NextResponse.json(
+      {
+        code: preflightFailure.code,
+        details: preflightFailure.details,
+        applied: [],
+      },
+      { status: preflightFailure.status },
+    );
+  }
+
   const applied: Array<{ opIndex: number; type: string; result?: unknown }> = [];
   let policyState = initializePolicyState(event);
+  const requestContext = await getRequestContext(await headers());
 
   function opError(status: number, payload: Record<string, unknown>) {
     return NextResponse.json({ ...payload, applied }, { status });
@@ -295,9 +464,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -333,9 +503,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -348,9 +519,10 @@ export async function POST(req: Request) {
       const result = await updateDistancePrice({ distanceId: op.distanceId, priceCents });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -383,9 +555,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -401,9 +574,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -420,9 +594,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -444,9 +619,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -455,7 +631,7 @@ export async function POST(req: Request) {
     }
 
     if (op.type === 'create_add_on') {
-      const createAddOnResult = await createAddOn({
+      const addOnPayload = {
         editionId,
         distanceId: op.data.distanceId ?? null,
         title: op.data.title,
@@ -464,17 +640,8 @@ export async function POST(req: Request) {
         deliveryMethod: op.data.deliveryMethod ?? 'pickup',
         isActive: op.data.isActive ?? true,
         sortOrder: op.data.sortOrder ?? 0,
-      });
-
-      if (!createAddOnResult.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: createAddOnResult.code, message: createAddOnResult.error },
-        });
-      }
-
-      const createOptionResult = await createAddOnOption({
-        addOnId: createAddOnResult.data.id,
+      };
+      const optionPayload = {
         label: op.data.optionLabel ?? 'Standard',
         priceCents: resolvePriceCents({
           priceCents: op.data.optionPriceCents,
@@ -483,38 +650,85 @@ export async function POST(req: Request) {
         maxQtyPerOrder: op.data.optionMaxQtyPerOrder ?? 5,
         isActive: true,
         sortOrder: 0,
-      });
+      };
 
-      if (!createOptionResult.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: {
-            opIndex: i,
-            code: createOptionResult.code,
-            message: createOptionResult.error,
-            addOnId: createAddOnResult.data.id,
+      const createdAddOnBundle = await db.transaction(async (tx) => {
+        const [newAddOn] = await tx.insert(addOns).values(addOnPayload).returning();
+        const addOnAudit = await createAuditLog(
+          {
+            organizationId: membership.organizationId,
+            actorUserId: authContext.user.id,
+            action: 'add_on.create',
+            entityType: 'add_on',
+            entityId: newAddOn.id,
+            after: {
+              title: addOnPayload.title,
+              type: addOnPayload.type,
+              deliveryMethod: addOnPayload.deliveryMethod,
+              distanceId: addOnPayload.distanceId,
+            },
+            request: requestContext,
           },
+          tx,
+        );
+        if (!addOnAudit.ok) {
+          throw new Error('ADD_ON_AUDIT_FAILED');
+        }
+
+        const [newOption] = await tx
+          .insert(addOnOptions)
+          .values({
+            addOnId: newAddOn.id,
+            ...optionPayload,
+            optionMeta: null,
+          })
+          .returning();
+        const optionAudit = await createAuditLog(
+          {
+            organizationId: membership.organizationId,
+            actorUserId: authContext.user.id,
+            action: 'add_on_option.create',
+            entityType: 'add_on_option',
+            entityId: newOption.id,
+            after: { label: optionPayload.label, priceCents: optionPayload.priceCents, addOnId: newAddOn.id },
+            request: requestContext,
+          },
+          tx,
+        );
+        if (!optionAudit.ok) {
+          throw new Error('ADD_ON_OPTION_AUDIT_FAILED');
+        }
+
+        return [newAddOn, newOption] as const;
+      }).catch(() => null);
+
+      if (!createdAddOnBundle) {
+        return opError(503, {
+          code: 'RETRY_LATER',
+          details: { opIndex: i, operation: op.type },
         });
       }
+      const [createdAddOn, createdOption] = createdAddOnBundle;
 
       applied.push({
         opIndex: i,
         type: op.type,
         result: {
-          addOn: createAddOnResult.data,
-          option: createOptionResult.data,
+          addOn: createdAddOn,
+          option: createdOption,
         },
       });
       continue;
     }
 
     if (op.type === 'append_website_section_markdown') {
-      const locale = op.data.locale ?? 'es';
+      const locale = op.data.locale ?? requestLocale ?? 'es';
       const contentResult = await getWebsiteContent({ editionId, locale });
       if (!contentResult.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: contentResult.code, message: contentResult.error },
+        const failure = mapApplyFailure(contentResult.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -553,9 +767,10 @@ export async function POST(req: Request) {
       });
 
       if (!updateResult.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: updateResult.code, message: updateResult.error },
+        const failure = mapApplyFailure(updateResult.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 
@@ -595,9 +810,10 @@ export async function POST(req: Request) {
       });
 
       if (!result.ok) {
-        return opError(400, {
-          error: 'OP_FAILED',
-          details: { opIndex: i, code: result.code, message: result.error },
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
         });
       }
 

@@ -64,14 +64,308 @@
       "publish": "Publish the event to make it visible."
     }
   },
+  "wizardShell": {
+    "eyebrow": "Setup wizard",
+    "title": "Build your event step by step",
+    "description": "Stay focused on the current step, move forward with confidence, and switch back to the full editor only when you choose to.",
+    "progress": {
+      "label": "Current progress",
+      "current": "Step {current} of {total}",
+      "step": "Active step",
+      "completedLabel": "Completed",
+      "completedValue": "of {total} steps",
+      "blockersValue": "{publish, plural, =0 {No publish blockers} one {# publish blocker} other {# publish blockers}}{required, plural, =0 {} one { · # required step still pending} other { · # required steps still pending}}",
+      "skippedValue": "{count, plural, =0 {No optional steps paused} one {# optional step paused} other {# optional steps paused}}"
+    },
+    "sidebar": {
+      "title": "Wizard steps",
+      "required": "Required",
+      "optional": "Optional",
+      "complete": "Complete",
+      "skipped": "Skipped"
+    },
+    "steps": {
+      "basics": "Event basics",
+      "distances": "Distances",
+      "pricing": "Pricing",
+      "registration": "Registration",
+      "policies": "Policies & waivers",
+      "content": "Participant content",
+      "extras": "Questions & extras",
+      "review": "Review & publish"
+    },
+    "stepDescriptions": {
+      "basics": "Define the essential event identity, schedule, and location details that anchor the rest of setup.",
+      "distances": "Create the distances runners can register for and configure how capacity should be managed.",
+      "pricing": "Make sure every distance has a usable pricing structure before you move toward publishing.",
+      "registration": "Set the registration window and control whether registrations are currently paused or active.",
+      "policies": "Review organizer-facing policy settings and the participant waivers that will appear in registration.",
+      "content": "Shape the participant-facing story with FAQ answers and rich website content.",
+      "extras": "Add registration questions and optional extras only if they add real value for your event.",
+      "review": "Check blockers, revisit skipped optional work, and control when the event becomes visible."
+    },
+    "navigation": {
+      "previous": "Previous",
+      "next": "Next",
+      "skip": "Skip for now",
+      "exit": "Exit wizard"
+    },
+    "footer": {
+      "description": "This shell sets the foundation for the full numbered wizard. Later stories will wire each step body into this flow.",
+      "completeRequired": "Complete {step} before moving forward.",
+      "optionalHint": "You can complete this step now or skip it and revisit it later.",
+      "ready": "This step is in good shape. Continue when you're ready."
+    },
+    "placeholder": {
+      "eyebrow": "Step scaffold",
+      "description": "{step} will be connected to its dedicated editor surface in the next wizard stories.",
+      "returnToBasics": "Return to basics"
+    },
+    "review": {
+      "finishLineLabel": "Finish line",
+      "readyTitle": "This event is ready for publish review",
+      "readyDescription": "Required setup is complete. Review visibility and publish controls below when you are ready to make the event visible.",
+      "blockedTitle": "Resolve these blockers before publishing",
+      "blockedDescription": "{publish, plural, =0 {No publish blockers remain.} one {# publish blocker remains.} other {# publish blockers remain.}} {required, plural, =0 {} one {# setup requirement still needs attention.} other {# setup requirements still need attention.}}",
+      "serverAuthority": "Final publish checks remain server-authoritative. The controls below confirm the real backend state before visibility changes.",
+      "goToFirstBlocker": "Fix first blocker",
+      "openPublishControls": "Open publish controls",
+      "publishBadge": "Publish blocker",
+      "requiredBadge": "Required setup",
+      "recommendationBadge": "Recommended",
+      "goToStep": "Go to {step}",
+      "blockersTitle": "Required blockers",
+      "blockersDescription": "These items must be resolved before publish readiness can be trusted.",
+      "noBlockers": "No blockers remain. The event is structurally ready for publish review.",
+      "recommendationsTitle": "Recommended polish",
+      "recommendationsDescription": "These items are optional, but they improve clarity and participant confidence.",
+      "noRecommendations": "No extra recommendations right now.",
+      "skippedTitle": "Skipped steps",
+      "skippedDescription": "Optional steps you intentionally skipped stay visible here so they are easy to revisit.",
+      "noSkipped": "No optional steps have been skipped.",
+      "skippedHelp": "Skipped steps do not block publish, but they remain worth revisiting if you want a more complete participant experience."
+    }
+  },
   "assistant": {
     "title": "Setup assistant",
     "description": "Describe your event in one message. I’ll propose changes you can review and apply.",
     "contract": "I only suggest updates. Nothing changes until you apply each proposal.",
     "historyLabel": "Setup assistant conversation",
     "composer": {
+      "sectionTitle": "What do you want help with in this step?",
       "label": "Message for setup assistant",
-      "hint": "Include date, city, distances, and pricing so I can draft accurate updates."
+      "hint": "Describe what you want for this step and I will propose reviewable changes. Rough notes are fine.",
+      "briefHint": "Use this box for what you want to solve right now. Rough notes are fine. Saved event notes stay above.",
+      "savedBriefHint": "The assistant already has your saved event notes. Add any rough extra details you want for this step here.",
+      "roughNotesTitle": "Paste rough notes. I will turn them into a clear proposal.",
+      "roughNotesExample": "Examples: \"10K at night in Guadalajara, first-timers welcome, music at the finish\" or \"Need FAQ and site copy, but keep logistics grounded in confirmed details.\""
+    },
+    "inline": {
+      "title": "AI assistant for {step}",
+      "description": "Get help for this step without leaving this setup flow.",
+      "markdownBadge": "Ready-to-publish copy",
+      "markdownHint": "Use it to leave this section ready to publish."
+    },
+    "mobile": {
+      "open": "Open assistant",
+      "stepHint": "Get help with {step} without losing your place."
+    },
+    "desktop": {
+      "open": "Open assistant",
+      "stepHint": "Keep the editor comfortable and open a wider AI workspace for {step} only when you need it.",
+      "workspaceTitle": "AI assistant for {step}",
+      "workspaceDescription": "Use this expanded workspace to review proposals, refine prompts, and apply changes without squeezing the main editor."
+    },
+    "latestProposal": {
+      "title": "Latest proposal",
+      "description": "Review the newest AI recommendation first, then keep iterating from there.",
+      "detailsTitle": "Show proposal details",
+      "contextTitle": "Show context",
+      "supportingContextTitle": "Supporting context",
+      "supportingContextDescription": "{count, plural, =0 {See the latest request and response if you need extra context.} one {See the latest request and response plus # earlier message.} other {See the latest request and response plus # earlier messages.}}",
+      "requestLabel": "Latest request",
+      "responseLabel": "Assistant recommendation",
+      "pendingTitle": "Current exchange"
+    },
+    "progress": {
+      "analyzing": {
+        "title": "Reviewing your request",
+        "description": "Checking your notes and the current {step} setup so the next proposal stays grounded."
+      },
+      "grounding": {
+        "title": "Grounding the proposal",
+        "description": "Cross-checking saved event details, existing setup, and open blockers before drafting {step}."
+      },
+      "drafting": {
+        "title": "Drafting your next move",
+        "description": "Shaping organizer-friendly guidance for {step} before the reviewable proposal is ready."
+      },
+      "finalizing": {
+        "title": "Preparing the proposal card",
+        "description": "Packaging the final recommendation so you can review and apply it safely."
+      }
+    },
+    "fastPath": {
+      "eyebrow": "Early structure",
+      "event_description": {
+        "title": "Starting with a grounded event description",
+        "description": "I can shape the first useful draft around these pieces before the full proposal is ready.",
+        "sections": {
+          "lead": "A clear opening that frames the race in one confident paragraph.",
+          "confirmed_highlights": "Specific highlights pulled only from confirmed details and tone cues.",
+          "pending_logistics": "Logistics that should stay pending or omitted until they are confirmed."
+        }
+      },
+      "faq": {
+        "title": "Starting with a usable FAQ structure",
+        "description": "I can draft the first answers faster by organizing the FAQ around the most likely participant questions.",
+        "sections": {
+          "event_basics": "What the event is, who it is for, and the essentials participants need first.",
+          "route_and_distances": "Grounded route or distance details that are already confirmed.",
+          "registration_and_logistics": "Registration, timing, and logistics only where the current setup supports them."
+        }
+      },
+      "website_overview": {
+        "title": "Starting with a website overview scaffold",
+        "description": "I can move faster by framing the site copy around the confirmed event story before expanding it.",
+        "sections": {
+          "hero_positioning": "A grounded hero message that sets the tone without overpromising.",
+          "confirmed_experience": "Specific event qualities or race-day feel that the snapshot already supports.",
+          "what_to_confirm": "Items to keep tentative until the organizer confirms them."
+        }
+      },
+      "policy": {
+        "title": "Starting with a policy draft structure",
+        "description": "I can prepare a clearer first draft by organizing the policy into the sections participants expect.",
+        "sections": {
+          "core_rule": "The main rule or commitment participants need to understand first.",
+          "participant_responsibility": "Participant-facing responsibilities or acknowledgements stated plainly.",
+          "open_logistics": "Operational details that should remain open until they are confirmed."
+        }
+      }
+    },
+    "earlyProse": {
+      "eyebrow": "Early draft"
+    },
+    "scaffold": {
+      "eyebrow": "Proposal in progress",
+      "basics": {
+        "title": "I already know how to start this basics draft",
+        "description": "While I finish the final proposal, I can keep the work grounded around these basics decisions.",
+        "sections": {
+          "first_pass": "Start with identity and positioning updates that do not require inventing date or venue details.",
+          "confirmed_facts": "Reuse only confirmed basics such as the current title, location, timezone, and saved organizer brief.",
+          "open_points": "Leave schedule and exact venue logistics pending if they are still unconfirmed."
+        }
+      },
+      "content": {
+        "title": "I already have a content draft plan forming",
+        "description": "The final proposal is still coming, but this is the structure I am using to keep it useful and publishable.",
+        "sections": {
+          "first_pass": "Draft the most useful participant-facing section first instead of waiting for every detail.",
+          "confirmed_facts": "Anchor the copy in confirmed event details, saved notes, and localized content already on the event.",
+          "open_points": "Keep missing logistics clearly pending instead of filling them with generic promises."
+        }
+      },
+      "policies": {
+        "title": "I am structuring the policy draft already",
+        "description": "Before the final proposal arrives, this is how I am keeping the policy readable and grounded.",
+        "sections": {
+          "first_pass": "Start with the clearest participant-facing rule or waiver structure first.",
+          "confirmed_facts": "Use only the rules, constraints, and event context that are already confirmed.",
+          "open_points": "Leave operational details open if the organizer has not confirmed them yet."
+        }
+      },
+      "review": {
+        "title": "I am organizing the next publish-ready move",
+        "description": "The final proposal is still being assembled, but this is the shape I am using to keep the review helpful.",
+        "sections": {
+          "first_pass": "Prioritize the most useful blocker fix or participant-copy improvement first.",
+          "confirmed_facts": "Base the recommendation on current blockers, saved notes, and existing event content.",
+          "open_points": "Keep unresolved logistics visible instead of hiding them behind polished filler."
+        }
+      },
+      "generic": {
+        "title": "I am turning this into a grounded first pass",
+        "description": "The final proposal is still loading, but the response is already being organized around safe, useful value.",
+        "sections": {
+          "first_pass": "Start with the smallest useful draft the current step can support safely.",
+          "confirmed_facts": "Lean on confirmed event details and saved organizer context before making claims.",
+          "open_points": "Keep unknowns visible so the proposal stays honest and reviewable."
+        }
+      }
+    },
+    "latency": {
+      "slow": {
+        "title": "Still shaping a grounded proposal",
+        "description": "This request needs a little more time because I am cross-checking your event details before I suggest anything."
+      },
+      "verySlow": {
+        "title": "Taking extra care with the final proposal",
+        "description": "I am still working through your notes and confirmed event data so the recommendation stays useful and safe to apply."
+      }
+    },
+    "archive": {
+      "title": "Earlier conversation",
+      "description": "{count, plural, one {# earlier message} other {# earlier messages}}",
+      "expand": "Show history",
+      "collapse": "Hide history"
+    },
+    "continuity": {
+      "eyebrow": "Your thread is still here",
+      "title": "I am still carrying your latest proposal from {step}",
+      "description": "If you moved here from a suggestion, the last useful exchange stays visible while you continue."
+    },
+    "appliedState": {
+      "eyebrow": "Changes already applied",
+      "revealEditor": "See them in the editor"
+    },
+    "suggestions": {
+      "basics": {
+        "draftFromBrief": "Use my rough notes to start this event.",
+        "suggestStrongerPositioning": "Make the title and summary feel stronger.",
+        "reviewMostImportantMissingDetails": "Tell me the most important basics still missing."
+      },
+      "distances": {
+        "createDistanceLineup": "Use my notes to suggest the distance lineup.",
+        "suggestCommonDistanceSet": "What distance mix would fit this event best?",
+        "reviewMissingDistances": "Review what is still missing."
+      },
+      "pricing": {
+        "draftPricingStructure": "Suggest realistic pricing for this event.",
+        "proposeMarketReadyPricing": "Suggest prices that feel realistic for this event.",
+        "fixNextPricingBlocker": "Tell me which pricing blocker to fix next."
+      },
+      "policies": {
+        "draftPolicyMarkdown": "Draft clear policies.",
+        "writeClearWaiverCopy": "Write a waiver that feels easy to understand.",
+        "improvePolicyClarity": "Review this step and improve the biggest clarity issue."
+      },
+      "content": {
+        "draftParticipantContent": "Draft participant content.",
+        "createFaqAndWebsiteCopy": "Draft FAQ and site copy.",
+        "improveContentClarity": "Make it clearer and more trustworthy."
+      },
+      "review": {
+        "explainCurrentBlockers": "Explain what is still blocking publish.",
+        "fixNextRequiredStep": "Help me with the next required step.",
+        "improveParticipantCopyBeforePublish": "Polish participant-facing copy before publish."
+      }
+    },
+    "brief": {
+      "savedLabel": "Saved event notes",
+      "description": "Key context the assistant can keep using across the wizard.",
+      "empty": "No saved event notes yet.",
+      "emptyHint": "Save the event vision, audience, tone, and must-haves once so the assistant can build from them later.",
+      "inputLabel": "Saved event notes",
+      "inputHint": "Edit the event notes you want the assistant to keep using throughout setup.",
+      "add": "Add notes",
+      "edit": "Edit notes",
+      "save": "Save notes",
+      "cancel": "Cancel",
+      "useForStep": "Start from saved notes",
+      "useForStepPrompt": "Use the event notes you already have and help me with {step}.",
+      "clear": "Clear notes"
     },
     "messages": {
       "user": "You",
@@ -103,12 +397,17 @@
         "date": "date",
         "location": "location",
         "label": "label",
+        "description": "description",
         "details": "details"
       }
     },
     "outputs": {
-      "title": "Drafted markdown output",
+      "title": "Proposed content",
+      "previewLabel": "Preview",
+      "participantBadge": "Participant-facing copy",
+      "structuredBadge": "Structured update",
       "domain": {
+        "description": "Description",
         "faq": "FAQ",
         "waiver": "Waiver",
         "website": "Website",
@@ -119,14 +418,28 @@
       }
     },
     "routing": {
-      "checklistTitle": "Missing fields checklist",
-      "intentTitle": "Suggested next intents",
-      "goToStep": "Go to step"
+      "checklistTitle": "What still needs attention",
+      "intentTitle": "Suggested next steps",
+      "goToStep": "Go to {step}",
+      "intentStepFallback": "Continue in {step}",
+      "stepActions": {
+        "basics": "Finish event basics",
+        "distances": "Define the distances",
+        "pricing": "Set pricing and capacity",
+        "registration": "Configure registration",
+        "policies": "Set policies and waivers",
+        "content": "Prepare participant content",
+        "extras": "Add questions and extras",
+        "review": "Review before publishing"
+      },
+      "intentLabels": {
+        "draft_website_overview": "Draft website overview"
+      }
     },
-    "placeholder": "Tell me about your event (date, city, distances, pricing)...",
+    "placeholder": "Tell me what you want to improve in this step...",
     "empty": {
-      "heading": "Try one of these:",
-      "example": "Half marathon in Guadalajara on March 15, 2026. Add a 5K and 10K. Pricing: 350 and 450 MXN."
+      "heading": "Rough notes are enough to start.",
+      "example": "For example: evening 10K in Guadalajara, friendly vibe, live music at the finish, help me write the event summary and tell me what still matters most."
     },
     "send": "Send",
     "stop": "Stop",
@@ -137,10 +450,15 @@
       "title": "Assistant error",
       "proRequired": "Setup assistant is a Pro feature.",
       "disabled": "Setup assistant is temporarily unavailable.",
+      "readOnlyTitle": "Assistant is read-only for this membership",
+      "readOnlyDescription": "You can keep working through the wizard, but only organizers with edit access can use or apply assistant proposals.",
       "rateLimited": "Too many assistant requests. Please wait a moment and try again.",
+      "requestFailedHint": "Something went wrong with the assistant request. Please try again.",
+      "invalid": "That proposal could not be applied as written. Review the step details and try again.",
+      "retryLater": "The assistant could not apply that proposal right now. Please try again in a moment.",
       "safety": {
-        "promptInjection": "Your request triggered a safety guard for prompt-injection patterns.",
-        "policyViolation": "Your request triggered a content policy safety block."
+        "promptInjection": "That request looks unrelated to event setup. Try asking for help with this step.",
+        "policyViolation": "That request can't be handled here. Try a more specific event-setup request."
       },
       "partialApplied": "Some changes were applied, but something failed. Please review your event settings.",
       "failed": "Could not apply changes. Please try again."

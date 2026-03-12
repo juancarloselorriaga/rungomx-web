@@ -14,9 +14,21 @@ export type AiWizardSafetyResult =
 
 const PROMPT_INJECTION_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /ignore (all|any|previous|prior) instructions/i, reason: 'IGNORE_INSTRUCTIONS' },
+  { pattern: /ignora(r)? (todas?|cualquier|las?|tus?) (las )?(instrucciones|indicaciones|reglas)( anteriores)?/i, reason: 'IGNORE_INSTRUCTIONS' },
+  { pattern: /ignora(r)? lo anterior/i, reason: 'IGNORE_INSTRUCTIONS' },
   { pattern: /system prompt/i, reason: 'SYSTEM_PROMPT_EXFIL' },
+  { pattern: /(prompt|instrucciones?) de sistema/i, reason: 'SYSTEM_PROMPT_EXFIL' },
   { pattern: /(jailbreak|developer mode|dan mode)/i, reason: 'JAILBREAK_ATTEMPT' },
+  { pattern: /(modo desarrollador|modo dan|hazte pasar por el sistema)/i, reason: 'JAILBREAK_ATTEMPT' },
   { pattern: /(bypass|disable).*(safety|policy|guardrail)/i, reason: 'SAFETY_BYPASS_ATTEMPT' },
+  { pattern: /(omite|desactiva|salta).*(seguridad|pol[ií]tica|guardrails?)/i, reason: 'SAFETY_BYPASS_ATTEMPT' },
+  { pattern: /(make up|invent|fabricate).*(details|facts|amenities|logistics|sponsors|parking|faq)/i, reason: 'MAKE_UP_FACTS' },
+  { pattern: /(inventa|fabrica|rellena).*(detalles|datos|amenidades|log[ií]stica|patrocinadores|estacionamiento|faq)/i, reason: 'MAKE_UP_FACTS' },
+];
+
+const NEGATED_FACT_FABRICATION_PATTERNS: RegExp[] = [
+  /(?:do not|don't|please don't)\s+(?:make up|invent|fabricate|fill in)\b/i,
+  /(?:^|[\s,.;:])(no|sin)\s+(?:quiero\s+que\s+)?(?:invent(?:es|ar|en)?|fabric(?:a|ar|an)?|rellen(?:a|ar|en)?)(?:\b|$)/i,
 ];
 
 const POLICY_BLOCK_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
@@ -39,6 +51,9 @@ function evaluatePatterns(
 ): AiWizardSafetyResult {
   for (const { pattern, reason } of patterns) {
     if (pattern.test(input)) {
+      if (reason === 'MAKE_UP_FACTS' && NEGATED_FACT_FABRICATION_PATTERNS.some((candidate) => candidate.test(input))) {
+        continue;
+      }
       return { blocked: true, category, reason };
     }
   }

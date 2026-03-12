@@ -30,14 +30,6 @@ import {
 } from '@/lib/events/actions';
 import { TERRAIN_TYPES, EVENT_VISIBILITY, type TerrainType } from '@/lib/events/constants';
 import {
-  evaluateEventWizardCompleteness,
-  getEventWizardSteps,
-  getWizardStepNavigationTarget,
-  resolveManualWizardStepTarget,
-  type EventCreationPath,
-  type EventWizardStepId,
-} from '@/lib/events/wizard/orchestrator';
-import {
   EVENT_MEDIA_BLOB_PREFIX,
   EVENT_MEDIA_IMAGE_TYPES,
   EVENT_MEDIA_MAX_FILE_SIZE,
@@ -58,19 +50,21 @@ import {
   Plus,
   Save,
   Settings2,
-  Sparkles,
   Trash2,
   Users,
   X,
 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { upload } from '@vercel/blob/client';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
-import { EVENT_AI_WIZARD_OPEN_EVENT } from './event-ai-wizard-drawer';
+import {
+  shouldAutoOpenDistanceComposer,
+  type EventSettingsSurface,
+} from './event-settings-surface';
 
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
@@ -79,8 +73,7 @@ const LocationField = dynamic(
 
 type EventSettingsFormProps = {
   event: EventEditionDetail;
-  wizardMode?: boolean;
-  assistantEntryEnabled?: boolean;
+  surface?: EventSettingsSurface;
 };
 
 type VisibilityType = 'draft' | 'published' | 'unlisted' | 'archived';
@@ -104,8 +97,7 @@ const visibilityStyles: Record<VisibilityType, string> = {
 
 export function EventSettingsForm({
   event,
-  wizardMode = false,
-  assistantEntryEnabled = false,
+  surface = 'full',
 }: EventSettingsFormProps) {
   const t = useTranslations('pages.dashboardEventSettings');
   const tSlug = useTranslations('pages.dashboardEvents');
@@ -134,32 +126,13 @@ export function EventSettingsForm({
   const [isUpdatingCapacity, setIsUpdatingCapacity] = useState(false);
   const maxHeroImageSizeMb = Math.floor(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
   const tHero = useTranslations('pages.dashboardEventSettings.heroImage');
-  const wizardSessionStorageKey = `event-wizard:path:${event.id}`;
-  const [creationPath, setCreationPath] = useState<EventCreationPath | null>(null);
-  const [hasHydratedCreationPath, setHasHydratedCreationPath] = useState(!wizardMode);
-
-  useEffect(() => {
-    if (!wizardMode || typeof window === 'undefined') return;
-    const raw = window.sessionStorage.getItem(wizardSessionStorageKey);
-    if (raw === 'ai' || raw === 'manual') {
-      setCreationPath(raw);
-    } else if (event.distances.length > 0) {
-      setCreationPath('manual');
-    }
-    setHasHydratedCreationPath(true);
-  }, [event.distances.length, wizardMode, wizardSessionStorageKey]);
-
-  useEffect(() => {
-    if (!wizardMode || typeof window === 'undefined' || !hasHydratedCreationPath) return;
-    if (!creationPath) {
-      window.sessionStorage.removeItem(wizardSessionStorageKey);
-      return;
-    }
-    window.sessionStorage.setItem(wizardSessionStorageKey, creationPath);
-  }, [wizardMode, creationPath, hasHydratedCreationPath, wizardSessionStorageKey]);
-
-  const wizardSteps = useMemo(() => getEventWizardSteps(event.id), [event.id]);
-  const isWizardLockedOnStep0 = wizardMode && creationPath === null;
+  const showVisibilitySection = surface === 'full' || surface === 'wizard-review';
+  const showRegistrationControlSection = surface === 'full' || surface === 'wizard-registration';
+  const showHeroImageSection = surface === 'full' || surface === 'wizard-basics';
+  const showCoreDetailsSection = surface === 'full' || surface === 'wizard-basics';
+  const showRegistrationWindowSection = surface === 'full' || surface === 'wizard-registration';
+  const showCapacitySection = surface === 'full' || surface === 'wizard-distances';
+  const showDistancesSection = surface === 'full' || surface === 'wizard-distances';
 
   // Event details form
   const detailsForm = useForm<{
@@ -290,6 +263,7 @@ export function EventSettingsForm({
       });
       if (result.ok) {
         setIsRegistrationPaused(!isRegistrationPaused);
+        router.refresh();
       }
     } finally {
       setIsUpdatingPause(false);
@@ -298,7 +272,9 @@ export function EventSettingsForm({
 
   // Distance management state
   const [distances, setDistances] = useState<EventDistanceDetail[]>(event.distances);
-  const [showAddDistance, setShowAddDistance] = useState(wizardMode && event.distances.length === 0);
+  const [showAddDistance, setShowAddDistance] = useState(
+    shouldAutoOpenDistanceComposer(surface, event.distances.length),
+  );
   const [editingDistanceId, setEditingDistanceId] = useState<string | null>(null);
   const pendingDistanceIdsRef = useRef<Set<string>>(new Set());
 
@@ -330,23 +306,15 @@ export function EventSettingsForm({
   }, [event.distances]);
 
   useEffect(() => {
+    if (shouldAutoOpenDistanceComposer(surface, distances.length) && !editingDistanceId) {
+      setShowAddDistance(true);
+    }
+  }, [distances.length, editingDistanceId, surface]);
+
+  useEffect(() => {
     setCapacityScope(event.sharedCapacity ? 'shared_pool' : 'per_distance');
     setSharedCapacityValue(event.sharedCapacity ? String(event.sharedCapacity) : '');
   }, [event.sharedCapacity]);
-
-  const wizardEvent = useMemo(
-    () => ({
-      ...event,
-      visibility,
-      isRegistrationPaused,
-      distances,
-    }),
-    [distances, event, isRegistrationPaused, visibility],
-  );
-  const wizardCompleteness = useMemo(
-    () => evaluateEventWizardCompleteness(wizardEvent, creationPath),
-    [creationPath, wizardEvent],
-  );
 
   function handleEditionSlugChange(nextSlug: string) {
     const trimmed = nextSlug.trim();
@@ -553,508 +521,359 @@ export function EventSettingsForm({
     toast.success(tCapacity('success'));
   }
 
-  function handleCreationPathChange(nextPath: EventCreationPath) {
-    if (wizardMode && typeof window !== 'undefined') {
-      window.sessionStorage.setItem(wizardSessionStorageKey, nextPath);
-    }
-    setCreationPath(nextPath);
-  }
-
-  function handleOpenAssistant() {
-    window.dispatchEvent(new Event(EVENT_AI_WIZARD_OPEN_EVENT));
-  }
-
-  function goToWizardStep(stepId: EventWizardStepId) {
-    const resolvedStepId = resolveManualWizardStepTarget(
-      wizardSteps,
-      wizardCompleteness.completionByStepId,
-      creationPath,
-      stepId,
-    );
-    const target = getWizardStepNavigationTarget(event.id, resolvedStepId);
-    if (target.hardNavigation) {
-      window.location.assign(target.href);
-      return;
-    }
-    router.push({ pathname: target.pathname, params: target.params });
-  }
-
   return (
     <div className="space-y-8">
-      {wizardMode && (
-        <section className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <p className="font-semibold text-sm">{t('wizard.title')}</p>
-          <p className="text-sm text-muted-foreground">{t('wizard.description')}</p>
-          <div className="mt-3 rounded-md border border-primary/20 bg-background/70 p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t('wizard.stepZeroLabel')}
-            </p>
-            <p className="mt-1 text-sm">{t('wizard.stepZeroDescription')}</p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+      {showVisibilitySection && (
+        <section className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">{t('visibility.title')}</h2>
+            </div>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                visibilityStyles[visibility],
+              )}
+            >
+              {tVis(visibility)}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">{t('visibility.description')}</p>
+
+          <div className="flex flex-wrap gap-2">
+            {EVENT_VISIBILITY.map((vis) => (
               <Button
-                type="button"
-                variant={creationPath === 'ai' ? 'default' : 'outline'}
-                onClick={() => handleCreationPathChange('ai')}
-                className="justify-start"
+                key={vis}
+                variant={visibility === vis ? 'default' : 'outline'}
+                size="sm"
+                disabled={isUpdatingVisibility}
+                onClick={() => handleVisibilityChange(vis as VisibilityType)}
               >
-                <Sparkles className="mr-2 h-4 w-4" />
-                {t('wizard.path.ai')}
+                {isUpdatingVisibility && visibility !== vis ? null : visibility === vis ? (
+                  <Check className="h-4 w-4 mr-1" />
+                ) : null}
+                {tVis(vis as VisibilityType)}
               </Button>
-              <Button
-                type="button"
-                variant={creationPath === 'manual' ? 'default' : 'outline'}
-                onClick={() => handleCreationPathChange('manual')}
-                className="justify-start"
-              >
-                <Settings2 className="mr-2 h-4 w-4" />
-                {t('wizard.path.manual')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            <div className="rounded-md border bg-background/80 p-3">
-              <p className="text-xs text-muted-foreground">{t('wizard.progress.required')}</p>
-              <p className="text-lg font-semibold">
-                {wizardCompleteness.progress.completedRequired}/{wizardCompleteness.progress.totalRequired}
-              </p>
-            </div>
-            <div className="rounded-md border bg-background/80 p-3">
-              <p className="text-xs text-muted-foreground">{t('wizard.progress.percent')}</p>
-              <p className="text-lg font-semibold">{wizardCompleteness.progress.percent}%</p>
-            </div>
-            <div className="rounded-md border bg-background/80 p-3">
-              <p className="text-xs text-muted-foreground">{t('wizard.progress.publishBlockers')}</p>
-              <p className="text-lg font-semibold">{wizardCompleteness.publishBlockers.length}</p>
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-2 rounded-md border border-primary/20 bg-background/70 p-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t('wizard.adaptive.title')}
-            </p>
-            <p className="text-xs text-muted-foreground">{t('wizard.adaptive.description')}</p>
-            <div className="grid gap-2">
-              {wizardCompleteness.prioritizedChecklist.map((issue) => {
-                const issueStep = wizardSteps.find((step) => step.id === issue.stepId);
-                return (
-                  <button
-                    key={issue.id}
-                    type="button"
-                    className={cn(
-                      'rounded-md border px-3 py-2 text-left text-sm transition',
-                      issue.severity === 'blocker'
-                        ? 'border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10'
-                        : issue.severity === 'required'
-                          ? 'border-amber-300/60 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                          : 'border-primary/30 bg-primary/5 text-foreground hover:bg-primary/10',
-                    )}
-                    onClick={() => goToWizardStep(issue.stepId)}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span>{t(issue.labelKey)}</span>
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                        {t(`wizard.adaptive.severity.${issue.severity}`)}
-                      </span>
-                    </div>
-                    {issueStep ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {t('wizard.adaptive.goToStep', { step: t(issueStep.labelKey) })}
-                      </p>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-1 rounded-md border bg-background/70 p-3 text-sm">
-            {wizardSteps.map((step) => (
-              <button
-                key={step.id}
-                type="button"
-                className="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-left transition hover:bg-muted"
-                onClick={() => goToWizardStep(step.id)}
-              >
-                <span>{t(step.labelKey)}</span>
-                {wizardCompleteness.completionByStepId[step.id] ? (
-                  <Check className="h-4 w-4 text-primary" />
-                ) : (
-                  <span className="text-xs text-muted-foreground">{t('wizard.pending')}</span>
-                )}
-              </button>
             ))}
           </div>
-
-          {creationPath !== null ? (
-            <div className="mt-4 flex flex-col gap-2 border-t border-primary/20 pt-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                {creationPath === 'ai' ? (
-                  <Sparkles className="mt-0.5 h-4 w-4 text-primary" />
-                ) : (
-                  <Settings2 className="mt-0.5 h-4 w-4 text-primary" />
-                )}
-                <span>{t(`wizard.pathHint.${creationPath}`)}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {creationPath === 'ai' && assistantEntryEnabled ? (
-                  <Button type="button" size="sm" variant="outline" onClick={handleOpenAssistant}>
-                    {t('assistant.title')}
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleCreationPathChange(creationPath === 'ai' ? 'manual' : 'ai')}
-                >
-                  {t('wizard.switchPath')}
-                </Button>
-              </div>
-            </div>
-          ) : null}
         </section>
       )}
-      {!isWizardLockedOnStep0 && (
-        <>
-      {/* Visibility Section */}
-      <section className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Eye className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{t('visibility.title')}</h2>
-          </div>
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-              visibilityStyles[visibility],
-            )}
-          >
-            {tVis(visibility)}
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">{t('visibility.description')}</p>
 
-        <div className="flex flex-wrap gap-2">
-          {EVENT_VISIBILITY.map((vis) => (
-            <Button
-              key={vis}
-              variant={visibility === vis ? 'default' : 'outline'}
-              size="sm"
-              disabled={isUpdatingVisibility}
-              onClick={() => handleVisibilityChange(vis as VisibilityType)}
+      {showRegistrationControlSection && (
+        <section className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">{t('registration.title')}</h2>
+            </div>
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                isRegistrationPaused
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                  : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+              )}
             >
-              {isUpdatingVisibility && visibility !== vis ? null : visibility === vis ? (
-                <Check className="h-4 w-4 mr-1" />
-              ) : null}
-              {tVis(vis as VisibilityType)}
-            </Button>
-          ))}
-        </div>
-      </section>
-
-      {/* Registration Control Section */}
-      <section className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{t('registration.title')}</h2>
+              {isRegistrationPaused ? t('registration.paused') : t('registration.active')}
+            </span>
           </div>
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-              isRegistrationPaused
-                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-            )}
+          <p className="text-sm text-muted-foreground mb-4">{t('registration.description')}</p>
+
+          <Button
+            variant={isRegistrationPaused ? 'default' : 'outline'}
+            disabled={isUpdatingPause}
+            onClick={handlePauseToggle}
           >
-            {isRegistrationPaused ? t('registration.paused') : t('registration.active')}
-          </span>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">{t('registration.description')}</p>
-
-        <Button
-          variant={isRegistrationPaused ? 'default' : 'outline'}
-          disabled={isUpdatingPause}
-          onClick={handlePauseToggle}
-        >
-          {isUpdatingPause ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : isRegistrationPaused ? (
-            <Play className="h-4 w-4 mr-2" />
-          ) : (
-            <Pause className="h-4 w-4 mr-2" />
-          )}
-          {isRegistrationPaused ? t('registration.resume') : t('registration.pause')}
-        </Button>
-      </section>
-
-      {/* Hero Image Section */}
-      <section className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <ImagePlus className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">{tHero('title')}</h2>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">{tHero('description')}</p>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="relative aspect-[16/9] w-full max-w-xl overflow-hidden rounded-lg border bg-muted">
-            {heroImagePreview ? (
-              <Image
-                src={heroImagePreview}
-                alt={`${event.seriesName} ${event.editionLabel}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 768px"
-              />
+            {isUpdatingPause ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : isRegistrationPaused ? (
+              <Play className="h-4 w-4 mr-2" />
             ) : (
-              <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                <span className="text-sm font-medium text-muted-foreground">
-                  {tHero('empty')}
-                </span>
-              </div>
+              <Pause className="h-4 w-4 mr-2" />
             )}
-            {isUploadingHeroImage && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                <Loader2 className="h-6 w-6 animate-spin text-white" />
-              </div>
-            )}
+            {isRegistrationPaused ? t('registration.resume') : t('registration.pause')}
+          </Button>
+        </section>
+      )}
+
+      {showHeroImageSection && (
+        <section className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <ImagePlus className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">{tHero('title')}</h2>
           </div>
+          <p className="text-sm text-muted-foreground mb-4">{tHero('description')}</p>
 
-          <div className="flex flex-col gap-3">
-            <p className="text-xs text-muted-foreground">
-              {tHero('helper', { maxSize: maxHeroImageSizeMb })}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleHeroImageUploadClick}
-                disabled={isHeroImageBusy}
-              >
-                <ImagePlus className="h-4 w-4 mr-2" />
-                {heroImagePreview ? tHero('actions.change') : tHero('actions.upload')}
-              </Button>
+          <div className="flex flex-col lg:flex-row gap-6">
+            <div className="relative aspect-[16/9] w-full max-w-xl overflow-hidden rounded-lg border bg-muted">
+              {heroImagePreview ? (
+                <Image
+                  src={heroImagePreview}
+                  alt={`${event.seriesName} ${event.editionLabel}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 768px"
+                />
+              ) : (
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
+                  <span className="text-sm font-medium text-muted-foreground">{tHero('empty')}</span>
+                </div>
+              )}
+              {isUploadingHeroImage && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                </div>
+              )}
+            </div>
 
-              {heroImagePreview && (
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-muted-foreground">
+                {tHero('helper', { maxSize: maxHeroImageSizeMb })}
+              </p>
+              <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={handleHeroImageRemove}
+                  onClick={handleHeroImageUploadClick}
                   disabled={isHeroImageBusy}
-                  className="text-destructive hover:bg-destructive/10"
                 >
-                  {isSavingHeroImage ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      {tHero('actions.removing')}
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {tHero('actions.remove')}
-                    </>
-                  )}
+                  <ImagePlus className="h-4 w-4 mr-2" />
+                  {heroImagePreview ? tHero('actions.change') : tHero('actions.upload')}
                 </Button>
-              )}
-            </div>
-          </div>
-        </div>
 
-        <input
-          ref={heroImageInputRef}
-          type="file"
-          accept={EVENT_MEDIA_IMAGE_TYPES.join(',')}
-          onChange={handleHeroImageSelect}
-          className="hidden"
-        />
-      </section>
-
-      {/* Event Details Section */}
-      <section className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">{t('details.title')}</h2>
-        </div>
-
-        <Form form={detailsForm} className="space-y-6" onSubmitCapture={handleDetailsSubmit}>
-          <FormError />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              label={t('details.editionLabel')}
-              error={detailsForm.errors.editionLabel}
-            >
-              <input
-                type="text"
-                {...detailsForm.register('editionLabel')}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                disabled={detailsForm.isSubmitting}
-              />
-            </FormField>
-
-            <FormField label={t('details.slug')} error={detailsForm.errors.slug}>
-              <div className="space-y-1">
-                <input
-                  type="text"
-                  name={slugField.name}
-                  value={slugField.value}
-                  onChange={(event) => {
-                    slugField.onChange(event);
-                    handleEditionSlugChange(event.target.value);
-                  }}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
-                  disabled={detailsForm.isSubmitting}
-                />
-                {detailsForm.values.slug.trim().length >= 2 &&
-                  detailsForm.values.slug.trim() !== event.slug &&
-                  editionSlugStatus !== 'idle' && (
-                  <p className={cn('text-xs', slugStatusClass(editionSlugStatus))}>
-                    {slugStatusLabel(editionSlugStatus)}
-                  </p>
+                {heroImagePreview && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleHeroImageRemove}
+                    disabled={isHeroImageBusy}
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    {isSavingHeroImage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {tHero('actions.removing')}
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {tHero('actions.remove')}
+                      </>
+                    )}
+                  </Button>
                 )}
               </div>
-            </FormField>
+            </div>
           </div>
 
-          <MarkdownField
-            label={tDescription('label')}
-            value={detailsForm.values.description}
-            onChange={(value) => detailsForm.setFieldValue('description', value)}
-            error={detailsForm.errors.description}
-            disabled={detailsForm.isSubmitting}
-            helperText={tDescription('help')}
-            textareaClassName="resize-none"
-            textareaProps={{ rows: 4 }}
+          <input
+            ref={heroImageInputRef}
+            type="file"
+            accept={EVENT_MEDIA_IMAGE_TYPES.join(',')}
+            onChange={handleHeroImageSelect}
+            className="hidden"
           />
+        </section>
+      )}
 
-          <FormField label={t('details.timezone')} error={detailsForm.errors.timezone}>
-            <select
-              {...detailsForm.register('timezone')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-              disabled={detailsForm.isSubmitting}
-            >
-              {TIMEZONE_OPTIONS.map((tz) => (
-                <option key={tz.value} value={tz.value}>
-                  {tz.label}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
-              <DatePicker
-                locale={locale}
-                value={detailsForm.values.startsAt || ''}
-                onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
-                clearLabel={t('details.clearDate')}
-              />
-            </FormField>
-
-            <FormField label={t('details.endsAt')} error={detailsForm.errors.endsAt}>
-              <DatePicker
-                locale={locale}
-                value={detailsForm.values.endsAt || ''}
-                onChangeAction={(value) => detailsForm.setFieldValue('endsAt', value)}
-                clearLabel={t('details.clearDate')}
-              />
-            </FormField>
+      {(showCoreDetailsSection || showRegistrationWindowSection) && (
+        <section className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">
+              {showCoreDetailsSection ? t('details.title') : t('registration.title')}
+            </h2>
           </div>
 
-          <div className="border-t pt-4">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
-              <h3 className="font-medium">{t('details.locationSection')}</h3>
-            </div>
+          <Form form={detailsForm} className="space-y-6" onSubmitCapture={handleDetailsSubmit}>
+            <FormError />
 
-            <LocationField
-              label={t('details.locationLabel')}
-              location={
-                detailsForm.values.latitude && detailsForm.values.longitude
-                  ? {
-                      lat: Number(detailsForm.values.latitude),
-                      lng: Number(detailsForm.values.longitude),
-                      formattedAddress: detailsForm.values.locationDisplay || '',
+            {showCoreDetailsSection ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label={t('details.editionLabel')} error={detailsForm.errors.editionLabel}>
+                    <input
+                      type="text"
+                      {...detailsForm.register('editionLabel')}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                      disabled={detailsForm.isSubmitting}
+                    />
+                  </FormField>
+
+                  <FormField label={t('details.slug')} error={detailsForm.errors.slug}>
+                    <div className="space-y-1">
+                      <input
+                        type="text"
+                        name={slugField.name}
+                        value={slugField.value}
+                        onChange={(event) => {
+                          slugField.onChange(event);
+                          handleEditionSlugChange(event.target.value);
+                        }}
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                        disabled={detailsForm.isSubmitting}
+                      />
+                      {detailsForm.values.slug.trim().length >= 2 &&
+                        detailsForm.values.slug.trim() !== event.slug &&
+                        editionSlugStatus !== 'idle' && (
+                        <p className={cn('text-xs', slugStatusClass(editionSlugStatus))}>
+                          {slugStatusLabel(editionSlugStatus)}
+                        </p>
+                      )}
+                    </div>
+                  </FormField>
+                </div>
+
+                <MarkdownField
+                  label={tDescription('label')}
+                  value={detailsForm.values.description}
+                  onChange={(value) => detailsForm.setFieldValue('description', value)}
+                  error={detailsForm.errors.description}
+                  disabled={detailsForm.isSubmitting}
+                  helperText={tDescription('help')}
+                  textareaClassName="resize-none"
+                  textareaProps={{ rows: 4 }}
+                />
+
+                <FormField label={t('details.timezone')} error={detailsForm.errors.timezone}>
+                  <select
+                    {...detailsForm.register('timezone')}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                    disabled={detailsForm.isSubmitting}
+                  >
+                    {TIMEZONE_OPTIONS.map((tz) => (
+                      <option key={tz.value} value={tz.value}>
+                        {tz.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
+                    <DatePicker
+                      locale={locale}
+                      value={detailsForm.values.startsAt || ''}
+                      onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
+                      clearLabel={t('details.clearDate')}
+                    />
+                  </FormField>
+
+                  <FormField label={t('details.endsAt')} error={detailsForm.errors.endsAt}>
+                    <DatePicker
+                      locale={locale}
+                      value={detailsForm.values.endsAt || ''}
+                      onChangeAction={(value) => detailsForm.setFieldValue('endsAt', value)}
+                      clearLabel={t('details.clearDate')}
+                    />
+                  </FormField>
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="font-medium">{t('details.locationSection')}</h3>
+                  </div>
+
+                  <LocationField
+                    label={t('details.locationLabel')}
+                    location={
+                      detailsForm.values.latitude && detailsForm.values.longitude
+                        ? {
+                            lat: Number(detailsForm.values.latitude),
+                            lng: Number(detailsForm.values.longitude),
+                            formattedAddress: detailsForm.values.locationDisplay || '',
+                          }
+                        : null
                     }
-                  : null
-              }
-              country="MX"
-              language={locale}
-              onLocationChangeAction={(location) => {
-                if (location) {
-                  detailsForm.setFieldValue('latitude', String(location.lat));
-                  detailsForm.setFieldValue('longitude', String(location.lng));
-                  detailsForm.setFieldValue('locationDisplay', location.formattedAddress || '');
-                  if (location.city) detailsForm.setFieldValue('city', location.city);
-                  if (location.region) detailsForm.setFieldValue('state', location.region);
-                } else {
-                  detailsForm.setFieldValue('latitude', '');
-                  detailsForm.setFieldValue('longitude', '');
-                  detailsForm.setFieldValue('locationDisplay', '');
-                  detailsForm.setFieldValue('city', '');
-                  detailsForm.setFieldValue('state', '');
-                }
-              }}
-            />
-          </div>
+                    country="MX"
+                    language={locale}
+                    onLocationChangeAction={(location) => {
+                      if (location) {
+                        detailsForm.setFieldValue('latitude', String(location.lat));
+                        detailsForm.setFieldValue('longitude', String(location.lng));
+                        detailsForm.setFieldValue('locationDisplay', location.formattedAddress || '');
+                        if (location.city) detailsForm.setFieldValue('city', location.city);
+                        if (location.region) detailsForm.setFieldValue('state', location.region);
+                      } else {
+                        detailsForm.setFieldValue('latitude', '');
+                        detailsForm.setFieldValue('longitude', '');
+                        detailsForm.setFieldValue('locationDisplay', '');
+                        detailsForm.setFieldValue('city', '');
+                        detailsForm.setFieldValue('state', '');
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            ) : null}
 
-          <div className="border-t pt-4">
-            <h3 className="font-medium mb-4">{t('details.registrationWindow')}</h3>
+            {showRegistrationWindowSection ? (
+              <div className={cn('pt-4', showCoreDetailsSection ? 'border-t' : undefined)}>
+                <h3 className="font-medium mb-4">{t('details.registrationWindow')}</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                label={t('details.registrationOpensAt')}
-                error={detailsForm.errors.registrationOpensAt}
-              >
-                <DatePicker
-                  locale={locale}
-                  value={detailsForm.values.registrationOpensAt ? detailsForm.values.registrationOpensAt.split('T')[0] : ''}
-                  onChangeAction={(value) => {
-                    // Preserve time if it exists, otherwise set to start of day
-                    const currentValue = detailsForm.values.registrationOpensAt;
-                    const timepart = currentValue ? currentValue.split('T')[1] : '00:00';
-                    detailsForm.setFieldValue('registrationOpensAt', value ? `${value}T${timepart}` : '');
-                  }}
-                  clearLabel={t('details.clearDate')}
-                />
-              </FormField>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    label={t('details.registrationOpensAt')}
+                    error={detailsForm.errors.registrationOpensAt}
+                  >
+                    <DatePicker
+                      locale={locale}
+                      value={
+                        detailsForm.values.registrationOpensAt
+                          ? detailsForm.values.registrationOpensAt.split('T')[0]
+                          : ''
+                      }
+                      onChangeAction={(value) => {
+                        const currentValue = detailsForm.values.registrationOpensAt;
+                        const timepart = currentValue ? currentValue.split('T')[1] : '00:00';
+                        detailsForm.setFieldValue('registrationOpensAt', value ? `${value}T${timepart}` : '');
+                      }}
+                      clearLabel={t('details.clearDate')}
+                    />
+                  </FormField>
 
-              <FormField
-                label={t('details.registrationClosesAt')}
-                error={detailsForm.errors.registrationClosesAt}
-              >
-                <DatePicker
-                  locale={locale}
-                  value={detailsForm.values.registrationClosesAt ? detailsForm.values.registrationClosesAt.split('T')[0] : ''}
-                  onChangeAction={(value) => {
-                    // Preserve time if it exists, otherwise set to end of day
-                    const currentValue = detailsForm.values.registrationClosesAt;
-                    const timepart = currentValue ? currentValue.split('T')[1] : '23:59';
-                    detailsForm.setFieldValue('registrationClosesAt', value ? `${value}T${timepart}` : '');
-                  }}
-                  clearLabel={t('details.clearDate')}
-                />
-              </FormField>
+                  <FormField
+                    label={t('details.registrationClosesAt')}
+                    error={detailsForm.errors.registrationClosesAt}
+                  >
+                    <DatePicker
+                      locale={locale}
+                      value={
+                        detailsForm.values.registrationClosesAt
+                          ? detailsForm.values.registrationClosesAt.split('T')[0]
+                          : ''
+                      }
+                      onChangeAction={(value) => {
+                        const currentValue = detailsForm.values.registrationClosesAt;
+                        const timepart = currentValue ? currentValue.split('T')[1] : '23:59';
+                        detailsForm.setFieldValue('registrationClosesAt', value ? `${value}T${timepart}` : '');
+                      }}
+                      clearLabel={t('details.clearDate')}
+                    />
+                  </FormField>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex justify-end">
+              <Button type="submit" disabled={detailsForm.isSubmitting || isEditionSlugTaken}>
+                {detailsForm.isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {t('details.save')}
+              </Button>
             </div>
-          </div>
+          </Form>
+        </section>
+      )}
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={detailsForm.isSubmitting || isEditionSlugTaken}>
-              {detailsForm.isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {t('details.save')}
-            </Button>
-          </div>
-        </Form>
-      </section>
-
-      {/* Capacity Section */}
+      {showCapacitySection && (
       <section className="rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-muted-foreground" />
@@ -1111,8 +930,9 @@ export function EventSettingsForm({
           </div>
         </div>
       </section>
+      )}
 
-      {/* Distances Section */}
+      {showDistancesSection && (
       <section className="rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{t('distances.title')}</h2>
@@ -1168,6 +988,7 @@ export function EventSettingsForm({
           </div>
         )}
       </section>
+      )}
 
       <Dialog open={showSlugConfirm} onOpenChange={setShowSlugConfirm}>
         <DialogContent className="sm:max-w-lg">
@@ -1194,8 +1015,6 @@ export function EventSettingsForm({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-        </>
-      )}
     </div>
   );
 }
@@ -1223,6 +1042,7 @@ function AddDistanceForm({
 }) {
   const t = useTranslations('pages.dashboardEventSettings.distances');
   const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1278,6 +1098,7 @@ function AddDistanceForm({
       hasPricingTier: true,
       registrationCount: 0,
     });
+    router.refresh();
   }
 
   return (
@@ -1394,6 +1215,7 @@ function DistanceItem({
   const t = useTranslations('pages.dashboardEventSettings.distances');
   const tCapacity = useTranslations('pages.dashboardEventSettings.capacity');
   const tCommon = useTranslations('common');
+  const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -1407,6 +1229,7 @@ function DistanceItem({
 
     if (result.ok) {
       onDelete();
+      router.refresh();
     } else {
       setError(result.error);
     }
@@ -1459,6 +1282,7 @@ function DistanceItem({
       ...(sharedCapacityEnabled ? {} : { capacity: capacityValue ?? null }),
       priceCents: newPriceCents,
     });
+    router.refresh();
   }
 
   if (isEditing) {

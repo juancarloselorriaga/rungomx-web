@@ -139,6 +139,7 @@ const createEventEditionSchema = z.object({
   longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional(),
   description: z.string().max(5000).optional(),
+  organizerBrief: z.string().max(4000).optional().nullable(),
 });
 
 const updateEventEditionSchema = z.object({
@@ -164,6 +165,7 @@ const updateEventEditionSchema = z.object({
   longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
+  organizerBrief: z.string().max(4000).optional().nullable(),
   heroImageMediaId: z.string().uuid().optional().nullable(),
 });
 
@@ -586,6 +588,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     longitude,
     externalUrl,
     description,
+    organizerBrief,
   } = validated.data;
 
   if (!authContext.permissions.canManageEvents) {
@@ -594,6 +597,18 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
       requireOrgPermission(membership, 'canEditEventConfig');
     } catch {
       return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const normalizedOrganizerBrief = organizerBrief?.trim() || null;
+  if (normalizedOrganizerBrief) {
+    try {
+      await requireProFeature('event_ai_wizard', authContext);
+    } catch (error) {
+      if (error instanceof ProFeatureAccessError) {
+        return { ok: false, error: error.message, code: error.code };
+      }
+      throw error;
     }
   }
 
@@ -649,6 +664,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
         longitude,
         externalUrl,
         description: description || undefined,
+        organizerBrief: normalizedOrganizerBrief,
       })
       .returning();
 
@@ -768,6 +784,17 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     }
   }
 
+  if (updates.organizerBrief !== undefined && updates.organizerBrief !== null && updates.organizerBrief.trim().length > 0) {
+    try {
+      await requireProFeature('event_ai_wizard', authContext);
+    } catch (error) {
+      if (error instanceof ProFeatureAccessError) {
+        return { ok: false, error: error.message, code: error.code };
+      }
+      throw error;
+    }
+  }
+
   const updateData: Record<string, unknown> = {};
   if (updates.editionLabel !== undefined) updateData.editionLabel = updates.editionLabel;
   if (updates.slug !== undefined) updateData.slug = updates.slug;
@@ -785,6 +812,7 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
   if (updates.description !== undefined) updateData.description = updates.description;
+  if (updates.organizerBrief !== undefined) updateData.organizerBrief = updates.organizerBrief?.trim() || null;
   if (updates.heroImageMediaId !== undefined) updateData.heroImageMediaId = updates.heroImageMediaId;
 
   if (Object.keys(updateData).length === 0) {

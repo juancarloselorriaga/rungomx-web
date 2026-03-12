@@ -64,14 +64,308 @@
       "publish": "Publica el evento para que sea visible."
     }
   },
+  "wizardShell": {
+    "eyebrow": "Asistente de configuración",
+    "title": "Construye tu evento paso a paso",
+    "description": "Mantén el foco en el paso actual, avanza con claridad y vuelve al editor completo solo cuando tú lo decidas.",
+    "progress": {
+      "label": "Progreso actual",
+      "current": "Paso {current} de {total}",
+      "step": "Paso activo",
+      "completedLabel": "Completados",
+      "completedValue": "de {total} pasos",
+      "blockersValue": "{publish, plural, =0 {Sin bloqueos de publicación} one {# bloqueo de publicación} other {# bloqueos de publicación}}{required, plural, =0 {} one { · # paso obligatorio pendiente} other { · # pasos obligatorios pendientes}}",
+      "skippedValue": "{count, plural, =0 {Sin pasos opcionales pausados} one {# paso opcional pausado} other {# pasos opcionales pausados}}"
+    },
+    "sidebar": {
+      "title": "Pasos del asistente",
+      "required": "Requerido",
+      "optional": "Opcional",
+      "complete": "Completo",
+      "skipped": "Omitido"
+    },
+    "steps": {
+      "basics": "Aspectos básicos",
+      "distances": "Distancias",
+      "pricing": "Precios",
+      "registration": "Inscripciones",
+      "policies": "Políticas y exenciones",
+      "content": "Contenido para participantes",
+      "extras": "Preguntas y extras",
+      "review": "Revisión y publicación"
+    },
+    "stepDescriptions": {
+      "basics": "Define la identidad esencial del evento, el calendario y la ubicación que sostienen el resto de la configuración.",
+      "distances": "Crea las distancias que se podrán registrar y configura cómo se administrará la capacidad.",
+      "pricing": "Asegúrate de que cada distancia tenga una estructura de precios útil antes de acercarte a la publicación.",
+      "registration": "Define la ventana de inscripciones y controla si las inscripciones están activas o pausadas.",
+      "policies": "Revisa las políticas del organizador y los deslindes que verán los participantes durante el registro.",
+      "content": "Construye la experiencia para participantes con FAQ y contenido enriquecido para el sitio del evento.",
+      "extras": "Agrega preguntas de registro y extras opcionales solo cuando aporten valor real al evento.",
+      "review": "Revisa bloqueos, retoma pasos opcionales omitidos y controla cuándo el evento se hace visible."
+    },
+    "navigation": {
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "skip": "Omitir por ahora",
+      "exit": "Salir del asistente"
+    },
+    "footer": {
+      "description": "Este contenedor prepara la base del asistente numerado. Las siguientes historias conectarán cada paso con su superficie de edición.",
+      "completeRequired": "Completa {step} antes de avanzar.",
+      "optionalHint": "Puedes completar este paso ahora u omitirlo y volver más tarde.",
+      "ready": "Este paso está en buen estado. Continúa cuando quieras."
+    },
+    "placeholder": {
+      "eyebrow": "Estructura del paso",
+      "description": "{step} se conectará con su superficie de edición dedicada en las siguientes historias del asistente.",
+      "returnToBasics": "Volver a aspectos básicos"
+    },
+    "review": {
+      "finishLineLabel": "Recta final",
+      "readyTitle": "Este evento está listo para revisar su publicación",
+      "readyDescription": "La configuración obligatoria ya está completa. Revisa abajo la visibilidad y los controles de publicación cuando quieras hacer visible el evento.",
+      "blockedTitle": "Resuelve estos bloqueos antes de publicar",
+      "blockedDescription": "{publish, plural, =0 {No quedan bloqueos de publicación.} one {Queda # bloqueo de publicación.} other {Quedan # bloqueos de publicación.}} {required, plural, =0 {} one {Aún falta # requisito de configuración.} other {Aún faltan # requisitos de configuración.}}",
+      "serverAuthority": "Las verificaciones finales de publicación siguen siendo autoritativas del servidor. Los controles de abajo confirman el estado real del backend antes de cambiar la visibilidad.",
+      "goToFirstBlocker": "Corregir primer bloqueo",
+      "openPublishControls": "Abrir controles de publicación",
+      "publishBadge": "Bloqueo de publicación",
+      "requiredBadge": "Configuración obligatoria",
+      "recommendationBadge": "Recomendado",
+      "goToStep": "Ir a {step}",
+      "blockersTitle": "Bloqueos obligatorios",
+      "blockersDescription": "Estos puntos deben resolverse antes de confiar en la preparación para publicar.",
+      "noBlockers": "Ya no quedan bloqueos. El evento está estructuralmente listo para revisar su publicación.",
+      "recommendationsTitle": "Mejoras recomendadas",
+      "recommendationsDescription": "Estos puntos son opcionales, pero mejoran la claridad y la confianza de los participantes.",
+      "noRecommendations": "No hay recomendaciones extra por ahora.",
+      "skippedTitle": "Pasos omitidos",
+      "skippedDescription": "Los pasos opcionales que omitiste se mantienen visibles aquí para retomarlos fácilmente.",
+      "noSkipped": "No se han omitido pasos opcionales.",
+      "skippedHelp": "Los pasos omitidos no bloquean la publicación, pero sigue valiendo la pena retomarlos si quieres una experiencia más completa para participantes."
+    }
+  },
   "assistant": {
     "title": "Asistente de configuración",
     "description": "Describe tu evento en un solo mensaje. Te propondré cambios para revisar y aplicar.",
     "contract": "Solo propongo cambios. Nada se aplica hasta que confirmes cada propuesta.",
     "historyLabel": "Conversación del asistente de configuración",
     "composer": {
+      "sectionTitle": "¿En qué quieres ayuda en este paso?",
       "label": "Mensaje para el asistente de configuración",
-      "hint": "Incluye fecha, ciudad, distancias y precios para generar propuestas precisas."
+      "hint": "Describe lo que quieres para este paso y propondré cambios revisables. Las notas en borrador también sirven.",
+      "briefHint": "Usa este espacio para lo que quieres resolver ahora. Las notas en borrador también sirven. Las notas guardadas del evento se quedan arriba.",
+      "savedBriefHint": "El asistente ya tiene tus notas guardadas del evento. Agrega aquí cualquier detalle extra, aunque sea en borrador.",
+      "roughNotesTitle": "Pega notas sueltas y las convierto en una propuesta clara.",
+      "roughNotesExample": "Ejemplos: \"10K nocturno en Guadalajara, primerizos bienvenidos, música en meta\" o \"Necesito FAQ y texto del sitio, pero sin inventar logística.\""
+    },
+    "inline": {
+      "title": "Asistente IA para {step}",
+      "description": "Recibe ayuda para este paso sin salir de esta guía.",
+      "markdownBadge": "Texto listo para publicar",
+      "markdownHint": "Úsalo para dejar esta sección lista para publicar."
+    },
+    "mobile": {
+      "open": "Abrir asistente",
+      "stepHint": "Recibe ayuda con {step} sin perder tu lugar."
+    },
+    "desktop": {
+      "open": "Abrir asistente",
+      "stepHint": "Mantén cómodo el editor y abre un espacio IA más amplio para {step} solo cuando lo necesites.",
+      "workspaceTitle": "Asistente IA para {step}",
+      "workspaceDescription": "Usa este espacio ampliado para revisar propuestas, afinar instrucciones y aplicar cambios sin exprimir el editor principal."
+    },
+    "latestProposal": {
+      "title": "Propuesta más reciente",
+      "description": "Revisa primero la recomendación más nueva de la IA y sigue iterando desde ahí.",
+      "detailsTitle": "Ver detalles de la propuesta",
+      "contextTitle": "Ver contexto",
+      "supportingContextTitle": "Contexto de apoyo",
+      "supportingContextDescription": "{count, plural, =0 {Consulta la última solicitud y respuesta solo si necesitas más contexto.} one {Consulta la última solicitud y respuesta, más # mensaje anterior.} other {Consulta la última solicitud y respuesta, más # mensajes anteriores.}}",
+      "requestLabel": "Última solicitud",
+      "responseLabel": "Recomendación del asistente",
+      "pendingTitle": "Intercambio actual"
+    },
+    "progress": {
+      "analyzing": {
+        "title": "Revisando tu solicitud",
+        "description": "Estoy validando tus notas y el estado actual de {step} para que la siguiente propuesta siga anclada en hechos."
+      },
+      "grounding": {
+        "title": "Aterrizando la propuesta",
+        "description": "Estoy cruzando detalles guardados del evento, configuración existente y bloqueos abiertos antes de redactar {step}."
+      },
+      "drafting": {
+        "title": "Redactando el siguiente paso",
+        "description": "Estoy armando una guía útil para {step} antes de mostrarte la propuesta revisable."
+      },
+      "finalizing": {
+        "title": "Preparando la tarjeta de propuesta",
+        "description": "Estoy empaquetando la recomendación final para que puedas revisarla y aplicarla con seguridad."
+      }
+    },
+    "fastPath": {
+      "eyebrow": "Estructura inicial",
+      "event_description": {
+        "title": "Empiezo con una descripción aterrizada del evento",
+        "description": "Puedo armar un primer borrador útil alrededor de estas piezas antes de que llegue la propuesta completa.",
+        "sections": {
+          "lead": "Una apertura clara que presenta la carrera en un solo párrafo con confianza.",
+          "confirmed_highlights": "Diferenciadores concretos tomados solo de detalles confirmados y del tono deseado.",
+          "pending_logistics": "Logística que debe quedarse pendiente u omitida hasta que se confirme."
+        }
+      },
+      "faq": {
+        "title": "Empiezo con una estructura útil para FAQ",
+        "description": "Puedo redactar las primeras respuestas más rápido si organizo la FAQ alrededor de las dudas más probables.",
+        "sections": {
+          "event_basics": "Qué es el evento, para quién es y lo esencial que los participantes necesitan primero.",
+          "route_and_distances": "Detalles de ruta o distancias ya confirmados y listos para comunicar.",
+          "registration_and_logistics": "Inscripción, horarios y logística solo donde la configuración actual los respalda."
+        }
+      },
+      "website_overview": {
+        "title": "Empiezo con un esquema para el sitio",
+        "description": "Puedo avanzar más rápido si enmarco el texto del sitio alrededor de la historia confirmada del evento antes de expandirlo.",
+        "sections": {
+          "hero_positioning": "Un mensaje principal aterrizado que marca el tono sin prometer de más.",
+          "confirmed_experience": "Rasgos específicos del evento o sensación del día de carrera que el snapshot ya respalda.",
+          "what_to_confirm": "Puntos que deben seguir tentativos hasta que el organizador los confirme."
+        }
+      },
+      "policy": {
+        "title": "Empiezo con una estructura clara para políticas",
+        "description": "Puedo preparar un primer borrador más claro si ordeno la política en las secciones que los participantes esperan.",
+        "sections": {
+          "core_rule": "La regla o compromiso principal que los participantes deben entender primero.",
+          "participant_responsibility": "Responsabilidades o aceptaciones del participante explicadas con claridad.",
+          "open_logistics": "Detalles operativos que deben seguir abiertos hasta confirmarse."
+        }
+      }
+    },
+    "earlyProse": {
+      "eyebrow": "Borrador inicial"
+    },
+    "scaffold": {
+      "eyebrow": "Propuesta en proceso",
+      "basics": {
+        "title": "Ya tengo claro cómo arrancar este borrador de aspectos básicos",
+        "description": "Mientras termino la propuesta final, puedo mantener el trabajo aterrizado alrededor de estas decisiones clave.",
+        "sections": {
+          "first_pass": "Empiezo con identidad y posicionamiento sin inventar fecha ni sede exacta.",
+          "confirmed_facts": "Reutilizo solo aspectos básicos confirmados como el título actual, la ubicación, la zona horaria y las notas guardadas.",
+          "open_points": "Dejo pendientes el calendario y la logística exacta de sede si todavía no están confirmados."
+        }
+      },
+      "content": {
+        "title": "Ya se está formando el plan del borrador de contenido",
+        "description": "La propuesta final sigue en camino, pero esta es la estructura que estoy usando para que ya se sienta útil y publicable.",
+        "sections": {
+          "first_pass": "Redacto primero la sección más útil para participantes en lugar de esperar a tener cada detalle.",
+          "confirmed_facts": "Anclo el texto en detalles confirmados del evento, notas guardadas y contenido localizado ya existente.",
+          "open_points": "Mantengo la logística faltante como pendiente en lugar de rellenarla con promesas genéricas."
+        }
+      },
+      "policies": {
+        "title": "Ya estoy ordenando el borrador de políticas",
+        "description": "Antes de que llegue la propuesta final, esta es la estructura que estoy usando para que la política se lea clara y aterrizada.",
+        "sections": {
+          "first_pass": "Empiezo por la regla o estructura de exención más clara para el participante.",
+          "confirmed_facts": "Uso solo reglas, restricciones y contexto del evento que ya están confirmados.",
+          "open_points": "Mantengo abiertos los detalles operativos que el organizador aún no confirma."
+        }
+      },
+      "review": {
+        "title": "Ya estoy organizando el siguiente movimiento listo para publicar",
+        "description": "La propuesta final todavía se está armando, pero esta es la forma que estoy usando para que la revisión siga siendo útil.",
+        "sections": {
+          "first_pass": "Priorizaré primero el bloqueo más útil de corregir o la mejora más valiosa para el contenido.",
+          "confirmed_facts": "Basaré la recomendación en los bloqueos actuales, las notas guardadas y el contenido existente del evento.",
+          "open_points": "Mantendré visible la logística no resuelta en lugar de esconderla detrás de texto bonito."
+        }
+      },
+      "generic": {
+        "title": "Ya estoy convirtiendo esto en un primer paso aterrizado",
+        "description": "La propuesta final sigue cargando, pero la respuesta ya se está organizando alrededor de valor útil y seguro.",
+        "sections": {
+          "first_pass": "Empiezo con el borrador más pequeño y útil que este paso puede sostener con seguridad.",
+          "confirmed_facts": "Me apoyo primero en detalles confirmados del evento y en el contexto guardado del organizador.",
+          "open_points": "Mantengo visibles las incógnitas para que la propuesta siga siendo honesta y revisable."
+        }
+      }
+    },
+    "latency": {
+      "slow": {
+        "title": "Sigo armando una propuesta bien aterrizada",
+        "description": "Esta solicitud necesita un poco más de tiempo porque estoy cruzando los detalles del evento antes de sugerir cambios."
+      },
+      "verySlow": {
+        "title": "Estoy afinando la propuesta final con más cuidado",
+        "description": "Sigo trabajando con tus notas y los datos confirmados del evento para que la recomendación sea útil y segura de aplicar."
+      }
+    },
+    "archive": {
+      "title": "Conversación anterior",
+      "description": "{count, plural, one {# mensaje anterior} other {# mensajes anteriores}}",
+      "expand": "Ver historial",
+      "collapse": "Ocultar historial"
+    },
+    "continuity": {
+      "eyebrow": "No perdiste el hilo",
+      "title": "Sigo trayendo la propuesta más reciente desde {step}",
+      "description": "Si cambiaste de paso por una sugerencia, aquí se queda visible el último intercambio útil mientras continúas."
+    },
+    "appliedState": {
+      "eyebrow": "Cambios ya aplicados",
+      "revealEditor": "Verlos en el editor"
+    },
+    "suggestions": {
+      "basics": {
+        "draftFromBrief": "Usa mis notas sueltas para arrancar este evento.",
+        "suggestStrongerPositioning": "Haz que el título y el resumen se sientan más fuertes.",
+        "reviewMostImportantMissingDetails": "Dime cuáles son los aspectos básicos más importantes que faltan."
+      },
+      "distances": {
+        "createDistanceLineup": "Usa mis notas para sugerirme las distancias.",
+        "suggestCommonDistanceSet": "¿Qué combinación de distancias le quedaría mejor a este evento?",
+        "reviewMissingDistances": "Revisa qué sigue faltando."
+      },
+      "pricing": {
+        "draftPricingStructure": "Sugiere precios realistas para este evento.",
+        "proposeMarketReadyPricing": "Sugiere precios que se sientan realistas para este evento.",
+        "fixNextPricingBlocker": "Dime qué bloqueo de precios resolver primero."
+      },
+      "policies": {
+        "draftPolicyMarkdown": "Redacta políticas claras.",
+        "writeClearWaiverCopy": "Escribe una exención fácil de entender.",
+        "improvePolicyClarity": "Revisa este paso y mejora el mayor problema de claridad."
+      },
+      "content": {
+        "draftParticipantContent": "Redacta contenido para participantes.",
+        "createFaqAndWebsiteCopy": "Redacta FAQ y texto del sitio.",
+        "improveContentClarity": "Hazlo más claro y confiable."
+      },
+      "review": {
+        "explainCurrentBlockers": "Explícame qué sigue bloqueando la publicación.",
+        "fixNextRequiredStep": "Ayúdame con el siguiente paso obligatorio.",
+        "improveParticipantCopyBeforePublish": "Pulir el contenido para participantes antes de publicar."
+      }
+    },
+    "brief": {
+      "savedLabel": "Notas guardadas del evento",
+      "description": "Contexto clave que el asistente puede seguir usando en todo el wizard.",
+      "empty": "Aún no hay notas guardadas del evento.",
+      "emptyHint": "Guarda una sola vez la visión del evento, la audiencia, el tono y los no negociables para que el asistente pueda construir sobre eso después.",
+      "inputLabel": "Notas guardadas del evento",
+      "inputHint": "Edita las notas del evento que quieres que el asistente siga usando durante la configuración.",
+      "add": "Agregar notas",
+      "edit": "Editar notas",
+      "save": "Guardar notas",
+      "cancel": "Cancelar",
+      "useForStep": "Empezar con notas guardadas",
+      "useForStepPrompt": "Usa las notas del evento que ya tienes y ayúdame con {step}.",
+      "clear": "Limpiar notas"
     },
     "messages": {
       "user": "Tú",
@@ -103,12 +397,17 @@
         "date": "fecha",
         "location": "ubicación",
         "label": "etiqueta",
+        "description": "descripción",
         "details": "detalles"
       }
     },
     "outputs": {
-      "title": "Salida de markdown propuesta",
+      "title": "Contenido propuesto",
+      "previewLabel": "Vista previa",
+      "participantBadge": "Texto para participantes",
+      "structuredBadge": "Actualización estructurada",
       "domain": {
+        "description": "Descripción",
         "faq": "Preguntas frecuentes",
         "waiver": "Exención",
         "website": "Sitio web",
@@ -119,14 +418,28 @@
       }
     },
     "routing": {
-      "checklistTitle": "Checklist de campos faltantes",
-      "intentTitle": "Siguientes intenciones sugeridas",
-      "goToStep": "Ir al paso"
+      "checklistTitle": "Lo que aún necesita atención",
+      "intentTitle": "Siguientes pasos sugeridos",
+      "goToStep": "Ir a {step}",
+      "intentStepFallback": "Continúa en {step}",
+      "stepActions": {
+        "basics": "Completa los aspectos básicos",
+        "distances": "Define las distancias",
+        "pricing": "Ajusta precios y cupos",
+        "registration": "Configura las inscripciones",
+        "policies": "Define políticas y exenciones",
+        "content": "Prepara contenido para participantes",
+        "extras": "Agrega preguntas y extras",
+        "review": "Revisa antes de publicar"
+      },
+      "intentLabels": {
+        "draft_website_overview": "Redactar resumen del sitio"
+      }
     },
-    "placeholder": "Cuéntame de tu evento (fecha, ciudad, distancias, precios)...",
+    "placeholder": "Cuéntame qué quieres mejorar en este paso...",
     "empty": {
-      "heading": "Prueba con:",
-      "example": "Medio maratón en Guadalajara el 15 de marzo de 2026. Agrega 5K y 10K. Precios: 350 y 450 MXN."
+      "heading": "Con notas en borrador basta para empezar.",
+      "example": "Por ejemplo: 10K nocturno en Guadalajara, ambiente amigable, música en la meta; ayúdame a redactar el resumen del evento y dime qué es lo más importante que aún falta."
     },
     "send": "Enviar",
     "stop": "Detener",
@@ -137,10 +450,15 @@
       "title": "Error del asistente",
       "proRequired": "El asistente de configuración es una función Pro.",
       "disabled": "El asistente de configuración no está disponible temporalmente.",
+      "readOnlyTitle": "El asistente está en modo solo lectura para esta membresía",
+      "readOnlyDescription": "Puedes seguir avanzando manualmente en el wizard, pero solo los organizadores con permiso de edición pueden usar o aplicar propuestas del asistente.",
       "rateLimited": "Demasiadas solicitudes al asistente. Espera un momento e inténtalo de nuevo.",
+      "requestFailedHint": "Ocurrió un problema con la solicitud al asistente. Intenta de nuevo.",
+      "invalid": "Esa propuesta no se pudo aplicar tal como está. Revisa los detalles del paso e inténtalo de nuevo.",
+      "retryLater": "El asistente no pudo aplicar esa propuesta en este momento. Inténtalo de nuevo en un momento.",
       "safety": {
-        "promptInjection": "Tu solicitud activó un bloqueo de seguridad por patrones de prompt injection.",
-        "policyViolation": "Tu solicitud activó un bloqueo de seguridad por política de contenido."
+        "promptInjection": "Esa solicitud parece fuera del alcance de la configuración del evento. Pídeme ayuda con este paso.",
+        "policyViolation": "No puedo ayudarte con esa solicitud aquí. Intenta con una petición más específica sobre la configuración del evento."
       },
       "partialApplied": "Se aplicaron algunos cambios, pero ocurrió un error. Revisa la configuración del evento.",
       "failed": "No se pudieron aplicar los cambios. Intenta de nuevo."

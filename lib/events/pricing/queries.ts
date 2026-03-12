@@ -5,6 +5,7 @@ import { eventDistances, pricingTiers } from '@/db/schema';
 import { eventEditionPricingTag } from '../cache-tags';
 import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 import type { CurrentPricing, PricingTierData } from './actions';
+import { selectCurrentAndNextPricingTiers } from './contracts';
 
 /**
  * Get all pricing tiers for a distance.
@@ -43,81 +44,22 @@ export async function getCurrentPricing(distanceId: string): Promise<CurrentPric
     return { currentTier: null, nextTier: null, allTiers: [] };
   }
 
-  // Find the current tier (now is within startsAt and endsAt, or unbounded)
-  let currentTier: PricingTierData | null = null;
-  let nextTier: PricingTierData | null = null;
-
-  for (const tier of allTiers) {
-    const startsAtDate = tier.startsAt;
-    const endsAtDate = tier.endsAt;
-
-    // Check if this tier is currently active
-    const hasStarted = !startsAtDate || now >= startsAtDate;
-    const hasNotEnded = !endsAtDate || now < endsAtDate;
-
-    if (hasStarted && hasNotEnded) {
-      currentTier = {
-        id: tier.id,
-        distanceId: tier.distanceId,
-        label: tier.label,
-        startsAt: tier.startsAt,
-        endsAt: tier.endsAt,
-        priceCents: tier.priceCents,
-        currency: tier.currency,
-        sortOrder: tier.sortOrder,
-      };
-      break;
-    }
-  }
-
-  // Find the next upcoming tier (starts in the future)
-  for (const tier of allTiers) {
-    if (tier.startsAt && tier.startsAt > now) {
-      // Skip if this is the current tier
-      if (currentTier && tier.id === currentTier.id) continue;
-
-      nextTier = {
-        id: tier.id,
-        distanceId: tier.distanceId,
-        label: tier.label,
-        startsAt: tier.startsAt,
-        endsAt: tier.endsAt,
-        priceCents: tier.priceCents,
-        currency: tier.currency,
-        sortOrder: tier.sortOrder,
-      };
-      break;
-    }
-  }
-
-  // If no current tier found, use the first available tier as fallback
-  if (!currentTier && allTiers.length > 0) {
-    const fallback = allTiers[0];
-    currentTier = {
-      id: fallback.id,
-      distanceId: fallback.distanceId,
-      label: fallback.label,
-      startsAt: fallback.startsAt,
-      endsAt: fallback.endsAt,
-      priceCents: fallback.priceCents,
-      currency: fallback.currency,
-      sortOrder: fallback.sortOrder,
-    };
-  }
+  const mappedTiers = allTiers.map((t) => ({
+    id: t.id,
+    distanceId: t.distanceId,
+    label: t.label,
+    startsAt: t.startsAt,
+    endsAt: t.endsAt,
+    priceCents: t.priceCents,
+    currency: t.currency,
+    sortOrder: t.sortOrder,
+  }));
+  const { currentTier, nextTier } = selectCurrentAndNextPricingTiers(mappedTiers, now);
 
   return {
     currentTier,
     nextTier,
-    allTiers: allTiers.map((t) => ({
-      id: t.id,
-      distanceId: t.distanceId,
-      label: t.label,
-      startsAt: t.startsAt,
-      endsAt: t.endsAt,
-      priceCents: t.priceCents,
-      currency: t.currency,
-      sortOrder: t.sortOrder,
-    })),
+    allTiers: mappedTiers,
   };
 }
 
@@ -166,46 +108,28 @@ export async function getPricingScheduleForEdition(
   const now = new Date();
 
   return distances.map((d) => {
-    const tiers = d.pricingTiers;
-
-    // Find current tier
-    let currentPriceCents: number | null = null;
-    let nextPriceIncrease: { date: Date; priceCents: number } | null = null;
-
-    for (const tier of tiers) {
-      const hasStarted = !tier.startsAt || now >= tier.startsAt;
-      const hasNotEnded = !tier.endsAt || now < tier.endsAt;
-
-      if (hasStarted && hasNotEnded) {
-        currentPriceCents = tier.priceCents;
-      } else if (tier.startsAt && tier.startsAt > now && !nextPriceIncrease) {
-        nextPriceIncrease = {
-          date: tier.startsAt,
-          priceCents: tier.priceCents,
-        };
-      }
-    }
-
-    // Fallback to first tier if no current found
-    if (currentPriceCents === null && tiers.length > 0) {
-      currentPriceCents = tiers[0].priceCents;
-    }
+    const tiers = d.pricingTiers.map((t) => ({
+      id: t.id,
+      distanceId: t.distanceId,
+      label: t.label,
+      startsAt: t.startsAt,
+      endsAt: t.endsAt,
+      priceCents: t.priceCents,
+      currency: t.currency,
+      sortOrder: t.sortOrder,
+    }));
+    const { currentTier, nextTier } = selectCurrentAndNextPricingTiers(tiers, now);
+    const currentPriceCents = currentTier?.priceCents ?? null;
+    const nextPriceIncrease = nextTier?.startsAt
+      ? { date: nextTier.startsAt, priceCents: nextTier.priceCents }
+      : null;
 
     return {
       distanceId: d.id,
       distanceLabel: d.label,
       currentPriceCents,
       nextPriceIncrease,
-      tiers: tiers.map((t) => ({
-        id: t.id,
-        distanceId: t.distanceId,
-        label: t.label,
-        startsAt: t.startsAt,
-        endsAt: t.endsAt,
-        priceCents: t.priceCents,
-        currency: t.currency,
-        sortOrder: t.sortOrder,
-      })),
+      tiers,
     };
   });
 }

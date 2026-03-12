@@ -5,13 +5,14 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { IconButton } from '@/components/ui/icon-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { Badge } from '@/components/common';
 import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
 import { checkSlugAvailability, createEventSeries, createEventEdition } from '@/lib/events/actions';
 import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, ChevronDown, Loader2, Sparkles } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
@@ -39,6 +40,7 @@ type OrganizationWithSeries = {
 
 type CreateEventFormProps = {
   organizations: OrganizationWithSeries[];
+  showAiContextDisclosure: boolean;
 };
 
 type Step = 'organization' | 'event';
@@ -55,13 +57,70 @@ function generateSlug(name: string): string {
     .slice(0, 100);
 }
 
-export function CreateEventForm({ organizations }: CreateEventFormProps) {
+function mapOrganizationCreateError(
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.createEvent'>>,
+  code?: string,
+) {
+  switch (code) {
+    case 'SLUG_TAKEN':
+      return t('organization.errors.slugTaken');
+    case 'FORBIDDEN':
+      return t('organization.errors.forbidden');
+    case 'UNAUTHENTICATED':
+      return t('organization.errors.unauthenticated');
+    case 'VALIDATION_ERROR':
+      return t('organization.errors.validationFailed');
+    default:
+      return t('organization.errors.createFailed');
+  }
+}
+
+function mapSeriesCreateError(
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.createEvent'>>,
+  code?: string,
+) {
+  switch (code) {
+    case 'SLUG_TAKEN':
+      return t('event.errors.seriesSlugTaken');
+    case 'FORBIDDEN':
+      return t('event.errors.forbidden');
+    case 'UNAUTHENTICATED':
+      return t('event.errors.unauthenticated');
+    case 'VALIDATION_ERROR':
+      return t('event.errors.validationFailed');
+    default:
+      return t('event.errors.seriesCreateFailed');
+  }
+}
+
+function mapEditionCreateError(
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.createEvent'>>,
+  code?: string,
+) {
+  switch (code) {
+    case 'SLUG_TAKEN':
+      return t('event.errors.editionSlugTaken');
+    case 'LABEL_TAKEN':
+      return t('event.errors.editionLabelTaken');
+    case 'FORBIDDEN':
+      return t('event.errors.forbidden');
+    case 'UNAUTHENTICATED':
+      return t('event.errors.unauthenticated');
+    case 'VALIDATION_ERROR':
+      return t('event.errors.validationFailed');
+    default:
+      return t('event.errors.editionCreateFailed');
+  }
+}
+
+export function CreateEventForm({ organizations, showAiContextDisclosure }: CreateEventFormProps) {
   const t = useTranslations('pages.dashboardEvents.createEvent');
   const tSlug = useTranslations('pages.dashboardEvents');
   const tSport = useTranslations('pages.dashboardEvents.sportTypes');
   const tCommon = useTranslations('common');
   const router = useRouter();
   const [step, setStep] = useState<Step>('organization');
+  const [isAiContextOpen, setIsAiContextOpen] = useState(false);
 
   // Organization step state
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
@@ -123,7 +182,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         });
 
         if (!result.ok) {
-          setOrgError(result.error);
+          setOrgError(mapOrganizationCreateError(t, result.code));
           setIsCreatingOrg(false);
           return;
         }
@@ -132,7 +191,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         setSelectedOrgId(result.data.id);
         setShowNewOrg(false);
       } catch {
-        setOrgError('Failed to create organization');
+        setOrgError(t('organization.errors.createFailed'));
         setIsCreatingOrg(false);
         return;
       }
@@ -152,6 +211,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       editionLabel: string;
       editionSlug: string;
       description: string;
+      organizerBrief: string;
       startsAt: string;
       city: string;
       state: string;
@@ -168,6 +228,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       editionLabel: new Date().getFullYear().toString(),
       editionSlug: new Date().getFullYear().toString(),
       description: '',
+      organizerBrief: '',
       startsAt: '',
       city: '',
       state: '',
@@ -177,7 +238,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
     },
     onSubmit: async (values) => {
       if (!selectedOrgId) {
-        return { ok: false, error: 'VALIDATION_ERROR', message: 'Organization required' };
+        return { ok: false, error: 'VALIDATION_ERROR', message: t('organization.errors.required') };
       }
 
       if ((showNewSeries && seriesSlugStatus === 'taken') || editionSlugStatus === 'taken') {
@@ -196,7 +257,11 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         });
 
         if (!seriesResult.ok) {
-          return { ok: false, error: 'SERVER_ERROR', message: seriesResult.error };
+          return {
+            ok: false,
+            error: 'SERVER_ERROR',
+            message: mapSeriesCreateError(t, seriesResult.code),
+          };
         }
 
         seriesId = seriesResult.data.id;
@@ -208,6 +273,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
         editionLabel: values.editionLabel.trim(),
         slug: values.editionSlug.trim(),
         description: values.description.trim() || undefined,
+        organizerBrief: showAiContextDisclosure ? values.organizerBrief.trim() || undefined : undefined,
         timezone: 'America/Mexico_City',
         country: 'MX',
         startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : undefined,
@@ -219,7 +285,11 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
       });
 
       if (!editionResult.ok) {
-        return { ok: false, error: 'SERVER_ERROR', message: editionResult.error };
+        return {
+          ok: false,
+          error: 'SERVER_ERROR',
+          message: mapEditionCreateError(t, editionResult.code),
+        };
       }
 
       return { ok: true, data: { eventId: editionResult.data.id } };
@@ -429,7 +499,9 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                   <Building2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{org.name}</p>
-                    <p className="text-sm text-muted-foreground">{org.series.length} series</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t('organization.seriesCount', { count: org.series.length })}
+                    </p>
                   </div>
                   {selectedOrgId === org.id && (
                     <Check className="h-5 w-5 text-primary flex-shrink-0" />
@@ -493,7 +565,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                   type="text"
                   value={newOrgSlug}
                   onChange={(e) => handleOrgSlugChange(e.target.value)}
-                  placeholder="my-organization"
+                  placeholder={t('organization.slugPlaceholder')}
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
                   disabled={isCreatingOrg}
                 />
@@ -585,7 +657,7 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
                     type="text"
                     value={form.values.seriesSlug}
                     onChange={handleSeriesSlugChange}
-                    placeholder="ultra-trail-mx"
+                    placeholder={t('event.seriesSlugPlaceholder')}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
                     disabled={form.isSubmitting}
                   />
@@ -672,11 +744,59 @@ export function CreateEventForm({ organizations }: CreateEventFormProps) {
               error={form.errors.description}
               disabled={form.isSubmitting}
               textareaClassName="resize-none"
+              helperText={t('event.descriptionHelper')}
               textareaProps={{
                 placeholder: t('event.descriptionPlaceholder'),
                 rows: 4,
               }}
             />
+
+            {showAiContextDisclosure ? (
+              <div className="rounded-2xl border border-[var(--brand-gold)]/30 bg-[var(--brand-gold)]/5 p-4">
+                <button
+                  type="button"
+                  className="flex w-full items-start justify-between gap-4 text-left"
+                  aria-expanded={isAiContextOpen}
+                  onClick={() => setIsAiContextOpen((current) => !current)}
+                >
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <Sparkles className="h-4 w-4 text-[var(--brand-gold-dark)]" />
+                        <span>{t('event.aiContextTrigger')}</span>
+                      </div>
+                      <Badge variant="pro" size="sm">
+                        {tCommon('billing.pro')}
+                      </Badge>
+                    </div>
+                    <p className="text-sm leading-6 text-muted-foreground">{t('event.aiContextDescription')}</p>
+                  </div>
+                  <ChevronDown
+                    className={cn(
+                      'mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform',
+                      isAiContextOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+
+                {isAiContextOpen ? (
+                  <div className="mt-4 border-t border-[var(--brand-gold)]/20 pt-4">
+                    <FormField label={t('event.aiContextLabel')}>
+                      <div className="space-y-2">
+                        <textarea
+                          value={form.values.organizerBrief}
+                          onChange={(event) => form.setFieldValue('organizerBrief', event.target.value)}
+                          placeholder={t('event.aiContextPlaceholder')}
+                          className="min-h-[144px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                          disabled={form.isSubmitting}
+                        />
+                        <p className="text-xs text-muted-foreground">{t('event.aiContextHelper')}</p>
+                      </div>
+                    </FormField>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             <FormField
               label={t('event.dateLabel')}

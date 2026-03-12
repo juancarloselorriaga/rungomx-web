@@ -28,7 +28,17 @@
       "backToList": "Volver a organizaciones",
       "nameLabel": "Nombre de la organización",
       "namePlaceholder": "Mi Organizadora de Carreras",
-      "slugLabel": "Slug de URL"
+      "slugLabel": "Slug de URL",
+      "slugPlaceholder": "mi-organizacion",
+      "seriesCount": "{count, plural, one {# serie} other {# series}}",
+      "errors": {
+        "createFailed": "No se pudo crear la organización",
+        "required": "Selecciona una organización",
+        "slugTaken": "La URL de esta organización ya está en uso. Prueba con otro slug.",
+        "forbidden": "No tienes permiso para crear una organización aquí.",
+        "unauthenticated": "Tu sesión expiró. Vuelve a iniciar sesión e inténtalo de nuevo.",
+        "validationFailed": "Revisa los datos de la organización e inténtalo nuevamente."
+      }
     },
     "event": {
       "title": "Detalles del evento",
@@ -41,19 +51,36 @@
       "seriesNameLabel": "Nombre de la serie",
       "seriesNamePlaceholder": "Ultra Trail México",
       "seriesSlugLabel": "Slug de URL de la serie",
+      "seriesSlugPlaceholder": "ultra-trail-mx",
       "sportTypeLabel": "Tipo de deporte",
       "editionDetails": "Detalles de la edición",
       "editionLabelLabel": "Etiqueta de edición",
       "editionSlugLabel": "Slug de URL de edición",
       "descriptionLabel": "Descripción del evento",
       "descriptionPlaceholder": "Comparte lo más importante de este evento...",
+      "descriptionHelper": "Un borrador corto es suficiente por ahora. Incluye el formato, la ubicación y qué lo hace especial. Ejemplo: \"Medio maratón de trail en Valle de Bravo con rutas de bosque, cronometraje en vivo y un festival familiar en la meta.\"",
+      "aiContextTrigger": "Agregar contexto para IA",
+      "aiContextDescription": "Opcional para Pro. Comparte notas internas para que el asistente pueda redactar mejor cuando empiece el wizard.",
+      "aiContextLabel": "Brief del organizador para IA",
+      "aiContextPlaceholder": "Ejemplo: Fin de semana de trail boutique en Valle de Bravo para corredores intermedios. Queremos un tono premium, activaciones con marcas, camping y contenido web muy pulido.",
+      "aiContextHelper": "Pueden ser notas desordenadas. Este campo no es público.",
       "dateLabel": "Fecha del evento",
       "clearDate": "Borrar",
       "locationLabel": "Ubicación del evento",
       "cityLabel": "Ciudad",
       "cityPlaceholder": "Ciudad de México",
       "stateLabel": "Estado",
-      "statePlaceholder": "CDMX"
+      "statePlaceholder": "CDMX",
+      "errors": {
+        "seriesCreateFailed": "No pudimos crear la serie del evento. Inténtalo de nuevo en unos momentos.",
+        "editionCreateFailed": "No pudimos crear el borrador del evento. Inténtalo de nuevo en unos momentos.",
+        "seriesSlugTaken": "La URL de esta serie ya está en uso. Elige otro slug.",
+        "editionSlugTaken": "La URL de esta edición ya está en uso. Elige otro slug.",
+        "editionLabelTaken": "La etiqueta de esta edición ya se está usando en la serie seleccionada.",
+        "forbidden": "No tienes permiso para crear este evento.",
+        "unauthenticated": "Tu sesión expiró. Vuelve a iniciar sesión e inténtalo de nuevo.",
+        "validationFailed": "Revisa los datos del evento e inténtalo nuevamente."
+      }
     }
   },
   "registrationCount": "inscripciones",

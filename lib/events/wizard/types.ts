@@ -70,6 +70,37 @@ export type EventWizardCompleteness = {
   };
 };
 
+export type EventSetupWizardStepId =
+  | 'basics'
+  | 'distances'
+  | 'pricing'
+  | 'registration'
+  | 'policies'
+  | 'content'
+  | 'extras'
+  | 'review';
+
+export type EventWizardCapabilityLocks = {
+  canUseAiAssistant: boolean;
+  canApplyAiPatch: boolean;
+  canPublishEvent: boolean;
+  canEditEventConfig: boolean;
+  canEditRegistration: boolean;
+};
+
+export type EventSetupWizardStepState = {
+  id: EventSetupWizardStepId;
+  required: boolean;
+  completed: boolean;
+  blockerCount: number;
+  recommendationCount: number;
+};
+
+export type EventWizardAggregate = EventWizardCompleteness & {
+  setupStepStateById: Record<EventSetupWizardStepId, EventSetupWizardStepState>;
+  capabilityLocks: EventWizardCapabilityLocks;
+};
+
 export type EventWizardStepModule = {
   id: EventWizardStepId;
   labelKey: EventWizardRegistryLabelKey;

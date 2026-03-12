@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import {
   Calendar,
   ChevronDown,
@@ -91,6 +92,7 @@ export function PricingTiersManager({
   initialPricingData,
 }: PricingTiersManagerProps) {
   const t = useTranslations('pages.dashboardEvents.pricing');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pricingData, setPricingData] = useState(initialPricingData);
   const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(
@@ -178,6 +180,7 @@ export function PricingTiersManager({
             toast.success(t('tier.saved'));
             setIsAddingNew(false);
             setTierFormData(EMPTY_TIER);
+            router.refresh();
           } else {
             toast.error(result.code === 'DATE_OVERLAP' ? t('tier.dateOverlap') : t('tier.errorSaving'));
           }
@@ -208,6 +211,7 @@ export function PricingTiersManager({
             toast.success(t('tier.saved'));
             setEditingTier(null);
             setTierFormData(EMPTY_TIER);
+            router.refresh();
           } else {
             toast.error(result.code === 'DATE_OVERLAP' ? t('tier.dateOverlap') : t('tier.errorSaving'));
           }
@@ -234,6 +238,7 @@ export function PricingTiersManager({
           );
           setDeletingTierId(null);
           toast.success(t('tier.deleted'));
+          router.refresh();
         } else if (result.code === 'CANNOT_DELETE_LAST_TIER') {
           setDeletingTierId(null);
           toast.error(t('tier.cannotDeleteLast'));

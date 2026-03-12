@@ -21,6 +21,12 @@ The suite wipes the test database **before and after** the run. Tests create the
 
 Playwright starts a dedicated Next.js dev server automatically (defaults to `http://127.0.0.1:43137`).
 
+Before choosing a lane:
+
+- `pnpm test:e2e` and `pnpm test:e2e:isolated` run against the test DB from `.env.test`.
+- Manual Playwright MCP smoke tests are a separate acceptance lane against real dev-branch data and real organizer/athlete accounts.
+- Do not mix those two models when debugging failures.
+
 ### Run all tests (headless)
 ```bash
 pnpm test:e2e
@@ -30,6 +36,14 @@ pnpm test:e2e
 ```bash
 pnpm test:e2e:isolated
 ```
+
+### Pro-gated setup rule
+
+For automated Pro-gated coverage:
+
+- use `seedActiveProEntitlement(...)` when the test means "already Pro"
+- use pending-grant setup only when the test is explicitly about billing auto-claim
+- keep `e2e/tests/billing-pro.spec.ts` as the canonical pending-grant auto-claim regression
 
 ### Run with visible browser
 ```bash
@@ -161,6 +175,8 @@ The suite uses a local run lock to prevent concurrent runs from clobbering the s
 - Wait for the other run to finish, or
 - Use isolated configs (different `DATABASE_URL` and `PLAYWRIGHT_BASE_URL`), or
 - Bypass the lock (not recommended): `E2E_SKIP_RUN_LOCK=1 pnpm test:e2e`
+
+This matters especially for isolated automation against the shared test DB. Real-account manual Playwright MCP smoke runs are a different lane and should not be diagnosed through the run-lock model.
 
 ### Tests fail with "Element not found"
 ```bash

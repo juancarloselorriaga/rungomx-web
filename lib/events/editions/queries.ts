@@ -52,6 +52,7 @@ export type EventEditionDetail = {
   editionLabel: string;
   visibility: string;
   description: string | null;
+  organizerBrief: string | null;
   startsAt: Date | null;
   endsAt: Date | null;
   timezone: string;
@@ -418,6 +419,7 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
     editionLabel: edition.editionLabel,
     visibility: edition.visibility,
     description: edition.description,
+    organizerBrief: edition.organizerBrief,
     startsAt: edition.startsAt,
     endsAt: edition.endsAt,
     timezone: edition.timezone,

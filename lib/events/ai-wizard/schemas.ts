@@ -1,17 +1,14 @@
 import { z } from 'zod';
 
 const wizardStepIds = [
-  'choose_path',
-  'event_details',
+  'basics',
   'distances',
   'pricing',
-  'faq',
-  'waivers',
-  'questions',
+  'registration',
   'policies',
-  'website',
-  'add_ons',
-  'publish',
+  'content',
+  'extras',
+  'review',
 ] as const;
 
 export const eventAiWizardStepIdSchema = z.enum(wizardStepIds);
@@ -256,15 +253,58 @@ export const eventAiWizardIntentRouteSchema = z
 
 export type EventAiWizardIntentRoute = z.infer<typeof eventAiWizardIntentRouteSchema>;
 
+const markdownOutputDomainValues = [
+  'description',
+  'faq',
+  'waiver',
+  'website',
+  'question',
+  'add_on',
+  'policy',
+] as const;
+
 export const eventAiWizardMarkdownOutputSchema = z
   .object({
-    domain: z.enum(['faq', 'waiver', 'website', 'question', 'add_on', 'policy', 'summary']),
+    domain: z.enum(markdownOutputDomainValues),
     title: z.string().max(120).optional(),
     contentMarkdown: z.string().min(1).max(10000),
   })
   .strict();
 
 export type EventAiWizardMarkdownOutput = z.infer<typeof eventAiWizardMarkdownOutputSchema>;
+
+type ExpectedMarkdownOutput = Pick<EventAiWizardMarkdownOutput, 'domain' | 'contentMarkdown'>;
+
+function collectExpectedMarkdownOutputs(ops: EventAiWizardOp[]): ExpectedMarkdownOutput[] {
+  return ops.flatMap((op): ExpectedMarkdownOutput[] => {
+    switch (op.type) {
+      case 'update_edition':
+        return op.data.description ? [{ domain: 'description', contentMarkdown: op.data.description }] : [];
+      case 'create_faq_item':
+        return [{ domain: 'faq', contentMarkdown: op.data.answerMarkdown }];
+      case 'create_waiver':
+        return [{ domain: 'waiver', contentMarkdown: op.data.bodyMarkdown }];
+      case 'create_question':
+        return op.data.helpTextMarkdown
+          ? [{ domain: 'question', contentMarkdown: op.data.helpTextMarkdown }]
+          : [];
+      case 'create_add_on':
+        return op.data.descriptionMarkdown
+          ? [{ domain: 'add_on', contentMarkdown: op.data.descriptionMarkdown }]
+          : [];
+      case 'append_website_section_markdown':
+        return [{ domain: 'website', contentMarkdown: op.data.markdown }];
+      case 'append_policy_markdown':
+        return [{ domain: 'policy', contentMarkdown: op.data.markdown }];
+      default:
+        return [];
+    }
+  });
+}
+
+function toOutputKey(output: ExpectedMarkdownOutput): string {
+  return `${output.domain}::${output.contentMarkdown}`;
+}
 
 export const eventAiWizardPatchSchema = z
   .object({
@@ -276,13 +316,54 @@ export const eventAiWizardPatchSchema = z
     intentRouting: z.array(eventAiWizardIntentRouteSchema).max(30).optional(),
     markdownOutputs: z.array(eventAiWizardMarkdownOutputSchema).max(30).optional(),
   })
-  .strict();
+  .strict()
+  .superRefine((patch, ctx) => {
+    const expectedOutputs = collectExpectedMarkdownOutputs(patch.ops);
+    const providedOutputs = patch.markdownOutputs ?? [];
+
+    if (expectedOutputs.length === 0) {
+      if (providedOutputs.length > 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['markdownOutputs'],
+          message: 'markdownOutputs are only allowed when the patch writes markdown-bearing fields',
+        });
+      }
+      return;
+    }
+
+    if (providedOutputs.length !== expectedOutputs.length) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['markdownOutputs'],
+        message: 'markdownOutputs must mirror each markdown-bearing operation exactly',
+      });
+      return;
+    }
+
+    const expectedKeys = expectedOutputs.map(toOutputKey).sort();
+    const providedKeys = providedOutputs
+      .map((output) => toOutputKey({ domain: output.domain, contentMarkdown: output.contentMarkdown }))
+      .sort();
+
+    for (let index = 0; index < expectedKeys.length; index += 1) {
+      if (expectedKeys[index] !== providedKeys[index]) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['markdownOutputs'],
+          message: 'markdownOutputs must match the exact markdown content written by the patch',
+        });
+        return;
+      }
+    }
+  });
 
 export type EventAiWizardPatch = z.infer<typeof eventAiWizardPatchSchema>;
 
 export const eventAiWizardApplyRequestSchema = z
   .object({
     editionId: z.string().uuid(),
+    locale: z.string().min(2).max(10).optional(),
     patch: eventAiWizardPatchSchema,
   })
   .strict();

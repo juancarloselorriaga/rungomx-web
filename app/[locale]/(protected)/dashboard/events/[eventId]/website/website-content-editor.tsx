@@ -139,6 +139,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     const result = await updateWebsiteContent({ editionId, locale, blocks: newBlocks });
     if (result.ok) {
       toast.success(t('saved'));
+      router.refresh();
     } else {
       toast.error(t('errorSaving'));
     }

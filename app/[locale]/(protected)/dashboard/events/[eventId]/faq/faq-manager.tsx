@@ -9,6 +9,7 @@ import { createFaqItem, updateFaqItem, deleteFaqItem, reorderFaqItems } from '@/
 import { cn } from '@/lib/utils';
 import { GripVertical, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { type FormEvent, useState, useTransition } from 'react';
 
 type FaqItem = {
@@ -25,6 +26,7 @@ type FaqManagerProps = {
 
 export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
   const t = useTranslations('pages.dashboardEvents.faq');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [faqItems, setFaqItems] = useState(initialFaqItems);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -73,6 +75,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       setFormQuestion('');
       setFormAnswer('');
       setIsAdding(false);
+      router.refresh();
     });
   }
 
@@ -128,6 +131,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       setFormQuestion('');
       setFormAnswer('');
       setEditingId(null);
+      router.refresh();
     });
   }
 
@@ -151,6 +155,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
 
       // Remove from local state
       setFaqItems((prev) => prev.filter((item) => item.id !== id));
+      router.refresh();
     });
   }
 
@@ -172,6 +177,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       }
 
       setFaqItems(newItems.map((item, i) => ({ ...item, sortOrder: i })));
+      router.refresh();
     });
   }
 
@@ -192,6 +198,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       }
 
       setFaqItems(newItems.map((item, i) => ({ ...item, sortOrder: i })));
+      router.refresh();
     });
   }
 

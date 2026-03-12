@@ -1,4 +1,5 @@
 import {
+  buildEventWizardAggregate,
   evaluateEventWizardCompleteness,
   getWizardStepHref,
   getEventWizardSteps,
@@ -15,6 +16,7 @@ function buildEvent(overrides?: Partial<EventEditionDetail>): EventEditionDetail
     editionLabel: '2026',
     visibility: 'draft',
     description: null,
+    organizerBrief: null,
     startsAt: null,
     endsAt: null,
     timezone: 'America/Mexico_City',
@@ -126,6 +128,108 @@ describe('event wizard orchestrator', () => {
 
     expect(result.publishBlockers.map((issue) => issue.code)).toEqual(['MISSING_PRICING']);
     expect(result.completionByStepId.pricing).toBe(false);
+  });
+
+  it('builds truthful setup-step state for registration, content, extras, and capability locks', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        city: 'Guadalajara',
+        description: 'A focused trail race weekend.',
+        registrationOpensAt: new Date('2025-12-01T00:00:00.000Z'),
+        waivers: [
+          {
+            id: 'waiver-1',
+            title: 'Participant waiver',
+            body: 'Please read carefully.',
+            versionHash: 'waiver-v1',
+            signatureType: 'checkbox',
+            displayOrder: 0,
+          },
+        ],
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+        hasWebsiteContent: false,
+        questionCount: 2,
+        addOnCount: 1,
+        capabilityLocks: {
+          canUseAiAssistant: true,
+          canApplyAiPatch: true,
+          canPublishEvent: false,
+        },
+      },
+    );
+
+    expect(aggregate.setupStepStateById.registration.completed).toBe(true);
+    expect(aggregate.setupStepStateById.content.completed).toBe(true);
+    expect(aggregate.setupStepStateById.policies.completed).toBe(true);
+    expect(aggregate.setupStepStateById.extras.completed).toBe(true);
+    expect(aggregate.setupStepStateById.review.completed).toBe(true);
+    expect(aggregate.capabilityLocks.canUseAiAssistant).toBe(true);
+    expect(aggregate.capabilityLocks.canApplyAiPatch).toBe(true);
+    expect(aggregate.capabilityLocks.canPublishEvent).toBe(false);
+  });
+
+  it('uses authoritative website, question, and add-on signals instead of synthetic placeholders', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        city: 'Guadalajara',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+        hasWebsiteContent: true,
+        questionCount: 1,
+        addOnCount: 1,
+      },
+    );
+
+    expect(aggregate.completionByStepId.website).toBe(true);
+    expect(aggregate.completionByStepId.questions).toBe(true);
+    expect(aggregate.completionByStepId.add_ons).toBe(true);
+    expect(aggregate.setupStepStateById.content.completed).toBe(true);
+    expect(aggregate.setupStepStateById.extras.completed).toBe(true);
   });
 
   it('marks required progress complete when path, details, distance, and pricing are complete', () => {

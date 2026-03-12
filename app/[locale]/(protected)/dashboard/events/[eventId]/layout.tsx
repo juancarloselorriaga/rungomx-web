@@ -1,5 +1,4 @@
 import { getPathname } from '@/i18n/navigation';
-import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import type { EventVisibility } from '@/lib/events/constants';
@@ -9,6 +8,8 @@ import { getTranslations } from 'next-intl/server';
 import { connection } from 'next/server';
 import { notFound, redirect } from 'next/navigation';
 import { ReactNode } from 'react';
+
+import { EventDetailLayoutShell } from './event-detail-layout-shell';
 
 type EventLayoutProps = {
   params: Promise<{ locale: string; eventId: string }>;
@@ -46,13 +47,6 @@ export default async function EventDetailLayout({
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
-  const visibilityStyles = {
-    draft: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
-    published: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-    unlisted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-    archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  };
-
   const footerLink =
     event.visibility === 'published'
       ? {
@@ -67,8 +61,7 @@ export default async function EventDetailLayout({
       : null;
 
   return (
-    <SubmenuContextProvider
-      submenuId="event-detail"
+    <EventDetailLayoutShell
       title={`${event.seriesName} ${event.editionLabel}`}
       subtitle={event.organizationName}
       metaBadge={{
@@ -79,29 +72,7 @@ export default async function EventDetailLayout({
       basePath={`/dashboard/events/${eventId}`}
       footerLink={footerLink}
     >
-      {/* Header: shown on mobile where sidebar is collapsed; hidden on desktop to avoid duplicate title */}
-      <div className="mb-6 md:hidden">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {event.seriesName} {event.editionLabel}
-              </h1>
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  visibilityStyles[event.visibility as keyof typeof visibilityStyles] ||
-                  visibilityStyles.draft
-                }`}
-              >
-                {tEvents(`visibility.${event.visibility as EventVisibility}`)}
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground">{event.organizationName}</p>
-          </div>
-        </div>
-      </div>
-
       {children}
-    </SubmenuContextProvider>
+    </EventDetailLayoutShell>
   );
 }

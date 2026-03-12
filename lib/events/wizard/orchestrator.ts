@@ -2,6 +2,9 @@ import type { EventEditionDetail } from '@/lib/events/queries';
 import { EVENT_WIZARD_STEP_MODULES } from './step-modules';
 import type {
   EventCreationPath,
+  EventSetupWizardStepId,
+  EventWizardAggregate,
+  EventWizardCapabilityLocks,
   EventWizardCompleteness,
   EventWizardIssue,
   EventWizardStep,
@@ -10,6 +13,10 @@ import type {
 
 export type {
   EventCreationPath,
+  EventSetupWizardStepId,
+  EventSetupWizardStepState,
+  EventWizardAggregate,
+  EventWizardCapabilityLocks,
   EventWizardCompleteness,
   EventWizardIssue,
   EventWizardIssueLabelKey,
@@ -49,6 +56,22 @@ const OPTIONAL_RECOMMENDATION_DEFINITIONS: Array<{
   { stepId: 'add_ons', code: 'RECOMMEND_ADD_ONS', labelKey: 'wizard.issues.recommendAddOns' },
   { stepId: 'policies', code: 'RECOMMEND_POLICIES', labelKey: 'wizard.issues.recommendPolicies' },
 ];
+
+const DEFAULT_CAPABILITY_LOCKS: EventWizardCapabilityLocks = {
+  canUseAiAssistant: false,
+  canApplyAiPatch: false,
+  canPublishEvent: true,
+  canEditEventConfig: true,
+  canEditRegistration: true,
+};
+
+type EventWizardAggregateOptions = {
+  selectedPath: EventCreationPath | null;
+  hasWebsiteContent?: boolean;
+  questionCount?: number;
+  addOnCount?: number;
+  capabilityLocks?: Partial<EventWizardCapabilityLocks>;
+};
 
 export function getEventWizardSteps(eventId: string): EventWizardStep[] {
   return EVENT_WIZARD_STEP_MODULES.map((module) => ({
@@ -163,16 +186,69 @@ export function getWizardStepNavigationTarget(
   }
 }
 
-export function evaluateEventWizardCompleteness(
+function buildSetupStepState(
+  id: EventSetupWizardStepId,
+  required: boolean,
+  completed: boolean,
+  blockerStepIds: Set<EventSetupWizardStepId>,
+  recommendationStepIds: EventSetupWizardStepId[],
+) {
+  const recommendationCount = recommendationStepIds.filter((stepId) => stepId === id).length;
+  return {
+    id,
+    required,
+    completed,
+    blockerCount: blockerStepIds.has(id) ? 1 : 0,
+    recommendationCount,
+  };
+}
+
+function mapIssueToSetupStepId(stepId: EventWizardStepId): EventSetupWizardStepId {
+  switch (stepId) {
+    case 'event_details':
+      return 'basics';
+    case 'distances':
+      return 'distances';
+    case 'pricing':
+      return 'pricing';
+    case 'questions':
+    case 'add_ons':
+      return 'extras';
+    case 'faq':
+    case 'website':
+      return 'content';
+    case 'waivers':
+    case 'policies':
+      return 'policies';
+    case 'publish':
+      return 'review';
+    default:
+      return 'basics';
+  }
+}
+
+export function buildEventWizardAggregate(
   event: EventEditionDetail,
-  selectedPath: EventCreationPath | null,
-): EventWizardCompleteness {
+  {
+    selectedPath,
+    hasWebsiteContent = false,
+    questionCount = 0,
+    addOnCount = 0,
+    capabilityLocks = {},
+  }: EventWizardAggregateOptions,
+): EventWizardAggregate {
   const steps = getEventWizardSteps(event.id);
   const stepById = new Map(steps.map((step) => [step.id, step]));
 
   const hasLocation = Boolean(event.locationDisplay || event.city || event.state);
   const hasDistances = event.distances.length > 0;
   const hasMissingPricing = event.distances.some((distance) => distance.hasPricingTier === false);
+  const hasRegistrationConfig = Boolean(
+    event.registrationOpensAt || event.registrationClosesAt || event.isRegistrationPaused,
+  );
+  const hasContent = hasWebsiteContent || event.faqItems.length > 0 || Boolean(event.description?.trim());
+  const hasPolicies = event.policyConfig !== null || event.waivers.length > 0;
+  const hasExtras = questionCount > 0 || addOnCount > 0;
 
   const missingRequired: EventWizardIssue[] = [];
   if (!event.startsAt) {
@@ -235,10 +311,10 @@ export function evaluateEventWizardCompleteness(
     pricing: hasDistances && !hasMissingPricing,
     faq: event.faqItems.length > 0,
     waivers: event.waivers.length > 0,
-    questions: false,
+    questions: questionCount > 0,
     policies: event.policyConfig !== null,
-    website: Boolean(event.externalUrl),
-    add_ons: false,
+    website: hasWebsiteContent,
+    add_ons: addOnCount > 0,
     publish: publishBlockers.length === 0,
   };
 
@@ -262,16 +338,42 @@ export function evaluateEventWizardCompleteness(
   const totalRequired = requiredSteps.length;
   const percent = totalRequired === 0 ? 100 : Math.round((completedRequired / totalRequired) * 100);
 
+  const blockerStepIds = new Set([...publishBlockers, ...missingRequired].map((issue) => mapIssueToSetupStepId(issue.stepId)));
+  const recommendationStepIds = optionalRecommendations.map((issue) => mapIssueToSetupStepId(issue.stepId));
+
+  const setupStepStateById: EventWizardAggregate['setupStepStateById'] = {
+    basics: buildSetupStepState('basics', true, completionByStepId.event_details, blockerStepIds, recommendationStepIds),
+    distances: buildSetupStepState('distances', true, completionByStepId.distances, blockerStepIds, recommendationStepIds),
+    pricing: buildSetupStepState('pricing', true, completionByStepId.pricing, blockerStepIds, recommendationStepIds),
+    registration: buildSetupStepState('registration', false, hasRegistrationConfig, blockerStepIds, recommendationStepIds),
+    policies: buildSetupStepState('policies', false, hasPolicies, blockerStepIds, recommendationStepIds),
+    content: buildSetupStepState('content', false, hasContent, blockerStepIds, recommendationStepIds),
+    extras: buildSetupStepState('extras', false, hasExtras, blockerStepIds, recommendationStepIds),
+    review: buildSetupStepState('review', true, publishBlockers.length === 0, blockerStepIds, recommendationStepIds),
+  };
+
   return {
     missingRequired,
     publishBlockers,
     optionalRecommendations,
     prioritizedChecklist,
     completionByStepId,
+    setupStepStateById,
+    capabilityLocks: {
+      ...DEFAULT_CAPABILITY_LOCKS,
+      ...capabilityLocks,
+    },
     progress: {
       completedRequired,
       totalRequired,
       percent,
     },
   };
+}
+
+export function evaluateEventWizardCompleteness(
+  event: EventEditionDetail,
+  selectedPath: EventCreationPath | null,
+): EventWizardCompleteness {
+  return buildEventWizardAggregate(event, { selectedPath });
 }

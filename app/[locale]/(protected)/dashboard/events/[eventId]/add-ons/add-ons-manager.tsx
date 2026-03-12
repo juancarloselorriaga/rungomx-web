@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   ChevronDown,
@@ -90,6 +91,7 @@ export function AddOnsManager({
   initialAddOns,
 }: AddOnsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.addOns');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [addOns, setAddOns] = useState(initialAddOns);
   const [expandedAddOns, setExpandedAddOns] = useState<Set<string>>(new Set());
@@ -187,6 +189,7 @@ export function AddOnsManager({
             toast.success(t('addOn.saved'));
             setIsAddingAddOn(false);
             setAddOnFormData(EMPTY_ADD_ON);
+            router.refresh();
           } else {
             toast.error(t('addOn.errorSaving'));
           }
@@ -208,6 +211,7 @@ export function AddOnsManager({
             toast.success(t('addOn.saved'));
             setEditingAddOn(null);
             setAddOnFormData(EMPTY_ADD_ON);
+            router.refresh();
           } else {
             toast.error(t('addOn.errorSaving'));
           }
@@ -227,6 +231,7 @@ export function AddOnsManager({
           setAddOns((prev) => prev.filter((a) => a.id !== addOnId));
           setDeletingAddOnId(null);
           toast.success(t('addOn.deleted'));
+          router.refresh();
         } else {
           setDeletingAddOnId(null);
           toast.error(t('addOn.errorDeleting'));
@@ -262,6 +267,7 @@ export function AddOnsManager({
             toast.success(t('option.saved'));
             setAddingOptionToAddOn(null);
             setOptionFormData(EMPTY_OPTION);
+            router.refresh();
           } else {
             toast.error(t('option.errorSaving'));
           }
@@ -290,6 +296,7 @@ export function AddOnsManager({
             toast.success(t('option.saved'));
             setEditingOption(null);
             setOptionFormData(EMPTY_OPTION);
+            router.refresh();
           } else {
             toast.error(t('option.errorSaving'));
           }
@@ -315,6 +322,7 @@ export function AddOnsManager({
           );
           setDeletingOptionInfo(null);
           toast.success(t('option.deleted'));
+          router.refresh();
         } else {
           setDeletingOptionInfo(null);
           toast.error(t('option.errorSaving'));

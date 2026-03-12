@@ -5,6 +5,8 @@
 
 import type { getTestDb } from './db';
 import * as schema from '@/db/schema';
+import { getProEntitlementForUser } from '@/lib/billing/entitlements';
+import { grantAdminOverride } from '@/lib/billing/commands';
 import { and, eq } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 import { hashPassword } from 'better-auth/crypto';
@@ -255,6 +257,57 @@ export async function createTestProfile(
     .returning();
 
   return profile;
+}
+
+/**
+ * Seed active Pro entitlement for a test user.
+ * Use this for Pro-gated UI tests that need deterministic "already Pro" state.
+ * Do not use this helper for pending-grant auto-claim tests.
+ * Real-account manual Playwright MCP smoke validation is a separate lane and
+ * should not share setup assumptions with isolated test-db automation.
+ */
+export async function seedActiveProEntitlement(
+  db: ReturnType<typeof getTestDb>,
+  userId: string,
+  options?: {
+    grantedByUserId?: string;
+    grantDurationDays?: number | null;
+    grantFixedEndsAt?: Date | null;
+    now?: Date;
+    reason?: string;
+  },
+) {
+  await waitForUserPersistence(db, userId, 'seedActiveProEntitlement');
+
+  const result = await grantAdminOverride({
+    userId,
+    grantedByUserId: options?.grantedByUserId ?? userId,
+    grantDurationDays: options?.grantDurationDays ?? 14,
+    grantFixedEndsAt: options?.grantFixedEndsAt ?? null,
+    reason: options?.reason ?? 'e2e_active_pro_entitlement',
+    now: options?.now,
+  });
+
+  if (!result.ok) {
+    throw new Error(`Failed to seed active Pro entitlement for ${userId}: ${result.error}`);
+  }
+
+  const entitlement = await getProEntitlementForUser({
+    userId,
+    isInternal: false,
+    now: options?.now ?? new Date(),
+  });
+
+  if (!entitlement.isPro) {
+    throw new Error(`Expected active Pro entitlement for ${userId}, but entitlement resolver returned false.`);
+  }
+
+  return {
+    overrideId: result.data.overrideId ?? null,
+    startsAt: result.data.startsAt ?? null,
+    endsAt: result.data.endsAt ?? null,
+    entitlement,
+  };
 }
 
 /**

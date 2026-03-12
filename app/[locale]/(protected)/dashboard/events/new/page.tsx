@@ -1,7 +1,10 @@
 import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
+import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { getUserOrganizations } from '@/lib/organizations/queries';
 import { getOrganizationEventSeries } from '@/lib/events/queries';
+import { evaluateProFeatureDecision } from '@/lib/pro-features/evaluator';
+import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -43,6 +46,19 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
       return { ...org, series };
     }),
   );
+  const [proFeatureConfigs, entitlement] = await Promise.all([
+    getProFeatureConfigSnapshot(),
+    authContext.isInternal
+      ? Promise.resolve({ isPro: false })
+      : getProEntitlementForUser({ userId: authContext.user!.id, isInternal: authContext.isInternal }),
+  ]);
+  const canSeedAiContext =
+    evaluateProFeatureDecision({
+      featureKey: 'event_ai_wizard',
+      config: proFeatureConfigs.event_ai_wizard,
+      isPro: entitlement.isPro ?? false,
+      isInternal: authContext.isInternal,
+    }).status === 'enabled';
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -51,7 +67,7 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
         <p className="text-muted-foreground">{t('createEvent.description')}</p>
       </div>
 
-      <CreateEventForm organizations={organizationsWithSeries} />
+      <CreateEventForm organizations={organizationsWithSeries} showAiContextDisclosure={canSeedAiContext} />
     </div>
   );
 }

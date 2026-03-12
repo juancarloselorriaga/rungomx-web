@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowDown, ArrowUp, Edit2, Loader2, Plus, Trash2, X } from 'lucide-react';
 
@@ -107,6 +108,7 @@ function QuestionForm({
 }) {
   const t = useTranslations('pages.dashboardEvents.questions.form');
   const tQuestions = useTranslations('pages.dashboardEvents.questions');
+  const router = useRouter();
 
   const form = useForm<QuestionFormData, RegistrationQuestionData>({
     defaultValues: initialData,
@@ -167,6 +169,7 @@ function QuestionForm({
     onSuccess: (question) => {
       toast.success(questionId ? tQuestions('toast.updated') : tQuestions('toast.created'));
       onSaved(question);
+      router.refresh();
     },
     onError: (message) => {
       toast.error(tQuestions('toast.error'), { description: message });
@@ -297,6 +300,7 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
   const t = useTranslations('pages.dashboardEvents.questions');
   const tForm = useTranslations('pages.dashboardEvents.questions.form');
   const tCommon = useTranslations('common');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [questions, setQuestions] = useState<RegistrationQuestionData[]>(
     normalizeQuestions(initialQuestions),
@@ -322,6 +326,7 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
       setQuestions((prev) => normalizeQuestions(prev.filter((q) => q.id !== questionId)));
       setDeletingQuestionId(null);
       toast.success(t('toast.deleted'));
+      router.refresh();
     });
   };
 
@@ -354,6 +359,7 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
       }
 
       toast.success(t('toast.reordered'));
+      router.refresh();
     });
   };
 

@@ -258,6 +258,47 @@
     display: none;
   }
 
+  @keyframes assistant-working-sheen {
+    0% {
+      background-position: 200% 50%;
+    }
+
+    100% {
+      background-position: -200% 50%;
+    }
+  }
+
+  @keyframes assistant-working-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(0.9);
+    }
+
+    50% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+  }
+
+  .assistant-working-label {
+    color: transparent;
+    background-image: linear-gradient(
+      110deg,
+      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 0%,
+      color-mix(in oklch, var(--foreground) 94%, white) 46%,
+      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 92%
+    );
+    background-size: 220% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: assistant-working-sheen 1.8s linear infinite;
+  }
+
+  .assistant-working-dot {
+    animation: assistant-working-pulse 1.2s ease-in-out infinite;
+  }
+
   /* Sliding sidebar navigation (2-level system: root + submenu) */
   .sliding-nav-track {
     display: flex;
