@@ -19,7 +19,14 @@ import {
   PaymentsDataTableHead,
   PaymentsDataTableHeader,
   PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
 } from '@/components/payments/payments-data-table';
+import { PaymentsCountPill } from '@/components/payments/payments-typography';
+import { PaymentsPanel } from '@/components/payments/payments-surfaces';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 
@@ -367,13 +374,58 @@ export function ArtifactGovernanceDashboard({
         ) : null}
       </details>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.recentVersionsTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{labels.recentVersionsTitle}</h3>
+          <PaymentsCountPill>{sortedVersions.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.recentVersionsDescription}</p>
         {sortedVersions.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{labels.versionsEmpty}</p>
         ) : (
-          <PaymentsDataTable minWidthClassName="min-w-[64rem]">
+          <>
+            <PaymentsResponsiveList className="mt-4">
+              {sortedVersions.map((version) => (
+                <PaymentsResponsiveListItem key={version.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-mono text-xs">{truncateMiddle(version.traceId)}</p>
+                    <PaymentsCountPill>{String(version.artifactVersion)}</PaymentsCountPill>
+                  </div>
+                  <PaymentsResponsiveListGrid className="mt-4">
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.versionFingerprintHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(version.fingerprint)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.versionLineageHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatLineageValue(version, labels)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.versionReasonHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs">{version.reasonCode}</PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.versionCreatedAtHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatDate(version.createdAt, locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.versionRequestedByHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(version.requestedByUserId)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                  </PaymentsResponsiveListGrid>
+                </PaymentsResponsiveListItem>
+              ))}
+            </PaymentsResponsiveList>
+            <div className="hidden md:block">
+              <PaymentsDataTable minWidthClassName="min-w-[64rem]">
               <PaymentsDataTableHead>
                 <tr>
                   <PaymentsDataTableHeader>{labels.versionTraceHeader}</PaymentsDataTableHeader>
@@ -413,17 +465,66 @@ export function ArtifactGovernanceDashboard({
                   </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </PaymentsDataTable>
+              </PaymentsDataTable>
+            </div>
+          </>
         )}
-      </div>
+      </PaymentsPanel>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.recentDeliveriesTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{labels.recentDeliveriesTitle}</h3>
+          <PaymentsCountPill>{sortedDeliveries.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.recentDeliveriesDescription}</p>
         {sortedDeliveries.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{labels.deliveriesEmpty}</p>
         ) : (
-          <PaymentsDataTable minWidthClassName="min-w-[64rem]">
+          <>
+            <PaymentsResponsiveList className="mt-4">
+              {sortedDeliveries.map((delivery) => (
+                <PaymentsResponsiveListItem key={delivery.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">{delivery.channel}</p>
+                    <PaymentsCountPill>{truncateMiddle(delivery.artifactVersionId, 8, 4)}</PaymentsCountPill>
+                  </div>
+                  <PaymentsResponsiveListGrid className="mt-4">
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.deliveryTraceHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(delivery.traceId)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.deliveryRecipientHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {truncateMiddle(delivery.recipientReference, 14, 6)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.deliveryReasonHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs">
+                        {delivery.reasonCode}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.deliveryRequestedByHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(delivery.requestedByUserId)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.deliveryCreatedAtHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatDate(delivery.createdAt, locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                  </PaymentsResponsiveListGrid>
+                </PaymentsResponsiveListItem>
+              ))}
+            </PaymentsResponsiveList>
+            <div className="hidden md:block">
+              <PaymentsDataTable minWidthClassName="min-w-[64rem]">
               <PaymentsDataTableHead>
                 <tr>
                   <PaymentsDataTableHeader>{labels.deliveryTraceHeader}</PaymentsDataTableHeader>
@@ -458,9 +559,11 @@ export function ArtifactGovernanceDashboard({
                   </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </PaymentsDataTable>
+              </PaymentsDataTable>
+            </div>
+          </>
         )}
-      </div>
+      </PaymentsPanel>
     </section>
   );
 }

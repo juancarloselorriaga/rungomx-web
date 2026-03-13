@@ -115,3 +115,54 @@ export function PaymentsDataTableMeta({
 }: ComponentPropsWithoutRef<'p'>) {
   return <p className={cn('mt-1 text-xs text-muted-foreground', className)} {...props} />;
 }
+
+export function PaymentsResponsiveList({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'div'>) {
+  return <div className={cn('grid gap-3 md:hidden', className)} {...props} />;
+}
+
+export function PaymentsResponsiveListItem({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'article'>) {
+  return (
+    <article
+      className={cn(
+        'rounded-xl border border-border/60 bg-background/80 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function PaymentsResponsiveListGrid({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'dl'>) {
+  return <dl className={cn('grid grid-cols-2 gap-x-4 gap-y-3', className)} {...props} />;
+}
+
+export function PaymentsResponsiveListLabel({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'dt'>) {
+  return (
+    <dt
+      className={cn(
+        'text-[11px] uppercase tracking-[0.14em] text-muted-foreground',
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export function PaymentsResponsiveListValue({
+  className,
+  ...props
+}: ComponentPropsWithoutRef<'dd'>) {
+  return <dd className={cn('mt-1 text-sm text-foreground', className)} {...props} />;
+}

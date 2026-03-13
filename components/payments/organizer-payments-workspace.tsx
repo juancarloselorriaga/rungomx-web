@@ -175,7 +175,7 @@ export function OrganizerPaymentsWorkspace({
         />
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)] xl:gap-6">
         {data.wallet ? (
           <OrganizerWalletSummary
             asOf={data.wallet.asOf}
@@ -192,11 +192,11 @@ export function OrganizerPaymentsWorkspace({
           />
         )}
 
-        <PaymentsPanel>
-          <div className="space-y-5">
+        <PaymentsPanel className="p-4 sm:p-6">
+          <div className="space-y-4 sm:space-y-5">
             <div className="space-y-1">
               <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>
-              <PaymentsSectionTitle>
+              <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">
                 {ctaState === 'request'
                   ? t('home.nextStep.requestTitle')
                   : ctaState === 'active'

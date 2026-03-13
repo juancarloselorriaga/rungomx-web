@@ -1,10 +1,18 @@
+import { SampledReferenceList } from '@/components/admin/payments/sampled-reference-list';
 import {
   PaymentsDataTable,
   PaymentsDataTableCell,
   PaymentsDataTableHead,
   PaymentsDataTableHeader,
   PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
 } from '@/components/payments/payments-data-table';
+import { PaymentsCountPill } from '@/components/payments/payments-typography';
+import { PaymentsPanel } from '@/components/payments/payments-surfaces';
 import type { MxnNetRecognizedFeeReport } from '@/lib/payments/economics/mxn-reporting';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
@@ -91,14 +99,98 @@ export function MxnReportingDashboard({
         </div>
       )}
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.tableTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{labels.tableTitle}</h3>
+          <PaymentsCountPill>{report.currencies.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.tableDescription}</p>
 
         {report.currencies.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">{labels.emptyState}</p>
         ) : (
-          <PaymentsDataTable minWidthClassName="min-w-[72rem]">
+          <>
+            <PaymentsResponsiveList className="mt-4">
+              {report.currencies.map((row) => (
+                <PaymentsResponsiveListItem key={row.sourceCurrency}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">{row.sourceCurrency}</p>
+                    <PaymentsCountPill>{row.convertedEventCount.toLocaleString(locale)}</PaymentsCountPill>
+                  </div>
+                  <PaymentsResponsiveListGrid className="mt-4">
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.sourceHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                        {formatMoneyFromMinor(row.sourceNetRecognizedFeeMinor, row.sourceCurrency, locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.mxnHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                        {row.mxnNetRecognizedFeeMinor === null
+                          ? labels.notConvertedLabel
+                          : formatMoneyFromMinor(row.mxnNetRecognizedFeeMinor, 'MXN', locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.convertedEventsHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="tabular-nums">
+                        {row.convertedEventCount.toLocaleString(locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.missingSnapshotsHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="tabular-nums">
+                        {row.missingSnapshotEventCount.toLocaleString(locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                  </PaymentsResponsiveListGrid>
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.snapshotsHeader}</PaymentsResponsiveListLabel>
+                      {row.appliedSnapshots.length === 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">—</p>
+                      ) : (
+                        <div className="mt-2">
+                          <SampledReferenceList
+                            items={row.appliedSnapshots.map(
+                              (snapshot) =>
+                                `${snapshot.snapshotId} (${formatSnapshotReference(
+                                  snapshot.effectiveAt,
+                                  snapshot.rateToMxn,
+                                  locale,
+                                )})`,
+                            )}
+                            countLabel={(count) => String(count)}
+                            moreLabel={(count) => `+${count}`}
+                            initialVisibleCount={2}
+                            compact
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.missingTraceHeader}</PaymentsResponsiveListLabel>
+                      {row.sampleMissingSnapshotTraceIds.length === 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">—</p>
+                      ) : (
+                        <div className="mt-2">
+                          <SampledReferenceList
+                            items={row.sampleMissingSnapshotTraceIds}
+                            countLabel={(count) => String(count)}
+                            moreLabel={(count) => `+${count}`}
+                            initialVisibleCount={2}
+                            compact
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </PaymentsResponsiveListItem>
+              ))}
+            </PaymentsResponsiveList>
+            <div className="hidden md:block">
+              <PaymentsDataTable minWidthClassName="min-w-[72rem]">
               <PaymentsDataTableHead>
                 <tr>
                   <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
@@ -136,46 +228,43 @@ export function MxnReportingDashboard({
                       {row.appliedSnapshots.length === 0 ? (
                         <p className="text-xs text-muted-foreground">—</p>
                       ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {row.appliedSnapshots.map((snapshot) => (
-                            <code
-                              key={`${row.sourceCurrency}:${snapshot.snapshotId}`}
-                              className="rounded bg-muted px-2 py-1 text-[11px]"
-                            >
-                              {snapshot.snapshotId} (
-                              {formatSnapshotReference(
+                        <SampledReferenceList
+                          items={row.appliedSnapshots.map(
+                            (snapshot) =>
+                              `${snapshot.snapshotId} (${formatSnapshotReference(
                                 snapshot.effectiveAt,
                                 snapshot.rateToMxn,
                                 locale,
-                              )}
-                              )
-                            </code>
-                          ))}
-                        </div>
+                              )})`,
+                          )}
+                          countLabel={(count) => String(count)}
+                          moreLabel={(count) => `+${count}`}
+                          initialVisibleCount={2}
+                          compact
+                        />
                       )}
                     </PaymentsDataTableCell>
                     <PaymentsDataTableCell>
                       {row.sampleMissingSnapshotTraceIds.length === 0 ? (
                         <p className="text-xs text-muted-foreground">—</p>
                       ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {row.sampleMissingSnapshotTraceIds.map((traceId) => (
-                            <code
-                              key={`${row.sourceCurrency}:${traceId}`}
-                              className="rounded bg-muted px-2 py-1 text-[11px]"
-                            >
-                              {traceId}
-                            </code>
-                          ))}
-                        </div>
+                        <SampledReferenceList
+                          items={row.sampleMissingSnapshotTraceIds}
+                          countLabel={(count) => String(count)}
+                          moreLabel={(count) => `+${count}`}
+                          initialVisibleCount={2}
+                          compact
+                        />
                       )}
                     </PaymentsDataTableCell>
                   </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </PaymentsDataTable>
+              </PaymentsDataTable>
+            </div>
+          </>
         )}
-      </div>
+      </PaymentsPanel>
     </section>
   );
 }

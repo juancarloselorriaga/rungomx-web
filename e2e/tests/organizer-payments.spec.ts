@@ -561,8 +561,9 @@ test.describe('Organizer Payments E2E', () => {
 
     await page.goto(`/en/dashboard/payments/payouts?organizationId=${organizationId}`);
 
-    await expect(page.getByText('Completed').first()).toBeVisible();
-    await expect(page.getByText('Processing').first()).toBeVisible();
+    const payoutHistoryRows = page.locator('tbody tr');
+    await expect(payoutHistoryRows.filter({ hasText: 'Completed' }).first()).toBeVisible();
+    await expect(payoutHistoryRows.filter({ hasText: 'Processing' }).first()).toBeVisible();
 
     await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
     await waitForPayoutDetailPageReady(page, terminalPayoutRequestId);
@@ -576,7 +577,9 @@ test.describe('Organizer Payments E2E', () => {
       .first();
     await pausedLifecycleItem.locator('summary').click();
     await expect(pausedLifecycleItem.getByText('risk_manual_review')).toBeVisible();
-    await expect(page.getByText('Completed').first()).toBeVisible();
+    await expect(
+      page.locator('span:visible').filter({ hasText: /^Completed$/ }).first(),
+    ).toBeVisible();
 
     await page.route('**/api/payments/payouts/*/statement?*', async (route) => {
       await route.fulfill({

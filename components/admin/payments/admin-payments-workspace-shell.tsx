@@ -56,36 +56,50 @@ export function AdminPaymentsWorkspaceShell({
       aria-busy={isPending}
       data-testid="admin-payments-workspace-shell"
     >
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 space-y-2.5 sm:space-y-3">
+      <div className="flex flex-col gap-3.5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 space-y-2 sm:space-y-3">
           <PaymentsEyebrow>{workspaceLabel}</PaymentsEyebrow>
           <div className="space-y-1.5">
             <h1
-              className="text-xl font-bold tracking-tight sm:text-3xl"
+              className="max-w-4xl text-xl font-bold tracking-tight text-balance sm:text-3xl"
               data-testid="admin-payments-workspace-title"
             >
               {title}
             </h1>
-            <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
+            <PaymentsSectionDescription className="max-w-2xl text-sm leading-5 sm:leading-6">
+              {description}
+            </PaymentsSectionDescription>
           </div>
 
           {activeItem ? (
-            <PaymentsMutedPanel className="flex flex-col gap-1.5 text-sm sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
-              <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+            <PaymentsMutedPanel
+              className="flex items-center gap-2 px-3 py-2.5 text-sm sm:flex-row sm:flex-wrap sm:gap-x-3 sm:gap-y-1"
+              data-testid="admin-payments-workspace-active-summary"
+            >
+              <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary sm:px-3">
                 {activeItem.label}
               </span>
-              <p className="hidden min-w-0 text-xs text-muted-foreground sm:block sm:text-sm">
+              <p className="min-w-0 text-xs leading-5 text-muted-foreground sm:text-sm">
                 {activeItem.description}
               </p>
             </PaymentsMutedPanel>
           ) : null}
         </div>
 
-        {toolbar ? <div className="w-full lg:max-w-[24rem] lg:flex-none">{toolbar}</div> : null}
+        {toolbar ? (
+          <div className="w-full lg:max-w-[24rem] lg:flex-none" data-testid="admin-payments-workspace-toolbar">
+            {toolbar}
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-3 sm:mt-4">
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:min-w-0 sm:flex-wrap">
+        <div
+          className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+          role="tablist"
+          aria-label={workspaceLabel}
+          data-testid="admin-payments-workspace-tablist"
+        >
         {items.map((item) => {
           const isActive = item.id === activeItemId;
 
@@ -96,9 +110,11 @@ export function AdminPaymentsWorkspaceShell({
               variant={isActive ? 'default' : 'outline'}
               disabled={isPending}
               onClick={() => handleSelect(item.id)}
-              aria-pressed={isActive}
+              role="tab"
+              aria-selected={isActive}
+              tabIndex={isActive ? 0 : -1}
               className={cn(
-                'h-auto w-full rounded-full px-3 py-2 text-center text-sm font-medium shadow-none sm:w-auto sm:px-4 sm:py-2.5 sm:text-left',
+                'h-auto shrink-0 rounded-full px-3 py-2 text-center text-sm font-medium shadow-none sm:px-4 sm:py-2.5 sm:text-left',
                 isPending ? 'opacity-80' : '',
                 isActive
                   ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/12'

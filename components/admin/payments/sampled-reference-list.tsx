@@ -1,3 +1,5 @@
+import { cn } from '@/lib/utils';
+
 function truncateMiddle(value: string, start = 16, end = 10): string {
   if (value.length <= start + end + 1) {
     return value;
@@ -47,61 +49,75 @@ export function SampledReferenceList({
   }
 
   return (
-    <div className={compact ? 'mt-1 space-y-1.5' : 'mt-4 space-y-2'}>
-      {title ? (
-        <h4
-          className={
-            compact
-              ? 'text-[11px] uppercase tracking-wide text-muted-foreground'
-              : 'text-xs font-semibold uppercase tracking-wide text-muted-foreground'
-          }
-        >
-          {title}
-        </h4>
+    <div className={compact ? 'mt-1 space-y-2' : 'mt-4 space-y-3'}>
+      {title || countLabel || totalCount ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {title ? (
+            <h4
+              className={
+                compact
+                  ? 'text-[11px] uppercase tracking-wide text-muted-foreground'
+                  : 'text-xs font-semibold uppercase tracking-wide text-muted-foreground'
+              }
+            >
+              {title}
+            </h4>
+          ) : null}
+          <span
+            className={cn(
+              'inline-flex items-center rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 font-medium text-muted-foreground',
+              compact ? 'text-[11px]' : 'text-xs',
+            )}
+          >
+            {countLabel ? countLabel(resolvedTotalCount) : resolvedTotalCount}
+          </span>
+        </div>
       ) : null}
       {scopeLabel ? (
         <p className={compact ? 'text-[11px] text-muted-foreground' : 'text-xs text-muted-foreground'}>
           {scopeLabel(shownCount, resolvedTotalCount)}
         </p>
-      ) : countLabel ? (
-        <p className={compact ? 'text-[11px] text-muted-foreground' : 'text-xs text-muted-foreground'}>
-          {countLabel(items.length)}
-        </p>
       ) : null}
-      <ul className={compact ? 'space-y-1' : 'space-y-2'}>
+      <ul className={compact ? 'space-y-1.5' : 'space-y-2'}>
         {visibleItems.map((item) => (
           <li key={item}>
-            <code
-              className={
-                compact
-                  ? 'block rounded bg-muted px-2 py-1 text-[11px] text-foreground'
-                  : 'block rounded bg-muted px-2 py-1 text-xs text-foreground'
-              }
-              title={item}
+            <div
+              className={cn(
+                'rounded-lg border border-border/50 bg-background/70',
+                compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
+              )}
             >
-              {truncateMiddle(item)}
-            </code>
+              <code
+                className={compact ? 'block text-[11px] text-foreground' : 'block text-xs text-foreground'}
+                title={item}
+              >
+                {truncateMiddle(item)}
+              </code>
+            </div>
           </li>
         ))}
       </ul>
       {hiddenItems.length > 0 ? (
         <details className={compact ? 'text-[11px]' : 'text-xs'}>
-          <summary className="cursor-pointer font-medium text-primary">
+          <summary className="cursor-pointer font-medium text-primary marker:text-primary">
             {moreLabel(hiddenItems.length)}
           </summary>
           <ul className="mt-2 space-y-1.5">
             {hiddenItems.map((item) => (
               <li key={item}>
-                <code
-                  className={
-                    compact
-                      ? 'block rounded bg-muted px-2 py-1 text-[11px] text-foreground'
-                      : 'block rounded bg-muted px-2 py-1 text-xs text-foreground'
-                  }
-                  title={item}
+                <div
+                  className={cn(
+                    'rounded-lg border border-border/50 bg-background/70',
+                    compact ? 'px-2.5 py-2' : 'px-3 py-2.5',
+                  )}
                 >
-                  {truncateMiddle(item)}
-                </code>
+                  <code
+                    className={compact ? 'block text-[11px] text-foreground' : 'block text-xs text-foreground'}
+                    title={item}
+                  >
+                    {truncateMiddle(item)}
+                  </code>
+                </div>
               </li>
             ))}
           </ul>

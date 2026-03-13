@@ -363,8 +363,12 @@ test.describe('Demo payments volume E2E', () => {
     await expect(page.getByTestId('admin-payments-organizer-page-summary')).toContainText(
       'Showing 1-1 of 1',
     );
-    await expect(page.getByText(organizerName)).toBeVisible();
+    const organizerRow = page.locator('tbody tr').filter({ hasText: organizerName }).first();
+    await expect(organizerRow).toBeVisible();
+    const organizerInvestigationLink = organizerRow
+      .getByTestId('admin-payments-organizer-investigation-link')
+      .first();
+    await expect(organizerInvestigationLink).toBeVisible();
     await expect(page.getByTestId('admin-payments-open-investigation-workspace')).toBeVisible();
-    await expect(page.getByTestId('admin-payments-organizer-investigation-link').first()).toBeVisible();
   });
 });

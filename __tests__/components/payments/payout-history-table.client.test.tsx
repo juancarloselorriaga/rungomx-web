@@ -77,5 +77,7 @@ describe('PayoutHistoryTable', () => {
       'href',
       '/dashboard/payments/payouts?page=2',
     );
+    expect(screen.getByTestId('payout-history-mobile-card')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'actions.openDetails' })).not.toHaveLength(0);
   });
 });

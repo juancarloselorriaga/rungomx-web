@@ -9,6 +9,8 @@ import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 
 import { PayoutStatusBadge } from './payout-status-badge';
+import { PaymentsCountPill } from './payments-typography';
+import { PaymentsPanel } from './payments-surfaces';
 
 type PayoutLifecycleRailProps = {
   locale: 'es' | 'en';
@@ -55,17 +57,20 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
 
   if (events.length === 0) {
     return (
-      <section className="rounded-xl border bg-card/80 p-6 shadow-sm">
+      <PaymentsPanel className="space-y-2">
         <h2 className="text-lg font-semibold">{t('detail.stateTimeline')}</h2>
         <p className="mt-2 text-sm text-muted-foreground">{t('detail.noEvents')}</p>
-      </section>
+      </PaymentsPanel>
     );
   }
 
   return (
-    <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-4">
+    <PaymentsPanel className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold tracking-tight">{t('detail.stateTimeline')}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold tracking-tight sm:text-xl">{t('detail.stateTimeline')}</h2>
+          <PaymentsCountPill>{events.length}</PaymentsCountPill>
+        </div>
         <p className="text-sm text-muted-foreground">{t('detail.stateTimelineDescription')}</p>
       </div>
 
@@ -75,11 +80,11 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
           const visibleReasonFamily = getVisibleReasonFamily(event.reasonCode);
 
           return (
-            <li key={event.eventId} className="relative rounded-xl border bg-background/85 p-5 shadow-sm">
-              <div className="absolute left-5 top-6 h-[calc(100%-3rem)] w-px bg-border/70" aria-hidden="true" />
-              <div className="relative pl-8">
+            <li key={event.eventId} className="relative rounded-xl border bg-background/85 p-4 shadow-sm sm:p-5">
+              <div className="absolute left-4 top-5 h-[calc(100%-2.75rem)] w-px bg-border/70 sm:left-5 sm:top-6 sm:h-[calc(100%-3rem)]" aria-hidden="true" />
+              <div className="relative pl-7 sm:pl-8">
                 <span
-                  className="absolute left-[-0.55rem] top-1 inline-flex size-4 rounded-full border-2 border-background bg-primary/80"
+                  className="absolute left-[-0.5rem] top-1 inline-flex size-4 rounded-full border-2 border-background bg-primary/80 sm:left-[-0.55rem]"
                   aria-hidden="true"
                 />
 
@@ -97,7 +102,7 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-lg font-semibold leading-tight">
+                        <p className="text-base font-semibold leading-tight sm:text-lg">
                           {eventTitleMap[event.eventName] ?? humanizeTechnicalCode(event.eventName)}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -152,6 +157,6 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
           );
         })}
       </ol>
-    </section>
+    </PaymentsPanel>
   );
 }

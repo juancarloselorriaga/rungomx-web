@@ -1,5 +1,8 @@
 'use client';
 
+import { SampledReferenceList } from '@/components/admin/payments/sampled-reference-list';
+import { PaymentsCountPill } from '@/components/payments/payments-typography';
+import { PaymentsInsetPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { FinancialCaseLookupResult } from '@/lib/payments/support/case-lookup';
@@ -128,7 +131,7 @@ export function FinancialCaseLookupDashboard({
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+      <PaymentsPanel>
         <h3 className="text-sm font-semibold">{labels.searchTitle}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{labels.searchDescription}</p>
         <form
@@ -159,7 +162,7 @@ export function FinancialCaseLookupDashboard({
             </Button>
           </div>
         </form>
-      </div>
+      </PaymentsPanel>
 
       {isPending ? (
         <div className="space-y-4">
@@ -197,28 +200,41 @@ export function FinancialCaseLookupDashboard({
         </div>
       ) : (
         <>
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <h3 className="text-sm font-semibold">{labels.disambiguationTitle}</h3>
+          <PaymentsPanel>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">{labels.disambiguationTitle}</h3>
+              <PaymentsCountPill>{result?.disambiguationGroups.length ?? 0}</PaymentsCountPill>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">{labels.disambiguationDescription}</p>
             {result?.disambiguationGroups.length ? (
               <div className="mt-3 space-y-2">
                 {result.disambiguationGroups.map((group) => (
-                  <div key={`${group.normalizedIdentifier}-${group.traceIds.join(':')}`} className="rounded border border-dashed p-3">
+                  <PaymentsInsetPanel
+                    key={`${group.normalizedIdentifier}-${group.traceIds.join(':')}`}
+                    className="border-dashed"
+                  >
                     <p className="font-mono text-xs">{group.displayIdentifier}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{group.reason}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {group.traceIds.join(', ')}
-                    </p>
-                  </div>
+                    <SampledReferenceList
+                      compact
+                      items={group.traceIds}
+                      countLabel={(count) => String(count)}
+                      moreLabel={(count) => `+${count}`}
+                      initialVisibleCount={2}
+                    />
+                  </PaymentsInsetPanel>
                 ))}
               </div>
             ) : (
               <p className="mt-3 text-sm text-muted-foreground">{labels.disambiguationEmpty}</p>
             )}
-          </div>
+          </PaymentsPanel>
 
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <h3 className="text-sm font-semibold">{labels.resultsTitle}</h3>
+          <PaymentsPanel>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-semibold">{labels.resultsTitle}</h3>
+              <PaymentsCountPill>{result?.returnedCaseCount ?? result?.cases.length ?? 0}</PaymentsCountPill>
+            </div>
             <p className="mt-1 text-xs text-muted-foreground">{labels.resultsDescription}</p>
             {summaryLabel ? (
               <p className="mt-3 text-xs text-muted-foreground">{summaryLabel}</p>
@@ -244,9 +260,9 @@ export function FinancialCaseLookupDashboard({
                 }
 
                 return (
-                  <article
+                  <PaymentsInsetPanel
                     key={entry.traceId}
-                    className="rounded-xl border bg-background/40 p-4 shadow-sm"
+                    className="bg-background/40"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-2">
@@ -259,15 +275,9 @@ export function FinancialCaseLookupDashboard({
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-                            {labels.eventCountHeader}: {entry.eventCount}
-                          </span>
-                          <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-                            {labels.firstEventHeader}: {formatDate(entry.firstOccurredAt, locale)}
-                          </span>
-                          <span className="rounded-full border px-2.5 py-1 text-xs text-muted-foreground">
-                            {labels.lastEventHeader}: {formatDate(entry.lastOccurredAt, locale)}
-                          </span>
+                          <PaymentsCountPill>{`${labels.eventCountHeader}: ${entry.eventCount}`}</PaymentsCountPill>
+                          <PaymentsCountPill>{`${labels.firstEventHeader}: ${formatDate(entry.firstOccurredAt, locale)}`}</PaymentsCountPill>
+                          <PaymentsCountPill>{`${labels.lastEventHeader}: ${formatDate(entry.lastOccurredAt, locale)}`}</PaymentsCountPill>
                         </div>
                       </div>
 
@@ -305,17 +315,13 @@ export function FinancialCaseLookupDashboard({
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
                           {labels.identifiersHeader}
                         </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {entry.matchedIdentifiers.map((identifier) => (
-                            <span
-                              key={`${entry.traceId}:${identifier}`}
-                              className="rounded-full border px-2.5 py-1 text-xs"
-                              title={identifier}
-                            >
-                              {truncateMiddle(identifier, 12, 8)}
-                            </span>
-                          ))}
-                        </div>
+                        <SampledReferenceList
+                          compact
+                          items={entry.matchedIdentifiers}
+                          countLabel={(count) => String(count)}
+                          moreLabel={(count) => `+${count}`}
+                          initialVisibleCount={2}
+                        />
                       </div>
                       <div>
                         <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -333,11 +339,11 @@ export function FinancialCaseLookupDashboard({
                         </div>
                       </div>
                     </div>
-                  </article>
+                  </PaymentsInsetPanel>
                 );
               })}
             </div>
-          </div>
+          </PaymentsPanel>
         </>
       )}
     </section>

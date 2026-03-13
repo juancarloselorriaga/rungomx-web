@@ -232,7 +232,7 @@ export function PayoutRequestForm({
     <section
       className={cn(
         'space-y-5',
-        presentation === 'card' ? 'rounded-2xl border bg-card/80 p-5 shadow-sm sm:p-6' : '',
+        presentation === 'card' ? 'rounded-2xl border bg-card/80 p-4 shadow-sm sm:p-6' : '',
       )}
     >
       {presentation === 'card' ? (
@@ -266,7 +266,7 @@ export function PayoutRequestForm({
                 value={requestedAmount}
                 onChange={(event) => setRequestedAmount(event.target.value)}
                 placeholder={t('request.amountPlaceholder')}
-                className="h-14 w-full rounded-xl border bg-background px-4 text-2xl font-semibold tracking-tight tabular-nums shadow-sm"
+                className="h-14 w-full rounded-xl border bg-background px-4 text-3xl font-semibold tracking-tight tabular-nums shadow-sm sm:text-[2rem]"
               />
             </label>
 

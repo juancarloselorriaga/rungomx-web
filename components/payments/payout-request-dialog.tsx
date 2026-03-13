@@ -43,8 +43,8 @@ export function PayoutRequestDialog({
           {triggerLabel}
         </Button>
       </DialogTrigger>
-      <DialogContent className="overflow-hidden rounded-2xl border border-border/80 bg-background/98 p-0 shadow-2xl sm:max-w-[40rem]">
-        <DialogHeader className="border-b border-border/70 bg-muted/20 px-5 py-4 sm:px-6">
+      <DialogContent className="max-h-[min(92vh,48rem)] overflow-hidden rounded-2xl border border-border/80 bg-background/98 p-0 shadow-2xl sm:max-w-[40rem]">
+        <DialogHeader className="border-b border-border/70 bg-muted/20 px-4 py-4 sm:px-6">
           <DialogTitle className="text-xl font-semibold tracking-tight">
             {t('request.title')}
           </DialogTitle>
@@ -52,7 +52,7 @@ export function PayoutRequestDialog({
             {t('request.description')}
           </DialogDescription>
         </DialogHeader>
-        <div className="px-5 py-5 sm:px-6 sm:py-6">
+        <div className="overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
           <PayoutRequestForm
             organizationId={organizationId}
             presentation="dialog"

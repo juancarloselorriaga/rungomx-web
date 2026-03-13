@@ -5,8 +5,14 @@ import {
   PaymentsDataTableHead,
   PaymentsDataTableHeader,
   PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
 } from '@/components/payments/payments-data-table';
 import {
+  PaymentsCountPill,
   PaymentsMetricLabel,
   PaymentsMetricValue,
   PaymentsSectionDescription,
@@ -122,9 +128,51 @@ export function NetRecognizedFeeDashboard({
 
       <div className="grid gap-4 xl:grid-cols-2">
         <PaymentsPanel>
-          <PaymentsSectionTitle compact className="text-base">{labels.currenciesTitle}</PaymentsSectionTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <PaymentsSectionTitle compact className="text-base">{labels.currenciesTitle}</PaymentsSectionTitle>
+            <PaymentsCountPill>{metrics.currencies.length}</PaymentsCountPill>
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">{labels.currenciesDescription}</p>
-          <PaymentsDataTable minWidthClassName="min-w-[28rem]">
+          <PaymentsResponsiveList className="mt-4">
+            {metrics.currencies.map((row) => (
+              <PaymentsResponsiveListItem key={row.currency}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold">{row.currency}</p>
+                  <PaymentsCountPill>
+                    {(row.captureEventCount + row.adjustmentEventCount).toLocaleString(locale)}
+                  </PaymentsCountPill>
+                </div>
+                <PaymentsResponsiveListGrid className="mt-4">
+                  <div>
+                    <PaymentsResponsiveListLabel>{labels.netHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                      {formatMoneyFromMinor(row.netRecognizedFeeMinor, row.currency, locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{labels.capturedHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                      {formatMoneyFromMinor(row.capturedFeeMinor, row.currency, locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{labels.adjustmentHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                      {formatMoneyFromMinor(row.adjustmentsMinor, row.currency, locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{labels.countHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="tabular-nums">
+                      {(row.captureEventCount + row.adjustmentEventCount).toLocaleString(locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                </PaymentsResponsiveListGrid>
+              </PaymentsResponsiveListItem>
+            ))}
+          </PaymentsResponsiveList>
+          <div className="hidden md:block">
+            <PaymentsDataTable minWidthClassName="min-w-[28rem]">
               <PaymentsDataTableHead>
                 <tr>
                   <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
@@ -154,15 +202,51 @@ export function NetRecognizedFeeDashboard({
                 ))}
               </tbody>
             </PaymentsDataTable>
+          </div>
         </PaymentsPanel>
 
         <PaymentsPanel>
-          <PaymentsSectionTitle compact className="text-base">{labels.adjustmentsTitle}</PaymentsSectionTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <PaymentsSectionTitle compact className="text-base">{labels.adjustmentsTitle}</PaymentsSectionTitle>
+            <PaymentsCountPill>{metrics.adjustments.length}</PaymentsCountPill>
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">{labels.adjustmentsDescription}</p>
           {metrics.adjustments.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{labels.emptyAdjustments}</p>
           ) : (
-            <PaymentsDataTable minWidthClassName="min-w-[28rem]">
+            <>
+              <PaymentsResponsiveList className="mt-4">
+                {metrics.adjustments.map((row) => (
+                  <PaymentsResponsiveListItem key={`${row.currency}:${row.adjustmentCode}`}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">{row.currency}</p>
+                      <PaymentsCountPill>{row.eventCount.toLocaleString(locale)}</PaymentsCountPill>
+                    </div>
+                    <PaymentsResponsiveListGrid className="mt-4">
+                      <div className="col-span-2">
+                        <PaymentsResponsiveListLabel>{labels.adjustmentCodeHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="font-mono text-xs">
+                          {row.adjustmentCode}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                      <div>
+                        <PaymentsResponsiveListLabel>{labels.adjustmentHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                          {formatMoneyFromMinor(row.amountMinor, row.currency, locale)}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                      <div>
+                        <PaymentsResponsiveListLabel>{labels.countHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="tabular-nums">
+                          {row.eventCount.toLocaleString(locale)}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                    </PaymentsResponsiveListGrid>
+                  </PaymentsResponsiveListItem>
+                ))}
+              </PaymentsResponsiveList>
+              <div className="hidden md:block">
+                <PaymentsDataTable minWidthClassName="min-w-[28rem]">
                 <PaymentsDataTableHead>
                   <tr>
                     <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
@@ -187,7 +271,9 @@ export function NetRecognizedFeeDashboard({
                     </PaymentsDataTableRow>
                   ))}
                 </tbody>
-              </PaymentsDataTable>
+                </PaymentsDataTable>
+              </div>
+            </>
           )}
         </PaymentsPanel>
       </div>

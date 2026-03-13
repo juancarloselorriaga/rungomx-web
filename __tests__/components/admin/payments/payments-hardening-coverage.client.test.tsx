@@ -561,7 +561,7 @@ describe('Payments hardening component coverage', () => {
     expect(screen.getByText('sectionTitle')).toBeInTheDocument();
     expect(screen.getByText('sampleTracesScopeLabel:1:2')).toBeInTheDocument();
     expect(screen.getByText('trace-net-1')).toBeInTheDocument();
-    expect(screen.getByText('manual_review')).toBeInTheDocument();
+    expect(screen.getAllByText('manual_review')).not.toHaveLength(0);
   });
 
   it('renders debt/dispute exposure dashboard organizer and event rows', () => {
@@ -573,12 +573,12 @@ describe('Payments hardening component coverage', () => {
       />,
     );
 
-    expect(screen.getByText('Organizer One')).toBeInTheDocument();
-    expect(screen.getByText('Main Event')).toBeInTheDocument();
+    expect(screen.getAllByText('Organizer One')).not.toHaveLength(0);
+    expect(screen.getAllByText('Main Event')).not.toHaveLength(0);
     expect(screen.getAllByText('sampledTraceCountLabel:1')).not.toHaveLength(0);
     expect(screen.getAllByText('sampledCaseCountLabel:1')).not.toHaveLength(0);
-    expect(screen.getByText('trace-dispute-1')).toBeInTheDocument();
-    expect(screen.getByText('case-1')).toBeInTheDocument();
+    expect(screen.getAllByText('trace-dispute-1')).not.toHaveLength(0);
+    expect(screen.getAllByText('case-1')).not.toHaveLength(0);
   });
 
   it('renders mxn reporting table rows and not-converted fallback label', () => {
@@ -591,9 +591,11 @@ describe('Payments hardening component coverage', () => {
     );
 
     expect(screen.getByText('sectionTitle')).toBeInTheDocument();
-    expect(screen.getByText(/fx-usd-mxn-2026-02-01/)).toBeInTheDocument();
-    expect(screen.getByText('trace-mxn-missing-1')).toBeInTheDocument();
-    expect(screen.getByText('notConvertedLabel')).toBeInTheDocument();
+    expect(
+      screen.getAllByTitle('fx-usd-mxn-2026-02-01 (Feb 1, 2026 · 17.3500)'),
+    ).not.toHaveLength(0);
+    expect(screen.getAllByText('trace-mxn-missing-1')).not.toHaveLength(0);
+    expect(screen.getAllByText('notConvertedLabel')).not.toHaveLength(0);
   });
 
   it('renders fx rate management action flags, form inputs, and rates table', () => {
@@ -613,7 +615,7 @@ describe('Payments hardening component coverage', () => {
     expect(screen.getByText(/staleTitle:\s*USD/)).toBeInTheDocument();
     expect(screen.getByLabelText('currencyFieldLabel')).toBeInTheDocument();
     expect(screen.getByLabelText('fxDatePicker')).toBeInTheDocument();
-    expect(screen.getByText('manual_review')).toBeInTheDocument();
+    expect(screen.getAllByText('manual_review')).not.toHaveLength(0);
   });
 
   it('renders fx rate dashboard no-action and empty-rates states', () => {
@@ -651,8 +653,8 @@ describe('Payments hardening component coverage', () => {
     expect(screen.getAllByText('ownershipStateActionNeededLabel').length).toBeGreaterThan(0);
     expect(screen.getAllByText('support.review_complete').length).toBeGreaterThan(0);
     expect(screen.getAllByText('payout_request:payout-001').length).toBeGreaterThan(0);
-    expect(screen.getByText('fp-v2')).toBeInTheDocument();
-    expect(screen.getByText('organizer@example.com')).toBeInTheDocument();
+    expect(screen.getAllByText('fp-v2')).not.toHaveLength(0);
+    expect(screen.getAllByText('organizer@example.com')).not.toHaveLength(0);
   });
 
   it('renders governance empty states and toggles resend version input enablement', () => {

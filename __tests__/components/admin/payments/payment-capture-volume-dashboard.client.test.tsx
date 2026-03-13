@@ -228,8 +228,8 @@ describe('payment capture volume dashboard', () => {
     expect(screen.getByText('trace-bad-1')).toBeInTheDocument();
 
     expect(screen.getByText(labels.topOrganizersTitle)).toBeInTheDocument();
-    expect(screen.getByText('Organizer One')).toBeInTheDocument();
-    expect(screen.getByText('Organizer Two')).toBeInTheDocument();
+    expect(screen.getAllByText('Organizer One')).not.toHaveLength(0);
+    expect(screen.getAllByText('Organizer Two')).not.toHaveLength(0);
     expect(screen.getByText('Showing 3-4 of 5 organizers')).toBeInTheDocument();
     expect(screen.getByText('Page 2 of 3')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: labels.firstPageLabel })).toHaveAttribute(

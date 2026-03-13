@@ -8,6 +8,7 @@ import type { OrganizerWalletIssueActivityItem } from '@/lib/payments/organizer/
 import { humanizeTechnicalCode } from '@/lib/payments/organizer/presentation';
 import { useTranslations } from 'next-intl';
 import {
+  PaymentsCountPill,
   PaymentsMetaLabel,
   PaymentsMetadataText,
   PaymentsMonoValue,
@@ -15,6 +16,7 @@ import {
   PaymentsSectionTitle,
   PaymentsTimestamp,
 } from './payments-typography';
+import { PaymentsPanel } from './payments-surfaces';
 
 type OrganizerActionQueueProps = {
   locale: 'es' | 'en';
@@ -102,13 +104,16 @@ function QueueSection({
   }
 
   return (
-    <section
-      className="space-y-3 rounded-xl border bg-card/80 p-4 shadow-sm"
+    <PaymentsPanel
+      className="space-y-3"
       aria-label={title}
       data-testid={testId}
     >
       <div className="space-y-1">
-        <PaymentsSectionTitle compact className="text-base sm:text-lg">{title}</PaymentsSectionTitle>
+        <div className="flex flex-wrap items-center gap-2">
+          <PaymentsSectionTitle compact className="text-base sm:text-lg">{title}</PaymentsSectionTitle>
+          <PaymentsCountPill>{items.length}</PaymentsCountPill>
+        </div>
         <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
       </div>
 
@@ -209,7 +214,7 @@ function QueueSection({
           ) : null}
         </div>
       )}
-    </section>
+    </PaymentsPanel>
   );
 }
 

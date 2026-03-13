@@ -46,6 +46,7 @@ export function AdminDashboardRangeSelector({
       )}
       role="group"
       aria-busy={isPending}
+      data-testid="admin-dashboard-range-selector"
     >
       {options.map((option) => (
         <Button
@@ -57,7 +58,7 @@ export function AdminDashboardRangeSelector({
           disabled={isPending}
           onClick={() => handleChange(option.value)}
           className={cn(
-            'h-9 w-full rounded-lg border-transparent px-2 text-xs font-medium whitespace-nowrap shadow-none sm:h-10 sm:rounded-xl sm:px-4 sm:text-sm',
+            'h-8 w-full rounded-lg border-transparent px-1.5 text-[11px] font-medium whitespace-nowrap shadow-none sm:h-10 sm:rounded-xl sm:px-4 sm:text-sm',
             option.value === selected
               ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/12'
               : 'bg-transparent text-muted-foreground hover:bg-background hover:text-foreground',

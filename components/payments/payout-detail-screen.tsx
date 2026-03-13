@@ -7,12 +7,14 @@ import { PayoutStatementAction } from '@/components/payments/payout-statement-ac
 import { PayoutStatusBadge } from '@/components/payments/payout-status-badge';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import {
+  PaymentsCountPill,
   PaymentsMetaLabel,
   PaymentsMetricValue,
   PaymentsMonoValue,
   PaymentsSectionDescription,
   PaymentsSectionTitle,
 } from './payments-typography';
+import { PaymentsInsetPanel, PaymentsPanel } from './payments-surfaces';
 
 type BreadcrumbItem = {
   label: string;
@@ -80,38 +82,37 @@ export function PayoutDetailScreen({
         </nav>
         <div className="space-y-1">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-semibold">{pageTitle}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{pageTitle}</h1>
             <PayoutStatusBadge status={detail.status} label={labels.status} />
           </div>
           <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
         </div>
       </div>
 
-      <section className="rounded-xl border bg-card/80 p-6 shadow-sm space-y-5">
+      <PaymentsPanel className="space-y-5">
         <div className="space-y-2">
-          <PaymentsSectionTitle>{labels.summaryTitle}</PaymentsSectionTitle>
+          <div className="flex flex-wrap items-center gap-2">
+            <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">{labels.summaryTitle}</PaymentsSectionTitle>
+            <PaymentsCountPill>4</PaymentsCountPill>
+          </div>
           <PaymentsSectionDescription>{labels.summaryDescription}</PaymentsSectionDescription>
           {organizationName ? <PaymentsSectionDescription>{organizationName}</PaymentsSectionDescription> : null}
         </div>
 
-        <dl className="grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-3 text-sm xl:grid-cols-4">
           <div>
             <PaymentsMetaLabel>{labels.requestedAmount}</PaymentsMetaLabel>
             <dd>
-              <PaymentsMetricValue compact>
-              {formatMoneyFromMinor(detail.requestedAmountMinor, detail.currency, locale)}
+              <PaymentsMetricValue compact className="text-lg sm:text-2xl">
+                {formatMoneyFromMinor(detail.requestedAmountMinor, detail.currency, locale)}
               </PaymentsMetricValue>
             </dd>
           </div>
           <div>
             <PaymentsMetaLabel>{labels.currentAmount}</PaymentsMetaLabel>
             <dd>
-              <PaymentsMetricValue compact>
-              {formatMoneyFromMinor(
-                detail.currentRequestedAmountMinor,
-                detail.currency,
-                locale,
-              )}
+              <PaymentsMetricValue compact className="text-lg sm:text-2xl">
+                {formatMoneyFromMinor(detail.currentRequestedAmountMinor, detail.currency, locale)}
               </PaymentsMetricValue>
             </dd>
           </div>
@@ -132,29 +133,29 @@ export function PayoutDetailScreen({
             {labels.technicalDetails}
           </summary>
           <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
-            <div>
+            <PaymentsInsetPanel className="rounded border p-3 shadow-none">
               <PaymentsMetaLabel>{labels.requestId}</PaymentsMetaLabel>
               <PaymentsMonoValue>{detail.payoutRequestId}</PaymentsMonoValue>
-            </div>
-            <div>
+            </PaymentsInsetPanel>
+            <PaymentsInsetPanel className="rounded border p-3 shadow-none">
               <PaymentsMetaLabel>{labels.traceId}</PaymentsMetaLabel>
               <PaymentsMonoValue>{detail.traceId}</PaymentsMonoValue>
-            </div>
-            <div>
+            </PaymentsInsetPanel>
+            <PaymentsInsetPanel className="rounded border p-3 shadow-none">
               <PaymentsMetaLabel>{labels.includedAmount}</PaymentsMetaLabel>
               <dd className="font-medium">
                 {formatMoneyFromMinor(detail.includedAmountMinor, detail.currency, locale)}
               </dd>
-            </div>
-            <div>
+            </PaymentsInsetPanel>
+            <PaymentsInsetPanel className="rounded border p-3 shadow-none">
               <PaymentsMetaLabel>{labels.deductionAmount}</PaymentsMetaLabel>
               <dd className="font-medium">
                 {formatMoneyFromMinor(detail.deductionAmountMinor, detail.currency, locale)}
               </dd>
-            </div>
+            </PaymentsInsetPanel>
           </dl>
         </details>
-      </section>
+      </PaymentsPanel>
 
       <PayoutLifecycleRail locale={locale} events={detail.lifecycleEvents} />
       <PayoutStatementAction

@@ -112,3 +112,16 @@ export function PaymentsTimestamp({
     </p>
   );
 }
+
+export function PaymentsCountPill({ children, className }: TextProps) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground',
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}

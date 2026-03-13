@@ -44,19 +44,19 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
     <PaymentsPanel aria-label={t('wallet.title')}>
       <div className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <PaymentsSectionTitle>{t('wallet.title')}</PaymentsSectionTitle>
+          <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">{t('wallet.title')}</PaymentsSectionTitle>
           <PaymentsSectionDescription>{t('wallet.description')}</PaymentsSectionDescription>
         </div>
-        <PaymentsTimestamp>
+        <PaymentsTimestamp className="text-xs sm:text-sm">
           {t('wallet.asOf', { timestamp: formatAsOf(asOf, locale) })}
         </PaymentsTimestamp>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {cards.map((card) => (
           <PaymentsInsetPanel key={card.key} className="space-y-2">
             <PaymentsMetricLabel>{t(`wallet.buckets.${card.key}`)}</PaymentsMetricLabel>
-            <PaymentsMetricValue>
+            <PaymentsMetricValue className="text-xl sm:text-[1.75rem]">
               {formatMoneyFromMinor(card.value, 'MXN', locale)}
             </PaymentsMetricValue>
           </PaymentsInsetPanel>

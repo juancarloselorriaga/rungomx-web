@@ -62,11 +62,13 @@ describe('AdminPaymentsWorkspaceShell', () => {
     expect(screen.getByText('Payments')).toBeInTheDocument();
     expect(screen.getByText('Workspaces')).toBeInTheDocument();
     expect(screen.getByTestId('range-toolbar')).toBeInTheDocument();
+    expect(screen.getByTestId('admin-payments-workspace-tablist')).toHaveAttribute('role', 'tablist');
+    expect(screen.getByTestId('admin-payments-workspace-active-summary')).toBeInTheDocument();
     expect(screen.getByText('Platform fee recognition and MXN conversion')).toBeInTheDocument();
     expect(screen.queryByText('Captured payment throughput')).not.toBeInTheDocument();
     expect(screen.queryByText('Exposure, debt, and disputes')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Risk' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Risk' }));
 
     expect(replace).toHaveBeenCalledTimes(1);
     expect(replace.mock.calls[0][0]).toContain('/admin/payments?');

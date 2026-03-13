@@ -15,6 +15,11 @@ import {
   PaymentsDataTableHead,
   PaymentsDataTableHeader,
   PaymentsDataTableMeta,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
   PaymentsDataTableRow,
 } from './payments-data-table';
 import { PaymentsStatePanel } from './payments-state-panel';
@@ -111,6 +116,64 @@ export function PayoutHistoryTable({
         </div>
       ) : null}
 
+      <PaymentsResponsiveList>
+        {items.map((item) => {
+          const detailHref = getPayoutDetailHref(item.payoutRequestId, { eventId });
+
+          return (
+            <PaymentsResponsiveListItem key={item.payoutRequestId} data-testid="payout-history-mobile-card">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
+                  <Link
+                    href={detailHref}
+                    className="block font-medium text-primary underline-offset-2 hover:underline"
+                  >
+                    {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
+                  </Link>
+                  <PaymentsDataTableMeta className="font-mono">
+                    {shortIdentifier(item.payoutRequestId)}
+                  </PaymentsDataTableMeta>
+                </div>
+                <PayoutStatusBadge
+                  status={item.status}
+                  label={t(`payouts.statuses.${item.status}`)}
+                />
+              </div>
+
+              <PaymentsResponsiveListGrid className="mt-4">
+                <div>
+                  <PaymentsResponsiveListLabel>{t('payouts.table.requested')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue className="tabular-nums">
+                    {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
+                  </PaymentsResponsiveListValue>
+                </div>
+                <div>
+                  <PaymentsResponsiveListLabel>{t('payouts.table.currentAmount')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue className="tabular-nums">
+                    {formatMoneyFromMinor(
+                      item.currentRequestedAmountMinor,
+                      item.currency,
+                      locale,
+                    )}
+                  </PaymentsResponsiveListValue>
+                </div>
+                <div className="col-span-2">
+                  <PaymentsResponsiveListLabel>{t('payouts.table.requestedAt')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue>{formatDate(item.requestedAt, locale)}</PaymentsResponsiveListValue>
+                </div>
+              </PaymentsResponsiveListGrid>
+
+              <div className="mt-4 flex justify-end">
+                <Button asChild variant="outline" size="sm" className="rounded-xl">
+                  <Link href={detailHref}>{t('actions.openDetails')}</Link>
+                </Button>
+              </div>
+            </PaymentsResponsiveListItem>
+          );
+        })}
+      </PaymentsResponsiveList>
+
+      <div className="hidden md:block">
       <PaymentsDataTable minWidthClassName="min-w-[48rem]">
           <PaymentsDataTableHead>
             <tr>
@@ -194,6 +257,7 @@ export function PayoutHistoryTable({
             })}
           </tbody>
       </PaymentsDataTable>
+      </div>
 
       {firstPageLabel && previousPageLabel && nextPageLabel && lastPageLabel ? (
         <div className="flex flex-wrap items-center justify-end gap-2">

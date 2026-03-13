@@ -10,7 +10,14 @@ import {
   PaymentsDataTableHead,
   PaymentsDataTableHeader,
   PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
 } from '@/components/payments/payments-data-table';
+import { PaymentsCountPill } from '@/components/payments/payments-typography';
+import { PaymentsInsetPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import type {
   DailyFxRateRecord,
   FxRateActionFlags,
@@ -96,7 +103,7 @@ export function FxRateManagementDashboard({
         </div>
       )}
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+      <PaymentsInsetPanel>
         {flags.hasActions ? (
           <div className="space-y-3 text-sm">
             {flags.missingRates.map((entry) => (
@@ -130,9 +137,9 @@ export function FxRateManagementDashboard({
         ) : (
           <p className="text-sm text-muted-foreground">{labels.noActions}</p>
         )}
-      </div>
+      </PaymentsInsetPanel>
 
-      <details className="rounded-xl border bg-card/80 p-4 shadow-sm" open={flags.hasActions}>
+      <details className="rounded-2xl border border-border/70 bg-card/90 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6" open={flags.hasActions}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold">{labels.upsertTitle}</h3>
@@ -205,14 +212,53 @@ export function FxRateManagementDashboard({
         </form>
       </details>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.ratesTableTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{labels.ratesTableTitle}</h3>
+          <PaymentsCountPill>{rates.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.ratesTableDescription}</p>
 
         {rates.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">{labels.emptyRates}</p>
         ) : (
-          <PaymentsDataTable minWidthClassName="min-w-[48rem]">
+          <>
+            <PaymentsResponsiveList className="mt-4">
+              {rates.map((rate) => (
+                <PaymentsResponsiveListItem key={rate.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">{rate.sourceCurrency}</p>
+                    <PaymentsCountPill>{formatRate(rate.rateToMxn)}</PaymentsCountPill>
+                  </div>
+                  <PaymentsResponsiveListGrid className="mt-4">
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.tableDateHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue>{formatDate(rate.effectiveDate, locale)}</PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.tableRateHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                        {formatRate(rate.rateToMxn)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.tableReasonHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {rate.updatedReason ?? '—'}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.tableUpdatedHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatDate(rate.updatedAt, locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                  </PaymentsResponsiveListGrid>
+                </PaymentsResponsiveListItem>
+              ))}
+            </PaymentsResponsiveList>
+            <div className="hidden md:block">
+              <PaymentsDataTable minWidthClassName="min-w-[48rem]">
               <PaymentsDataTableHead>
                 <tr>
                   <PaymentsDataTableHeader>{labels.tableCurrencyHeader}</PaymentsDataTableHeader>
@@ -241,9 +287,11 @@ export function FxRateManagementDashboard({
                   </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </PaymentsDataTable>
+              </PaymentsDataTable>
+            </div>
+          </>
         )}
-      </div>
+      </PaymentsPanel>
     </section>
   );
 }

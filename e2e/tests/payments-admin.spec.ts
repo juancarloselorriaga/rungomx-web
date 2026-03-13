@@ -128,7 +128,7 @@ test.describe('Payments Admin E2E', () => {
     await expect(page).toHaveURL(/\/en\/admin\/payments/);
     await expect(page.getByTestId('admin-payments-workspace-title')).toBeVisible();
     await expect(page.getByTestId('admin-payments-workspace-tab-economics')).toHaveAttribute(
-      'aria-pressed',
+      'aria-selected',
       'true',
     );
     await expect(page.getByTestId('admin-payments-workspace-tab-risk')).toBeVisible();
@@ -139,7 +139,7 @@ test.describe('Payments Admin E2E', () => {
 
     await page.getByTestId('admin-payments-workspace-tab-operations').click();
     await expect(page.getByTestId('admin-payments-workspace-tab-operations')).toHaveAttribute(
-      'aria-pressed',
+      'aria-selected',
       'true',
     );
     await expect(page.getByTestId('admin-payments-fx-dashboard')).toBeVisible();
@@ -154,7 +154,7 @@ test.describe('Payments Admin E2E', () => {
 
     await expect(page).toHaveURL(/\/en\/admin\/payments/);
     await expect(page.getByTestId('admin-payments-workspace-tab-investigation')).toHaveAttribute(
-      'aria-pressed',
+      'aria-selected',
       'true',
     );
     await expect(page.getByTestId('admin-payments-case-lookup-dashboard')).toBeVisible();
@@ -189,9 +189,10 @@ test.describe('Payments Admin E2E', () => {
     });
 
     await expect(page).toHaveURL(/\/en\/admin\/payments\?.*evidenceTraceId=/);
-    await expect(page.getByTestId('admin-payments-evidence-dashboard')).toBeVisible();
-    await expect(page.getByText('dispute.opened')).toBeVisible();
-    await expect(page.getByText('dispute.under_review')).toBeVisible();
+    const evidenceDashboard = page.getByTestId('admin-payments-evidence-dashboard');
+    await expect(evidenceDashboard).toBeVisible();
+    await expect(evidenceDashboard).toContainText('dispute.opened');
+    await expect(evidenceDashboard).toContainText('dispute.under_review');
     await expect(page.getByTestId('admin-payments-evidence-current-state')).toContainText(
       'In progress',
     );

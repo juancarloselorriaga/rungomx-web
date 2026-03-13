@@ -324,7 +324,7 @@ describe('admin payments page workspace semantics', () => {
   it('renders navigation in the expected visible order', async () => {
     await renderPage({ workspace: 'volume' });
 
-    expect(screen.getAllByRole('button').map((node) => node.textContent)).toEqual([
+    expect(screen.getAllByRole('tab').map((node) => node.textContent)).toEqual([
       'nav.volumeLabel',
       'nav.economicsLabel',
       'nav.riskLabel',

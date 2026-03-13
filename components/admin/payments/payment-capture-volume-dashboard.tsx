@@ -7,8 +7,14 @@ import {
   PaymentsDataTableHeader,
   PaymentsDataTableMeta,
   PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
 } from '@/components/payments/payments-data-table';
 import {
+  PaymentsCountPill,
   PaymentsMetricLabel,
   PaymentsMetricValue,
   PaymentsSectionDescription,
@@ -211,12 +217,53 @@ export function PaymentCaptureVolumeDashboard({
 
       <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
         <PaymentsPanel>
-          <h3 className="text-sm font-semibold">{labels.currenciesTitle}</h3>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold">{labels.currenciesTitle}</h3>
+            <PaymentsCountPill>{metrics.currencies.length}</PaymentsCountPill>
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">{labels.currenciesDescription}</p>
           {metrics.currencies.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{labels.emptyCurrencies}</p>
           ) : (
-            <PaymentsDataTable minWidthClassName="min-w-[34rem]">
+            <>
+              <PaymentsResponsiveList className="mt-4">
+                {metrics.currencies.map((row) => (
+                  <PaymentsResponsiveListItem key={row.sourceCurrency}>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold">{row.sourceCurrency}</p>
+                      <PaymentsCountPill>{row.captureCount.toLocaleString(locale)}</PaymentsCountPill>
+                    </div>
+                    <PaymentsResponsiveListGrid className="mt-4">
+                      <div>
+                        <PaymentsResponsiveListLabel>{labels.grossHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                          {formatMoneyFromMinor(row.grossProcessedMinor, row.sourceCurrency, locale)}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                      <div>
+                        <PaymentsResponsiveListLabel>{labels.feesHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                          {formatMoneyFromMinor(row.platformFeeMinor, row.sourceCurrency, locale)}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                      <div>
+                        <PaymentsResponsiveListLabel>{labels.proceedsHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                          {formatMoneyFromMinor(row.organizerProceedsMinor, row.sourceCurrency, locale)}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                      <div>
+                        <PaymentsResponsiveListLabel>{labels.countHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListValue className="tabular-nums">
+                          {row.captureCount.toLocaleString(locale)}
+                        </PaymentsResponsiveListValue>
+                      </div>
+                    </PaymentsResponsiveListGrid>
+                  </PaymentsResponsiveListItem>
+                ))}
+              </PaymentsResponsiveList>
+              <div className="hidden md:block">
+                <PaymentsDataTable minWidthClassName="min-w-[34rem]">
                 <PaymentsDataTableHead>
                   <tr>
                     <PaymentsDataTableHeader>{labels.currencyHeader}</PaymentsDataTableHeader>
@@ -249,7 +296,9 @@ export function PaymentCaptureVolumeDashboard({
                     </PaymentsDataTableRow>
                   ))}
                 </tbody>
-              </PaymentsDataTable>
+                </PaymentsDataTable>
+              </div>
+            </>
           )}
         </PaymentsPanel>
 
@@ -316,8 +365,11 @@ export function PaymentCaptureVolumeDashboard({
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
         <PaymentsPanel>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <h3 className="text-sm font-semibold">{labels.topOrganizersTitle}</h3>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-semibold">{labels.topOrganizersTitle}</h3>
+                <PaymentsCountPill>{metrics.organizerPagination.total}</PaymentsCountPill>
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {labels.topOrganizersDescription}
               </p>
@@ -342,7 +394,65 @@ export function PaymentCaptureVolumeDashboard({
           {metrics.organizers.length === 0 ? (
             <p className="mt-4 text-sm text-muted-foreground">{labels.organizerEmpty}</p>
           ) : (
-            <PaymentsDataTable minWidthClassName="min-w-[40rem]">
+            <>
+              <PaymentsResponsiveList className="mt-4">
+                {metrics.organizers.map((row) => {
+                  const traceId = row.traceability.sampleTraceIds[0] ?? null;
+                  const investigationHref = buildQueryHref({
+                    workspace: 'investigation',
+                    investigationTool: traceId ? 'trace' : 'lookup',
+                    evidenceTraceId: traceId,
+                    organizerPage: null,
+                  });
+
+                  return (
+                    <PaymentsResponsiveListItem key={row.organizerId ?? row.organizerLabel}>
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">{row.organizerLabel}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{row.headlineCurrency}</p>
+                        </div>
+                        <PaymentsCountPill>{row.captureCount.toLocaleString(locale)}</PaymentsCountPill>
+                      </div>
+                      <PaymentsResponsiveListGrid className="mt-4">
+                        <div>
+                          <PaymentsResponsiveListLabel>{labels.organizerGrossHeader}</PaymentsResponsiveListLabel>
+                          <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                            {formatMoneyFromMinor(row.headlineGrossProcessedMinor, row.headlineCurrency, locale)}
+                          </PaymentsResponsiveListValue>
+                        </div>
+                        <div>
+                          <PaymentsResponsiveListLabel>{labels.organizerFeesHeader}</PaymentsResponsiveListLabel>
+                          <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                            {formatMoneyFromMinor(row.headlinePlatformFeeMinor, row.headlineCurrency, locale)}
+                          </PaymentsResponsiveListValue>
+                        </div>
+                        <div>
+                          <PaymentsResponsiveListLabel>{labels.organizerProceedsHeader}</PaymentsResponsiveListLabel>
+                          <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                            {formatMoneyFromMinor(row.headlineOrganizerProceedsMinor, row.headlineCurrency, locale)}
+                          </PaymentsResponsiveListValue>
+                        </div>
+                        <div>
+                          <PaymentsResponsiveListLabel>{labels.organizerCountHeader}</PaymentsResponsiveListLabel>
+                          <PaymentsResponsiveListValue className="tabular-nums">
+                            {row.captureCount.toLocaleString(locale)}
+                          </PaymentsResponsiveListValue>
+                        </div>
+                      </PaymentsResponsiveListGrid>
+                      <div className="mt-4">
+                        <Button asChild variant="outline" size="sm" className="w-full rounded-xl">
+                          <a href={investigationHref} data-testid="admin-payments-organizer-investigation-link">
+                            {labels.organizerActionLabel}
+                          </a>
+                        </Button>
+                      </div>
+                    </PaymentsResponsiveListItem>
+                  );
+                })}
+              </PaymentsResponsiveList>
+              <div className="hidden md:block">
+                <PaymentsDataTable minWidthClassName="min-w-[40rem]">
                 <PaymentsDataTableHead>
                   <tr>
                     <PaymentsDataTableHeader>{labels.organizerHeader}</PaymentsDataTableHeader>
@@ -406,10 +516,12 @@ export function PaymentCaptureVolumeDashboard({
                     );
                   })}
                 </tbody>
-              </PaymentsDataTable>
+                </PaymentsDataTable>
+              </div>
+            </>
           )}
 
-          <div className="mt-4 flex items-center justify-end gap-2">
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
             <Button asChild={Boolean(firstOrganizerHref)} variant="outline" size="sm" disabled={!firstOrganizerHref}>
               {firstOrganizerHref ? (
                 <a href={firstOrganizerHref}>{labels.firstPageLabel}</a>
