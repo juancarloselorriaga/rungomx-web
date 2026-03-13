@@ -24,6 +24,7 @@ type OrganizerActionQueueProps = {
 };
 
 type QueueSectionProps = {
+  testId: string;
   title: string;
   description: string;
   emptyMessage: string;
@@ -41,6 +42,7 @@ function splitVisibleItems<T>(items: T[], maxVisible = 3): { visible: T[]; hidde
 }
 
 function QueueSection({
+  testId,
   title,
   description,
   emptyMessage,
@@ -100,7 +102,11 @@ function QueueSection({
   }
 
   return (
-    <section className="space-y-3 rounded-xl border bg-card/80 p-4 shadow-sm" aria-label={title}>
+    <section
+      className="space-y-3 rounded-xl border bg-card/80 p-4 shadow-sm"
+      aria-label={title}
+      data-testid={testId}
+    >
       <div className="space-y-1">
         <PaymentsSectionTitle compact className="text-base sm:text-lg">{title}</PaymentsSectionTitle>
         <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
@@ -217,7 +223,11 @@ export function OrganizerActionQueue({
   const isCompletelyEmpty = actionNeeded.length === 0 && inProgress.length === 0;
 
   return (
-    <section className="space-y-4" aria-label={t('wallet.queue.title')}>
+    <section
+      className="space-y-4"
+      aria-label={t('wallet.queue.title')}
+      data-testid="payments-action-queue"
+    >
       <div className="space-y-1">
         <PaymentsSectionTitle>{t('wallet.queue.title')}</PaymentsSectionTitle>
         <PaymentsSectionDescription>{t('wallet.queue.description')}</PaymentsSectionDescription>
@@ -233,6 +243,7 @@ export function OrganizerActionQueue({
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           <QueueSection
+            testId="payments-action-needed-section"
             title={t('wallet.queue.actionNeeded')}
             description={t('wallet.queue.actionNeededDescription')}
             emptyMessage={t('wallet.queue.emptyActionNeeded')}
@@ -242,6 +253,7 @@ export function OrganizerActionQueue({
             eventId={eventId}
           />
           <QueueSection
+            testId="payments-in-progress-section"
             title={t('wallet.queue.inProgress')}
             description={t('wallet.queue.inProgressDescription')}
             emptyMessage={t('wallet.queue.emptyInProgress')}

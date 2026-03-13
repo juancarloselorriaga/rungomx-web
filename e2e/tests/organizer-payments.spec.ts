@@ -23,6 +23,20 @@ let organizationId = '';
 let terminalPayoutRequestId = '';
 let processingPayoutRequestId = '';
 
+async function waitForPayoutDetailPageReady(page: Page, payoutRequestId: string) {
+  await expect(
+    page.getByRole('status', {
+      name: 'Loading payout detail',
+    }),
+  ).toHaveCount(0, { timeout: 20_000 });
+
+  await expect(
+    page.getByRole('heading', {
+      name: `Payout #${payoutRequestId.slice(0, 8)}`,
+    }),
+  ).toBeVisible({ timeout: 30_000 });
+}
+
 async function seedOrganizerPayoutRecords(params: {
   organizerId: string;
   userId: string;
@@ -390,15 +404,16 @@ test.describe('Organizer Payments E2E', () => {
 
     await expect(page).toHaveURL(new RegExp(`/en/dashboard/payments\\?organizationId=${organizationId}`));
     await expect(page.getByRole('heading', { name: 'Payments', exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Action Needed' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'In Progress' })).toBeVisible();
-    await expect(page.getByTestId('payments-primary-cta')).toHaveText('Request payout');
+    await expect(page.getByTestId('payments-action-queue')).toBeVisible();
+    await expect(page.getByTestId('payments-action-needed-section')).toBeVisible();
+    await expect(page.getByTestId('payments-in-progress-section')).toBeVisible();
+    await expect(page.getByTestId('payments-current-payout-link')).toBeVisible();
 
-    await page.getByTestId('payments-primary-cta').focus();
+    await page.getByTestId('payments-current-payout-link').focus();
     await page.keyboard.press('Enter');
 
     await expect(page).toHaveURL(
-      new RegExp(`/en/dashboard/payments/payouts\\?organizationId=${organizationId}`),
+      new RegExp(`/en/dashboard/payments/payouts/[0-9a-f-]+$`),
     );
   });
 
@@ -481,7 +496,10 @@ test.describe('Organizer Payments E2E', () => {
 
     await page.goto(`/en/dashboard/payments/payouts?organizationId=${organizationId}`);
 
-    const amountInput = page.getByLabel('Requested amount (minor units)');
+    await page.getByRole('button', { name: 'New payout' }).click();
+    const payoutDialog = page.getByRole('dialog');
+    await expect(payoutDialog).toBeVisible();
+    const amountInput = payoutDialog.getByLabel('Payout amount');
     await expect(amountInput).toBeVisible();
 
     await amountInput.fill('50000');
@@ -496,7 +514,7 @@ test.describe('Organizer Payments E2E', () => {
       page.getByRole('button', { name: 'Request payout' }).click(),
     ]);
     await expect.poll(() => requestCount).toBe(firstPayoutSubmitCount + 1);
-    await expect(page.getByText('Payout request created')).toBeVisible();
+    await expect(page.getByText('Payout requested')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Open details' })).toBeVisible();
 
     await amountInput.fill('50000');
@@ -511,9 +529,13 @@ test.describe('Organizer Payments E2E', () => {
       page.getByRole('button', { name: 'Request payout' }).click(),
     ]);
     await expect.poll(() => requestCount).toBe(secondPayoutSubmitCount + 1);
-    await expect(page.getByText(/already has an active payout lifecycle/i)).toBeVisible();
+    await expect(
+      page.getByText(
+        'This organizer already has an active payout. Queue the next request for when the current cycle finishes.',
+      ),
+    ).toBeVisible();
 
-    const queueButton = page.getByRole('button', { name: 'Queue payout request' });
+    const queueButton = page.getByRole('button', { name: 'Prepare next payout' });
     await expect(queueButton).toBeVisible();
     const queueIntentSubmitCount = queuedIntentCount;
     await Promise.all([
@@ -526,7 +548,7 @@ test.describe('Organizer Payments E2E', () => {
       queueButton.click(),
     ]);
 
-    await expect(page.getByText('Payout intent queued')).toBeVisible();
+    await expect(page.getByText('Next payout prepared')).toBeVisible();
     await expect.poll(() => requestCount).toBe(2);
     await expect.poll(() => queuedIntentCount).toBe(queueIntentSubmitCount + 1);
     await expect.poll(() => queuedIntentRequestedAmountMinor).toBe(50_000);
@@ -542,12 +564,18 @@ test.describe('Organizer Payments E2E', () => {
     await expect(page.getByText('Completed').first()).toBeVisible();
     await expect(page.getByText('Processing').first()).toBeVisible();
 
-    await page.getByRole('link', { name: terminalPayoutRequestId }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}$`),
-    );
-    await expect(page.getByRole('heading', { name: 'Lifecycle timeline' })).toBeVisible();
-    await expect(page.getByText('risk_manual_review')).toBeVisible();
+    await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
+    await waitForPayoutDetailPageReady(page, terminalPayoutRequestId);
+    const payoutHistorySection = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'Payout history' }) });
+    await expect(page.getByRole('heading', { name: 'Payout history' })).toBeVisible();
+    const pausedLifecycleItem = payoutHistorySection
+      .locator('li')
+      .filter({ hasText: 'Manual review is required' })
+      .first();
+    await pausedLifecycleItem.locator('summary').click();
+    await expect(pausedLifecycleItem.getByText('risk_manual_review')).toBeVisible();
     await expect(page.getByText('Completed').first()).toBeVisible();
 
     await page.route('**/api/payments/payouts/*/statement?*', async (route) => {
@@ -556,27 +584,30 @@ test.describe('Organizer Payments E2E', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           data: {
+            payoutStatus: 'completed',
             statementFingerprint: 'fp-terminal-statement',
+            originalRequestedAmountMinor: 100_000,
+            currentRequestedAmountMinor: 97_500,
+            terminalAmountMinor: 97_500,
+            adjustmentTotalMinor: -2_500,
+            generatedAt: new Date().toISOString(),
           },
         }),
       });
     });
 
     await page.getByRole('button', { name: 'View statement' }).click();
-    await expect(page.getByText('Statement available')).toBeVisible();
-    await expect(page.getByText('fp-terminal-statement')).toBeVisible();
+    await expect(page.getByText('The statement is available.')).toBeVisible();
+    const statementSection = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'Payout statement' }) });
+    await statementSection.locator('details summary').click();
+    await expect(statementSection.getByText('fp-terminal-statement')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Back to payouts' }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`/en/dashboard/payments/payouts\\?organizationId=${organizationId}`),
-    );
-
-    await page.getByRole('link', { name: processingPayoutRequestId }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`/en/dashboard/payments/payouts/${processingPayoutRequestId}$`),
-    );
+    await page.goto(`/en/dashboard/payments/payouts/${processingPayoutRequestId}`);
+    await waitForPayoutDetailPageReady(page, processingPayoutRequestId);
     await expect(
-      page.getByText('Statement will be available after payout reaches a terminal status.'),
+      page.getByText('The statement will appear once the payout reaches a terminal state.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'View statement' })).toHaveCount(0);
   });
@@ -622,7 +653,13 @@ test.describe('Organizer Payments E2E', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           data: {
+            payoutStatus: 'completed',
             statementFingerprint: 'fp-mobile-telemetry',
+            originalRequestedAmountMinor: 100_000,
+            currentRequestedAmountMinor: 97_500,
+            terminalAmountMinor: 97_500,
+            adjustmentTotalMinor: -2_500,
+            generatedAt: new Date().toISOString(),
           },
         }),
       });
@@ -640,18 +677,16 @@ test.describe('Organizer Payments E2E', () => {
     await page.getByTestId('payments-primary-cta').focus();
     await page.keyboard.press('Enter');
 
-    await expect(page).toHaveURL(
-      new RegExp(`/en/dashboard/payments/payouts\\?organizationId=${organizationId}`),
-    );
-
-    await page.getByLabel('Requested amount (minor units)').fill('50000');
-    await page.getByRole('button', { name: 'Request payout' }).click();
-    await expect(page.getByText('Payout request created')).toBeVisible();
+    const payoutDialog = page.getByRole('dialog');
+    await expect(payoutDialog).toBeVisible();
+    await payoutDialog.getByLabel('Payout amount').fill('50000');
+    await payoutDialog.getByRole('button', { name: 'Request payout' }).click();
+    await expect(page.getByText('Payout requested')).toBeVisible();
 
     await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
-    await expect(page.getByRole('heading', { name: 'Payout detail' })).toBeVisible();
+    await waitForPayoutDetailPageReady(page, terminalPayoutRequestId);
     await page.getByRole('button', { name: 'View statement' }).click();
-    await expect(page.getByText('Statement available')).toBeVisible();
+    await expect(page.getByText('The statement is available.')).toBeVisible();
 
     const telemetry = await page.evaluate(
       () =>

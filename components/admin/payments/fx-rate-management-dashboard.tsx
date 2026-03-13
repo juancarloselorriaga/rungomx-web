@@ -72,7 +72,7 @@ export function FxRateManagementDashboard({
   const [effectiveDate, setEffectiveDate] = useState('');
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" data-testid="admin-payments-fx-dashboard">
       <div>
         <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>

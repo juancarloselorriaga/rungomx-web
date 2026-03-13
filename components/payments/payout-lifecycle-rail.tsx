@@ -27,19 +27,9 @@ function formatAmount(amountMinor: number | null, locale: 'es' | 'en'): string |
   return formatMoneyFromMinor(amountMinor, 'MXN', locale);
 }
 
-function shouldSurfaceReasonFamily(reasonCode: string | null): boolean {
-  if (!reasonCode) return false;
-  const normalized = reasonCode.trim().toLowerCase();
-
-  return (
-    normalized.includes('manual_review') ||
-    normalized.includes('bank') ||
-    normalized.includes('reject') ||
-    normalized.includes('fail') ||
-    normalized.includes('pause') ||
-    normalized.includes('active_') ||
-    normalized.includes('lifecycle_conflict')
-  );
+function getVisibleReasonFamily(reasonCode: string | null) {
+  if (!reasonCode?.trim()) return null;
+  return getOrganizerPayoutReasonFamily(reasonCode);
 }
 
 export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps) {
@@ -82,6 +72,7 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
       <ol className="space-y-4">
         {events.map((event) => {
           const formattedAmount = formatAmount(event.amountMinor, locale);
+          const visibleReasonFamily = getVisibleReasonFamily(event.reasonCode);
 
           return (
             <li key={event.eventId} className="relative rounded-xl border bg-background/85 p-5 shadow-sm">
@@ -116,12 +107,12 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
                     </div>
                   </div>
 
-                  {shouldSurfaceReasonFamily(event.reasonCode) || formattedAmount ? (
+                  {visibleReasonFamily || formattedAmount ? (
                     <div className="flex flex-wrap gap-2">
-                      {shouldSurfaceReasonFamily(event.reasonCode) ? (
+                      {visibleReasonFamily ? (
                         <span className="rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
                           <span className="font-medium">{t('detail.stateReason')}:</span>{' '}
-                          {t(`detail.reasonFamilies.${getOrganizerPayoutReasonFamily(event.reasonCode)}`)}
+                          {t(`detail.reasonFamilies.${visibleReasonFamily}`)}
                         </span>
                       ) : null}
 

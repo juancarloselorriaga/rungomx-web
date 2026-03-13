@@ -190,7 +190,7 @@ export function PaymentCaptureVolumeDashboard({
   });
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" data-testid="admin-payments-volume-dashboard">
       <div>
         <PaymentsSectionTitle compact>{labels.sectionTitle}</PaymentsSectionTitle>
         <PaymentsSectionDescription className="mt-1">{labels.sectionDescription}</PaymentsSectionDescription>
@@ -322,7 +322,7 @@ export function PaymentCaptureVolumeDashboard({
                 {labels.topOrganizersDescription}
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground" data-testid="admin-payments-organizer-page-summary">
               {labels.organizerPageSummary({
                 start: organizerStart,
                 end: organizerEnd,
@@ -397,7 +397,9 @@ export function PaymentCaptureVolumeDashboard({
                         </PaymentsDataTableCell>
                         <PaymentsDataTableCell align="right">
                           <Button asChild variant="outline" size="sm" className="rounded-xl">
-                            <a href={investigationHref}>{labels.organizerActionLabel}</a>
+                          <a href={investigationHref} data-testid="admin-payments-organizer-investigation-link">
+                            {labels.organizerActionLabel}
+                          </a>
                           </Button>
                         </PaymentsDataTableCell>
                       </PaymentsDataTableRow>
@@ -454,7 +456,9 @@ export function PaymentCaptureVolumeDashboard({
           <p className="mt-1 text-sm text-muted-foreground">{labels.investigationDescription}</p>
           <div className="mt-4">
             <Button asChild variant="outline" className="rounded-xl">
-              <a href={investigationWorkspaceHref}>{labels.investigationActionLabel}</a>
+              <a href={investigationWorkspaceHref} data-testid="admin-payments-open-investigation-workspace">
+                {labels.investigationActionLabel}
+              </a>
             </Button>
           </div>
         </PaymentsPanel>

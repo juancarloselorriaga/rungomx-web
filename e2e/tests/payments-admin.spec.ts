@@ -25,7 +25,7 @@ async function signInAsStaff(
 
 async function openPaymentsWorkspace(
   page: Page,
-  options?: { evidenceTraceId?: string },
+  options?: { evidenceTraceId?: string; workspace?: 'economics' | 'investigation' | 'risk' | 'operations' | 'volume' },
 ) {
   const targetPath = '/en/admin/payments';
   const searchParams = new URLSearchParams();
@@ -33,12 +33,14 @@ async function openPaymentsWorkspace(
   if (options?.evidenceTraceId) {
     searchParams.set('evidenceTraceId', options.evidenceTraceId);
   }
+  if (options?.workspace) {
+    searchParams.set('workspace', options.workspace);
+  }
 
   const targetUrl = searchParams.size > 0 ? `${targetPath}?${searchParams.toString()}` : targetPath;
   await page.goto(targetUrl, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(new RegExp(`${targetPath}(?:\\?|$)`));
-  await expect(page.getByRole('heading', { name: 'Payments economics' })).toBeVisible();
-  await expect(page.getByText('Financial case lookup')).toBeVisible();
+  await expect(page.getByTestId('admin-payments-workspace-shell')).toBeVisible();
 }
 
 test.describe('Payments Admin E2E', () => {
@@ -121,40 +123,59 @@ test.describe('Payments Admin E2E', () => {
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
-    await openPaymentsWorkspace(page);
+    await openPaymentsWorkspace(page, { workspace: 'economics' });
 
     await expect(page).toHaveURL(/\/en\/admin\/payments/);
-    await expect(page.getByRole('heading', { name: 'Payments economics' })).toBeVisible();
-    await expect(page.getByText('Net recognized fees')).toBeVisible();
-    await expect(page.getByText('Debt and dispute concentration')).toBeVisible();
-    await expect(page.getByText('Deterministic MXN report')).toBeVisible();
-    await expect(page.getByText('Daily FX management')).toBeVisible();
-    await expect(page.getByText('Artifact governance')).toBeVisible();
-    await expect(page.getByText('Financial case lookup')).toBeVisible();
-    await expect(page.getByText('Evidence pack review')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-workspace-title')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-workspace-tab-economics')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('admin-payments-workspace-tab-risk')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-workspace-tab-operations')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-workspace-tab-investigation')).toBeVisible();
+    await expect(page.getByText('Platform economics')).toBeVisible();
+    await expect(page.getByText('Reviewed period')).toBeVisible();
+
+    await page.getByTestId('admin-payments-workspace-tab-operations').click();
+    await expect(page.getByTestId('admin-payments-workspace-tab-operations')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('admin-payments-fx-dashboard')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-artifact-governance-dashboard')).toBeVisible();
   });
 
   test('1.2-E2E-001 staff user can reuse the same trace identifier across support lookup and evidence review', async ({
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
-    await openPaymentsWorkspace(page);
+    await openPaymentsWorkspace(page, { workspace: 'investigation' });
 
     await expect(page).toHaveURL(/\/en\/admin\/payments/);
+    await expect(page.getByTestId('admin-payments-workspace-tab-investigation')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByTestId('admin-payments-case-lookup-dashboard')).toBeVisible();
 
     const sharedTraceId = `trace:missing-${Date.now()}`;
-    await page.getByLabel('Trace or transaction identifier').fill(sharedTraceId);
+    await page.getByLabel('ID or trace').fill(sharedTraceId);
     await page.getByRole('button', { name: 'Search cases' }).click();
 
+    await expect(page.getByText('No matches found')).toBeVisible();
     await expect(
-      page.getByText('No matching financial cases were found for the provided identifier.'),
+      page.getByText('We could not find a case for that identifier. Check the trace, payout request ID, or idempotency key.'),
     ).toBeVisible();
 
-    await page.getByPlaceholder('trace:...', { exact: true }).fill(sharedTraceId);
+    await page.getByRole('button', { name: /Open a trace/i }).click();
+    await expect(page.getByTestId('admin-payments-evidence-dashboard')).toBeVisible();
+    await page.getByRole('textbox', { name: 'Technical trace' }).fill(sharedTraceId);
     await page.getByRole('button', { name: 'Load evidence pack' }).click();
 
+    await expect(page.getByText('No evidence found for that trace')).toBeVisible();
     await expect(
-      page.getByText('No evidence pack data was found for the selected trace.'),
+      page.getByText('That trace did not return an evidence pack. Verify the identifier or go back to case lookup.'),
     ).toBeVisible();
   });
 
@@ -162,14 +183,23 @@ test.describe('Payments Admin E2E', () => {
     page,
   }) => {
     await signInAsStaff(page, staffCreds);
-    await openPaymentsWorkspace(page, { evidenceTraceId: ownershipTraceId });
+    await openPaymentsWorkspace(page, {
+      evidenceTraceId: ownershipTraceId,
+      workspace: 'investigation',
+    });
 
-    await expect(page).toHaveURL(/\/en\/admin\/payments\?evidenceTraceId=/);
+    await expect(page).toHaveURL(/\/en\/admin\/payments\?.*evidenceTraceId=/);
+    await expect(page.getByTestId('admin-payments-evidence-dashboard')).toBeVisible();
     await expect(page.getByText('dispute.opened')).toBeVisible();
     await expect(page.getByText('dispute.under_review')).toBeVisible();
-    await expect(page.getByText('Action Needed').first()).toBeVisible();
-    await expect(page.getByText('In Progress').first()).toBeVisible();
-    await expect(page.getByText('platform').first()).toBeVisible();
-    await expect(page.getByText('dispute.won_or_lost').first()).toBeVisible();
+    await expect(page.getByTestId('admin-payments-evidence-current-state')).toContainText(
+      'In progress',
+    );
+    await expect(page.getByTestId('admin-payments-evidence-current-owner')).toContainText(
+      'platform',
+    );
+    await expect(page.getByTestId('admin-payments-evidence-next-transition')).toContainText(
+      'dispute.won_or_lost',
+    );
   });
 });

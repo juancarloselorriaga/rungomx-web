@@ -118,7 +118,11 @@ export function FinancialCaseLookupDashboard({
   }
 
   return (
-    <section className="space-y-4" aria-busy={isPending}>
+    <section
+      className="space-y-4"
+      aria-busy={isPending}
+      data-testid="admin-payments-case-lookup-dashboard"
+    >
       <div>
         <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>

@@ -22,9 +22,14 @@ jest.mock('@/lib/auth/guards', () => ({
   requireAuthenticatedUser: (...args: unknown[]) => mockRequireAuth(...args),
 }));
 
-jest.mock('drizzle-orm', () => ({
-  eq: (...args: unknown[]) => eqMock(...args),
-}));
+jest.mock('drizzle-orm', () => {
+  const actual = jest.requireActual('drizzle-orm');
+
+  return {
+    ...actual,
+    eq: (...args: unknown[]) => eqMock(...args),
+  };
+});
 
 jest.mock('@/db', () => {
   const state = {

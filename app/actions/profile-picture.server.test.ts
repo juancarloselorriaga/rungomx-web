@@ -30,9 +30,14 @@ jest.mock('@vercel/blob', () => ({
   del: (...args: unknown[]) => mockBlobDel(...args),
 }));
 
-jest.mock('drizzle-orm', () => ({
-  eq: (...args: unknown[]) => eqMock(...args),
-}));
+jest.mock('drizzle-orm', () => {
+  const actual = jest.requireActual('drizzle-orm');
+
+  return {
+    ...actual,
+    eq: (...args: unknown[]) => eqMock(...args),
+  };
+});
 
 jest.mock('@/db', () => {
   const state = {

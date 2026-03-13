@@ -45,11 +45,16 @@ jest.mock('@/db', () => {
   return { db, __pushSelect, __reset };
 });
 
-jest.mock('drizzle-orm', () => ({
-  eq: (...args: unknown[]) => ({ type: 'eq', args }),
-  and: (...args: unknown[]) => ({ type: 'and', args }),
-  isNull: (...args: unknown[]) => ({ type: 'isNull', args }),
-}));
+jest.mock('drizzle-orm', () => {
+  const actual = jest.requireActual('drizzle-orm');
+
+  return {
+    ...actual,
+    eq: (...args: unknown[]) => ({ type: 'eq', args }),
+    and: (...args: unknown[]) => ({ type: 'and', args }),
+    isNull: (...args: unknown[]) => ({ type: 'isNull', args }),
+  };
+});
 
 type MockDbModule = {
   db: { select: jest.Mock };

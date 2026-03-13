@@ -78,14 +78,6 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
     (registration.status === 'started' || registration.status === 'submitted') &&
     registration.expiresAt &&
     registration.expiresAt <= new Date();
-  const statusLabels = {
-    confirmed: 'green',
-    payment_pending: 'blue',
-    cancelled: 'outline',
-    started: 'indigo',
-    submitted: 'indigo',
-    expired: 'outline',
-  } as const;
   const statusCopy = {
     confirmed: t('status.confirmed'),
     payment_pending: t('status.payment_pending'),
@@ -94,7 +86,7 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
     submitted: t('status.submitted'),
     expired: t('status.expired'),
   } as const;
-  type StatusKey = keyof typeof statusLabels;
+  type StatusKey = keyof typeof statusCopy;
   const statusKey = (isExpired ? 'expired' : registration.status) as StatusKey;
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
   const hasPriceDetails =

@@ -360,9 +360,11 @@ test.describe('Demo payments volume E2E', () => {
     await expect(currencyRow).toContainText(feesFormatted);
     await expect(currencyRow).toContainText(proceedsFormatted);
 
-    await expect(page.getByText('Showing 1-1 of 1 organizers')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-organizer-page-summary')).toContainText(
+      'Showing 1-1 of 1',
+    );
     await expect(page.getByText(organizerName)).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open investigation workspace' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open in investigation' }).first()).toBeVisible();
+    await expect(page.getByTestId('admin-payments-open-investigation-workspace')).toBeVisible();
+    await expect(page.getByTestId('admin-payments-organizer-investigation-link').first()).toBeVisible();
   });
 });

@@ -52,6 +52,9 @@ webServerEnv.NODE_ENV = nextServerMode === 'dev' ? 'development' : 'production';
 // auth limiter explicitly for the spawned app server instead of relying on
 // NODE_ENV, which Next.js normalizes to "production" under `next start`.
 webServerEnv.E2E_DISABLE_AUTH_RATE_LIMIT = 'true';
+// Demo-pay E2E coverage runs the app through a production build, so the
+// explicit production override must be enabled for the spawned test server.
+webServerEnv.EVENTS_DEMO_PAYMENTS_ALLOW_PRODUCTION = 'true';
 
 if (process.env.DATABASE_URL) {
   webServerEnv.DATABASE_URL = process.env.DATABASE_URL;

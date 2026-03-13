@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/navigation';
+import { getPathname } from '@/i18n/navigation';
 import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { PaymentsStatePanel } from '@/components/payments/payments-state-panel';
 import { OrganizerPaymentsWorkspace } from '@/components/payments/organizer-payments-workspace';
@@ -9,6 +10,7 @@ import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
@@ -43,9 +45,19 @@ export default async function DashboardPaymentsPage({
   const t = await getTranslations('pages.dashboardPayments');
   const authContext = await getAuthContext();
 
+  if (!authContext.permissions.canViewStaffTools && !authContext.user) {
+    redirect(getPathname({ href: '/sign-in', locale: locale as 'es' | 'en' }));
+  }
+
   const organizations = authContext.permissions.canViewStaffTools
     ? await getAllOrganizations()
-    : await getUserOrganizations(authContext.user!.id);
+    : await (async () => {
+        const userId = authContext.user?.id;
+        if (!userId) {
+          redirect(getPathname({ href: '/sign-in', locale: locale as 'es' | 'en' }));
+        }
+        return getUserOrganizations(userId);
+      })();
 
   if (organizations.length === 0) {
     return (

@@ -37,9 +37,12 @@ describe('PayoutLifecycleRail', () => {
     expect(within(timelineItems[0]).getByText('payouts.statuses.requested')).toBeInTheDocument();
     expect(within(timelineItems[1]).getByText('payout.paused')).toBeInTheDocument();
     expect(within(timelineItems[1]).getByText('payouts.statuses.paused')).toBeInTheDocument();
-    expect(within(timelineItems[1]).getByText('detail.stateReason')).toBeInTheDocument();
+    expect(within(timelineItems[1]).getByText(/detail\.stateReason/)).toBeInTheDocument();
+    expect(
+      within(timelineItems[1]).getByText(/detail\.reasonFamilies\.genericReview/),
+    ).toBeInTheDocument();
     expect(within(timelineItems[1]).getByText('risk_check_required')).toBeInTheDocument();
-    expect(within(timelineItems[1]).getByText('detail.amountSummary')).toBeInTheDocument();
+    expect(within(timelineItems[1]).getByText(/detail\.amountSummary/)).toBeInTheDocument();
     expect(within(timelineItems[1]).getByText(/1,200\.00/)).toBeInTheDocument();
   });
 

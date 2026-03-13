@@ -90,7 +90,7 @@ export function NetRecognizedFeeDashboard({
   );
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" data-testid="admin-payments-economics-dashboard">
       <div>
         <PaymentsSectionTitle compact>{labels.sectionTitle}</PaymentsSectionTitle>
         <PaymentsSectionDescription className="mt-1">{labels.sectionDescription}</PaymentsSectionDescription>

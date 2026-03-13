@@ -154,7 +154,11 @@ export function EvidencePackReviewDashboard({
   }
 
   return (
-    <section className="space-y-4" aria-busy={isPending}>
+    <section
+      className="space-y-4"
+      aria-busy={isPending}
+      data-testid="admin-payments-evidence-dashboard"
+    >
       <div>
         <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
@@ -258,7 +262,7 @@ export function EvidencePackReviewDashboard({
                   {evidencePack.redaction.viewRole} ({evidencePack.redaction.redactedPaths.length})
                 </p>
               </div>
-              <div className="rounded border p-3">
+              <div className="rounded border p-3" data-testid="admin-payments-evidence-current-state">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.currentStateLabel}
                 </p>
@@ -266,13 +270,16 @@ export function EvidencePackReviewDashboard({
                   {formatOwnershipState(evidencePack.ownership.currentState, labels)}
                 </p>
               </div>
-              <div className="rounded border p-3">
+              <div className="rounded border p-3" data-testid="admin-payments-evidence-current-owner">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.currentOwnerLabel}
                 </p>
                 <p className="mt-1 text-xs">{evidencePack.ownership.currentOwner}</p>
               </div>
-              <div className="rounded border p-3 md:col-span-2 xl:col-span-2">
+              <div
+                className="rounded border p-3 md:col-span-2 xl:col-span-2"
+                data-testid="admin-payments-evidence-next-transition"
+              >
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.nextTransitionLabel}
                 </p>

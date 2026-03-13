@@ -54,12 +54,18 @@ export function AdminPaymentsWorkspaceShell({
     <PaymentsPanel
       className="p-3 sm:rounded-3xl sm:p-5 lg:p-6"
       aria-busy={isPending}
+      data-testid="admin-payments-workspace-shell"
     >
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2.5 sm:space-y-3">
           <PaymentsEyebrow>{workspaceLabel}</PaymentsEyebrow>
           <div className="space-y-1.5">
-            <h1 className="text-xl font-bold tracking-tight sm:text-3xl">{title}</h1>
+            <h1
+              className="text-xl font-bold tracking-tight sm:text-3xl"
+              data-testid="admin-payments-workspace-title"
+            >
+              {title}
+            </h1>
             <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
           </div>
 
@@ -98,6 +104,7 @@ export function AdminPaymentsWorkspaceShell({
                   ? 'border-primary/40 bg-primary/10 text-foreground hover:bg-primary/12'
                   : 'bg-background/80 text-muted-foreground hover:border-primary/30 hover:text-foreground hover:bg-card',
               )}
+              data-testid={`admin-payments-workspace-tab-${item.id}`}
             >
               {item.label}
             </Button>

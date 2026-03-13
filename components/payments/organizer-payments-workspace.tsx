@@ -146,7 +146,6 @@ export function OrganizerPaymentsWorkspace({
       : null;
   const isPartial = workspaceStatus === 'partial';
   const isWalletUnavailable = data.wallet == null;
-  const isQueueUnavailable = data.issues == null;
   const ctaState =
     data.wallet && (data.wallet.buckets.processingMinor > 0 || activePayoutId)
       ? 'active'
@@ -228,11 +227,15 @@ export function OrganizerPaymentsWorkspace({
                 />
               ) : ctaState === 'active' ? (
                 <Button asChild className="w-full justify-center">
-                  <Link href={currentPayoutHref}>{t('actions.viewCurrentPayout')}</Link>
+                  <Link href={currentPayoutHref} data-testid="payments-current-payout-link">
+                    {t('actions.viewCurrentPayout')}
+                  </Link>
                 </Button>
               ) : (
                 <Button asChild className="w-full justify-center">
-                  <Link href={resolvedHistoryHref}>{t('actions.viewPayouts')}</Link>
+                  <Link href={resolvedHistoryHref} data-testid="payments-history-link">
+                    {t('actions.viewPayouts')}
+                  </Link>
                 </Button>
               )}
 
@@ -251,6 +254,7 @@ export function OrganizerPaymentsWorkspace({
                 <PaymentsInsetPanel className="flex items-center justify-center py-3">
                   <Link
                     href={resolvedHistoryHref}
+                    data-testid="payments-history-shortcut-link"
                     className="text-sm font-medium text-muted-foreground transition hover:text-foreground"
                   >
                     {t('actions.viewPayouts')}
