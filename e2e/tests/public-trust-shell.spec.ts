@@ -372,6 +372,14 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
 
 const locales: readonly LocaleSpec[] = [createLocaleSpec('es'), createLocaleSpec('en')] as const;
 
+function localeOrThrow(code: LocaleSpec['code']) {
+  const locale = locales.find((entry) => entry.code === code);
+  if (!locale) {
+    throw new Error(`${code} locale configuration is missing`);
+  }
+  return locale;
+}
+
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -661,33 +669,59 @@ async function followTermsLinks(page: Page, locale: LocaleSpec) {
   );
 }
 
-test.describe('Public trust/support/legal shell regression', () => {
-  test('English routes render and major public-shell cross-links resolve to the expected destinations', async ({ page }) => {
-    const locale = locales.find((entry) => entry.code === 'en');
-    if (!locale) throw new Error('English locale configuration is missing');
+test.describe('Public trust/support/legal shell smoke', () => {
+  test('English contact page renders, validates, and routes its primary CTA to help', async ({ page }) => {
+    const locale = localeOrThrow('en');
 
     await assertContactPage(page, locale);
     await assertContactHrefs(page, locale);
     await assertContactValidation(page, locale);
-    await followContactLinks(page, locale);
+    await followLink(
+      hrefLink(page, locale.routes.help, locale.contact.heroHelpCta),
+      page,
+      locale.routes.help,
+      locale.headings.help,
+    );
+  });
+
+  test('English help page renders, expands FAQ content, and routes support CTA to contact', async ({ page }) => {
+    const locale = localeOrThrow('en');
 
     await assertHelpPage(page, locale);
     await assertHelpHrefs(page, locale);
     await assertHelpInteraction(page, locale);
-    await followHelpLinks(page, locale);
+    await followLink(
+      visibleHrefLink(page, locale.routes.contact, locale.help.ctaContact),
+      page,
+      locale.routes.contact,
+      locale.headings.contact,
+    );
+  });
+
+  test('English privacy and terms pages keep their primary legal cross-links intact', async ({ page }) => {
+    const locale = localeOrThrow('en');
 
     await assertPrivacyPage(page, locale);
     await assertPrivacyHrefs(page, locale);
-    await followPrivacyLinks(page, locale);
+    await followLink(
+      hrefLink(page, locale.routes.terms, locale.privacy.heroTermsCta),
+      page,
+      locale.routes.terms,
+      locale.headings.terms,
+    );
 
     await assertTermsPage(page, locale);
     await assertTermsHrefs(page, locale);
-    await followTermsLinks(page, locale);
+    await followLink(
+      hrefLink(page, locale.routes.privacy, locale.terms.heroPrivacyCta),
+      page,
+      locale.routes.privacy,
+      locale.headings.privacy,
+    );
   });
 
   test('Spanish localized routes render and expose the expected localized hrefs', async ({ page }) => {
-    const locale = locales.find((entry) => entry.code === 'es');
-    if (!locale) throw new Error('Spanish locale configuration is missing');
+    const locale = localeOrThrow('es');
 
     await assertContactPage(page, locale);
     await assertContactHrefs(page, locale);
@@ -702,5 +736,29 @@ test.describe('Public trust/support/legal shell regression', () => {
 
     await assertTermsPage(page, locale);
     await assertTermsHrefs(page, locale);
+  });
+});
+
+test.describe('Public trust/support/legal shell regression', { tag: '@extended' }, () => {
+  test('English contact cross-links resolve to the expected destinations', async ({ page }) => {
+    await followContactLinks(page, localeOrThrow('en'));
+  });
+
+  test('English help cross-links resolve to the expected destinations', async ({ page }) => {
+    await followHelpLinks(page, localeOrThrow('en'));
+  });
+
+  test('English privacy cross-links resolve to the expected destinations', async ({ page }) => {
+    const locale = localeOrThrow('en');
+    await assertPrivacyPage(page, locale);
+    await assertPrivacyHrefs(page, locale);
+    await followPrivacyLinks(page, locale);
+  });
+
+  test('English terms cross-links resolve to the expected destinations', async ({ page }) => {
+    const locale = localeOrThrow('en');
+    await assertTermsPage(page, locale);
+    await assertTermsHrefs(page, locale);
+    await followTermsLinks(page, locale);
   });
 });

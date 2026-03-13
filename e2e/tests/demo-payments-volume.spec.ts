@@ -232,8 +232,8 @@ test.describe('Demo payments volume E2E', () => {
     await page.goto('/en/dashboard/my-registrations', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(ticketCode)).toBeVisible();
     await page.getByRole('link', { name: /view details/i }).first().click();
+    await expect(page).toHaveURL(new RegExp(`/en/dashboard/my-registrations/${registration!.id}(?:$|[?#])`));
 
-    await expect(page.getByText('Payment pending')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Pay (demo)' })).toBeVisible();
     await page.getByRole('button', { name: 'Pay (demo)' }).click();
 

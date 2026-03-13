@@ -46,7 +46,9 @@ export function buildAdminPaymentsWorkspaceSearchParams(
       ? new URLSearchParams(searchParams)
       : new URLSearchParams(searchParams?.toString());
   const next = new URLSearchParams();
-  const allowedKeys = new Set(adminPaymentsWorkspaceScopedSearchParams[nextWorkspace]);
+  const allowedKeys: ReadonlySet<string> = new Set(
+    adminPaymentsWorkspaceScopedSearchParams[nextWorkspace],
+  );
 
   for (const [key, value] of current.entries()) {
     if (allowedKeys.has(key)) {

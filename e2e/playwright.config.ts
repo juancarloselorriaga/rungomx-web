@@ -24,6 +24,7 @@ const runtimeTarget = resolvePlaywrightRuntimeTarget({
 });
 const origin = runtimeTarget.origin;
 const port = runtimeTarget.port;
+const includeExtendedE2E = process.env.PW_INCLUDE_EXTENDED_E2E?.trim() === 'true';
 
 function getRunId() {
   const raw = process.env.E2E_RUN_ID?.trim();
@@ -82,6 +83,9 @@ if (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN) {
 
 export default defineConfig({
   testDir: './tests',
+  // Keep the main E2E gate focused on smoke-level coverage. Broader regression
+  // suites opt in via PW_INCLUDE_EXTENDED_E2E=true.
+  grepInvert: includeExtendedE2E ? undefined : /@extended/,
   // Folder for test artifacts such as screenshots, videos, traces, etc.
   outputDir,
 
