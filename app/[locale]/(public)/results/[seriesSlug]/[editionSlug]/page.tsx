@@ -6,6 +6,7 @@ import {
   getPublicResultIdentityPolicy,
   resolvePublicResultIdentityDisplay,
 } from '@/lib/events/results/public-identity-policy';
+import { resolvePublicOfficialResultsRobotsDirectives } from '@/lib/events/results/public-official-results-indexability';
 import { getPublicOfficialResultsPageData } from '@/lib/events/results/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -47,14 +48,6 @@ function toDateTimeLabel(
   }).format(value);
 }
 
-function resolveRobotsDirectives(
-  pageData: Awaited<ReturnType<typeof getPublicOfficialResultsPageData>>,
-): Metadata['robots'] | undefined {
-  if (pageData.state !== 'official') return { index: false, follow: false };
-  if (pageData.edition.visibility !== 'published') return { index: false, follow: false };
-  return undefined;
-}
-
 export async function generateMetadata({ params }: PublicOfficialResultsPageProps): Promise<Metadata> {
   const { locale, seriesSlug, editionSlug } = await params;
   const pageData = await getPublicOfficialResultsPageData(seriesSlug, editionSlug, { entryLimit: 1 });
@@ -65,7 +58,7 @@ export async function generateMetadata({ params }: PublicOfficialResultsPageProp
     (messages) => messages.Pages?.Results?.metadata,
     {
       params: { seriesSlug, editionSlug },
-      robots: resolveRobotsDirectives(pageData),
+      robots: resolvePublicOfficialResultsRobotsDirectives(pageData),
     },
   );
 }

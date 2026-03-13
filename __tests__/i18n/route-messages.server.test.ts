@@ -53,12 +53,14 @@ describe('route-based namespace loading', () => {
     expect(size).toBeLessThan(ROUTE_MESSAGES_BYTE_LIMIT);
   });
 
-  it('supports routes without page-specific namespaces (privacy/terms)', async () => {
+  it('loads dedicated page namespaces for privacy and terms routes', async () => {
     const privacy = await loadRouteMessages('en', '/privacy');
     const terms = await loadRouteMessages('en', '/terms');
 
-    expect(privacy.pages).toBeUndefined();
-    expect(terms.pages).toBeUndefined();
+    expect(privacy.pages?.privacy).toBeDefined();
+    expect(privacy.pages?.terms).toBeUndefined();
+    expect(terms.pages?.terms).toBeDefined();
+    expect(terms.pages?.privacy).toBeUndefined();
   });
 
   it('falls back to default selection for unmapped routes', async () => {

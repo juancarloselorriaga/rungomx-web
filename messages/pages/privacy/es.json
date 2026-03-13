@@ -1,0 +1,134 @@
+{
+  "hero": {
+    "badge": "Aviso de privacidad",
+    "title": "Cómo maneja RunGoMX tu información",
+    "description": "Aquí te explicamos qué información puede recibir RunGoMX, por qué se usa, cuándo puede compartirse y cómo contactarnos si tienes dudas de privacidad.",
+    "primaryCta": "Contactar soporte",
+    "secondaryCta": "Revisar términos"
+  },
+  "summary": {
+    "eyebrow": "Resumen en lenguaje claro",
+    "title": "La versión corta",
+    "description": "RunGoMX conecta páginas de eventos, inscripciones, pagos, resultados, rankings y herramientas para Directores de Carrera. La forma en que manejamos datos sigue esos flujos, y parte de la información del evento la publican los organizadores del evento.",
+    "highlights": [
+      "Recopilamos la información necesaria para operar cuentas, inscripciones, conversaciones de soporte y flujos relacionados con eventos.",
+      "Usamos la información para operar la plataforma, confirmar transacciones, comunicarnos sobre eventos o soporte y proteger el servicio.",
+      "Podemos compartir datos relevantes con organizadores del evento y proveedores involucrados en pagos, comunicaciones, hosting y seguridad.",
+      "Las preguntas sobre privacidad, correcciones o temas relacionados con tu cuenta pueden enviarse a través de nuestra página de contacto."
+    ]
+  },
+  "sections": {
+    "eyebrow": "Detalles de la política",
+    "title": "Detalles de privacidad para corredores, Directores de Carrera y visitantes",
+    "description": "Estas secciones están escritas para que se entiendan fácil. Explican cómo suele moverse la información dentro de RunGoMX.",
+    "items": {
+      "informationWeCollect": {
+        "title": "Información que recopilamos",
+        "intro": "La información que recibimos depende de cómo uses RunGoMX.",
+        "paragraphs": [
+          "Cuando navegas páginas públicas, podemos recibir información técnica básica necesaria para renderizar páginas de forma segura, mantener la confiabilidad del servicio y entender el uso de la plataforma a un nivel general.",
+          "Cuando creas una cuenta, te inscribes a un evento, contactas soporte o usas herramientas para Directores de Carrera, podemos recibir datos de perfil, información de contacto, datos de inscripción, confirmaciones relacionadas con pagos y mensajes de soporte."
+        ],
+        "bullets": [
+          "Datos de cuenta y contacto que proporcionas",
+          "Información de inscripción y participante enviada para un evento",
+          "Mensajes operativos o de soporte que envías al equipo",
+          "Información básica de dispositivo, navegador y uso utilizada para confiabilidad y seguridad"
+        ]
+      },
+      "howInformationIsUsed": {
+        "title": "Cómo se usa la información",
+        "intro": "Usamos la información para entregar el producto que estás utilizando activamente.",
+        "paragraphs": [
+          "Eso incluye operar páginas de eventos, procesar inscripciones, confirmar pagos o estados de inscripción, mostrar resultados y rankings cuando corresponde y responder solicitudes de soporte.",
+          "También podemos usar la información para mejorar la confiabilidad de la plataforma, investigar usos indebidos, prevenir fraude, cumplir obligaciones legales o contables y mantener informados a Directores de Carrera y participantes sobre actividad relacionada con eventos."
+        ],
+        "bullets": [
+          "Operar cuentas, inscripciones y herramientas para Directores de Carrera",
+          "Enviar confirmaciones, actualizaciones y respuestas de soporte",
+          "Proteger la plataforma, a los usuarios, a los Directores de Carrera y los flujos de pago",
+          "Mantener registros necesarios para cumplimiento, conciliación y mejora del servicio"
+        ]
+      },
+      "whenInformationIsShared": {
+        "title": "Cuándo se comparte la información",
+        "intro": "RunGoMX no trata toda la información de la misma forma. El intercambio depende de la transacción o flujo involucrado.",
+        "paragraphs": [
+          "Los datos relevantes del participante o de la transacción pueden compartirse con el organizador responsable del evento con el que interactúas, porque los organizadores del evento necesitan información para administrar inscripciones, logística del evento, check-in, soporte y operaciones posteriores al evento.",
+          "También podemos apoyarnos en proveedores que soportan pagos, comunicaciones, hosting, analítica o seguridad. La información puede divulgarse cuando sea razonablemente necesario para cumplir con la ley, hacer valer reglas de la plataforma o responder solicitudes legales legítimas."
+        ],
+        "bullets": [
+          "Organizadores del evento que administran",
+          "Proveedores de pagos, comunicaciones, hosting y seguridad que soportan la plataforma",
+          "Autoridades o procesos legales cuando la divulgación sea requerida o razonablemente necesaria"
+        ]
+      },
+      "eventOrganizerRelationship": {
+        "title": "Contexto de la relación entre el evento y su organizador",
+        "intro": "RunGoMX provee la plataforma, pero los organizadores del evento suelen controlar decisiones importantes de cada evento.",
+        "paragraphs": [
+          "Las descripciones del evento, precios, horarios, logística, instrucciones del día de la carrera, deslindes y algunas comunicaciones hacia participantes pueden venir del organizador de un evento específico.",
+          "Eso significa que parte de la información que envías a través de RunGoMX se usa para ayudar a ese organizador a operar su evento. Los organizadores del evento pueden tener sus propias políticas, avisos u obligaciones además de lo descrito en esta página."
+        ],
+        "bullets": [
+          "Los organizadores del evento suelen ser responsables de los detalles y decisiones específicas de su evento",
+          "RunGoMX opera la plataforma que hace posibles las inscripciones, la búsqueda de eventos, los resultados, los rankings y otros flujos relacionados"
+        ]
+      },
+      "communicationsAndSupport": {
+        "title": "Comunicaciones y soporte",
+        "intro": "Algunas comunicaciones son necesarias para operar el servicio que solicitaste.",
+        "paragraphs": [
+          "Si nos contactas, creas una cuenta, te inscribes a un evento o usas una herramienta para Directores de Carrera, podemos enviarte mensajes operativos relacionados con confirmaciones, actualizaciones importantes, respuestas de soporte o problemas que afecten el servicio.",
+          "Las conversaciones de soporte pueden almacenarse para que el equipo dé seguimiento, entienda el contexto previo y resuelva problemas futuros con mayor precisión."
+        ],
+        "bullets": [
+          "Confirmaciones de inscripción y actualizaciones relacionadas con pagos",
+          "Respuestas de soporte y comunicaciones de diagnóstico",
+          "Avisos importantes sobre operaciones del evento o de la plataforma"
+        ]
+      },
+      "dataRetentionAndAccounts": {
+        "title": "Retención de datos y consideraciones sobre la cuenta",
+        "intro": "La retención depende de por qué existe esa información en primer lugar.",
+        "paragraphs": [
+          "RunGoMX puede conservar información durante el tiempo necesario para operar cuentas, soportar inscripciones, mostrar historial de participación, mantener resultados o rankings, resolver disputas, realizar tareas contables o proteger la plataforma.",
+          "Si una cuenta cambia o se cierra, algunos registros aún pueden necesitar conservarse porque están ligados a inscripciones completadas, operaciones del evento, resultados públicos, obligaciones legales o revisiones de seguridad."
+        ],
+        "bullets": [
+          "Los registros operativos pueden durar más que una sesión individual o un cambio en la cuenta",
+          "El historial de eventos y transacciones completadas puede necesitar seguir disponible para soporte, operación del evento o cumplimiento"
+        ]
+      },
+      "userChoicesAndContact": {
+        "title": "Opciones del usuario y contacto para preguntas de privacidad",
+        "intro": "Queremos que las preguntas de privacidad tengan un camino claro.",
+        "paragraphs": [
+          "Si necesitas ayuda con una inquietud de privacidad, quieres reportar información incorrecta o tienes una pregunta sobre tu cuenta relacionada con datos personales, contacta al equipo de RunGoMX mediante la página pública de contacto.",
+          "Las solicitudes pueden requerir que verifiquemos el contexto y pueden estar limitadas cuando los registros son necesarios para administración del evento, transacciones completadas, resultados públicos, seguridad o cumplimiento legal."
+        ],
+        "bullets": [
+          "Usa la página de contacto para preguntas de privacidad y temas relacionados con la cuenta",
+          "Incluye suficiente detalle para que podamos identificar el evento, la cuenta o la situación involucrada"
+        ]
+      }
+    }
+  },
+  "cta": {
+    "title": "¿Preguntas sobre privacidad o tu cuenta?",
+    "description": "Envíale al equipo de RunGoMX los datos necesarios para ubicar el evento, la cuenta o la transacción relacionada.",
+    "primaryActionLabel": "Ir a contacto"
+  },
+  "relatedLinks": {
+    "eyebrow": "Página legal relacionada",
+    "title": "También revisa nuestros términos y condiciones",
+    "description": "Privacidad explica el manejo de información. Nuestros términos explican el uso de la plataforma, las responsabilidades del organizador del evento y las expectativas de transacción.",
+    "items": {
+      "terms": {
+        "href": "/terms",
+        "title": "Términos y condiciones",
+        "description": "Lee las reglas, responsabilidades y limitaciones que aplican al usar RunGoMX."
+      }
+    }
+  }
+}

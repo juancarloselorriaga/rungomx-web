@@ -1,4 +1,309 @@
 {
-  "title": "Centro de ayuda",
-  "description": "Encuentra respuestas a tus preguntas. Centro de ayuda."
+  "hero": {
+    "badge": "Centro de ayuda",
+    "title": "Encuentra ayuda práctica antes de contactar soporte",
+    "description": "Empieza aquí si necesitas ayuda con páginas de eventos, inscripciones, resultados, rankings, pagos o acceso a tu cuenta.",
+    "primaryCta": "Explorar eventos",
+    "secondaryCta": "Contactar soporte"
+  },
+  "categories": {
+    "eyebrow": "Respuestas rápidas",
+    "title": "Empieza por el tema que mejor coincide con tu pregunta",
+    "description": "Empieza por la sección que más se parezca a tu duda. Esta página está pensada para resolver cosas reales de RunGoMX, sin rodeos.",
+    "items": {
+      "registrations": {
+        "title": "Inscripciones",
+        "description": "Revisa si una inscripción está abierta y dónde continuar o revisar una inscripción que ya comenzó.",
+        "linkLabel": "Ir a respuestas sobre inscripciones"
+      },
+      "eventInformation": {
+        "title": "Información del evento",
+        "description": "Ubica dónde suelen aparecer horarios, instrucciones para participantes, contexto de precios y actualizaciones del Director de Carrera.",
+        "linkLabel": "Ir a respuestas sobre el evento"
+      },
+      "results": {
+        "title": "Resultados",
+        "description": "Encuentra páginas oficiales de resultados y entiende por qué un resultado puede cambiar después de una revisión.",
+        "linkLabel": "Ir a respuestas sobre resultados"
+      },
+      "rankings": {
+        "title": "Rankings",
+        "description": "Aprende dónde aparecen las clasificaciones y por qué pueden moverse cuando se publican resultados nuevos o corregidos.",
+        "linkLabel": "Ir a respuestas sobre rankings"
+      },
+      "payments": {
+        "title": "Pagos y confirmaciones",
+        "description": "Obtén orientación práctica cuando un pago, una confirmación o un estado de inscripción no se ve correcto.",
+        "linkLabel": "Ir a respuestas sobre pagos"
+      },
+      "accountBasics": {
+        "title": "Cuenta",
+        "description": "Usa la ruta correcta para iniciar sesión y entiende cómo el acceso a la cuenta se conecta con la gestión de inscripciones.",
+        "linkLabel": "Ir a respuestas sobre cuenta"
+      }
+    }
+  },
+  "faqGroups": {
+    "eyebrow": "Preguntas frecuentes",
+    "title": "Respuestas claras para las dudas más comunes",
+    "description": "Cuando algo depende de las reglas del Director de Carrera o de una inscripción específica, te lo decimos tal cual.",
+    "groups": {
+      "registrations": {
+        "title": "Inscripciones",
+        "description": "Las preguntas sobre inscripciones normalmente empiezan en la página pública del evento y continúan en el flujo de cuenta una vez que la persona inicia sesión.",
+        "items": {
+          "checkStatus": {
+            "question": "¿Cómo sé si la inscripción está abierta para un evento?",
+            "paragraphs": [
+              "Empieza en la página del evento. RunGoMX muestra ahí el estado de la inscripción, incluyendo si está abierta, cerrada, aún no inicia o está pausada para ese evento específico.",
+              "Esa misma vista del evento también es el lugar correcto para revisar la edición actual, el contexto de fechas y cualquier instrucción publicada por el Director de Carrera antes de empezar."
+            ],
+            "links": [
+              {
+                "href": "/events",
+                "label": "Explorar eventos"
+              }
+            ]
+          },
+          "continueRegistration": {
+            "question": "¿Dónde continúo una inscripción iniciada o reviso mis detalles de inscripción?",
+            "paragraphs": [
+              "Inicia sesión con la misma cuenta usada para la inscripción y después abre Mis inscripciones. Ese es el flujo real para continuar una inscripción en progreso y revisar detalles de inscripción ya ligados a tu cuenta.",
+              "Si una inscripción debería existir pero no la encuentras, contacta soporte con el nombre del evento y cualquier identificador de inscripción que tengas."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Iniciar sesión"
+              },
+              {
+                "href": "/dashboard/my-registrations",
+                "label": "Mis inscripciones"
+              }
+            ]
+          }
+        }
+      },
+      "eventInformation": {
+        "title": "Información del evento",
+        "description": "Las páginas públicas del evento son el punto de partida para los detalles prácticos, pero algunas políticas siguen siendo del organizador del evento.",
+        "items": {
+          "findEventDetails": {
+            "question": "¿Dónde debo revisar detalles del evento, horarios e instrucciones para participantes?",
+            "paragraphs": [
+              "Usa primero el listado de eventos y la página del evento. Ahí es donde las personas corredoras deberían esperar la información pública más actual, incluyendo el contexto de inscripción y los detalles para participantes que ya fueron publicados.",
+              "Si un detalle falta o no está claro, la página del evento sigue siendo el mejor punto de partida antes de escalar a soporte."
+            ],
+            "links": [
+              {
+                "href": "/events",
+                "label": "Ir a eventos"
+              }
+            ]
+          },
+          "organizerPolicies": {
+            "question": "¿Quién controla precios, deslindes, cancelaciones u otras reglas específicas del evento?",
+            "paragraphs": [
+              "Normalmente esas decisiones específicas del evento las toma el Director de Carrera. RunGoMX impulsa la experiencia de plataforma, pero precios, deslindes, condiciones de cancelación y reglas del día del evento pueden venir del organizador responsable del evento.",
+              "Si algo en la plataforma parece inconsistente con el contexto del evento, contacta soporte con el evento y los detalles de la inscripción para que el caso pueda revisarse."
+            ],
+            "links": [
+              {
+                "href": "/contact",
+                "label": "Contactar soporte"
+              }
+            ]
+          }
+        }
+      },
+      "results": {
+        "title": "Resultados",
+        "description": "Los resultados son información deportiva pública y todavía pueden actualizarse cuando un Director de Carrera o un flujo de cronometraje publica cambios.",
+        "items": {
+          "findOfficialResults": {
+            "question": "¿Dónde encuentro resultados oficiales en RunGoMX?",
+            "paragraphs": [
+              "Usa el área pública de resultados. Es el punto correcto para páginas oficiales de resultados y vistas relacionadas publicadas por la plataforma.",
+              "Si ya conoces el evento, revisa la página correspondiente de resultados para ver el estado publicado más reciente."
+            ],
+            "links": [
+              {
+                "href": "/results",
+                "label": "Ver resultados"
+              }
+            ]
+          },
+          "unexpectedResult": {
+            "question": "¿Por qué un resultado podría verse distinto de lo que esperaba?",
+            "paragraphs": [
+              "Los resultados pueden cambiar cuando se revisan y republican correcciones, clasificaciones o datos de cronometraje compartidos por el Director de Carrera. Eso significa que un resultado público no siempre queda congelado desde la primera publicación.",
+              "Si algo sigue viéndose mal después de revisar la página publicada de resultados, contacta soporte con el nombre del evento y el contexto de la persona participante para que la solicitud llegue a la ruta correcta."
+            ],
+            "links": [
+              {
+                "href": "/results",
+                "label": "Revisar resultados"
+              },
+              {
+                "href": "/contact",
+                "label": "Reportar un problema"
+              }
+            ]
+          }
+        }
+      },
+      "rankings": {
+        "title": "Rankings",
+        "description": "Los rankings dependen de resultados publicados, así que muchas veces conviene revisar juntos el ranking y la vista de resultados.",
+        "items": {
+          "howRankingsUpdate": {
+            "question": "¿Cómo se actualizan los rankings?",
+            "paragraphs": [
+              "Los rankings reflejan los resultados que están publicados en la plataforma en este momento. Cuando se agregan resultados nuevos o se corrige uno existente, los rankings pueden cambiar junto con esa información pública.",
+              "Si estás revisando un desempeño reciente, consulta tanto el ranking como la página del resultado relacionado antes de asumir que algo falta."
+            ],
+            "links": [
+              {
+                "href": "/rankings",
+                "label": "Ver rankings"
+              },
+              {
+                "href": "/results",
+                "label": "Ver resultados"
+              }
+            ]
+          },
+          "missingRanking": {
+            "question": "¿Qué hago si no aparezco en un ranking?",
+            "paragraphs": [
+              "Primero confirma que el resultado correspondiente ya está publicado y que se ve correcto. Los rankings dependen de ese contexto de resultados del evento, así que un resultado faltante o actualizado puede afectar la vista del ranking.",
+              "Si el resultado ya está presente y el ranking sigue viéndose mal, contacta soporte con los datos del evento y de la persona participante para que el registro pueda revisarse."
+            ],
+            "links": [
+              {
+                "href": "/rankings",
+                "label": "Revisar rankings"
+              },
+              {
+                "href": "/contact",
+                "label": "Contactar soporte"
+              }
+            ]
+          }
+        }
+      },
+      "payments": {
+        "title": "Pagos y confirmaciones",
+        "description": "La respuesta más segura suele ser verificar primero el estado de la inscripción y después escalar con el contexto exacto de la transacción si hace falta.",
+        "items": {
+          "paymentNoConfirmation": {
+            "question": "Inicié un pago o una inscripción pero no recibí la confirmación que esperaba. ¿Qué debo revisar primero?",
+            "paragraphs": [
+              "Primero inicia sesión y revisa Mis inscripciones. Ese es el lugar donde puedes confirmar si una inscripción sigue en progreso, está esperando pago o ya quedó asociada a tu cuenta.",
+              "Si el estado sigue sin tener sentido, contacta soporte con el nombre del evento, el correo usado para la inscripción y cualquier código de boleto o identificador de inscripción que tengas."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Iniciar sesión"
+              },
+              {
+                "href": "/dashboard/my-registrations",
+                "label": "Revisar mis inscripciones"
+              }
+            ]
+          },
+          "refundsCharges": {
+            "question": "¿Quién atiende reembolsos, cargos o disputas de pago?",
+            "paragraphs": [
+              "Esos resultados pueden depender de reglas del Director de Carrera, del contexto del pago y del estado de la inscripción. RunGoMX no trata todas las dudas de pago como si fueran una acción simple de autoservicio.",
+              "Revisa primero el contexto del evento y después contacta soporte con los detalles de la inscripción y del pago si algo sigue viéndose mal."
+            ],
+            "links": [
+              {
+                "href": "/events",
+                "label": "Revisar páginas de eventos"
+              },
+              {
+                "href": "/contact",
+                "label": "Pedir ayuda con pagos"
+              }
+            ]
+          }
+        }
+      },
+      "accountBasics": {
+        "title": "Cuenta",
+        "description": "Las páginas públicas están abiertas para todas las personas, pero la gestión de inscripciones y los detalles ligados a la cuenta viven detrás de inicio de sesión.",
+        "items": {
+          "needAccount": {
+            "question": "¿Necesito una cuenta para usar RunGoMX?",
+            "paragraphs": [
+              "Puedes navegar páginas públicas como eventos, resultados, rankings y ayuda sin iniciar sesión. Sí necesitas el contexto correcto de cuenta para gestionar inscripciones y ver detalles de inscripción ligados a tu cuenta.",
+              "Si quieres continuar una inscripción o revisar tu historial, empieza con el flujo de inicio de sesión vinculado a la cuenta que usaste."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Iniciar sesión"
+              },
+              {
+                "href": "/sign-up",
+                "label": "Crear cuenta"
+              }
+            ]
+          },
+          "accessProblem": {
+            "question": "¿Qué pasa si no puedo entrar a la cuenta conectada con mi inscripción?",
+            "paragraphs": [
+              "Empieza desde la página pública de inicio de sesión para asegurarte de usar el punto de entrada correcto. Si aun así no puedes llegar a la inscripción ligada a tu actividad en el evento, contacta soporte con el nombre del evento, el nombre de la persona participante y el correo que crees haber usado.",
+              "Ese contexto ayuda al equipo a ubicar el registro correcto sin adivinar."
+            ],
+            "links": [
+              {
+                "href": "/sign-in",
+                "label": "Ir a iniciar sesión"
+              },
+              {
+                "href": "/contact",
+                "label": "Contactar soporte"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "cta": {
+    "title": "¿Aún necesitas ayuda?",
+    "description": "Usa la página de contacto e incluye el nombre del evento, el correo ligado a la cuenta si lo conoces y cualquier ID de inscripción o boleto para que podamos canalizarlo más rápido.",
+    "primaryActionLabel": "Ir a contacto"
+  },
+  "relatedLinks": {
+    "eyebrow": "Enlaces útiles",
+    "title": "Ve directo a las páginas públicas principales",
+    "description": "Si tu duda realmente es sobre una página o un registro, estos enlaces suelen ser el siguiente paso más rápido.",
+    "items": {
+      "events": {
+        "href": "/events",
+        "title": "Eventos",
+        "description": "Explora páginas públicas de eventos y revisa el estado de inscripción o los detalles publicados por el Director de Carrera."
+      },
+      "results": {
+        "href": "/results",
+        "title": "Resultados",
+        "description": "Encuentra páginas oficiales de resultados y verifica el estado publicado más reciente de un evento."
+      },
+      "rankings": {
+        "href": "/rankings",
+        "title": "Rankings",
+        "description": "Revisa clasificaciones públicas que reflejan los resultados publicados actualmente."
+      },
+      "home": {
+        "href": "/",
+        "title": "Inicio",
+        "description": "Vuelve a la portada pública de RunGoMX y empieza otra vez desde la navegación principal."
+      }
+    }
+  }
 }

@@ -2,15 +2,15 @@
   "SEO": {
     "default": {
       "title": "RunGoMX",
-      "description": "RunGoMX es la plataforma todo-en-uno para crear, administrar y promocionar carreras y eventos deportivos en México.",
+      "description": "RunGoMX te ayuda a encontrar eventos, inscribirte y revisar resultados oficiales en México.",
       "openGraph": {
         "title": "RunGoMX",
-        "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México: inscripciones, pagos, resultados, rankings y más.",
+        "description": "Encuentra eventos, inscripciones, resultados oficiales y rankings en RunGoMX.",
         "imageAlt": "RunGoMX - Plataforma para carreras en México"
       },
       "twitter": {
         "title": "RunGoMX",
-        "description": "Plataforma todo-en-uno para organizar y promocionar carreras en México."
+        "description": "Encuentra eventos, inscríbete y revisa resultados oficiales en RunGoMX."
       },
       "applicationName": "RunGoMX"
     }
@@ -19,7 +19,7 @@
     "Home": {
       "metadata": {
         "title": "Carreras y eventos deportivos en México | RunGoMX",
-        "description": "Descubre las mejores carreras en México. Inscripciones en línea, pagos seguros, resultados, rankings, eventos en CDMX y más con RunGoMX.",
+        "description": "Encuentra carreras en México, inscríbete en línea y revisa resultados oficiales y rankings con RunGoMX.",
         "keywords": [
           "carreras en México",
           "running México",
@@ -32,28 +32,27 @@
         ],
         "openGraph": {
           "title": "Carreras y eventos deportivos en México | RunGoMX",
-          "description": "Descubre las mejores carreras en México. Inscripciones en línea, pagos seguros, resultados, rankings, eventos en CDMX y más con RunGoMX.",
+          "description": "Encuentra carreras en México, inscríbete en línea y revisa resultados oficiales y rankings con RunGoMX.",
           "imageAlt": "RunGoMX - Plataforma para carreras en México"
         }
       }
     },
     "About": {
       "metadata": {
-        "title": "Sobre RunGoMX | Quiénes somos y qué hacemos",
-        "description": "Conoce RunGoMX, la plataforma mexicana que transforma la manera de organizar y correr carreras. Tecnología local, running local.",
+        "title": "Sobre RunGoMX | Eventos, inscripciones, resultados y ayuda",
+        "description": "Conoce cómo RunGoMX conecta páginas públicas de eventos, inscripciones, resultados oficiales, rankings y ayuda.",
         "keywords": [
           "sobre RunGoMX",
-          "quiénes somos",
-          "plataforma mexicana running",
-          "tecnología mexicana",
-          "directores de carrera de carreras",
-          "sistema de inscripciones",
-          "RunGoMX México",
-          "cronometraje y resultados"
+          "eventos running México",
+          "plataforma para encontrar carreras",
+          "resultados oficiales",
+          "rankings y soporte",
+          "páginas públicas RunGoMX",
+          "contexto de inscripción"
         ],
         "openGraph": {
-          "title": "Sobre RunGoMX | Quiénes somos",
-          "description": "Conoce RunGoMX, la plataforma mexicana que transforma la manera de organizar y correr carreras. Tecnología local, running local.",
+          "title": "Sobre RunGoMX | Eventos, resultados y ayuda",
+          "description": "Mira cómo RunGoMX reúne páginas de eventos, inscripciones, resultados oficiales, rankings y ayuda.",
           "imageAlt": "Sobre RunGoMX"
         }
       }
@@ -73,24 +72,29 @@
     "Help": {
       "metadata": {
         "title": "Centro de ayuda | RunGoMX",
-        "description": "Encuentra respuestas sobre inscripciones, pagos y gestión de carreras en RunGoMX.",
+        "description": "Encuentra ayuda sobre inscripciones, resultados, rankings, pagos y acceso a tu cuenta en RunGoMX.",
         "keywords": ["ayuda", "soporte"],
         "openGraph": {
           "title": "Centro de ayuda | RunGoMX",
-          "description": "Ayuda sobre inscripciones, pagos y gestión de carreras en RunGoMX.",
+          "description": "Ayuda sobre inscripciones, resultados, pagos y acceso a tu cuenta en RunGoMX.",
           "imageAlt": "Recursos de ayuda"
         }
       }
     },
     "News": {
       "metadata": {
-        "title": "Noticias de running | RunGoMX",
-        "description": "Mantente al día con noticias, consejos y anuncios de carreras en México.",
-        "keywords": ["noticias running", "actualizaciones carreras"],
+        "title": "Actualizaciones de RunGoMX | Novedades del sitio público",
+        "description": "Revisa cambios prácticos en páginas de eventos, ayuda, resultados, rankings y otras partes públicas de RunGoMX.",
+        "keywords": [
+          "actualizaciones rungomx",
+          "actualizaciones de plataforma",
+          "actualizaciones de ayuda",
+          "actualizaciones de confianza"
+        ],
         "openGraph": {
-          "title": "Noticias de running | RunGoMX",
-          "description": "Últimas noticias y actualizaciones de carreras en RunGoMX.",
-          "imageAlt": "Noticias de running"
+          "title": "Actualizaciones de RunGoMX | Cambios del sitio público",
+          "description": "Cambios prácticos en páginas de eventos, ayuda, resultados, rankings y soporte en RunGoMX.",
+          "imageAlt": "Actualizaciones de RunGoMX"
         }
       }
     },
@@ -109,12 +113,29 @@
     "Results": {
       "metadata": {
         "title": "Resultados de carreras | RunGoMX",
-        "description": "Consulta resultados oficiales, rankings e insights de desempeño.",
+        "description": "Consulta resultados oficiales y revisa la información publicada más reciente en RunGoMX.",
         "keywords": ["resultados", "rankings"],
         "openGraph": {
           "title": "Resultados de carreras | RunGoMX",
-          "description": "Consulta resultados y rankings en RunGoMX.",
+          "description": "Consulta resultados oficiales y la información publicada más reciente en RunGoMX.",
           "imageAlt": "Resultados de carreras"
+        }
+      }
+    },
+    "Rankings": {
+      "metadata": {
+        "title": "Rankings nacionales | RunGoMX",
+        "description": "Explora rankings nacionales construidos con resultados oficiales publicados en RunGoMX.",
+        "keywords": [
+          "clasificaciones nacionales",
+          "leaderboard de carreras",
+          "rankings oficiales",
+          "clasificaciones RunGoMX"
+        ],
+        "openGraph": {
+          "title": "Rankings nacionales | RunGoMX",
+          "description": "Explora rankings nacionales construidos con resultados oficiales publicados en RunGoMX.",
+          "imageAlt": "Clasificaciones nacionales"
         }
       }
     },
@@ -290,7 +311,7 @@
       "metadata": {
         "title": "Gestionar Eventos | RunGoMX",
         "description": "Crea, administra y publica tus eventos de running y carreras con RunGoMX.",
-        "keywords": ["gestión de eventos", "organizador de carreras", "dashboard de eventos"],
+        "keywords": ["gestión de eventos", "director de carrera", "dashboard de eventos"],
         "openGraph": {
           "title": "Gestionar Eventos | RunGoMX",
           "description": "Crea y administra tus eventos de running con RunGoMX.",
@@ -302,11 +323,11 @@
       "metadata": {
         "title": "Espacio de pagos | RunGoMX",
         "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
-        "keywords": ["retiros organizador", "espacio de pagos", "elegibilidad cartera"],
+        "keywords": ["retiros director de carrera", "espacio de pagos", "elegibilidad cartera"],
         "openGraph": {
           "title": "Espacio de pagos | RunGoMX",
           "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
-          "imageAlt": "Espacio de pagos para organizadores"
+          "imageAlt": "Espacio de pagos para Directores de Carrera"
         }
       }
     },

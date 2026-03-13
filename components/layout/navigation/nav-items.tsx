@@ -10,6 +10,7 @@ import {
   FileText,
   Info,
   LayoutDashboard,
+  Medal,
   Mail,
   Newspaper,
   Settings,
@@ -30,6 +31,7 @@ const iconMap = {
   Users,
   Trophy,
   Calendar,
+  Medal,
   Newspaper,
   FileText,
 } as const satisfies Record<NavItem['iconName'], typeof Info>;
@@ -69,6 +71,7 @@ export function NavItems({
         const hasChild = itemHrefs.some(
           (href) => href !== itemHref && href.startsWith(`${itemHref}/`),
         );
+        const isSecondary = item.emphasis === 'secondary';
 
         const content = (
           <NavLink
@@ -78,8 +81,13 @@ export function NavItems({
             iconSize={iconSize}
             showLabel={showLabels}
             allowPrefixMatch={!hasChild}
-            iconClassName={iconClassName}
-            linkClassName={linkClassName}
+            iconClassName={cn(iconClassName, isSecondary && 'opacity-80')}
+            linkClassName={cn(linkClassName, isSecondary && 'text-muted-foreground/85')}
+            inactiveClassName={
+              isSecondary
+                ? 'text-muted-foreground/75 hover:bg-accent/70 hover:text-foreground'
+                : undefined
+            }
             onClick={onItemClick}
           />
         );

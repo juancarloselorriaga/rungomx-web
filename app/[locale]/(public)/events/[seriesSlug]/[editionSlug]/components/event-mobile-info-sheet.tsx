@@ -42,9 +42,11 @@ type EventMobileInfoSheetProps = {
   otherEditions: OtherEdition[];
   locale: string;
   labels: {
+    eventDetails: string;
     eventDate: string;
     location: string;
     organizer: string;
+    officialWebsite: string;
     viewMap: string;
     registrationDetails: string;
     registrationOpens: string;
@@ -54,6 +56,7 @@ type EventMobileInfoSheetProps = {
     registrationClosed: string;
     registerNow: string;
     otherEditionsTitle: string;
+    tba: string;
   };
 };
 
@@ -82,7 +85,7 @@ export function EventMobileInfoSheet({
   );
 
   const formatEditionDate = (edition: OtherEdition) => {
-    if (!edition.startsAt) return 'TBA';
+    if (!edition.startsAt) return labels.tba;
     return new Intl.DateTimeFormat(locale, {
       month: 'short',
       day: 'numeric',
@@ -102,7 +105,7 @@ export function EventMobileInfoSheet({
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-xl">
         <SheetHeader className="border-b pb-4">
-          <SheetTitle>Event Details</SheetTitle>
+          <SheetTitle>{labels.eventDetails}</SheetTitle>
         </SheetHeader>
 
         <div className="py-4 space-y-6">
@@ -112,7 +115,7 @@ export function EventMobileInfoSheet({
               {labels.eventDate}
             </h3>
             <p className="text-sm">
-              {eventDate || <span className="italic">TBA</span>}
+              {eventDate || <span className="italic">{labels.tba}</span>}
             </p>
           </div>
 
@@ -153,7 +156,7 @@ export function EventMobileInfoSheet({
                 rel="noopener noreferrer"
                 className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
               >
-                Official website
+                {labels.officialWebsite}
                 <ExternalLink className="h-3 w-3" />
               </a>
             )}

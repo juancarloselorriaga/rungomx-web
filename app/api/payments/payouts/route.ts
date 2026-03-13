@@ -1,15 +1,18 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { organizations } from '@/db/schema';
-import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
+import {
+  findActivePaymentsOrganization,
+  parsePaymentsJsonBody,
+  paymentsServerErrorResponse,
+  requireOrganizerWriteAccess,
+  requireAuthenticatedPaymentsContext,
+  withNoStore,
+} from '@/app/api/payments/_shared';
 import {
   createPayoutQuoteAndContract,
   PayoutQuoteContractError,
 } from '@/lib/payments/payouts/quote-contract';
-import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
 const createPayoutQuoteSchema = z.object({
   organizationId: z.string().uuid(),
@@ -27,14 +30,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const authContext = authResult.context;
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    return withNoStore(NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }));
+  const payloadResult = await parsePaymentsJsonBody(request);
+  if (!payloadResult.ok) {
+    return payloadResult.response;
   }
 
-  const parseResult = createPayoutQuoteSchema.safeParse(payload);
+  const parseResult = createPayoutQuoteSchema.safeParse(payloadResult.payload);
   if (!parseResult.success) {
     return withNoStore(
       NextResponse.json(
@@ -50,22 +51,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   const { organizationId, requestedAmountMinor, idempotencyKey, activeConflictPolicy } =
     parseResult.data;
 
-  if (!authContext.permissions.canManageEvents) {
-    const membership = await getOrgMembership(authContext.user.id, organizationId);
-    try {
-      requireOrgPermission(membership, 'canEditRegistrationSettings');
-    } catch {
-      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
-    }
+  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  if (!accessResult.ok) {
+    return accessResult.response;
   }
 
-  const organization = await db.query.organizations.findFirst({
-    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
-    columns: { id: true },
-  });
-
-  if (!organization) {
-    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
+  const organizationResult = await findActivePaymentsOrganization(organizationId);
+  if (!organizationResult.ok) {
+    return organizationResult.response;
   }
 
   try {
@@ -169,6 +162,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       actorUserId: authContext.user.id,
       error,
     });
-    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+    return paymentsServerErrorResponse();
   }
 }

@@ -10,10 +10,10 @@ export default function Footer() {
   return (
     <footer className="w-full border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="w-full max-w-7xl mx-auto px-5 py-8">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
-          {/* About Section */}
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)]">
           <div>
             <h3 className="text-sm font-semibold mb-3">{t('sections.about')}</h3>
+            <p className="mb-3 max-w-md text-sm text-muted-foreground">{t('companyText')}</p>
             <ul className="space-y-2">
               <li>
                 <Link
@@ -25,19 +25,26 @@ export default function Footer() {
               </li>
               <li>
                 <Link
+                  href="/news"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {t('links.news')}
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold mb-3">{t('sections.resources')}</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link
                   href="/contact"
                   className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {t('links.contact')}
                 </Link>
               </li>
-            </ul>
-          </div>
-
-          {/* Resources Section */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3">{t('sections.resources')}</h3>
-            <ul className="space-y-2">
               <li>
                 <Link
                   href="/help"
@@ -49,7 +56,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Legal Section */}
           <div>
             <h3 className="text-sm font-semibold mb-3">{t('sections.legal')}</h3>
             <ul className="space-y-2">
@@ -71,16 +77,11 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          {/* Connect Section */}
-          <div>
-            <h3 className="text-sm font-semibold mb-3">{t('sections.connect')}</h3>
-            <p className="text-sm text-muted-foreground">{t('connectText')}</p>
-          </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-8 pt-6 border-t border-border">
+        <div className="mt-8 space-y-3 border-t border-border pt-6">
+          <p className="text-center text-sm text-muted-foreground">{t('trustLine')}</p>
           <p className="text-center text-sm text-muted-foreground">
             {t('copyright', { year: currentYear })}
           </p>

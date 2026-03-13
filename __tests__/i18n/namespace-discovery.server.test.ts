@@ -237,8 +237,8 @@ describe('Namespace Discovery', () => {
   describe('Backward compatibility', () => {
     it('manual overrides take precedence over auto-detection', () => {
       const routeNamespaceMap: Record<string, any> = {
-        '/privacy': { base: ['common'], components: [], pages: [] },
-        '/terms': { base: ['common'], components: [], pages: [] },
+        '/privacy': { base: ['common'], components: [], pages: ['privacy'] },
+        '/terms': { base: ['common'], components: [], pages: ['terms'] },
       };
 
       const checkPath = (pathname: string) => {
@@ -255,15 +255,14 @@ describe('Namespace Discovery', () => {
       expect(checkPath('/about')).toBe('auto');
     });
 
-    it('supports routes without page namespaces', () => {
-      // /privacy and /terms have no page-specific content
+    it('supports routes with dedicated legal page namespaces', () => {
       const selection = {
         base: ['common', 'navigation', 'auth', 'errors'],
         components: ['footer', 'themeSwitcher'],
-        pages: [], // Empty pages array
+        pages: ['privacy', 'terms'],
       };
 
-      expect(selection.pages).toHaveLength(0);
+      expect(selection.pages).toEqual(['privacy', 'terms']);
       expect(selection.base.length).toBeGreaterThan(0);
     });
   });

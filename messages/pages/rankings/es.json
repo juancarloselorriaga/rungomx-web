@@ -1,32 +1,32 @@
 {
-  "title": "Clasificaciones nacionales",
-  "description": "Tabla nacional oficial calculada a partir de snapshots promovidos de resultados oficiales.",
+  "title": "Rankings nacionales",
+  "description": "Consulta los rankings nacionales más recientes con base en resultados oficiales publicados.",
   "scope": {
-    "national": "Alcance nacional",
-    "organizer": "Alcance por organizador",
-    "default": "Nacional por defecto",
-    "contextOrg": "Contexto del organizador: {organization}"
+    "national": "Vista nacional",
+    "organizer": "Alcance de Director de Carrera",
+    "default": "Vista nacional",
+    "contextOrg": "Contexto de Director de Carrera: {organization}"
   },
   "snapshot": {
-    "summary": "Ruleset {ruleset} · {rows} filas",
-    "current": "Snapshot actual",
-    "historical": "Snapshot histórico"
+    "summary": "Ruleset {ruleset} · {rows} posiciones",
+    "current": "Actualización actual",
+    "historical": "Actualización anterior"
   },
   "reproducibility": {
-    "summary": "Contexto de reproducibilidad",
+    "summary": "Referencia del ranking",
     "notAvailable": "No disponible",
-    "referenceLink": "Abrir referencia del ruleset",
+    "referenceLink": "Abrir referencia de reglas",
     "referenceMissing": "Este snapshot no tiene referencia pública del ruleset.",
     "fields": {
-      "ruleset": "Versión del ruleset",
-      "generatedAt": "Snapshot generado",
-      "promotedAt": "Snapshot promovido",
-      "snapshotId": "ID del snapshot"
+      "ruleset": "Versión de reglas",
+      "generatedAt": "Generado",
+      "promotedAt": "Publicado",
+      "snapshotId": "ID de actualización"
     }
   },
   "filters": {
     "scope": "Alcance",
-    "organization": "Organizador",
+    "organization": "Director de Carrera",
     "snapshot": "Historial de snapshots",
     "discipline": "Disciplina",
     "gender": "Género",
@@ -38,10 +38,10 @@
     "reset": "Limpiar"
   },
   "table": {
-    "title": "Leaderboard nacional",
-    "description": "Snapshot nacional promovido actual.",
+    "title": "Ranking nacional",
+    "description": "Actualización nacional publicada más reciente.",
     "headers": {
-      "rank": "Ranking",
+      "rank": "Posición",
       "runner": "Corredor",
       "bib": "Dorsal",
       "discipline": "Disciplina",
@@ -51,9 +51,9 @@
     }
   },
   "empty": {
-    "noSnapshot": "Aún no hay un snapshot nacional promovido.",
-    "noRows": "Aún no hay filas de ranking disponibles.",
-    "noMatch": "No hay filas de ranking que coincidan con los filtros seleccionados."
+    "noSnapshot": "Aún no se ha publicado una actualización nacional del ranking.",
+    "noRows": "Aún no hay rankings disponibles.",
+    "noMatch": "No hay rankings que coincidan con los filtros seleccionados."
   },
   "discipline": {
     "trail_running": "Carrera de montaña",

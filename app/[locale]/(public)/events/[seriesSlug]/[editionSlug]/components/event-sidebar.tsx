@@ -32,6 +32,7 @@ type EventSidebarProps = {
     eventDate: string;
     location: string;
     organizer: string;
+    officialWebsite: string;
     viewMap: string;
     registrationDetails: string;
     registrationOpens: string;
@@ -40,6 +41,7 @@ type EventSidebarProps = {
     registrationOpen: string;
     registrationClosed: string;
     otherEditionsTitle: string;
+    tba: string;
   };
 };
 
@@ -64,7 +66,7 @@ export function EventSidebar({
   );
 
   const formatEditionDate = (edition: OtherEdition) => {
-    if (!edition.startsAt) return 'TBA';
+    if (!edition.startsAt) return labels.tba;
     return new Intl.DateTimeFormat(locale, {
       month: 'short',
       day: 'numeric',
@@ -87,7 +89,7 @@ export function EventSidebar({
         {eventDate ? (
           <p className="text-sm text-muted-foreground">{eventDate}</p>
         ) : (
-          <p className="text-sm text-muted-foreground italic">TBA</p>
+          <p className="text-sm text-muted-foreground italic">{labels.tba}</p>
         )}
 
         {location && (
@@ -119,7 +121,7 @@ export function EventSidebar({
             rel="noopener noreferrer"
             className="text-sm text-primary hover:underline inline-flex items-center gap-1"
           >
-            Official website
+            {labels.officialWebsite}
             <ExternalLink className="h-3 w-3" />
           </a>
         )}

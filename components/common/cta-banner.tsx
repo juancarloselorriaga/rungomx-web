@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
-import Link from 'next/link';
 import * as React from 'react';
 
 const bannerVariants = cva('rounded-2xl p-8 md:p-12 text-center', {
@@ -26,6 +26,8 @@ export interface CtaAction {
   href: string;
   variant?: 'default' | 'secondary' | 'outline' | 'ghost';
 }
+
+type LocalizedLinkHref = React.ComponentProps<typeof Link>['href'];
 
 export interface CtaBannerProps
   extends React.HTMLAttributes<HTMLDivElement>,
@@ -84,7 +86,7 @@ export function CtaBanner({
                 )}
                 asChild
               >
-                <Link href={action.href}>{action.label}</Link>
+                <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
               </Button>
             );
           })}

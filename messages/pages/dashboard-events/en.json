@@ -279,7 +279,7 @@
       "details": "Details"
     },
     "fallbackRows": {
-      "defaultDetails": "Draft result row available in organizer workflow.",
+      "defaultDetails": "Draft result row available in the Race Director workflow.",
       "capture": {
         "savedLocally": "Saved locally from mobile capture session.",
         "offlineCheckpoint": "Status confirmed during offline checkpoint."
@@ -289,7 +289,7 @@
         "duplicateBib": "Duplicate bib conflict flagged for review."
       },
       "review": {
-        "ready": "Draft row ready for final organizer review.",
+        "ready": "Draft row ready for final Race Director review.",
         "pendingConflict": "Pending conflict resolution before final review."
       }
     },
@@ -317,7 +317,7 @@
           "safe": "No draft rows are ready for review yet.",
           "next": "Start capture or import to create a draft before publishing official results.",
           "details": {
-            "draftProtection": "Draft rows remain protected until an organizer publishes an Official version.",
+            "draftProtection": "Draft rows remain protected until a Race Director publishes an Official version.",
             "blockersWarningsSummary": "Once draft rows exist, blockers and warnings will be summarized here."
           }
         },
@@ -406,7 +406,7 @@
       },
       "corrections": {
         "title": "Corrections lane",
-        "description": "Review pending correction requests and record organizer decisions with audit metadata.",
+        "description": "Review pending correction requests and record Race Director decisions with audit metadata.",
         "action": "Open corrections lane"
       },
       "investigation": {
@@ -438,7 +438,7 @@
         "finishTime": "Finish time (ms)"
       },
       "review": {
-        "notePlaceholder": "Optional organizer decision note",
+        "notePlaceholder": "Optional Race Director decision note",
         "approveAction": "Approve request",
         "rejectAction": "Reject request",
         "pendingAction": "Saving decision...",
@@ -569,7 +569,7 @@
       },
       "audit": {
         "title": "Trust-critical audit logs",
-        "description": "Filter organizer trust actions by event, action type, and time window.",
+        "description": "Filter Race Director trust actions by event, action type, and time window.",
         "empty": "No trust-critical audit logs matched the selected filters.",
         "fields": {
           "action": "Action",
@@ -719,7 +719,7 @@
         "details": "Details",
         "safeMessage": "Draft data remains protected while conflicts are unresolved.",
         "nextMessage": "Choose a resolution for every conflict and rerun sync.",
-        "detailConflictSummary": "{count} conflicts require organizer action.",
+        "detailConflictSummary": "{count} conflicts require Race Director action.",
         "detailDraftProtection": "Official results remain unchanged until sync finalization."
       }
     },
@@ -735,10 +735,10 @@
       "savedTemplatesLabel": "Saved mapping templates",
       "savedTemplatesEmpty": "Select a saved template",
       "saveTemplateNameLabel": "Template name",
-      "saveTemplateNamePlaceholder": "My organizer import mapping",
+      "saveTemplateNamePlaceholder": "My results import mapping",
       "saveTemplateAction": "Save template",
       "templateAppliedMessage": "Template applied",
-      "templateSavedMessage": "Template saved for this organizer scope.",
+      "templateSavedMessage": "Template saved for this Race Director scope.",
       "requiredMappingMessage": "Map required canonical fields before saving a template.",
       "parsingMessage": "Parsing file and extracting sample rows...",
       "mapFieldLabel": "Map field",

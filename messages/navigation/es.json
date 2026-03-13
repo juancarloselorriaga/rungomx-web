@@ -1,11 +1,12 @@
 {
   "home": "Inicio",
-  "about": "Acerca",
+  "about": "Nosotros",
   "contact": "Contacto",
   "events": "Eventos",
   "organizations": "Organizaciones",
   "news": "Noticias",
   "results": "Resultados",
+  "rankings": "Rankings",
   "help": "Ayuda",
   "dashboard": "Panel",
   "payments": "Pagos",
@@ -36,5 +37,7 @@
   "feedback": "Comentarios",
   "collapseMenu": "Colapsar menú",
   "expandMenu": "Expandir menú",
-  "sectionGeneral": "General"
+  "sectionGeneral": "General",
+  "openSubmenu": "Abrir submenú de {label}",
+  "backToMainMenu": "Volver al menú principal"
 }

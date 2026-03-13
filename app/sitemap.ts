@@ -1,6 +1,7 @@
 import { siteUrl } from '@/config/url';
 import { type AppLocale, routing } from '@/i18n/routing';
-import { getPublishedEventRoutesForSitemap } from '@/lib/events/queries';
+import { getPublicOfficialResultsPageData, getPublishedEventRoutesForSitemap } from '@/lib/events/queries';
+import { isPublicOfficialResultsPageIndexable } from '@/lib/events/results/public-official-results-indexability';
 import { MetadataRoute } from 'next';
 
 // Capture timestamp once at module load for deterministic lastModified
@@ -16,6 +17,7 @@ const staticRoutes = [
   '/privacy',
   '/terms',
   '/results',
+  '/rankings',
   '/news',
   '/events',
 ];
@@ -81,6 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const publishedEvents = await getPublishedEventRoutesForSitemap();
   const eventPathname = '/events/[seriesSlug]/[editionSlug]';
+  const officialResultsPathname = '/results/[seriesSlug]/[editionSlug]';
 
   publishedEvents.forEach((event) => {
     const alternates: Record<string, string> = {};
@@ -109,6 +112,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'weekly',
       priority: 0.7,
     });
+  });
+
+  const officialResultsEntries = await Promise.all(
+    publishedEvents.map(async (event) => {
+      const pageData = await getPublicOfficialResultsPageData(event.seriesSlug, event.editionSlug, {
+        entryLimit: 1,
+      });
+
+      if (!isPublicOfficialResultsPageIndexable(pageData)) return null;
+
+      const alternates: Record<string, string> = {};
+
+      routing.locales.forEach((locale) => {
+        const externalPath = resolveExternalPathname(locale, officialResultsPathname);
+        const localizedPath = applyParams(externalPath, {
+          seriesSlug: event.seriesSlug,
+          editionSlug: event.editionSlug,
+        });
+        const prefix = resolvePrefix(locale);
+        alternates[locale] = `${siteUrl}${prefix}${localizedPath === '/' ? '' : localizedPath}`;
+      });
+
+      const canonicalLocale = routing.defaultLocale;
+      const canonicalPath = applyParams(
+        resolveExternalPathname(canonicalLocale, officialResultsPathname),
+        { seriesSlug: event.seriesSlug, editionSlug: event.editionSlug },
+      );
+      const canonicalUrl = `${siteUrl}${resolvePrefix(canonicalLocale)}${canonicalPath === '/' ? '' : canonicalPath}`;
+
+      return {
+        url: canonicalUrl,
+        lastModified:
+          pageData.activeVersion.updatedAt ?? pageData.activeVersion.finalizedAt ?? buildTimestamp,
+        alternates: { languages: alternates },
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      } satisfies MetadataRoute.Sitemap[number];
+    }),
+  );
+
+  officialResultsEntries.forEach((entry) => {
+    if (!entry) return;
+    sitemapEntries.push(entry);
   });
 
   return sitemapEntries;

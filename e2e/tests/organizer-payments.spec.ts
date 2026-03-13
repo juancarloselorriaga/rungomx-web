@@ -554,7 +554,7 @@ test.describe('Organizer Payments E2E', () => {
     await expect.poll(() => queuedIntentRequestedAmountMinor).toBe(50_000);
   });
 
-  test('11.4-E2E-003 organizer can inspect lifecycle detail and statement availability states', async ({
+  test('11.4-E2E-003a organizer can inspect terminal payout detail lifecycle and statement availability', async ({
     page,
   }) => {
     await signInAsOrganizer(page, organizerCreds);
@@ -607,12 +607,29 @@ test.describe('Organizer Payments E2E', () => {
     await statementSection.locator('details summary').click();
     await expect(statementSection.getByText('fp-terminal-statement')).toBeVisible();
 
+    await expect(page.getByRole('link', { name: 'Back to payout history' })).toHaveAttribute(
+      'href',
+      `/en/dashboard/payments/payouts?organizationId=${organizationId}`,
+    );
+  });
+
+  test('11.4-E2E-003b organizer can inspect non-terminal payout detail statement state', async ({
+    page,
+  }) => {
+    await signInAsOrganizer(page, organizerCreds);
+
     await page.goto(`/en/dashboard/payments/payouts/${processingPayoutRequestId}`);
     await waitForPayoutDetailPageReady(page, processingPayoutRequestId);
+    await expect(page.getByText('Processing').first()).toBeVisible();
     await expect(
       page.getByText('The statement will appear once the payout reaches a terminal state.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'View statement' })).toHaveCount(0);
+
+    await expect(page.getByRole('link', { name: 'Back to payout history' })).toHaveAttribute(
+      'href',
+      `/en/dashboard/payments/payouts?organizationId=${organizationId}`,
+    );
   });
 
   test('11.4-E2E-004 @mobile organizer payments telemetry emits across workspace journey', async ({

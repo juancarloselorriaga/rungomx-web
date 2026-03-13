@@ -16,11 +16,25 @@ export type { CtaBannerProps, CtaAction } from './cta-banner';
 export { FeatureCard } from './feature-card';
 export type { FeatureCardProps } from './feature-card';
 
+export { FaqAccordion } from './faq-accordion';
+export type {
+  FaqAccordionGroup,
+  FaqAccordionItem,
+  FaqAccordionLink,
+  FaqAccordionProps,
+} from './faq-accordion';
+
 export { Hero } from './hero';
 export type { HeroProps, HeroAction } from './hero';
 
 export { IconList } from './icon-list';
 export type { IconListProps, IconListItem } from './icon-list';
+
+export { LegalDocumentSection } from './legal-document-section';
+export type { LegalDocumentSectionProps } from './legal-document-section';
+
+export { RelatedLinksStrip } from './related-links-strip';
+export type { RelatedLinksStripItem, RelatedLinksStripProps } from './related-links-strip';
 
 export { Section } from './section';
 export type { SectionProps } from './section';

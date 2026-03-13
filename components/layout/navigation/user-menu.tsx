@@ -42,7 +42,7 @@ export function UserMenu({ user, isPro }: { user: User | null; isPro?: boolean }
   const tLocale = useTranslations('components.localeSwitcher');
   const tBilling = useTranslations('common.billing');
 
-  const displayName = user?.name || user?.email || 'Guest';
+  const displayName = user?.name || user?.email || tAuth('guest');
   const displayEmail = user?.email;
 
   useEffect(() => {
