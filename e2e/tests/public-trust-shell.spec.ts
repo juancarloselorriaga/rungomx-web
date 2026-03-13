@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 type RouteKey = 'home' | 'contact' | 'help' | 'privacy' | 'terms' | 'events' | 'results' | 'rankings';
@@ -74,236 +76,301 @@ type LocaleSpec = {
   };
 };
 
-const locales: readonly LocaleSpec[] = [
-  {
-    code: 'es',
-    acceptLanguage: 'es-MX,es;q=0.9',
+type HomeMessages = {
+  hero: {
+    title: string;
+  };
+};
+
+type ContactMessages = {
+  hero: {
+    title: string;
+    primaryCta: string;
+    secondaryCta: string;
+  };
+  triage: {
+    title: string;
+    items: {
+      support: { title: string };
+      partnerships: { title: string };
+      accountOrEventIssue: { title: string };
+    };
+  };
+  form: {
+    title: string;
+    fields: {
+      name: { label: string };
+      email: { label: string };
+      message: { label: string };
+    };
+    submit: string;
+    errors: {
+      invalidInput: string;
+    };
+  };
+  directLinks: {
+    title: string;
+    items: {
+      events: { title: string };
+      results: { title: string };
+      rankings: { title: string };
+      help: { title: string };
+    };
+  };
+  trustBlock: {
+    title: string;
+    primaryActionLabel: string;
+    secondaryActionLabel: string;
+  };
+};
+
+type HelpMessages = {
+  hero: {
+    title: string;
+    primaryCta: string;
+    secondaryCta: string;
+  };
+  categories: {
+    title: string;
+    items: {
+      registrations: { title: string };
+      eventInformation: { title: string };
+      results: { title: string };
+      rankings: { title: string };
+      payments: { title: string };
+      accountBasics: { title: string };
+    };
+  };
+  faqGroups: {
+    title: string;
+    groups: {
+      registrations: {
+        title: string;
+        items: {
+          checkStatus: {
+            question: string;
+            paragraphs: string[];
+          };
+        };
+      };
+      eventInformation: { title: string };
+      results: { title: string };
+      rankings: { title: string };
+      payments: { title: string };
+      accountBasics: { title: string };
+    };
+  };
+  cta: {
+    title: string;
+    primaryActionLabel: string;
+  };
+  relatedLinks: {
+    title: string;
+    items: {
+      events: { title: string };
+      results: { title: string };
+      rankings: { title: string };
+      home: { title: string };
+    };
+  };
+};
+
+type PrivacyMessages = {
+  hero: {
+    title: string;
+    primaryCta: string;
+    secondaryCta: string;
+  };
+  summary: {
+    title: string;
+  };
+  sections: {
+    items: {
+      informationWeCollect: { title: string };
+      howInformationIsUsed: { title: string };
+      whenInformationIsShared: { title: string };
+      userChoicesAndContact: { title: string };
+    };
+  };
+  cta: {
+    title: string;
+    primaryActionLabel: string;
+  };
+  relatedLinks: {
+    title: string;
+    items: {
+      terms: { title: string };
+    };
+  };
+};
+
+type TermsMessages = {
+  hero: {
+    title: string;
+    primaryCta: string;
+    secondaryCta: string;
+  };
+  summary: {
+    title: string;
+  };
+  sections: {
+    items: {
+      usingThePlatform: { title: string };
+      accountsAndResponsibility: { title: string };
+      registrationsPaymentsAndTransactions: { title: string };
+      contactAndLegalQuestions: { title: string };
+    };
+  };
+  cta: {
+    title: string;
+    primaryActionLabel: string;
+  };
+  relatedLinks: {
+    title: string;
+    items: {
+      privacy: { title: string };
+    };
+  };
+};
+
+type PageTitleMessages = {
+  title: string;
+};
+
+function loadJsonFile<T>(relativePath: string): T {
+  return JSON.parse(readFileSync(join(process.cwd(), relativePath), 'utf8')) as T;
+}
+
+function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
+  const home = loadJsonFile<HomeMessages>(`messages/pages/home/${code}.json`);
+  const contact = loadJsonFile<ContactMessages>(`messages/pages/contact/${code}.json`);
+  const help = loadJsonFile<HelpMessages>(`messages/pages/help/${code}.json`);
+  const privacy = loadJsonFile<PrivacyMessages>(`messages/pages/privacy/${code}.json`);
+  const terms = loadJsonFile<TermsMessages>(`messages/pages/terms/${code}.json`);
+  const events = loadJsonFile<PageTitleMessages>(`messages/pages/events/${code}.json`);
+  const results = loadJsonFile<PageTitleMessages>(`messages/pages/results/${code}.json`);
+  const rankings = loadJsonFile<PageTitleMessages>(`messages/pages/rankings/${code}.json`);
+
+  return {
+    code,
+    acceptLanguage: code === 'es' ? 'es-MX,es;q=0.9' : 'en-US,en;q=0.9',
     routes: {
-      home: '/',
-      contact: '/contacto',
-      help: '/ayuda',
-      privacy: '/privacidad',
-      terms: '/terminos',
-      events: '/eventos',
-      results: '/resultados',
-      rankings: '/clasificaciones',
+      home: code === 'es' ? '/' : '/en',
+      contact: code === 'es' ? '/contacto' : '/en/contact',
+      help: code === 'es' ? '/ayuda' : '/en/help',
+      privacy: code === 'es' ? '/privacidad' : '/en/privacy',
+      terms: code === 'es' ? '/terminos' : '/en/terms',
+      events: code === 'es' ? '/eventos' : '/en/events',
+      results: code === 'es' ? '/resultados' : '/en/results',
+      rankings: code === 'es' ? '/clasificaciones' : '/en/rankings',
     },
     headings: {
-      home: 'Páginas de evento, inscripciones, resultados y rankings en un solo lugar',
-      contact: 'Escribe al equipo de RunGoMX cuando necesites soporte o una respuesta real',
-      help: 'Encuentra ayuda práctica antes de contactar soporte',
-      privacy: 'Cómo maneja RunGoMX tu información',
-      terms: 'Términos para usar RunGoMX',
-      events: 'Eventos',
-      results: 'Resultados',
-      rankings: 'Clasificaciones nacionales',
+      home: home.hero.title,
+      contact: contact.hero.title,
+      help: help.hero.title,
+      privacy: privacy.hero.title,
+      terms: terms.hero.title,
+      events: events.title,
+      results: results.title,
+      rankings: rankings.title,
     },
     contact: {
-      heroHelpCta: 'Ir al centro de ayuda',
-      heroEventsCta: 'Ver eventos',
-      triageTitle: 'Elige la vía que más se parezca a tu pregunta',
-      triageCards: ['Soporte', 'Alianzas o consultas generales', 'Problema de cuenta o evento'],
-      formTitle: 'Envía un mensaje al equipo',
-      directLinksTitle: 'A veces la respuesta más rápida ya está en el sitio público',
+      heroHelpCta: contact.hero.primaryCta,
+      heroEventsCta: contact.hero.secondaryCta,
+      triageTitle: contact.triage.title,
+      triageCards: [
+        contact.triage.items.support.title,
+        contact.triage.items.partnerships.title,
+        contact.triage.items.accountOrEventIssue.title,
+      ],
+      formTitle: contact.form.title,
+      directLinksTitle: contact.directLinks.title,
       directLinks: {
-        events: 'Explorar eventos',
-        results: 'Revisar resultados',
-        rankings: 'Ver rankings',
-        help: 'Ir al centro de ayuda',
+        events: contact.directLinks.items.events.title,
+        results: contact.directLinks.items.results.title,
+        rankings: contact.directLinks.items.rankings.title,
+        help: contact.directLinks.items.help.title,
       },
-      trustTitle: '¿También necesitas la parte de políticas?',
+      trustTitle: contact.trustBlock.title,
       trustActions: {
-        privacy: 'Revisar privacidad',
-        terms: 'Revisar términos',
+        privacy: contact.trustBlock.primaryActionLabel,
+        terms: contact.trustBlock.secondaryActionLabel,
       },
       fieldLabels: {
-        name: 'Nombre',
-        email: 'Correo electrónico',
-        message: 'Mensaje',
+        name: contact.form.fields.name.label,
+        email: contact.form.fields.email.label,
+        message: contact.form.fields.message.label,
       },
-      submitLabel: 'Enviar mensaje',
-      invalidInput: 'Revisa los campos del formulario de contacto e inténtalo de nuevo.',
+      submitLabel: contact.form.submit,
+      invalidInput: contact.form.errors.invalidInput,
     },
     help: {
-      heroEventsCta: 'Ver eventos',
-      heroContactCta: 'Contactar soporte',
-      categoriesTitle: 'Empieza por el tema que mejor coincide con tu pregunta',
+      heroEventsCta: help.hero.primaryCta,
+      heroContactCta: help.hero.secondaryCta,
+      categoriesTitle: help.categories.title,
       categories: [
-        { id: 'registrations', title: 'Inscripciones' },
-        { id: 'eventInformation', title: 'Información del evento' },
-        { id: 'results', title: 'Resultados' },
-        { id: 'rankings', title: 'Rankings' },
-        { id: 'payments', title: 'Pagos y confirmaciones' },
-        { id: 'accountBasics', title: 'Cuenta básica' },
+        { id: 'registrations', title: help.categories.items.registrations.title },
+        { id: 'eventInformation', title: help.categories.items.eventInformation.title },
+        { id: 'results', title: help.categories.items.results.title },
+        { id: 'rankings', title: help.categories.items.rankings.title },
+        { id: 'payments', title: help.categories.items.payments.title },
+        { id: 'accountBasics', title: help.categories.items.accountBasics.title },
       ],
-      faqTitle: 'Respuestas aterrizadas para los flujos que más preguntan',
+      faqTitle: help.faqGroups.title,
       faqGroups: [
-        { id: 'registrations', title: 'Inscripciones' },
-        { id: 'eventInformation', title: 'Información del evento' },
-        { id: 'results', title: 'Resultados' },
-        { id: 'rankings', title: 'Rankings' },
-        { id: 'payments', title: 'Pagos y confirmaciones' },
-        { id: 'accountBasics', title: 'Cuenta básica' },
+        { id: 'registrations', title: help.faqGroups.groups.registrations.title },
+        { id: 'eventInformation', title: help.faqGroups.groups.eventInformation.title },
+        { id: 'results', title: help.faqGroups.groups.results.title },
+        { id: 'rankings', title: help.faqGroups.groups.rankings.title },
+        { id: 'payments', title: help.faqGroups.groups.payments.title },
+        { id: 'accountBasics', title: help.faqGroups.groups.accountBasics.title },
       ],
-      faqQuestion: '¿Cómo sé si la inscripción está abierta para un evento?',
-      faqAnswer:
-        'Empieza en la página del evento. RunGoMX muestra ahí el estado de la inscripción, incluyendo si está abierta, cerrada, aún no inicia o está pausada para ese evento específico.',
-      ctaTitle: '¿Aún necesitas ayuda?',
-      ctaContact: 'Ir a contacto',
-      helpfulLinksTitle: 'Ve directo a las superficies públicas principales',
+      faqQuestion: help.faqGroups.groups.registrations.items.checkStatus.question,
+      faqAnswer: help.faqGroups.groups.registrations.items.checkStatus.paragraphs[0],
+      ctaTitle: help.cta.title,
+      ctaContact: help.cta.primaryActionLabel,
+      helpfulLinksTitle: help.relatedLinks.title,
       helpfulLinks: {
-        events: 'Eventos',
-        results: 'Resultados',
-        rankings: 'Rankings',
-        home: 'Inicio',
+        events: help.relatedLinks.items.events.title,
+        results: help.relatedLinks.items.results.title,
+        rankings: help.relatedLinks.items.rankings.title,
+        home: help.relatedLinks.items.home.title,
       },
     },
     privacy: {
-      heroContactCta: 'Contactar soporte',
-      heroTermsCta: 'Revisar términos',
-      summaryTitle: 'La versión corta',
+      heroContactCta: privacy.hero.primaryCta,
+      heroTermsCta: privacy.hero.secondaryCta,
+      summaryTitle: privacy.summary.title,
       sections: [
-        'Información que recopilamos',
-        'Cómo se usa la información',
-        'Cuándo se comparte la información',
-        'Opciones del usuario y contacto para preguntas de privacidad',
+        privacy.sections.items.informationWeCollect.title,
+        privacy.sections.items.howInformationIsUsed.title,
+        privacy.sections.items.whenInformationIsShared.title,
+        privacy.sections.items.userChoicesAndContact.title,
       ],
-      ctaTitle: '¿Preguntas sobre privacidad o tu cuenta?',
-      ctaContact: 'Ir a contacto',
-      relatedTitle: 'También revisa nuestros términos y condiciones',
-      relatedTerms: 'Términos y condiciones',
+      ctaTitle: privacy.cta.title,
+      ctaContact: privacy.cta.primaryActionLabel,
+      relatedTitle: privacy.relatedLinks.title,
+      relatedTerms: privacy.relatedLinks.items.terms.title,
     },
     terms: {
-      heroContactCta: 'Contactar soporte',
-      heroPrivacyCta: 'Revisar privacidad',
-      summaryTitle: 'Qué buscan cubrir estos términos',
+      heroContactCta: terms.hero.primaryCta,
+      heroPrivacyCta: terms.hero.secondaryCta,
+      summaryTitle: terms.summary.title,
       sections: [
-        'Uso de la plataforma',
-        'Cuentas y responsabilidad del usuario',
-        'Inscripciones, pagos y expectativas de transacción',
-        'Contacto y preguntas legales',
+        terms.sections.items.usingThePlatform.title,
+        terms.sections.items.accountsAndResponsibility.title,
+        terms.sections.items.registrationsPaymentsAndTransactions.title,
+        terms.sections.items.contactAndLegalQuestions.title,
       ],
-      ctaTitle: '¿Necesitas ayuda con estos términos o con un tema del evento?',
-      ctaContact: 'Ir a contacto',
-      relatedTitle: 'También revisa nuestro aviso de privacidad',
-      relatedPrivacy: 'Aviso de privacidad',
+      ctaTitle: terms.cta.title,
+      ctaContact: terms.cta.primaryActionLabel,
+      relatedTitle: terms.relatedLinks.title,
+      relatedPrivacy: terms.relatedLinks.items.privacy.title,
     },
-  },
-  {
-    code: 'en',
-    acceptLanguage: 'en-US,en;q=0.9',
-    routes: {
-      home: '/en',
-      contact: '/en/contact',
-      help: '/en/help',
-      privacy: '/en/privacy',
-      terms: '/en/terms',
-      events: '/en/events',
-      results: '/en/results',
-      rankings: '/en/rankings',
-    },
-    headings: {
-      home: 'Event pages, registrations, results, and rankings in one place',
-      contact: 'Reach the RunGoMX team when you need support or a real answer',
-      help: 'Find practical help before you contact support',
-      privacy: 'How RunGoMX handles your information',
-      terms: 'Terms for using RunGoMX',
-      events: 'Events',
-      results: 'Results',
-      rankings: 'National Rankings',
-    },
-    contact: {
-      heroHelpCta: 'Visit help center',
-      heroEventsCta: 'Browse events',
-      triageTitle: 'Choose the lane that best matches your question',
-      triageCards: ['Support', 'Partnerships or general inquiries', 'Account or event issue'],
-      formTitle: 'Send a message to the team',
-      directLinksTitle: 'Sometimes the fastest answer is already on the public site',
-      directLinks: {
-        events: 'Browse events',
-        results: 'Check results',
-        rankings: 'View rankings',
-        help: 'Go to help center',
-      },
-      trustTitle: 'Need the policy side too?',
-      trustActions: {
-        privacy: 'Review privacy',
-        terms: 'Review terms',
-      },
-      fieldLabels: {
-        name: 'Name',
-        email: 'Email',
-        message: 'Message',
-      },
-      submitLabel: 'Send message',
-      invalidInput: 'Please review the contact form fields and try again.',
-    },
-    help: {
-      heroEventsCta: 'Browse events',
-      heroContactCta: 'Contact support',
-      categoriesTitle: 'Start with the topic that matches your question',
-      categories: [
-        { id: 'registrations', title: 'Registrations' },
-        { id: 'eventInformation', title: 'Event information' },
-        { id: 'results', title: 'Results' },
-        { id: 'rankings', title: 'Rankings' },
-        { id: 'payments', title: 'Payments and confirmations' },
-        { id: 'accountBasics', title: 'Account basics' },
-      ],
-      faqTitle: 'Grounded answers for the flows people ask about most',
-      faqGroups: [
-        { id: 'registrations', title: 'Registrations' },
-        { id: 'eventInformation', title: 'Event information' },
-        { id: 'results', title: 'Results' },
-        { id: 'rankings', title: 'Rankings' },
-        { id: 'payments', title: 'Payments and confirmations' },
-        { id: 'accountBasics', title: 'Account basics' },
-      ],
-      faqQuestion: 'How do I know whether registration is open for an event?',
-      faqAnswer:
-        'Start from the event page. RunGoMX shows the registration state there, including whether registration is open, closed, not open yet, or paused for that specific event.',
-      ctaTitle: 'Still need help?',
-      ctaContact: 'Go to contact',
-      helpfulLinksTitle: 'Go straight to the main public surfaces',
-      helpfulLinks: {
-        events: 'Events',
-        results: 'Results',
-        rankings: 'Rankings',
-        home: 'Homepage',
-      },
-    },
-    privacy: {
-      heroContactCta: 'Contact support',
-      heroTermsCta: 'Review terms',
-      summaryTitle: 'The short version',
-      sections: [
-        'Information we collect',
-        'How information is used',
-        'When information is shared',
-        'User choices and contact for privacy questions',
-      ],
-      ctaTitle: 'Questions about privacy or your account?',
-      ctaContact: 'Go to contact',
-      relatedTitle: 'Also review our terms of service',
-      relatedTerms: 'Terms of Service',
-    },
-    terms: {
-      heroContactCta: 'Contact support',
-      heroPrivacyCta: 'Review privacy',
-      summaryTitle: 'What these terms are meant to cover',
-      sections: [
-        'Using the platform',
-        'Accounts and user responsibility',
-        'Registrations, payments, and transaction expectations',
-        'Contact and legal questions',
-      ],
-      ctaTitle: 'Need help with terms or an event-related issue?',
-      ctaContact: 'Go to contact',
-      relatedTitle: 'Also review our privacy policy',
-      relatedPrivacy: 'Privacy Policy',
-    },
-  },
-] as const;
+  };
+}
+
+const locales: readonly LocaleSpec[] = [createLocaleSpec('es'), createLocaleSpec('en')] as const;
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

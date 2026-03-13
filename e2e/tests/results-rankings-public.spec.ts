@@ -1,4 +1,6 @@
 import { randomUUID } from 'crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 import * as schema from '@/db/schema';
@@ -64,100 +66,146 @@ type LocaleSpec = {
   };
 };
 
-const locales: readonly LocaleSpec[] = [
-  {
-    code: 'es',
-    acceptLanguage: 'es-MX,es;q=0.9',
+type ResultsMessages = {
+  title: string;
+  discovery: {
+    title: string;
+    searchNameLabel: string;
+    searchBibLabel: string;
+    searchAction: string;
+  };
+  directory: {
+    title: string;
+    openOfficial: string;
+  };
+  searchResults: {
+    title: string;
+  };
+  official: {
+    title: string;
+    subtitle: string;
+    status: {
+      official: string;
+    };
+    version: string;
+    trustScan: {
+      title: string;
+    };
+    table: {
+      title: string;
+    };
+  };
+};
+
+type RankingsMessages = {
+  title: string;
+  filters: {
+    scope: string;
+    organization: string;
+    apply: string;
+  };
+};
+
+type PrivacyMessages = {
+  hero: {
+    title: string;
+  };
+  summary: {
+    title: string;
+  };
+  sections: {
+    items: {
+      informationWeCollect: {
+        title: string;
+      };
+    };
+  };
+};
+
+type TermsMessages = {
+  hero: {
+    title: string;
+  };
+  summary: {
+    title: string;
+  };
+  sections: {
+    items: {
+      usingThePlatform: {
+        title: string;
+      };
+    };
+  };
+};
+
+function loadJsonFile<T>(relativePath: string): T {
+  return JSON.parse(readFileSync(join(process.cwd(), relativePath), 'utf8')) as T;
+}
+
+function formatMessage(template: string, values: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
+}
+
+function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
+  const results = loadJsonFile<ResultsMessages>(`messages/pages/results/${code}.json`);
+  const rankings = loadJsonFile<RankingsMessages>(`messages/pages/rankings/${code}.json`);
+  const privacy = loadJsonFile<PrivacyMessages>(`messages/pages/privacy/${code}.json`);
+  const terms = loadJsonFile<TermsMessages>(`messages/pages/terms/${code}.json`);
+
+  return {
+    code,
+    acceptLanguage: code === 'es' ? 'es-MX,es;q=0.9' : 'en-US,en;q=0.9',
     results: {
-      path: '/resultados',
-      title: 'Resultados',
-      discoveryTitle: 'Encontrar resultados oficiales',
-      directoryTitle: 'Directorio de resultados oficiales',
-      searchNameLabel: 'Nombre del corredor',
-      searchBibLabel: 'Dorsal',
-      searchAction: 'Buscar',
-      searchResultsTitle: 'Coincidencias de búsqueda',
-      openOfficial: 'Abrir página oficial',
+      path: code === 'es' ? '/resultados' : '/en/results',
+      title: results.title,
+      discoveryTitle: results.discovery.title,
+      directoryTitle: results.directory.title,
+      searchNameLabel: results.discovery.searchNameLabel,
+      searchBibLabel: results.discovery.searchBibLabel,
+      searchAction: results.discovery.searchAction,
+      searchResultsTitle: results.searchResults.title,
+      openOfficial: results.directory.openOfficial,
     },
     rankings: {
-      path: '/clasificaciones',
-      title: 'Clasificaciones nacionales',
-      scopeLabel: 'Alcance',
-      organizerLabel: 'Organizador',
-      applyLabel: 'Aplicar',
+      path: code === 'es' ? '/clasificaciones' : '/en/rankings',
+      title: rankings.title,
+      scopeLabel: rankings.filters.scope,
+      organizerLabel: rankings.filters.organization,
+      applyLabel: rankings.filters.apply,
     },
     legal: {
       privacy: {
-        path: '/privacidad',
-        title: 'Cómo maneja RunGoMX tu información',
-        summaryTitle: 'La versión corta',
-        keySection: 'Información que recopilamos',
+        path: code === 'es' ? '/privacidad' : '/en/privacy',
+        title: privacy.hero.title,
+        summaryTitle: privacy.summary.title,
+        keySection: privacy.sections.items.informationWeCollect.title,
       },
       terms: {
-        path: '/terminos',
-        title: 'Términos para usar RunGoMX',
-        summaryTitle: 'Qué buscan cubrir estos términos',
-        keySection: 'Uso de la plataforma',
+        path: code === 'es' ? '/terminos' : '/en/terms',
+        title: terms.hero.title,
+        summaryTitle: terms.summary.title,
+        keySection: terms.sections.items.usingThePlatform.title,
       },
     },
     detail: {
-      path: `/resultados/${seededOfficialResult.seriesSlug}/${seededOfficialResult.editionSlug}`,
-      title: `Resultados oficiales de ${seededOfficialResult.seriesName} ${seededOfficialResult.editionLabel}`,
-      subtitle:
-        'Esta URL estable siempre apunta a la publicación oficial o corregida más reciente de esta edición.',
-      trustScanTitle: 'Escaneo de confianza',
-      tableTitle: 'Filas del registro oficial',
-      versionLabel: 'Versión 1',
-      statusLabel: 'Oficial',
+      path:
+        code === 'es'
+          ? `/resultados/${seededOfficialResult.seriesSlug}/${seededOfficialResult.editionSlug}`
+          : `/en/results/${seededOfficialResult.seriesSlug}/${seededOfficialResult.editionSlug}`,
+      title: formatMessage(results.official.title ?? '', {
+        seriesName: seededOfficialResult.seriesName,
+        editionLabel: seededOfficialResult.editionLabel,
+      }),
+      subtitle: results.official.subtitle,
+      trustScanTitle: results.official.trustScan.title,
+      tableTitle: results.official.table.title,
+      versionLabel: formatMessage(results.official.version, { versionNumber: 1 }),
+      statusLabel: results.official.status.official,
     },
-  },
-  {
-    code: 'en',
-    acceptLanguage: 'en-US,en;q=0.9',
-    results: {
-      path: '/en/results',
-      title: 'Results',
-      discoveryTitle: 'Find official results',
-      directoryTitle: 'Official results directory',
-      searchNameLabel: 'Runner name',
-      searchBibLabel: 'Bib',
-      searchAction: 'Search',
-      searchResultsTitle: 'Search matches',
-      openOfficial: 'Open official page',
-    },
-    rankings: {
-      path: '/en/rankings',
-      title: 'National Rankings',
-      scopeLabel: 'Scope',
-      organizerLabel: 'Organizer',
-      applyLabel: 'Apply',
-    },
-    legal: {
-      privacy: {
-        path: '/en/privacy',
-        title: 'How RunGoMX handles your information',
-        summaryTitle: 'The short version',
-        keySection: 'Information we collect',
-      },
-      terms: {
-        path: '/en/terms',
-        title: 'Terms for using RunGoMX',
-        summaryTitle: 'What these terms are meant to cover',
-        keySection: 'Using the platform',
-      },
-    },
-    detail: {
-      path: `/en/results/${seededOfficialResult.seriesSlug}/${seededOfficialResult.editionSlug}`,
-      title: `${seededOfficialResult.seriesName} ${seededOfficialResult.editionLabel} Official Results`,
-      subtitle:
-        'This stable URL always points to the latest official or corrected publication for this edition.',
-      trustScanTitle: 'Trust scan',
-      tableTitle: 'Official ledger rows',
-      versionLabel: 'Version 1',
-      statusLabel: 'Official',
-    },
-  },
-] as const;
+  };
+}
+
+const locales: readonly LocaleSpec[] = [createLocaleSpec('es'), createLocaleSpec('en')] as const;
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

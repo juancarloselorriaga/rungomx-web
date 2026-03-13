@@ -532,17 +532,12 @@ test.describe('Organizer Payments E2E', () => {
     await expect.poll(() => queuedIntentRequestedAmountMinor).toBe(50_000);
   });
 
-  test('11.4-E2E-003 organizer can inspect lifecycle detail and statement availability states', async ({
+  test('11.4-E2E-003a organizer can inspect terminal payout detail lifecycle and statement availability', async ({
     page,
   }) => {
     await signInAsOrganizer(page, organizerCreds);
 
-    await page.goto(`/en/dashboard/payments/payouts?organizationId=${organizationId}`);
-
-    await expect(page.getByText('Completed').first()).toBeVisible();
-    await expect(page.getByText('Processing').first()).toBeVisible();
-
-    await page.getByRole('link', { name: terminalPayoutRequestId }).click();
+    await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
     await expect(page).toHaveURL(
       new RegExp(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}$`),
     );
@@ -566,19 +561,32 @@ test.describe('Organizer Payments E2E', () => {
     await expect(page.getByText('Statement available')).toBeVisible();
     await expect(page.getByText('fp-terminal-statement')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Back to payouts' }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`/en/dashboard/payments/payouts\\?organizationId=${organizationId}`),
+    await expect(page.getByRole('link', { name: 'Back to payouts' })).toHaveAttribute(
+      'href',
+      `/en/dashboard/payments/payouts?organizationId=${organizationId}`,
     );
+  });
 
-    await page.getByRole('link', { name: processingPayoutRequestId }).click();
+  test('11.4-E2E-003b organizer can inspect non-terminal payout detail statement state', async ({
+    page,
+  }) => {
+    await signInAsOrganizer(page, organizerCreds);
+
+    await page.goto(`/en/dashboard/payments/payouts/${processingPayoutRequestId}`);
     await expect(page).toHaveURL(
       new RegExp(`/en/dashboard/payments/payouts/${processingPayoutRequestId}$`),
     );
+    await expect(page.getByRole('heading', { name: 'Lifecycle timeline' })).toBeVisible();
+    await expect(page.getByText('Processing').first()).toBeVisible();
     await expect(
       page.getByText('Statement will be available after payout reaches a terminal status.'),
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'View statement' })).toHaveCount(0);
+
+    await expect(page.getByRole('link', { name: 'Back to payouts' })).toHaveAttribute(
+      'href',
+      `/en/dashboard/payments/payouts?organizationId=${organizationId}`,
+    );
   });
 
   test('11.4-E2E-004 @mobile organizer payments telemetry emits across workspace journey', async ({

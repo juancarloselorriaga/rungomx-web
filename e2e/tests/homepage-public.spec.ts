@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 type LocaleSpec = {
@@ -8,8 +10,8 @@ type LocaleSpec = {
   expandMenuLabel: string;
   heroHeading: string;
   sectionLabels: string[];
-  navLabels: [string, string, string, string, string];
-  footerLabels: [string, string, string, string, string, string];
+  navLabels: string[];
+  footerLabels: string[];
   ctas: {
     events: string;
     results: string;
@@ -36,82 +38,141 @@ type ViewportSpec = {
   height: number;
 };
 
-const locales: readonly LocaleSpec[] = [
-  {
-    code: 'es',
-    homePath: '/',
-    acceptLanguage: 'es-MX,es;q=0.9',
-    signInLabel: 'Iniciar sesión',
-    expandMenuLabel: 'Expandir menú',
-    heroHeading: 'Páginas de evento, inscripciones, resultados y rankings en un solo lugar',
+type HomeMessages = {
+  ctas: {
+    browseEvents: string;
+    viewResults: string;
+    viewRankings: string;
+  };
+  hero: {
+    eyebrow: string;
+    title: string;
+  };
+  proofPaths: {
+    title: string;
+  };
+  eventPages: {
+    title: string;
+  };
+  participation: {
+    title: string;
+  };
+  resultsRankings: {
+    title: string;
+  };
+  aboutBridge: {
+    title: string;
+    cta: string;
+  };
+  finalCta: {
+    title: string;
+  };
+};
+
+type NavigationMessages = {
+  events: string;
+  results: string;
+  rankings: string;
+  about: string;
+  news: string;
+  expandMenu: string;
+};
+
+type FooterMessages = {
+  links: {
+    aboutUs: string;
+    news: string;
+    contact: string;
+    helpCenter: string;
+    privacy: string;
+    terms: string;
+  };
+};
+
+type ResultsMessages = {
+  title: string;
+};
+
+type RankingsMessages = {
+  title: string;
+};
+
+type EventsMessages = {
+  title: string;
+};
+
+type AboutMessages = {
+  hero: {
+    title: string;
+  };
+};
+
+function loadJsonFile<T>(relativePath: string): T {
+  return JSON.parse(readFileSync(join(process.cwd(), relativePath), 'utf8')) as T;
+}
+
+function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
+  const home = loadJsonFile<HomeMessages>(`messages/pages/home/${code}.json`);
+  const navigation = loadJsonFile<NavigationMessages>(`messages/navigation/${code}.json`);
+  const footer = loadJsonFile<FooterMessages>(`messages/components/footer/${code}.json`);
+  const about = loadJsonFile<AboutMessages>(`messages/pages/about/${code}.json`);
+  const events = loadJsonFile<EventsMessages>(`messages/pages/events/${code}.json`);
+  const results = loadJsonFile<ResultsMessages>(`messages/pages/results/${code}.json`);
+  const rankings = loadJsonFile<RankingsMessages>(`messages/pages/rankings/${code}.json`);
+
+  return {
+    code,
+    homePath: code === 'es' ? '/' : '/en',
+    acceptLanguage: code === 'es' ? 'es-MX,es;q=0.9' : 'en-US,en;q=0.9',
+    signInLabel: code === 'es' ? 'Iniciar sesión' : 'Sign In',
+    expandMenuLabel: navigation.expandMenu,
+    heroHeading: home.hero.title,
     sectionLabels: [
-      'Diseñado para generar confianza el día del evento',
-      'Tres puntos de entrada públicos que mantienen el avance',
-      'Páginas que convierten el interés en inscripciones',
-      'Un camino más fluido desde el descubrimiento hasta la confirmación',
-      'Haz que la plataforma siga siendo útil después del día de carrera',
-      'Conecta el valor del producto con la credibilidad de la plataforma',
-      'Lanza una experiencia pública más sólida para tu próximo evento',
+      home.hero.eyebrow,
+      home.proofPaths.title,
+      home.eventPages.title,
+      home.participation.title,
+      home.resultsRankings.title,
+      home.aboutBridge.title,
+      home.finalCta.title,
     ],
-    navLabels: ['Eventos', 'Resultados', 'Clasificaciones', 'Acerca', 'Noticias'],
-    footerLabels: ['Acerca de', 'Noticias', 'Contacto', 'Ayuda', 'Privacidad', 'Términos'],
+    navLabels: [
+      navigation.events,
+      navigation.results,
+      navigation.rankings,
+      navigation.about,
+      navigation.news,
+    ],
+    footerLabels: [
+      footer.links.aboutUs,
+      footer.links.news,
+      footer.links.contact,
+      footer.links.helpCenter,
+      footer.links.privacy,
+      footer.links.terms,
+    ],
     ctas: {
-      events: 'Explorar eventos',
-      results: 'Ver resultados',
-      rankings: 'Ver rankings',
-      about: 'Conocer RunGoMx',
+      events: home.ctas.browseEvents,
+      results: home.ctas.viewResults,
+      rankings: home.ctas.viewRankings,
+      about: home.aboutBridge.cta,
     },
     routePaths: {
-      events: '/eventos',
-      results: '/resultados',
-      rankings: '/clasificaciones',
-      about: '/acerca',
+      events: code === 'es' ? '/eventos' : '/en/events',
+      results: code === 'es' ? '/resultados' : '/en/results',
+      rankings: code === 'es' ? '/clasificaciones' : '/en/rankings',
+      about: code === 'es' ? '/acerca' : '/en/about',
     },
     routeHeadings: {
-      events: 'Eventos',
-      results: 'Resultados',
-      rankings: 'Clasificaciones nacionales',
-      about: 'Quiénes somos',
+      events: events.title,
+      results: results.title,
+      rankings: rankings.title,
+      about: about.hero.title,
     },
-  },
-  {
-    code: 'en',
-    homePath: '/en',
-    acceptLanguage: 'en-US,en;q=0.9',
-    signInLabel: 'Sign In',
-    expandMenuLabel: 'Expand menu',
-    heroHeading: 'Event pages, registrations, results, and rankings in one place',
-    sectionLabels: [
-      'Built for race-day trust',
-      'Three public entry points that keep visitors moving',
-      'Pages that turn interest into registrations',
-      'A smoother path from discovery to confirmation',
-      'Keep the platform useful after race day',
-      'Bridge product value with platform credibility',
-      'Launch a stronger public experience for your next event',
-    ],
-    navLabels: ['Events', 'Results', 'Rankings', 'About', 'News'],
-    footerLabels: ['About', 'News', 'Contact', 'Help', 'Privacy', 'Terms'],
-    ctas: {
-      events: 'Explore events',
-      results: 'View results',
-      rankings: 'See rankings',
-      about: 'Learn about RunGoMx',
-    },
-    routePaths: {
-      events: '/en/events',
-      results: '/en/results',
-      rankings: '/en/rankings',
-      about: '/en/about',
-    },
-    routeHeadings: {
-      events: 'Events',
-      results: 'Results',
-      rankings: 'National Rankings',
-      about: 'Who we are',
-    },
-  },
-] as const;
+  };
+}
+
+const locales: readonly LocaleSpec[] = [createLocaleSpec('es'), createLocaleSpec('en')] as const;
 
 const viewports: readonly ViewportSpec[] = [
   { name: 'desktop', width: 1440, height: 1080 },
@@ -165,19 +226,24 @@ async function assertEnglishPreferenceResolvesBareRoot(
   testInfo: TestInfo,
   viewport: ViewportSpec,
 ) {
+  const englishLocale = locales.find((locale) => locale.code === 'en');
+  if (!englishLocale) {
+    throw new Error('English locale spec is missing.');
+  }
+
   await page.context().setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
   await page.setViewportSize({ width: viewport.width, height: viewport.height });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-  expect(new URL(page.url()).pathname).toBe('/en');
+  expect(new URL(page.url()).pathname).toBe(englishLocale.homePath);
   await expect(
     page.getByRole('heading', {
       level: 1,
-      name: 'Event pages, registrations, results, and rankings in one place',
+      name: englishLocale.heroHeading,
       exact: true,
     }),
   ).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Sign In', exact: true }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: englishLocale.signInLabel, exact: true }).first()).toBeVisible();
 }
 
 async function assertHomepageSections(page: Page, locale: LocaleSpec) {
