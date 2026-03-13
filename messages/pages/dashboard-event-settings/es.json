@@ -184,8 +184,11 @@
       "supportingContextTitle": "Contexto de apoyo",
       "supportingContextDescription": "{count, plural, =0 {Consulta la última solicitud y respuesta solo si necesitas más contexto.} one {Consulta la última solicitud y respuesta, más # mensaje anterior.} other {Consulta la última solicitud y respuesta, más # mensajes anteriores.}}",
       "requestLabel": "Última solicitud",
-      "responseLabel": "Recomendación del asistente",
-      "pendingTitle": "Intercambio actual"
+      "responseLabel": "Lo que ya llevo armado",
+      "pendingTitle": "Lo que estoy preparando"
+    },
+    "pending": {
+      "requestLabel": "Lo que me pediste"
     },
     "progress": {
       "analyzing": {
@@ -248,50 +251,50 @@
       "eyebrow": "Borrador inicial"
     },
     "scaffold": {
-      "eyebrow": "Propuesta en proceso",
+      "eyebrow": "Lo que voy armando",
       "basics": {
-        "title": "Ya tengo claro cómo arrancar este borrador de aspectos básicos",
-        "description": "Mientras termino la propuesta final, puedo mantener el trabajo aterrizado alrededor de estas decisiones clave.",
+        "title": "Ya voy armando tu primer borrador para Aspectos básicos",
+        "description": "Con lo que ya sé del evento, puedo avanzar sin inventar lo que todavía falta confirmar.",
         "sections": {
-          "first_pass": "Empiezo con identidad y posicionamiento sin inventar fecha ni sede exacta.",
-          "confirmed_facts": "Reutilizo solo aspectos básicos confirmados como el título actual, la ubicación, la zona horaria y las notas guardadas.",
-          "open_points": "Dejo pendientes el calendario y la logística exacta de sede si todavía no están confirmados."
+          "first_pass": "Empiezo por la identidad y la presentación general del evento sin adivinar fecha ni sede exacta.",
+          "confirmed_facts": "Me apoyo solo en lo que ya está confirmado: título, ubicación, zona horaria y tus notas guardadas.",
+          "open_points": "Lo que todavía no está claro se queda marcado como pendiente en vez de inventarlo."
         }
       },
       "content": {
-        "title": "Ya se está formando el plan del borrador de contenido",
-        "description": "La propuesta final sigue en camino, pero esta es la estructura que estoy usando para que ya se sienta útil y publicable.",
+        "title": "Ya voy armando el borrador de contenido",
+        "description": "La propuesta final sigue en camino, pero ya tengo una base útil para que esto se sienta publicable desde ahorita.",
         "sections": {
-          "first_pass": "Redacto primero la sección más útil para participantes en lugar de esperar a tener cada detalle.",
-          "confirmed_facts": "Anclo el texto en detalles confirmados del evento, notas guardadas y contenido localizado ya existente.",
-          "open_points": "Mantengo la logística faltante como pendiente en lugar de rellenarla con promesas genéricas."
+          "first_pass": "Empiezo por la parte más útil para participantes en lugar de esperar a tener cada detalle.",
+          "confirmed_facts": "Anclo el texto en datos confirmados del evento, tus notas y contenido que ya existe.",
+          "open_points": "La logística que falta se queda pendiente en lugar de rellenarla con texto genérico."
         }
       },
       "policies": {
-        "title": "Ya estoy ordenando el borrador de políticas",
-        "description": "Antes de que llegue la propuesta final, esta es la estructura que estoy usando para que la política se lea clara y aterrizada.",
+        "title": "Ya voy ordenando el borrador de políticas",
+        "description": "Antes de mostrarte la propuesta final, estoy acomodando la política para que se lea clara y bien aterrizada.",
         "sections": {
-          "first_pass": "Empiezo por la regla o estructura de exención más clara para el participante.",
-          "confirmed_facts": "Uso solo reglas, restricciones y contexto del evento que ya están confirmados.",
-          "open_points": "Mantengo abiertos los detalles operativos que el organizador aún no confirma."
+          "first_pass": "Empiezo por la regla o la exención que el participante necesita entender primero.",
+          "confirmed_facts": "Uso solo reglas, restricciones y contexto que ya están confirmados.",
+          "open_points": "Los detalles operativos que siguen abiertos se quedan así hasta que tú los confirmes."
         }
       },
       "review": {
-        "title": "Ya estoy organizando el siguiente movimiento listo para publicar",
-        "description": "La propuesta final todavía se está armando, pero esta es la forma que estoy usando para que la revisión siga siendo útil.",
+        "title": "Ya voy ordenando el siguiente paso para dejarlo listo",
+        "description": "La propuesta final todavía se está armando, pero ya tengo clara la ruta para que la revisión sí te sirva.",
         "sections": {
-          "first_pass": "Priorizaré primero el bloqueo más útil de corregir o la mejora más valiosa para el contenido.",
-          "confirmed_facts": "Basaré la recomendación en los bloqueos actuales, las notas guardadas y el contenido existente del evento.",
-          "open_points": "Mantendré visible la logística no resuelta en lugar de esconderla detrás de texto bonito."
+          "first_pass": "Voy a priorizar primero el bloqueo más importante o la mejora que más valor te dé.",
+          "confirmed_facts": "La recomendación se basa en los bloqueos actuales, tus notas y el contenido ya existente del evento.",
+          "open_points": "Lo que siga sin resolverse se queda visible, no lo voy a tapar con texto bonito."
         }
       },
       "generic": {
-        "title": "Ya estoy convirtiendo esto en un primer paso aterrizado",
-        "description": "La propuesta final sigue cargando, pero la respuesta ya se está organizando alrededor de valor útil y seguro.",
+        "title": "Ya voy convirtiendo esto en una primera propuesta útil",
+        "description": "La propuesta final sigue en camino, pero ya estoy ordenando algo que te sirva y siga siendo seguro de revisar.",
         "sections": {
-          "first_pass": "Empiezo con el borrador más pequeño y útil que este paso puede sostener con seguridad.",
-          "confirmed_facts": "Me apoyo primero en detalles confirmados del evento y en el contexto guardado del organizador.",
-          "open_points": "Mantengo visibles las incógnitas para que la propuesta siga siendo honesta y revisable."
+          "first_pass": "Empiezo con el borrador más pequeño y útil que este paso puede sostener sin arriesgar la calidad.",
+          "confirmed_facts": "Me apoyo primero en datos confirmados del evento y en el contexto que ya dejaste guardado.",
+          "open_points": "Las dudas siguen visibles para que la propuesta se mantenga honesta y revisable."
         }
       }
     },
@@ -446,6 +449,23 @@
     "apply": "Aplicar cambios",
     "applying": "Aplicando...",
     "applied": "Aplicado",
+    "locationResolution": {
+      "matched": {
+        "eyebrow": "Ubicación encontrada",
+        "title": "Esta es la ubicación real que se aplicará",
+        "description": "Se guardará en el campo real de ubicación del evento, no solo dentro del texto público."
+      },
+      "ambiguous": {
+        "eyebrow": "Ubicación por confirmar",
+        "title": "Encontré varias ubicaciones posibles",
+        "description": "Todavía no fijaré una ubicación exacta. Revisa estas opciones o aclara el lugar antes de aplicarlo."
+      },
+      "noMatch": {
+        "eyebrow": "Ubicación no resuelta",
+        "title": "Aún no pude fijar una ubicación segura",
+        "description": "Puedo seguir ayudando con el texto, pero la ubicación real del evento todavía necesita confirmación."
+      }
+    },
     "errors": {
       "title": "Error del asistente",
       "proRequired": "El asistente de configuración es una función Pro.",
@@ -540,6 +560,8 @@
     "endsAt": "Fecha de Fin",
     "locationSection": "Ubicación",
     "locationLabel": "Ubicación del Evento",
+    "locationAppliedTitle": "La ubicación sugerida por IA ya quedó en el editor",
+    "locationAppliedDescription": "Revisa este campo para confirmar el lugar exacto antes de seguir con el resto del evento.",
     "city": "Ciudad",
     "state": "Estado",
     "address": "Dirección",

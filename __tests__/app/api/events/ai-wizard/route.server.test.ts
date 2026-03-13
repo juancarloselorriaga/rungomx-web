@@ -9,6 +9,7 @@ const mockGetQuestionsForEdition = jest.fn();
 const mockGetAddOnsForEdition = jest.fn();
 const mockBuildEventWizardAggregate = jest.fn();
 const mockCheckRateLimit = jest.fn();
+const mockForwardGeocode = jest.fn();
 let capturedSystemPrompt: string | null = null;
 let capturedStreamParts: Array<{ type: string; data?: unknown }> = [];
 let capturedModelName: string | null = null;
@@ -60,6 +61,13 @@ jest.mock('@/lib/rate-limit', () => ({
 
 jest.mock('@/lib/pro-features/server/tracking', () => ({
   trackProFeatureEvent: (...args: unknown[]) => mockTrackProFeatureEvent(...args),
+}));
+
+jest.mock('@/lib/location/location-provider', () => ({
+  getLocationProvider: () => ({
+    forwardGeocode: (...args: unknown[]) => mockForwardGeocode(...args),
+    reverseGeocode: jest.fn(),
+  }),
 }));
 
 jest.mock('@/lib/organizations/permissions', () => {
@@ -125,7 +133,13 @@ jest.mock('ai', () => ({
   }),
 }));
 
-import { POST, finalizeWizardPatchForUi } from '@/app/api/events/ai-wizard/route';
+import {
+  POST,
+  enrichPatchWithResolvedLocation,
+  finalizeWizardPatchForUi,
+  resolveCrossStepIntent,
+} from '@/app/api/events/ai-wizard/route';
+import { resolveAssistantLocationQuery, buildAssistantLocationResolutionOptions } from '@/lib/events/ai-wizard/location-resolution';
 
 function buildEvent() {
   return {
@@ -202,6 +216,7 @@ describe('POST /api/events/ai-wizard', () => {
     mockBuildEventWizardAggregate.mockReturnValue({
       prioritizedChecklist: [],
     });
+    mockForwardGeocode.mockResolvedValue([]);
     mockCheckRateLimit.mockResolvedValue({
       allowed: true,
       resetAt: new Date('2026-03-12T00:00:00.000Z'),
@@ -336,6 +351,373 @@ describe('POST /api/events/ai-wizard', () => {
     ]);
   });
 
+  it('projects basics location updates so location is no longer reported as missing', () => {
+    mockBuildEventWizardAggregate.mockImplementation((projectedEvent) => ({
+      missingRequired: projectedEvent.locationDisplay
+        ? []
+        : [
+            {
+              id: 'missing-location',
+              stepId: 'event_details',
+              labelKey: 'wizard.issues.missingEventLocation',
+              href: '/settings',
+              code: 'MISSING_EVENT_LOCATION',
+              severity: 'required',
+            },
+          ],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    }));
+
+    const patch = finalizeWizardPatchForUi(
+      buildEvent(),
+      {
+        title: 'Set basics',
+        summary: 'Adds structured location and description.',
+        ops: [
+          {
+            type: 'update_edition',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: {
+              description: 'Nuevo texto',
+              locationDisplay: 'Bosque de Chapultepec',
+              city: 'Ciudad de México',
+              state: 'Ciudad de México',
+            },
+          },
+        ],
+      },
+      {
+        selectedPath: null,
+        hasWebsiteContent: false,
+        questionCount: 0,
+        addOnCount: 0,
+      },
+    );
+
+    expect(patch.missingFieldsChecklist).toEqual([]);
+  });
+
+  it('attaches matched location review metadata only when the patch updates real location fields', () => {
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const resolvedLocation = {
+      status: 'matched' as const,
+      query: 'Bosque de Chapultepec, Ciudad de México',
+      candidate: {
+        lat: 19.4204,
+        lng: -99.1821,
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        postalCode: '11111',
+        placeId: 'mapbox-1',
+        provider: 'mapbox',
+        raw: { provider: 'mapbox' },
+      },
+    };
+
+    const patchWithLocation = finalizeWizardPatchForUi(
+      buildEvent(),
+      {
+        title: 'Set basics location',
+        summary: 'Writes the real event location fields.',
+        ops: [
+          {
+            type: 'update_edition',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: {
+              locationDisplay: 'Bosque de Chapultepec',
+              city: 'Ciudad de México',
+              state: 'Ciudad de México',
+              latitude: '19.4204',
+              longitude: '-99.1821',
+            },
+          },
+        ],
+      },
+      {
+        selectedPath: null,
+        hasWebsiteContent: false,
+        questionCount: 0,
+        addOnCount: 0,
+      },
+      resolvedLocation,
+    );
+
+    const patchWithoutLocation = finalizeWizardPatchForUi(
+      buildEvent(),
+      {
+        title: 'Rewrite description only',
+        summary: 'Does not touch structured location fields.',
+        ops: [
+          {
+            type: 'update_edition',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: {
+              description: 'Bosque de Chapultepec como referencia en el copy',
+            },
+          },
+        ],
+      },
+      {
+        selectedPath: null,
+        hasWebsiteContent: false,
+        questionCount: 0,
+        addOnCount: 0,
+      },
+      resolvedLocation,
+    );
+
+    expect(patchWithLocation.locationResolution).toEqual({
+      status: 'matched',
+      query: 'Bosque de Chapultepec, Ciudad de México',
+      candidate: {
+        lat: 19.4204,
+        lng: -99.1821,
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        placeId: 'mapbox-1',
+        provider: 'mapbox',
+      },
+    });
+    expect(patchWithoutLocation.locationResolution).toBeUndefined();
+  });
+
+  it('classifies a basics FAQ ask as a cross-step content intent', () => {
+    expect(
+      resolveCrossStepIntent(
+        'basics',
+        'Con estas notas crea FAQ para participantes y texto del sitio del evento.',
+      ),
+    ).toEqual({
+      scope: 'cross_step',
+      sourceStepId: 'basics',
+      primaryTargetStepId: 'content',
+      intentType: 'faq',
+      confidence: 'high',
+      reasonCodes: expect.arrayContaining(['faq_language', 'website_language']),
+    });
+  });
+
+  it('preserves server-owned cross-step intent metadata on the finalized patch', () => {
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const crossStepIntent = resolveCrossStepIntent(
+      'basics',
+      'Redacta las políticas de cancelación y transferencias con lo que ya sabes del evento.',
+    );
+
+    const patch = finalizeWizardPatchForUi(
+      buildEvent(),
+      {
+        title: 'Draft policy support',
+        summary: 'Route this work to policies.',
+        ops: [
+          {
+            type: 'append_policy_markdown',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: {
+              policy: 'refund',
+              markdown: 'Cancelaciones sujetas a revisión del organizador.',
+            },
+          },
+        ],
+      },
+      {
+        selectedPath: null,
+        hasWebsiteContent: false,
+        questionCount: 0,
+        addOnCount: 0,
+      },
+      undefined,
+      crossStepIntent,
+    );
+
+    expect(patch.crossStepIntent).toEqual({
+      scope: 'cross_step',
+      sourceStepId: 'basics',
+      primaryTargetStepId: 'policies',
+      intentType: 'policy',
+      confidence: 'high',
+      reasonCodes: ['policy_language'],
+    });
+  });
+
+  it('resolves a strong single location match through the internal location service', async () => {
+    mockForwardGeocode.mockResolvedValue([
+      {
+        lat: 19.4204,
+        lng: -99.1821,
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        placeId: 'mapbox-1',
+        provider: 'mapbox',
+      },
+    ]);
+
+    const resolution = await resolveAssistantLocationQuery(
+      'Bosque de Chapultepec, Ciudad de México',
+      buildAssistantLocationResolutionOptions(buildEvent(), 'es'),
+    );
+
+    expect(mockForwardGeocode).toHaveBeenCalledWith('Bosque de Chapultepec, Ciudad de México', {
+      limit: 3,
+      language: 'es',
+      country: 'MX',
+      proximity: undefined,
+    });
+    expect(resolution).toEqual({
+      status: 'matched',
+      query: 'Bosque de Chapultepec, Ciudad de México',
+      match: {
+        lat: 19.4204,
+        lng: -99.1821,
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        placeId: 'mapbox-1',
+        provider: 'mapbox',
+      },
+    });
+  });
+
+  it('enriches a basics patch with the exact resolved structured location fields before apply', async () => {
+    mockForwardGeocode.mockResolvedValue([
+      {
+        lat: 19.4204,
+        lng: -99.1821,
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        placeId: 'mapbox-1',
+        provider: 'mapbox',
+      },
+    ]);
+
+    const patch = await enrichPatchWithResolvedLocation(
+      buildEvent(),
+      {
+        title: 'Set basics location',
+        summary: 'Adds the confirmed place to the event details.',
+        ops: [
+          {
+            type: 'update_edition',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: {
+              locationDisplay: 'Bosque de Chapultepec',
+              city: 'Ciudad de México',
+              state: 'Ciudad de México',
+            },
+          },
+        ],
+      },
+      {
+        stepId: 'basics',
+        locale: 'es',
+      },
+    );
+
+    expect(patch.ops).toEqual([
+      {
+        type: 'update_edition',
+        editionId: '11111111-1111-4111-8111-111111111111',
+        data: {
+          locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
+          address: 'Bosque de Chapultepec, Ciudad de México, México',
+          city: 'Ciudad de México',
+          state: 'Ciudad de México',
+          latitude: '19.4204',
+          longitude: '-99.1821',
+        },
+      },
+    ]);
+  });
+
+  it('classifies multiple non-exact results as ambiguous', async () => {
+    mockForwardGeocode.mockResolvedValue([
+      {
+        lat: 19.1,
+        lng: -99.1,
+        formattedAddress: 'Chapultepec, Morelos, México',
+        city: 'Chapultepec',
+        region: 'Morelos',
+      },
+      {
+        lat: 19.43,
+        lng: -99.19,
+        formattedAddress: 'Bosque de Chapultepec II Sección, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+      },
+    ]);
+
+    const resolution = await resolveAssistantLocationQuery('Chapultepec', {
+      locale: 'es',
+      country: 'MX',
+    });
+
+    expect(resolution).toEqual({
+      status: 'ambiguous',
+      query: 'Chapultepec',
+      candidates: [
+        {
+          lat: 19.1,
+          lng: -99.1,
+          formattedAddress: 'Chapultepec, Morelos, México',
+          city: 'Chapultepec',
+          region: 'Morelos',
+        },
+        {
+          lat: 19.43,
+          lng: -99.19,
+          formattedAddress: 'Bosque de Chapultepec II Sección, Ciudad de México, México',
+          city: 'Ciudad de México',
+          region: 'Ciudad de México',
+        },
+      ],
+    });
+  });
+
+  it('returns no_match when the internal location resolver finds nothing', async () => {
+    mockForwardGeocode.mockResolvedValue([]);
+
+    await expect(
+      resolveAssistantLocationQuery('Lugar inventado 123', {
+        locale: 'es',
+        country: 'MX',
+      }),
+    ).resolves.toEqual({
+      status: 'no_match',
+      query: 'Lugar inventado 123',
+    });
+  });
+
   it('blocks unsafe persisted organizer brief content before invoking the assistant', async () => {
     mockCanUserAccessSeries.mockResolvedValue({
       organizationId: 'org-1',
@@ -416,6 +798,39 @@ describe('POST /api/events/ai-wizard', () => {
     );
     expect(capturedSystemPrompt).toContain(
       'The first proposal should update only the event description markdown.',
+    );
+  });
+
+  it('tells basics proposals to write confirmed location into structured edition fields', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-1',
+              role: 'user',
+              parts: [{ type: 'text', text: 'La ubicación es Bosque de Chapultepec, Ciudad de México.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toContain(
+      'include that as structured update_edition location data',
+    );
+    expect(capturedSystemPrompt).toContain(
+      'Do not hide confirmed location details only inside description copy.',
     );
   });
 

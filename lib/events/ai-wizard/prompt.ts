@@ -2,6 +2,7 @@ import type { EventEditionDetail } from '@/lib/events/queries';
 import type { EventWizardIssueLabelKey } from '@/lib/events/wizard/types';
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
 import type { EventAiWizardFastPathKind } from './ui-types';
+import type { EventAiWizardLocationResolution } from './location-resolution';
 import { sanitizeAiWizardText } from './safety';
 
 type EventAiWizardPromptChecklistItem = {
@@ -19,6 +20,7 @@ type EventAiWizardPromptContext = {
   websiteContent?: WebsiteContentBlocks | null;
   fastPathKind?: EventAiWizardFastPathKind | null;
   compactMode?: boolean;
+  locationResolution?: EventAiWizardLocationResolution | null;
 };
 
 const ALLOWED_STEP_IDS = [
@@ -205,6 +207,7 @@ function describeFirstResponsePolicy(
   if (context.activeStepId === 'basics') {
     rules.push(
       '- For basics, it is acceptable to propose description and positioning improvements from the brief while leaving date, venue, and timing gaps unfilled.',
+      '- If the organizer explicitly provides or confirms a location, include that as structured update_edition location data (locationDisplay and city/state when safely known), not only inside the public description markdown.',
     );
   }
 
@@ -252,6 +255,40 @@ function describeFastPathPatchScope(
     default:
       return [];
   }
+}
+
+function describeLocationResolution(
+  context: Pick<EventAiWizardPromptContext, 'activeStepId' | 'locationResolution'>,
+): string[] {
+  if (context.activeStepId !== 'basics' || !context.locationResolution) {
+    return [];
+  }
+
+  if (context.locationResolution.status === 'matched') {
+    const candidate = context.locationResolution.candidate;
+    return [
+      'Server-owned location resolution:',
+      `- Organizer location intent query: ${context.locationResolution.query}`,
+      `- A strong resolved location candidate already exists: ${candidate.formattedAddress}.`,
+      `- Resolved coordinates: ${candidate.lat}, ${candidate.lng}.`,
+      '- If you propose a Basics location update, reuse this exact resolved location. Do not invent or alter coordinates.',
+    ];
+  }
+
+  if (context.locationResolution.status === 'ambiguous') {
+    return [
+      'Server-owned location resolution:',
+      `- Organizer location intent query: ${context.locationResolution.query}`,
+      '- Multiple likely location candidates exist. Do not invent coordinates or behave as if location is fully resolved yet.',
+      '- If location matters to the response, explain that confirmation is still needed.',
+    ];
+  }
+
+  return [
+    'Server-owned location resolution:',
+    `- Organizer location intent query: ${context.locationResolution.query}`,
+    '- No safe structured location match was found. Do not invent coordinates or claim the event location is resolved.',
+  ];
 }
 
 function summarizeWebsiteContent(
@@ -544,6 +581,7 @@ export function buildEventAiWizardSystemPrompt(
       '- Keep conversational prose to one or two short organizer-friendly sentences.',
       `- Use only these step IDs: ${JSON.stringify(ALLOWED_STEP_IDS)}.`,
       ...describeLanguageRules(context.locale),
+      ...(describeLocationResolution(context).length > 0 ? ['', ...describeLocationResolution(context)] : []),
       '',
       'Clarify only when the missing answer would materially change truth, structure, legal meaning, or payment mechanics.',
     ].join('\n');
@@ -570,6 +608,8 @@ export function buildEventAiWizardSystemPrompt(
     '',
     ...describeLanguageRules(context.locale),
     '',
+    ...describeLocationResolution(context),
+    '',
     'Localized website content already saved for this locale:',
     websiteContentSummary ? JSON.stringify(websiteContentSummary, null, 2) : 'None saved yet.',
     '',
@@ -594,6 +634,7 @@ export function buildEventAiWizardSystemPrompt(
     '- Do not propose delete/update/reorder for append-only content domains in this phase.',
     '- Use markdown-quality copy for event description, FAQ answers, waiver body, website sections, and policy text.',
     '- markdownOutputs must mirror the exact markdown-bearing operations in the patch. Never include preview-only markdown that will not be written by apply.',
+    '- If the organizer explicitly provides a venue or location, write it into structured update_edition location fields. Do not hide confirmed location details only inside description copy.',
     '- If setup is still unresolved after the patch, include:',
     '  missingFieldsChecklist[] with { code, stepId, label, severity }',
     "  severity should be one of: 'blocker', 'required', or 'optional'",

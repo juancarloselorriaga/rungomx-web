@@ -5,7 +5,7 @@ import type { UIMessagePart } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, Send, Sparkles, Square } from 'lucide-react';
+import { Check, MapPin, Send, Sparkles, Square } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,10 @@ type EventAiWizardAppliedState = {
   patchId: string;
   title: string;
   summary: string;
+  showRevealAction?: boolean;
 };
+
+type EventAiWizardEditorFocusTarget = 'location';
 
 function isEventPatchPart(
   part: UIMessagePart<EventAiWizardDataTypes, UnknownUITools>,
@@ -191,6 +194,77 @@ function MarkdownOutputsList({ outputs }: { outputs: EventAiWizardMarkdownOutput
   );
 }
 
+function LocationResolutionCard({
+  resolution,
+}: {
+  resolution: NonNullable<EventAiWizardPatch['locationResolution']>;
+}) {
+  const t = useTranslations('pages.dashboardEventSettings.assistant');
+
+  if (resolution.status === 'matched') {
+    return (
+      <div className="mt-3 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+            <MapPin className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              {t('locationResolution.matched.eyebrow')}
+            </p>
+            <p className="mt-1 text-sm font-semibold text-foreground">
+              {t('locationResolution.matched.title')}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground">
+              {resolution.candidate.formattedAddress}
+            </p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {t('locationResolution.matched.description')}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (resolution.status === 'ambiguous') {
+    return (
+      <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+          {t('locationResolution.ambiguous.eyebrow')}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-foreground">
+          {t('locationResolution.ambiguous.title')}
+        </p>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          {t('locationResolution.ambiguous.description')}
+        </p>
+        <ul className="mt-3 space-y-2 text-sm text-foreground">
+          {resolution.candidates.map((candidate, index) => (
+            <li key={`${candidate.placeId ?? candidate.formattedAddress}-${index}`} className="rounded-xl border border-border/50 bg-background/70 px-3 py-2">
+              {candidate.formattedAddress}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {t('locationResolution.noMatch.eyebrow')}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {t('locationResolution.noMatch.title')}
+      </p>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        {t('locationResolution.noMatch.description')}
+      </p>
+    </div>
+  );
+}
+
 function getMessageText(message: EventAiWizardUIMessage): string {
   return message.parts
     .filter((part) => part.type === 'text')
@@ -222,6 +296,50 @@ function MessageBubble({
     >
       <p className="sr-only">{roleLabel}</p>
       <p className="whitespace-pre-wrap">{text}</p>
+    </div>
+  );
+}
+
+function RequestSummaryCard({
+  message,
+}: {
+  message: Pick<EventAiWizardUIMessage, 'id' | 'role' | 'parts'>;
+}) {
+  const t = useTranslations('pages.dashboardEventSettings.assistant');
+  const text = getMessageText(message as EventAiWizardUIMessage);
+
+  if (!text) return null;
+
+  return (
+    <div className="rounded-2xl border border-border/60 bg-background/50 px-4 py-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {t('pending.requestLabel')}
+      </p>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{text}</p>
+    </div>
+  );
+}
+
+function ConversationExcerpt({
+  label,
+  text,
+  tone = 'default',
+}: {
+  label: string;
+  text: string;
+  tone?: 'default' | 'assistant';
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border px-3 py-3',
+        tone === 'assistant'
+          ? 'border-border/60 bg-background/55 dark:border-white/10 dark:bg-white/[0.03]'
+          : 'border-border/50 bg-background/45 dark:border-white/8 dark:bg-white/[0.02]',
+      )}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{text}</p>
     </div>
   );
 }
@@ -377,17 +495,35 @@ function EarlyProseLeadCard({ lead }: { lead: EventAiWizardEarlyProseLead }) {
 function AnimatedProgressLabel({
   label,
   description,
+  emphasis,
 }: {
   label: string;
   description: string;
+  emphasis?: 'normal' | 'slow';
 }) {
+  const isSlow = emphasis === 'slow';
+
   return (
     <div className="px-1 py-1">
       <div className="flex items-center gap-2">
         <span className="assistant-working-dot mt-0.5 size-2.5 shrink-0 rounded-full bg-primary/35" />
-        <p className="assistant-working-label text-sm font-semibold italic">{label}</p>
+        <p
+          className={cn(
+            'assistant-working-label text-sm font-semibold italic',
+            isSlow && 'opacity-95',
+          )}
+        >
+          {label}
+        </p>
       </div>
-      <p className="mt-1.5 text-sm leading-6 italic text-muted-foreground/90">{description}</p>
+      <p
+        className={cn(
+          'mt-1.5 text-sm leading-6 italic text-muted-foreground/90',
+          isSlow && 'text-muted-foreground',
+        )}
+      >
+        {description}
+      </p>
     </div>
   );
 }
@@ -401,7 +537,7 @@ function ContinuitySnapshotCard({
   const tPage = useTranslations('pages.dashboardEventSettings');
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-background/55 p-4">
+    <div className="rounded-2xl border border-border/60 bg-background/55 p-4 dark:border-white/10 dark:bg-white/[0.03]">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t('continuity.eyebrow')}
       </p>
@@ -413,20 +549,17 @@ function ContinuitySnapshotCard({
       <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('continuity.description')}</p>
       <div className="mt-3 space-y-3">
         {snapshot.latestRequestMessage ? (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t('latestProposal.requestLabel')}
-            </p>
-            <MessageBubble message={snapshot.latestRequestMessage} />
-          </div>
+          <ConversationExcerpt
+            label={t('latestProposal.requestLabel')}
+            text={getMessageText(snapshot.latestRequestMessage as EventAiWizardUIMessage)}
+          />
         ) : null}
         {snapshot.latestProposalText && snapshot.latestProposalMessage ? (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t('latestProposal.responseLabel')}
-            </p>
-            <MessageBubble message={snapshot.latestProposalMessage} />
-          </div>
+          <ConversationExcerpt
+            label={t('latestProposal.responseLabel')}
+            text={snapshot.latestProposalText}
+            tone="assistant"
+          />
         ) : null}
       </div>
     </div>
@@ -438,7 +571,7 @@ function AppliedConfirmationCard({
   onRevealEditor,
 }: {
   appliedState: EventAiWizardAppliedState;
-  onRevealEditor: () => void;
+  onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
 }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
 
@@ -449,11 +582,13 @@ function AppliedConfirmationCard({
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">{appliedState.title}</p>
       <p className="mt-1 text-sm leading-6 text-muted-foreground">{appliedState.summary}</p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <Button type="button" size="sm" variant="secondary" onClick={onRevealEditor}>
-          {t('appliedState.revealEditor')}
-        </Button>
-      </div>
+      {appliedState.showRevealAction !== false ? (
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button type="button" size="sm" variant="secondary" onClick={() => onRevealEditor()}>
+            {t('appliedState.revealEditor')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -619,16 +754,20 @@ function PatchCard({
   patchId,
   patch,
   locale,
+  activeStepId,
   applied,
   onApplied,
+  onRevealEditor,
   onNavigateToStep,
 }: {
   editionId: string;
   patchId: string;
   patch: EventAiWizardPatch;
   locale: string;
+  activeStepId: EventAiAssistantStepId;
   applied: boolean;
   onApplied: (appliedState: EventAiWizardAppliedState) => void;
+  onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
   onNavigateToStep: (stepId: EventAiAssistantStepId) => void;
 }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
@@ -739,7 +878,7 @@ function PatchCard({
         }
         if (Array.isArray(data?.applied) && data.applied.length > 0) {
           toast.error(t('errors.partialApplied'));
-          onApplied({ patchId, title: patch.title, summary: patch.summary });
+          onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: true });
           router.refresh();
           return;
         }
@@ -748,7 +887,27 @@ function PatchCard({
       }
 
       toast.success(t('applied'));
-      onApplied({ patchId, title: patch.title, summary: patch.summary });
+      const shouldRevealLocationInEditor =
+        activeStepId === 'basics' &&
+        patch.ops.some(
+          (op) =>
+            op.type === 'update_edition' &&
+            Boolean(op.data.locationDisplay && op.data.latitude?.trim() && op.data.longitude?.trim()),
+        );
+      const shouldRevealBasicsEditor =
+        activeStepId === 'basics' &&
+        patch.ops.some((op) => op.type === 'update_edition');
+      if (shouldRevealLocationInEditor) {
+        onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: false });
+        onRevealEditor('location');
+        return;
+      }
+      if (shouldRevealBasicsEditor) {
+        onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: false });
+        onRevealEditor();
+        return;
+      }
+      onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: true });
       router.refresh();
     } finally {
       setIsApplying(false);
@@ -776,6 +935,7 @@ function PatchCard({
       </div>
 
       <MarkdownOutputsList outputs={patch.markdownOutputs ?? []} />
+      {patch.locationResolution ? <LocationResolutionCard resolution={patch.locationResolution} /> : null}
 
       <details className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">
         <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
@@ -821,6 +981,7 @@ export function EventAiWizardPanel({
   const briefStorageKey = `event-ai-wizard:brief:${editionId}`;
   const draftStorageKey = `event-ai-wizard:draft:${editionId}:${stepId}`;
   const continuityStorageKey = `event-ai-wizard:continuity:${editionId}`;
+  const editorFocusStorageKey = `event-ai-wizard:editor-focus:${editionId}`;
   const normalizedInitialBrief = initialEventBrief?.trim() ?? '';
   const [input, setInput] = useState(() => {
     if (typeof window === 'undefined') return '';
@@ -929,6 +1090,8 @@ export function EventAiWizardPanel({
 
     return -1;
   }, [renderedMessages]);
+  const latestVisibleUserMessage =
+    latestUserMessageIndex >= 0 ? renderedMessages[latestUserMessageIndex] : null;
   const latestProposalMessageIndex = useMemo(() => {
     for (let index = renderedMessages.length - 1; index >= 0; index -= 1) {
       const message = renderedMessages[index];
@@ -1139,6 +1302,14 @@ export function EventAiWizardPanel({
   }
 
   const slowFeedback = resolveSlowFeedback(activeElapsedMs);
+  const visibleProgressContent = resolveProgressContent(
+    visibleProgressState?.code ?? 'analyzing_request',
+  );
+  const activeProgressLabel = slowFeedback?.title ?? visibleProgressContent.title;
+  const activeProgressDescription = slowFeedback?.description ?? visibleProgressContent.description;
+  const activeProgressEmphasis = slowFeedback ? 'slow' : 'normal';
+  const shouldShowAnimatedProgress =
+    !!visibleProgressState && !latestAssistantWithoutPatch;
   const recoveredContinuitySnapshot =
     !latestProposalMessage &&
     !isBusy &&
@@ -1250,14 +1421,17 @@ export function EventAiWizardPanel({
     router.push(`${url.pathname}${url.search}` as never);
   }
 
-  function handleRevealEditor() {
+  function handleRevealEditor(target?: EventAiWizardEditorFocusTarget) {
+    if (typeof window !== 'undefined' && target) {
+      window.sessionStorage.setItem(editorFocusStorageKey, target);
+    }
     setAssistantOpen(false);
   }
 
   return (
     <section
       className={cn(
-        'overflow-hidden rounded-3xl border border-border/60 bg-card/70 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/65',
+        'overflow-hidden rounded-3xl border border-border/60 bg-card/70 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/65 dark:border-white/8 dark:bg-[#0d1017]/96 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
         embeddedInWorkspace && 'border-none bg-transparent shadow-none backdrop-blur-0 supports-[backdrop-filter]:bg-transparent',
       )}
       data-latency-request-started-at={latencyMarks.requestStartedAt ?? undefined}
@@ -1267,7 +1441,7 @@ export function EventAiWizardPanel({
       data-latency-proposal-ready-ms={proposalReadyMs ?? undefined}
     >
       {embeddedInWorkspace ? (
-        <div className="rounded-2xl bg-muted/[0.22] px-4 py-3 sm:px-5">
+        <div className="px-1 pb-1 pt-2 sm:px-2">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-semibold text-foreground">{t('inline.title', { step: stepTitle })}</p>
             {markdownFocus ? (
@@ -1279,7 +1453,7 @@ export function EventAiWizardPanel({
           <p className="mt-1 text-sm text-muted-foreground">{t('contract')}</p>
         </div>
       ) : (
-        <header className="border-b border-border/60 px-4 py-4 sm:px-5 sm:py-5">
+        <header className="border-b border-border/60 px-4 py-4 sm:px-5 sm:py-5 dark:border-white/8">
           <div className="flex items-start gap-3">
             <span className="mt-0.5 flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Sparkles className="size-4" />
@@ -1302,7 +1476,7 @@ export function EventAiWizardPanel({
         </header>
       )}
 
-      <div className="space-y-4 px-4 py-4 sm:px-5">
+      <div className="space-y-5 px-4 py-4 sm:px-5">
         {recoveredContinuitySnapshot ? (
           <ContinuitySnapshotCard snapshot={recoveredContinuitySnapshot} />
         ) : null}
@@ -1312,9 +1486,9 @@ export function EventAiWizardPanel({
         ) : null}
 
         {latestProposalMessage ? (
-          <section className="rounded-2xl bg-muted/[0.18] p-4">
+          <section className="rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <div className="space-y-4">
-              <div className="rounded-2xl bg-primary/[0.06] px-4 py-3">
+              <div className="rounded-xl border border-primary/18 bg-primary/[0.05] px-4 py-3 dark:border-primary/20 dark:bg-primary/[0.08]">
                 <p className="text-xs font-semibold uppercase tracking-wide text-primary">
                   {t('latestProposal.title')}
                 </p>
@@ -1327,6 +1501,7 @@ export function EventAiWizardPanel({
                   patchId={latestProposalPatchPart.id ?? `${latestProposalMessage.id}-patch`}
                   patch={latestProposalPatchPart.data}
                   locale={locale}
+                  activeStepId={stepId}
                   applied={appliedPatchIds.has(
                     latestProposalPatchPart.id ?? `${latestProposalMessage.id}-patch`,
                   )}
@@ -1336,6 +1511,7 @@ export function EventAiWizardPanel({
                     setAppliedPatchIds((prev) => new Set([...prev, patchId]));
                     setLastAppliedPatch(appliedState);
                   }}
+                  onRevealEditor={handleRevealEditor}
                   onNavigateToStep={handleNavigateToStep}
                 />
               ) : null}
@@ -1349,70 +1525,64 @@ export function EventAiWizardPanel({
             </div>
           </section>
         ) : renderedMessages.length > 0 ? (
-          <section className="rounded-2xl bg-muted/[0.18] p-4">
+          <section className="rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.pendingTitle')}
             </p>
             <div className="mt-3 space-y-3">
-              {visibleProgressState ? (
+              {latestVisibleUserMessage ? <RequestSummaryCard message={latestVisibleUserMessage} /> : null}
+              {shouldShowAnimatedProgress ? (
                 <AnimatedProgressLabel
-                  label={resolveProgressContent(visibleProgressState.code).title}
-                  description={resolveProgressContent(visibleProgressState.code).description}
+                  label={activeProgressLabel}
+                  description={activeProgressDescription}
+                  emphasis={activeProgressEmphasis}
                 />
               ) : null}
               {earlyProseLead ? <EarlyProseLeadCard lead={earlyProseLead} /> : null}
               {fastPathStructure ? <FastPathStructureCard structure={fastPathStructure} /> : null}
               {slowScaffoldKey ? <SlowProposalScaffoldCard scaffoldKey={slowScaffoldKey} /> : null}
-              {renderedMessages.slice(-2).map((message) => (
-                <MessageBubble key={message.id} message={message} />
-              ))}
-              {slowFeedback ? (
-                <div className="px-1 py-1">
-                  <p className="assistant-working-label text-sm font-semibold italic">{slowFeedback.title}</p>
-                  <p className="mt-1 text-sm leading-6 italic text-muted-foreground/90">{slowFeedback.description}</p>
-                </div>
+              {latestAssistantWithoutPatch ? (
+                <ConversationExcerpt
+                  label={t('latestProposal.responseLabel')}
+                  text={latestAssistantWithoutPatch}
+                  tone="assistant"
+                />
               ) : null}
             </div>
           </section>
         ) : isBusy || visibleProgressState ? (
-          <section className="rounded-2xl bg-muted/[0.18] p-4">
+          <section className="rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.pendingTitle')}
             </p>
             <div className="mt-3 space-y-3">
-              <AnimatedProgressLabel
-                label={resolveProgressContent(visibleProgressState?.code ?? 'analyzing_request').title}
-                description={resolveProgressContent(visibleProgressState?.code ?? 'analyzing_request').description}
-              />
+              {shouldShowAnimatedProgress ? (
+                <AnimatedProgressLabel
+                  label={activeProgressLabel}
+                  description={activeProgressDescription}
+                  emphasis={activeProgressEmphasis}
+                />
+              ) : null}
               {earlyProseLead ? <EarlyProseLeadCard lead={earlyProseLead} /> : null}
               {fastPathStructure ? <FastPathStructureCard structure={fastPathStructure} /> : null}
               {slowScaffoldKey ? <SlowProposalScaffoldCard scaffoldKey={slowScaffoldKey} /> : null}
               {latestAssistantWithoutPatch ? (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {t('latestProposal.responseLabel')}
-                  </p>
-                  <div className="rounded-2xl border border-border/60 bg-background/65 px-4 py-3 text-sm leading-relaxed text-foreground shadow-sm">
-                    <p className="whitespace-pre-wrap">{latestAssistantWithoutPatch}</p>
-                  </div>
-                </div>
-              ) : null}
-              {slowFeedback ? (
-                <div className="px-1 py-1">
-                  <p className="assistant-working-label text-sm font-semibold italic">{slowFeedback.title}</p>
-                  <p className="mt-1 text-sm leading-6 italic text-muted-foreground/90">{slowFeedback.description}</p>
-                </div>
+                <ConversationExcerpt
+                  label={t('latestProposal.responseLabel')}
+                  text={latestAssistantWithoutPatch}
+                  tone="assistant"
+                />
               ) : null}
             </div>
           </section>
         ) : (
-          <section className="rounded-2xl bg-muted/[0.14] p-4 text-sm text-muted-foreground">
+          <section className="rounded-2xl border border-dashed border-border/60 bg-background/35 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
             <p className="font-medium text-foreground">{t('empty.heading')}</p>
             <p className="mt-1 leading-6">{t('empty.example')}</p>
           </section>
         )}
 
-        <section className="rounded-2xl bg-muted/[0.18] px-4 py-4 sm:px-5">
+        <section className="rounded-2xl border border-border/60 bg-background/65 px-4 py-4 shadow-sm sm:px-5 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
           <label htmlFor={composerId} className="sr-only">
             {t('composer.label')}
           </label>
@@ -1421,6 +1591,10 @@ export function EventAiWizardPanel({
               <p className="text-sm font-semibold text-foreground">{t('composer.sectionTitle')}</p>
               <p id={composerHintId} className="mt-1 text-xs leading-5 text-muted-foreground">
                 {hasSavedBrief ? t('composer.savedBriefHint') : t('composer.briefHint')}
+              </p>
+              <p className="mt-3 text-sm font-medium text-foreground">{t('composer.roughNotesTitle')}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {t('composer.roughNotesExample')}
               </p>
             </div>
 
@@ -1433,7 +1607,7 @@ export function EventAiWizardPanel({
               disabled={isBusy}
               rows={5}
               className={cn(
-                'min-h-[150px] w-full resize-y rounded-2xl border border-border/60 bg-background px-4 py-3 text-sm shadow-sm outline-none ring-offset-background transition sm:min-h-[180px]',
+                'min-h-[150px] w-full resize-y rounded-2xl border border-border/60 bg-background px-4 py-3 text-sm shadow-sm outline-none ring-offset-background transition sm:min-h-[180px] dark:border-primary/35 dark:bg-black/40 dark:shadow-none',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                 'disabled:opacity-60',
               )}
@@ -1444,13 +1618,6 @@ export function EventAiWizardPanel({
                 }
               }}
             />
-
-            <div className="rounded-2xl bg-primary/[0.06] px-4 py-3">
-              <p className="text-sm font-medium text-foreground">{t('composer.roughNotesTitle')}</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                {t('composer.roughNotesExample')}
-              </p>
-            </div>
 
             <div className="grid gap-2 sm:flex sm:flex-wrap">
               {suggestions.map((suggestion) => (
@@ -1495,7 +1662,7 @@ export function EventAiWizardPanel({
           </div>
         </section>
 
-        <details className="rounded-2xl bg-muted/[0.14] p-4" open={isEditingBrief}>
+        <details className="rounded-2xl border border-border/50 bg-background/40 p-4 dark:border-white/8 dark:bg-white/[0.025]" open={isEditingBrief}>
           <summary className="cursor-pointer list-none">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -1522,7 +1689,7 @@ export function EventAiWizardPanel({
             </div>
           </summary>
 
-          <div className="mt-4 border-t border-border/60 pt-4">
+          <div className="mt-4 border-t border-border/60 pt-4 dark:border-white/8">
             {isEditingBrief ? (
               <div className="space-y-3">
                 <label htmlFor={briefEditorId} className="sr-only">
@@ -1538,7 +1705,7 @@ export function EventAiWizardPanel({
                   onChange={(event) => setBriefDraft(event.target.value)}
                   rows={5}
                   className={cn(
-                    'min-h-[136px] w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition',
+                    'min-h-[136px] w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition dark:border-white/10 dark:bg-black/35 dark:shadow-none',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                     'disabled:opacity-60',
                   )}

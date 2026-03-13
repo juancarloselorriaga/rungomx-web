@@ -184,8 +184,11 @@
       "supportingContextTitle": "Supporting context",
       "supportingContextDescription": "{count, plural, =0 {See the latest request and response if you need extra context.} one {See the latest request and response plus # earlier message.} other {See the latest request and response plus # earlier messages.}}",
       "requestLabel": "Latest request",
-      "responseLabel": "Assistant recommendation",
-      "pendingTitle": "Current exchange"
+      "responseLabel": "What I have so far",
+      "pendingTitle": "What I’m putting together"
+    },
+    "pending": {
+      "requestLabel": "What you asked for"
     },
     "progress": {
       "analyzing": {
@@ -248,50 +251,50 @@
       "eyebrow": "Early draft"
     },
     "scaffold": {
-      "eyebrow": "Proposal in progress",
+      "eyebrow": "What I’m drafting",
       "basics": {
-        "title": "I already know how to start this basics draft",
-        "description": "While I finish the final proposal, I can keep the work grounded around these basics decisions.",
+        "title": "I’m already shaping your first basics draft",
+        "description": "With what I already know about the event, I can move this forward without inventing what is still unconfirmed.",
         "sections": {
-          "first_pass": "Start with identity and positioning updates that do not require inventing date or venue details.",
-          "confirmed_facts": "Reuse only confirmed basics such as the current title, location, timezone, and saved organizer brief.",
-          "open_points": "Leave schedule and exact venue logistics pending if they are still unconfirmed."
+          "first_pass": "I’m starting with the event identity and overall framing without guessing on the exact date or venue details.",
+          "confirmed_facts": "I’m leaning only on confirmed basics like the current title, location, timezone, and your saved notes.",
+          "open_points": "Anything still unclear stays marked as pending instead of getting invented."
         }
       },
       "content": {
-        "title": "I already have a content draft plan forming",
-        "description": "The final proposal is still coming, but this is the structure I am using to keep it useful and publishable.",
+        "title": "I’m already building the content draft",
+        "description": "The final proposal is still on the way, but I already have a useful structure to make this feel publishable.",
         "sections": {
-          "first_pass": "Draft the most useful participant-facing section first instead of waiting for every detail.",
-          "confirmed_facts": "Anchor the copy in confirmed event details, saved notes, and localized content already on the event.",
-          "open_points": "Keep missing logistics clearly pending instead of filling them with generic promises."
+          "first_pass": "I’m starting with the most useful participant-facing section instead of waiting on every detail.",
+          "confirmed_facts": "The copy stays anchored in confirmed event details, saved notes, and content already on the event.",
+          "open_points": "Anything missing stays clearly pending instead of turning into generic filler."
         }
       },
       "policies": {
-        "title": "I am structuring the policy draft already",
-        "description": "Before the final proposal arrives, this is how I am keeping the policy readable and grounded.",
+        "title": "I’m already organizing the policy draft",
+        "description": "Before the final proposal lands, I’m shaping the policy so it reads clearly and stays grounded.",
         "sections": {
-          "first_pass": "Start with the clearest participant-facing rule or waiver structure first.",
-          "confirmed_facts": "Use only the rules, constraints, and event context that are already confirmed.",
-          "open_points": "Leave operational details open if the organizer has not confirmed them yet."
+          "first_pass": "I’m starting with the clearest participant-facing rule or waiver structure first.",
+          "confirmed_facts": "I’m using only the rules, constraints, and event context that are already confirmed.",
+          "open_points": "Operational details stay open until you confirm them."
         }
       },
       "review": {
-        "title": "I am organizing the next publish-ready move",
-        "description": "The final proposal is still being assembled, but this is the shape I am using to keep the review helpful.",
+        "title": "I’m lining up the next move to get this ready",
+        "description": "The final proposal is still coming together, but I already know the clearest way to keep this review useful.",
         "sections": {
-          "first_pass": "Prioritize the most useful blocker fix or participant-copy improvement first.",
-          "confirmed_facts": "Base the recommendation on current blockers, saved notes, and existing event content.",
-          "open_points": "Keep unresolved logistics visible instead of hiding them behind polished filler."
+          "first_pass": "I’m prioritizing the blocker fix or content improvement that will help most first.",
+          "confirmed_facts": "The recommendation stays tied to current blockers, saved notes, and existing event content.",
+          "open_points": "Anything unresolved stays visible instead of getting hidden behind polished filler."
         }
       },
       "generic": {
-        "title": "I am turning this into a grounded first pass",
-        "description": "The final proposal is still loading, but the response is already being organized around safe, useful value.",
+        "title": "I’m turning this into a useful first pass",
+        "description": "The final proposal is still on the way, but I’m already organizing something you can trust and review.",
         "sections": {
-          "first_pass": "Start with the smallest useful draft the current step can support safely.",
-          "confirmed_facts": "Lean on confirmed event details and saved organizer context before making claims.",
-          "open_points": "Keep unknowns visible so the proposal stays honest and reviewable."
+          "first_pass": "I’m starting with the smallest useful draft this step can support safely.",
+          "confirmed_facts": "I’m leaning on confirmed event details and your saved context before making claims.",
+          "open_points": "Unknowns stay visible so the proposal stays honest and reviewable."
         }
       }
     },
@@ -446,6 +449,23 @@
     "apply": "Apply changes",
     "applying": "Applying...",
     "applied": "Applied",
+    "locationResolution": {
+      "matched": {
+        "eyebrow": "Location found",
+        "title": "This is the real location that will be applied",
+        "description": "It will be saved into the actual event location field, not only inside public-facing copy."
+      },
+      "ambiguous": {
+        "eyebrow": "Location needs confirmation",
+        "title": "I found several likely locations",
+        "description": "I will not pin an exact location yet. Review these options or clarify the place before applying."
+      },
+      "noMatch": {
+        "eyebrow": "Location still unresolved",
+        "title": "I could not pin a safe location yet",
+        "description": "I can still help with copy, but the real event location still needs confirmation."
+      }
+    },
     "errors": {
       "title": "Assistant error",
       "proRequired": "Setup assistant is a Pro feature.",
@@ -540,6 +560,8 @@
     "endsAt": "End Date",
     "locationSection": "Location",
     "locationLabel": "Event Location",
+    "locationAppliedTitle": "The AI-suggested location is now in the editor",
+    "locationAppliedDescription": "Review this field to confirm the exact place before you continue with the rest of the event.",
     "city": "City",
     "state": "State",
     "address": "Address",

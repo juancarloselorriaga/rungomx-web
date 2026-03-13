@@ -124,6 +124,8 @@ export function EventSettingsForm({
   );
   const [capacityError, setCapacityError] = useState<string | null>(null);
   const [isUpdatingCapacity, setIsUpdatingCapacity] = useState(false);
+  const [assistantEditorFocus, setAssistantEditorFocus] = useState<'location' | null>(null);
+  const locationSectionRef = useRef<HTMLDivElement | null>(null);
   const maxHeroImageSizeMb = Math.floor(EVENT_MEDIA_MAX_FILE_SIZE / (1024 * 1024));
   const tHero = useTranslations('pages.dashboardEventSettings.heroImage');
   const showVisibilitySection = surface === 'full' || surface === 'wizard-review';
@@ -133,6 +135,7 @@ export function EventSettingsForm({
   const showRegistrationWindowSection = surface === 'full' || surface === 'wizard-registration';
   const showCapacitySection = surface === 'full' || surface === 'wizard-distances';
   const showDistancesSection = surface === 'full' || surface === 'wizard-distances';
+  const editorFocusStorageKey = `event-ai-wizard:editor-focus:${event.id}`;
 
   // Event details form
   const detailsForm = useForm<{
@@ -205,6 +208,26 @@ export function EventSettingsForm({
   });
 
   const isEditionSlugChanged = detailsForm.values.slug.trim() !== event.slug;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const pendingFocus = window.sessionStorage.getItem(editorFocusStorageKey);
+    if (pendingFocus !== 'location') return;
+
+    setAssistantEditorFocus('location');
+    window.sessionStorage.removeItem(editorFocusStorageKey);
+  }, [editorFocusStorageKey]);
+
+  useEffect(() => {
+    if (assistantEditorFocus !== 'location') return;
+
+    locationSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const timeout = window.setTimeout(() => {
+      setAssistantEditorFocus(null);
+    }, 4500);
+
+    return () => window.clearTimeout(timeout);
+  }, [assistantEditorFocus]);
 
   const handleDetailsSubmit = (formEvent: React.FormEvent<HTMLFormElement>) => {
     formEvent.preventDefault();
@@ -772,11 +795,29 @@ export function EventSettingsForm({
                   </FormField>
                 </div>
 
-                <div className="border-t pt-4">
+                <div
+                  ref={locationSectionRef}
+                  className={cn(
+                    'border-t pt-4 transition-all',
+                    assistantEditorFocus === 'location' &&
+                      'rounded-2xl border border-emerald-500/35 bg-emerald-500/8 px-4 pb-4 shadow-[0_0_0_1px_rgba(16,185,129,0.08)]',
+                  )}
+                >
                   <div className="flex items-center gap-2 mb-4">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <h3 className="font-medium">{t('details.locationSection')}</h3>
                   </div>
+
+                  {assistantEditorFocus === 'location' ? (
+                    <div className="mb-4 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2">
+                      <p className="text-sm font-medium text-emerald-300">
+                        {t('details.locationAppliedTitle')}
+                      </p>
+                      <p className="mt-1 text-sm text-emerald-100/80">
+                        {t('details.locationAppliedDescription')}
+                      </p>
+                    </div>
+                  ) : null}
 
                   <LocationField
                     label={t('details.locationLabel')}

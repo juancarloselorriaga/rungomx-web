@@ -20,8 +20,14 @@ import { canUserAccessSeries, hasOrgPermission } from '@/lib/organizations/permi
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import { buildEventAiWizardSystemPrompt } from '@/lib/events/ai-wizard/prompt';
-import { eventAiWizardPatchSchema, type EventAiWizardPatch } from '@/lib/events/ai-wizard/schemas';
+import {
+  eventAiWizardCrossStepIntentSchema,
+  eventAiWizardPatchSchema,
+  type EventAiWizardCrossStepIntent,
+  type EventAiWizardPatch,
+} from '@/lib/events/ai-wizard/schemas';
 import { evaluateAiWizardTextSafety, extractLatestUserText } from '@/lib/events/ai-wizard/safety';
+import { extractLocationIntentQuery, resolveAiWizardLocationIntent } from '@/lib/events/ai-wizard/location-resolution';
 import type {
   EventAiWizardEarlyProseLead,
   EventAiWizardFastPathKind,
@@ -30,6 +36,11 @@ import type {
 } from '@/lib/events/ai-wizard/ui-types';
 import { buildEventWizardAggregate } from '@/lib/events/wizard/orchestrator';
 import { getPublicWebsiteContent, hasWebsiteContent } from '@/lib/events/website/queries';
+import {
+  buildAssistantLocationResolutionOptions,
+  buildLocationResolutionQueryFromEditionUpdate,
+  resolveAssistantLocationQuery,
+} from '@/lib/events/ai-wizard/location-resolution';
 
 export const maxDuration = 30;
 
@@ -38,6 +49,9 @@ const fastPathDescriptionProposalSchema = z
     title: z.string().min(1).max(120),
     summary: z.string().min(1).max(400),
     descriptionMarkdown: z.string().min(1).max(5000),
+    locationDisplay: z.string().max(255).optional(),
+    city: z.string().max(100).optional(),
+    state: z.string().max(100).optional(),
   })
   .strict();
 
@@ -185,6 +199,116 @@ function detectFastPathKind(
   return null;
 }
 
+export function resolveCrossStepIntent(
+  stepId: z.infer<typeof requestSchema>['stepId'],
+  latestUserText: string,
+): EventAiWizardCrossStepIntent | null {
+  const normalized = normalizeFastPathText(latestUserText);
+  if (!normalized.trim()) return null;
+
+  const asksForFaq =
+    /\bfaq\b/.test(normalized) ||
+    normalized.includes('preguntas frecuentes') ||
+    normalized.includes('common questions');
+  const asksForPolicy =
+    normalized.includes('politica') ||
+    normalized.includes('politicas') ||
+    normalized.includes('policy') ||
+    normalized.includes('policies') ||
+    normalized.includes('waiver') ||
+    normalized.includes('reglamento') ||
+    normalized.includes('terminos') ||
+    normalized.includes('exencion') ||
+    normalized.includes('exenciones');
+  const asksForWebsite =
+    normalized.includes('website') ||
+    normalized.includes('sitio') ||
+    normalized.includes('landing') ||
+    normalized.includes('pagina') ||
+    normalized.includes('overview');
+  const asksForParticipantContent =
+    normalized.includes('contenido para participantes') ||
+    normalized.includes('participant content') ||
+    normalized.includes('texto del sitio') ||
+    normalized.includes('texto para participantes') ||
+    normalized.includes('resumen del evento') ||
+    normalized.includes('description') ||
+    normalized.includes('descripcion') ||
+    normalized.includes('summary') ||
+    normalized.includes('copy');
+  const asksForExtras =
+    normalized.includes('preguntas de registro') ||
+    normalized.includes('registration questions') ||
+    normalized.includes('add-ons') ||
+    normalized.includes('add ons') ||
+    normalized.includes('extras') ||
+    normalized.includes('merch') ||
+    normalized.includes('addon');
+  const asksForBasics =
+    normalized.includes('ubicacion') ||
+    normalized.includes('location') ||
+    normalized.includes('fecha') ||
+    normalized.includes('date') ||
+    normalized.includes('hora') ||
+    normalized.includes('time') ||
+    normalized.includes('titulo') ||
+    normalized.includes('title') ||
+    normalized.includes('imagen') ||
+    normalized.includes('image');
+
+  const matchedTargets = [
+    asksForFaq || asksForWebsite || asksForParticipantContent ? 'content' : null,
+    asksForPolicy ? 'policies' : null,
+    asksForExtras ? 'extras' : null,
+  ].filter((value): value is 'content' | 'policies' | 'extras' => Boolean(value));
+
+  if (matchedTargets.length === 0) return null;
+
+  const uniqueTargets = Array.from(new Set(matchedTargets));
+  const primaryTargetStepId = uniqueTargets[0];
+  if (!primaryTargetStepId) return null;
+
+  const scope: EventAiWizardCrossStepIntent['scope'] =
+    asksForBasics && primaryTargetStepId !== stepId
+      ? 'mixed'
+      : primaryTargetStepId !== stepId
+        ? 'cross_step'
+        : 'current_step';
+
+  let intentType: EventAiWizardCrossStepIntent['intentType'] = 'mixed_general';
+  if (uniqueTargets.length > 1) {
+    intentType = 'mixed_content';
+  } else if (asksForFaq) {
+    intentType = 'faq';
+  } else if (asksForPolicy) {
+    intentType = 'policy';
+  } else if (asksForWebsite) {
+    intentType = 'website_overview';
+  } else if (asksForExtras) {
+    intentType = 'extras';
+  } else if (asksForParticipantContent) {
+    intentType = 'participant_content';
+  }
+
+  return eventAiWizardCrossStepIntentSchema.parse({
+    scope,
+    sourceStepId: stepId,
+    primaryTargetStepId,
+    secondaryTargetStepIds: uniqueTargets.length > 1 ? uniqueTargets.slice(1) : undefined,
+    intentType,
+    confidence: uniqueTargets.length > 1 || scope === 'mixed' ? 'medium' : 'high',
+    requiresUserChoice: uniqueTargets.length > 1 ? true : undefined,
+    reasonCodes: [
+      ...(asksForFaq ? ['faq_language'] : []),
+      ...(asksForWebsite ? ['website_language'] : []),
+      ...(asksForPolicy ? ['policy_language'] : []),
+      ...(asksForExtras ? ['extras_language'] : []),
+      ...(asksForParticipantContent ? ['participant_copy_language'] : []),
+      ...(asksForBasics ? ['current_step_basics_language'] : []),
+    ].slice(0, 6),
+  });
+}
+
 function buildFastPathStructure(
   kind: EventAiWizardFastPathKind,
 ): EventAiWizardFastPathStructure {
@@ -276,6 +400,73 @@ function emitPatch(writer: UIMessageStreamWriter<EventAiWizardUIMessage>, patch:
   return { patchId };
 }
 
+export async function enrichPatchWithResolvedLocation(
+  event: NonNullable<Awaited<ReturnType<typeof getEventEditionDetail>>>,
+  patch: EventAiWizardPatch,
+  context: {
+    stepId: z.infer<typeof requestSchema>['stepId'];
+    locale?: string;
+  },
+) {
+  if (context.stepId !== 'basics') {
+    return patch;
+  }
+
+  let patchChanged = false;
+  const resolutionOptions = buildAssistantLocationResolutionOptions(event, context.locale);
+  const ops = await Promise.all(
+    patch.ops.map(async (op) => {
+      if (op.type !== 'update_edition' || op.editionId !== event.id) {
+        return op;
+      }
+
+      const alreadyResolved = op.data.latitude?.trim() && op.data.longitude?.trim();
+      if (alreadyResolved) {
+        return op;
+      }
+
+      const query = buildLocationResolutionQueryFromEditionUpdate({
+        locationDisplay: op.data.locationDisplay,
+        address: op.data.address,
+        city: op.data.city,
+        state: op.data.state,
+      });
+
+      if (!query) {
+        return op;
+      }
+
+      const resolution = await resolveAssistantLocationQuery(query, resolutionOptions);
+      if (resolution.status !== 'matched') {
+        return op;
+      }
+
+      patchChanged = true;
+      return {
+        ...op,
+        data: {
+          ...op.data,
+          locationDisplay: resolution.match.formattedAddress,
+          address: resolution.match.formattedAddress,
+          city: resolution.match.city ?? op.data.city,
+          state: resolution.match.region ?? op.data.state,
+          latitude: String(resolution.match.lat),
+          longitude: String(resolution.match.lng),
+        },
+      };
+    }),
+  );
+
+  if (!patchChanged) {
+    return patch;
+  }
+
+  return {
+    ...patch,
+    ops,
+  } satisfies EventAiWizardPatch;
+}
+
 type WizardAggregateInput = Parameters<typeof buildEventWizardAggregate>[1];
 
 function buildProjectedAggregate(
@@ -292,7 +483,7 @@ function buildProjectedAggregate(
     patch.ops.some((op) => op.type === 'append_policy_markdown') || addedWaiverCount > 0;
   const descriptionOp = patch.ops.find(
     (op): op is Extract<EventAiWizardPatch['ops'][number], { type: 'update_edition' }> =>
-      op.type === 'update_edition' && Boolean(op.data.description?.trim()),
+      op.type === 'update_edition',
   );
   const addedDistanceCount = patch.ops.filter((op) => op.type === 'create_distance').length;
   const pricingOpsCount = patch.ops.filter(
@@ -305,6 +496,10 @@ function buildProjectedAggregate(
   const projectedEvent = {
     ...event,
     description: descriptionOp?.data.description ?? event.description,
+    locationDisplay: descriptionOp?.data.locationDisplay ?? event.locationDisplay,
+    city: descriptionOp?.data.city ?? event.city,
+    state: descriptionOp?.data.state ?? event.state,
+    address: descriptionOp?.data.address ?? event.address,
     faqItems: [
       ...event.faqItems,
       ...Array.from({ length: addedFaqCount }, (_, index) => ({
@@ -350,10 +545,71 @@ function canonicalIntentForStep(stepId: ReturnType<typeof mapIssueStepId>) {
   return `continue_${stepId}`;
 }
 
+function patchTouchesLocation(patch: EventAiWizardPatch) {
+  return patch.ops.some(
+    (op) =>
+      op.type === 'update_edition' &&
+      Boolean(
+        op.data.locationDisplay ||
+          op.data.address ||
+          op.data.city ||
+          op.data.state ||
+          op.data.latitude ||
+          op.data.longitude,
+      ),
+  );
+}
+
+function serializeResolvedLocationCandidate(
+  candidate: NonNullable<
+    Extract<
+      Awaited<ReturnType<typeof resolveAiWizardLocationIntent>>,
+      { status: 'matched' }
+    >['candidate']
+  >,
+) {
+  return {
+    formattedAddress: candidate.formattedAddress,
+    lat: candidate.lat,
+    lng: candidate.lng,
+    city: candidate.city,
+    region: candidate.region,
+    countryCode: candidate.countryCode,
+    placeId: candidate.placeId,
+    provider: candidate.provider,
+  };
+}
+
+function sanitizeResolvedLocationForUi(
+  resolvedLocation: Awaited<ReturnType<typeof resolveAiWizardLocationIntent>>,
+): EventAiWizardPatch['locationResolution'] {
+  if (resolvedLocation.status === 'matched') {
+    return {
+      status: 'matched',
+      query: resolvedLocation.query,
+      candidate: serializeResolvedLocationCandidate(resolvedLocation.candidate),
+    };
+  }
+
+  if (resolvedLocation.status === 'ambiguous') {
+    return {
+      status: 'ambiguous',
+      query: resolvedLocation.query,
+      candidates: resolvedLocation.candidates.map((candidate) =>
+        serializeResolvedLocationCandidate(candidate),
+      ),
+    };
+  }
+
+  return resolvedLocation;
+}
+
 export function finalizeWizardPatchForUi(
   event: NonNullable<Awaited<ReturnType<typeof getEventEditionDetail>>>,
   patch: EventAiWizardPatch,
   aggregateInput: WizardAggregateInput,
+  resolvedLocation?: Awaited<ReturnType<typeof resolveAiWizardLocationIntent>> | null,
+  crossStepIntent?: EventAiWizardCrossStepIntent | null,
 ): EventAiWizardPatch {
   const projectedAggregate = buildProjectedAggregate(event, patch, aggregateInput);
   const projectedChecklist = [...projectedAggregate.publishBlockers, ...projectedAggregate.missingRequired].map((issue) => ({
@@ -376,6 +632,11 @@ export function finalizeWizardPatchForUi(
     ...patch,
     missingFieldsChecklist: projectedChecklist,
     intentRouting: canonicalIntentRouting,
+    crossStepIntent: crossStepIntent ?? patch.crossStepIntent,
+    locationResolution:
+      resolvedLocation && patchTouchesLocation(patch)
+        ? sanitizeResolvedLocationForUi(resolvedLocation)
+        : patch.locationResolution,
   };
 }
 
@@ -470,6 +731,9 @@ function buildFastPathPatch(
             editionId,
             data: {
               description: descriptionProposal.descriptionMarkdown,
+              locationDisplay: descriptionProposal.locationDisplay,
+              city: descriptionProposal.city,
+              state: descriptionProposal.state,
             },
           },
         ],
@@ -549,6 +813,8 @@ export async function POST(req: Request) {
 
   const resolvedEventBrief = event.organizerBrief?.trim() || eventBrief?.trim() || null;
   const fastPathKind = detectFastPathKind(stepId, latestUserText);
+  const crossStepIntent = resolveCrossStepIntent(stepId, latestUserText);
+  const locationIntentQuery = stepId === 'basics' ? extractLocationIntentQuery(latestUserText) : null;
   const briefSafetyDecision = evaluateAiWizardTextSafety(resolvedEventBrief ?? '');
   if (briefSafetyDecision.blocked) {
     await trackProFeatureEvent({
@@ -574,11 +840,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const [websiteContent, websiteEnabled, questions, addOns] = await Promise.all([
+  const [websiteContent, websiteEnabled, questions, addOns, resolvedLocation] = await Promise.all([
     getPublicWebsiteContent(editionId, locale ?? 'es'),
     hasWebsiteContent(editionId),
     getQuestionsForEdition(editionId),
     getAddOnsForEdition(editionId),
+    locationIntentQuery
+      ? resolveAiWizardLocationIntent(locationIntentQuery, {
+          locale: locale ?? 'es',
+          country: event.country ?? 'MX',
+        })
+      : Promise.resolve(null),
   ]);
 
   const streamRateLimit = await checkRateLimit(`${authContext.user.id}:${editionId}`, 'user', {
@@ -678,6 +950,7 @@ export async function POST(req: Request) {
         eventBrief: resolvedEventBrief,
         fastPathKind,
         compactMode: Boolean(fastPathKind && isCopyHeavyStep),
+        locationResolution: resolvedLocation,
       });
       writer.write({
         type: 'data-notification',
@@ -696,15 +969,23 @@ export async function POST(req: Request) {
           description:
             'Create the first reviewable patch for the event description only. Use this for broad copy-heavy content requests.',
           inputSchema: fastPathDescriptionProposalSchema,
-          execute: async (proposal) =>
-            emitPatch(
+          execute: async (proposal) => {
+            const enrichedPatch = await enrichPatchWithResolvedLocation(
+              event,
+              buildFastPathPatch('event_description', editionId, locale, proposal),
+              { stepId, locale },
+            );
+            return emitPatch(
               writer,
               finalizeWizardPatchForUi(
                 event,
-                buildFastPathPatch('event_description', editionId, locale, proposal),
+                enrichedPatch,
                 aggregateInput,
+                resolvedLocation,
+                crossStepIntent,
               ),
-            ),
+            );
+          },
         }),
         proposeFaqPatch: tool({
           description:
@@ -713,7 +994,13 @@ export async function POST(req: Request) {
           execute: async (proposal) =>
             emitPatch(
               writer,
-              finalizeWizardPatchForUi(event, buildFastPathPatch('faq', editionId, locale, proposal), aggregateInput),
+              finalizeWizardPatchForUi(
+                event,
+                buildFastPathPatch('faq', editionId, locale, proposal),
+                aggregateInput,
+                resolvedLocation,
+                crossStepIntent,
+              ),
             ),
         }),
         proposeWebsiteOverviewPatch: tool({
@@ -727,6 +1014,8 @@ export async function POST(req: Request) {
                 event,
                 buildFastPathPatch('website_overview', editionId, locale, proposal),
                 aggregateInput,
+                resolvedLocation,
+                crossStepIntent,
               ),
             ),
         }),
@@ -737,14 +1026,35 @@ export async function POST(req: Request) {
           execute: async (proposal) =>
             emitPatch(
               writer,
-              finalizeWizardPatchForUi(event, buildFastPathPatch('policy', editionId, locale, proposal), aggregateInput),
+              finalizeWizardPatchForUi(
+                event,
+                buildFastPathPatch('policy', editionId, locale, proposal),
+                aggregateInput,
+                resolvedLocation,
+                crossStepIntent,
+              ),
             ),
         }),
         proposePatch: tool({
           description:
             'Propose a single patch of allowlisted operations for the current event edition. The user will review and apply it.',
           inputSchema: eventAiWizardPatchSchema,
-          execute: async (patch) => emitPatch(writer, finalizeWizardPatchForUi(event, patch, aggregateInput)),
+          execute: async (patch) => {
+            const enrichedPatch = await enrichPatchWithResolvedLocation(event, patch, {
+              stepId,
+              locale,
+            });
+            return emitPatch(
+              writer,
+              finalizeWizardPatchForUi(
+                event,
+                enrichedPatch,
+                aggregateInput,
+                resolvedLocation,
+                crossStepIntent,
+              ),
+            );
+          },
         }),
       };
       const streamConfig = {

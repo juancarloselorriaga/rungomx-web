@@ -39,6 +39,7 @@ jest.mock('next-intl', () => ({
     if (key === 'latestProposal.supportingContextTitle') return 'Supporting context';
     if (key === 'latestProposal.supportingContextDescription')
       return `See the latest request and response plus ${values?.count} earlier messages.`;
+    if (key === 'pending.requestLabel') return 'Your request';
     if (key === 'continuity.eyebrow') return 'Your thread is still here';
     if (key === 'continuity.title') return `Still carrying the latest proposal from ${values?.step}`;
     if (key === 'continuity.description') return 'Your last useful exchange stays visible while you continue.';
@@ -87,6 +88,18 @@ jest.mock('next-intl', () => ({
     if (key === 'latency.verySlow.title') return 'Taking extra care with the final proposal';
     if (key === 'latency.verySlow.description')
       return 'I am still working through your notes and confirmed event data so the recommendation stays useful and safe to apply.';
+    if (key === 'locationResolution.matched.eyebrow') return 'Location found';
+    if (key === 'locationResolution.matched.title') return 'This is the real location that will be applied';
+    if (key === 'locationResolution.matched.description')
+      return 'The assistant resolved a concrete map-backed match for this basics proposal.';
+    if (key === 'locationResolution.ambiguous.eyebrow') return 'Need location confirmation';
+    if (key === 'locationResolution.ambiguous.title') return 'I found multiple possible matches';
+    if (key === 'locationResolution.ambiguous.description')
+      return 'Choose or clarify the place before applying it to the event.';
+    if (key === 'locationResolution.noMatch.eyebrow') return 'Location still unresolved';
+    if (key === 'locationResolution.noMatch.title') return 'I could not confirm that place';
+    if (key === 'locationResolution.noMatch.description')
+      return 'Keep the location as notes only until the place is clearer.';
     if (values?.step) return `${key}:${values.step}`;
     return key;
   },
@@ -475,6 +488,188 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getAllByRole('button', { name: 'apply' })).toHaveLength(1);
   });
 
+  it('renders a real location review card when the latest proposal carries a matched location', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-location',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Set the confirmed location',
+                summary: 'Writes the real basics location into the event fields.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: '68ca6035-7c0f-4ff6-b3c2-651f81e5a8a4',
+                    data: {
+                      locationDisplay: 'Bosque de Chapultepec',
+                      city: 'Ciudad de México',
+                      state: 'Ciudad de México',
+                      latitude: 19.4204,
+                      longitude: -99.1821,
+                    },
+                  },
+                ],
+                locationResolution: {
+                  status: 'matched',
+                  query: 'Bosque de Chapultepec, Ciudad de México',
+                  candidate: {
+                    lat: 19.4204,
+                    lng: -99.1821,
+                    formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+                    city: 'Ciudad de México',
+                    region: 'Ciudad de México',
+                    placeId: 'mapbox-1',
+                    provider: 'mapbox',
+                  },
+                },
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Use my rough notes to start this event.']}
+        initialEventBrief={null}
+      />,
+    );
+
+    expect(screen.getByText('Location found')).toBeInTheDocument();
+    expect(screen.getByText('This is the real location that will be applied')).toBeInTheDocument();
+    expect(screen.getByText('Bosque de Chapultepec, Ciudad de México, México')).toBeInTheDocument();
+  });
+
+  it('renders an ambiguous location review card without pretending the place is resolved', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-location-ambiguous',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Clarify the event location',
+                summary: 'I found several plausible matches and need confirmation.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: '68ca6035-7c0f-4ff6-b3c2-651f81e5a8a4',
+                    data: {
+                      locationDisplay: 'Chapultepec',
+                      city: 'Ciudad de México',
+                    },
+                  },
+                ],
+                locationResolution: {
+                  status: 'ambiguous',
+                  query: 'Chapultepec',
+                  candidates: [
+                    {
+                      lat: 19.4204,
+                      lng: -99.1821,
+                      formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+                      city: 'Ciudad de México',
+                      region: 'Ciudad de México',
+                      placeId: 'mapbox-1',
+                      provider: 'mapbox',
+                    },
+                    {
+                      lat: 19.2961,
+                      lng: -99.5317,
+                      formattedAddress: 'Chapultepec, Estado de México, México',
+                      city: 'Chapultepec',
+                      region: 'Estado de México',
+                      placeId: 'mapbox-2',
+                      provider: 'mapbox',
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Use my rough notes to start this event.']}
+        initialEventBrief={null}
+      />,
+    );
+
+    expect(screen.getByText('Need location confirmation')).toBeInTheDocument();
+    expect(screen.getByText('I found multiple possible matches')).toBeInTheDocument();
+    expect(screen.getByText('Bosque de Chapultepec, Ciudad de México, México')).toBeInTheDocument();
+    expect(screen.getByText('Chapultepec, Estado de México, México')).toBeInTheDocument();
+  });
+
+  it('renders a truthful no-match review card when the place could not be resolved', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-location-no-match',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Keep the venue pending',
+                summary: 'The place still needs clarification before it can become a real event location.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: '68ca6035-7c0f-4ff6-b3c2-651f81e5a8a4',
+                    data: {
+                      description: 'Sede por confirmar',
+                    },
+                  },
+                ],
+                locationResolution: {
+                  status: 'no_match',
+                  query: 'Lugar inventado 123',
+                },
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Use my rough notes to start this event.']}
+        initialEventBrief={null}
+      />,
+    );
+
+    expect(screen.getByText('Location still unresolved')).toBeInTheDocument();
+    expect(screen.getByText('I could not confirm that place')).toBeInTheDocument();
+    expect(screen.getByText('Keep the location as notes only until the place is clearer.')).toBeInTheDocument();
+  });
+
   it('localizes routing labels when the model returns known intent keys', () => {
     mockChatState = {
       messages: [
@@ -849,6 +1044,8 @@ describe('EventAiWizardPanel', () => {
 
     expect(screen.getByText('I am organizing your notes into a clearer participant-facing draft.')).toBeInTheDocument();
     expect(screen.getByText('latestProposal.pendingTitle')).toBeInTheDocument();
+    expect(screen.getByText('Your request')).toBeInTheDocument();
+    expect(screen.getByText('Help me improve the participant content.')).toBeInTheDocument();
   });
 
   it('captures visible latency checkpoints as data attributes', async () => {
@@ -1376,6 +1573,64 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('Changes already applied')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'See them in the editor' }));
     expect(mockSetAssistantOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('reveals the basics editor immediately after applying a basics patch', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, applied: [] }),
+    });
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-apply-basics',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Set location',
+                summary: 'Adds the confirmed location to the event details.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: 'evt-1',
+                    data: {
+                      description: 'Ubicación\n- Bosque de Chapultepec, Ciudad de México',
+                      locationDisplay: 'Bosque de Chapultepec',
+                      city: 'Ciudad de México',
+                      state: 'Ciudad de México',
+                      latitude: '19.4204',
+                      longitude: '-99.1821',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Draft from brief']}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'apply' }));
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('applied');
+    });
+    expect(window.sessionStorage.getItem('event-ai-wizard:editor-focus:evt-1')).toBe('location');
+    expect(mockSetAssistantOpen).toHaveBeenCalledWith(false);
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 
   it('shows a localized invalid-patch message when the visible Apply UI fails validation', async () => {

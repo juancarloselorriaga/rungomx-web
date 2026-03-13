@@ -253,6 +253,30 @@ export const eventAiWizardIntentRouteSchema = z
 
 export type EventAiWizardIntentRoute = z.infer<typeof eventAiWizardIntentRouteSchema>;
 
+export const eventAiWizardCrossStepIntentSchema = z
+  .object({
+    scope: z.enum(['current_step', 'cross_step', 'mixed']),
+    sourceStepId: eventAiWizardStepIdSchema,
+    primaryTargetStepId: eventAiWizardStepIdSchema,
+    secondaryTargetStepIds: z.array(eventAiWizardStepIdSchema).max(3).optional(),
+    intentType: z.enum([
+      'event_description',
+      'participant_content',
+      'faq',
+      'website_overview',
+      'policy',
+      'extras',
+      'mixed_content',
+      'mixed_general',
+    ]),
+    confidence: z.enum(['low', 'medium', 'high']),
+    requiresUserChoice: z.boolean().optional(),
+    reasonCodes: z.array(z.string().min(1).max(80)).max(6),
+  })
+  .strict();
+
+export type EventAiWizardCrossStepIntent = z.infer<typeof eventAiWizardCrossStepIntentSchema>;
+
 const markdownOutputDomainValues = [
   'description',
   'faq',
@@ -272,6 +296,42 @@ export const eventAiWizardMarkdownOutputSchema = z
   .strict();
 
 export type EventAiWizardMarkdownOutput = z.infer<typeof eventAiWizardMarkdownOutputSchema>;
+
+const eventAiWizardResolvedLocationSchema = z
+  .object({
+    formattedAddress: z.string().min(1).max(500),
+    lat: z.number(),
+    lng: z.number(),
+    city: z.string().max(120).optional(),
+    region: z.string().max(120).optional(),
+    countryCode: z.string().max(8).optional(),
+    placeId: z.string().max(255).optional(),
+    provider: z.string().max(40).optional(),
+  })
+  .strict();
+
+const eventAiWizardLocationResolutionSchema = z.discriminatedUnion('status', [
+  z
+    .object({
+      status: z.literal('matched'),
+      query: z.string().min(1).max(255),
+      candidate: eventAiWizardResolvedLocationSchema,
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal('ambiguous'),
+      query: z.string().min(1).max(255),
+      candidates: z.array(eventAiWizardResolvedLocationSchema).min(1).max(3),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal('no_match'),
+      query: z.string().min(1).max(255),
+    })
+    .strict(),
+]);
 
 type ExpectedMarkdownOutput = Pick<EventAiWizardMarkdownOutput, 'domain' | 'contentMarkdown'>;
 
@@ -314,7 +374,9 @@ export const eventAiWizardPatchSchema = z
     risky: z.boolean().optional(),
     missingFieldsChecklist: z.array(eventAiWizardMissingFieldItemSchema).max(30).optional(),
     intentRouting: z.array(eventAiWizardIntentRouteSchema).max(30).optional(),
+    crossStepIntent: eventAiWizardCrossStepIntentSchema.optional(),
     markdownOutputs: z.array(eventAiWizardMarkdownOutputSchema).max(30).optional(),
+    locationResolution: eventAiWizardLocationResolutionSchema.optional(),
   })
   .strict()
   .superRefine((patch, ctx) => {

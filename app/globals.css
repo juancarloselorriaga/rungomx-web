@@ -285,14 +285,25 @@
     color: transparent;
     background-image: linear-gradient(
       110deg,
-      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 0%,
-      color-mix(in oklch, var(--foreground) 94%, white) 46%,
-      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 92%
+      color-mix(in oklch, var(--muted-foreground) 92%, white) 0%,
+      color-mix(in oklch, var(--foreground) 98%, white) 34%,
+      color-mix(in oklch, var(--primary) 38%, var(--foreground) 62%) 50%,
+      color-mix(in oklch, var(--foreground) 98%, white) 66%,
+      color-mix(in oklch, var(--muted-foreground) 92%, white) 100%
     );
     background-size: 220% 100%;
     background-clip: text;
     -webkit-background-clip: text;
     animation: assistant-working-sheen 1.8s linear infinite;
+  }
+
+  .dark .assistant-working-label {
+    background-image: linear-gradient(
+      110deg,
+      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 0%,
+      color-mix(in oklch, var(--foreground) 94%, white) 46%,
+      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 92%
+    );
   }
 
   .assistant-working-dot {
