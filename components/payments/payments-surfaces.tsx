@@ -1,47 +1,23 @@
-import { cn } from '@/lib/utils';
 import type { ComponentPropsWithoutRef } from 'react';
+import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
 
 export function PaymentsPanel({
   className,
   ...props
 }: ComponentPropsWithoutRef<'section'>) {
-  return (
-    <section
-      className={cn(
-        'rounded-2xl border border-border/70 bg-card/90 p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:p-6',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <Surface className={className} {...props} />;
 }
 
 export function PaymentsInsetPanel({
   className,
   ...props
 }: ComponentPropsWithoutRef<'div'>) {
-  return (
-    <div
-      className={cn(
-        'rounded-xl border border-border/60 bg-background/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <InsetSurface className={className} {...props} />;
 }
 
 export function PaymentsMutedPanel({
   className,
   ...props
 }: ComponentPropsWithoutRef<'div'>) {
-  return (
-    <div
-      className={cn(
-        'rounded-xl border border-border/50 bg-muted/20 px-4 py-3',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <MutedSurface className={className} {...props} />;
 }
