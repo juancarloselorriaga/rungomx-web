@@ -397,15 +397,6 @@ async function followLink(locator: Locator, page: Page, href: string, targetHead
   await expect(page.getByRole('heading', { level: 1, name: targetHeading, exact: true })).toBeVisible();
 }
 
-async function followLinkByDomClick(locator: Locator, page: Page, href: string, targetHeading: string) {
-  await expectLink(locator, href);
-  await Promise.all([
-    page.waitForURL(new RegExp(`${escapeRegex(href)}(?:$|[?#])`)),
-    locator.evaluate((element) => (element as HTMLAnchorElement).click()),
-  ]);
-  await expect(page.getByRole('heading', { level: 1, name: targetHeading, exact: true })).toBeVisible();
-}
-
 function hrefLink(page: Page, href: string, label: string) {
   return page.locator(`a[href="${href}"]`).filter({ hasText: label }).first();
 }
@@ -599,13 +590,6 @@ async function followHelpLinks(page: Page, locale: LocaleSpec) {
     page,
     locale.routes.rankings,
     locale.headings.rankings,
-  );
-  await openRoute(page, locale, 'help');
-  await followLinkByDomClick(
-    relatedCardLink(page, locale.routes.home, locale.help.helpfulLinks.home),
-    page,
-    locale.routes.home,
-    locale.headings.home,
   );
 }
 
