@@ -9,6 +9,10 @@ jest.mock('next-intl', () => ({
       return `As of ${String(values.timestamp)}`;
     }
 
+    if (key === 'wallet.queue.actionNeededDescription') {
+      return 'Items that need action to keep this organization payout-ready.';
+    }
+
     return key;
   },
 }));
@@ -167,6 +171,9 @@ describe('OrganizerPaymentsWorkspace', () => {
     expect(screen.getByTestId('payments-primary-cta')).toHaveTextContent(
       'actions.queuePayoutRequest',
     );
+    expect(
+      screen.getByText('Items that need action to keep this organization payout-ready.'),
+    ).toBeInTheDocument();
   });
 
   it('renders degraded state and supports retry when API calls fail', async () => {

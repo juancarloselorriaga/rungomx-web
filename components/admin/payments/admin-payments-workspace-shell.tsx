@@ -6,7 +6,10 @@ import {
 } from '@/components/payments/payments-typography';
 import { PaymentsMutedPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import { Button } from '@/components/ui/button';
-import { type AdminPaymentsWorkspaceId } from '@/lib/payments/admin/workspaces';
+import {
+  buildAdminPaymentsWorkspaceSearchParams,
+  type AdminPaymentsWorkspaceId,
+} from '@/lib/payments/admin/workspaces';
 import { cn } from '@/lib/utils';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTransition, type ReactNode } from 'react';
@@ -43,8 +46,7 @@ export function AdminPaymentsWorkspaceShell({
   const activeItem = items.find((item) => item.id === activeItemId) ?? items[0];
 
   function handleSelect(nextWorkspace: AdminPaymentsWorkspaceId): void {
-    const next = new URLSearchParams(searchParams?.toString());
-    next.set('workspace', nextWorkspace);
+    const next = buildAdminPaymentsWorkspaceSearchParams(searchParams, nextWorkspace);
     startTransition(() => {
       router.replace(`${pathname}?${next.toString()}`);
     });

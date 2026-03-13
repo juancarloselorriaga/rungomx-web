@@ -8,11 +8,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 const replace = jest.fn();
+const useSearchParamsMock = jest.fn(() => new URLSearchParams('range=30d'));
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ replace }),
   usePathname: () => '/admin/payments',
-  useSearchParams: () => new URLSearchParams('range=30d'),
+  useSearchParams: () => useSearchParamsMock(),
 }));
 
 jest.mock('@/components/ui/button', () => ({
@@ -29,6 +30,7 @@ jest.mock('@/components/ui/button', () => ({
 describe('AdminPaymentsWorkspaceShell', () => {
   beforeEach(() => {
     replace.mockReset();
+    useSearchParamsMock.mockReturnValue(new URLSearchParams('range=30d'));
   });
 
   it('keeps one active workspace summary and routes through compact navigation buttons', () => {
@@ -74,5 +76,38 @@ describe('AdminPaymentsWorkspaceShell', () => {
     expect(replace.mock.calls[0][0]).toContain('/admin/payments?');
     expect(replace.mock.calls[0][0]).toContain('range=30d');
     expect(replace.mock.calls[0][0]).toContain('workspace=risk');
+  });
+
+  it('strips workspace-specific params when switching workspaces', () => {
+    useSearchParamsMock.mockReturnValue(
+      new URLSearchParams(
+        'workspace=investigation&range=14d&caseQuery=case-123&evidenceTraceId=trace-123&investigationTool=trace&organizerPage=4',
+      ),
+    );
+
+    render(
+      <AdminPaymentsWorkspaceShell
+        title="Payments"
+        description="Use workspaces to move between volume, economics, risk, operations, and investigation."
+        workspaceLabel="Workspaces"
+        activeItemId={'investigation' satisfies AdminPaymentsWorkspaceId}
+        items={[
+          {
+            id: 'economics',
+            label: 'Economics',
+            description: 'Platform fee recognition and MXN conversion',
+          },
+          {
+            id: 'investigation',
+            label: 'Investigation',
+            description: 'Technical ID lookup and evidence',
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Economics' }));
+
+    expect(replace).toHaveBeenCalledWith('/admin/payments?range=14d&workspace=economics');
   });
 });

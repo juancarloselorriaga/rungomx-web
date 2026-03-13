@@ -67,7 +67,7 @@
       "description": "Actividad reciente que conviene atender o monitorear.",
       "actionNeeded": "Requiere atención",
       "inProgress": "En seguimiento",
-      "actionNeededDescription": "Elementos que requieren acción del Director de Carrera para seguir avanzando.",
+      "actionNeededDescription": "Elementos que requieren acción para mantener a esta organización lista para retiro.",
       "inProgressDescription": "Casos que siguen su curso y sólo conviene monitorear.",
       "emptyActionNeeded": "No hay elementos que requieran atención ahora mismo.",
       "emptyInProgress": "No hay elementos en seguimiento ahora mismo.",

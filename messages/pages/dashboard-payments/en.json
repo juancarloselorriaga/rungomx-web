@@ -67,7 +67,7 @@
       "description": "Recent payment activity worth monitoring or reviewing.",
       "actionNeeded": "Needs attention",
       "inProgress": "Being monitored",
-      "actionNeededDescription": "Items that need Race Director action to keep payout readiness moving.",
+      "actionNeededDescription": "Items that need action to keep this organization payout-ready.",
       "inProgressDescription": "Cases still moving and only needing monitoring.",
       "emptyActionNeeded": "Nothing needs attention right now.",
       "emptyInProgress": "Nothing is being monitored right now.",
