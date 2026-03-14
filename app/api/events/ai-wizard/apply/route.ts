@@ -740,7 +740,7 @@ export async function POST(req: Request) {
           ...previous,
           enabled: true,
           title: previous.title ?? op.data.title,
-          content: appendMarkdown(previous.content, op.data.markdown),
+          content: op.data.markdown.trim(),
         };
       } else if (op.data.section === 'course') {
         const previous = blocks.course ?? { type: 'course' as const, enabled: true };
@@ -833,6 +833,83 @@ export async function POST(req: Request) {
         opIndex: i,
         type: op.type,
         result: { policy: op.data.policy },
+      });
+      continue;
+    }
+
+    if (op.type === 'update_policy_config') {
+      const nextPolicy = {
+        ...policyState,
+        ...(op.data.refundsAllowed !== undefined ? { refundsAllowed: op.data.refundsAllowed } : {}),
+        ...(op.data.refundPolicyText !== undefined ? { refundPolicyText: op.data.refundPolicyText } : {}),
+        ...(op.data.refundDeadline !== undefined
+          ? {
+              refundDeadline: op.data.refundDeadline
+                ? normalizeIsoDateTime(op.data.refundDeadline)
+                : null,
+            }
+          : {}),
+        ...(op.data.transfersAllowed !== undefined ? { transfersAllowed: op.data.transfersAllowed } : {}),
+        ...(op.data.transferPolicyText !== undefined ? { transferPolicyText: op.data.transferPolicyText } : {}),
+        ...(op.data.transferDeadline !== undefined
+          ? {
+              transferDeadline: op.data.transferDeadline
+                ? normalizeIsoDateTime(op.data.transferDeadline)
+                : null,
+            }
+          : {}),
+        ...(op.data.deferralsAllowed !== undefined ? { deferralsAllowed: op.data.deferralsAllowed } : {}),
+        ...(op.data.deferralPolicyText !== undefined ? { deferralPolicyText: op.data.deferralPolicyText } : {}),
+        ...(op.data.deferralDeadline !== undefined
+          ? {
+              deferralDeadline: op.data.deferralDeadline
+                ? normalizeIsoDateTime(op.data.deferralDeadline)
+                : null,
+            }
+          : {}),
+      };
+
+      const result = await updateEventPolicyConfig({
+        editionId,
+        refundsAllowed: nextPolicy.refundsAllowed,
+        refundPolicyText: nextPolicy.refundPolicyText,
+        refundDeadline: nextPolicy.refundDeadline,
+        transfersAllowed: nextPolicy.transfersAllowed,
+        transferPolicyText: nextPolicy.transferPolicyText,
+        transferDeadline: nextPolicy.transferDeadline,
+        deferralsAllowed: nextPolicy.deferralsAllowed,
+        deferralPolicyText: nextPolicy.deferralPolicyText,
+        deferralDeadline: nextPolicy.deferralDeadline,
+      });
+
+      if (!result.ok) {
+        const failure = mapApplyFailure(result.code);
+        return opError(failure.status, {
+          code: failure.code,
+          details: { opIndex: i, operation: op.type },
+        });
+      }
+
+      policyState = {
+        refundsAllowed: result.data.refundsAllowed,
+        refundPolicyText: result.data.refundPolicyText,
+        refundDeadline: result.data.refundDeadline,
+        transfersAllowed: result.data.transfersAllowed,
+        transferPolicyText: result.data.transferPolicyText,
+        transferDeadline: result.data.transferDeadline,
+        deferralsAllowed: result.data.deferralsAllowed,
+        deferralPolicyText: result.data.deferralPolicyText,
+        deferralDeadline: result.data.deferralDeadline,
+      };
+
+      applied.push({
+        opIndex: i,
+        type: op.type,
+        result: {
+          refundsAllowed: policyState.refundsAllowed,
+          transfersAllowed: policyState.transfersAllowed,
+          deferralsAllowed: policyState.deferralsAllowed,
+        },
       });
       continue;
     }

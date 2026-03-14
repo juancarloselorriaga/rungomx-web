@@ -217,6 +217,33 @@ export const eventAiWizardAppendPolicyOpSchema = z
   })
   .strict();
 
+export const eventAiWizardUpdatePolicyConfigOpSchema = z
+  .object({
+    type: z.literal('update_policy_config'),
+    editionId: z.string().uuid(),
+    data: z
+      .object({
+        refundsAllowed: z.boolean().optional(),
+        refundPolicyText: z.string().max(5000).nullable().optional(),
+        refundDeadline: z.string().nullable().optional(),
+        transfersAllowed: z.boolean().optional(),
+        transferPolicyText: z.string().max(5000).nullable().optional(),
+        transferDeadline: z.string().nullable().optional(),
+        deferralsAllowed: z.boolean().optional(),
+        deferralPolicyText: z.string().max(5000).nullable().optional(),
+        deferralDeadline: z.string().nullable().optional(),
+      })
+      .strict()
+      .refine(
+        (value) =>
+          Object.values(value).some((entry) => entry !== undefined),
+        {
+          message: 'At least one policy field must be provided',
+        },
+      ),
+  })
+  .strict();
+
 export const eventAiWizardOpSchema = z.discriminatedUnion('type', [
   eventAiWizardUpdateEditionOpSchema,
   eventAiWizardCreateDistanceOpSchema,
@@ -228,6 +255,7 @@ export const eventAiWizardOpSchema = z.discriminatedUnion('type', [
   eventAiWizardCreateAddOnOpSchema,
   eventAiWizardAppendWebsiteSectionOpSchema,
   eventAiWizardAppendPolicyOpSchema,
+  eventAiWizardUpdatePolicyConfigOpSchema,
 ]);
 
 export type EventAiWizardOp = z.infer<typeof eventAiWizardOpSchema>;
@@ -305,7 +333,7 @@ const eventAiWizardResolvedLocationSchema = z
     city: z.string().max(120).optional(),
     region: z.string().max(120).optional(),
     countryCode: z.string().max(8).optional(),
-    placeId: z.string().max(255).optional(),
+    placeId: z.string().max(1024).optional(),
     provider: z.string().max(40).optional(),
   })
   .strict();
@@ -333,6 +361,19 @@ const eventAiWizardLocationResolutionSchema = z.discriminatedUnion('status', [
     .strict(),
 ]);
 
+export const eventAiWizardChoiceRequestSchema = z
+  .object({
+    kind: z.literal('location_candidate_selection'),
+    selectionMode: z.literal('single'),
+    sourceStepId: eventAiWizardStepIdSchema,
+    targetField: z.literal('event_location'),
+    query: z.string().min(1).max(255),
+    options: z.array(eventAiWizardResolvedLocationSchema).min(1).max(4),
+  })
+  .strict();
+
+export type EventAiWizardChoiceRequest = z.infer<typeof eventAiWizardChoiceRequestSchema>;
+
 type ExpectedMarkdownOutput = Pick<EventAiWizardMarkdownOutput, 'domain' | 'contentMarkdown'>;
 
 function collectExpectedMarkdownOutputs(ops: EventAiWizardOp[]): ExpectedMarkdownOutput[] {
@@ -356,6 +397,18 @@ function collectExpectedMarkdownOutputs(ops: EventAiWizardOp[]): ExpectedMarkdow
         return [{ domain: 'website', contentMarkdown: op.data.markdown }];
       case 'append_policy_markdown':
         return [{ domain: 'policy', contentMarkdown: op.data.markdown }];
+      case 'update_policy_config':
+        return [
+          op.data.refundPolicyText
+            ? { domain: 'policy', contentMarkdown: op.data.refundPolicyText }
+            : null,
+          op.data.transferPolicyText
+            ? { domain: 'policy', contentMarkdown: op.data.transferPolicyText }
+            : null,
+          op.data.deferralPolicyText
+            ? { domain: 'policy', contentMarkdown: op.data.deferralPolicyText }
+            : null,
+        ].filter((value): value is ExpectedMarkdownOutput => Boolean(value));
       default:
         return [];
     }
@@ -377,6 +430,7 @@ export const eventAiWizardPatchSchema = z
     crossStepIntent: eventAiWizardCrossStepIntentSchema.optional(),
     markdownOutputs: z.array(eventAiWizardMarkdownOutputSchema).max(30).optional(),
     locationResolution: eventAiWizardLocationResolutionSchema.optional(),
+    choiceRequest: eventAiWizardChoiceRequestSchema.optional(),
   })
   .strict()
   .superRefine((patch, ctx) => {

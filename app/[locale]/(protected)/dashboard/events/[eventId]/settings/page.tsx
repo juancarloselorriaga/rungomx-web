@@ -6,7 +6,7 @@ import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
 import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
 import { getQuestionsForEdition } from '@/lib/events/questions/queries';
 import { buildEventWizardAggregate, type EventWizardStepId } from '@/lib/events/wizard/orchestrator';
-import { hasWebsiteContent } from '@/lib/events/website/queries';
+import { getPublicWebsiteContent, hasWebsiteContent } from '@/lib/events/website/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { hasOrgPermission } from '@/lib/organizations/permissions';
 import { guardProFeaturePage } from '@/lib/pro-features/server/guard';
@@ -297,11 +297,12 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
 
   if (wizardMode) {
     const assistantGate = await guardProFeaturePage('event_ai_wizard', authContext);
-    const [pricingData, questions, addOns, websiteEnabled] = await Promise.all([
+    const [pricingData, questions, addOns, websiteEnabled, websiteContent] = await Promise.all([
       getPricingScheduleForEdition(eventId),
       getQuestionsForEdition(eventId),
       getAddOnsForEdition(eventId),
       hasWebsiteContent(eventId),
+      getPublicWebsiteContent(eventId, locale),
     ]);
 
     const aggregate = buildEventWizardAggregate(event, {
@@ -559,11 +560,16 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
               <div className="space-y-8">
                 <StepGroup title={tFaq('title')} description={tFaq('description')}>
                   <div className="max-w-5xl">
-                    <FaqManager eventId={eventId} initialFaqItems={event.faqItems} />
+                    <FaqManager
+                      key={`faq-${event.faqItems.map((item) => item.id).join(',') || 'empty'}`}
+                      eventId={eventId}
+                      initialFaqItems={event.faqItems}
+                    />
                   </div>
                 </StepGroup>
                 <StepGroup title={tWebsite('title')} description={tWebsite('description')}>
                   <WebsiteContentEditor
+                    key={`website-${locale}-${JSON.stringify(websiteContent ?? null)}`}
                     editionId={eventId}
                     locale={locale}
                     organizationId={event.organizationId}

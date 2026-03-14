@@ -126,6 +126,15 @@ function isSpecificEnough(query: string) {
   return query.includes(',') || tokens.length >= 3 || /\d/.test(query);
 }
 
+function looksLikeVenueOrPoiQuery(query: string) {
+  const normalized = normalizeText(query);
+  return (
+    /(?:\bparque\b|\bbosque\b|\bcampamento\b|\bestadio\b|\bvenue\b|\bsede\b|\btrail\b|\brancho\b|\breserva\b|\bclub\b|\bhotel\b|\bcentro\b|\barena\b|\bforum\b)/.test(
+      normalized,
+    ) || /[—–-]/.test(query)
+  );
+}
+
 function finalizeIntentQuery(rawQuery: string) {
   return rawQuery
     .trim()
@@ -134,13 +143,50 @@ function finalizeIntentQuery(rawQuery: string) {
     .trim();
 }
 
+function buildResolutionQueryVariants(query: string) {
+  const variants = new Set<string>();
+  const base = finalizeIntentQuery(query);
+  if (!base) return [];
+
+  variants.add(base);
+
+  const commaClauses = base
+    .split(',')
+    .map((part) => finalizeIntentQuery(part))
+    .filter(Boolean);
+  const dashSplit = base
+    .split(/[—–-]/)
+    .map((part) => finalizeIntentQuery(part))
+    .filter(Boolean);
+
+  if (dashSplit.length > 1) {
+    const primary = dashSplit[0];
+    if (primary) {
+      if (commaClauses.length <= 1) {
+        variants.add(primary);
+      }
+      if (commaClauses.length > 1) {
+        variants.add([primary, ...commaClauses.slice(1)].join(', '));
+      }
+    }
+  }
+
+  if (commaClauses.length >= 3) {
+    variants.add([commaClauses[0], ...commaClauses.slice(-2)].join(', '));
+  }
+
+  return [...variants];
+}
+
 export function extractLocationIntentQuery(text: string): string | null {
   const trimmed = text.trim();
   if (!trimmed) return null;
 
   const patterns = [
+    /(?:\by\b|\band\b)\s+(.+?)\s+como\s+(?:ubicaci[oó]n(?:\s+exacta)?(?:\s+real)?(?:\s+del\s+evento)?|location(?:\s+for\s+the\s+event)?)(?:\s+(?:y|and)\s+|[.\n]|$)/i,
+    /(?:usa|use)\s+(.+?)\s+como\s+(?:ubicaci[oó]n(?:\s+exacta)?(?:\s+real)?(?:\s+del\s+evento)?|location(?:\s+for\s+the\s+event)?)(?:\s+(?:y|and)\s+|[.\n]|$)/i,
     /(?:ubicaci[oó]n(?: exacta)?(?: del evento)?|location(?: for the event)?|venue|sede)(?:\s+(?:es|is|ser[áa]))?\s*[:\-]?\s*(.+?)(?:[.\n]|$)/i,
-    /(?:ser[áa]\s+en|es\s+en|located\s+at|at)\s+(.+?)(?:[.\n]|$)/i,
+    /(?:\bser[áa]\s+en\b|\bes\s+en\b|\blocated\s+at\b|\bat\b)\s+(.+?)(?:[.\n]|$)/i,
   ];
 
   for (const pattern of patterns) {
@@ -182,59 +228,95 @@ export async function resolveAiWizardLocationIntent(
   }
 
   const provider = getLocationProvider();
-  const results = await provider.forwardGeocode(normalizedQuery, {
-    limit: options.limit ?? 3,
-    language: options.locale ?? undefined,
-    country: options.country ?? undefined,
-    proximity: options.proximity,
-  });
+  let fallbackResolution: EventAiWizardLocationResolution | null = null;
 
-  if (results.length === 0) {
-    return {
-      status: 'no_match',
-      query: normalizedQuery,
+  for (const candidateQuery of buildResolutionQueryVariants(normalizedQuery)) {
+    const searchOptions = {
+      limit: options.limit ?? 3,
+      language: options.locale ?? undefined,
+      country: options.country ?? undefined,
+      proximity: options.proximity,
     };
-  }
 
-  const specificEnough = isSpecificEnough(normalizedQuery);
-  const queryTokens = tokenize(normalizedQuery);
-  const rankedResults = results
-    .map((candidate) => ({
-      candidate,
-      score: locationMatchScore(normalizedQuery, candidate),
-    }))
-    .sort((left, right) => right.score.combinedScore - left.score.combinedScore);
-  const [best, secondBest] = rankedResults;
+    const searchPlaces = provider.searchPlaces;
+    const prefersSearchBox = Boolean(searchPlaces) && looksLikeVenueOrPoiQuery(candidateQuery);
 
-  if (results.length > 1 && queryTokens.length < 2 && !specificEnough) {
-    return {
+    const searchBoxResults = prefersSearchBox
+      ? await searchPlaces!(candidateQuery, searchOptions)
+      : [];
+    const usingSearchBox = searchBoxResults.length > 0;
+
+    const results =
+      searchBoxResults.length > 0
+        ? searchBoxResults
+        : await provider.forwardGeocode(candidateQuery, searchOptions);
+
+    if (results.length === 0) {
+      continue;
+    }
+
+    const specificEnough = isSpecificEnough(candidateQuery);
+    const queryTokens = tokenize(candidateQuery);
+    const rankedResults = results
+      .map((candidate) => ({
+        candidate,
+        score: locationMatchScore(candidateQuery, candidate),
+      }))
+      .sort((left, right) => right.score.combinedScore - left.score.combinedScore);
+    const [best, secondBest] = rankedResults;
+
+    if (results.length > 1 && queryTokens.length < 2 && !specificEnough) {
+      fallbackResolution ??= {
+        status: 'ambiguous',
+        query: candidateQuery,
+        candidates: results.slice(0, 3),
+      };
+      continue;
+    }
+
+    if (
+      usingSearchBox &&
+      best &&
+      rankedResults.length === 1 &&
+      specificEnough &&
+      best.score.contextCoverage >= 0.6
+    ) {
+      return {
+        status: 'matched',
+        query: candidateQuery,
+        candidate: best.candidate,
+      };
+    }
+
+    if (
+      best &&
+      best.score.primaryClauseMatched &&
+      best.score.overallCoverage >= (usingSearchBox ? 0.6 : 0.8) &&
+      best.score.contextCoverage >= (usingSearchBox ? 0.6 : 0.8) &&
+      (rankedResults.length === 1 ||
+        specificEnough ||
+        best.score.combinedScore - (secondBest?.score.combinedScore ?? 0) >= 0.15)
+    ) {
+      return {
+        status: 'matched',
+        query: candidateQuery,
+        candidate: best.candidate,
+      };
+    }
+
+    fallbackResolution ??= {
       status: 'ambiguous',
-      query: normalizedQuery,
+      query: candidateQuery,
       candidates: results.slice(0, 3),
     };
   }
 
-  if (
-    best &&
-    best.score.primaryClauseMatched &&
-    best.score.overallCoverage >= 0.8 &&
-    best.score.contextCoverage >= 0.8 &&
-    (rankedResults.length === 1 ||
-      specificEnough ||
-      best.score.combinedScore - (secondBest?.score.combinedScore ?? 0) >= 0.15)
-  ) {
-    return {
-      status: 'matched',
+  return (
+    fallbackResolution ?? {
+      status: 'no_match',
       query: normalizedQuery,
-      candidate: best.candidate,
-    };
-  }
-
-  return {
-    status: 'ambiguous',
-    query: normalizedQuery,
-    candidates: results.slice(0, 3),
-  };
+    }
+  );
 }
 
 export async function resolveAssistantLocationQuery(

@@ -36,10 +36,14 @@
     },
     "issues": {
       "missingEventDate": "Agrega una fecha de inicio del evento para continuar.",
+      "missingEventEndDate": "Agrega una fecha de fin si quieres dejar claro cuándo termina el evento.",
       "missingEventLocation": "Agrega una ubicación del evento (ciudad/estado o ubicación en mapa).",
+      "missingEventDescription": "Agrega una descripción pública para que participantes entiendan rápidamente de qué trata el evento.",
+      "missingHeroImage": "Agrega una imagen principal para que el evento se vea más completo y atractivo.",
       "missingDistance": "Agrega al menos una distancia para esta edición.",
       "publishMissingDistance": "Publicación bloqueada: agrega al menos una distancia antes de publicar.",
       "publishMissingPricing": "Publicación bloqueada: cada distancia necesita al menos un nivel de precio.",
+      "recommendPricingWindows": "Recomendado: define ventanas de precio claras para preventa, regular o cierre.",
       "recommendFaq": "Recomendado: agrega al menos una FAQ para responder dudas frecuentes.",
       "recommendWaivers": "Recomendado: agrega una exención para que los participantes acepten términos.",
       "recommendQuestions": "Recomendado: agrega preguntas de registro para logística y preferencias.",
@@ -190,6 +194,26 @@
     "pending": {
       "requestLabel": "Lo que me pediste"
     },
+    "handoff": {
+      "eyebrow": "Dónde conviene seguir",
+      "titleCrossStep": "Lo más útil es continuar en {step}",
+      "titleMixed": "Puedo seguir contigo aquí, pero lo fuerte va en {step}",
+      "descriptionCrossStep": "Esta solicitud encaja mejor en {step}, que es donde vive ese tipo de trabajo dentro del asistente.",
+      "descriptionMixed": "Parte de esto toca {currentStep}, pero el mejor siguiente paso para avanzar sin forzar el flujo está en {step}.",
+      "secondaryTargets": "Esto también puede tocar: {steps}.",
+      "primaryAction": "Continuar en {step}",
+      "stayHereAction": "Seguir en {step}",
+      "reason": {
+        "event_description": "Lo que pediste apunta a redactar o mejorar el texto principal que verán participantes.",
+        "participant_content": "Esto suena más a contenido para participantes que a configuración de aspectos básicos.",
+        "faq": "Esto encaja mejor donde armamos preguntas frecuentes y respuestas para participantes.",
+        "website_overview": "Esto pertenece al contenido del sitio del evento, no al formulario base de este paso.",
+        "policy": "Esto se resuelve mejor en políticas y exenciones, donde el texto legal y operativo queda ordenado.",
+        "extras": "Esto conviene resolverlo en preguntas y extras, donde viven esos ajustes opcionales.",
+        "mixed_content": "Tu solicitud mezcla contenido de participantes con otras piezas cercanas; conviene empezar por el paso donde eso vive mejor.",
+        "mixed_general": "Tu solicitud toca más de un frente; este es el paso más útil para continuar sin perder contexto."
+      }
+    },
     "progress": {
       "analyzing": {
         "title": "Revisando tu solicitud",
@@ -226,6 +250,15 @@
           "event_basics": "Qué es el evento, para quién es y lo esencial que los participantes necesitan primero.",
           "route_and_distances": "Detalles de ruta o distancias ya confirmados y listos para comunicar.",
           "registration_and_logistics": "Inscripción, horarios y logística solo donde la configuración actual los respalda."
+        }
+      },
+      "content_bundle": {
+        "title": "Empiezo con FAQ y resumen del sitio",
+        "description": "Puedo dejar una primera base de contenido más útil si preparo juntas las FAQ clave y el resumen principal del sitio.",
+        "sections": {
+          "faq_answers": "Respuestas cortas a las dudas más probables usando solo detalles ya confirmados.",
+          "website_summary": "Un resumen principal del sitio que presente el evento sin inventar logística.",
+          "confirmed_boundaries": "Límites claros sobre lo que sigue pendiente para no prometer más de la cuenta."
         }
       },
       "website_overview": {
@@ -317,11 +350,14 @@
     "continuity": {
       "eyebrow": "No perdiste el hilo",
       "title": "Sigo trayendo la propuesta más reciente desde {step}",
-      "description": "Si cambiaste de paso por una sugerencia, aquí se queda visible el último intercambio útil mientras continúas."
+      "description": "Si cambiaste de paso por una sugerencia, aquí se queda visible el último intercambio útil mientras continúas.",
+      "proposalLabel": "Lo último que ya había armado",
+      "reuseRequest": "Seguir con esta solicitud"
     },
     "appliedState": {
       "eyebrow": "Cambios ya aplicados",
-      "revealEditor": "Verlos en el editor"
+      "revealEditor": "Verlos en el editor",
+      "goToStep": "Ir a {step}"
     },
     "suggestions": {
       "basics": {
@@ -383,8 +419,9 @@
       "addWaiver": "Agregar exención: {title}",
       "addQuestion": "Agregar pregunta de registro: {prompt}",
       "addAddOn": "Agregar complemento: {title} ({price})",
-      "appendWebsite": "Anexar sección del sitio: {section}",
+      "appendWebsite": "Actualizar sección del sitio: {section}",
       "appendPolicy": "Anexar texto de política: {policy}",
+      "updatePolicies": "Actualizar políticas para participantes",
       "defaultTier": "Categoría de precios",
       "sections": {
         "overview": "Resumen",
@@ -459,6 +496,15 @@
         "eyebrow": "Ubicación por confirmar",
         "title": "Encontré varias ubicaciones posibles",
         "description": "Todavía no fijaré una ubicación exacta. Revisa estas opciones o aclara el lugar antes de aplicarlo."
+      },
+      "choice": {
+        "title": "Elige la ubicación correcta",
+        "description": "Haz clic en la opción correcta para usarla en la propuesta final antes de aplicar cambios.",
+        "useThis": "Usar esta ubicación",
+        "selected": "Ubicación elegida",
+        "noneOfThese": "Ninguna de estas",
+        "searchInEditor": "Buscar en el editor",
+        "manualClarificationPrompt": "Ninguna de estas opciones es correcta para \"{query}\". La ubicación correcta es: "
       },
       "noMatch": {
         "eyebrow": "Ubicación no resuelta",

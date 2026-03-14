@@ -1137,6 +1137,8 @@ function AddDistanceForm({
       priceCents: Math.round(Number(formData.get('price')) * 100),
       currency: 'MXN',
       hasPricingTier: true,
+      pricingTierCount: 1,
+      hasBoundedPricingTier: false,
       registrationCount: 0,
     });
     router.refresh();

@@ -1,7 +1,6 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
-import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -20,7 +19,7 @@ import {
   DISTANCE_UNITS,
   TERRAIN_TYPES,
 } from '@/lib/events/constants';
-import { safeUpdateTag } from '@/lib/next-cache';
+import { safeRefresh, safeUpdateTag } from '@/lib/next-cache';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 import { type ActionResult, checkEventsAccess } from '@/lib/events/shared';
 
@@ -183,7 +182,7 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(eventEditionPricingTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return {
     ok: true,
@@ -295,7 +294,7 @@ export const updateDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
   safeUpdateTag(eventEditionDetailTag(updated.editionId));
   safeUpdateTag(eventEditionPricingTag(updated.editionId));
   safeUpdateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug));
-  refresh();
+  safeRefresh();
 
   return {
     ok: true,
@@ -384,7 +383,7 @@ export const deleteDistance = withAuthenticatedUser<ActionResult>({
   safeUpdateTag(eventEditionDetailTag(distance.editionId));
   safeUpdateTag(eventEditionPricingTag(distance.editionId));
   safeUpdateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: undefined };
 });
@@ -465,7 +464,7 @@ export const updateDistancePrice = withAuthenticatedUser<ActionResult>({
   safeUpdateTag(eventEditionDetailTag(distance.editionId));
   safeUpdateTag(eventEditionPricingTag(distance.editionId));
   safeUpdateTag(publicEventBySlugTag(distance.edition.series.slug, distance.edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: undefined };
 });

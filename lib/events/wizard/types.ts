@@ -15,10 +15,14 @@ export type EventWizardRegistryLabelKey =
 
 export type EventWizardIssueLabelKey =
   | 'wizard.issues.missingEventDate'
+  | 'wizard.issues.missingEventEndDate'
   | 'wizard.issues.missingEventLocation'
+  | 'wizard.issues.missingEventDescription'
+  | 'wizard.issues.missingHeroImage'
   | 'wizard.issues.missingDistance'
   | 'wizard.issues.publishMissingDistance'
   | 'wizard.issues.publishMissingPricing'
+  | 'wizard.issues.recommendPricingWindows'
   | 'wizard.issues.recommendFaq'
   | 'wizard.issues.recommendWaivers'
   | 'wizard.issues.recommendQuestions'
@@ -98,6 +102,7 @@ export type EventSetupWizardStepState = {
 
 export type EventWizardAggregate = EventWizardCompleteness & {
   setupStepStateById: Record<EventSetupWizardStepId, EventSetupWizardStepState>;
+  stepDiagnosisById?: Partial<Record<EventSetupWizardStepId, EventWizardIssue[]>>;
   capabilityLocks: EventWizardCapabilityLocks;
 };
 

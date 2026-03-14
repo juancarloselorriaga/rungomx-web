@@ -240,35 +240,77 @@ export function buildEventWizardAggregate(
   const steps = getEventWizardSteps(event.id);
   const stepById = new Map(steps.map((step) => [step.id, step]));
 
-  const hasLocation = Boolean(event.locationDisplay || event.city || event.state);
+  const hasLocation = Boolean(
+    String(event.latitude ?? '').trim() && String(event.longitude ?? '').trim(),
+  );
   const hasDistances = event.distances.length > 0;
   const hasMissingPricing = event.distances.some((distance) => distance.hasPricingTier === false);
+  const hasBoundedPricingAcrossDistances =
+    hasDistances && event.distances.every((distance) => distance.hasBoundedPricingTier);
   const hasRegistrationConfig = Boolean(
     event.registrationOpensAt || event.registrationClosesAt || event.isRegistrationPaused,
   );
   const hasContent = hasWebsiteContent || event.faqItems.length > 0 || Boolean(event.description?.trim());
   const hasPolicies = event.policyConfig !== null || event.waivers.length > 0;
   const hasExtras = questionCount > 0 || addOnCount > 0;
+  const hasHeroImage = Boolean(event.heroImageMediaId || event.heroImageUrl);
+  const hasEndDate = Boolean(event.endsAt);
+  const hasDescription = Boolean(event.description?.trim());
 
   const missingRequired: EventWizardIssue[] = [];
+  const basicsDiagnosis: EventWizardIssue[] = [];
   if (!event.startsAt) {
-    missingRequired.push({
+    const issue = {
       id: 'missing-event-date',
       stepId: 'event_details',
       labelKey: 'wizard.issues.missingEventDate',
       href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
       code: 'MISSING_EVENT_DATE',
       severity: 'required',
-    });
+    } satisfies EventWizardIssue;
+    missingRequired.push(issue);
+    basicsDiagnosis.push(issue);
   }
   if (!hasLocation) {
-    missingRequired.push({
+    const issue = {
       id: 'missing-event-location',
       stepId: 'event_details',
       labelKey: 'wizard.issues.missingEventLocation',
       href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
       code: 'MISSING_EVENT_LOCATION',
       severity: 'required',
+    } satisfies EventWizardIssue;
+    missingRequired.push(issue);
+    basicsDiagnosis.push(issue);
+  }
+  if (!hasDescription) {
+    basicsDiagnosis.push({
+      id: 'missing-event-description',
+      stepId: 'event_details',
+      labelKey: 'wizard.issues.missingEventDescription',
+      href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
+      code: 'MISSING_EVENT_DESCRIPTION',
+      severity: 'optional',
+    });
+  }
+  if (!hasEndDate) {
+    basicsDiagnosis.push({
+      id: 'missing-event-end-date',
+      stepId: 'event_details',
+      labelKey: 'wizard.issues.missingEventEndDate',
+      href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
+      code: 'MISSING_EVENT_END_DATE',
+      severity: 'optional',
+    });
+  }
+  if (!hasHeroImage) {
+    basicsDiagnosis.push({
+      id: 'missing-hero-image',
+      stepId: 'event_details',
+      labelKey: 'wizard.issues.missingHeroImage',
+      href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
+      code: 'MISSING_HERO_IMAGE',
+      severity: 'optional',
     });
   }
   if (!hasDistances) {
@@ -280,6 +322,40 @@ export function buildEventWizardAggregate(
       code: 'MISSING_DISTANCE',
       severity: 'required',
     });
+  }
+
+  const pricingDiagnosis: EventWizardIssue[] = [];
+  if (!hasDistances) {
+    pricingDiagnosis.push({
+      id: 'pricing-needs-distance-first',
+      stepId: 'distances',
+      labelKey: 'wizard.issues.missingDistance',
+      href: stepById.get('distances')?.href ?? eventPath(event.id, '/settings'),
+      code: 'MISSING_DISTANCE',
+      severity: 'required',
+    });
+  } else {
+    if (hasMissingPricing) {
+      pricingDiagnosis.push({
+        id: 'pricing-missing-tier',
+        stepId: 'pricing',
+        labelKey: 'wizard.issues.publishMissingPricing',
+        href: stepById.get('pricing')?.href ?? eventPath(event.id, '/pricing'),
+        code: 'MISSING_PRICING',
+        severity: 'required',
+      });
+    }
+
+    if (!hasBoundedPricingAcrossDistances) {
+      pricingDiagnosis.push({
+        id: 'pricing-missing-bounded-windows',
+        stepId: 'pricing',
+        labelKey: 'wizard.issues.recommendPricingWindows',
+        href: stepById.get('pricing')?.href ?? eventPath(event.id, '/pricing'),
+        code: 'RECOMMEND_PRICING_WINDOWS',
+        severity: 'optional',
+      });
+    }
   }
 
   const publishBlockers: EventWizardIssue[] = [];
@@ -359,6 +435,10 @@ export function buildEventWizardAggregate(
     prioritizedChecklist,
     completionByStepId,
     setupStepStateById,
+    stepDiagnosisById: {
+      basics: basicsDiagnosis,
+      pricing: pricingDiagnosis,
+    },
     capabilityLocks: {
       ...DEFAULT_CAPABILITY_LOCKS,
       ...capabilityLocks,

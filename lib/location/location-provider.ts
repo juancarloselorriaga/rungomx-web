@@ -19,6 +19,8 @@ export type ReverseGeocodeOptions = {
 export interface LocationProvider {
   forwardGeocode(query: string, options?: LocationSearchOptions): Promise<LocationValue[]>;
 
+  searchPlaces?(query: string, options?: LocationSearchOptions): Promise<LocationValue[]>;
+
   reverseGeocode(
     lat: number,
     lng: number,

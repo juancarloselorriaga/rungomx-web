@@ -36,10 +36,14 @@
     },
     "issues": {
       "missingEventDate": "Add an event start date to keep setup on track.",
+      "missingEventEndDate": "Add an end date if you want the event window to feel fully defined.",
       "missingEventLocation": "Add an event location (city/state or map location).",
+      "missingEventDescription": "Add a public description so participants immediately understand what the event is about.",
+      "missingHeroImage": "Add a hero image so the event feels complete and more compelling at a glance.",
       "missingDistance": "Add at least one distance for this edition.",
       "publishMissingDistance": "Publish blocked: add at least one distance before publishing.",
       "publishMissingPricing": "Publish blocked: each distance needs at least one price tier.",
+      "recommendPricingWindows": "Recommended: define clear early, regular, or late pricing windows.",
       "recommendFaq": "Recommended: add at least one FAQ item to answer common participant questions.",
       "recommendWaivers": "Recommended: add a waiver so participants can acknowledge event terms.",
       "recommendQuestions": "Recommended: add registration questions for logistics and participant preferences.",
@@ -190,6 +194,26 @@
     "pending": {
       "requestLabel": "What you asked for"
     },
+    "handoff": {
+      "eyebrow": "Best place to continue",
+      "titleCrossStep": "The strongest next move is in {step}",
+      "titleMixed": "I can keep helping here, but the main work belongs in {step}",
+      "descriptionCrossStep": "This request fits better in {step}, which is where that kind of work lives in the assistant flow.",
+      "descriptionMixed": "Part of this still touches {currentStep}, but the clearest next step to keep moving is in {step}.",
+      "secondaryTargets": "This may also touch: {steps}.",
+      "primaryAction": "Continue in {step}",
+      "stayHereAction": "Stay in {step}",
+      "reason": {
+        "event_description": "What you asked for is mainly about drafting or improving the main participant-facing event description.",
+        "participant_content": "This is more participant-facing content work than event-basics setup.",
+        "faq": "This fits best where participant questions and answers are built out.",
+        "website_overview": "This belongs with the event website content, not the core setup fields in this step.",
+        "policy": "This is better handled in policies and waivers, where participant-facing rules and organizer commitments stay organized.",
+        "extras": "This is best handled in questions and extras, where those optional setup pieces already live.",
+        "mixed_content": "Your request mixes participant-facing content areas together, so it is best to continue where that work naturally belongs.",
+        "mixed_general": "Your request spans more than one setup area, so this is the clearest place to continue without losing context."
+      }
+    },
     "progress": {
       "analyzing": {
         "title": "Reviewing your request",
@@ -226,6 +250,15 @@
           "event_basics": "What the event is, who it is for, and the essentials participants need first.",
           "route_and_distances": "Grounded route or distance details that are already confirmed.",
           "registration_and_logistics": "Registration, timing, and logistics only where the current setup supports them."
+        }
+      },
+      "content_bundle": {
+        "title": "Starting with FAQ plus the website overview",
+        "description": "I can leave a more useful first layer of content by drafting the key FAQs and the main website summary together.",
+        "sections": {
+          "faq_answers": "Short answers to the most likely participant questions using only confirmed event details.",
+          "website_summary": "A main website summary that introduces the event without inventing logistics.",
+          "confirmed_boundaries": "Clear boundaries around what is still pending so we do not over-promise."
         }
       },
       "website_overview": {
@@ -317,11 +350,14 @@
     "continuity": {
       "eyebrow": "Your thread is still here",
       "title": "I am still carrying your latest proposal from {step}",
-      "description": "If you moved here from a suggestion, the last useful exchange stays visible while you continue."
+      "description": "If you moved here from a suggestion, the last useful exchange stays visible while you continue.",
+      "proposalLabel": "What I had already drafted",
+      "reuseRequest": "Keep going from this request"
     },
     "appliedState": {
       "eyebrow": "Changes already applied",
-      "revealEditor": "See them in the editor"
+      "revealEditor": "See them in the editor",
+      "goToStep": "Go to {step}"
     },
     "suggestions": {
       "basics": {
@@ -383,8 +419,9 @@
       "addWaiver": "Add waiver: {title}",
       "addQuestion": "Add registration question: {prompt}",
       "addAddOn": "Add add-on: {title} ({price})",
-      "appendWebsite": "Append website section: {section}",
+      "appendWebsite": "Update website section: {section}",
       "appendPolicy": "Append policy text: {policy}",
+      "updatePolicies": "Update participant policies",
       "defaultTier": "Pricing tier",
       "sections": {
         "overview": "Overview",
@@ -459,6 +496,15 @@
         "eyebrow": "Location needs confirmation",
         "title": "I found several likely locations",
         "description": "I will not pin an exact location yet. Review these options or clarify the place before applying."
+      },
+      "choice": {
+        "title": "Choose the correct location",
+        "description": "Click the right option so I can use it in the final proposal before you apply changes.",
+        "useThis": "Use this location",
+        "selected": "Location selected",
+        "noneOfThese": "None of these",
+        "searchInEditor": "Search in the editor",
+        "manualClarificationPrompt": "None of these options is correct for \"{query}\". The right location is: "
       },
       "noMatch": {
         "eyebrow": "Location still unresolved",

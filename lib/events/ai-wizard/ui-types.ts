@@ -11,6 +11,7 @@ export type EventAiWizardNotificationCode =
 export type EventAiWizardFastPathKind =
   | 'event_description'
   | 'faq'
+  | 'content_bundle'
   | 'website_overview'
   | 'policy';
 

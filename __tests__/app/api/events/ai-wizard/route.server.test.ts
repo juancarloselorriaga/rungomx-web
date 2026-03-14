@@ -11,12 +11,13 @@ const mockBuildEventWizardAggregate = jest.fn();
 const mockCheckRateLimit = jest.fn();
 const mockForwardGeocode = jest.fn();
 let capturedSystemPrompt: string | null = null;
-let capturedStreamParts: Array<{ type: string; data?: unknown }> = [];
+let capturedStreamParts: Array<{ type: string; data?: unknown; id?: string; delta?: string }> = [];
 let capturedModelName: string | null = null;
 let capturedStepBudget: number | null = null;
 let capturedToolChoice: unknown = null;
 let capturedProviderOptions: unknown = null;
 let capturedToolNames: string[] = [];
+const mockConvertToModelMessages = jest.fn(async () => []);
 
 jest.mock('@/lib/auth/guards', () => ({
   requireAuthenticatedUser: (...args: unknown[]) => mockRequireAuthenticatedUser(...args),
@@ -87,14 +88,14 @@ jest.mock('@ai-sdk/openai', () => ({
 
 jest.mock('ai', () => ({
   tool: (config: unknown) => config,
-  convertToModelMessages: jest.fn(async () => []),
+  convertToModelMessages: (...args: unknown[]) => (mockConvertToModelMessages as (...innerArgs: unknown[]) => unknown)(...args),
   createUIMessageStream: jest.fn((config: unknown) => config),
   createUIMessageStreamResponse: jest.fn(async ({ stream }: { stream: { execute: (ctx: { writer: { write: (part: unknown) => void; merge: (stream: unknown) => void } }) => Promise<void> } }) => {
     await stream.execute({
       writer: {
         write: (part: unknown) => {
           if (part && typeof part === 'object' && 'type' in (part as Record<string, unknown>)) {
-            capturedStreamParts.push(part as { type: string; data?: unknown });
+            capturedStreamParts.push(part as { type: string; data?: unknown; id?: string; delta?: string });
           }
         },
         merge: () => undefined,
@@ -140,8 +141,9 @@ import {
   resolveCrossStepIntent,
 } from '@/app/api/events/ai-wizard/route';
 import { resolveAssistantLocationQuery, buildAssistantLocationResolutionOptions } from '@/lib/events/ai-wizard/location-resolution';
+import type { EventEditionDetail } from '@/lib/events/queries';
 
-function buildEvent() {
+function buildEvent(overrides: Partial<EventEditionDetail> = {}) {
   return {
     id: '11111111-1111-4111-8111-111111111111',
     publicCode: 'EVT123',
@@ -178,6 +180,7 @@ function buildEvent() {
     faqItems: [],
     waivers: [],
     policyConfig: null,
+    ...overrides,
   };
 }
 
@@ -201,6 +204,8 @@ describe('POST /api/events/ai-wizard', () => {
     capturedToolChoice = null;
     capturedProviderOptions = null;
     capturedToolNames = [];
+    mockConvertToModelMessages.mockReset();
+    mockConvertToModelMessages.mockResolvedValue([]);
 
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: '11111111-1111-4111-8111-111111111112' },
@@ -781,23 +786,23 @@ describe('POST /api/events/ai-wizard', () => {
     expect(response.status).toBe(200);
     expect(capturedModelName).toBe('gpt-5-nano');
     expect(capturedStepBudget).toBe(4);
-    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeDescriptionPatch' });
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeWebsiteOverviewPatch' });
     expect(capturedProviderOptions).toEqual({
       openai: {
         reasoningEffort: 'minimal',
         textVerbosity: 'low',
       },
     });
-    expect(capturedToolNames).toEqual(['proposeDescriptionPatch']);
+    expect(capturedToolNames).toEqual(['proposeWebsiteOverviewPatch']);
     expect(capturedSystemPrompt).toContain(
       'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
     );
-    expect(capturedSystemPrompt).toContain('Fast-path focus:\nevent_description');
+    expect(capturedSystemPrompt).toContain('Fast-path focus:\nwebsite_overview');
     expect(capturedSystemPrompt).toContain(
       'Clarify only when the missing answer would materially change truth, structure, legal meaning, or payment mechanics.',
     );
     expect(capturedSystemPrompt).toContain(
-      'The first proposal should update only the event description markdown.',
+      'The first proposal should update only the website overview markdown.',
     );
   });
 
@@ -965,5 +970,1138 @@ describe('POST /api/events/ai-wizard', () => {
       'The first proposal should update only the clearest participant-facing policy block for this step.',
     );
     expect(capturedSystemPrompt).toContain('Goal: move quickly to one grounded, reviewable patch for the active wizard step.');
+  });
+
+  it('supports a first-pass FAQ proposal even when the organizer asks from basics', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-5',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Crea FAQ para participantes con lo que ya sabes del evento.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeFaqPatch' });
+    expect(capturedToolNames).toEqual(['proposeFaqPatch']);
+  });
+
+  it('uses the mixed content bundle fast path when the organizer asks for FAQ plus website summary together', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-content-bundle',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Agrega FAQ para participantes y un resumen del sitio usando solo lo ya confirmado.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeContentBundlePatch' });
+    expect(capturedToolNames).toEqual(['proposeContentBundlePatch']);
+    expect(capturedStreamParts).toContainEqual({
+      type: 'data-fast-path-structure',
+      data: {
+        kind: 'content_bundle',
+        sectionKeys: ['faq_answers', 'website_summary', 'confirmed_boundaries'],
+      },
+      transient: true,
+    });
+  });
+
+  it('keeps generic content refinements on the website overview fast path from the content step', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-content-refine',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Hazlo más claro y confiable, usando solo lo ya confirmado y sin inventar logística.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeWebsiteOverviewPatch' });
+    expect(capturedToolNames).toEqual(['proposeWebsiteOverviewPatch']);
+    expect(capturedStreamParts).toContainEqual({
+      type: 'data-fast-path-structure',
+      data: {
+        kind: 'website_overview',
+        sectionKeys: ['hero_positioning', 'confirmed_experience', 'what_to_confirm'],
+      },
+      transient: true,
+    });
+  });
+
+  it('keeps review content-polish requests on the website overview fast path', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'review',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-review-content-refine',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Pulir el contenido para participantes antes de publicar.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeWebsiteOverviewPatch' });
+    expect(capturedToolNames).toEqual(['proposeWebsiteOverviewPatch']);
+    expect(capturedStreamParts).toContainEqual({
+      type: 'data-fast-path-structure',
+      data: {
+        kind: 'website_overview',
+        sectionKeys: ['hero_positioning', 'confirmed_experience', 'what_to_confirm'],
+      },
+      transient: true,
+    });
+  });
+
+  it('supports a first-pass policy proposal even when the organizer asks from basics', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-6',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Redacta las políticas de cancelación con lo que ya tienes confirmado.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposePolicyPatch' });
+    expect(capturedToolNames).toEqual(['proposePolicyPatch']);
+  });
+
+  it('supports a first-pass participant-content proposal even when the organizer asks from basics', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-7',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Redacta texto para participantes con lo que ya sabes del evento.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeDescriptionPatch' });
+    expect(capturedToolNames).toEqual(['proposeDescriptionPatch']);
+  });
+
+  it('answers what is missing in basics from the canonical basics diagnosis without switching into proposal mode', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue(
+      buildEvent({
+        startsAt: new Date('2026-03-29T08:00:00.000Z'),
+        locationDisplay: 'Bosque de Chapultepec',
+        city: 'Ciudad de México',
+        state: 'Ciudad de México',
+        description: 'Trail urbano de noche.',
+        endsAt: null,
+        heroImageMediaId: null,
+        heroImageUrl: null,
+      }),
+    );
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [
+        {
+          id: 'missing-pricing',
+          stepId: 'pricing',
+          labelKey: 'wizard.issues.publishMissingPricing',
+          href: '/pricing',
+          code: 'MISSING_PRICING',
+          severity: 'blocker',
+        },
+      ],
+      optionalRecommendations: [],
+      prioritizedChecklist: [
+        {
+          id: 'missing-pricing',
+          stepId: 'pricing',
+          labelKey: 'wizard.issues.publishMissingPricing',
+          href: '/pricing',
+          code: 'MISSING_PRICING',
+          severity: 'blocker',
+        },
+      ],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      stepDiagnosisById: {
+        basics: [
+          {
+            id: 'missing-end-date',
+            stepId: 'event_details',
+            labelKey: 'wizard.issues.missingEventEndDate',
+            href: '/settings',
+            code: 'MISSING_EVENT_END_DATE',
+            severity: 'optional',
+          },
+          {
+            id: 'missing-hero-image',
+            stepId: 'event_details',
+            labelKey: 'wizard.issues.missingHeroImage',
+            href: '/settings',
+            code: 'MISSING_HERO_IMAGE',
+            severity: 'optional',
+          },
+        ],
+      },
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-8',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Dime cuáles son los aspectos básicos más importantes que faltan.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    expect(capturedSystemPrompt).toBeNull();
+    const diagnosisDelta = capturedStreamParts
+      .filter((part) => part.type === 'text-delta')
+      .map((part) => part.delta ?? '')
+      .join('');
+    expect(diagnosisDelta).toContain('Qué ya tiene Aspectos básicos ahora');
+    expect(diagnosisDelta).toContain('Todavía falta confirmar la fecha de fin del evento.');
+    expect(diagnosisDelta).toContain('Sería bueno subir una imagen principal antes de publicar.');
+    expect(diagnosisDelta).toContain('Puedes seguir con Precios.');
+  });
+
+  it('emits an actionable follow-up proposal instead of staying in diagnosis mode after basics guidance', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-9',
+              role: 'assistant',
+              parts: [{ type: 'text', text: 'Todavía falta confirmar la ubicación exacta y crear la primera distancia.' }],
+            },
+            {
+              id: 'msg-10',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Usa Bosque de Chapultepec, Ciudad de México, México como ubicación real del evento y crea una distancia de 10 km con precio inicial de 350 MXN.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toBeNull();
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch).toBeTruthy();
+  });
+
+  it('uses canonical pricing diagnosis when the organizer asks what is still missing in pricing', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [
+        {
+          id: 'recommend-content',
+          stepId: 'website',
+          labelKey: 'wizard.issues.recommendWebsite',
+          href: '/website',
+          code: 'RECOMMEND_WEBSITE',
+          severity: 'optional',
+        },
+      ],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      stepDiagnosisById: {
+        pricing: [],
+      },
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'pricing',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-pricing-diagnosis',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Dime qué falta en Precios ahora.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    expect(capturedSystemPrompt).toBeNull();
+    const diagnosisDelta = capturedStreamParts
+      .filter((part) => part.type === 'text-delta')
+      .map((part) => part.delta ?? '')
+      .join('');
+    expect(diagnosisDelta).toContain('Qué ya tiene Precios ahora');
+    expect(diagnosisDelta).toContain('En Precios no falta nada importante por ahora.');
+    expect(diagnosisDelta).toContain('Puedes seguir con Contenido para participantes.');
+  });
+
+  it('answers what is missing in policies without switching into proposal mode', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      stepDiagnosisById: {
+        policies: [],
+      },
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'policies',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-policies-diagnosis',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Dime qué falta en Políticas.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toBeNull();
+    const diagnosisDelta = capturedStreamParts
+      .filter((part) => part.type === 'text-delta')
+      .map((part) => part.delta ?? '')
+      .join('');
+    expect(diagnosisDelta).toContain('Qué ya tiene Políticas ahora');
+    expect(diagnosisDelta).toContain('Todavía no hay texto claro de políticas guardado.');
+    expect(diagnosisDelta).toContain('Todavía no hay exenciones configuradas.');
+  });
+
+  it('keeps content diagnosis anchored on the current step when faq or website content is still missing', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [{ stepId: 'faq', code: 'RECOMMEND_FAQ', labelKey: 'wizard.issues.recommendFaq', severity: 'optional' }],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      stepDiagnosisById: {
+        content: [],
+      },
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    mockGetEventEditionDetail.mockResolvedValue(
+      buildEvent({
+        description: 'Base description exists',
+        faqItems: [],
+      }),
+    );
+    mockHasWebsiteContent.mockResolvedValue(false);
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-content-diagnosis',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Dime qué falta en Contenido ahora.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toBeNull();
+    const diagnosisDelta = capturedStreamParts
+      .filter((part) => part.type === 'text-delta')
+      .map((part) => part.delta ?? '')
+      .join('');
+    expect(diagnosisDelta).toContain('Qué ya tiene Contenido ahora');
+    expect(diagnosisDelta).toContain('Sería recomendable agregar FAQ para resolver dudas frecuentes.');
+    expect(diagnosisDelta).toContain('Sería recomendable completar el contenido del sitio del evento.');
+    expect(diagnosisDelta).toContain('Conviene seguir aquí en Contenido para participantes.');
+  });
+
+  it('answers what is still blocking publication from the canonical review diagnosis without switching into proposal mode', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue({
+      ...buildEvent(),
+      faqItems: [
+        { id: 'faq-1', question: 'What is included?', answer: 'Timing support.' },
+      ],
+      waivers: [],
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [
+        {
+          id: 'recommend-waivers',
+          stepId: 'waivers',
+          labelKey: 'wizard.issues.recommendWaivers',
+          href: '/waivers',
+          code: 'RECOMMEND_WAIVERS',
+          severity: 'optional',
+        },
+        {
+          id: 'recommend-questions',
+          stepId: 'questions',
+          labelKey: 'wizard.issues.recommendQuestions',
+          href: '/questions',
+          code: 'RECOMMEND_QUESTIONS',
+          severity: 'optional',
+        },
+        {
+          id: 'recommend-add-ons',
+          stepId: 'add_ons',
+          labelKey: 'wizard.issues.recommendAddOns',
+          href: '/add-ons',
+          code: 'RECOMMEND_ADD_ONS',
+          severity: 'optional',
+        },
+      ],
+      prioritizedChecklist: [
+        {
+          id: 'recommend-waivers',
+          stepId: 'waivers',
+          labelKey: 'wizard.issues.recommendWaivers',
+          href: '/waivers',
+          code: 'RECOMMEND_WAIVERS',
+          severity: 'optional',
+        },
+      ],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 6, totalRequired: 6, percent: 100 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'review',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-review-diagnosis',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Explícame qué sigue bloqueando la publicación.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    const diagnosisDelta = capturedStreamParts
+      .filter((part): part is { type: 'text-delta'; delta: string } => part.type === 'text-delta')
+      .map((part) => part.delta)
+      .join('');
+    expect(diagnosisDelta).toContain('Qué ya tiene Revisión y publicación ahora');
+    expect(diagnosisDelta).toContain('Ya no hay bloqueos de publicación.');
+    expect(diagnosisDelta).toContain(
+      'Sería recomendable agregar una exención para que los participantes acepten términos.',
+    );
+    expect(diagnosisDelta).toContain(
+      'Sería recomendable agregar preguntas de registro para logística y preferencias.',
+    );
+    expect(diagnosisDelta).toContain(
+      'Sería recomendable configurar complementos si planeas ofrecer extras.',
+    );
+    expect(diagnosisDelta).toContain('Puedes seguir con Políticas y exenciones.');
+    expect(diagnosisDelta).not.toContain('RECOMMEND_WAIVERS');
+    expect(diagnosisDelta).not.toContain('RECOMMEND_QUESTIONS');
+    expect(diagnosisDelta).not.toContain('RECOMMEND_ADD_ONS');
+  });
+
+  it('uses the deterministic policy follow-up path when a policies request spans refunds, transfers, and deferrals', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'policies',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-policies-multi',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Crea una política con reembolsos, transferencias y diferimientos para participantes.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch).toBeTruthy();
+  });
+
+  it('synthesizes a deterministic basics follow-up patch when the organizer confirms location and first distance details', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockForwardGeocode.mockResolvedValue([
+      {
+        provider: 'mapbox',
+        placeId: 'place-1',
+        formattedAddress: 'Bosque de Chapultepec — Área de Campamento, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        countryCode: 'MX',
+        lat: 19.4204,
+        lng: -99.1819,
+      },
+    ]);
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-11',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Usa Bosque de Chapultepec — Área de Campamento, Ciudad de México, México como ubicación real del evento y crea una distancia de 10 km con precio inicial de 350 MXN.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch).toBeTruthy();
+    expect(emittedPatch?.data).toMatchObject({
+      title: 'Confirmar ubicación y crear la primera distancia',
+      ops: [
+        {
+          type: 'update_edition',
+          data: expect.objectContaining({
+            locationDisplay:
+              'Bosque de Chapultepec — Área de Campamento, Ciudad de México, México',
+            city: 'Ciudad de México',
+            state: 'Ciudad de México',
+            latitude: '19.4204',
+            longitude: '-99.1819',
+          }),
+        },
+        {
+          type: 'create_distance',
+          data: expect.objectContaining({
+            label: '10 km',
+            distanceValue: 10,
+            distanceUnit: 'km',
+            price: 350,
+          }),
+        },
+      ],
+    });
+  });
+
+  it('synthesizes a deterministic basics follow-up patch when the organizer confirms end date and first distance details', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-12',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Usa 29 de marzo de 2026 como fecha de fin y crea una distancia de 10 km con precio inicial de 350 MXN.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch).toBeTruthy();
+    expect(emittedPatch?.data).toMatchObject({
+      title: 'Completar Aspectos básicos y crear la primera distancia',
+      ops: [
+        {
+          type: 'update_edition',
+          data: expect.objectContaining({
+            endsAt: '2026-03-29T00:00:00.000Z',
+          }),
+        },
+        {
+          type: 'create_distance',
+          data: expect.objectContaining({
+            label: '10 km',
+            distanceValue: 10,
+            distanceUnit: 'km',
+            price: 350,
+          }),
+        },
+      ],
+    });
+  });
+
+  it('synthesizes a deterministic basics follow-up patch when the organizer confirms start date and location details', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockForwardGeocode.mockResolvedValue([
+      {
+        provider: 'mapbox',
+        placeId: 'place-start-1',
+        formattedAddress: 'Bosque de Chapultepec, 11100 Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        countryCode: 'MX',
+        lat: 19.41666781,
+        lng: -99.18333064,
+      },
+    ]);
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-start-location',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Usa 29 de marzo de 2026 como fecha de inicio y Bosque de Chapultepec, Ciudad de México, México como ubicación real del evento.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch?.data).toMatchObject({
+      title: 'Completar los detalles de Aspectos básicos',
+      ops: [
+        {
+          type: 'update_edition',
+          data: expect.objectContaining({
+            startsAt: '2026-03-29T00:00:00.000Z',
+            locationDisplay: 'Bosque de Chapultepec, 11100 Ciudad de México, México',
+            latitude: '19.41666781',
+            longitude: '-99.18333064',
+          }),
+        },
+      ],
+    });
+  });
+
+  it('synthesizes an immediate ambiguous basics location patch with a clickable choice request', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockForwardGeocode.mockResolvedValue([
+      {
+        provider: 'mapbox',
+        placeId: 'place-1',
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        countryCode: 'MX',
+        lat: 19.4204,
+        lng: -99.1819,
+      },
+      {
+        provider: 'mapbox',
+        placeId: 'place-2',
+        formattedAddress: 'Chapultepec, Estado de México, México',
+        city: 'Chapultepec',
+        region: 'Estado de México',
+        countryCode: 'MX',
+        lat: 19.289,
+        lng: -99.546,
+      },
+    ]);
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-12',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Usa Chapultepec como ubicación exacta del evento.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toBeNull();
+    expect(capturedToolChoice).toBeNull();
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch).toBeTruthy();
+    expect(emittedPatch?.data).toMatchObject({
+      title: 'Elegir la ubicación exacta del evento',
+      ops: [
+        {
+          type: 'update_edition',
+          data: {
+            locationDisplay: 'Chapultepec',
+          },
+        },
+      ],
+      locationResolution: {
+        status: 'ambiguous',
+        query: 'Chapultepec',
+        candidates: [
+          expect.objectContaining({
+            formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+          }),
+          expect.objectContaining({
+            formattedAddress: 'Chapultepec, Estado de México, México',
+          }),
+        ],
+      },
+      choiceRequest: {
+        kind: 'location_candidate_selection',
+        targetField: 'event_location',
+        query: 'Chapultepec',
+        options: [
+          expect.objectContaining({
+            formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+          }),
+          expect.objectContaining({
+            formattedAddress: 'Chapultepec, Estado de México, México',
+          }),
+        ],
+      },
+    });
+  });
+
+  it('synthesizes a deterministic policy-config patch when the organizer confirms refund, transfer, and deferral rules together', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockGetEventEditionDetail.mockResolvedValue(
+      buildEvent({
+        policyConfig: {
+          refundsAllowed: true,
+          refundPolicyText: 'Texto anterior',
+          refundDeadline: null,
+          transfersAllowed: false,
+          transferPolicyText: null,
+          transferDeadline: null,
+          deferralsAllowed: false,
+          deferralPolicyText: null,
+          deferralDeadline: null,
+        },
+      }),
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'policies',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-policies-follow-up',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Haz la política más clara para participantes. Mantén reembolsos hasta el 15 de marzo de 2026 con cargo administrativo del 10%, transferencias hasta el 22 de marzo de 2026 y sin diferimientos. Redáctalo en markdown claro.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch).toBeTruthy();
+    expect(emittedPatch?.data).toMatchObject({
+      title: 'Aclarar políticas para participantes',
+      ops: [
+        {
+          type: 'update_policy_config',
+          data: expect.objectContaining({
+            refundsAllowed: true,
+            refundDeadline: '2026-03-15T00:00:00.000Z',
+            transfersAllowed: true,
+            transferDeadline: '2026-03-22T00:00:00.000Z',
+            deferralsAllowed: false,
+          }),
+        },
+      ],
+      markdownOutputs: expect.arrayContaining([
+        expect.objectContaining({
+          domain: 'policy',
+          contentMarkdown: expect.stringContaining('### Reembolsos'),
+        }),
+        expect.objectContaining({
+          domain: 'policy',
+          contentMarkdown: expect.stringContaining('### Transferencias'),
+        }),
+        expect.objectContaining({
+          domain: 'policy',
+          contentMarkdown: expect.stringContaining('### Diferimientos'),
+        }),
+      ]),
+    });
+  });
+
+  it('normalizes content-only ui messages before model conversion', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'user-1',
+              role: 'user',
+              content: 'Usa 29 de marzo de 2026 como fecha de inicio.',
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockConvertToModelMessages).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'user-1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Usa 29 de marzo de 2026 como fecha de inicio.' }],
+        }),
+      ]),
+    );
   });
 });

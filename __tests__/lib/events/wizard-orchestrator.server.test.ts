@@ -9,6 +9,19 @@ import {
 import type { EventEditionDetail } from '@/lib/events/queries';
 
 function buildEvent(overrides?: Partial<EventEditionDetail>): EventEditionDetail {
+  const resolvedLatitude =
+    overrides?.latitude !== undefined
+      ? overrides.latitude
+      : overrides?.city || overrides?.state || overrides?.locationDisplay
+        ? '20.6597'
+        : null;
+  const resolvedLongitude =
+    overrides?.longitude !== undefined
+      ? overrides.longitude
+      : overrides?.city || overrides?.state || overrides?.locationDisplay
+        ? '-103.3496'
+        : null;
+
   return {
     id: 'event-123',
     publicCode: 'EVT123',
@@ -29,8 +42,8 @@ function buildEvent(overrides?: Partial<EventEditionDetail>): EventEditionDetail
     city: null,
     state: null,
     country: 'MX',
-    latitude: null,
-    longitude: null,
+    latitude: resolvedLatitude,
+    longitude: resolvedLongitude,
     externalUrl: null,
     heroImageMediaId: null,
     heroImageUrl: null,
@@ -119,6 +132,8 @@ describe('event wizard orchestrator', () => {
             priceCents: 0,
             currency: 'MXN',
             hasPricingTier: false,
+            pricingTierCount: 0,
+            hasBoundedPricingTier: false,
             registrationCount: 0,
           },
         ],
@@ -128,6 +143,46 @@ describe('event wizard orchestrator', () => {
 
     expect(result.publishBlockers.map((issue) => issue.code)).toEqual(['MISSING_PRICING']);
     expect(result.completionByStepId.pricing).toBe(false);
+  });
+
+  it('marks pricing diagnosis as covered when bounded pricing windows already exist', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        city: 'Guadalajara',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 4,
+            hasBoundedPricingTier: true,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'ai',
+        hasWebsiteContent: false,
+        questionCount: 0,
+        addOnCount: 0,
+      },
+    );
+
+    expect(aggregate.completionByStepId.pricing).toBe(true);
+    expect(aggregate.stepDiagnosisById?.pricing).toEqual([]);
   });
 
   it('builds truthful setup-step state for registration, content, extras, and capability locks', () => {
@@ -164,6 +219,8 @@ describe('event wizard orchestrator', () => {
             priceCents: 35000,
             currency: 'MXN',
             hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
             registrationCount: 0,
           },
         ],
@@ -213,6 +270,8 @@ describe('event wizard orchestrator', () => {
             priceCents: 35000,
             currency: 'MXN',
             hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
             registrationCount: 0,
           },
         ],
@@ -230,6 +289,28 @@ describe('event wizard orchestrator', () => {
     expect(aggregate.completionByStepId.add_ons).toBe(true);
     expect(aggregate.setupStepStateById.content.completed).toBe(true);
     expect(aggregate.setupStepStateById.extras.completed).toBe(true);
+  });
+
+  it('builds a basics-only diagnosis from the canonical basics fields', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        city: 'Ciudad de México',
+        state: 'CDMX',
+        description: 'Trail urbano de noche.',
+        heroImageMediaId: null,
+        heroImageUrl: null,
+        endsAt: null,
+      }),
+      {
+        selectedPath: 'manual',
+      },
+    );
+
+    expect(aggregate.stepDiagnosisById?.basics?.map((issue) => issue.code)).toEqual([
+      'MISSING_EVENT_END_DATE',
+      'MISSING_HERO_IMAGE',
+    ]);
   });
 
   it('marks required progress complete when path, details, distance, and pricing are complete', () => {
@@ -254,6 +335,8 @@ describe('event wizard orchestrator', () => {
             priceCents: 35000,
             currency: 'MXN',
             hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
             registrationCount: 0,
           },
         ],

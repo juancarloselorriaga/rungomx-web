@@ -3,7 +3,7 @@
 import { DefaultChatTransport } from 'ai';
 import type { UIMessagePart } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { Check, MapPin, Send, Sparkles, Square } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,8 +13,10 @@ import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { useRouter } from '@/i18n/navigation';
 import { updateEventEdition } from '@/lib/events/actions';
 import type {
+  EventAiWizardChoiceRequest,
   EventAiWizardOp,
   EventAiWizardPatch,
+  EventAiWizardCrossStepIntent,
   EventAiWizardMarkdownOutput,
   EventAiWizardIntentRoute,
   EventAiWizardMissingFieldItem,
@@ -82,16 +84,30 @@ type EventAiWizardContinuitySnapshot = {
   latestRequestMessage: Pick<EventAiWizardUIMessage, 'id' | 'role' | 'parts'> | null;
   latestProposalMessage: Pick<EventAiWizardUIMessage, 'id' | 'role' | 'parts'> | null;
   latestProposalText: string;
+  latestProposalPatch: Pick<EventAiWizardPatch, 'title' | 'summary'> | null;
 };
 
 type EventAiWizardAppliedState = {
   patchId: string;
   title: string;
   summary: string;
-  showRevealAction?: boolean;
+  action?:
+    | {
+        kind: 'editor';
+        target?: EventAiWizardEditorFocusTarget;
+      }
+    | {
+        kind: 'step';
+        stepId: EventAiAssistantStepId;
+      };
 };
 
 type EventAiWizardEditorFocusTarget = 'location';
+
+type EventAiWizardResolvedLocationCandidate = Extract<
+  NonNullable<EventAiWizardPatch['locationResolution']>,
+  { status: 'matched' }
+>['candidate'];
 
 function isEventPatchPart(
   part: UIMessagePart<EventAiWizardDataTypes, UnknownUITools>,
@@ -265,6 +281,148 @@ function LocationResolutionCard({
   );
 }
 
+function buildPatchWithSelectedLocation(
+  patch: EventAiWizardPatch,
+  candidate: EventAiWizardResolvedLocationCandidate,
+): EventAiWizardPatch {
+  const editionScopedOp = patch.ops.find(
+    (
+      op,
+    ): op is Extract<
+      EventAiWizardOp,
+      | { type: 'update_edition' }
+      | { type: 'create_distance' }
+      | { type: 'create_faq_item' }
+      | { type: 'create_waiver' }
+      | { type: 'create_question' }
+      | { type: 'create_add_on' }
+      | { type: 'append_website_section_markdown' }
+      | { type: 'append_policy_markdown' }
+    > => 'editionId' in op,
+  );
+
+  if (!editionScopedOp) {
+    return patch;
+  }
+
+  const locationOp: Extract<EventAiWizardOp, { type: 'update_edition' }> = {
+    type: 'update_edition',
+    editionId:
+      patch.ops.find(
+        (op): op is Extract<EventAiWizardOp, { type: 'update_edition' }> =>
+          op.type === 'update_edition',
+      )?.editionId ?? editionScopedOp.editionId,
+    data: {
+      locationDisplay: candidate.formattedAddress,
+      address: candidate.formattedAddress,
+      city: candidate.city ?? null,
+      state: candidate.region ?? null,
+      latitude: String(candidate.lat),
+      longitude: String(candidate.lng),
+    },
+  };
+
+  const ops = [...patch.ops];
+  const updateEditionIndex = ops.findIndex((op) => op.type === 'update_edition');
+
+  if (updateEditionIndex >= 0) {
+    const updateEdition = ops[updateEditionIndex] as Extract<EventAiWizardOp, { type: 'update_edition' }>;
+    ops[updateEditionIndex] = {
+      ...updateEdition,
+      data: {
+        ...updateEdition.data,
+        ...locationOp.data,
+      },
+    };
+  } else {
+    ops.unshift(locationOp);
+  }
+
+  return {
+    ...patch,
+    ops,
+    locationResolution: {
+      status: 'matched',
+      query: patch.locationResolution?.query ?? candidate.formattedAddress,
+      candidate,
+    },
+    choiceRequest: undefined,
+  };
+}
+
+function LocationChoiceRequestCard({
+  request,
+  selectedCandidate,
+  onSelectCandidate,
+  onRevealEditor,
+  onRequestManualClarification,
+}: {
+  request: EventAiWizardChoiceRequest;
+  selectedCandidate: EventAiWizardResolvedLocationCandidate | null;
+  onSelectCandidate: (candidate: EventAiWizardResolvedLocationCandidate) => void;
+  onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
+  onRequestManualClarification: (query: string) => void;
+}) {
+  const t = useTranslations('pages.dashboardEventSettings.assistant');
+
+  return (
+    <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+        {t('locationResolution.ambiguous.eyebrow')}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {t('locationResolution.choice.title')}
+      </p>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        {t('locationResolution.choice.description')}
+      </p>
+      <ul className="mt-3 space-y-2">
+        {request.options.map((candidate, index) => {
+          const isSelected = selectedCandidate?.placeId === candidate.placeId;
+          return (
+            <li
+              key={`${candidate.placeId ?? candidate.formattedAddress}-${index}`}
+              className={cn(
+                'rounded-xl border px-3 py-3',
+                isSelected
+                  ? 'border-primary/40 bg-primary/10'
+                  : 'border-border/50 bg-background/70',
+              )}
+            >
+              <p className="text-sm font-medium text-foreground">{candidate.formattedAddress}</p>
+              {candidate.city || candidate.region ? (
+                <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  {[candidate.city, candidate.region].filter(Boolean).join(', ')}
+                </p>
+              ) : null}
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={isSelected ? 'default' : 'secondary'}
+                  onClick={() => onSelectCandidate(candidate)}
+                >
+                  {isSelected
+                    ? t('locationResolution.choice.selected')
+                    : t('locationResolution.choice.useThis')}
+                </Button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button type="button" size="sm" variant="secondary" onClick={() => onRequestManualClarification(request.query)}>
+          {t('locationResolution.choice.noneOfThese')}
+        </Button>
+        <Button type="button" size="sm" variant="secondary" onClick={() => onRevealEditor('location')}>
+          {t('locationResolution.choice.searchInEditor')}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function getMessageText(message: EventAiWizardUIMessage): string {
   return message.parts
     .filter((part) => part.type === 'text')
@@ -324,10 +482,12 @@ function ConversationExcerpt({
   label,
   text,
   tone = 'default',
+  renderMarkdown = false,
 }: {
   label: string;
   text: string;
   tone?: 'default' | 'assistant';
+  renderMarkdown?: boolean;
 }) {
   return (
     <div
@@ -339,7 +499,14 @@ function ConversationExcerpt({
       )}
     >
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{text}</p>
+      {renderMarkdown ? (
+        <MarkdownContent
+          content={text}
+          className="mt-2 text-sm leading-6 text-foreground prose-p:my-0 prose-headings:my-0 prose-ul:my-2 prose-li:my-1"
+        />
+      ) : (
+        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{text}</p>
+      )}
     </div>
   );
 }
@@ -395,7 +562,12 @@ function SupportingContextPanel({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.responseLabel')}
             </p>
-            <MessageBubble message={latestProposalMessage} />
+            <ConversationExcerpt
+              label={t('latestProposal.responseLabel')}
+              text={latestProposalText}
+              tone="assistant"
+              renderMarkdown
+            />
           </div>
         ) : null}
 
@@ -530,11 +702,16 @@ function AnimatedProgressLabel({
 
 function ContinuitySnapshotCard({
   snapshot,
+  onReuseRequest,
 }: {
   snapshot: EventAiWizardContinuitySnapshot;
+  onReuseRequest: (requestText: string) => void;
 }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const tPage = useTranslations('pages.dashboardEventSettings');
+  const latestRequestText = snapshot.latestRequestMessage
+    ? getMessageText(snapshot.latestRequestMessage as EventAiWizardUIMessage)
+    : '';
 
   return (
     <div className="rounded-2xl border border-border/60 bg-background/55 p-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -548,20 +725,40 @@ function ContinuitySnapshotCard({
       </p>
       <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('continuity.description')}</p>
       <div className="mt-3 space-y-3">
-        {snapshot.latestRequestMessage ? (
+        {snapshot.latestRequestMessage && latestRequestText ? (
           <ConversationExcerpt
             label={t('latestProposal.requestLabel')}
-            text={getMessageText(snapshot.latestRequestMessage as EventAiWizardUIMessage)}
+            text={latestRequestText}
           />
         ) : null}
-        {snapshot.latestProposalText && snapshot.latestProposalMessage ? (
+        {snapshot.latestProposalPatch ? (
+          <ConversationExcerpt
+            label={t('continuity.proposalLabel')}
+            text={`${snapshot.latestProposalPatch.title}\n${snapshot.latestProposalPatch.summary}`}
+            tone="assistant"
+            renderMarkdown
+          />
+        ) : snapshot.latestProposalText && snapshot.latestProposalMessage ? (
           <ConversationExcerpt
             label={t('latestProposal.responseLabel')}
             text={snapshot.latestProposalText}
             tone="assistant"
+            renderMarkdown
           />
         ) : null}
       </div>
+      {latestRequestText ? (
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => onReuseRequest(latestRequestText)}
+          >
+            {t('continuity.reuseRequest')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -569,11 +766,21 @@ function ContinuitySnapshotCard({
 function AppliedConfirmationCard({
   appliedState,
   onRevealEditor,
+  onNavigateToStep,
 }: {
   appliedState: EventAiWizardAppliedState;
   onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
+  onNavigateToStep: (stepId: EventAiAssistantStepId) => void;
 }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
+  const tPage = useTranslations('pages.dashboardEventSettings');
+
+  const stepActionLabel =
+    appliedState.action?.kind === 'step'
+      ? t('appliedState.goToStep', {
+          step: tPage(`wizardShell.steps.${appliedState.action.stepId}` as never),
+        })
+      : null;
 
   return (
     <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/8 p-4">
@@ -582,13 +789,199 @@ function AppliedConfirmationCard({
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">{appliedState.title}</p>
       <p className="mt-1 text-sm leading-6 text-muted-foreground">{appliedState.summary}</p>
-      {appliedState.showRevealAction !== false ? (
+      {appliedState.action ? (
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button type="button" size="sm" variant="secondary" onClick={() => onRevealEditor()}>
-            {t('appliedState.revealEditor')}
-          </Button>
+          {appliedState.action.kind === 'editor' ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => onRevealEditor(appliedState.action?.kind === 'editor' ? appliedState.action.target : undefined)}
+            >
+              {t('appliedState.revealEditor')}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() =>
+                onNavigateToStep(
+                  appliedState.action?.kind === 'step' ? appliedState.action.stepId : 'basics',
+                )
+              }
+            >
+              {stepActionLabel}
+            </Button>
+          )}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function getAppliedStepTarget(patch: EventAiWizardPatch): EventAiAssistantStepId | null {
+  for (const op of patch.ops) {
+    switch (op.type) {
+      case 'create_distance':
+        return 'distances';
+      case 'update_distance_price':
+      case 'create_pricing_tier':
+        return 'pricing';
+      case 'create_faq_item':
+      case 'append_website_section_markdown':
+        return 'content';
+      case 'create_waiver':
+      case 'append_policy_markdown':
+        return 'policies';
+      case 'create_question':
+      case 'create_add_on':
+        return 'extras';
+      default:
+        break;
+    }
+  }
+
+  return null;
+}
+
+function buildAppliedState({
+  patchId,
+  patch,
+  activeStepId,
+}: {
+  patchId: string;
+  patch: EventAiWizardPatch;
+  activeStepId: EventAiAssistantStepId;
+}): EventAiWizardAppliedState {
+  const crossStepTarget = getAppliedStepTarget(patch);
+
+  if (activeStepId === 'basics') {
+    const basicsUpdate = patch.ops.find((op) => op.type === 'update_edition');
+    if (basicsUpdate?.type === 'update_edition') {
+      const savedLocation =
+        Boolean(
+          basicsUpdate.data.locationDisplay &&
+            String(basicsUpdate.data.latitude ?? '').trim() &&
+            String(basicsUpdate.data.longitude ?? '').trim(),
+        );
+
+      if (savedLocation) {
+        return {
+          patchId,
+          title: patch.title,
+          summary: patch.summary,
+          action: {
+            kind: 'editor',
+            target: 'location',
+          },
+        };
+      }
+
+      return {
+        patchId,
+        title: patch.title,
+        summary: patch.summary,
+        action: {
+          kind: 'editor',
+        },
+      };
+    }
+  }
+
+  if (crossStepTarget && crossStepTarget !== activeStepId) {
+    return {
+      patchId,
+      title: patch.title,
+      summary: patch.summary,
+      action: {
+        kind: 'step',
+        stepId: crossStepTarget,
+      },
+    };
+  }
+
+  return {
+    patchId,
+    title: patch.title,
+    summary: patch.summary,
+    action: {
+      kind: 'editor',
+    },
+  };
+}
+
+function CrossStepHandoffCard({
+  handoff,
+  onNavigateToStep,
+}: {
+  handoff: EventAiWizardCrossStepIntent;
+  onNavigateToStep: (stepId: EventAiAssistantStepId) => void;
+}) {
+  const t = useTranslations('pages.dashboardEventSettings.assistant');
+  const tPage = useTranslations('pages.dashboardEventSettings');
+
+  function resolveStepLabel(stepId: EventAiAssistantStepId) {
+    return tPage(`wizardShell.steps.${stepId}` as never);
+  }
+
+  function resolveIntentReason(intentType: EventAiWizardCrossStepIntent['intentType']) {
+    return t(`handoff.reason.${intentType}` as never);
+  }
+
+  const primaryStepLabel = resolveStepLabel(handoff.primaryTargetStepId);
+  const sourceStepLabel = resolveStepLabel(handoff.sourceStepId);
+  const additionalStepLabels = (handoff.secondaryTargetStepIds ?? []).map((stepId) =>
+    resolveStepLabel(stepId),
+  );
+
+  return (
+    <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.05] p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+        {t('handoff.eyebrow')}
+      </p>
+      <p className="mt-1 text-sm font-semibold text-foreground">
+        {handoff.scope === 'mixed'
+          ? t('handoff.titleMixed', { step: primaryStepLabel })
+          : t('handoff.titleCrossStep', { step: primaryStepLabel })}
+      </p>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        {handoff.scope === 'mixed'
+          ? t('handoff.descriptionMixed', {
+              currentStep: sourceStepLabel,
+              step: primaryStepLabel,
+            })
+          : t('handoff.descriptionCrossStep', { step: primaryStepLabel })}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-foreground">
+        {resolveIntentReason(handoff.intentType)}
+      </p>
+      {additionalStepLabels.length ? (
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          {t('handoff.secondaryTargets', {
+            steps: additionalStepLabels.join(', '),
+          })}
+        </p>
+      ) : null}
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => onNavigateToStep(handoff.primaryTargetStepId)}
+        >
+          {t('handoff.primaryAction', { step: primaryStepLabel })}
+        </Button>
+        {handoff.scope === 'mixed' ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => onNavigateToStep(handoff.sourceStepId)}
+          >
+            {t('handoff.stayHereAction', { step: sourceStepLabel })}
+          </Button>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -759,6 +1152,7 @@ function PatchCard({
   onApplied,
   onRevealEditor,
   onNavigateToStep,
+  onRequestManualClarification,
 }: {
   editionId: string;
   patchId: string;
@@ -769,10 +1163,25 @@ function PatchCard({
   onApplied: (appliedState: EventAiWizardAppliedState) => void;
   onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
   onNavigateToStep: (stepId: EventAiAssistantStepId) => void;
+  onRequestManualClarification: (query: string) => void;
 }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const router = useRouter();
   const [isApplying, setIsApplying] = useState(false);
+  const [selectedLocationCandidate, setSelectedLocationCandidate] =
+    useState<EventAiWizardResolvedLocationCandidate | null>(null);
+
+  useEffect(() => {
+    setSelectedLocationCandidate(
+      patch.locationResolution?.status === 'matched' ? patch.locationResolution.candidate : null,
+    );
+  }, [patch]);
+
+  const effectivePatch = useMemo(() => {
+    if (!selectedLocationCandidate) return patch;
+    return buildPatchWithSelectedLocation(patch, selectedLocationCandidate);
+  }, [patch, selectedLocationCandidate]);
+  const requiresLocationSelection = Boolean(patch.choiceRequest && !selectedLocationCandidate);
 
   function formatOpLabel(op: EventAiWizardOp): string {
     switch (op.type) {
@@ -827,6 +1236,8 @@ function PatchCard({
         return t('ops.appendWebsite', { section: t(`ops.sections.${op.data.section}`) });
       case 'append_policy_markdown':
         return t('ops.appendPolicy', { policy: t(`ops.policies.${op.data.policy}`) });
+      case 'update_policy_config':
+        return t('ops.updatePolicies');
     }
   }
 
@@ -837,7 +1248,7 @@ function PatchCard({
       const res = await fetch('/api/events/ai-wizard/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ editionId, locale, patch }),
+        body: JSON.stringify({ editionId, locale, patch: effectivePatch }),
       });
 
       if (!res.ok) {
@@ -878,7 +1289,7 @@ function PatchCard({
         }
         if (Array.isArray(data?.applied) && data.applied.length > 0) {
           toast.error(t('errors.partialApplied'));
-          onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: true });
+          onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
           router.refresh();
           return;
         }
@@ -889,25 +1300,25 @@ function PatchCard({
       toast.success(t('applied'));
       const shouldRevealLocationInEditor =
         activeStepId === 'basics' &&
-        patch.ops.some(
+        effectivePatch.ops.some(
           (op) =>
             op.type === 'update_edition' &&
             Boolean(op.data.locationDisplay && op.data.latitude?.trim() && op.data.longitude?.trim()),
         );
       const shouldRevealBasicsEditor =
         activeStepId === 'basics' &&
-        patch.ops.some((op) => op.type === 'update_edition');
+        effectivePatch.ops.some((op) => op.type === 'update_edition');
       if (shouldRevealLocationInEditor) {
-        onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: false });
+        onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
         onRevealEditor('location');
         return;
       }
       if (shouldRevealBasicsEditor) {
-        onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: false });
+        onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
         onRevealEditor();
         return;
       }
-      onApplied({ patchId, title: patch.title, summary: patch.summary, showRevealAction: true });
+      onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
       router.refresh();
     } finally {
       setIsApplying(false);
@@ -918,14 +1329,14 @@ function PatchCard({
     <article className="mt-3 rounded-2xl border border-border/60 bg-background/65 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-1">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{patch.title}</p>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">{patch.summary}</p>
+          <p className="truncate text-sm font-semibold text-foreground">{effectivePatch.title}</p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">{effectivePatch.summary}</p>
         </div>
         <Button
           type="button"
           size="sm"
           variant={applied ? 'secondary' : 'default'}
-          disabled={isApplying || applied}
+          disabled={isApplying || applied || requiresLocationSelection}
           onClick={applyPatch}
           className="w-full shrink-0 sm:w-auto"
         >
@@ -934,8 +1345,22 @@ function PatchCard({
         </Button>
       </div>
 
-      <MarkdownOutputsList outputs={patch.markdownOutputs ?? []} />
-      {patch.locationResolution ? <LocationResolutionCard resolution={patch.locationResolution} /> : null}
+      <MarkdownOutputsList outputs={effectivePatch.markdownOutputs ?? []} />
+      {effectivePatch.choiceRequest ? (
+        <LocationChoiceRequestCard
+          request={effectivePatch.choiceRequest}
+          selectedCandidate={selectedLocationCandidate}
+          onSelectCandidate={setSelectedLocationCandidate}
+          onRevealEditor={onRevealEditor}
+          onRequestManualClarification={onRequestManualClarification}
+        />
+      ) : null}
+      {effectivePatch.locationResolution && !effectivePatch.choiceRequest ? (
+        <LocationResolutionCard resolution={effectivePatch.locationResolution} />
+      ) : null}
+      {effectivePatch.crossStepIntent ? (
+        <CrossStepHandoffCard handoff={effectivePatch.crossStepIntent} onNavigateToStep={onNavigateToStep} />
+      ) : null}
 
       <details className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">
         <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
@@ -943,7 +1368,7 @@ function PatchCard({
         </summary>
         <div className="mt-3 space-y-3 border-t border-border/60 pt-3">
           <ul className="space-y-1 text-sm text-muted-foreground">
-            {patch.ops.map((op, idx) => (
+            {effectivePatch.ops.map((op, idx) => (
               <li key={`${patchId}-${idx}`} className="flex gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
                 <span className="min-w-0">{formatOpLabel(op)}</span>
@@ -951,8 +1376,17 @@ function PatchCard({
             ))}
           </ul>
           <RoutingCard
-            checklist={patch.missingFieldsChecklist ?? []}
-            intentRouting={patch.intentRouting ?? []}
+            checklist={effectivePatch.missingFieldsChecklist ?? []}
+            intentRouting={(effectivePatch.intentRouting ?? []).filter((item) => {
+              if (!effectivePatch.crossStepIntent) return true;
+
+              const blockedStepIds = new Set<EventAiAssistantStepId>([
+                effectivePatch.crossStepIntent.primaryTargetStepId,
+                ...(effectivePatch.crossStepIntent.secondaryTargetStepIds ?? []),
+              ]);
+
+              return !blockedStepIds.has(item.stepId);
+            })}
             onNavigateToStep={onNavigateToStep}
           />
         </div>
@@ -978,6 +1412,7 @@ export function EventAiWizardPanel({
   const composerHintId = useId();
   const briefEditorId = useId();
   const briefEditorHintId = useId();
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const briefStorageKey = `event-ai-wizard:brief:${editionId}`;
   const draftStorageKey = `event-ai-wizard:draft:${editionId}:${stepId}`;
   const continuityStorageKey = `event-ai-wizard:continuity:${editionId}`;
@@ -1143,6 +1578,7 @@ export function EventAiWizardPanel({
     for (let index = renderedMessages.length - 1; index >= 0; index -= 1) {
       const message = renderedMessages[index];
       if (message?.role !== 'assistant') continue;
+      if (index <= latestUserMessageIndex) return null;
       const text = getMessageText(message);
       if (text) {
         return text;
@@ -1150,7 +1586,7 @@ export function EventAiWizardPanel({
     }
 
     return null;
-  }, [latestProposalMessage, renderedMessages]);
+  }, [latestProposalMessage, latestUserMessageIndex, renderedMessages]);
   const visibleProgressState =
     latestProposalMessage || (!isBusy && !chatError) ? null : progressState;
   const firstProgressMs =
@@ -1191,6 +1627,12 @@ export function EventAiWizardPanel({
             ? 'basics'
             : 'generic'
     : null;
+
+  useEffect(() => {
+    if (!chatError) return;
+    if (!latestProposalMessage && !lastAppliedPatch) return;
+    clearError();
+  }, [chatError, clearError, lastAppliedPatch, latestProposalMessage]);
 
   useEffect(() => {
     if (!latencyMarks.requestStartedAt || latencyMarks.firstTextAt || !latestAssistantWithoutPatch) {
@@ -1327,12 +1769,19 @@ export function EventAiWizardPanel({
       latestRequestMessage,
       latestProposalMessage,
       latestProposalText,
+      latestProposalPatch: latestProposalPatchPart
+        ? {
+            title: latestProposalPatchPart.data.title,
+            summary: latestProposalPatchPart.data.summary,
+          }
+        : null,
     };
 
     window.sessionStorage.setItem(continuityStorageKey, JSON.stringify(snapshot));
   }, [
     continuityStorageKey,
     latestProposalMessage,
+    latestProposalPatchPart,
     latestProposalText,
     latestRequestMessage,
     stepId,
@@ -1428,6 +1877,23 @@ export function EventAiWizardPanel({
     setAssistantOpen(false);
   }
 
+  function handleReuseRequest(requestText: string) {
+    setInput(requestText);
+    window.requestAnimationFrame(() => {
+      composerRef.current?.focus();
+      composerRef.current?.setSelectionRange(requestText.length, requestText.length);
+    });
+  }
+
+  function handleRequestManualLocationClarification(query: string) {
+    const prompt = t('locationResolution.choice.manualClarificationPrompt', { query });
+    setInput(prompt);
+    window.requestAnimationFrame(() => {
+      composerRef.current?.focus();
+      composerRef.current?.setSelectionRange(prompt.length, prompt.length);
+    });
+  }
+
   return (
     <section
       className={cn(
@@ -1478,11 +1944,18 @@ export function EventAiWizardPanel({
 
       <div className="space-y-5 px-4 py-4 sm:px-5">
         {recoveredContinuitySnapshot ? (
-          <ContinuitySnapshotCard snapshot={recoveredContinuitySnapshot} />
+          <ContinuitySnapshotCard
+            snapshot={recoveredContinuitySnapshot}
+            onReuseRequest={handleReuseRequest}
+          />
         ) : null}
 
         {lastAppliedPatch ? (
-          <AppliedConfirmationCard appliedState={lastAppliedPatch} onRevealEditor={handleRevealEditor} />
+          <AppliedConfirmationCard
+            appliedState={lastAppliedPatch}
+            onRevealEditor={handleRevealEditor}
+            onNavigateToStep={handleNavigateToStep}
+          />
         ) : null}
 
         {latestProposalMessage ? (
@@ -1513,6 +1986,7 @@ export function EventAiWizardPanel({
                   }}
                   onRevealEditor={handleRevealEditor}
                   onNavigateToStep={handleNavigateToStep}
+                  onRequestManualClarification={handleRequestManualLocationClarification}
                 />
               ) : null}
 
@@ -1546,6 +2020,7 @@ export function EventAiWizardPanel({
                   label={t('latestProposal.responseLabel')}
                   text={latestAssistantWithoutPatch}
                   tone="assistant"
+                  renderMarkdown
                 />
               ) : null}
             </div>
@@ -1571,6 +2046,7 @@ export function EventAiWizardPanel({
                   label={t('latestProposal.responseLabel')}
                   text={latestAssistantWithoutPatch}
                   tone="assistant"
+                  renderMarkdown
                 />
               ) : null}
             </div>
@@ -1600,6 +2076,7 @@ export function EventAiWizardPanel({
 
             <textarea
               id={composerId}
+              ref={composerRef}
               aria-describedby={composerHintId}
               value={input}
               onChange={(event) => setInput(event.target.value)}

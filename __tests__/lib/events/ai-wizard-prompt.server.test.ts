@@ -100,6 +100,8 @@ describe('event ai wizard prompt', () => {
           priceCents: 95000,
           currency: 'MXN',
           hasPricingTier: true,
+          pricingTierCount: 1,
+          hasBoundedPricingTier: false,
           startTimeLocal: null,
           timeLimitMinutes: null,
           sortOrder: 0,

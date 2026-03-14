@@ -1,7 +1,6 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
-import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -24,7 +23,7 @@ import {
 } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
-import { safeUpdateTag } from '@/lib/next-cache';
+import { safeRefresh, safeUpdateTag } from '@/lib/next-cache';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import {
@@ -971,7 +970,7 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
 
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: { capacityScope, sharedCapacity: nextSharedCapacity } };
 });
@@ -1295,7 +1294,7 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
 
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: { visibility } };
 });
@@ -1368,7 +1367,7 @@ export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused
 
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: { paused } };
 });

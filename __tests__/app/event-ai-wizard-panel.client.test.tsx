@@ -29,6 +29,10 @@ jest.mock('next-intl', () => ({
     if (key === 'wizard.issues.publishMissingDistance') return 'Add at least one distance';
     if (key === 'wizardShell.steps.content') return 'Participant content';
     if (key === 'wizardShell.steps.basics') return 'Basics';
+    if (key === 'wizardShell.steps.distances') return 'Distances';
+    if (key === 'wizardShell.steps.pricing') return 'Pricing';
+    if (key === 'wizardShell.steps.policies') return 'Policies';
+    if (key === 'wizardShell.steps.extras') return 'Questions and extras';
     if (key === 'wizardShell.steps.review') return 'Review';
     if (key === 'routing.intentLabels.draft_website_overview') return 'Draft website overview';
     if (key === 'routing.stepActions.content') return 'Prepare participant content';
@@ -36,6 +40,30 @@ jest.mock('next-intl', () => ({
     if (key === 'routing.stepActions.review') return 'Review before publishing';
     if (key === 'routing.intentStepFallback') return `Continue in ${values?.step}`;
     if (key === 'routing.goToStep') return `Go to ${values?.step}`;
+    if (key === 'handoff.eyebrow') return 'Best place to continue';
+    if (key === 'handoff.titleCrossStep') return `The strongest next move is in ${values?.step}`;
+    if (key === 'handoff.titleMixed') return `I can keep helping here, but the main work belongs in ${values?.step}`;
+    if (key === 'handoff.descriptionCrossStep')
+      return `This request fits better in ${values?.step}, which is where that kind of work lives in the assistant flow.`;
+    if (key === 'handoff.descriptionMixed')
+      return `Part of this still touches ${values?.currentStep}, but the clearest next step to keep moving is in ${values?.step}.`;
+    if (key === 'handoff.secondaryTargets') return `This may also touch: ${values?.steps}.`;
+    if (key === 'handoff.primaryAction') return `Continue in ${values?.step}`;
+    if (key === 'handoff.stayHereAction') return `Stay in ${values?.step}`;
+    if (key === 'handoff.reason.participant_content')
+      return 'This is more participant-facing content work than event-basics setup.';
+    if (key === 'handoff.reason.faq')
+      return 'This fits best where participant questions and answers are built out.';
+    if (key === 'handoff.reason.policy')
+      return 'This is better handled in policies and waivers, where participant-facing rules and organizer commitments stay organized.';
+    if (key === 'handoff.reason.website_overview')
+      return 'This belongs with the event website content, not the core setup fields in this step.';
+    if (key === 'handoff.reason.extras')
+      return 'This is best handled in questions and extras, where those optional setup pieces already live.';
+    if (key === 'handoff.reason.mixed_content')
+      return 'Your request mixes participant-facing content areas together, so it is best to continue where that work naturally belongs.';
+    if (key === 'handoff.reason.mixed_general')
+      return 'Your request spans more than one setup area, so this is the clearest place to continue without losing context.';
     if (key === 'latestProposal.supportingContextTitle') return 'Supporting context';
     if (key === 'latestProposal.supportingContextDescription')
       return `See the latest request and response plus ${values?.count} earlier messages.`;
@@ -43,8 +71,11 @@ jest.mock('next-intl', () => ({
     if (key === 'continuity.eyebrow') return 'Your thread is still here';
     if (key === 'continuity.title') return `Still carrying the latest proposal from ${values?.step}`;
     if (key === 'continuity.description') return 'Your last useful exchange stays visible while you continue.';
+    if (key === 'continuity.proposalLabel') return 'What I had already drafted';
+    if (key === 'continuity.reuseRequest') return 'Keep going from this request';
     if (key === 'appliedState.eyebrow') return 'Changes already applied';
     if (key === 'appliedState.revealEditor') return 'See them in the editor';
+    if (key === 'appliedState.goToStep') return `Go to ${values?.step}`;
     if (key === 'errors.requestFailedHint') return 'Try again in a moment.';
     if (key === 'errors.safety.promptInjection') return 'That request is outside event setup.';
     if (key === 'errors.safety.policyViolation') return 'That request cannot be handled here.';
@@ -96,6 +127,13 @@ jest.mock('next-intl', () => ({
     if (key === 'locationResolution.ambiguous.title') return 'I found multiple possible matches';
     if (key === 'locationResolution.ambiguous.description')
       return 'Choose or clarify the place before applying it to the event.';
+    if (key === 'locationResolution.choice.title') return 'Choose the correct location';
+    if (key === 'locationResolution.choice.description')
+      return 'Click the real place before applying it to the event.';
+    if (key === 'locationResolution.choice.selected') return 'Selected location';
+    if (key === 'locationResolution.choice.useThis') return 'Use this location';
+    if (key === 'locationResolution.choice.noneOfThese') return 'None of these';
+    if (key === 'locationResolution.choice.searchInEditor') return 'Search manually in the editor';
     if (key === 'locationResolution.noMatch.eyebrow') return 'Location still unresolved';
     if (key === 'locationResolution.noMatch.title') return 'I could not confirm that place';
     if (key === 'locationResolution.noMatch.description')
@@ -363,6 +401,61 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('ops.updateEvent')).toBeInTheDocument();
   });
 
+  it('clears a stale assistant error once a real proposal is available', async () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-1',
+          role: 'assistant',
+          parts: [
+            { type: 'text', text: 'I drafted a participant-facing improvement.' },
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Improve website overview',
+                summary: 'Updates the participant-facing overview.',
+                ops: [
+                  {
+                    type: 'append_website_section_markdown',
+                    editionId: '68ca6035-7c0f-4ff6-b3c2-651f81e5a8a4',
+                    data: {
+                      section: 'overview',
+                      title: 'Overview',
+                      markdown: '## Ready for race day',
+                    },
+                  },
+                ],
+                markdownOutputs: [
+                  {
+                    domain: 'website',
+                    title: 'Website overview',
+                    contentMarkdown: '## Ready for race day',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      status: 'error',
+      error: new Error(JSON.stringify({ code: 'RETRY_LATER' })),
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="review"
+        stepTitle="Review"
+        suggestions={['Polish participant content before publishing.']}
+        markdownFocus
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockClearError).toHaveBeenCalled();
+    });
+  });
+
   it('surfaces the latest proposal before saved notes and moves earlier chat into an archive', () => {
     mockChatState = {
       messages: [
@@ -429,6 +522,37 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('Here is the newest recommendation for this step.')).toBeInTheDocument();
     expect(screen.getByText('Old question that should move into the archive.')).toBeInTheDocument();
     expect(latestProposal.compareDocumentPosition(savedNotes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('renders structured assistant-owned pending excerpts as markdown', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-pending',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'text',
+              text: '## Primer borrador\n- Ya identifiqué lo que falta\n- Puedo preparar la siguiente propuesta',
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Draft from brief']}
+      />,
+    );
+
+    expect(screen.getByTestId('markdown-content')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Primer borrador' })).toBeInTheDocument();
   });
 
   it('renders only the latest authoritative patch when the final assistant message includes repeated patch parts', () => {
@@ -619,6 +743,108 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('I found multiple possible matches')).toBeInTheDocument();
     expect(screen.getByText('Bosque de Chapultepec, Ciudad de México, México')).toBeInTheDocument();
     expect(screen.getByText('Chapultepec, Estado de México, México')).toBeInTheDocument();
+  });
+
+  it('requires choosing a location candidate before an ambiguous basics proposal can be applied', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-location-choice',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Choose the exact event location',
+                summary: 'Pick the right location before applying it to the event.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: '68ca6035-7c0f-4ff6-b3c2-651f81e5a8a4',
+                    data: {
+                      locationDisplay: 'Chapultepec',
+                    },
+                  },
+                ],
+                locationResolution: {
+                  status: 'ambiguous',
+                  query: 'Chapultepec',
+                  candidates: [
+                    {
+                      lat: 19.4204,
+                      lng: -99.1821,
+                      formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+                      city: 'Ciudad de México',
+                      region: 'Ciudad de México',
+                      placeId: 'mapbox-1',
+                      provider: 'mapbox',
+                    },
+                    {
+                      lat: 19.2961,
+                      lng: -99.5317,
+                      formattedAddress: 'Chapultepec, Estado de México, México',
+                      city: 'Chapultepec',
+                      region: 'Estado de México',
+                      placeId: 'mapbox-2',
+                      provider: 'mapbox',
+                    },
+                  ],
+                },
+                choiceRequest: {
+                  kind: 'location_candidate_selection',
+                  selectionMode: 'single',
+                  sourceStepId: 'basics',
+                  targetField: 'event_location',
+                  query: 'Chapultepec',
+                  options: [
+                    {
+                      lat: 19.4204,
+                      lng: -99.1821,
+                      formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+                      city: 'Ciudad de México',
+                      region: 'Ciudad de México',
+                      placeId: 'mapbox-1',
+                      provider: 'mapbox',
+                    },
+                    {
+                      lat: 19.2961,
+                      lng: -99.5317,
+                      formattedAddress: 'Chapultepec, Estado de México, México',
+                      city: 'Chapultepec',
+                      region: 'Estado de México',
+                      placeId: 'mapbox-2',
+                      provider: 'mapbox',
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Use my rough notes to start this event.']}
+        initialEventBrief={null}
+      />,
+    );
+
+    const applyButton = screen.getByRole('button', { name: 'apply' });
+    expect(screen.getByText('Choose the correct location')).toBeInTheDocument();
+    expect(applyButton).toBeDisabled();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Use this location' })[0]!);
+
+    expect(screen.queryByText('Choose the correct location')).not.toBeInTheDocument();
+    expect(screen.getByText('This is the real location that will be applied')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'apply' })).toBeEnabled();
   });
 
   it('renders a truthful no-match review card when the place could not be resolved', () => {
@@ -844,6 +1070,72 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getAllByRole('button', { name: 'Go to Participant content' })).toHaveLength(1);
   });
 
+  it('renders a dedicated cross-step handoff with one primary continuation action', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-cross-step',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Route the organizer',
+                summary: 'Guide the next step.',
+                ops: [
+                  {
+                    type: 'create_faq_item',
+                    editionId: '68ca6035-7c0f-4ff6-b3c2-651f81e5a8a4',
+                    data: {
+                      question: 'What is included?',
+                      answerMarkdown: 'Trail access and timing support.',
+                    },
+                  },
+                ],
+                crossStepIntent: {
+                  scope: 'cross_step',
+                  sourceStepId: 'basics',
+                  primaryTargetStepId: 'content',
+                  intentType: 'participant_content',
+                  confidence: 'high',
+                  reasonCodes: ['participant_copy_language'],
+                },
+                intentRouting: [
+                  {
+                    intent: 'draft_website_overview',
+                    stepId: 'content',
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Basics"
+        suggestions={['Use my notes to get started']}
+      />,
+    );
+
+    expect(screen.getByText('Best place to continue')).toBeInTheDocument();
+    expect(screen.getByText('The strongest next move is in Participant content')).toBeInTheDocument();
+    expect(
+      screen.getByText('This is more participant-facing content work than event-basics setup.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue in Participant content' })).toBeInTheDocument();
+
+    openDetailsBySummaryText('latestProposal.detailsTitle');
+    expect(screen.queryByText('Draft website overview')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Go to Participant content' })).not.toBeInTheDocument();
+  });
+
   it('maps structured chat safety errors to localized organizer copy', () => {
     mockChatState = {
       messages: [],
@@ -861,6 +1153,44 @@ describe('EventAiWizardPanel', () => {
     );
 
     expect(screen.getByRole('alert')).toHaveTextContent('That request is outside event setup.');
+  });
+
+  it('preserves continuity across step handoff and lets the organizer reuse the last request', () => {
+    window.sessionStorage.setItem(
+      'event-ai-wizard:continuity:evt-1',
+      JSON.stringify({
+        sourceStepId: 'basics',
+        latestRequestMessage: {
+          id: 'user-1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Draft FAQ from these notes.' }],
+        },
+        latestProposalMessage: {
+          id: 'assistant-1',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'I can carry this into participant content.' }],
+        },
+        latestProposalText: '',
+        latestProposalPatch: {
+          title: 'Draft participant FAQ',
+          summary: 'Creates the first grounded FAQ entries from the saved notes.',
+        },
+      }),
+    );
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="content"
+        stepTitle="Participant content"
+        suggestions={['Improve participant-facing copy']}
+      />,
+    );
+
+    expect(screen.getByText('Your thread is still here')).toBeInTheDocument();
+    expect(screen.getByText(/Draft participant FAQ/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Keep going from this request' }));
+    expect(screen.getByLabelText('composer.label')).toHaveValue('Draft FAQ from these notes.');
   });
 
   it('shows staged organizer-facing progress from transient stream notifications', () => {
@@ -1366,6 +1696,44 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('latestProposal.pendingTitle')).toBeInTheDocument();
   });
 
+  it('does not reuse a stale assistant diagnosis while a newer follow-up is pending', () => {
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-diagnosis',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Todavía falta confirmar la ubicación exacta.' }],
+        },
+        {
+          id: 'user-followup',
+          role: 'user',
+          parts: [
+            {
+              type: 'text',
+              text: 'Usa Bosque de Chapultepec, Ciudad de México como ubicación real del evento y crea una distancia de 10 km.',
+            },
+          ],
+        },
+      ],
+      status: 'streaming',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Draft from brief']}
+      />,
+    );
+
+    expect(screen.getByText('latestProposal.pendingTitle')).toBeInTheDocument();
+    expect(
+      screen.queryByText('Todavía falta confirmar la ubicación exacta.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('loads the saved server brief immediately and mirrors it into session storage', async () => {
     render(
       <EventAiWizardPanel
@@ -1573,6 +1941,62 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('Changes already applied')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'See them in the editor' }));
     expect(mockSetAssistantOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('points to the saved destination step after applying a cross-step basics patch', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, applied: [] }),
+    });
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-apply-cross-step',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Create starter distance',
+                summary: 'Adds a 10 km distance and opening price.',
+                ops: [
+                  {
+                    type: 'create_distance',
+                    editionId: 'evt-1',
+                    data: {
+                      label: '10 km',
+                      distanceValue: 10,
+                      distanceUnit: 'km',
+                      price: 350,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Draft from brief']}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'apply' }));
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith('applied');
+    });
+    expect(screen.getByText('Changes already applied')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Go to Distances' }));
+    expect(mockPush).toHaveBeenCalled();
   });
 
   it('reveals the basics editor immediately after applying a basics patch', async () => {

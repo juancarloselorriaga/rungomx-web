@@ -38,6 +38,43 @@ type MapboxGeocodeResponse = {
   features?: MapboxFeature[];
 };
 
+type MapboxSearchBoxSuggestSuggestion = {
+  name?: string;
+  mapbox_id?: string;
+  full_address?: string;
+  place_formatted?: string;
+  country_code?: string;
+  coordinates?: {
+    latitude?: number;
+    longitude?: number;
+  };
+  center?: [number, number];
+  context?: {
+    country?: {
+      country_code?: string;
+      name?: string;
+    };
+    region?: {
+      name?: string;
+    };
+    place?: {
+      name?: string;
+    };
+    locality?: {
+      name?: string;
+    };
+    postcode?: {
+      name?: string;
+    };
+  };
+};
+
+type MapboxSearchBoxSuggestResponse = {
+  suggestions?: MapboxSearchBoxSuggestSuggestion[];
+};
+
+type MapboxSearchBoxRetrieveResponse = MapboxGeocodeResponse;
+
 function getMapboxAccessToken() {
   const token = process.env.MAPBOX_ACCESS_TOKEN;
   if (!token) {
@@ -75,6 +112,55 @@ function buildForwardUrl(query: string, options?: LocationSearchOptions) {
   return url;
 }
 
+function buildSearchBoxSuggestUrl(
+  query: string,
+  sessionToken: string,
+  options?: LocationSearchOptions,
+) {
+  const url = new URL('https://api.mapbox.com/search/searchbox/v1/suggest');
+  url.searchParams.set('q', query);
+  url.searchParams.set('access_token', getMapboxAccessToken());
+  url.searchParams.set('session_token', sessionToken);
+
+  if (options?.limit && Number.isFinite(options.limit)) {
+    url.searchParams.set('limit', String(options.limit));
+  }
+
+  if (options?.language) {
+    url.searchParams.set('language', options.language);
+  }
+
+  if (options?.country) {
+    url.searchParams.set('country', options.country);
+  }
+
+  if (options?.proximity) {
+    url.searchParams.set('proximity', `${options.proximity.lng},${options.proximity.lat}`);
+  }
+
+  url.searchParams.set('types', 'poi,address,place,locality,neighborhood');
+
+  return url;
+}
+
+function buildSearchBoxRetrieveUrl(
+  mapboxId: string,
+  sessionToken: string,
+  options?: LocationSearchOptions,
+) {
+  const url = new URL(
+    `https://api.mapbox.com/search/searchbox/v1/retrieve/${encodeURIComponent(mapboxId)}`,
+  );
+  url.searchParams.set('access_token', getMapboxAccessToken());
+  url.searchParams.set('session_token', sessionToken);
+
+  if (options?.language) {
+    url.searchParams.set('language', options.language);
+  }
+
+  return url;
+}
+
 function buildReverseUrl(lat: number, lng: number, options?: ReverseGeocodeOptions) {
   const url = new URL('https://api.mapbox.com/search/geocode/v6/reverse');
   url.searchParams.set('longitude', String(lng));
@@ -100,9 +186,6 @@ function normalizeFeature(feature: MapboxFeature): LocationValue | null {
 
   const [lng, lat] = coordinates;
   const properties = feature.properties ?? {};
-
-  // Debug: log the actual response structure
-  console.log('[Mapbox v6] Feature properties:', JSON.stringify(properties, null, 2));
 
   // v6 API: For address types, 'name' contains street+number, 'place_formatted' has the rest
   // We need to combine them for a complete address
@@ -151,6 +234,37 @@ function normalizeFeature(feature: MapboxFeature): LocationValue | null {
   };
 }
 
+function normalizeSearchBoxSuggestion(suggestion: MapboxSearchBoxSuggestSuggestion): LocationValue | null {
+  const lat = suggestion.coordinates?.latitude ?? suggestion.center?.[1];
+  const lng = suggestion.coordinates?.longitude ?? suggestion.center?.[0];
+  const formattedAddress =
+    suggestion.full_address ??
+    [suggestion.name, suggestion.place_formatted].filter(Boolean).join(', ');
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || !formattedAddress) {
+    return null;
+  }
+
+  const safeLat = lat as number;
+  const safeLng = lng as number;
+
+  return {
+    lat: safeLat,
+    lng: safeLng,
+    formattedAddress,
+    placeId: suggestion.mapbox_id || undefined,
+    countryCode:
+      suggestion.country_code ??
+      suggestion.context?.country?.country_code ??
+      undefined,
+    region: suggestion.context?.region?.name ?? undefined,
+    city: suggestion.context?.place?.name ?? suggestion.context?.locality?.name ?? undefined,
+    postalCode: suggestion.context?.postcode?.name ?? undefined,
+    provider: 'mapbox',
+    raw: suggestion,
+  };
+}
+
 async function fetchJson(url: URL): Promise<MapboxGeocodeResponse> {
   const response = await fetch(url.toString(), {
     headers: {
@@ -166,6 +280,36 @@ async function fetchJson(url: URL): Promise<MapboxGeocodeResponse> {
   return (await response.json()) as MapboxGeocodeResponse;
 }
 
+async function fetchSearchBoxSuggest(url: URL): Promise<MapboxSearchBoxSuggestResponse> {
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Mapbox search box suggest failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as MapboxSearchBoxSuggestResponse;
+}
+
+async function fetchSearchBoxRetrieve(url: URL): Promise<MapboxSearchBoxRetrieveResponse> {
+  const response = await fetch(url.toString(), {
+    headers: {
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(`Mapbox search box retrieve failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as MapboxSearchBoxRetrieveResponse;
+}
+
 export const mapboxLocationProvider: LocationProvider = {
   async forwardGeocode(query, options) {
     const trimmed = query.trim();
@@ -178,6 +322,38 @@ export const mapboxLocationProvider: LocationProvider = {
     return features
       .map((feature) => normalizeFeature(feature))
       .filter((value): value is LocationValue => value !== null);
+  },
+
+  async searchPlaces(query, options) {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    const sessionToken = crypto.randomUUID();
+    const url = buildSearchBoxSuggestUrl(trimmed, sessionToken, options);
+    const data = await fetchSearchBoxSuggest(url);
+    const suggestions = data.suggestions ?? [];
+    const retrievedLocations = await Promise.all(
+      suggestions.map(async (suggestion) => {
+        if (!suggestion.mapbox_id) {
+          return normalizeSearchBoxSuggestion(suggestion);
+        }
+
+        try {
+          const retrieveUrl = buildSearchBoxRetrieveUrl(
+            suggestion.mapbox_id,
+            sessionToken,
+            options,
+          );
+          const retrieved = await fetchSearchBoxRetrieve(retrieveUrl);
+          const feature = retrieved.features?.[0];
+          return feature ? normalizeFeature(feature) : normalizeSearchBoxSuggestion(suggestion);
+        } catch {
+          return normalizeSearchBoxSuggestion(suggestion);
+        }
+      }),
+    );
+
+    return retrievedLocations.filter((value): value is LocationValue => value !== null);
   },
 
   async reverseGeocode(lat, lng, options) {

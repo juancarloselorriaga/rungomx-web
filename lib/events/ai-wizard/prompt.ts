@@ -14,6 +14,8 @@ type EventAiWizardPromptChecklistItem = {
 
 type EventAiWizardPromptContext = {
   checklist: EventAiWizardPromptChecklistItem[];
+  activeStepDiagnosis?: EventAiWizardPromptChecklistItem[];
+  diagnosisNextStep?: EventAiWizardPromptChecklistItem | null;
   activeStepId: 'basics' | 'distances' | 'pricing' | 'registration' | 'policies' | 'content' | 'extras' | 'review';
   eventBrief?: string | null;
   locale?: string | null;
@@ -21,6 +23,7 @@ type EventAiWizardPromptContext = {
   fastPathKind?: EventAiWizardFastPathKind | null;
   compactMode?: boolean;
   locationResolution?: EventAiWizardLocationResolution | null;
+  diagnosisMode?: boolean;
 };
 
 const ALLOWED_STEP_IDS = [
@@ -118,6 +121,57 @@ function describeReadinessGuardrails(
   }
 
   return rules;
+}
+
+function describeActiveStepDiagnosis(
+  context: Pick<
+    EventAiWizardPromptContext,
+    'activeStepId' | 'activeStepDiagnosis' | 'diagnosisMode' | 'diagnosisNextStep'
+  >,
+): string[] {
+  if (!context.diagnosisMode || (context.activeStepId !== 'basics' && context.activeStepId !== 'pricing')) {
+    return [];
+  }
+
+  const diagnosis = context.activeStepDiagnosis ?? [];
+
+  if (context.activeStepId === 'pricing') {
+    return [
+      'Pricing diagnosis mode:',
+      '- The organizer is explicitly asking what is still missing in Pricing.',
+      '- Answer from the canonical Pricing diagnosis below, not from stale assumptions or generic publish momentum.',
+      '- Structure the response in this order: (1) what Pricing already has, (2) what is still missing or merely recommended, (3) the single best next step afterward if Pricing is already in good shape.',
+      '- If Pricing is already good enough, say so clearly before mentioning any recommendation.',
+      '- If the canonical Pricing diagnosis is empty, explicitly say that Pricing is already covered enough for now and do not infer missing tier windows from the raw snapshot.',
+      '- Do not propose a patch, tool action, or cross-step creation flow in this response.',
+      '- If the locale is Spanish, never write severity words in English. Use natural Spanish phrases like "bloquea la publicación", "todavía falta", or "sería recomendable".',
+      '- Keep the answer practical and organizer-facing. Do not label items with internal status jargon or enum-like severity names.',
+      diagnosis.length > 0
+        ? `- Canonical Pricing diagnosis: ${JSON.stringify(diagnosis)}`
+        : '- Canonical Pricing diagnosis: [] (Pricing is already covered in the current aggregate).',
+      context.diagnosisNextStep
+        ? `- Canonical next step after Pricing: ${JSON.stringify(context.diagnosisNextStep)}`
+        : '- Canonical next step after Pricing: none',
+    ];
+  }
+
+  return [
+    'Basics diagnosis mode:',
+    '- The organizer is explicitly asking what is still missing in Basics.',
+    '- Answer from the Basics diagnosis list below, not from publish blockers or cross-step momentum.',
+    '- Structure the response in this order: (1) what is still missing in Basics, (2) if Basics is already covered or nearly covered, the single best next step afterward.',
+    '- Separate what is still required to complete Basics from what would make Basics feel more complete.',
+    '- You may mention a likely next step only after answering the Basics diagnosis clearly.',
+    '- Do not propose a patch, tool action, or cross-step creation flow in this response.',
+    '- If the locale is Spanish, never write severity words in English. Use natural Spanish phrases like "bloquea la publicación", "todavía falta", or "sería recomendable".',
+    '- Keep the answer practical and organizer-facing. Do not label items with internal status jargon or enum-like severity names.',
+    diagnosis.length > 0
+      ? `- Canonical Basics diagnosis: ${JSON.stringify(diagnosis)}`
+      : '- Canonical Basics diagnosis: [] (Basics is already covered in the current aggregate).',
+    context.diagnosisNextStep
+      ? `- Canonical next step after Basics: ${JSON.stringify(context.diagnosisNextStep)}`
+      : '- Canonical next step after Basics: none',
+  ];
 }
 
 function describeLanguageRules(locale: string | null | undefined): string[] {
@@ -239,6 +293,12 @@ function describeFastPathPatchScope(
         'Fast-path first patch scope:',
         '- The first proposal should update only FAQ content.',
         '- Do not mix in website overview or description rewrites until the FAQ draft is reviewable.',
+      ];
+    case 'content_bundle':
+      return [
+        'Fast-path first patch scope:',
+        '- The first proposal should combine FAQ answers plus the website overview because the organizer explicitly asked for both.',
+        '- Keep the bundle limited to FAQ answers and one overview section draft. Do not expand into policies, pricing, or broader logistics.',
       ];
     case 'website_overview':
       return [
@@ -515,6 +575,8 @@ export function buildEventAiWizardSystemPrompt(
       priceCents: d.priceCents,
       currency: d.currency,
       hasPricingTier: d.hasPricingTier ?? false,
+      pricingTierCount: d.pricingTierCount,
+      hasBoundedPricingTier: d.hasBoundedPricingTier,
       isVirtual: d.isVirtual,
       terrain: d.terrain,
       capacity: d.capacity,
@@ -566,6 +628,9 @@ export function buildEventAiWizardSystemPrompt(
       'Server checklist:',
       JSON.stringify(checklist),
       '',
+      'Active step diagnosis:',
+      JSON.stringify(context.activeStepDiagnosis ?? []),
+      '',
       'Critical grounding rules:',
       '- Snapshot facts win over organizer phrasing when they conflict.',
       '- Shared brief guides tone, audience, and must-haves; it does not authorize invented logistics.',
@@ -607,6 +672,8 @@ export function buildEventAiWizardSystemPrompt(
     ...describeFirstResponsePolicy(context),
     '',
     ...describeLanguageRules(context.locale),
+    '',
+    ...describeActiveStepDiagnosis(context),
     '',
     ...describeLocationResolution(context),
     '',
