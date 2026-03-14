@@ -105,7 +105,7 @@
         "tools": {
           "lookup": {
             "title": "Buscar por identificador",
-            "description": "Úsalo cuando tienes un ID de retiro u otra referencia técnica, pero todavía no la traza.",
+            "description": "Úsalo cuando tienes una referencia de retiro u otra referencia técnica, pero todavía no tienes la traza.",
             "activeState": "Búsqueda en curso",
             "idleState": "Útil cuando todavía no tienes la traza"
           },
@@ -172,7 +172,7 @@
         },
         "artifacts": {
           "eyebrow": "Operaciones",
-          "title": "Estados de cuenta y reenvíos",
+          "title": "Comprobantes y reenvíos",
           "description": "Revisa versiones y entregas recientes antes de abrir una acción manual."
         },
         "cases": {
