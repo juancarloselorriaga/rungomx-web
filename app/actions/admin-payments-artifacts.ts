@@ -17,14 +17,6 @@ import {
 
 const governanceOperationSchema = z.enum(['rebuild', 'resend']);
 const artifactTypeSchema = z.enum(['payout_statement']);
-const artifactGovernanceValidationCodes = [
-  'VALIDATION_FAILED',
-  'REQUIRED_FIELD',
-  'INVALID_NUMBER',
-  'INVALID_STRING',
-  'INVALID_ENUM',
-] as const;
-
 const governanceActionSchema = z
   .object({
     operation: governanceOperationSchema,
@@ -48,7 +40,11 @@ const governanceActionSchema = z
 
 type GovernanceOperation = z.infer<typeof governanceOperationSchema>;
 type ArtifactGovernanceValidationCode =
-  (typeof artifactGovernanceValidationCodes)[number];
+  | 'VALIDATION_FAILED'
+  | 'REQUIRED_FIELD'
+  | 'INVALID_NUMBER'
+  | 'INVALID_STRING'
+  | 'INVALID_ENUM';
 
 function mapArtifactGovernanceValidationIssue(
   issue: z.ZodError['issues'][number],
