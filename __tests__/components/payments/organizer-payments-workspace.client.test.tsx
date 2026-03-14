@@ -78,8 +78,6 @@ const issuesResponse = {
         entityId: 'payout-1',
         occurredAt: '2026-03-03T11:55:00.000Z',
         state: 'action_needed' as const,
-        stateLabel: 'Action Needed' as const,
-        stateDescription: 'Paused by risk controls',
         recoveryGuidance: null,
       },
     ],
@@ -92,8 +90,6 @@ const issuesResponse = {
         entityId: 'payout-2',
         occurredAt: '2026-03-03T11:40:00.000Z',
         state: 'in_progress' as const,
-        stateLabel: 'In Progress' as const,
-        stateDescription: 'Processing normally',
         recoveryGuidance: null,
       },
     ],
@@ -174,6 +170,8 @@ describe('OrganizerPaymentsWorkspace', () => {
     expect(
       screen.getByText('Items that need action to keep this organization payout-ready.'),
     ).toBeInTheDocument();
+    expect(screen.queryByText('trace-action')).not.toBeInTheDocument();
+    expect(screen.queryByText('trace-progress')).not.toBeInTheDocument();
   });
 
   it('renders degraded state and supports retry when API calls fail', async () => {

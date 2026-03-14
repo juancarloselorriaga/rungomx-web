@@ -4,8 +4,8 @@ import { Link } from '@/i18n/navigation';
 import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
 import {
+  getOrganizerPayoutRequestErrorKey,
   getOrganizerPayoutReasonFamily,
-  humanizeTechnicalCode,
 } from '@/lib/payments/organizer/presentation';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -46,6 +46,11 @@ type RequestedAmountParseResult =
   | { kind: 'invalid' }
   | { kind: 'valid'; value: number };
 
+type RequestErrorPayload = {
+  code?: string;
+  reasonCode?: string;
+};
+
 function createIdempotencyKey(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return `${prefix}:${crypto.randomUUID()}`;
@@ -64,6 +69,19 @@ function parseRequestedAmount(rawValue: string): RequestedAmountParseResult {
   }
 
   return { kind: 'valid', value: parsed };
+}
+
+function resolveLocalizedRequestError(
+  t: ReturnType<typeof useTranslations>,
+  payload: RequestErrorPayload,
+): string {
+  const errorKey = getOrganizerPayoutRequestErrorKey(payload.reasonCode ?? payload.code);
+
+  if (errorKey) {
+    return t(`request.errors.${errorKey}`);
+  }
+
+  return t('request.errors.unknownAction');
 }
 
 export function PayoutRequestForm({
@@ -128,7 +146,7 @@ export function PayoutRequestForm({
       const payload = (await response.json()) as {
         error?: string;
         code?: string;
-        reason?: string;
+        reasonCode?: string;
         suggestedAction?: string;
         data?: {
           payoutQuoteId: string;
@@ -162,7 +180,7 @@ export function PayoutRequestForm({
         return;
       }
 
-      setErrorMessage(payload.reason || t('request.errors.submitFailed'));
+      setErrorMessage(resolveLocalizedRequestError(t, payload));
     } catch {
       setErrorMessage(t('request.errors.submitFailed'));
     } finally {
@@ -199,7 +217,8 @@ export function PayoutRequestForm({
       });
 
       const payload = (await response.json()) as {
-        reason?: string;
+        code?: string;
+        reasonCode?: string;
         data?: {
           payoutQueuedIntentId: string;
           requestedAmountMinor: number;
@@ -219,7 +238,7 @@ export function PayoutRequestForm({
         return;
       }
 
-      setErrorMessage(payload.reason || t('request.errors.queueFailed'));
+      setErrorMessage(resolveLocalizedRequestError(t, payload));
     } catch {
       setErrorMessage(t('request.errors.queueFailed'));
     } finally {
@@ -291,7 +310,7 @@ export function PayoutRequestForm({
             disabled={isSubmitting || isQueueSubmitting}
             className="w-full sm:w-auto"
           >
-            {isSubmitting ? t('home.shell.loadingTitle') : t('actions.requestPayout')}
+            {isSubmitting ? t('request.submittingAction') : t('actions.requestPayout')}
           </Button>
 
           {pendingQueueAmountMinor != null ? (
@@ -302,7 +321,7 @@ export function PayoutRequestForm({
               disabled={isSubmitting || isQueueSubmitting}
               className="w-full sm:w-auto"
             >
-              {isQueueSubmitting ? t('home.shell.loadingTitle') : t('actions.queuePayoutRequest')}
+              {isQueueSubmitting ? t('request.queueSubmittingAction') : t('actions.queuePayoutRequest')}
             </Button>
           ) : null}
         </div>
@@ -342,12 +361,6 @@ export function PayoutRequestForm({
               <p className="text-muted-foreground">
                 {t('request.summary.requestId')} <PaymentsMonoValue as="span">{requestSuccess.payoutRequestId}</PaymentsMonoValue>
               </p>
-              <p className="text-muted-foreground">
-                {t('request.summary.quoteId')} <PaymentsMonoValue as="span">{requestSuccess.payoutQuoteId}</PaymentsMonoValue>
-              </p>
-              <p className="text-muted-foreground">
-                {t('request.summary.contractId')} <PaymentsMonoValue as="span">{requestSuccess.payoutContractId}</PaymentsMonoValue>
-              </p>
             </div>
           </details>
           <Button asChild variant="outline" className="w-full sm:w-auto">
@@ -386,16 +399,6 @@ export function PayoutRequestForm({
               <p className="text-muted-foreground">
                 {t('request.summary.queueIntentId')} {' '}
                 <PaymentsMonoValue as="span">{queueSuccess.payoutQueuedIntentId}</PaymentsMonoValue>
-              </p>
-              <p className="text-muted-foreground">
-                {t('request.summary.blockedReason')} {' '}
-                <PaymentsMonoValue as="span">
-                  {humanizeTechnicalCode(queueSuccess.blockedReasonCode)}
-                </PaymentsMonoValue>
-              </p>
-              <p className="text-muted-foreground">
-                {t('request.summary.rawBlockedReason')} {' '}
-                <PaymentsMonoValue as="span">{queueSuccess.blockedReasonCode}</PaymentsMonoValue>
               </p>
             </div>
           </details>

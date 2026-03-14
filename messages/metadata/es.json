@@ -262,11 +262,11 @@
     "AdminPayments": {
       "metadata": {
         "title": "Economía de pagos | RunGoMX",
-        "description": "Monitorea comisiones netas reconocidas con contexto de ajustes financieros.",
+        "description": "Monitorea comisiones de plataforma, operaciones de retiro, riesgo e investigación.",
         "keywords": ["economía de pagos", "comisiones de plataforma", "pagos admin"],
         "openGraph": {
           "title": "Economía de pagos | RunGoMX",
-          "description": "Revisa comisiones netas reconocidas y contexto de ajustes.",
+          "description": "Revisa comisiones de plataforma, operaciones de retiro, riesgo e investigación.",
           "imageAlt": "Tablero de economía de pagos"
         }
       }
@@ -322,11 +322,11 @@
     "DashboardPayments": {
       "metadata": {
         "title": "Espacio de pagos | RunGoMX",
-        "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
+        "description": "Consulta tu saldo disponible, el estado de tus retiros y el historial.",
         "keywords": ["retiros director de carrera", "espacio de pagos", "elegibilidad cartera"],
         "openGraph": {
           "title": "Espacio de pagos | RunGoMX",
-          "description": "Sigue elegibilidad de cartera, solicitudes de retiro y progreso del ciclo de pagos.",
+          "description": "Consulta tu saldo disponible, el estado de tus retiros y el historial.",
           "imageAlt": "Espacio de pagos para Directores de Carrera"
         }
       }

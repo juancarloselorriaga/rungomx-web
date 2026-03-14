@@ -39,7 +39,7 @@ export async function GET(
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid payout request ID',
+          error: 'INVALID_PAYOUT_REQUEST_ID',
           details: parsedParams.error.issues,
         },
         { status: 400 },
@@ -55,7 +55,7 @@ export async function GET(
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid organizationId',
+          error: 'INVALID_ORGANIZATION_ID',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -118,7 +118,7 @@ export async function GET(
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout request not found',
+              error: 'PAYOUT_STATEMENT_NOT_FOUND',
               code: error.code,
             },
             { status: 404 },
@@ -130,9 +130,9 @@ export async function GET(
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout statement is not available for non-terminal payout status',
+              error: 'PAYOUT_STATEMENT_UNAVAILABLE',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 409 },
           ),
@@ -143,9 +143,9 @@ export async function GET(
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout statement baseline could not be resolved',
+              error: 'PAYOUT_STATEMENT_BASELINE_UNAVAILABLE',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 500 },
           ),
@@ -155,9 +155,9 @@ export async function GET(
       return withNoStore(
         NextResponse.json(
           {
-            error: 'Invalid payout statement request',
+            error: 'INVALID_PAYOUT_STATEMENT_REQUEST',
             code: error.code,
-            reason: error.message,
+            reasonCode: error.code,
           },
           { status: 400 },
         ),
@@ -170,6 +170,6 @@ export async function GET(
       actorUserId: authContext.user.id,
       error,
     });
-    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+    return withNoStore(NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 }));
   }
 }

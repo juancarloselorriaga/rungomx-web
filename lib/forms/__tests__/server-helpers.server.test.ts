@@ -202,6 +202,39 @@ describe('server-helpers', () => {
       }
     });
 
+    it('should support opt-in validation code mapping', () => {
+      const schema = z.object({
+        traceId: z.string().trim().min(1),
+        artifactVersion: z.number().int().positive(),
+      });
+
+      const result = validateInput(
+        schema,
+        { traceId: '', artifactVersion: 'bad' },
+        {
+          issueMapper: (issue) => {
+            if (issue.path[0] === 'traceId') return 'REQUIRED_FIELD';
+            if (issue.path[0] === 'artifactVersion') return 'INVALID_NUMBER';
+            return 'VALIDATION_FAILED';
+          },
+          validationMessage: 'VALIDATION_FAILED',
+        },
+      );
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toEqual({
+          ok: false,
+          error: 'INVALID_INPUT',
+          message: 'VALIDATION_FAILED',
+          fieldErrors: {
+            traceId: ['REQUIRED_FIELD'],
+            artifactVersion: ['INVALID_NUMBER'],
+          },
+        });
+      }
+    });
+
     it('should handle complex schemas with nested objects', () => {
       const schema = z.object({
         user: z.object({

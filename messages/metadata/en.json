@@ -252,11 +252,11 @@
     "AdminPayments": {
       "metadata": {
         "title": "Payments economics | RunGoMX",
-        "description": "Monitor net recognized platform fees with supporting adjustment context.",
+        "description": "Monitor platform fees, payout operations, risk, and investigation workflows.",
         "keywords": ["payments economics", "platform fees", "admin payments"],
         "openGraph": {
           "title": "Payments economics | RunGoMX",
-          "description": "Review net recognized platform fees and adjustment context.",
+          "description": "Review platform fees, payout operations, risk, and investigation workflows.",
           "imageAlt": "Payments economics dashboard"
         }
       }
@@ -312,11 +312,11 @@
     "DashboardPayments": {
       "metadata": {
         "title": "Payments workspace | RunGoMX",
-        "description": "Track wallet readiness, payout requests, and payout lifecycle progress.",
+        "description": "Review available balance, payout status, and payout history.",
         "keywords": ["race director payouts", "payments workspace", "wallet readiness"],
         "openGraph": {
           "title": "Payments workspace | RunGoMX",
-          "description": "Track wallet readiness, payout requests, and payout lifecycle progress.",
+          "description": "Review available balance, payout status, and payout history.",
           "imageAlt": "Race Director payments workspace"
         }
       }

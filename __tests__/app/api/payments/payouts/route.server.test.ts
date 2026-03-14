@@ -176,9 +176,9 @@ describe('POST /api/payments/payouts', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Payout quote request is not eligible',
+      error: 'PAYOUT_REQUEST_CONFLICT',
       code: 'PAYOUT_NOT_ELIGIBLE',
-      reason: 'Organizer is not eligible for immediate payout because max withdrawable amount is zero.',
+      reasonCode: 'PAYOUT_NOT_ELIGIBLE',
     });
   });
 
@@ -206,10 +206,9 @@ describe('POST /api/payments/payouts', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Payout request conflicts with active payout lifecycle',
+      error: 'PAYOUT_REQUEST_CONFLICT',
       code: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_REJECTED',
-      reason:
-        'Organizer already has an active payout lifecycle. reasonCode=active_processing_payout_exists policyOutcome=reject',
+      reasonCode: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_REJECTED',
     });
   });
 
@@ -239,10 +238,9 @@ describe('POST /api/payments/payouts', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Payout request conflicts with active lifecycle and should be queued',
+      error: 'PAYOUT_REQUEST_CONFLICT',
       code: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED',
-      reason:
-        'Organizer already has an active payout lifecycle. reasonCode=active_requested_payout_exists policyOutcome=queue',
+      reasonCode: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED',
       suggestedAction: 'submit_queue_intent',
     });
   });
@@ -271,9 +269,9 @@ describe('POST /api/payments/payouts', () => {
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({
-      error: 'Payout quote could not be persisted',
+      error: 'PAYOUT_REQUEST_PERSIST_FAILED',
       code: 'PAYOUT_REQUEST_INSERT_FAILED',
-      reason: 'Payout request could not be persisted.',
+      reasonCode: 'PAYOUT_REQUEST_INSERT_FAILED',
     });
   });
 

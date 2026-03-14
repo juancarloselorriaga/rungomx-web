@@ -330,8 +330,6 @@ async function mockWorkspaceApis(
               entityId: processingPayoutRequestId,
               occurredAt: '2026-03-03T11:50:00.000Z',
               state: 'action_needed',
-              stateLabel: 'Action Needed',
-              stateDescription: 'Manual review required before payout can continue.',
               recoveryGuidance: null,
             },
           ],
@@ -344,8 +342,6 @@ async function mockWorkspaceApis(
               entityId: terminalPayoutRequestId,
               occurredAt: '2026-03-03T11:40:00.000Z',
               state: 'in_progress',
-              stateLabel: 'In Progress',
-              stateDescription: 'Settlement checks running.',
               recoveryGuidance: null,
             },
           ],
@@ -496,7 +492,7 @@ test.describe('Organizer Payments E2E', () => {
 
     await page.goto(`/en/dashboard/payments/payouts?organizationId=${organizationId}`);
 
-    await page.getByRole('button', { name: 'New payout' }).click();
+    await page.getByRole('button', { name: 'Request payout' }).click();
     const payoutDialog = page.getByRole('dialog');
     await expect(payoutDialog).toBeVisible();
     const amountInput = payoutDialog.getByLabel('Payout amount');
@@ -515,7 +511,7 @@ test.describe('Organizer Payments E2E', () => {
     ]);
     await expect.poll(() => requestCount).toBe(firstPayoutSubmitCount + 1);
     await expect(page.getByText('Payout requested')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open details' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Open payout details' })).toBeVisible();
 
     await amountInput.fill('50000');
     const secondPayoutSubmitCount = requestCount;
@@ -531,11 +527,11 @@ test.describe('Organizer Payments E2E', () => {
     await expect.poll(() => requestCount).toBe(secondPayoutSubmitCount + 1);
     await expect(
       page.getByText(
-        'This organizer already has an active payout. Queue the next request for when the current cycle finishes.',
+        'This organization already has a payout in progress. You can line up the next one to start after it finishes.',
       ),
     ).toBeVisible();
 
-    const queueButton = page.getByRole('button', { name: 'Prepare next payout' });
+    const queueButton = page.getByRole('button', { name: 'Line up next payout' });
     await expect(queueButton).toBeVisible();
     const queueIntentSubmitCount = queuedIntentCount;
     await Promise.all([
@@ -548,7 +544,7 @@ test.describe('Organizer Payments E2E', () => {
       queueButton.click(),
     ]);
 
-    await expect(page.getByText('Next payout prepared')).toBeVisible();
+    await expect(page.getByText('Next payout lined up')).toBeVisible();
     await expect.poll(() => requestCount).toBe(2);
     await expect.poll(() => queuedIntentCount).toBe(queueIntentSubmitCount + 1);
     await expect.poll(() => queuedIntentRequestedAmountMinor).toBe(50_000);
@@ -573,10 +569,11 @@ test.describe('Organizer Payments E2E', () => {
     await expect(page.getByRole('heading', { name: 'Payout history' })).toBeVisible();
     const pausedLifecycleItem = payoutHistorySection
       .locator('li')
-      .filter({ hasText: 'Manual review is required' })
+      .filter({ hasText: 'This payout needs manual review' })
       .first();
     await pausedLifecycleItem.locator('summary').click();
-    await expect(pausedLifecycleItem.getByText('risk_manual_review')).toBeVisible();
+    await expect(pausedLifecycleItem.getByText('Support details')).toBeVisible();
+    await expect(pausedLifecycleItem.getByText('risk_manual_review')).toHaveCount(0);
     await expect(
       page.locator('span:visible').filter({ hasText: /^Completed$/ }).first(),
     ).toBeVisible();
@@ -599,7 +596,7 @@ test.describe('Organizer Payments E2E', () => {
       });
     });
 
-    await page.getByRole('button', { name: 'View statement' }).click();
+    await page.getByRole('button', { name: 'View payout statement' }).click();
     await expect(page.getByText('The statement is available.')).toBeVisible();
     const statementSection = page
       .locator('section')
@@ -622,9 +619,9 @@ test.describe('Organizer Payments E2E', () => {
     await waitForPayoutDetailPageReady(page, processingPayoutRequestId);
     await expect(page.getByText('Processing').first()).toBeVisible();
     await expect(
-      page.getByText('The statement will appear once the payout reaches a terminal state.'),
+      page.getByText('The statement will appear once this payout reaches a final state.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'View statement' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'View payout statement' })).toHaveCount(0);
 
     await expect(page.getByRole('link', { name: 'Back to payout history' })).toHaveAttribute(
       'href',
@@ -705,7 +702,7 @@ test.describe('Organizer Payments E2E', () => {
 
     await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
     await waitForPayoutDetailPageReady(page, terminalPayoutRequestId);
-    await page.getByRole('button', { name: 'View statement' }).click();
+    await page.getByRole('button', { name: 'View payout statement' }).click();
     await expect(page.getByText('The statement is available.')).toBeVisible();
 
     const telemetry = await page.evaluate(

@@ -32,7 +32,7 @@ jest.mock('next-intl/server', () => ({
         return `${values?.count} organizations available`;
       }
       if (key === 'actions.newPayout') {
-        return 'New payout';
+        return 'Request payout';
       }
       if (key === 'detail.pageTitle') {
         return `Payout #${values?.id}`;
@@ -340,7 +340,7 @@ describe('dashboard payments pages', () => {
     });
     expect(html).toContain('data-organization-count-label="1 organizations available"');
     expect(html).toContain('data-organization-id="org-user-1"');
-    expect(html).toContain('data-trigger-label="New payout"');
+    expect(html).toContain('data-trigger-label="Request payout"');
     expect(html).toContain('data-scope-summary="Showing 0-0 of 0 payouts"');
     expect(html).toContain('data-page-status="Page 0 of 0"');
     expect(html.indexOf('data-testid="payout-history"')).toBeLessThan(

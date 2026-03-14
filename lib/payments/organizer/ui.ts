@@ -26,8 +26,6 @@ export type OrganizerWalletIssueActivityItem = {
   entityId: string;
   occurredAt: string;
   state: 'action_needed' | 'in_progress';
-  stateLabel: 'Action Needed' | 'In Progress';
-  stateDescription: string;
   recoveryGuidance: {
     policyCode: string;
     reasonCode: string;

@@ -181,10 +181,9 @@ describe('POST /api/payments/payouts/queued-intents', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Queued payout intent is not required',
+      error: 'QUEUED_PAYOUT_CONFLICT',
       code: 'PAYOUT_QUEUE_ELIGIBLE_FOR_IMMEDIATE',
-      reason:
-        'Organizer is currently eligible for immediate payout; queueing is not required for this request.',
+      reasonCode: 'PAYOUT_QUEUE_ELIGIBLE_FOR_IMMEDIATE',
     });
   });
 
@@ -213,9 +212,9 @@ describe('POST /api/payments/payouts/queued-intents', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Queued payout intent already exists for organizer',
+      error: 'QUEUED_PAYOUT_CONFLICT',
       code: 'PAYOUT_QUEUE_ALREADY_ACTIVE',
-      reason: 'Organizer already has an active queued payout lifecycle.',
+      reasonCode: 'PAYOUT_QUEUE_ALREADY_ACTIVE',
     });
   });
 

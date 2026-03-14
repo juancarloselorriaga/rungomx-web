@@ -41,13 +41,13 @@ export function EventPaymentsHeader({
         <dl className="grid gap-3 rounded-lg border bg-background/70 p-4 md:grid-cols-[minmax(12rem,0.75fr)_minmax(0,1.25fr)]">
           <div className="space-y-1">
             <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              {organizationLabel ?? 'Organization'}
+              {organizationLabel ?? 'Selected organization'}
             </dt>
             <dd className="text-sm font-medium">{organizationName}</dd>
           </div>
           <div className="space-y-1">
             <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              {scopeLabel ?? 'How it works'}
+              {scopeLabel ?? 'What happens here'}
             </dt>
             <dd className="text-sm text-muted-foreground">{note}</dd>
           </div>
