@@ -51,6 +51,7 @@ type ArtifactGovernanceLabels = {
   successPrefix: string;
   policyDeniedPrefix: string;
   genericErrorMessage: string;
+  errorMessages: Record<string, string>;
   recentVersionsTitle: string;
   recentVersionsDescription: string;
   recentDeliveriesTitle: string;
@@ -140,6 +141,29 @@ function renderOperationValue(
   return operation === 'rebuild' ? labels.operationRebuildLabel : labels.operationResendLabel;
 }
 
+function resolveArtifactGovernanceErrorMessage(
+  labels: ArtifactGovernanceLabels,
+  code: string | null | undefined,
+  fallbackCode = 'UNKNOWN_ERROR',
+): string {
+  const normalized = code?.trim() || fallbackCode;
+  return labels.errorMessages[normalized] ?? labels.errorMessages[fallbackCode];
+}
+
+function translateArtifactGovernanceFieldErrors(
+  labels: ArtifactGovernanceLabels,
+  fieldErrors: Record<string, string[]>,
+): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(fieldErrors).map(([field, codes]) => [
+      field,
+      codes.map((code) =>
+        resolveArtifactGovernanceErrorMessage(labels, code, 'VALIDATION_FAILED'),
+      ),
+    ]),
+  );
+}
+
 function versionSortKey(value: ArtifactVersionRecord): string {
   return `${value.traceId}:${value.artifactVersion.toString().padStart(8, '0')}:${value.id}`;
 }
@@ -200,12 +224,32 @@ export function ArtifactGovernanceDashboard({
       });
 
       if (!result.ok) {
-        const code = result.error || 'UNKNOWN_ERROR';
-        const detail = result.message || labels.genericErrorMessage;
+        if (result.error === 'INVALID_INPUT') {
+          const fieldErrors =
+            'fieldErrors' in result && result.fieldErrors
+              ? translateArtifactGovernanceFieldErrors(labels, result.fieldErrors)
+              : undefined;
+
+          return {
+            ok: false as const,
+            error: result.error,
+            fieldErrors,
+            message: resolveArtifactGovernanceErrorMessage(
+              labels,
+              result.message,
+              'VALIDATION_FAILED',
+            ),
+          };
+        }
+
+        const detail = resolveArtifactGovernanceErrorMessage(
+          labels,
+          result.error || 'UNKNOWN_ERROR',
+        );
         return {
           ok: false,
           error: result.error,
-          message: `${labels.policyDeniedPrefix}: ${code} (${detail})`,
+          message: `${labels.policyDeniedPrefix}: ${detail}`,
         };
       }
 

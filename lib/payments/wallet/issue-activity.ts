@@ -40,8 +40,6 @@ export type WalletIssueActivityItem = {
   entityId: string;
   occurredAt: Date;
   state: WalletIssueState;
-  stateLabel: 'Action Needed' | 'In Progress';
-  stateDescription: string;
   recoveryGuidance: WalletIssueRecoveryGuidance | null;
 };
 
@@ -65,83 +63,32 @@ type PersistedIssueEvent = {
   payloadJson: Record<string, unknown>;
 };
 
-function classifyIssueState(eventName: WalletIssueEventName): {
-  state: WalletIssueState;
-  stateLabel: 'Action Needed' | 'In Progress';
-  stateDescription: string;
-} {
+function classifyIssueState(eventName: WalletIssueEventName): WalletIssueState {
   switch (eventName) {
     case 'dispute.opened':
-      return {
-        state: 'action_needed',
-        stateLabel: 'Action Needed',
-        stateDescription:
-          'Evidence action is required to respond to this dispute before the configured deadline.',
-      };
+      return 'action_needed';
     case 'subscription.renewal_failed':
-      return {
-        state: 'action_needed',
-        stateLabel: 'Action Needed',
-        stateDescription:
-          'A billing recovery action is required to avoid grace expiry and access downgrade.',
-      };
+      return 'action_needed';
     case 'debt_control.pause_required':
-      return {
-        state: 'action_needed',
-        stateLabel: 'Action Needed',
-        stateDescription:
-          'Paid registrations were paused by debt policy; free registrations remain available while debt recovers.',
-      };
+      return 'action_needed';
     case 'debt_control.resume_allowed':
-      return {
-        state: 'in_progress',
-        stateLabel: 'In Progress',
-        stateDescription:
-          'Debt recovered through policy threshold and paid registrations were resumed automatically.',
-      };
+      return 'in_progress';
     case 'payout.queued':
-      return {
-        state: 'action_needed',
-        stateLabel: 'Action Needed',
-        stateDescription:
-          'Your payout is queued because eligibility is not currently met; resolve blockers so activation can proceed.',
-      };
+      return 'action_needed';
     case 'payout.requested':
     case 'payout.processing':
     case 'payout.resumed':
     case 'payout.completed':
     case 'payout.adjusted':
-      return {
-        state: 'in_progress',
-        stateLabel: 'In Progress',
-        stateDescription: 'Your payout request is progressing through the platform payout lifecycle.',
-      };
+      return 'in_progress';
     case 'payout.paused':
-      return {
-        state: 'action_needed',
-        stateLabel: 'Action Needed',
-        stateDescription:
-          'Your payout is paused by risk policy; review reason codes and complete required remediation to continue.',
-      };
+      return 'action_needed';
     case 'payout.failed':
-      return {
-        state: 'action_needed',
-        stateLabel: 'Action Needed',
-        stateDescription:
-          'Your payout failed to complete and requires follow-up action before a new payout lifecycle can proceed.',
-      };
+      return 'action_needed';
     case 'refund.executed':
-      return {
-        state: 'in_progress',
-        stateLabel: 'In Progress',
-        stateDescription: 'A refund lifecycle update is currently managed by platform processing rules.',
-      };
+      return 'in_progress';
     default:
-      return {
-        state: 'in_progress',
-        stateLabel: 'In Progress',
-        stateDescription: 'This financial workflow item is currently managed by platform processing.',
-      };
+      return 'in_progress';
   }
 }
 
@@ -195,9 +142,7 @@ function toIssueItem(event: PersistedIssueEvent): WalletIssueActivityItem {
     entityType: event.entityType,
     entityId: event.entityId,
     occurredAt: event.occurredAt,
-    state: classification.state,
-    stateLabel: classification.stateLabel,
-    stateDescription: classification.stateDescription,
+    state: classification,
     recoveryGuidance: buildRecoveryGuidance(eventName, event.payloadJson),
   };
 }

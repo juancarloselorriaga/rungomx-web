@@ -44,13 +44,13 @@ describe('payments wallet explainability', () => {
 
     expect(result).not.toBeNull();
     expect(result!.eventName).toBe('payment.captured');
-    expect(result!.reasonText).toContain('captured');
+    expect(result!.reasonText).toContain('cleared');
     expect(result!.impactedEntities).toEqual(
       expect.arrayContaining([
         {
           entityType: 'registration',
           entityId: 'registration-1',
-          label: 'Primary financial entity',
+          label: 'Primary record',
         },
       ]),
     );
@@ -59,7 +59,7 @@ describe('payments wallet explainability', () => {
       expect.arrayContaining([
         {
           kind: 'trace',
-          label: 'Trace reference',
+          label: 'Trace',
           value: 'trace-pay-1',
         },
       ]),
@@ -86,7 +86,7 @@ describe('payments wallet explainability', () => {
 
     expect(result).not.toBeNull();
     expect(result!.eventName).toBe('financial.unknown');
-    expect(result!.reasonText).toContain('balance-impacting');
+    expect(result!.reasonText).toContain('balance-affecting');
   });
 
   it('describes positive financial adjustments as balance-increasing corrections', async () => {
@@ -110,8 +110,8 @@ describe('payments wallet explainability', () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.reasonText).toContain('positive financial adjustment');
-    expect(result!.policyDisclosure).toContain('Manual adjustments');
+    expect(result!.reasonText).toContain('positive balance adjustment');
+    expect(result!.policyDisclosure).toContain('Manual balance adjustments');
   });
 
   it('describes negative financial adjustments as debt-increasing corrections', async () => {
@@ -135,7 +135,7 @@ describe('payments wallet explainability', () => {
     });
 
     expect(result).not.toBeNull();
-    expect(result!.reasonText).toContain('negative financial adjustment');
+    expect(result!.reasonText).toContain('negative balance adjustment');
   });
 
   it('returns null when event is not found for organizer scope', async () => {
@@ -175,8 +175,8 @@ describe('payments wallet explainability', () => {
 
     expect(result).not.toBeNull();
     expect(result!.eventName).toBe('payout.adjusted');
-    expect(result!.reasonText).toContain('decreased');
-    expect(result!.policyDisclosure).toContain('decrease-only');
+    expect(result!.reasonText).toContain('reduced during review');
+    expect(result!.policyDisclosure).toContain('only reduce');
     expect(result!.impactedEntities).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -217,7 +217,7 @@ describe('payments wallet explainability', () => {
         {
           entityType: 'payout_request',
           entityId: 'payout-request-1',
-          label: 'Primary financial entity',
+          label: 'Primary record',
         },
         {
           entityType: 'registration',
@@ -232,7 +232,7 @@ describe('payments wallet explainability', () => {
         {
           entityType: 'payout_queued_intent',
           entityId: 'queued-intent-1',
-          label: 'Queued payout intent',
+          label: 'Queued payout',
         },
         {
           entityType: 'dispute_case',

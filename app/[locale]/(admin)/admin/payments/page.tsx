@@ -619,6 +619,30 @@ export default async function AdminPaymentsEconomicsPage({
     missingDatesLabel: tPayments('fx.missingDatesLabel'),
   };
 
+  const artifactUiErrorMessages = {
+    INVALID_INPUT: tPayments('artifacts.errorMessages.INVALID_INPUT'),
+    VALIDATION_FAILED: tPayments('artifacts.errorMessages.VALIDATION_FAILED'),
+    REQUIRED_FIELD: tPayments('artifacts.errorMessages.REQUIRED_FIELD'),
+    INVALID_NUMBER: tPayments('artifacts.errorMessages.INVALID_NUMBER'),
+    INVALID_STRING: tPayments('artifacts.errorMessages.INVALID_STRING'),
+    INVALID_ENUM: tPayments('artifacts.errorMessages.INVALID_ENUM'),
+    UNAUTHENTICATED: tPayments('artifacts.errorMessages.UNAUTHENTICATED'),
+    FORBIDDEN: tPayments('artifacts.errorMessages.FORBIDDEN'),
+    SERVER_ERROR: tPayments('artifacts.errorMessages.SERVER_ERROR'),
+    ARTIFACT_TRACE_ID_REQUIRED: tPayments('artifacts.errorMessages.ARTIFACT_TRACE_ID_REQUIRED'),
+    ARTIFACT_REASON_REQUIRED: tPayments('artifacts.errorMessages.ARTIFACT_REASON_REQUIRED'),
+    ARTIFACT_SCOPE_SINGLETON_REQUIRED: tPayments(
+      'artifacts.errorMessages.ARTIFACT_SCOPE_SINGLETON_REQUIRED',
+    ),
+    ARTIFACT_UNSUPPORTED_TYPE: tPayments('artifacts.errorMessages.ARTIFACT_UNSUPPORTED_TYPE'),
+    ARTIFACT_TRACE_NOT_FOUND: tPayments('artifacts.errorMessages.ARTIFACT_TRACE_NOT_FOUND'),
+    ARTIFACT_VERSION_NOT_FOUND: tPayments('artifacts.errorMessages.ARTIFACT_VERSION_NOT_FOUND'),
+    ARTIFACT_RESEND_RATE_LIMITED: tPayments(
+      'artifacts.errorMessages.ARTIFACT_RESEND_RATE_LIMITED',
+    ),
+    UNKNOWN_ERROR: tPayments('artifacts.errorMessages.UNKNOWN_ERROR'),
+  } as const;
+
   const artifactLabels = {
     sectionTitle: tPayments('artifacts.sectionTitle'),
     sectionDescription: tPayments('artifacts.sectionDescription'),
@@ -640,6 +664,7 @@ export default async function AdminPaymentsEconomicsPage({
     successPrefix: tPayments('artifacts.successPrefix'),
     policyDeniedPrefix: tPayments('artifacts.policyDeniedPrefix'),
     genericErrorMessage: tPayments('artifacts.genericErrorMessage'),
+    errorMessages: artifactUiErrorMessages,
     recentVersionsTitle: tPayments('artifacts.recentVersionsTitle'),
     recentVersionsDescription: tPayments('artifacts.recentVersionsDescription'),
     recentDeliveriesTitle: tPayments('artifacts.recentDeliveriesTitle'),
@@ -693,6 +718,20 @@ export default async function AdminPaymentsEconomicsPage({
     identifiersHeader: tPayments('caseLookup.identifiersHeader'),
     sourcesHeader: tPayments('caseLookup.sourcesHeader'),
   };
+  const caseLookupUiResult = caseLookupResult
+    ? {
+        ...caseLookupResult,
+        disambiguationGroups: caseLookupResult.disambiguationGroups.map((group) => ({
+          ...group,
+          uiReason:
+            group.reasonCode === 'multiple_traces_matched'
+              ? tPayments('caseLookup.disambiguationReasons.multipleTraces', {
+                  count: group.traceIds.length,
+                })
+              : tPayments('caseLookup.disambiguationReasons.fallback'),
+        })),
+      }
+    : null;
   const caseLookupSummaryLabel = caseLookupResult
     ? tPayments('caseLookup.summaryLabel', {
         shown: caseLookupResult.returnedCaseCount,
@@ -1121,7 +1160,7 @@ export default async function AdminPaymentsEconomicsPage({
               locale={locale as AppLocale}
               selectedRange={selectedRange}
               searchQuery={caseQuery}
-              result={caseLookupResult}
+              result={caseLookupUiResult}
               labels={caseLookupLabels}
               summaryLabel={caseLookupSummaryLabel}
               summaryLimitedHint={caseLookupSummaryLimitedHint}

@@ -50,8 +50,8 @@ describe('financial case lookup projection helpers', () => {
       {
         normalizedIdentifier: 'payout-req-001',
         displayIdentifier: 'PAYOUT-REQ-001',
+        reasonCode: 'multiple_traces_matched',
         traceIds: ['trace-1', 'trace-2'],
-        reason: '2 traces matched this identifier',
       },
     ]);
   });
@@ -226,7 +226,7 @@ describe('lookupFinancialCases DB-backed branches', () => {
         normalizedIdentifier: uuid,
         displayIdentifier: uuid,
         traceIds: ['trace-from-quote', 'trace-from-request'],
-        reason: '2 traces matched this identifier',
+        reasonCode: 'multiple_traces_matched',
       },
     ]);
   });
@@ -283,7 +283,7 @@ describe('lookupFinancialCases DB-backed branches', () => {
         normalizedIdentifier: sharedIdentifier,
         displayIdentifier: 'shared-i…7890',
         traceIds: ['trace-a', 'trace-b'],
-        reason: '2 traces matched this identifier',
+        reasonCode: 'multiple_traces_matched',
       },
     ]);
   });

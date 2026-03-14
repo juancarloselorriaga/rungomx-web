@@ -80,7 +80,17 @@ function createLabels<T extends Record<string, unknown>>(): T {
 
 const caseLookupLabels = createLabels<FinancialCaseLookupLabels>();
 const evidenceLabels = createLabels<EvidencePackReviewLabels>();
-const governanceLabels = createLabels<ArtifactGovernanceLabels>();
+const governanceLabels = Object.assign(createLabels<ArtifactGovernanceLabels>(), {
+  errorMessages: {
+    VALIDATION_FAILED: 'validationFallbackMessage',
+    REQUIRED_FIELD: 'requiredFieldMessage',
+    INVALID_NUMBER: 'invalidNumberMessage',
+    INVALID_STRING: 'invalidStringMessage',
+    INVALID_ENUM: 'invalidEnumMessage',
+    ARTIFACT_TRACE_NOT_FOUND: 'errorMessageForCode:ARTIFACT_TRACE_NOT_FOUND',
+    UNKNOWN_ERROR: 'errorMessageForCode:UNKNOWN_ERROR',
+  },
+});
 const netRecognizedFeeLabels = Object.assign(createLabels<NetRecognizedFeeLabels>(), {
   sampleTracesScopeLabel: (shown: number, total: number) =>
     `sampleTracesScopeLabel:${shown}:${total}`,
@@ -342,7 +352,8 @@ const financialCaseLookupResultFixture: FinancialCaseLookupResult = {
       normalizedIdentifier: 'trace-01',
       displayIdentifier: 'trace-01',
       traceIds: ['trace-01', 'trace-02'],
-      reason: '2 traces matched this identifier',
+      reasonCode: 'multiple_traces_matched',
+      uiReason: 'disambiguationReasonMultipleTraces:2',
     },
   ],
 };
@@ -511,7 +522,7 @@ describe('Payments hardening component coverage', () => {
     );
 
     expect(screen.getAllByText('trace-01').length).toBeGreaterThan(0);
-    expect(screen.getByText('2 traces matched this identifier')).toBeInTheDocument();
+    expect(screen.getByText('disambiguationReasonMultipleTraces:2')).toBeInTheDocument();
     expect(screen.getByText('summaryLabel:1:3')).toBeInTheDocument();
     expect(screen.getByText('summaryLimitedHint:1:3')).toBeInTheDocument();
   });
@@ -756,7 +767,76 @@ describe('Payments hardening component coverage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
 
     await waitFor(() => {
-      expect(screen.getByText('policyDeniedPrefix: ARTIFACT_TRACE_NOT_FOUND (Trace not found)')).toBeInTheDocument();
+      expect(
+        screen.getByText('policyDeniedPrefix: errorMessageForCode:ARTIFACT_TRACE_NOT_FOUND'),
+      ).toBeInTheDocument();
     });
+  });
+
+  it('maps validation codes to localized field copy and validation fallback', async () => {
+    runArtifactGovernanceAdminActionMock.mockResolvedValue({
+      ok: false,
+      error: 'INVALID_INPUT',
+      message: 'VALIDATION_FAILED',
+      fieldErrors: {
+        traceId: ['REQUIRED_FIELD'],
+        artifactVersion: ['INVALID_NUMBER'],
+      },
+    });
+
+    render(
+      <ArtifactGovernanceDashboard
+        locale="en"
+        initialSummary={{ versions: [], deliveries: [] }}
+        labels={governanceLabels}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('operationFieldLabel'), {
+      target: { value: 'resend' },
+    });
+    fireEvent.change(screen.getByLabelText('reasonFieldLabel'), {
+      target: { value: 'manual_review' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('requiredFieldMessage')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('invalidNumberMessage')).toBeInTheDocument();
+    expect(screen.getByText('validationFallbackMessage')).toBeInTheDocument();
+    expect(screen.queryByText('Validation failed')).not.toBeInTheDocument();
+  });
+
+  it('falls back to safe translated copy for unknown validation codes', async () => {
+    runArtifactGovernanceAdminActionMock.mockResolvedValue({
+      ok: false,
+      error: 'INVALID_INPUT',
+      message: 'RAW_BACKEND_MESSAGE',
+      fieldErrors: {
+        traceId: ['RAW_ZOD_MESSAGE'],
+      },
+    });
+
+    render(
+      <ArtifactGovernanceDashboard
+        locale="en"
+        initialSummary={{ versions: [], deliveries: [] }}
+        labels={governanceLabels}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('reasonFieldLabel'), {
+      target: { value: 'manual_review' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('validationFallbackMessage').length).toBeGreaterThanOrEqual(1);
+    });
+
+    expect(screen.queryByText('RAW_BACKEND_MESSAGE')).not.toBeInTheDocument();
+    expect(screen.queryByText('RAW_ZOD_MESSAGE')).not.toBeInTheDocument();
   });
 });

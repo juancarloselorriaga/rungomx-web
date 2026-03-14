@@ -50,7 +50,7 @@ export type FinancialCaseDisambiguationGroup = {
   normalizedIdentifier: string;
   displayIdentifier: string;
   traceIds: string[];
-  reason: string;
+  reasonCode: 'multiple_traces_matched';
 };
 
 export type FinancialCaseLookupResult = {
@@ -149,7 +149,7 @@ export function projectFinancialCaseDisambiguationGroups(
       normalizedIdentifier,
       displayIdentifier: context.displayIdentifier,
       traceIds,
-      reason: `${traceIds.length} traces matched this identifier`,
+      reasonCode: 'multiple_traces_matched',
     });
   }
 
