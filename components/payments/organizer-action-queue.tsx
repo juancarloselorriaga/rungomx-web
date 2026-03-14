@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerWalletIssueActivityItem } from '@/lib/payments/organizer/ui';
-import { humanizeTechnicalCode } from '@/lib/payments/organizer/presentation';
+import { getOrganizerQueueEventCopy } from '@/lib/payments/organizer/presentation';
 import { useTranslations } from 'next-intl';
 import {
   PaymentsCountPill,
@@ -56,38 +56,6 @@ function QueueSection({
   const t = useTranslations('pages.dashboardPayments');
   const { visible, hidden } = splitVisibleItems(items);
 
-  const eventTitleMap: Record<string, string> = {
-    'payout.queued': t('wallet.queue.events.payoutQueued.title'),
-    'payout.requested': t('wallet.queue.events.payoutRequested.title'),
-    'payout.processing': t('wallet.queue.events.payoutProcessing.title'),
-    'payout.paused': t('wallet.queue.events.payoutPaused.title'),
-    'payout.resumed': t('wallet.queue.events.payoutResumed.title'),
-    'payout.completed': t('wallet.queue.events.payoutCompleted.title'),
-    'payout.failed': t('wallet.queue.events.payoutFailed.title'),
-    'payout.adjusted': t('wallet.queue.events.payoutAdjusted.title'),
-    'debt_control.pause_required': t('wallet.queue.events.debtPauseRequired.title'),
-    'debt_control.resume_allowed': t('wallet.queue.events.debtResumeAllowed.title'),
-    'dispute.opened': t('wallet.queue.events.disputeOpened.title'),
-    'subscription.renewal_failed': t('wallet.queue.events.subscriptionRenewalFailed.title'),
-    'refund.executed': t('wallet.queue.events.refundExecuted.title'),
-  };
-
-  const eventDescriptionMap: Record<string, string> = {
-    'payout.queued': t('wallet.queue.events.payoutQueued.description'),
-    'payout.requested': t('wallet.queue.events.payoutRequested.description'),
-    'payout.processing': t('wallet.queue.events.payoutProcessing.description'),
-    'payout.paused': t('wallet.queue.events.payoutPaused.description'),
-    'payout.resumed': t('wallet.queue.events.payoutResumed.description'),
-    'payout.completed': t('wallet.queue.events.payoutCompleted.description'),
-    'payout.failed': t('wallet.queue.events.payoutFailed.description'),
-    'payout.adjusted': t('wallet.queue.events.payoutAdjusted.description'),
-    'debt_control.pause_required': t('wallet.queue.events.debtPauseRequired.description'),
-    'debt_control.resume_allowed': t('wallet.queue.events.debtResumeAllowed.description'),
-    'dispute.opened': t('wallet.queue.events.disputeOpened.description'),
-    'subscription.renewal_failed': t('wallet.queue.events.subscriptionRenewalFailed.description'),
-    'refund.executed': t('wallet.queue.events.refundExecuted.description'),
-  };
-
   function formatDate(value: string) {
     const dateValue = new Date(value);
     if (Number.isNaN(dateValue.getTime())) return value;
@@ -124,65 +92,49 @@ function QueueSection({
       ) : (
         <div className="space-y-3">
           <ul className="space-y-3">
-            {visible.map((item) => (
-              <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-base font-semibold leading-tight">
-                      {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
-                    </p>
-                    <PaymentsMetadataText>
-                      {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
-                    </PaymentsMetadataText>
-                  </div>
-                  <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
-                    {badgeLabel}
-                  </Badge>
-                </div>
+            {visible.map((item) => {
+              const eventCopy = getOrganizerQueueEventCopy(item.eventName);
 
-                <div className="mt-3 flex flex-wrap gap-4">
-                  <PaymentsTimestamp>{formatDate(item.occurredAt)}</PaymentsTimestamp>
-                </div>
-
-                <div className="mt-4 space-y-2">
-                  {getDetailHref(item) ? (
-                    <div>
-                      <Button asChild size="sm" variant="outline">
-                        <Link href={getDetailHref(item)!}>{t('wallet.queue.openPayoutAction')}</Link>
-                      </Button>
+              return (
+                <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-base font-semibold leading-tight">{t(eventCopy.titleKey)}</p>
+                      <PaymentsMetadataText>{t(eventCopy.descriptionKey)}</PaymentsMetadataText>
                     </div>
-                  ) : null}
+                    <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
+                      {badgeLabel}
+                    </Badge>
+                  </div>
 
-                  <details className="rounded-lg border bg-muted/25 px-4 py-3">
-                    <summary className="cursor-pointer text-sm font-medium text-primary">
-                      {t('wallet.queue.detailsLabel')}
-                    </summary>
-                    <dl className="mt-3 space-y-2 text-sm">
+                  <div className="mt-3 flex flex-wrap gap-4">
+                    <PaymentsTimestamp>{formatDate(item.occurredAt)}</PaymentsTimestamp>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {getDetailHref(item) ? (
                       <div>
-                        <PaymentsMetaLabel>{t('wallet.queue.technicalEventLabel')}</PaymentsMetaLabel>
-                        <PaymentsMonoValue>{item.eventName}</PaymentsMonoValue>
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={getDetailHref(item)!}>{t('wallet.queue.openPayoutAction')}</Link>
+                        </Button>
                       </div>
-                      <div>
-                        <PaymentsMetaLabel>{t('wallet.queue.traceLabel')}</PaymentsMetaLabel>
-                        <PaymentsMonoValue>{item.traceId}</PaymentsMonoValue>
-                      </div>
-                      <div>
-                        <PaymentsMetaLabel>{t('wallet.queue.entityLabel')}</PaymentsMetaLabel>
-                        <PaymentsMonoValue>
-                          {item.entityType}:{item.entityId}
-                        </PaymentsMonoValue>
-                      </div>
-                      {item.recoveryGuidance?.reasonCode ? (
+                    ) : null}
+
+                    <details className="rounded-lg border bg-muted/25 px-4 py-3">
+                      <summary className="cursor-pointer text-sm font-medium text-primary">
+                        {t('wallet.queue.detailsLabel')}
+                      </summary>
+                      <dl className="mt-3 space-y-2 text-sm">
                         <div>
-                          <PaymentsMetaLabel>{t('wallet.queue.rawReasonLabel')}</PaymentsMetaLabel>
-                          <PaymentsMonoValue>{item.recoveryGuidance.reasonCode}</PaymentsMonoValue>
+                          <PaymentsMetaLabel>{t('wallet.queue.entityLabel')}</PaymentsMetaLabel>
+                          <PaymentsMonoValue>{item.entityId}</PaymentsMonoValue>
                         </div>
-                      ) : null}
-                    </dl>
-                  </details>
-                </div>
-              </li>
-            ))}
+                      </dl>
+                    </details>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
 
           {hidden.length > 0 ? (
@@ -191,24 +143,24 @@ function QueueSection({
                 {t('wallet.queue.moreItems', { count: hidden.length })}
               </summary>
               <ul className="mt-3 space-y-3">
-                {hidden.map((item) => (
-                  <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="font-medium">
-                          {eventTitleMap[item.eventName] ?? humanizeTechnicalCode(item.eventName)}
-                        </p>
-                        <PaymentsMetadataText>
-                          {eventDescriptionMap[item.eventName] ?? t('wallet.queue.genericDescription')}
-                        </PaymentsMetadataText>
+                {hidden.map((item) => {
+                  const eventCopy = getOrganizerQueueEventCopy(item.eventName);
+
+                  return (
+                    <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="font-medium">{t(eventCopy.titleKey)}</p>
+                          <PaymentsMetadataText>{t(eventCopy.descriptionKey)}</PaymentsMetadataText>
+                        </div>
+                        <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
+                          {badgeLabel}
+                        </Badge>
                       </div>
-                      <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
-                        {badgeLabel}
-                      </Badge>
-                    </div>
-                    <PaymentsTimestamp className="mt-3">{formatDate(item.occurredAt)}</PaymentsTimestamp>
-                  </li>
-                ))}
+                      <PaymentsTimestamp className="mt-3">{formatDate(item.occurredAt)}</PaymentsTimestamp>
+                    </li>
+                  );
+                })}
               </ul>
             </details>
           ) : null}

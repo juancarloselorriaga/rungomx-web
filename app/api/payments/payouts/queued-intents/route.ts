@@ -39,7 +39,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid queued payout payload',
+          error: 'INVALID_QUEUED_PAYOUT_PAYLOAD',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -99,12 +99,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         return withNoStore(
           NextResponse.json(
             {
-              error:
-                error.code === 'PAYOUT_QUEUE_ALREADY_ACTIVE'
-                  ? 'Queued payout intent already exists for organizer'
-                  : 'Queued payout intent is not required',
+              error: 'QUEUED_PAYOUT_CONFLICT',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 409 },
           ),
@@ -118,9 +115,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Queued payout intent could not be persisted',
+              error: 'QUEUED_PAYOUT_PERSIST_FAILED',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 500 },
           ),
@@ -130,9 +127,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return withNoStore(
         NextResponse.json(
           {
-            error: 'Invalid queued payout request',
+            error: 'INVALID_QUEUED_PAYOUT',
             code: error.code,
-            reason: error.message,
+            reasonCode: error.code,
           },
           { status: 400 },
         ),

@@ -31,7 +31,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid organizationId',
+          error: 'INVALID_ORGANIZATION_ID',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -66,10 +66,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       meta: {
         actionNeededCount: activity.actionNeededCount,
         inProgressCount: activity.inProgressCount,
-        semantics: {
-          actionNeededLabel: 'Action Needed',
-          inProgressLabel: 'In Progress',
-        },
       },
     });
 
@@ -82,6 +78,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
     });
 
-    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+    return withNoStore(NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 }));
   }
 }

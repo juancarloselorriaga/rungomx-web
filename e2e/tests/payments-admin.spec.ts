@@ -160,12 +160,12 @@ test.describe('Payments Admin E2E', () => {
     await expect(page.getByTestId('admin-payments-case-lookup-dashboard')).toBeVisible();
 
     const sharedTraceId = `trace:missing-${Date.now()}`;
-    await page.getByLabel('ID or trace').fill(sharedTraceId);
+    await page.getByLabel('Reference or trace').fill(sharedTraceId);
     await page.getByRole('button', { name: 'Search cases' }).click();
 
     await expect(page.getByText('No matches found')).toBeVisible();
     await expect(
-      page.getByText('We could not find a case for that identifier. Check the trace, payout request ID, or idempotency key.'),
+      page.getByText('We could not find a case for that identifier. Check the trace, payout reference, or idempotency key.'),
     ).toBeVisible();
 
     await page.getByRole('button', { name: /Open a trace/i }).click();

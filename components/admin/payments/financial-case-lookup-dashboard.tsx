@@ -9,6 +9,14 @@ import type { FinancialCaseLookupResult } from '@/lib/payments/support/case-look
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
 
+type FinancialCaseLookupUiResult = Omit<FinancialCaseLookupResult, 'disambiguationGroups'> & {
+  disambiguationGroups: Array<
+    FinancialCaseLookupResult['disambiguationGroups'][number] & {
+      uiReason: string;
+    }
+  >;
+};
+
 type FinancialCaseLookupLabels = {
   sectionTitle: string;
   sectionDescription: string;
@@ -42,7 +50,7 @@ type FinancialCaseLookupDashboardProps = {
   locale: 'es' | 'en';
   selectedRange: '7d' | '14d' | '30d';
   searchQuery: string;
-  result: FinancialCaseLookupResult | null;
+  result: FinancialCaseLookupUiResult | null;
   labels: FinancialCaseLookupLabels;
   summaryLabel: string | null;
   summaryLimitedHint: string | null;
@@ -214,7 +222,9 @@ export function FinancialCaseLookupDashboard({
                     className="border-dashed"
                   >
                     <p className="font-mono text-xs">{group.displayIdentifier}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{group.reason}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {group.uiReason}
+                    </p>
                     <SampledReferenceList
                       compact
                       items={group.traceIds}

@@ -106,9 +106,6 @@ describe('GET /api/payments/wallet/issues', () => {
           entityId: 'policy-1',
           occurredAt: new Date('2026-02-24T10:00:00.000Z'),
           state: 'action_needed',
-          stateLabel: 'Action Needed',
-          stateDescription:
-            'Paid registrations were paused by debt policy; free registrations remain available while debt recovers.',
           recoveryGuidance: {
             policyCode: 'debt_threshold_v1',
             reasonCode: 'debt_threshold_pause_required',
@@ -128,8 +125,6 @@ describe('GET /api/payments/wallet/issues', () => {
           entityId: 'payout-1',
           occurredAt: new Date('2026-02-24T09:00:00.000Z'),
           state: 'in_progress',
-          stateLabel: 'In Progress',
-          stateDescription: 'Your payout request is processing through the platform payout lifecycle.',
           recoveryGuidance: null,
         },
       ],
@@ -154,10 +149,6 @@ describe('GET /api/payments/wallet/issues', () => {
     expect(body.meta).toEqual({
       actionNeededCount: 1,
       inProgressCount: 1,
-      semantics: {
-        actionNeededLabel: 'Action Needed',
-        inProgressLabel: 'In Progress',
-      },
     });
   });
 });

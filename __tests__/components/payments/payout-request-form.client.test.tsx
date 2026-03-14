@@ -54,16 +54,25 @@ describe('PayoutRequestForm', () => {
   it('submits a payout request and renders outcome summary', async () => {
     const fetchMock = global.fetch as jest.Mock;
 
-    fetchMock.mockResolvedValueOnce(
-      mockJsonResponse({
-        data: {
-          payoutQuoteId: 'quote-1',
-          payoutRequestId: 'request-1',
-          payoutContractId: 'contract-1',
-          maxWithdrawableAmountMinor: 100_000,
-          requestedAmountMinor: 50_000,
-        },
-      }),
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve(
+                mockJsonResponse({
+                  data: {
+                    payoutQuoteId: 'quote-1',
+                    payoutRequestId: 'request-1',
+                    payoutContractId: 'contract-1',
+                    maxWithdrawableAmountMinor: 100_000,
+                    requestedAmountMinor: 50_000,
+                  },
+                }),
+              ),
+            10,
+          );
+        }),
     );
 
     render(<PayoutRequestForm organizationId="org-1" />);
@@ -78,13 +87,17 @@ describe('PayoutRequestForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'actions.requestPayout' }));
 
+    expect(
+      screen.getByRole('button', { name: 'request.submittingAction' }),
+    ).toBeInTheDocument();
+
     await waitFor(() => {
       expect(screen.getByText('request.successTitle')).toBeInTheDocument();
     });
 
     expect(screen.getByText(/request.summary.requestId/)).toBeInTheDocument();
-    expect(screen.getByText(/request.summary.quoteId/)).toBeInTheDocument();
-    expect(screen.getByText(/request.summary.contractId/)).toBeInTheDocument();
+    expect(screen.queryByText(/request.summary.quoteId/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/request.summary.contractId/)).not.toBeInTheDocument();
     expect(window.__RUNGO_PAYMENTS_SMOKE_TELEMETRY__).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -138,6 +151,9 @@ describe('PayoutRequestForm', () => {
     });
 
     expect(screen.getByText(/request.summary.queueIntentId/)).toBeInTheDocument();
+    expect(screen.getByText('request.summary.blockedReasonHuman')).toBeInTheDocument();
+    expect(screen.queryByText(/^request\.summary\.blockedReason$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^request\.summary\.rawBlockedReason$/)).not.toBeInTheDocument();
     expect(window.__RUNGO_PAYMENTS_SMOKE_TELEMETRY__).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -188,5 +204,32 @@ describe('PayoutRequestForm', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a safe localized fallback when the API returns an unknown code', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+
+    fetchMock.mockResolvedValueOnce(
+      mockJsonResponse(
+        {
+          error: 'PAYOUT_REQUEST_CONFLICT',
+          code: 'PAYOUT_UNKNOWN_CONDITION',
+          reasonCode: 'PAYOUT_UNKNOWN_CONDITION',
+        },
+        { ok: false, status: 409 },
+      ),
+    );
+
+    render(<PayoutRequestForm organizationId="org-1" />);
+
+    fireEvent.change(screen.getByLabelText('request.amountLabel'), {
+      target: { value: '50000' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'actions.requestPayout' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('request.errors.unknownAction')).toBeInTheDocument();
+    });
   });
 });

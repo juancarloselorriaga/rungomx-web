@@ -312,19 +312,19 @@
     },
     "payout": {
       "title": "Configuración de Pagos",
-      "description": "Configura cómo recibes los pagos de inscripciones a eventos.",
-      "accessRestriction": "Solo los propietarios y administradores de la organización pueden ver y editar la configuración de pagos.",
-      "emptyState": "Aún no hay perfil de pagos configurado. Agrega tu información bancaria para recibir pagos.",
+      "description": "Agrega los datos legales y bancarios que usaremos para depositar los retiros de tus inscripciones.",
+      "accessRestriction": "Sólo los propietarios y administradores pueden ver o actualizar estos datos de pago.",
+      "emptyState": "Aún no has configurado tus datos de pago. Agrega la cuenta bancaria donde quieres recibir tus retiros.",
       "fields": {
         "legalName": {
-          "label": "Nombre Legal",
+          "label": "Nombre legal",
           "placeholder": "Nombre de empresa o persona física",
-          "hint": "El nombre que aparecerá en las transferencias bancarias"
+          "hint": "Este es el nombre que aparecerá en las transferencias bancarias."
         },
         "rfc": {
           "label": "RFC",
           "placeholder": "XAXX010101000",
-          "hint": "Registro Federal de Contribuyentes (12-13 caracteres)"
+          "hint": "Registro Federal de Contribuyentes (12-13 caracteres)."
         },
         "bankName": {
           "label": "Nombre del Banco",
@@ -336,30 +336,30 @@
           "hint": "Número de cuenta interbancaria de 18 dígitos"
         },
         "accountHolder": {
-          "label": "Titular de la Cuenta",
-          "placeholder": "Nombre como aparece en la cuenta bancaria"
+          "label": "Nombre del titular",
+          "placeholder": "Nombre tal como aparece en la cuenta bancaria"
         }
       },
       "sections": {
-        "taxInfo": "Información Fiscal",
-        "bankInfo": "Cuenta Bancaria"
+        "taxInfo": "Datos fiscales",
+        "bankInfo": "Cuenta bancaria"
       },
       "buttons": {
-        "save": "Guardar Configuración",
+        "save": "Guardar datos de pago",
         "saving": "Guardando..."
       },
       "success": {
-        "toast": "Configuración de pagos guardada correctamente"
+        "toast": "Datos de pago guardados"
       },
       "errors": {
-        "forbidden": "Solo los propietarios y administradores pueden actualizar la configuración de pagos.",
-        "invalidRfc": "Formato de RFC inválido. Por favor ingresa un RFC válido.",
+        "forbidden": "Sólo los propietarios y administradores pueden actualizar los datos de pago.",
+        "invalidRfc": "Ingresa un RFC válido.",
         "invalidClabe": "La CLABE debe tener exactamente 18 dígitos.",
-        "generic": "Error al guardar la configuración de pagos. Inténtalo de nuevo."
+        "generic": "No pudimos guardar los datos de pago. Inténtalo de nuevo."
       },
       "help": {
-        "title": "¿Por qué necesitamos esto?",
-        "description": "La información de pago es necesaria para transferir las cuotas de inscripción recolectadas de tus eventos. Usamos esto para procesar transferencias bancarias seguras a tu cuenta."
+        "title": "¿Para qué pedimos esto?",
+        "description": "Usamos esta información para validar quién debe recibir los retiros y para enviar transferencias bancarias seguras por las inscripciones de tus eventos."
       }
     }
   }

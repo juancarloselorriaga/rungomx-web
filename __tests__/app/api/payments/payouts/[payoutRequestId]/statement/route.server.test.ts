@@ -103,7 +103,7 @@ describe('GET /api/payments/payouts/[payoutRequestId]/statement', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe('Invalid payout request ID');
+    expect(body.error).toBe('INVALID_PAYOUT_REQUEST_ID');
   });
 
   it('returns 400 when organizationId query is invalid', async () => {
@@ -121,7 +121,7 @@ describe('GET /api/payments/payouts/[payoutRequestId]/statement', () => {
 
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.error).toBe('Invalid organizationId');
+    expect(body.error).toBe('INVALID_ORGANIZATION_ID');
   });
 
   it('returns 403 when requester lacks organizer permissions', async () => {
@@ -187,7 +187,7 @@ describe('GET /api/payments/payouts/[payoutRequestId]/statement', () => {
 
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({
-      error: 'Payout request not found',
+      error: 'PAYOUT_STATEMENT_NOT_FOUND',
       code: 'PAYOUT_STATEMENT_NOT_FOUND',
     });
   });
@@ -213,9 +213,9 @@ describe('GET /api/payments/payouts/[payoutRequestId]/statement', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toEqual({
-      error: 'Payout statement is not available for non-terminal payout status',
+      error: 'PAYOUT_STATEMENT_UNAVAILABLE',
       code: 'PAYOUT_STATEMENT_STATUS_NOT_TERMINAL',
-      reason: 'Payout statement generation requires terminal status, received=processing.',
+      reasonCode: 'PAYOUT_STATEMENT_STATUS_NOT_TERMINAL',
     });
   });
 
@@ -240,10 +240,9 @@ describe('GET /api/payments/payouts/[payoutRequestId]/statement', () => {
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({
-      error: 'Payout statement baseline could not be resolved',
+      error: 'PAYOUT_STATEMENT_BASELINE_UNAVAILABLE',
       code: 'PAYOUT_STATEMENT_BASELINE_INCOMPLETE',
-      reason:
-        'Payout statement generation requires quote and contract baseline artifacts for the payout request.',
+      reasonCode: 'PAYOUT_STATEMENT_BASELINE_INCOMPLETE',
     });
   });
 

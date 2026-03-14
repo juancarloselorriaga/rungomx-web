@@ -40,7 +40,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid payout quote payload',
+          error: 'INVALID_PAYOUT_QUOTE_PAYLOAD',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -109,9 +109,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout quote could not be persisted',
+              error: 'PAYOUT_REQUEST_PERSIST_FAILED',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 500 },
           ),
@@ -127,14 +127,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         return withNoStore(
           NextResponse.json(
             {
-              error:
-                error.code === 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED'
-                  ? 'Payout request conflicts with active lifecycle and should be queued'
-                  : error.code === 'PAYOUT_REQUEST_ACTIVE_CONFLICT_REJECTED'
-                    ? 'Payout request conflicts with active payout lifecycle'
-                    : 'Payout quote request is not eligible',
+              error: 'PAYOUT_REQUEST_CONFLICT',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
               suggestedAction:
                 error.code === 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED'
                   ? 'submit_queue_intent'
@@ -148,9 +143,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return withNoStore(
         NextResponse.json(
           {
-            error: 'Invalid payout quote request',
+            error: 'INVALID_PAYOUT_REQUEST',
             code: error.code,
-            reason: error.message,
+            reasonCode: error.code,
           },
           { status: 400 },
         ),

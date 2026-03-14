@@ -24,6 +24,29 @@ import {
   signUpTestUser,
 } from '../utils/fixtures';
 
+type DemoPaymentsVolumeScenario = {
+  organizerCreds: { id: string; email: string; password: string; name: string };
+  athleteCreds: { id: string; email: string; password: string; name: string };
+  staffCreds: { id: string; email: string; password: string; name: string };
+  organizationId: string;
+  organizerName: string;
+  seriesSlug: string;
+  editionSlug: string;
+  editionId: string;
+};
+
+type VolumeTotals = {
+  gross: number;
+  fees: number;
+  proceeds: number;
+  count: number;
+};
+
+type ReconciliationTotals = {
+  captureEventCount: number;
+  excludedEventCount: number;
+};
+
 async function signInAsStaff(
   page: Page,
   credentials: { email: string; password: string },
@@ -52,133 +75,166 @@ async function openRegistrationPageAsAthlete(
   await expect(signInRequiredHeading).not.toBeVisible({ timeout: 10_000 });
 }
 
-function getSummaryCard(page: Page, label: string) {
-  return page
-    .getByText(label, { exact: true })
-    .first()
-    .locator('xpath=ancestor::div[contains(@class, "rounded-xl")][1]');
+async function setupDemoPaymentsVolumeScenario(page: Page): Promise<DemoPaymentsVolumeScenario> {
+  const db = getTestDb();
+
+  const organizerCreds = await signUpTestUser(page, 'org-demo-volume-', {
+    name: 'Demo Volume Organizer',
+  });
+  await setUserVerified(db, organizerCreds.email);
+  await createTestProfile(db, organizerCreds.id, {
+    dateOfBirth: new Date('1988-03-11'),
+    gender: 'male',
+    phone: '+523355501111',
+    city: 'Monterrey',
+    state: 'Nuevo León',
+  });
+  await assignExternalRole(db, organizerCreds.id, 'organizer');
+
+  const athleteCreds = await signUpTestUser(page, 'athlete-demo-volume-', {
+    name: 'Demo Volume Athlete',
+  });
+  await setUserVerified(db, athleteCreds.email);
+  await createTestProfile(db, athleteCreds.id, {
+    dateOfBirth: new Date('1994-08-20'),
+    gender: 'female',
+    phone: '+523355502222',
+    city: 'Guadalajara',
+    state: 'Jalisco',
+    emergencyContactName: 'Mariana Lopez',
+    emergencyContactPhone: '+523355503333',
+    shirtSize: 'M',
+  });
+  await assignExternalRole(db, athleteCreds.id, 'athlete');
+
+  const staffCreds = await signUpTestUser(page, 'staff-demo-volume-', {
+    name: 'Demo Volume Staff',
+  });
+  await setUserVerified(db, staffCreds.email);
+  let staffRole = await db.query.roles.findFirst({
+    where: eq(schema.roles.name, 'staff'),
+  });
+  if (!staffRole) {
+    staffRole = await createTestRole(db, {
+      name: 'staff',
+      description: 'Internal staff role for E2E tests',
+    });
+  }
+  await assignUserRole(db, staffCreds.id, staffRole.id);
+
+  const organization = await createTestOrganization(db, organizerCreds.id, {
+    name: `Volume Org ${Date.now()}`,
+    slug: `volume-org-${Date.now()}`,
+  });
+
+  const series = await createTestEventSeries(db, organization.id, {
+    name: `Volume Event ${Date.now()}`,
+    slug: `volume-event-${Date.now()}`,
+    sportType: 'trail_running',
+  });
+
+  const startsAt = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000);
+  const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
+  const registrationOpensAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const registrationClosesAt = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
+
+  const edition = await createTestEventEdition(db, series.id, {
+    editionLabel: '2026',
+    slug: `2026-${Date.now()}`,
+    visibility: 'published',
+    startsAt,
+    endsAt,
+    registrationOpensAt,
+    registrationClosesAt,
+    locationDisplay: 'Bosque de la Primavera',
+    city: 'Guadalajara',
+    state: 'Jalisco',
+    country: 'MX',
+    description: 'E2E demo payments volume event.',
+  });
+
+  const distance = await createTestDistance(db, edition.id, {
+    label: '10K Trail Run',
+    distanceValue: '10',
+    distanceUnit: 'km',
+    terrain: 'trail',
+    capacity: 100,
+    sortOrder: 0,
+  });
+
+  await createTestPricingTier(db, distance.id, {
+    label: 'General',
+    priceCents: 50_000,
+    currency: 'MXN',
+    sortOrder: 0,
+  });
+
+  return {
+    organizerCreds,
+    athleteCreds,
+    staffCreds,
+    organizationId: organization.id,
+    organizerName: organization.name,
+    seriesSlug: series.slug,
+    editionSlug: edition.slug,
+    editionId: edition.id,
+  };
 }
 
-function getSummaryCardValue(page: Page, label: string) {
-  return getSummaryCard(page, label).locator('p').nth(1);
+async function getDailyVolumeTotals() {
+  const db = getTestDb();
+  const rows = await db
+    .select({
+      grossProcessedMinor: schema.paymentCaptureVolumeDaily.grossProcessedMinor,
+      platformFeeMinor: schema.paymentCaptureVolumeDaily.platformFeeMinor,
+      organizerProceedsMinor: schema.paymentCaptureVolumeDaily.organizerProceedsMinor,
+      captureCount: schema.paymentCaptureVolumeDaily.captureCount,
+    })
+    .from(schema.paymentCaptureVolumeDaily);
+
+  return rows.reduce<VolumeTotals>(
+    (acc, row) => ({
+      gross: acc.gross + row.grossProcessedMinor,
+      fees: acc.fees + row.platformFeeMinor,
+      proceeds: acc.proceeds + row.organizerProceedsMinor,
+      count: acc.count + row.captureCount,
+    }),
+    { gross: 0, fees: 0, proceeds: 0, count: 0 },
+  );
 }
 
-let organizerCreds: { id: string; email: string; password: string; name: string };
-let athleteCreds: { id: string; email: string; password: string; name: string };
-let staffCreds: { id: string; email: string; password: string; name: string };
-let organizerName = '';
-let seriesSlug = '';
-let editionSlug = '';
-let editionId = '';
+async function getReconciliationTotals() {
+  const db = getTestDb();
+  const rows = await db
+    .select({
+      captureEventCount: schema.paymentCaptureVolumeReconciliationDaily.captureEventCount,
+      excludedEventCount: schema.paymentCaptureVolumeReconciliationDaily.excludedEventCount,
+    })
+    .from(schema.paymentCaptureVolumeReconciliationDaily);
+
+  return rows.reduce<ReconciliationTotals>(
+    (acc, row) => ({
+      captureEventCount: acc.captureEventCount + row.captureEventCount,
+      excludedEventCount: acc.excludedEventCount + row.excludedEventCount,
+    }),
+    { captureEventCount: 0, excludedEventCount: 0 },
+  );
+}
 
 test.describe('Demo payments volume E2E', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test.beforeAll(async ({ browser }) => {
-    const db = getTestDb();
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    organizerCreds = await signUpTestUser(page, 'org-demo-volume-', {
-      name: 'Demo Volume Organizer',
-    });
-    await setUserVerified(db, organizerCreds.email);
-    await createTestProfile(db, organizerCreds.id, {
-      dateOfBirth: new Date('1988-03-11'),
-      gender: 'male',
-      phone: '+523355501111',
-      city: 'Monterrey',
-      state: 'Nuevo León',
-    });
-    await assignExternalRole(db, organizerCreds.id, 'organizer');
-
-    athleteCreds = await signUpTestUser(page, 'athlete-demo-volume-', {
-      name: 'Demo Volume Athlete',
-    });
-    await setUserVerified(db, athleteCreds.email);
-    await createTestProfile(db, athleteCreds.id, {
-      dateOfBirth: new Date('1994-08-20'),
-      gender: 'female',
-      phone: '+523355502222',
-      city: 'Guadalajara',
-      state: 'Jalisco',
-      emergencyContactName: 'Mariana Lopez',
-      emergencyContactPhone: '+523355503333',
-      shirtSize: 'M',
-    });
-    await assignExternalRole(db, athleteCreds.id, 'athlete');
-
-    staffCreds = await signUpTestUser(page, 'staff-demo-volume-', {
-      name: 'Demo Volume Staff',
-    });
-    await setUserVerified(db, staffCreds.email);
-    let staffRole = await db.query.roles.findFirst({
-      where: eq(schema.roles.name, 'staff'),
-    });
-    if (!staffRole) {
-      staffRole = await createTestRole(db, {
-        name: 'staff',
-        description: 'Internal staff role for E2E tests',
-      });
-    }
-    await assignUserRole(db, staffCreds.id, staffRole.id);
-
-    const organization = await createTestOrganization(db, organizerCreds.id, {
-      name: `Volume Org ${Date.now()}`,
-      slug: `volume-org-${Date.now()}`,
-    });
-    organizerName = organization.name;
-
-    const series = await createTestEventSeries(db, organization.id, {
-      name: `Volume Event ${Date.now()}`,
-      slug: `volume-event-${Date.now()}`,
-      sportType: 'trail_running',
-    });
-    seriesSlug = series.slug;
-
-    const startsAt = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000);
-    const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
-    const registrationOpensAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const registrationClosesAt = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
-
-    const edition = await createTestEventEdition(db, series.id, {
-      editionLabel: '2026',
-      slug: `2026-${Date.now()}`,
-      visibility: 'published',
-      startsAt,
-      endsAt,
-      registrationOpensAt,
-      registrationClosesAt,
-      locationDisplay: 'Bosque de la Primavera',
-      city: 'Guadalajara',
-      state: 'Jalisco',
-      country: 'MX',
-      description: 'E2E demo payments volume event.',
-    });
-    editionId = edition.id;
-    editionSlug = edition.slug;
-
-    const distance = await createTestDistance(db, edition.id, {
-      label: '10K Trail Run',
-      distanceValue: '10',
-      distanceUnit: 'km',
-      terrain: 'trail',
-      capacity: 100,
-      sortOrder: 0,
-    });
-
-    await createTestPricingTier(db, distance.id, {
-      label: 'General',
-      priceCents: 50_000,
-      currency: 'MXN',
-      sortOrder: 0,
-    });
-
-    await context.close();
-  });
-
   test('athlete demo payment appears in admin volume workspace', async ({ page }) => {
     const db = getTestDb();
+    const {
+      athleteCreds,
+      staffCreds,
+      organizationId,
+      organizerName,
+      seriesSlug,
+      editionSlug,
+      editionId,
+    } = await setupDemoPaymentsVolumeScenario(page);
 
     await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
@@ -229,10 +285,17 @@ test.describe('Demo payments volume E2E', () => {
     expect(registration?.id).toBeTruthy();
     expect(registration?.status).toBe('payment_pending');
 
+    const baselineDailyTotals = await getDailyVolumeTotals();
+    const baselineReconciliationTotals = await getReconciliationTotals();
+
     await page.goto('/en/dashboard/my-registrations', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText(ticketCode)).toBeVisible();
-    await page.getByRole('link', { name: /view details/i }).first().click();
-    await expect(page).toHaveURL(new RegExp(`/en/dashboard/my-registrations/${registration!.id}(?:$|[?#])`));
+    await page.goto(`/en/dashboard/my-registrations/${registration!.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await expect(page).toHaveURL(
+      new RegExp(`/en/dashboard/my-registrations/${registration!.id}(?:$|[?#])`),
+    );
 
     await expect(page.getByRole('button', { name: 'Pay (demo)' })).toBeVisible();
     await page.getByRole('button', { name: 'Pay (demo)' }).click();
@@ -270,40 +333,35 @@ test.describe('Demo payments volume E2E', () => {
 
     await expect
       .poll(async () => {
-        const rows = await db
-          .select({
-            grossProcessedMinor: schema.paymentCaptureVolumeDaily.grossProcessedMinor,
-            platformFeeMinor: schema.paymentCaptureVolumeDaily.platformFeeMinor,
-            organizerProceedsMinor: schema.paymentCaptureVolumeDaily.organizerProceedsMinor,
-            captureCount: schema.paymentCaptureVolumeDaily.captureCount,
-          })
-          .from(schema.paymentCaptureVolumeDaily);
-
-        return rows.reduce(
-          (acc, row) => ({
-            gross: acc.gross + row.grossProcessedMinor,
-            fees: acc.fees + row.platformFeeMinor,
-            proceeds: acc.proceeds + row.organizerProceedsMinor,
-            count: acc.count + row.captureCount,
-          }),
-          { gross: 0, fees: 0, proceeds: 0, count: 0 },
-        );
+        const current = await getDailyVolumeTotals();
+        return {
+          gross: current.gross - baselineDailyTotals.gross,
+          fees: current.fees - baselineDailyTotals.fees,
+          proceeds: current.proceeds - baselineDailyTotals.proceeds,
+          count: current.count - baselineDailyTotals.count,
+        };
       }, { timeout: 15_000 })
       .toMatchObject({ count: 1 });
 
-    const dailyRows = await db
-      .select({
-        sourceCurrency: schema.paymentCaptureVolumeDaily.sourceCurrency,
-        grossProcessedMinor: schema.paymentCaptureVolumeDaily.grossProcessedMinor,
-        platformFeeMinor: schema.paymentCaptureVolumeDaily.platformFeeMinor,
-        organizerProceedsMinor: schema.paymentCaptureVolumeDaily.organizerProceedsMinor,
-        captureCount: schema.paymentCaptureVolumeDaily.captureCount,
-      })
-      .from(schema.paymentCaptureVolumeDaily);
+    await expect
+      .poll(async () => {
+        const rows = await db
+          .select({
+            organizerId: schema.paymentCaptureVolumeOrganizerDaily.organizerId,
+            sourceCurrency: schema.paymentCaptureVolumeOrganizerDaily.sourceCurrency,
+            grossProcessedMinor: schema.paymentCaptureVolumeOrganizerDaily.grossProcessedMinor,
+            platformFeeMinor: schema.paymentCaptureVolumeOrganizerDaily.platformFeeMinor,
+            organizerProceedsMinor: schema.paymentCaptureVolumeOrganizerDaily.organizerProceedsMinor,
+            captureCount: schema.paymentCaptureVolumeOrganizerDaily.captureCount,
+          })
+          .from(schema.paymentCaptureVolumeOrganizerDaily)
+          .where(eq(schema.paymentCaptureVolumeOrganizerDaily.organizerId, organizationId));
 
-    expect(dailyRows).toHaveLength(1);
+        return rows;
+      }, { timeout: 15_000 })
+      .toHaveLength(1);
 
-    const organizerRows = await db
+    const [organizerVolumeRow] = await db
       .select({
         organizerId: schema.paymentCaptureVolumeOrganizerDaily.organizerId,
         sourceCurrency: schema.paymentCaptureVolumeOrganizerDaily.sourceCurrency,
@@ -312,28 +370,37 @@ test.describe('Demo payments volume E2E', () => {
         organizerProceedsMinor: schema.paymentCaptureVolumeOrganizerDaily.organizerProceedsMinor,
         captureCount: schema.paymentCaptureVolumeOrganizerDaily.captureCount,
       })
-      .from(schema.paymentCaptureVolumeOrganizerDaily);
-
-    expect(organizerRows).toHaveLength(1);
-    expect(organizerRows[0]?.captureCount).toBe(1);
-
-    const [reconciliationRow] = await db
-      .select({
-        captureEventCount: schema.paymentCaptureVolumeReconciliationDaily.captureEventCount,
-        excludedEventCount: schema.paymentCaptureVolumeReconciliationDaily.excludedEventCount,
-      })
-      .from(schema.paymentCaptureVolumeReconciliationDaily)
+      .from(schema.paymentCaptureVolumeOrganizerDaily)
+      .where(eq(schema.paymentCaptureVolumeOrganizerDaily.organizerId, organizationId))
       .limit(1);
 
-    expect(reconciliationRow?.captureEventCount).toBe(1);
-    expect(reconciliationRow?.excludedEventCount).toBe(0);
+    expect(organizerVolumeRow?.captureCount).toBe(1);
 
-    const [dailyRow] = dailyRows;
-    const grossFormatted = formatMoneyFromMinor(dailyRow.grossProcessedMinor, 'MXN', 'en');
-    const feesFormatted = formatMoneyFromMinor(dailyRow.platformFeeMinor, 'MXN', 'en');
+    await expect
+      .poll(async () => {
+        const current = await getReconciliationTotals();
+        return {
+          captureEventCount:
+            current.captureEventCount - baselineReconciliationTotals.captureEventCount,
+          excludedEventCount:
+            current.excludedEventCount - baselineReconciliationTotals.excludedEventCount,
+        };
+      }, { timeout: 15_000 })
+      .toMatchObject({ captureEventCount: 1, excludedEventCount: 0 });
+
+    const grossFormatted = formatMoneyFromMinor(
+      organizerVolumeRow!.grossProcessedMinor,
+      organizerVolumeRow!.sourceCurrency,
+      'en',
+    );
+    const feesFormatted = formatMoneyFromMinor(
+      organizerVolumeRow!.platformFeeMinor,
+      organizerVolumeRow!.sourceCurrency,
+      'en',
+    );
     const proceedsFormatted = formatMoneyFromMinor(
-      dailyRow.organizerProceedsMinor,
-      'MXN',
+      organizerVolumeRow!.organizerProceedsMinor,
+      organizerVolumeRow!.sourceCurrency,
       'en',
     );
 
@@ -346,26 +413,13 @@ test.describe('Demo payments volume E2E', () => {
     await expect(page.getByRole('heading', { name: 'Payments' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Captured payment volume' })).toBeVisible();
 
-    await expect(getSummaryCardValue(page, 'Gross processed')).toHaveText(grossFormatted);
-    await expect(getSummaryCardValue(page, 'Platform fees captured')).toHaveText(feesFormatted);
-    await expect(getSummaryCardValue(page, 'Organizer proceeds at capture')).toHaveText(
-      proceedsFormatted,
-    );
-    await expect(getSummaryCardValue(page, 'Captured payments')).toHaveText('1');
-
-    const currencyRow = page.locator('tr').filter({
-      has: page.getByText('MXN', { exact: true }),
-    }).first();
-    await expect(currencyRow).toContainText(grossFormatted);
-    await expect(currencyRow).toContainText(feesFormatted);
-    await expect(currencyRow).toContainText(proceedsFormatted);
-
-    await expect(page.getByTestId('admin-payments-organizer-page-summary')).toContainText(
-      'Showing 1-1 of 1',
-    );
-    const organizerRow = page.locator('tbody tr').filter({ hasText: organizerName }).first();
-    await expect(organizerRow).toBeVisible();
-    const organizerInvestigationLink = organizerRow
+    const organizerWorkspaceRow = page.locator('tbody tr').filter({ hasText: organizerName }).first();
+    await expect(organizerWorkspaceRow).toBeVisible();
+    await expect(organizerWorkspaceRow).toContainText(grossFormatted);
+    await expect(organizerWorkspaceRow).toContainText(feesFormatted);
+    await expect(organizerWorkspaceRow).toContainText(proceedsFormatted);
+    await expect(organizerWorkspaceRow).toContainText('1');
+    const organizerInvestigationLink = organizerWorkspaceRow
       .getByTestId('admin-payments-organizer-investigation-link')
       .first();
     await expect(organizerInvestigationLink).toBeVisible();

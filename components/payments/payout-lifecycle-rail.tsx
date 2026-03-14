@@ -3,7 +3,7 @@
 import type { OrganizerPayoutLifecycleEvent } from '@/lib/payments/organizer/payout-views';
 import {
   getOrganizerPayoutReasonFamily,
-  humanizeTechnicalCode,
+  getOrganizerPayoutLifecycleEventCopy,
 } from '@/lib/payments/organizer/presentation';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
@@ -36,24 +36,6 @@ function getVisibleReasonFamily(reasonCode: string | null) {
 
 export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps) {
   const t = useTranslations('pages.dashboardPayments');
-  const eventTitleMap: Record<string, string> = {
-    'payout.requested': t('detail.events.requested.title'),
-    'payout.processing': t('detail.events.processing.title'),
-    'payout.paused': t('detail.events.paused.title'),
-    'payout.resumed': t('detail.events.resumed.title'),
-    'payout.completed': t('detail.events.completed.title'),
-    'payout.failed': t('detail.events.failed.title'),
-    'payout.adjusted': t('detail.events.adjusted.title'),
-  };
-  const eventDescriptionMap: Record<string, string> = {
-    'payout.requested': t('detail.events.requested.description'),
-    'payout.processing': t('detail.events.processing.description'),
-    'payout.paused': t('detail.events.paused.description'),
-    'payout.resumed': t('detail.events.resumed.description'),
-    'payout.completed': t('detail.events.completed.description'),
-    'payout.failed': t('detail.events.failed.description'),
-    'payout.adjusted': t('detail.events.adjusted.description'),
-  };
 
   if (events.length === 0) {
     return (
@@ -78,6 +60,7 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
         {events.map((event) => {
           const formattedAmount = formatAmount(event.amountMinor, locale);
           const visibleReasonFamily = getVisibleReasonFamily(event.reasonCode);
+          const eventCopy = getOrganizerPayoutLifecycleEventCopy(event.eventName);
 
           return (
             <li key={event.eventId} className="relative rounded-xl border bg-background/85 p-4 shadow-sm sm:p-5">
@@ -103,11 +86,9 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
 
                       <div className="space-y-1">
                         <p className="text-base font-semibold leading-tight sm:text-lg">
-                          {eventTitleMap[event.eventName] ?? humanizeTechnicalCode(event.eventName)}
+                          {t(eventCopy.titleKey)}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          {eventDescriptionMap[event.eventName] ?? t('detail.events.genericDescription')}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{t(eventCopy.descriptionKey)}</p>
                       </div>
                     </div>
                   </div>
@@ -137,16 +118,6 @@ export function PayoutLifecycleRail({ locale, events }: PayoutLifecycleRailProps
                   {t('detail.technicalDetailsLabel')}
                 </summary>
                 <dl className="mt-3 space-y-2 text-sm">
-                  <div>
-                    <dt className="text-muted-foreground">{t('detail.technicalEventLabel')}</dt>
-                    <dd className="font-mono text-xs">{event.eventName}</dd>
-                  </div>
-                  {event.reasonCode ? (
-                    <div>
-                      <dt className="text-muted-foreground">{t('detail.rawReasonLabel')}</dt>
-                      <dd className="font-mono text-xs">{event.reasonCode}</dd>
-                    </div>
-                  ) : null}
                   <div>
                     <dt className="text-muted-foreground">{t('detail.eventReferenceLabel')}</dt>
                     <dd className="font-mono text-xs">{event.eventId}</dd>

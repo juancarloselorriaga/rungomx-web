@@ -110,10 +110,35 @@ describe('admin payments artifact governance actions', () => {
       expect.objectContaining({
         ok: false,
         error: 'INVALID_INPUT',
-        fieldErrors: expect.any(Object),
+        message: 'VALIDATION_FAILED',
+        fieldErrors: {
+          traceId: ['REQUIRED_FIELD'],
+          artifactType: ['INVALID_ENUM'],
+          reasonCode: ['INVALID_STRING'],
+        },
       }),
     );
     expect(mockRebuildArtifactForTrace).not.toHaveBeenCalled();
+    expect(mockResendArtifactForTrace).not.toHaveBeenCalled();
+  });
+
+  it('returns numeric validation codes for invalid resend version input', async () => {
+    const result = await runArtifactGovernanceAdminAction({
+      operation: 'resend',
+      traceId: 'trace-1',
+      artifactType: 'payout_statement',
+      reasonCode: 'manual_resend',
+      artifactVersion: 'abc',
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'INVALID_INPUT',
+      message: 'VALIDATION_FAILED',
+      fieldErrors: {
+        artifactVersion: ['INVALID_NUMBER'],
+      },
+    });
     expect(mockResendArtifactForTrace).not.toHaveBeenCalled();
   });
 
@@ -235,7 +260,7 @@ describe('admin payments artifact governance actions', () => {
     );
   });
 
-  it('returns governance domain errors with explicit code and message', async () => {
+  it('returns governance domain errors with explicit code identifiers only', async () => {
     mockRebuildArtifactForTrace.mockRejectedValueOnce(
       new MockArtifactGovernanceError(
         'ARTIFACT_SCOPE_SINGLETON_REQUIRED',
@@ -253,7 +278,7 @@ describe('admin payments artifact governance actions', () => {
     expect(result).toEqual({
       ok: false,
       error: 'ARTIFACT_SCOPE_SINGLETON_REQUIRED',
-      message: 'Governance operations are singleton-only in v1.',
+      message: 'ARTIFACT_SCOPE_SINGLETON_REQUIRED',
     });
   });
 

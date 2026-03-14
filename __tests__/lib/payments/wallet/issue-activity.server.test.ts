@@ -84,8 +84,7 @@ describe('payments wallet issue activity', () => {
     ]);
 
     for (const item of [...result.actionNeeded, ...result.inProgress]) {
-      expect(item.stateLabel.length).toBeGreaterThan(0);
-      expect(item.stateDescription.length).toBeGreaterThan(0);
+      expect(item.state === 'action_needed' || item.state === 'in_progress').toBe(true);
     }
   });
 
@@ -125,8 +124,7 @@ describe('payments wallet issue activity', () => {
 
     expect(result.actionNeededCount).toBe(0);
     expect(result.inProgressCount).toBe(1);
-    expect(result.inProgress[0]!.stateLabel).toBe('In Progress');
-    expect(result.inProgress[0]!.stateDescription.length).toBeGreaterThan(0);
+    expect(result.inProgress[0]!.state).toBe('in_progress');
   });
 
   it('surfaces recovery guidance for debt-threshold pause/resume policy events', async () => {

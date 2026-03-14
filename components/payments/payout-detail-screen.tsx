@@ -93,7 +93,7 @@ export function PayoutDetailScreen({
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">{labels.summaryTitle}</PaymentsSectionTitle>
-            <PaymentsCountPill>4</PaymentsCountPill>
+            <PaymentsCountPill>3</PaymentsCountPill>
           </div>
           <PaymentsSectionDescription>{labels.summaryDescription}</PaymentsSectionDescription>
           {organizationName ? <PaymentsSectionDescription>{organizationName}</PaymentsSectionDescription> : null}
@@ -136,10 +136,6 @@ export function PayoutDetailScreen({
             <PaymentsInsetPanel className="rounded border p-3 shadow-none">
               <PaymentsMetaLabel>{labels.requestId}</PaymentsMetaLabel>
               <PaymentsMonoValue>{detail.payoutRequestId}</PaymentsMonoValue>
-            </PaymentsInsetPanel>
-            <PaymentsInsetPanel className="rounded border p-3 shadow-none">
-              <PaymentsMetaLabel>{labels.traceId}</PaymentsMetaLabel>
-              <PaymentsMonoValue>{detail.traceId}</PaymentsMonoValue>
             </PaymentsInsetPanel>
             <PaymentsInsetPanel className="rounded border p-3 shadow-none">
               <PaymentsMetaLabel>{labels.includedAmount}</PaymentsMetaLabel>
