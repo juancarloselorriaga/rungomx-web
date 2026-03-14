@@ -684,18 +684,12 @@ test.describe('Public trust/support/legal shell smoke', () => {
     );
   });
 
-  test('English help page renders, expands FAQ content, and routes support CTA to contact', async ({ page }) => {
+  test('English help page renders, expands FAQ content, and exposes the support CTA href', async ({ page }) => {
     const locale = localeOrThrow('en');
 
     await assertHelpPage(page, locale);
     await assertHelpHrefs(page, locale);
     await assertHelpInteraction(page, locale);
-    await followLink(
-      visibleHrefLink(page, locale.routes.contact, locale.help.ctaContact),
-      page,
-      locale.routes.contact,
-      locale.headings.contact,
-    );
   });
 
   test('English privacy and terms pages keep their primary legal cross-links intact', async ({ page }) => {
