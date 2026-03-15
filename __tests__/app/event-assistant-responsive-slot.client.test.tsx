@@ -67,7 +67,10 @@ function installMatchMedia(initialMatches: boolean) {
     removeListener: (listener) => {
       listeners.delete(listener);
     },
-    dispatchEvent: (_event) => true,
+    dispatchEvent: (event) => {
+      void event;
+      return true;
+    },
   };
 
   Object.defineProperty(window, 'matchMedia', {

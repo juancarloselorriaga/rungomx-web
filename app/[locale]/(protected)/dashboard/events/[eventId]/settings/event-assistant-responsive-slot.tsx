@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useState, type ReactNode } from 'react';
 
 import { EventAssistantDesktopWorkspace } from './event-assistant-desktop-workspace';
 import { EventAssistantMobileWorkspace } from './event-assistant-mobile-workspace';
@@ -26,9 +26,6 @@ type EventAssistantResponsiveSlotProps = {
   children: ReactNode;
 };
 
-const useIsomorphicLayoutEffect =
-  typeof window === 'undefined' ? useEffect : useLayoutEffect;
-
 function resolvePresentationTarget(
   assistantMode: EventAssistantMode,
   isDesktop: boolean,
@@ -45,7 +42,7 @@ function resolvePresentationTarget(
 function useDesktopBreakpoint() {
   const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
 
-  useIsomorphicLayoutEffect(() => {
+  useLayoutEffect(() => {
     const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY);
     const update = () => setIsDesktop(mediaQuery.matches);
 
@@ -82,21 +79,39 @@ export function EventAssistantResponsiveSlot({
   const isDesktop = useDesktopBreakpoint();
   const preferredTarget =
     isDesktop === null ? null : resolvePresentationTarget(assistantMode, isDesktop);
-  const [lockedTarget, setLockedTarget] =
-    useState<EventAssistantPresentationTarget | null>(null);
+  const [targetState, setTargetState] = useState<{
+    lastIsOpen: boolean;
+    lastPreferredTarget: EventAssistantPresentationTarget | null;
+    lockedTarget: EventAssistantPresentationTarget | null;
+  }>({
+    lastIsOpen: isOpen,
+    lastPreferredTarget: preferredTarget,
+    lockedTarget: isOpen ? preferredTarget : null,
+  });
 
-  useEffect(() => {
-    if (!isOpen) {
-      setLockedTarget(null);
-      return;
-    }
+  if (
+    isOpen !== targetState.lastIsOpen ||
+    preferredTarget !== targetState.lastPreferredTarget
+  ) {
+    setTargetState((currentState) => {
+      if (
+        isOpen === currentState.lastIsOpen &&
+        preferredTarget === currentState.lastPreferredTarget
+      ) {
+        return currentState;
+      }
 
-    if (preferredTarget) {
-      setLockedTarget((currentTarget) => currentTarget ?? preferredTarget);
-    }
-  }, [isOpen, preferredTarget]);
+      return {
+        lastIsOpen: isOpen,
+        lastPreferredTarget: preferredTarget,
+        lockedTarget: !isOpen ? null : currentState.lockedTarget ?? preferredTarget,
+      };
+    });
+  }
 
-  const activeTarget = isOpen ? lockedTarget ?? preferredTarget : preferredTarget;
+  const activeTarget = isOpen
+    ? targetState.lockedTarget ?? preferredTarget
+    : preferredTarget;
   const assistantPanel = <AssistantPanelInstance>{assistant}</AssistantPanelInstance>;
 
   if (assistantMode === 'inline') {
