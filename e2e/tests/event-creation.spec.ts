@@ -70,13 +70,13 @@ test.describe('Event Creation', () => {
     const orgSlug = `e2e-test-org-${timestamp}`;
 
     // Wait for and fill organization name
-    const orgNameInput = page.getByPlaceholder(/my race organization/i);
+    const orgNameInput = page.getByRole('textbox', { name: /organization name/i });
     await expect(orgNameInput).toBeVisible({ timeout: 10000 });
     await orgNameInput.click();
     await orgNameInput.fill(organizationName);
 
     // Fill slug manually (Playwright doesn't trigger React onChange for auto-generation)
-    const slugInput = page.getByPlaceholder(/my-organization/i);
+    const slugInput = page.getByRole('textbox', { name: /url slug/i });
     await expect(slugInput).toBeVisible();
     await slugInput.click();
     await slugInput.fill(orgSlug);
@@ -123,8 +123,8 @@ test.describe('Event Creation', () => {
         organizationName = `E2E Test Org ${timestamp}`;
         const orgSlug = `e2e-test-org-${timestamp}`;
 
-        await page.getByPlaceholder(/my race organization/i).fill(organizationName);
-        await page.getByPlaceholder(/my-organization/i).fill(orgSlug);
+        await page.getByRole('textbox', { name: /organization name/i }).fill(organizationName);
+        await page.getByRole('textbox', { name: /url slug/i }).fill(orgSlug);
         await page.waitForTimeout(300);
         await page.getByRole('button', { name: /continue/i }).click();
         await expect(page.getByText(/event details/i).first()).toBeVisible({ timeout: 5000 });
@@ -135,8 +135,8 @@ test.describe('Event Creation', () => {
       organizationName = `E2E Test Org ${timestamp}`;
       const orgSlug = `e2e-test-org-${timestamp}`;
 
-      await page.getByPlaceholder(/my race organization/i).fill(organizationName);
-      await page.getByPlaceholder(/my-organization/i).fill(orgSlug);
+      await page.getByRole('textbox', { name: /organization name/i }).fill(organizationName);
+      await page.getByRole('textbox', { name: /url slug/i }).fill(orgSlug);
       await page.waitForTimeout(300);
       await page.getByRole('button', { name: /continue/i }).click();
       await expect(page.getByText(/event details/i).first()).toBeVisible({ timeout: 5000 });

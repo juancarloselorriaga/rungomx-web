@@ -9,6 +9,7 @@ import { organizationPayoutProfiles, organizations } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
+import type { FormActionResult } from '@/lib/forms';
 import { getOrgMembership } from '@/lib/organizations/permissions';
 
 // =============================================================================
@@ -60,24 +61,79 @@ const rfcRegex = /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i;
 // CLABE validation (18-digit Mexican bank account)
 const clabeRegex = /^\d{18}$/;
 
+const payoutProfileValidationKeys = {
+  invalidInput: 'PAYOUT_PROFILE_INVALID_INPUT',
+  invalidRfc: 'PAYOUT_PROFILE_INVALID_RFC',
+  invalidClabe: 'PAYOUT_PROFILE_INVALID_CLABE',
+} as const;
+
 const updatePayoutProfileSchema = z.object({
   organizationId: z.string().uuid(),
   legalName: z.string().max(255).optional().nullable(),
   rfc: z
     .string()
-    .regex(rfcRegex, 'Invalid RFC format')
+    .regex(rfcRegex)
     .transform((val) => val.toUpperCase())
     .optional()
     .nullable(),
   payoutDestination: z
     .object({
       bankName: z.string().max(100).optional(),
-      clabe: z.string().regex(clabeRegex, 'CLABE must be 18 digits').optional(),
+      clabe: z.string().regex(clabeRegex).optional(),
       accountHolder: z.string().max(255).optional(),
     })
     .optional()
     .nullable(),
 });
+
+function toPayoutProfileValidationKey(issue: z.ZodIssue): string {
+  const [root, nested] = issue.path;
+
+  if (root === 'rfc') {
+    return payoutProfileValidationKeys.invalidRfc;
+  }
+
+  if (root === 'payoutDestination' && nested === 'clabe') {
+    return payoutProfileValidationKeys.invalidClabe;
+  }
+
+  return payoutProfileValidationKeys.invalidInput;
+}
+
+function toPayoutProfileFieldErrors(
+  issues: z.ZodIssue[],
+): Record<'legalName' | 'rfc' | 'bankName' | 'clabe' | 'accountHolder', string[]> {
+  const fieldErrors: Record<'legalName' | 'rfc' | 'bankName' | 'clabe' | 'accountHolder', string[]> = {
+    legalName: [],
+    rfc: [],
+    bankName: [],
+    clabe: [],
+    accountHolder: [],
+  };
+
+  for (const issue of issues) {
+    const [root, nested] = issue.path;
+    const validationKey = toPayoutProfileValidationKey(issue);
+
+    if (root === 'legalName') {
+      fieldErrors.legalName.push(validationKey);
+      continue;
+    }
+
+    if (root === 'rfc') {
+      fieldErrors.rfc.push(validationKey);
+      continue;
+    }
+
+    if (root === 'payoutDestination') {
+      if (nested === 'bankName') fieldErrors.bankName.push(validationKey);
+      if (nested === 'clabe') fieldErrors.clabe.push(validationKey);
+      if (nested === 'accountHolder') fieldErrors.accountHolder.push(validationKey);
+    }
+  }
+
+  return fieldErrors;
+}
 
 // =============================================================================
 // Actions
@@ -153,17 +209,28 @@ export const getPayoutProfile = withAuthenticatedUser<ActionResult<PayoutProfile
  * Update the payout profile for an organization.
  * Requires Owner or Admin role.
  */
-export const updatePayoutProfile = withAuthenticatedUser<ActionResult<PayoutProfileData>>({
-  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+export const updatePayoutProfile = withAuthenticatedUser<FormActionResult<PayoutProfileData>>({
+  unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED', message: 'Authentication required' }),
 })(async (authContext, input: z.infer<typeof updatePayoutProfileSchema>) => {
   const accessError = checkEventsAccess(authContext);
   if (accessError) {
-    return { ok: false, ...accessError };
+    return { ok: false, error: accessError.code, message: accessError.error };
   }
 
   const validated = updatePayoutProfileSchema.safeParse(input);
   if (!validated.success) {
-    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+    const fieldErrors = toPayoutProfileFieldErrors(validated.error.issues);
+    const hasFieldErrors = Object.values(fieldErrors).some((messages) => messages.length > 0);
+
+    return {
+      ok: false,
+      error: 'INVALID_INPUT',
+      message:
+        validated.error.issues[0] != null
+          ? toPayoutProfileValidationKey(validated.error.issues[0])
+          : payoutProfileValidationKeys.invalidInput,
+      fieldErrors: hasFieldErrors ? fieldErrors : undefined,
+    };
   }
 
   const { organizationId, legalName, rfc, payoutDestination } = validated.data;
@@ -174,14 +241,18 @@ export const updatePayoutProfile = withAuthenticatedUser<ActionResult<PayoutProf
   });
 
   if (!org) {
-    return { ok: false, error: 'Organization not found', code: 'NOT_FOUND' };
+    return { ok: false, error: 'NOT_FOUND', message: 'Organization not found' };
   }
 
   // Check permission - only Owner or Admin can update payout profile
   if (!authContext.permissions.canManageEvents) {
     const membership = await getOrgMembership(authContext.user.id, organizationId);
     if (!membership || !['owner', 'admin'].includes(membership.role)) {
-      return { ok: false, error: 'Permission denied. Only owners and admins can update payout settings.', code: 'FORBIDDEN' };
+      return {
+        ok: false,
+        error: 'FORBIDDEN',
+        message: 'Permission denied. Only owners and admins can update payout settings.',
+      };
     }
   }
 

@@ -5,6 +5,7 @@ import { PaymentsStatePanel } from '@/components/payments/payments-state-panel';
 import { OrganizerPaymentsWorkspace } from '@/components/payments/organizer-payments-workspace';
 import { getAuthContext } from '@/lib/auth/server';
 import { getAllOrganizations, getUserOrganizations } from '@/lib/organizations/queries';
+import { loadOrganizerPaymentsWorkspaceData } from '@/lib/payments/organizer/workspace-data';
 import { Button } from '@/components/ui/button';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -89,6 +90,10 @@ export default async function DashboardPaymentsPage({
   const hasInvalidSelection =
     requestedOrganizationId.length > 0 &&
     !organizations.some((organization) => organization.id === requestedOrganizationId);
+  const initialWorkspaceData = await loadOrganizerPaymentsWorkspaceData({
+    authContext,
+    organizationId: selectedOrganization.id,
+  });
 
   return (
     <div className="space-y-6">
@@ -118,9 +123,11 @@ export default async function DashboardPaymentsPage({
       ) : null}
 
       <OrganizerPaymentsWorkspace
+        key={selectedOrganization.id}
         locale={locale as 'es' | 'en'}
         organizationId={selectedOrganization.id}
         organizationName={selectedOrganization.name}
+        initialData={initialWorkspaceData}
       />
 
       <OrganizerPaymentsContextCard

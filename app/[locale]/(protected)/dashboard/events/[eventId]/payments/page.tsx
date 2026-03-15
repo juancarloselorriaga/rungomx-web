@@ -1,15 +1,18 @@
 import { EventPaymentsHeader } from '@/components/payments/event-payments-header';
 import { OrganizerPaymentsWorkspace } from '@/components/payments/organizer-payments-workspace';
 import { getEventPayoutHistoryHref } from '@/lib/payments/organizer/hrefs';
+import { loadOrganizerPaymentsWorkspaceData } from '@/lib/payments/organizer/workspace-data';
 import { Link } from '@/i18n/navigation';
+import { getPathname } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 type EventPaymentsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -29,6 +32,11 @@ export default async function EventPaymentsPage({ params }: EventPaymentsPagePro
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/payments' });
 
+  const authContext = await getAuthContext();
+  if (!authContext.user) {
+    redirect(getPathname({ href: '/sign-in', locale: locale as 'es' | 'en' }));
+  }
+
   const tPayments = await getTranslations('pages.dashboardPayments');
   const tEvents = await getTranslations('pages.dashboardEvents.detail.nav');
   const event = await getEventEditionDetail(eventId);
@@ -36,6 +44,11 @@ export default async function EventPaymentsPage({ params }: EventPaymentsPagePro
   if (!event) {
     notFound();
   }
+
+  const initialWorkspaceData = await loadOrganizerPaymentsWorkspaceData({
+    authContext,
+    organizationId: event.organizationId,
+  });
 
   return (
     <div className="space-y-6">
@@ -65,6 +78,7 @@ export default async function EventPaymentsPage({ params }: EventPaymentsPagePro
         historyHref={getEventPayoutHistoryHref(eventId)}
         eventId={eventId}
         showHistoryShortcut={false}
+        initialData={initialWorkspaceData}
       />
     </div>
   );

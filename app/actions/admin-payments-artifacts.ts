@@ -7,8 +7,10 @@ import { withStaffUser } from '@/lib/auth/action-wrapper';
 import { getRequestContext } from '@/lib/audit';
 import type { FormActionResult } from '@/lib/forms';
 import { validateInput } from '@/lib/forms';
+import { safeRevalidateTag } from '@/lib/next-cache';
 import {
   ArtifactGovernanceError,
+  artifactGovernanceSummaryTag,
   getArtifactGovernanceSummary,
   rebuildArtifactForTrace,
   resendArtifactForTrace,
@@ -157,6 +159,7 @@ export const runArtifactGovernanceAdminAction = withStaffUser<
         request: requestContext,
       });
 
+      safeRevalidateTag(artifactGovernanceSummaryTag, { expire: 0 });
       return {
         ok: true,
         data: {
@@ -182,6 +185,7 @@ export const runArtifactGovernanceAdminAction = withStaffUser<
       request: requestContext,
     });
 
+    safeRevalidateTag(artifactGovernanceSummaryTag, { expire: 0 });
     return {
       ok: true,
       data: {

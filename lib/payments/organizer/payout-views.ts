@@ -2,6 +2,12 @@ import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { moneyEvents, payoutQuotes, payoutRequests } from '@/db/schema';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
+import {
+  organizerPayoutCountTag,
+  organizerPayoutDetailTag,
+  organizerPayoutsTag,
+} from './cache-tags';
 
 const lifecycleEventNames = [
   'payout.requested',
@@ -189,11 +195,18 @@ export async function listOrganizerPayouts(params: {
   limit?: number;
   offset?: number;
 }): Promise<OrganizerPayoutListItem[]> {
+  'use cache: remote';
+
   const limit = params.limit ?? 25;
   const offset =
     typeof params.offset === 'number' && Number.isFinite(params.offset) && params.offset > 0
       ? Math.trunc(params.offset)
       : 0;
+  safeCacheTag(
+    organizerPayoutsTag(params.organizerId),
+    `${organizerPayoutsTag(params.organizerId)}:${limit}:${offset}`,
+  );
+  safeCacheLife({ expire: 120 });
 
   const rows = await db
     .select({
@@ -239,6 +252,10 @@ export async function listOrganizerPayouts(params: {
 export async function countOrganizerPayouts(params: {
   organizerId: string;
 }): Promise<number> {
+  'use cache: remote';
+  safeCacheTag(organizerPayoutCountTag(params.organizerId));
+  safeCacheLife({ expire: 120 });
+
   const [row] = await db
     .select({
       count: sql<number>`count(*)::int`,
@@ -260,6 +277,13 @@ export async function getOrganizerPayoutDetail(params: {
   organizerId: string;
   payoutRequestId: string;
 }): Promise<OrganizerPayoutDetail | null> {
+  'use cache: remote';
+  safeCacheTag(
+    organizerPayoutsTag(params.organizerId),
+    organizerPayoutDetailTag(params.payoutRequestId),
+  );
+  safeCacheLife({ expire: 60 });
+
   const payoutRequest = await db
     .select({
       payoutRequestId: payoutRequests.id,
@@ -293,6 +317,10 @@ export async function getOrganizerPayoutDetail(params: {
 export async function getOrganizerPayoutDetailByRequestId(
   payoutRequestId: string,
 ): Promise<OrganizerPayoutDetail | null> {
+  'use cache: remote';
+  safeCacheTag(organizerPayoutDetailTag(payoutRequestId));
+  safeCacheLife({ expire: 60 });
+
   const payoutRequest = await db
     .select({
       payoutRequestId: payoutRequests.id,

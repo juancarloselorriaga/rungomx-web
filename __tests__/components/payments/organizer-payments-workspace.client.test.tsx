@@ -4,16 +4,22 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 jest.mock('next-intl', () => ({
-  useTranslations: () => (key: string, values?: Record<string, unknown>) => {
-    if (key === 'wallet.asOf' && values?.timestamp) {
-      return `As of ${String(values.timestamp)}`;
-    }
+  useTranslations: () => {
+    const translator = ((key: string, values?: Record<string, unknown>) => {
+      if (key === 'wallet.asOf' && values?.timestamp) {
+        return `As of ${String(values.timestamp)}`;
+      }
 
-    if (key === 'wallet.queue.actionNeededDescription') {
-      return 'Items that need action to keep this organization payout-ready.';
-    }
+      if (key === 'wallet.queue.actionNeededDescription') {
+        return 'Items that need action to keep this organization payout-ready.';
+      }
 
-    return key;
+      return key;
+    }) as ((key: string, values?: Record<string, unknown>) => string) & {
+      raw: (key: string) => string;
+    };
+    translator.raw = (key: string) => key;
+    return translator;
   },
 }));
 
@@ -33,6 +39,11 @@ jest.mock('@/i18n/navigation', () => ({
       </a>
     );
   },
+}));
+
+jest.mock('@/app/actions/payments-organizer-payouts', () => ({
+  requestOrganizerPayoutAction: jest.fn(),
+  queueOrganizerPayoutIntentAction: jest.fn(),
 }));
 
 const walletResponse = {
@@ -102,6 +113,27 @@ const requestEligibleIssuesResponse = {
     asOf: '2026-03-03T12:00:00.000Z',
     actionNeeded: [],
     inProgress: [],
+  },
+};
+
+const initialWorkspaceDataOrg1 = {
+  wallet: walletResponse.data,
+  issues: requestEligibleIssuesResponse.data,
+};
+
+const initialWorkspaceDataOrg2 = {
+  wallet: {
+    ...walletResponse.data,
+    organizerId: 'org-2',
+    buckets: {
+      ...walletResponse.data.buckets,
+      availableMinor: 250_000,
+      processingMinor: 10_000,
+    },
+  },
+  issues: {
+    ...requestEligibleIssuesResponse.data,
+    organizerId: 'org-2',
   },
 };
 
@@ -213,5 +245,32 @@ describe('OrganizerPaymentsWorkspace', () => {
     expect(screen.getByText('wallet.buckets.available')).toBeInTheDocument();
     expect(screen.getByTestId('payments-primary-cta')).toHaveTextContent('actions.requestPayout');
     expect(screen.getByRole('heading', { name: 'wallet.queue.title' })).toBeInTheDocument();
+  });
+
+  it('synchronizes to new server-provided initialData when organization changes in place', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+    const { rerender } = render(
+      <OrganizerPaymentsWorkspace
+        locale="en"
+        organizationId="org-1"
+        initialData={initialWorkspaceDataOrg1}
+      />,
+    );
+
+    expect(screen.getByText(/1,200\.00/)).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    rerender(
+      <OrganizerPaymentsWorkspace
+        locale="en"
+        organizationId="org-2"
+        initialData={initialWorkspaceDataOrg2}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/2,500\.00/)).toBeInTheDocument();
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

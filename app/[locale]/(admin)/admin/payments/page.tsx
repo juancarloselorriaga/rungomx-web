@@ -26,7 +26,9 @@ import {
   adminPaymentsRangeSelectorWorkspaceIds,
   normalizeAdminPaymentsWorkspace,
 } from '@/lib/payments/admin/workspaces';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 import { getArtifactGovernanceSummary } from '@/lib/payments/artifacts/governance';
+import { adminPaymentsCacheTags, withWindowTag } from '@/lib/payments/economics/cache-tags';
 import { getAdminDebtDisputeExposureMetrics } from '@/lib/payments/economics/debt-dispute-exposure';
 import {
   getFxRateActionFlagsForAdmin,
@@ -159,6 +161,18 @@ async function getAdminPaymentsContextSummary(params: {
   windowStart: Date;
   windowEnd: Date;
 }): Promise<AdminPaymentsContextSummary> {
+  'use cache: remote';
+
+  const rangeDays = Math.max(
+    1,
+    Math.ceil((params.windowEnd.getTime() - params.windowStart.getTime()) / 86_400_000),
+  );
+  safeCacheTag(
+    adminPaymentsCacheTags.contextSummary,
+    withWindowTag(adminPaymentsCacheTags.contextSummary, rangeDays),
+  );
+  safeCacheLife({ expire: 120 });
+
   const rows = await db
     .select({
       eventName: moneyEvents.eventName,
@@ -206,11 +220,6 @@ export default async function AdminPaymentsEconomicsPage({
 
   if (!authContext.permissions.canViewStaffTools) {
     redirect(getPathname({ href: '/admin', locale }));
-  }
-
-  async function upsertFxRateFormAction(formData: FormData): Promise<void> {
-    'use server';
-    await upsertDailyFxRateAdminAction(formData);
   }
 
   const tDashboardRanges = await getTranslations('pages.dashboard.admin.metrics.ranges');
@@ -619,29 +628,18 @@ export default async function AdminPaymentsEconomicsPage({
     missingDatesLabel: tPayments('fx.missingDatesLabel'),
   };
 
-  const artifactUiErrorMessages = {
-    INVALID_INPUT: tPayments('artifacts.errorMessages.INVALID_INPUT'),
-    VALIDATION_FAILED: tPayments('artifacts.errorMessages.VALIDATION_FAILED'),
-    REQUIRED_FIELD: tPayments('artifacts.errorMessages.REQUIRED_FIELD'),
-    INVALID_NUMBER: tPayments('artifacts.errorMessages.INVALID_NUMBER'),
-    INVALID_STRING: tPayments('artifacts.errorMessages.INVALID_STRING'),
-    INVALID_ENUM: tPayments('artifacts.errorMessages.INVALID_ENUM'),
-    UNAUTHENTICATED: tPayments('artifacts.errorMessages.UNAUTHENTICATED'),
-    FORBIDDEN: tPayments('artifacts.errorMessages.FORBIDDEN'),
-    SERVER_ERROR: tPayments('artifacts.errorMessages.SERVER_ERROR'),
-    ARTIFACT_TRACE_ID_REQUIRED: tPayments('artifacts.errorMessages.ARTIFACT_TRACE_ID_REQUIRED'),
-    ARTIFACT_REASON_REQUIRED: tPayments('artifacts.errorMessages.ARTIFACT_REASON_REQUIRED'),
-    ARTIFACT_SCOPE_SINGLETON_REQUIRED: tPayments(
-      'artifacts.errorMessages.ARTIFACT_SCOPE_SINGLETON_REQUIRED',
-    ),
-    ARTIFACT_UNSUPPORTED_TYPE: tPayments('artifacts.errorMessages.ARTIFACT_UNSUPPORTED_TYPE'),
-    ARTIFACT_TRACE_NOT_FOUND: tPayments('artifacts.errorMessages.ARTIFACT_TRACE_NOT_FOUND'),
-    ARTIFACT_VERSION_NOT_FOUND: tPayments('artifacts.errorMessages.ARTIFACT_VERSION_NOT_FOUND'),
-    ARTIFACT_RESEND_RATE_LIMITED: tPayments(
-      'artifacts.errorMessages.ARTIFACT_RESEND_RATE_LIMITED',
-    ),
-    UNKNOWN_ERROR: tPayments('artifacts.errorMessages.UNKNOWN_ERROR'),
-  } as const;
+  const rawArtifactUiErrorMessages = (
+    tPayments as typeof tPayments & { raw: (key: string) => unknown }
+  ).raw('artifacts.errorMessages');
+  const artifactUiErrorMessages: Record<string, string> =
+    rawArtifactUiErrorMessages && typeof rawArtifactUiErrorMessages === 'object'
+      ? Object.fromEntries(
+          Object.entries(rawArtifactUiErrorMessages).map(([key, value]) => [
+            key,
+            typeof value === 'string' ? value : String(value ?? ''),
+          ]),
+        )
+      : {};
 
   const artifactLabels = {
     sectionTitle: tPayments('artifacts.sectionTitle'),
@@ -718,6 +716,11 @@ export default async function AdminPaymentsEconomicsPage({
     identifiersHeader: tPayments('caseLookup.identifiersHeader'),
     sourcesHeader: tPayments('caseLookup.sourcesHeader'),
   };
+  const rawCaseLookupDisambiguationReasons = (
+    tPayments as typeof tPayments & { raw: (key: string) => unknown }
+  ).raw('caseLookup.disambiguationReasons') as
+    | { multipleTraces?: string; fallback?: string }
+    | undefined;
   const caseLookupUiResult = caseLookupResult
     ? {
         ...caseLookupResult,
@@ -725,10 +728,11 @@ export default async function AdminPaymentsEconomicsPage({
           ...group,
           uiReason:
             group.reasonCode === 'multiple_traces_matched'
-              ? tPayments('caseLookup.disambiguationReasons.multipleTraces', {
-                  count: group.traceIds.length,
-                })
-              : tPayments('caseLookup.disambiguationReasons.fallback'),
+              ? (rawCaseLookupDisambiguationReasons?.multipleTraces ?? '').replace(
+                  '{count}',
+                  String(group.traceIds.length),
+                )
+              : (rawCaseLookupDisambiguationReasons?.fallback ?? ''),
         })),
       }
     : null;
@@ -1077,7 +1081,7 @@ export default async function AdminPaymentsEconomicsPage({
             rates={fxRates}
             flags={fxFlags}
             labels={fxLabels}
-            upsertAction={upsertFxRateFormAction}
+            upsertAction={upsertDailyFxRateAdminAction}
             hideSummaryCards
           />
           <ArtifactGovernanceDashboard

@@ -55,6 +55,7 @@ function QueueSection({
 }: QueueSectionProps) {
   const t = useTranslations('pages.dashboardPayments');
   const { visible, hidden } = splitVisibleItems(items);
+  const tWithRaw = t as typeof t & { raw: (key: string) => unknown };
 
   function formatDate(value: string) {
     const dateValue = new Date(value);
@@ -69,6 +70,11 @@ function QueueSection({
   function getDetailHref(item: OrganizerWalletIssueActivityItem) {
     if (item.entityType !== 'payout') return null;
     return getPayoutDetailHref(item.entityId, { eventId });
+  }
+
+  function readDynamicLabel(key: string): string {
+    const value = tWithRaw.raw(key);
+    return typeof value === 'string' ? value : String(value ?? '');
   }
 
   return (
@@ -99,8 +105,12 @@ function QueueSection({
                 <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="space-y-1">
-                      <p className="text-base font-semibold leading-tight">{t(eventCopy.titleKey)}</p>
-                      <PaymentsMetadataText>{t(eventCopy.descriptionKey)}</PaymentsMetadataText>
+                      <p className="text-base font-semibold leading-tight">
+                        {readDynamicLabel(eventCopy.titleKey)}
+                      </p>
+                      <PaymentsMetadataText>
+                        {readDynamicLabel(eventCopy.descriptionKey)}
+                      </PaymentsMetadataText>
                     </div>
                     <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
                       {badgeLabel}
@@ -150,8 +160,10 @@ function QueueSection({
                     <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <p className="font-medium">{t(eventCopy.titleKey)}</p>
-                          <PaymentsMetadataText>{t(eventCopy.descriptionKey)}</PaymentsMetadataText>
+                          <p className="font-medium">{readDynamicLabel(eventCopy.titleKey)}</p>
+                          <PaymentsMetadataText>
+                            {readDynamicLabel(eventCopy.descriptionKey)}
+                          </PaymentsMetadataText>
                         </div>
                         <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
                           {badgeLabel}

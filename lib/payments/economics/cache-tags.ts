@@ -7,6 +7,7 @@ export const adminPaymentsCacheTags = {
   fxRates: 'admin-payments-fx-rates',
   fxActionFlags: 'admin-payments-fx-action-flags',
   fxSnapshots: 'admin-payments-fx-snapshots',
+  contextSummary: 'admin-payments-context-summary',
 } as const;
 
 export function withWindowTag(baseTag: string, days: number): string {

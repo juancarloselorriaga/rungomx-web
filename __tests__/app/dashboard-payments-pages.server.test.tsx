@@ -14,6 +14,7 @@ import {
   getOrganizerPayoutDetailByRequestId,
   listOrganizerPayouts,
 } from '@/lib/payments/organizer/payout-views';
+import { loadOrganizerPaymentsWorkspaceData } from '@/lib/payments/organizer/workspace-data';
 import type { ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
@@ -120,9 +121,23 @@ jest.mock('@/lib/payments/organizer/payout-views', () => ({
   getOrganizerPayoutDetailByRequestId: jest.fn(),
 }));
 
+jest.mock('@/lib/payments/organizer/workspace-data', () => ({
+  loadOrganizerPaymentsWorkspaceData: jest.fn(),
+}));
+
 jest.mock('@/components/payments/organizer-payments-workspace', () => ({
-  OrganizerPaymentsWorkspace: ({ organizationId }: { organizationId: string }) => (
-    <div data-testid="workspace" data-organization-id={organizationId}>
+  OrganizerPaymentsWorkspace: ({
+    organizationId,
+    initialData,
+  }: {
+    organizationId: string;
+    initialData?: unknown;
+  }) => (
+    <div
+      data-testid="workspace"
+      data-organization-id={organizationId}
+      data-has-initial-data={String(initialData != null)}
+    >
       organizer-workspace
     </div>
   ),
@@ -242,6 +257,10 @@ const mockGetOrganizerPayoutDetailByRequestId =
   getOrganizerPayoutDetailByRequestId as jest.MockedFunction<
     typeof getOrganizerPayoutDetailByRequestId
   >;
+const mockLoadOrganizerPaymentsWorkspaceData =
+  loadOrganizerPaymentsWorkspaceData as jest.MockedFunction<
+    typeof loadOrganizerPaymentsWorkspaceData
+  >;
 
 const basePermissions: PermissionSet = {
   canAccessAdminArea: false,
@@ -260,6 +279,7 @@ describe('dashboard payments pages', () => {
     mockListOrganizerPayouts.mockResolvedValue([]);
     mockGetOrgMembership.mockResolvedValue(null);
     mockGetOrganizationSummary.mockResolvedValue(null);
+    mockLoadOrganizerPaymentsWorkspaceData.mockResolvedValue(null);
   });
 
   it('uses user organizations for external organizers on the payments home page', async () => {
@@ -297,9 +317,16 @@ describe('dashboard payments pages', () => {
 
     expect(mockGetUserOrganizations).toHaveBeenCalledWith('organizer-user');
     expect(mockGetAllOrganizations).not.toHaveBeenCalled();
+    expect(mockLoadOrganizerPaymentsWorkspaceData).toHaveBeenCalledWith({
+      authContext: expect.objectContaining({
+        user: { id: 'organizer-user' },
+      }),
+      organizationId: 'org-user-1',
+    });
     expect(html).toContain('data-organization-count-label="1 organizations available"');
     expect(html).not.toContain('Staff Org');
     expect(html).toContain('data-organization-id="org-user-1"');
+    expect(html).toContain('data-has-initial-data="false"');
     expect(html.indexOf('data-testid="workspace"')).toBeLessThan(
       html.indexOf('data-testid="organization-context-card"'),
     );

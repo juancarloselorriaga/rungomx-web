@@ -3,7 +3,13 @@ import { render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 jest.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => {
+    const translator = ((key: string) => key) as ((key: string) => string) & {
+      raw: (key: string) => string;
+    };
+    translator.raw = (key: string) => key;
+    return translator;
+  },
 }));
 
 jest.mock('@/i18n/navigation', () => ({

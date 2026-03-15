@@ -610,7 +610,10 @@ describe('Payments hardening component coverage', () => {
   });
 
   it('renders fx rate management action flags, form inputs, and rates table', () => {
-    const upsertActionMock = jest.fn();
+    const upsertActionMock = jest.fn().mockResolvedValue({
+      ok: true,
+      data: { rateId: 'fx-rate-created' },
+    });
 
     render(
       <FxRateManagementDashboard
@@ -641,12 +644,53 @@ describe('Payments hardening component coverage', () => {
           hasActions: false,
         }}
         labels={fxRateManagementLabels}
-        upsertAction={() => undefined}
+        upsertAction={async () => ({ ok: true, data: { rateId: 'fx-rate-created' } })}
       />,
     );
 
     expect(screen.getByText('noActions')).toBeInTheDocument();
     expect(screen.getByText('emptyRates')).toBeInTheDocument();
+  });
+
+  it('submits fx upsert through form action payload', async () => {
+    const upsertActionMock = jest.fn().mockResolvedValue({
+      ok: true,
+      data: { rateId: 'fx-rate-created' },
+    });
+
+    render(
+      <FxRateManagementDashboard
+        locale="en"
+        rates={fxRatesFixture}
+        flags={fxFlagsFixture}
+        labels={fxRateManagementLabels}
+        upsertAction={upsertActionMock}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('currencyFieldLabel'), {
+      target: { value: 'usd' },
+    });
+    fireEvent.change(screen.getByLabelText('fxDatePicker'), {
+      target: { value: '2026-02-06' },
+    });
+    fireEvent.change(screen.getByLabelText('rateFieldLabel'), {
+      target: { value: '17.250000' },
+    });
+    fireEvent.change(screen.getByLabelText('reasonFieldLabel'), {
+      target: { value: 'manual_review' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
+
+    await waitFor(() => {
+      expect(upsertActionMock).toHaveBeenCalledWith({
+        sourceCurrency: 'usd',
+        effectiveDate: '2026-02-06',
+        rateToMxn: '17.250000',
+        reason: 'manual_review',
+      });
+    });
   });
 
   it('renders evidence summary, ownership state, and artifact rows when pack exists', () => {

@@ -13,7 +13,7 @@ import {
 } from '@/lib/payments/organizer/ui';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { OrganizerActionQueue } from './organizer-action-queue';
 import { PaymentsStatePanel } from './payments-state-panel';
@@ -34,6 +34,7 @@ type OrganizerPaymentsWorkspaceProps = {
   historyHref?: AppHref;
   eventId?: string;
   showHistoryShortcut?: boolean;
+  initialData?: WorkspaceData | null;
 };
 
 type WorkspaceData = {
@@ -50,12 +51,35 @@ export function OrganizerPaymentsWorkspace({
   historyHref,
   eventId,
   showHistoryShortcut = true,
+  initialData,
 }: OrganizerPaymentsWorkspaceProps) {
   const t = useTranslations('pages.dashboardPayments');
   const resolvedHistoryHref = historyHref ?? getGlobalPayoutHistoryHref(organizationId);
-  const [data, setData] = useState<WorkspaceData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus>('ready');
+  const [data, setData] = useState<WorkspaceData | null>(initialData ?? null);
+  const [isLoading, setIsLoading] = useState(initialData === undefined);
+  const [workspaceStatus, setWorkspaceStatus] = useState<WorkspaceStatus>(() => {
+    if (initialData === undefined) return 'ready';
+    if (!initialData) return 'error';
+    return initialData.wallet && initialData.issues ? 'ready' : 'partial';
+  });
+  const hasEmittedTelemetryRef = useRef(false);
+
+  useEffect(() => {
+    if (initialData === undefined) {
+      setData(null);
+      setIsLoading(true);
+      setWorkspaceStatus('ready');
+      return;
+    }
+
+    setData(initialData);
+    setIsLoading(false);
+    if (!initialData) {
+      setWorkspaceStatus('error');
+      return;
+    }
+    setWorkspaceStatus(initialData.wallet && initialData.issues ? 'ready' : 'partial');
+  }, [organizationId, initialData]);
 
   const loadWorkspaceData = useCallback(async () => {
     setIsLoading(true);
@@ -102,10 +126,6 @@ export function OrganizerPaymentsWorkspace({
 
       setData(nextData);
       setWorkspaceStatus(nextData.wallet && nextData.issues ? 'ready' : 'partial');
-      emitOrganizerPaymentsTelemetry({
-        eventName: 'organizer_payments_workspace_viewed',
-        organizationId,
-      });
     } catch {
       setWorkspaceStatus('error');
       setData(null);
@@ -115,8 +135,26 @@ export function OrganizerPaymentsWorkspace({
   }, [organizationId]);
 
   useEffect(() => {
+    if (initialData !== undefined) {
+      return;
+    }
     void loadWorkspaceData();
-  }, [loadWorkspaceData]);
+  }, [initialData, loadWorkspaceData]);
+
+  useEffect(() => {
+    hasEmittedTelemetryRef.current = false;
+  }, [organizationId]);
+
+  useEffect(() => {
+    if (hasEmittedTelemetryRef.current || !data) {
+      return;
+    }
+    emitOrganizerPaymentsTelemetry({
+      eventName: 'organizer_payments_workspace_viewed',
+      organizationId,
+    });
+    hasEmittedTelemetryRef.current = true;
+  }, [data, organizationId]);
 
   if (isLoading) {
     return (

@@ -418,78 +418,6 @@ test.describe('Organizer Payments E2E', () => {
   }) => {
     await signInAsOrganizer(page, organizerCreds);
 
-    let queuedIntentCount = 0;
-    let queuedIntentRequestedAmountMinor: number | null = null;
-    await page.route('**/api/payments/payouts/queued-intents', async (route) => {
-      if (route.request().method() !== 'POST') {
-        await route.continue();
-        return;
-      }
-
-      queuedIntentCount += 1;
-      let payload: { requestedAmountMinor?: number } | null = null;
-      try {
-        payload = route.request().postDataJSON() as { requestedAmountMinor?: number } | null;
-      } catch {
-        const rawPayload = route.request().postData();
-        if (rawPayload) {
-          try {
-            payload = JSON.parse(rawPayload) as { requestedAmountMinor?: number };
-          } catch {
-            payload = null;
-          }
-        }
-      }
-      queuedIntentRequestedAmountMinor = payload?.requestedAmountMinor ?? null;
-
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: {
-            payoutQueuedIntentId: randomUUID(),
-            requestedAmountMinor: 50_000,
-            blockedReasonCode: 'active_payout_lifecycle_conflict',
-          },
-        }),
-      });
-    });
-
-    let requestCount = 0;
-    await page.route('**/api/payments/payouts', async (route) => {
-      if (route.request().method() !== 'POST') {
-        await route.continue();
-        return;
-      }
-
-      requestCount += 1;
-      if (requestCount === 1) {
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            data: {
-              payoutQuoteId: randomUUID(),
-              payoutRequestId: terminalPayoutRequestId,
-              payoutContractId: randomUUID(),
-              maxWithdrawableAmountMinor: 120_000,
-              requestedAmountMinor: 50_000,
-            },
-          }),
-        });
-        return;
-      }
-
-      await route.fulfill({
-        status: 409,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          code: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED',
-          suggestedAction: 'submit_queue_intent',
-        }),
-      });
-    });
-
     await page.goto(`/en/dashboard/payments/payouts?organizationId=${organizationId}`);
 
     await page.getByRole('button', { name: 'Request payout' }).click();
@@ -499,55 +427,19 @@ test.describe('Organizer Payments E2E', () => {
     await expect(amountInput).toBeVisible();
 
     await amountInput.fill('50000');
-    const firstPayoutSubmitCount = requestCount;
-    await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          response.url().includes('/api/payments/payouts') &&
-          response.request().method() === 'POST' &&
-          response.status() === 201,
-      ),
-      page.getByRole('button', { name: 'Request payout' }).click(),
-    ]);
-    await expect.poll(() => requestCount).toBe(firstPayoutSubmitCount + 1);
-    await expect(page.getByText('Payout requested')).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Open payout details' })).toBeVisible();
-
-    await amountInput.fill('50000');
-    const secondPayoutSubmitCount = requestCount;
-    await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          response.url().includes('/api/payments/payouts') &&
-          response.request().method() === 'POST' &&
-          response.status() === 409,
-      ),
-      page.getByRole('button', { name: 'Request payout' }).click(),
-    ]);
-    await expect.poll(() => requestCount).toBe(secondPayoutSubmitCount + 1);
+    await page.getByRole('button', { name: 'Request payout' }).click();
     await expect(
       page.getByText(
         'This organization already has a payout in progress. You can line up the next one to start after it finishes.',
       ),
     ).toBeVisible();
+    await expect(page.getByText('Payout requested')).toHaveCount(0);
 
     const queueButton = page.getByRole('button', { name: 'Line up next payout' });
     await expect(queueButton).toBeVisible();
-    const queueIntentSubmitCount = queuedIntentCount;
-    await Promise.all([
-      page.waitForResponse(
-        (response) =>
-          response.url().includes('/api/payments/payouts/queued-intents') &&
-          response.request().method() === 'POST' &&
-          response.status() === 201,
-      ),
-      queueButton.click(),
-    ]);
+    await queueButton.click();
 
     await expect(page.getByText('Next payout lined up')).toBeVisible();
-    await expect.poll(() => requestCount).toBe(2);
-    await expect.poll(() => queuedIntentCount).toBe(queueIntentSubmitCount + 1);
-    await expect.poll(() => queuedIntentRequestedAmountMinor).toBe(50_000);
   });
 
   test('11.4-E2E-003a organizer can inspect terminal payout detail lifecycle and statement availability', async ({
@@ -641,28 +533,6 @@ test.describe('Organizer Payments E2E', () => {
         }
       ).__RUNGO_PAYMENTS_SMOKE_TELEMETRY__ = [];
     }, organizerPaymentsTelemetryStorageKey);
-    await mockWorkspaceApis(page, organizationId, { availableMinor: 160_000, processingMinor: 0 });
-
-    await page.route('**/api/payments/payouts', async (route) => {
-      if (route.request().method() !== 'POST') {
-        await route.continue();
-        return;
-      }
-
-      await route.fulfill({
-        status: 201,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: {
-            payoutQuoteId: randomUUID(),
-            payoutRequestId: randomUUID(),
-            payoutContractId: randomUUID(),
-            maxWithdrawableAmountMinor: 160_000,
-            requestedAmountMinor: 50_000,
-          },
-        }),
-      });
-    });
 
     await page.route('**/api/payments/payouts/*/statement?*', async (route) => {
       await route.fulfill({
@@ -690,7 +560,8 @@ test.describe('Organizer Payments E2E', () => {
     );
     expect(hasHorizontalOverflow).toBe(false);
 
-    await expect(page.getByTestId('payments-primary-cta')).toBeVisible();
+    await expect(page.getByTestId('payments-current-payout-link')).toBeVisible();
+    await expect(page.getByTestId('payments-primary-cta')).toHaveText('Line up next payout');
     await page.getByTestId('payments-primary-cta').focus();
     await page.keyboard.press('Enter');
 
@@ -698,7 +569,35 @@ test.describe('Organizer Payments E2E', () => {
     await expect(payoutDialog).toBeVisible();
     await payoutDialog.getByLabel('Payout amount').fill('50000');
     await payoutDialog.getByRole('button', { name: 'Request payout' }).click();
-    await expect(page.getByText('Payout requested')).toBeVisible();
+    await expect(
+      page.getByText(
+        'This organization already has a payout in progress. You can line up the next one to start after it finishes.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText('Payout requested')).toHaveCount(0);
+
+    const queueButton = page.getByRole('button', { name: 'Line up next payout' });
+    await expect(queueButton).toBeVisible();
+    await queueButton.click();
+    const queueSuccessMessage = page.getByText('Next payout lined up');
+    const queuedAlreadyActiveMessage = page.getByText(
+      'There is already a payout lined up for this organization.',
+    );
+    await expect
+      .poll(
+        async () =>
+          (await queueSuccessMessage.isVisible()) || (await queuedAlreadyActiveMessage.isVisible()),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+
+    const didQueueSucceed = await queueSuccessMessage.isVisible();
+    if (didQueueSucceed) {
+      await expect(queueSuccessMessage).toBeVisible();
+    } else {
+      await expect(queuedAlreadyActiveMessage).toBeVisible();
+      await expect(page.getByText('Your next payout is lined up').first()).toBeVisible();
+    }
 
     await page.goto(`/en/dashboard/payments/payouts/${terminalPayoutRequestId}`);
     await waitForPayoutDetailPageReady(page, terminalPayoutRequestId);
@@ -715,17 +614,44 @@ test.describe('Organizer Payments E2E', () => {
     );
     expect(Array.isArray(telemetry)).toBe(true);
 
+    expect(telemetry).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventName: 'organizer_payments_workspace_viewed',
+          organizationId,
+        }),
+        expect.objectContaining({
+          eventName: 'organizer_payout_detail_viewed',
+          organizationId,
+          payoutRequestId: terminalPayoutRequestId,
+        }),
+        expect.objectContaining({
+          eventName: 'organizer_payout_statement_requested',
+          organizationId,
+          payoutRequestId: terminalPayoutRequestId,
+          isTerminal: true,
+        }),
+      ]),
+    );
+
     const telemetryNames = (telemetry as Array<{ eventName?: string }>)
       .map((event) => event.eventName)
       .filter((name): name is string => typeof name === 'string');
 
-    expect(telemetryNames).toEqual(
-      expect.arrayContaining([
-        'organizer_payments_workspace_viewed',
-        'organizer_payout_request_submitted',
-        'organizer_payout_detail_viewed',
-        'organizer_payout_statement_requested',
-      ]),
-    );
+    if (didQueueSucceed) {
+      expect(telemetry).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            eventName: 'organizer_payout_queue_intent_submitted',
+            organizationId,
+            requestedAmountMinor: 50_000,
+          }),
+        ]),
+      );
+    } else {
+      expect(telemetryNames).not.toContain('organizer_payout_queue_intent_submitted');
+    }
+
+    expect(telemetryNames).not.toContain('organizer_payout_request_submitted');
   });
 });

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { payoutContracts, payoutQuotes, payoutRequests } from '@/db/schema';
@@ -550,6 +550,7 @@ export async function createPayoutQuoteAndContract(params: {
     })
     .onConflictDoNothing({
       target: [payoutQuotes.organizerId, payoutQuotes.idempotencyKey],
+      where: sql`${payoutQuotes.deletedAt} is null`,
     })
     .returning({
       id: payoutQuotes.id,

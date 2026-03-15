@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
+import { FormField } from '@/components/ui/form-field';
 import {
   PaymentsDataTable,
   PaymentsDataTableCell,
@@ -18,6 +17,8 @@ import {
 } from '@/components/payments/payments-data-table';
 import { PaymentsCountPill } from '@/components/payments/payments-typography';
 import { PaymentsInsetPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
+import { Form, FormError, useForm } from '@/lib/forms';
+import type { FormActionResult } from '@/lib/forms';
 import type {
   DailyFxRateRecord,
   FxRateActionFlags,
@@ -54,7 +55,12 @@ type FxRateManagementDashboardProps = {
   rates: DailyFxRateRecord[];
   flags: FxRateActionFlags;
   labels: FxRateManagementLabels;
-  upsertAction: (formData: FormData) => void | Promise<void>;
+  upsertAction: (input: {
+    sourceCurrency: string;
+    effectiveDate: string;
+    rateToMxn: string;
+    reason: string;
+  }) => Promise<FormActionResult<{ rateId: string }>>;
   hideSummaryCards?: boolean;
 };
 
@@ -76,7 +82,34 @@ export function FxRateManagementDashboard({
   upsertAction,
   hideSummaryCards = false,
 }: FxRateManagementDashboardProps) {
-  const [effectiveDate, setEffectiveDate] = useState('');
+  const form = useForm<
+    { sourceCurrency: string; effectiveDate: string; rateToMxn: string; reason: string },
+    { rateId: string }
+  >({
+    defaultValues: {
+      sourceCurrency: '',
+      effectiveDate: '',
+      rateToMxn: '',
+      reason: '',
+    },
+    onSubmit: async (values) => {
+      const result = await upsertAction({
+        sourceCurrency: values.sourceCurrency,
+        effectiveDate: values.effectiveDate,
+        rateToMxn: values.rateToMxn,
+        reason: values.reason,
+      });
+
+      if (!result.ok) {
+        return {
+          ...result,
+          message: result.message ?? result.error,
+        };
+      }
+
+      return result;
+    },
+  });
 
   return (
     <section className="space-y-4" data-testid="admin-payments-fx-dashboard">
@@ -149,67 +182,82 @@ export function FxRateManagementDashboard({
             {labels.editActionLabel}
           </span>
         </summary>
-        <form action={upsertAction} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.currencyFieldLabel}
-            </span>
+        <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="md:col-span-2 xl:col-span-4">
+            <FormError />
+          </div>
+
+          <FormField
+            label={labels.currencyFieldLabel}
+            required
+            error={form.errors.sourceCurrency}
+            className="space-y-1 text-xs"
+          >
             <input
-              name="sourceCurrency"
               required
               maxLength={3}
               placeholder="USD"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm uppercase"
+              {...form.register('sourceCurrency')}
+              disabled={form.isSubmitting}
             />
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.dateFieldLabel}
-            </span>
+          <FormField
+            label={labels.dateFieldLabel}
+            required
+            error={form.errors.effectiveDate}
+            className="space-y-1 text-xs"
+          >
             <DatePicker
-              value={effectiveDate}
-              onChangeAction={setEffectiveDate}
+              value={form.values.effectiveDate}
+              onChangeAction={(value) => form.setFieldValue('effectiveDate', value)}
               locale={locale}
               clearLabel={labels.clearDateLabel}
+              disabled={form.isSubmitting}
             />
-            <input type="hidden" name="effectiveDate" value={effectiveDate} required readOnly />
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.rateFieldLabel}
-            </span>
+          <FormField
+            label={labels.rateFieldLabel}
+            required
+            error={form.errors.rateToMxn}
+            className="space-y-1 text-xs"
+          >
             <input
-              name="rateToMxn"
               required
               type="number"
               min="0.000001"
               step="0.000001"
               placeholder="17.250000"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm tabular-nums"
+              {...form.register('rateToMxn')}
+              disabled={form.isSubmitting}
             />
-          </label>
+          </FormField>
 
-          <label className="space-y-1 text-xs">
-            <span className="uppercase tracking-wide text-muted-foreground">
-              {labels.reasonFieldLabel}
-            </span>
+          <FormField
+            label={labels.reasonFieldLabel}
+            required
+            error={form.errors.reason}
+            className="space-y-1 text-xs"
+          >
             <input
-              name="reason"
               required
               minLength={3}
               maxLength={500}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              {...form.register('reason')}
+              disabled={form.isSubmitting}
             />
-          </label>
+          </FormField>
 
           <div className="md:col-span-2 xl:col-span-4">
-            <Button type="submit">
+            <Button type="submit" disabled={form.isSubmitting}>
               {labels.submitLabel}
             </Button>
           </div>
-        </form>
+        </Form>
       </details>
 
       <PaymentsPanel>

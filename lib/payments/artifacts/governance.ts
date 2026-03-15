@@ -10,8 +10,11 @@ import {
   payoutRequests,
 } from '@/db/schema';
 import { createAuditLog } from '@/lib/audit';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 import { generatePayoutStatementArtifact } from '@/lib/payments/payouts/statements';
 import { checkRateLimit, type RateLimitResult } from '@/lib/rate-limit';
+
+export const artifactGovernanceSummaryTag = 'admin-payments-artifact-governance-summary';
 
 export const supportedArtifactTypes = ['payout_statement'] as const;
 export type SupportedArtifactType = (typeof supportedArtifactTypes)[number];
@@ -553,10 +556,14 @@ export async function resendArtifactForTrace(params: {
 export async function getArtifactGovernanceSummary(params?: {
   limit?: number;
 }): Promise<ArtifactGovernanceSummary> {
+  'use cache: remote';
+
   const limit =
     typeof params?.limit === 'number' && Number.isFinite(params.limit) && params.limit > 0
       ? Math.trunc(params.limit)
       : 20;
+  safeCacheTag(artifactGovernanceSummaryTag, `${artifactGovernanceSummaryTag}:${limit}`);
+  safeCacheLife({ expire: 120 });
 
   const [versionRows, deliveryRows] = await Promise.all([
     db
