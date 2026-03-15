@@ -314,40 +314,24 @@ export async function getOrganizerPayoutDetail(params: {
   return buildOrganizerPayoutDetail(payoutRequest);
 }
 
-export async function getOrganizerPayoutDetailByRequestId(
+export async function getOrganizerIdForPayoutRequest(
   payoutRequestId: string,
-): Promise<OrganizerPayoutDetail | null> {
-  'use cache: remote';
-  safeCacheTag(organizerPayoutDetailTag(payoutRequestId));
-  safeCacheLife({ expire: 60 });
-
-  const payoutRequest = await db
+): Promise<string | null> {
+  const row = await db
     .select({
-      payoutRequestId: payoutRequests.id,
       organizerId: payoutRequests.organizerId,
-      status: payoutRequests.status,
-      traceId: payoutRequests.traceId,
-      requestedAt: payoutRequests.requestedAt,
-      lifecycleContextJson: payoutRequests.lifecycleContextJson,
-      currency: payoutQuotes.currency,
-      requestedAmountMinor: payoutQuotes.requestedAmountMinor,
-      maxWithdrawableAmountMinor: payoutQuotes.maxWithdrawableAmountMinor,
-      includedAmountMinor: payoutQuotes.includedAmountMinor,
-      deductionAmountMinor: payoutQuotes.deductionAmountMinor,
     })
     .from(payoutRequests)
-    .innerJoin(payoutQuotes, eq(payoutRequests.payoutQuoteId, payoutQuotes.id))
     .where(
       and(
         eq(payoutRequests.id, payoutRequestId),
         isNull(payoutRequests.deletedAt),
-        isNull(payoutQuotes.deletedAt),
       ),
     )
     .limit(1)
-    .then((rows) => (rows[0] ?? null) as OrganizerPayoutDetailRow | null);
+    .then((rows) => rows[0] ?? null);
 
-  return buildOrganizerPayoutDetail(payoutRequest);
+  return row?.organizerId ?? null;
 }
 
 async function buildOrganizerPayoutDetail(

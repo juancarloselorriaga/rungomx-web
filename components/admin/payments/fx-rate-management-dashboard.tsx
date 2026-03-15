@@ -1,5 +1,7 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
@@ -82,6 +84,7 @@ export function FxRateManagementDashboard({
   upsertAction,
   hideSummaryCards = false,
 }: FxRateManagementDashboardProps) {
+  const router = useRouter();
   const form = useForm<
     { sourceCurrency: string; effectiveDate: string; rateToMxn: string; reason: string },
     { rateId: string }
@@ -108,6 +111,9 @@ export function FxRateManagementDashboard({
       }
 
       return result;
+    },
+    onSuccess: () => {
+      router.refresh();
     },
   });
 

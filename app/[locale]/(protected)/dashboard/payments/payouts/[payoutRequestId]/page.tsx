@@ -9,7 +9,10 @@ import {
   getGlobalPayoutHistoryHref,
 } from '@/lib/payments/organizer/hrefs';
 import { shortIdentifier } from '@/lib/payments/organizer/presentation';
-import { getOrganizerPayoutDetailByRequestId } from '@/lib/payments/organizer/payout-views';
+import {
+  getOrganizerIdForPayoutRequest,
+  getOrganizerPayoutDetail,
+} from '@/lib/payments/organizer/payout-views';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
@@ -52,11 +55,18 @@ export default async function DashboardPaymentsPayoutDetailPage({
   const t = await getTranslations('pages.dashboardPayments');
   const pageTitle = t('detail.pageTitle', { id: shortIdentifier(payoutRequestId) });
   const authContext = await getAuthContext();
-  const detail = await getOrganizerPayoutDetailByRequestId(payoutRequestId);
   const isSupportUser = authContext.permissions.canViewStaffTools;
+  const resolvedOrganizationId = await getOrganizerIdForPayoutRequest(payoutRequestId);
   const membership =
-    detail && !isSupportUser && authContext.user
-      ? await getOrgMembership(authContext.user.id, detail.organizerId)
+    resolvedOrganizationId && !isSupportUser && authContext.user
+      ? await getOrgMembership(authContext.user.id, resolvedOrganizationId)
+      : null;
+  const detail =
+    resolvedOrganizationId && (isSupportUser || membership)
+      ? await getOrganizerPayoutDetail({
+          organizerId: resolvedOrganizationId,
+          payoutRequestId,
+        })
       : null;
 
   if (!detail || (!isSupportUser && !membership)) {

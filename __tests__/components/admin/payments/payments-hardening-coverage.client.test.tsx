@@ -691,6 +691,10 @@ describe('Payments hardening component coverage', () => {
         reason: 'manual_review',
       });
     });
+
+    await waitFor(() => {
+      expect(routerRefreshMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('renders evidence summary, ownership state, and artifact rows when pack exists', () => {

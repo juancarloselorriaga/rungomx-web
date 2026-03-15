@@ -11,7 +11,8 @@ import {
 } from '@/lib/organizations/queries';
 import {
   countOrganizerPayouts,
-  getOrganizerPayoutDetailByRequestId,
+  getOrganizerIdForPayoutRequest,
+  getOrganizerPayoutDetail,
   listOrganizerPayouts,
 } from '@/lib/payments/organizer/payout-views';
 import { loadOrganizerPaymentsWorkspaceData } from '@/lib/payments/organizer/workspace-data';
@@ -118,7 +119,8 @@ jest.mock('@/lib/organizations/permissions', () => ({
 jest.mock('@/lib/payments/organizer/payout-views', () => ({
   countOrganizerPayouts: jest.fn(),
   listOrganizerPayouts: jest.fn(),
-  getOrganizerPayoutDetailByRequestId: jest.fn(),
+  getOrganizerIdForPayoutRequest: jest.fn(),
+  getOrganizerPayoutDetail: jest.fn(),
 }));
 
 jest.mock('@/lib/payments/organizer/workspace-data', () => ({
@@ -253,10 +255,10 @@ const mockListOrganizerPayouts =
   listOrganizerPayouts as jest.MockedFunction<typeof listOrganizerPayouts>;
 const mockCountOrganizerPayouts =
   countOrganizerPayouts as jest.MockedFunction<typeof countOrganizerPayouts>;
-const mockGetOrganizerPayoutDetailByRequestId =
-  getOrganizerPayoutDetailByRequestId as jest.MockedFunction<
-    typeof getOrganizerPayoutDetailByRequestId
-  >;
+const mockGetOrganizerIdForPayoutRequest =
+  getOrganizerIdForPayoutRequest as jest.MockedFunction<typeof getOrganizerIdForPayoutRequest>;
+const mockGetOrganizerPayoutDetail =
+  getOrganizerPayoutDetail as jest.MockedFunction<typeof getOrganizerPayoutDetail>;
 const mockLoadOrganizerPaymentsWorkspaceData =
   loadOrganizerPaymentsWorkspaceData as jest.MockedFunction<
     typeof loadOrganizerPaymentsWorkspaceData
@@ -277,6 +279,8 @@ describe('dashboard payments pages', () => {
     jest.clearAllMocks();
     mockCountOrganizerPayouts.mockResolvedValue(0);
     mockListOrganizerPayouts.mockResolvedValue([]);
+    mockGetOrganizerIdForPayoutRequest.mockResolvedValue(null);
+    mockGetOrganizerPayoutDetail.mockResolvedValue(null);
     mockGetOrgMembership.mockResolvedValue(null);
     mockGetOrganizationSummary.mockResolvedValue(null);
     mockLoadOrganizerPaymentsWorkspaceData.mockResolvedValue(null);
@@ -419,7 +423,7 @@ describe('dashboard payments pages', () => {
     expect(html).toContain('data-organization-id="org-staff-2"');
   });
 
-  it('derives payout detail organization from the payout request id', async () => {
+  it('authorizes payout detail access before loading organizer-scoped detail', async () => {
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'organizer-user' },
       permissions: {
@@ -429,7 +433,8 @@ describe('dashboard payments pages', () => {
       },
     } as Awaited<ReturnType<typeof getAuthContext>>);
 
-    mockGetOrganizerPayoutDetailByRequestId.mockResolvedValue({
+    mockGetOrganizerIdForPayoutRequest.mockResolvedValue('org-user-1');
+    mockGetOrganizerPayoutDetail.mockResolvedValue({
       payoutRequestId: 'payout-123',
       organizerId: 'org-user-1',
       status: 'completed',
@@ -456,12 +461,41 @@ describe('dashboard payments pages', () => {
     });
     const html = renderToStaticMarkup(page);
 
-    expect(mockGetOrganizerPayoutDetailByRequestId).toHaveBeenCalledWith('payout-123');
+    expect(mockGetOrganizerIdForPayoutRequest).toHaveBeenCalledWith('payout-123');
     expect(mockGetOrgMembership).toHaveBeenCalledWith('organizer-user', 'org-user-1');
+    expect(mockGetOrganizerPayoutDetail).toHaveBeenCalledWith({
+      organizerId: 'org-user-1',
+      payoutRequestId: 'payout-123',
+    });
+    expect(mockGetOrgMembership.mock.invocationCallOrder[0]).toBeLessThan(
+      mockGetOrganizerPayoutDetail.mock.invocationCallOrder[0],
+    );
     expect(mockGetOrganizationSummary).toHaveBeenCalledWith('org-user-1');
     expect(html).toContain('data-testid="detail-telemetry"');
     expect(html).toContain('data-organization-id="org-user-1"');
     expect(html).toContain('/dashboard/payments/payouts?organizationId=org-user-1');
     expect(html).toContain('Payout #payout-1');
+  });
+
+  it('does not load payout detail when membership check fails', async () => {
+    mockGetAuthContext.mockResolvedValue({
+      user: { id: 'organizer-user' },
+      permissions: {
+        ...basePermissions,
+        canManageEvents: true,
+        canViewOrganizersDashboard: true,
+      },
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    mockGetOrganizerIdForPayoutRequest.mockResolvedValue('org-user-1');
+    mockGetOrgMembership.mockResolvedValue(null);
+
+    const page = await DashboardPaymentsPayoutDetailPage({
+      params: Promise.resolve({ locale: 'en', payoutRequestId: 'payout-123' }),
+    });
+    const html = renderToStaticMarkup(page);
+
+    expect(mockGetOrganizerPayoutDetail).not.toHaveBeenCalled();
+    expect(html).toContain('detail.notFoundTitle');
   });
 });

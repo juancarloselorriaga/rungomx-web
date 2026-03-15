@@ -37,6 +37,20 @@ type QueueIntentSuccess = {
   blockedReasonCode: string;
 };
 
+const positiveIntegerMinorAmountSchema = z.preprocess(
+  (value) => {
+    if (typeof value === 'string') {
+      if (!/^\d+$/.test(value)) {
+        return value;
+      }
+      return Number.parseInt(value, 10);
+    }
+
+    return value;
+  },
+  z.number().int().positive(),
+);
+
 const payoutRequestSchema = z
   .object({
     organizationId: z.string().uuid(),
@@ -44,11 +58,9 @@ const payoutRequestSchema = z
       .preprocess(
         (value) => {
           if (value == null || value === '') return undefined;
-          if (typeof value === 'number') return value;
-          if (typeof value === 'string') return Number.parseInt(value, 10);
           return value;
         },
-        z.number().int().positive().optional(),
+        positiveIntegerMinorAmountSchema.optional(),
       )
       .optional(),
   })
@@ -57,14 +69,7 @@ const payoutRequestSchema = z
 const queuePayoutSchema = z
   .object({
     organizationId: z.string().uuid(),
-    requestedAmountMinor: z.preprocess(
-      (value) => {
-        if (typeof value === 'number') return value;
-        if (typeof value === 'string') return Number.parseInt(value, 10);
-        return value;
-      },
-      z.number().int().positive(),
-    ),
+    requestedAmountMinor: positiveIntegerMinorAmountSchema,
   })
   .strict();
 
