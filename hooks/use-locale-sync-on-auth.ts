@@ -5,7 +5,16 @@ import type { AppLocale } from '@/i18n/routing';
 import { useSession } from '@/lib/auth/client';
 import { useLocale } from 'next-intl';
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+
+function isAppLocale(value: string | null | undefined): value is AppLocale {
+  return value === 'es' || value === 'en';
+}
+
+export type LocaleSyncOnAuthState = {
+  preferredLocale: AppLocale | null;
+  isLocaleRedirectPending: boolean;
+};
 
 /**
  * Syncs the user's DB locale preference with the browser when authenticated.
@@ -14,47 +23,49 @@ import { useEffect, useRef } from 'react';
  *
  * This hook should be used in a layout or provider that renders on authenticated pages.
  */
-export function useLocaleSyncOnAuth() {
+export function useLocaleSyncOnAuth(
+  initialPreferredLocale?: string | null,
+): LocaleSyncOnAuthState {
   const { data: session, isPending } = useSession();
   const currentLocale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const searchParams = useSearchParams();
-  const lastSyncedLocaleRef = useRef<string | null>(null);
+  const lastReplaceKeyRef = useRef<string | null>(null);
+  const queryString = searchParams?.toString() ?? '';
+
+  const preferredLocale = useMemo(() => {
+    const sessionLocale = (session as { profile?: { locale?: string | null } } | null)?.profile?.locale;
+    if (isAppLocale(sessionLocale)) return sessionLocale;
+    if (isAppLocale(initialPreferredLocale)) return initialPreferredLocale;
+    return null;
+  }, [initialPreferredLocale, session]);
+
+  const isLocaleRedirectPending = preferredLocale !== null && preferredLocale !== currentLocale;
 
   useEffect(() => {
-    // Don't sync while session is loading
-    if (isPending) return;
+    if (isPending && !preferredLocale) return;
+    if (!preferredLocale || preferredLocale === currentLocale) return;
 
-    // Need a user with a profile to sync
-    if (!session?.user) return;
+    const replaceKey = `${pathname}?${queryString}->${preferredLocale}`;
+    if (lastReplaceKeyRef.current === replaceKey) return;
+    lastReplaceKeyRef.current = replaceKey;
 
-    // Get the DB locale from the session profile (profile is at session.profile, not session.user.profile)
-    const dbLocale = (session as { profile?: { locale?: string | null } }).profile
-      ?.locale as AppLocale | null | undefined;
+    const query =
+      searchParams && searchParams.size > 0
+        ? Object.fromEntries(searchParams.entries())
+        : undefined;
 
-    // Skip if no DB locale or already synced to this locale
-    if (!dbLocale) return;
-    if (lastSyncedLocaleRef.current === dbLocale) return;
+    router.replace(
+      // @ts-expect-error -- Params from the active route already match the pathname
+      { pathname, params, query },
+      { locale: preferredLocale },
+    );
+  }, [currentLocale, isPending, params, pathname, preferredLocale, queryString, router, searchParams]);
 
-    // Only redirect if DB locale differs from current browser locale
-    if (dbLocale !== currentLocale) {
-      lastSyncedLocaleRef.current = dbLocale;
-
-      const query =
-        searchParams && searchParams.size > 0
-          ? Object.fromEntries(searchParams.entries())
-          : undefined;
-
-      router.replace(
-        // @ts-expect-error -- Params from the active route already match the pathname
-        { pathname, params, query },
-        { locale: dbLocale },
-      );
-    } else {
-      // Already on correct locale, mark as synced
-      lastSyncedLocaleRef.current = dbLocale;
-    }
-  }, [session, isPending, currentLocale, router, pathname, params, searchParams]);
+  return {
+    preferredLocale,
+    isLocaleRedirectPending,
+  };
 }

@@ -17,9 +17,11 @@ import {
 import { signInAsOrganizer } from '../utils/helpers';
 
 let nonProOrganizerCreds: { id: string; email: string; password: string; name: string };
+let proOrganizerCreds: { id: string; email: string; password: string; name: string };
 let viewerOrganizerCreds: { id: string; email: string; password: string; name: string };
 let readyEventId: string;
 let blockedEventId: string;
+let assistantReadyEventId: string;
 
 function escapeForRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -53,6 +55,30 @@ function wizardStepButton(page: Page, label: string) {
       name: new RegExp(escapeForRegex(label), 'i'),
     })
     .first();
+}
+
+function assistantTextarea(page: Page) {
+  return page.getByTestId('event-assistant-panel-instance').locator('textarea');
+}
+
+function assistantDialog(page: Page) {
+  return page.getByRole('dialog');
+}
+
+function assistantOverlay(page: Page) {
+  return page.locator('[data-slot="sheet-overlay"]');
+}
+
+function assistantPanelInstance(page: Page) {
+  return page.getByTestId('event-assistant-panel-instance');
+}
+
+function assistantSendButtons(page: Page) {
+  return assistantPanelInstance(page).getByRole('button', { name: /send|enviar/i });
+}
+
+function assistantStopButtons(page: Page) {
+  return assistantPanelInstance(page).getByRole('button', { name: /detener|stop/i });
 }
 
 async function createEdition(
@@ -140,6 +166,9 @@ test.describe('Event wizard regression coverage', () => {
     nonProOrganizerCreds = await signUpTestUser(page, 'wizard-regression-non-pro-', {
       name: 'Wizard Regression Non-Pro Organizer',
     });
+    proOrganizerCreds = await signUpTestUser(page, 'wizard-regression-pro-', {
+      name: 'Wizard Regression Pro Organizer',
+    });
     viewerOrganizerCreds = await signUpTestUser(page, 'wizard-regression-viewer-', {
       name: 'Wizard Regression Viewer Organizer',
     });
@@ -154,6 +183,16 @@ test.describe('Event wizard regression coverage', () => {
         emergencyContactName: 'Wizard Regression Contact',
         emergencyContactPhone: '+523312300302',
       }),
+      createTestProfile(db, proOrganizerCreds.id, {
+        dateOfBirth: new Date('1993-01-01'),
+        gender: 'male',
+        phone: '+523312300401',
+        city: 'Monterrey',
+        state: 'Nuevo León',
+        locale: 'es',
+        emergencyContactName: 'Wizard Regression Pro Contact',
+        emergencyContactPhone: '+523312300402',
+      }),
       createTestProfile(db, viewerOrganizerCreds.id, {
         dateOfBirth: new Date('1992-01-01'),
         gender: 'female',
@@ -164,9 +203,15 @@ test.describe('Event wizard regression coverage', () => {
         emergencyContactPhone: '+523312300502',
       }),
       assignExternalRole(db, nonProOrganizerCreds.id, 'organizer'),
+      assignExternalRole(db, proOrganizerCreds.id, 'organizer'),
       assignExternalRole(db, viewerOrganizerCreds.id, 'organizer'),
     ]);
 
+    await seedActiveProEntitlement(db, proOrganizerCreds.id, {
+      grantedByUserId: nonProOrganizerCreds.id,
+      grantDurationDays: 14,
+      reason: 'e2e_active_pro_entitlement_event_wizard_regression_pro',
+    });
     await seedActiveProEntitlement(db, viewerOrganizerCreds.id, {
       grantedByUserId: nonProOrganizerCreds.id,
       grantDurationDays: 14,
@@ -176,6 +221,10 @@ test.describe('Event wizard regression coverage', () => {
     const nonProOrg = await createTestOrganization(db, nonProOrganizerCreds.id, {
       name: `Wizard Regression Non-Pro Org ${Date.now()}`,
       slug: `wizard-regression-non-pro-org-${randomUUID().slice(0, 8)}`,
+    });
+    const proOrg = await createTestOrganization(db, proOrganizerCreds.id, {
+      name: `Wizard Regression Pro Org ${Date.now()}`,
+      slug: `wizard-regression-pro-org-${randomUUID().slice(0, 8)}`,
     });
     await db.insert(schema.organizationMemberships).values({
       organizationId: nonProOrg.id,
@@ -192,6 +241,11 @@ test.describe('Event wizard regression coverage', () => {
     blockedEventId = await createEdition(db, nonProOrg.id, {
       namePrefix: 'wizard-review-blocked',
       startsAt: null,
+    });
+    assistantReadyEventId = await createEdition(db, proOrg.id, {
+      namePrefix: 'wizard-assistant-ready',
+      startsAt: new Date('2027-04-20T12:00:00.000Z'),
+      withDistanceAndPricing: true,
     });
     await context.close();
   });
@@ -306,5 +360,121 @@ test.describe('Event wizard regression coverage', () => {
       page.getByText(/only organizers with edit access can use or apply assistant proposals/i),
     ).toBeVisible();
     await expect(page.getByRole('textbox', { name: /message for setup assistant/i })).toHaveCount(0);
+  });
+
+  test('desktop assistant route mounts exactly one workspace panel subtree and keeps draft continuity without duplicate controls', async ({
+    page,
+  }) => {
+    await signInAsOrganizer(page, proOrganizerCreds);
+    await page.setViewportSize({ width: 1440, height: 960 });
+
+    await page.goto(
+      `/en/dashboard/events/${assistantReadyEventId}/settings?wizard=1&step=basics&assistant=1`,
+    );
+    await expect.poll(() => new URL(page.url()).searchParams.get('step')).toBe('basics');
+    await expect(assistantTextarea(page)).toHaveCount(1);
+
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+    await expect(assistantSendButtons(page)).toHaveCount(1);
+
+    await assistantTextarea(page).fill('Keep this draft mounted only once on the basics step.');
+
+    await page.goto(
+      `/en/dashboard/events/${assistantReadyEventId}/settings?wizard=1&step=distances&assistant=1`,
+    );
+    await expect.poll(() => new URL(page.url()).searchParams.get('step')).toBe('distances');
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+
+    await page.goto(
+      `/en/dashboard/events/${assistantReadyEventId}/settings?wizard=1&step=basics&assistant=1`,
+    );
+    await expect.poll(() => new URL(page.url()).searchParams.get('step')).toBe('basics');
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveValue(
+      'Keep this draft mounted only once on the basics step.',
+    );
+
+    await page.route('**/api/events/ai-wizard', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'synthetic assistant failure for duplicate-mount regression' }),
+      });
+    });
+
+    await assistantTextarea(page).fill('Trigger the pending assistant state once.');
+    await assistantSendButtons(page).first().click();
+
+    await expect(assistantStopButtons(page)).toHaveCount(1);
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+
+    await expect(assistantStopButtons(page)).toHaveCount(0);
+    await expect(assistantSendButtons(page)).toHaveCount(1);
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+  });
+
+  test('wrong-locale protected settings entry normalizes once without leaving duplicate protected or assistant trees', async ({
+    page,
+  }) => {
+    await signInAsOrganizer(page, proOrganizerCreds);
+    await page.setViewportSize({ width: 1440, height: 960 });
+
+    const wrongLocaleUrl = `/en/dashboard/events/${assistantReadyEventId}/settings?wizard=1&step=basics&assistant=1`;
+    const normalizedUrl = `/tablero/eventos/${assistantReadyEventId}/configuracion?wizard=1&step=basics&assistant=1`;
+
+    await page.goto('/tablero');
+    await expect(page).toHaveURL(/\/tablero(?:\?.*)?$/, { timeout: 30_000 });
+
+    await page.goto(wrongLocaleUrl);
+    await expect(page).toHaveURL(normalizedUrl, { timeout: 30_000 });
+
+    const normalizedSearch = new URL(page.url()).searchParams;
+    expect(normalizedSearch.get('wizard')).toBe('1');
+    expect(normalizedSearch.get('step')).toBe('basics');
+    expect(normalizedSearch.get('assistant')).toBe('1');
+
+    await expect(page.getByTestId('protected-layout-subtree')).toHaveCount(1);
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+    await expect(assistantSendButtons(page)).toHaveCount(1);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/tablero(?:\?.*)?$/, { timeout: 30_000 });
+
+    await page.goForward();
+    await expect(page).toHaveURL(normalizedUrl, { timeout: 30_000 });
+    await expect(page.getByTestId('protected-layout-subtree')).toHaveCount(1);
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+    await expect(assistantSendButtons(page)).toHaveCount(1);
+
+    await page.goto(normalizedUrl);
+    await expect(page).toHaveURL(normalizedUrl, { timeout: 30_000 });
+    await expect(page.getByTestId('protected-layout-subtree')).toHaveCount(1);
+    await expect(assistantPanelInstance(page)).toHaveCount(1);
+    await expect(assistantDialog(page)).toHaveCount(1);
+    await expect(assistantOverlay(page)).toHaveCount(1);
+    await expect(assistantTextarea(page)).toHaveCount(1);
+    await expect(assistantSendButtons(page)).toHaveCount(1);
   });
 });

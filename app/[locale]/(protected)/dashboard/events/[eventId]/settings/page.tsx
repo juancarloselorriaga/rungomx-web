@@ -30,8 +30,7 @@ import {
   EventAiWizardPanel,
   type EventAiAssistantStepId,
 } from './event-ai-wizard-panel';
-import { EventAssistantDesktopWorkspace } from './event-assistant-desktop-workspace';
-import { EventAssistantMobileWorkspace } from './event-assistant-mobile-workspace';
+import { EventAssistantResponsiveSlot } from './event-assistant-responsive-slot';
 import { EventSettingsForm } from './event-settings-form';
 import {
   EventSetupWizardShell,
@@ -188,45 +187,19 @@ function StepWithAssistant({
     return <>{children}</>;
   }
 
-  if (assistantMode === 'inline') {
-    return (
-      <div className="space-y-6">
-        <div className="lg:hidden">
-          <EventAssistantMobileWorkspace
-            triggerLabel={mobileTriggerLabel}
-            triggerHint={mobileTriggerHint}
-          >
-            {assistant}
-          </EventAssistantMobileWorkspace>
-        </div>
-        <div className="min-w-0">{children}</div>
-        <div className="hidden max-w-3xl lg:block">{assistant}</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="lg:hidden">
-        <EventAssistantMobileWorkspace
-          triggerLabel={mobileTriggerLabel}
-          triggerHint={mobileTriggerHint}
-        >
-          {assistant}
-        </EventAssistantMobileWorkspace>
-      </div>
-      <div className="hidden lg:block">
-        <EventAssistantDesktopWorkspace
-          triggerLabel={desktopTriggerLabel}
-          triggerHint={desktopTriggerHint}
-          workspaceTitle={desktopWorkspaceTitle}
-          workspaceDescription={desktopWorkspaceDescription}
-        >
-          {assistant}
-        </EventAssistantDesktopWorkspace>
-      </div>
-      <div className="min-w-0">{children}</div>
-    </div>
+    <EventAssistantResponsiveSlot
+      assistant={assistant}
+      assistantMode={assistantMode}
+      mobileTriggerLabel={mobileTriggerLabel}
+      mobileTriggerHint={mobileTriggerHint}
+      desktopTriggerLabel={desktopTriggerLabel}
+      desktopTriggerHint={desktopTriggerHint}
+      desktopWorkspaceTitle={desktopWorkspaceTitle}
+      desktopWorkspaceDescription={desktopWorkspaceDescription}
+    >
+      {children}
+    </EventAssistantResponsiveSlot>
   );
 }
 

@@ -93,7 +93,10 @@ export default async function ProtectedLayout({ children, params }: ProtectedLay
   }
 
   return (
-    <ProtectedLayoutWrapper initialProFeaturesSnapshot={proFeaturesSnapshot}>
+    <ProtectedLayoutWrapper
+      initialPreferredLocale={authContext.profile?.locale ?? null}
+      initialProFeaturesSnapshot={proFeaturesSnapshot}
+    >
       <AutoClaimPendingGrantsClient enabled={shouldAutoClaimGrants} />
       <SlidingNavProvider>
         <NavDrawerProvider>
