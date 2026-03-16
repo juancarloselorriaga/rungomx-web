@@ -806,6 +806,46 @@ describe('POST /api/events/ai-wizard', () => {
     );
   });
 
+  it('grounds fast-path participant content on persisted schedule truth instead of treating it as unconfirmed', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue({
+      ...buildEvent(),
+      startsAt: new Date('2026-03-15T06:00:00.000Z'),
+      endsAt: new Date('2026-03-15T14:00:00.000Z'),
+      timezone: 'America/Mexico_City',
+      locationDisplay: 'Bosque de Chapultepec',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-grounded-content',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Ayúdame con esto' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toContain('"startsAt":"2026-03-15T06:00:00.000Z"');
+    expect(capturedSystemPrompt).toContain('"endsAt":"2026-03-15T14:00:00.000Z"');
+    expect(capturedSystemPrompt).toContain('"timezone":"America/Mexico_City"');
+    expect(capturedSystemPrompt).toContain(
+      'Persisted startsAt/endsAt mean the event date/time is confirmed for this draft. Do not call it unconfirmed, TBD, or pending.',
+    );
+  });
+
   it('tells basics proposals to write confirmed location into structured edition fields', async () => {
     mockCanUserAccessSeries.mockResolvedValue({
       organizationId: 'org-1',
@@ -1599,6 +1639,71 @@ describe('POST /api/events/ai-wizard', () => {
     expect(diagnosisDelta).not.toContain('RECOMMEND_WAIVERS');
     expect(diagnosisDelta).not.toContain('RECOMMEND_QUESTIONS');
     expect(diagnosisDelta).not.toContain('RECOMMEND_ADD_ONS');
+  });
+
+  it('does not report review as blocker-free when participant content contradicts persisted schedule truth', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [
+        {
+          id: 'publish-content-schedule-truth-conflict',
+          stepId: 'website',
+          labelKey: 'wizard.issues.publishContentScheduleTruthConflict',
+          href: '/website',
+          code: 'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+          severity: 'blocker',
+        },
+      ],
+      optionalRecommendations: [],
+      prioritizedChecklist: [
+        {
+          id: 'publish-content-schedule-truth-conflict',
+          stepId: 'website',
+          labelKey: 'wizard.issues.publishContentScheduleTruthConflict',
+          href: '/website',
+          code: 'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+          severity: 'blocker',
+        },
+      ],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 6, totalRequired: 6, percent: 100 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'review',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-review-truth-conflict',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Explícame qué sigue bloqueando la publicación.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const diagnosisDelta = capturedStreamParts
+      .filter((part): part is { type: 'text-delta'; delta: string } => part.type === 'text-delta')
+      .map((part) => part.delta)
+      .join('');
+    expect(diagnosisDelta).toContain('Todavía hay 1 bloqueo(s) obligatorio(s) para publicar.');
+    expect(diagnosisDelta).toContain(
+      'El contenido para participantes todavía dice que la fecha u hora no están confirmadas aunque la programación estructurada ya está guardada.',
+    );
+    expect(diagnosisDelta).not.toContain('Ya no hay bloqueos de publicación.');
+    expect(diagnosisDelta).not.toContain('Puedes revisar la visibilidad y publicar cuando quieras.');
   });
 
   it('uses the deterministic policy follow-up path when a policies request spans refunds, transfers, and deferrals', async () => {

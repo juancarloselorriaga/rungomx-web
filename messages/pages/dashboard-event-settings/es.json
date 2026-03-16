@@ -43,6 +43,8 @@
       "missingDistance": "Agrega al menos una distancia para esta edición.",
       "publishMissingDistance": "Publicación bloqueada: agrega al menos una distancia antes de publicar.",
       "publishMissingPricing": "Publicación bloqueada: cada distancia necesita al menos un nivel de precio.",
+      "publishContentScheduleTruthConflict": "Publicación bloqueada: el contenido para participantes todavía dice que la fecha u hora no están confirmadas aunque la programación estructurada ya está guardada.",
+      "publishContentLocationTruthConflict": "Publicación bloqueada: el contenido para participantes todavía dice que la ubicación no está confirmada aunque la ubicación estructurada del evento ya está guardada.",
       "recommendPricingWindows": "Recomendado: define ventanas de precio claras para preventa, regular o cierre.",
       "recommendFaq": "Recomendado: agrega al menos una FAQ para responder dudas frecuentes.",
       "recommendWaivers": "Recomendado: agrega una exención para que los participantes acepten términos.",

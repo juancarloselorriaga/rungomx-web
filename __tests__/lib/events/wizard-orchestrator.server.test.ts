@@ -7,6 +7,7 @@ import {
   resolveManualWizardStepTarget,
 } from '@/lib/events/wizard/orchestrator';
 import type { EventEditionDetail } from '@/lib/events/queries';
+import type { WebsiteContentBlocks } from '@/lib/events/website/types';
 
 function buildEvent(overrides?: Partial<EventEditionDetail>): EventEditionDetail {
   const resolvedLatitude =
@@ -143,6 +144,63 @@ describe('event wizard orchestrator', () => {
 
     expect(result.publishBlockers.map((issue) => issue.code)).toEqual(['MISSING_PRICING']);
     expect(result.completionByStepId.pricing).toBe(false);
+  });
+
+  it('blocks publish readiness when participant-facing content contradicts persisted schedule or location truth', () => {
+    const websiteContent: WebsiteContentBlocks = {
+      schedule: {
+        type: 'schedule',
+        enabled: true,
+        raceDay: 'The start time is still TBD.',
+      },
+      overview: {
+        type: 'overview',
+        enabled: true,
+        content: 'Event location to be confirmed.',
+      },
+    };
+
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        locationDisplay: 'Bosque de Chapultepec',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+        hasWebsiteContent: true,
+        websiteContent,
+      },
+    );
+
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).toEqual([
+      'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+      'CONTENT_LOCATION_TRUTH_CONFLICT',
+    ]);
+    expect(aggregate.completionByStepId.publish).toBe(false);
+    expect(aggregate.setupStepStateById.review.completed).toBe(false);
   });
 
   it('marks pricing diagnosis as covered when bounded pricing windows already exist', () => {

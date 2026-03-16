@@ -15,6 +15,7 @@ import {
   updateEventEdition,
   updateEventPolicyConfig,
 } from '@/lib/events/actions';
+import { normalizeEditionDateTimeForPersistence } from '@/lib/events/ai-wizard/datetime';
 import { eventAiWizardApplyRequestSchema } from '@/lib/events/ai-wizard/schemas';
 import { evaluateAiWizardPatchSafety } from '@/lib/events/ai-wizard/safety';
 import { createPricingTier } from '@/lib/events/pricing/actions';
@@ -187,9 +188,12 @@ async function preflightPatch(
     }
 
     if (op.type === 'update_edition') {
+      const effectiveTimezone = op.data.timezone ?? event.timezone;
       if (
-        (op.data.startsAt && !normalizeIsoDateTime(op.data.startsAt)) ||
-        (op.data.endsAt && !normalizeIsoDateTime(op.data.endsAt)) ||
+        (op.data.startsAt &&
+          !normalizeEditionDateTimeForPersistence(op.data.startsAt, effectiveTimezone)) ||
+        (op.data.endsAt &&
+          !normalizeEditionDateTimeForPersistence(op.data.endsAt, effectiveTimezone)) ||
         (op.data.registrationOpensAt && !normalizeIsoDateTime(op.data.registrationOpensAt)) ||
         (op.data.registrationClosesAt && !normalizeIsoDateTime(op.data.registrationClosesAt))
       ) {
@@ -410,18 +414,19 @@ export async function POST(req: Request) {
 
     if (op.type === 'update_edition') {
       const data = op.data;
+      const effectiveTimezone = data.timezone ?? event.timezone;
       const startsAt =
         data.startsAt === undefined
           ? undefined
           : data.startsAt === null
             ? null
-            : normalizeIsoDateTime(data.startsAt);
+            : normalizeEditionDateTimeForPersistence(data.startsAt, effectiveTimezone);
       const endsAt =
         data.endsAt === undefined
           ? undefined
           : data.endsAt === null
             ? null
-            : normalizeIsoDateTime(data.endsAt);
+            : normalizeEditionDateTimeForPersistence(data.endsAt, effectiveTimezone);
       const registrationOpensAt =
         data.registrationOpensAt === undefined
           ? undefined

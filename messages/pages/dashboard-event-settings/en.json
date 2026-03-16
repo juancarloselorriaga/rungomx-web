@@ -43,6 +43,8 @@
       "missingDistance": "Add at least one distance for this edition.",
       "publishMissingDistance": "Publish blocked: add at least one distance before publishing.",
       "publishMissingPricing": "Publish blocked: each distance needs at least one price tier.",
+      "publishContentScheduleTruthConflict": "Publish blocked: participant-facing content still says the event date or time is unconfirmed even though the structured schedule is already saved.",
+      "publishContentLocationTruthConflict": "Publish blocked: participant-facing content still says the location is unconfirmed even though the structured event location is already saved.",
       "recommendPricingWindows": "Recommended: define clear early, regular, or late pricing windows.",
       "recommendFaq": "Recommended: add at least one FAQ item to answer common participant questions.",
       "recommendWaivers": "Recommended: add a waiver so participants can acknowledge event terms.",

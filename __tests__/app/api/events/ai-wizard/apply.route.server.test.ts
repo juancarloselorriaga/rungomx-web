@@ -67,7 +67,7 @@ jest.mock('next/headers', () => ({
 }));
 
 import { POST } from '@/app/api/events/ai-wizard/apply/route';
-import { updateEventPolicyConfig } from '@/lib/events/actions';
+import { updateEventEdition, updateEventPolicyConfig } from '@/lib/events/actions';
 import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
 
 describe('POST /api/events/ai-wizard/apply', () => {
@@ -76,6 +76,10 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockRequireProFeature.mockReset();
     mockGetEventEditionDetail.mockReset();
     mockCanUserAccessSeries.mockReset();
+    (updateEventEdition as jest.Mock).mockReset();
+    (updateEventPolicyConfig as jest.Mock).mockReset();
+    (getWebsiteContent as jest.Mock).mockReset();
+    (updateWebsiteContent as jest.Mock).mockReset();
 
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },
@@ -83,6 +87,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     });
     mockHeaders.mockResolvedValue(new Headers());
     mockRequireProFeature.mockResolvedValue(undefined);
+    (updateEventEdition as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'edition-1' } });
     mockGetEventEditionDetail.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
       seriesId: 'series-1',
@@ -216,6 +221,120 @@ describe('POST /api/events/ai-wizard/apply', () => {
         refundDeadline: '2026-03-15T00:00:00.000Z',
         transferDeadline: '2026-03-22T00:00:00.000Z',
         deferralDeadline: null,
+      }),
+    );
+  });
+
+  it('interprets naive edition datetimes in the event timezone before persistence regardless of host timezone', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      seriesId: 'series-1',
+      slug: 'trail-2026',
+      timezone: 'America/Mexico_City',
+      organizerBrief: null,
+      policyConfig: null,
+      faqItems: [],
+      waivers: [],
+      distances: [],
+    });
+
+    const originalTz = process.env.TZ;
+
+    try {
+      for (const hostTimeZone of ['UTC', 'Europe/Stockholm']) {
+        process.env.TZ = hostTimeZone;
+
+        const response = await POST(
+          new Request('http://localhost/api/events/ai-wizard/apply', {
+            method: 'POST',
+            body: JSON.stringify({
+              editionId: '11111111-1111-4111-8111-111111111111',
+              locale: 'es',
+              patch: {
+                title: 'Ajustar horario del evento',
+                summary: 'Guarda el horario confirmado en la zona del evento.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: '11111111-1111-4111-8111-111111111111',
+                    data: {
+                      startsAt: '2026-10-12T07:00:00',
+                      endsAt: '2026-10-12T13:00:00',
+                    },
+                  },
+                ],
+                markdownOutputs: [],
+              },
+            }),
+          }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(updateEventEdition).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            editionId: '11111111-1111-4111-8111-111111111111',
+            startsAt: '2026-10-12T13:00:00.000Z',
+            endsAt: '2026-10-12T19:00:00.000Z',
+          }),
+        );
+      }
+    } finally {
+      process.env.TZ = originalTz;
+    }
+  });
+
+  it('preserves explicit offset semantics for edition datetimes', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      seriesId: 'series-1',
+      slug: 'trail-2026',
+      timezone: 'America/Mexico_City',
+      organizerBrief: null,
+      policyConfig: null,
+      faqItems: [],
+      waivers: [],
+      distances: [],
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Mantener semántica explícita del horario',
+            summary: 'Respeta el offset explícito sin doble conversión.',
+            ops: [
+              {
+                type: 'update_edition',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  startsAt: '2026-10-12T07:00:00-06:00',
+                  endsAt: '2026-10-12T13:00:00-06:00',
+                },
+              },
+            ],
+            markdownOutputs: [],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateEventEdition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        editionId: '11111111-1111-4111-8111-111111111111',
+        startsAt: '2026-10-12T13:00:00.000Z',
+        endsAt: '2026-10-12T19:00:00.000Z',
       }),
     );
   });

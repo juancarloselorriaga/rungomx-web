@@ -1,4 +1,5 @@
 import type { EventEditionDetail } from '@/lib/events/queries';
+import type { WebsiteContentBlocks } from '@/lib/events/website/types';
 import { EVENT_WIZARD_STEP_MODULES } from './step-modules';
 import type {
   EventCreationPath,
@@ -68,10 +69,99 @@ const DEFAULT_CAPABILITY_LOCKS: EventWizardCapabilityLocks = {
 type EventWizardAggregateOptions = {
   selectedPath: EventCreationPath | null;
   hasWebsiteContent?: boolean;
+  websiteContent?: WebsiteContentBlocks | null;
   questionCount?: number;
   addOnCount?: number;
   capabilityLocks?: Partial<EventWizardCapabilityLocks>;
 };
+
+const SCHEDULE_UNCONFIRMED_PATTERNS = [
+  /\b(event date|race date|start date|date and time|start time|race starts?)\b[\s\S]{0,40}\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b/i,
+  /\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b[\s\S]{0,40}\b(event date|race date|start date|date and time|start time|race starts?)\b/i,
+  /\b(fecha del evento|fecha de salida|fecha y hora|hora de salida|hora de inicio)\b[\s\S]{0,40}\b(por confirmar|sin confirmar|pendiente|por definirse)\b/i,
+  /\b(por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(fecha del evento|fecha de salida|fecha y hora|hora de salida|hora de inicio)\b/i,
+] as const;
+
+const LOCATION_UNCONFIRMED_PATTERNS = [
+  /\b(event location|race location|start location|location)\b[\s\S]{0,40}\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b/i,
+  /\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b[\s\S]{0,40}\b(event location|race location|start location|location)\b/i,
+  /\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b[\s\S]{0,40}\b(por confirmar|sin confirmar|pendiente|por definirse)\b/i,
+  /\b(por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b/i,
+] as const;
+
+function hasConfirmedLocationTruth(event: EventEditionDetail): boolean {
+  return Boolean(
+    String(event.locationDisplay ?? '').trim() ||
+      String(event.address ?? '').trim() ||
+      String(event.city ?? '').trim() ||
+      String(event.state ?? '').trim() ||
+      (String(event.latitude ?? '').trim() && String(event.longitude ?? '').trim()),
+  );
+}
+
+function collectParticipantFacingContent(
+  event: EventEditionDetail,
+  websiteContent: WebsiteContentBlocks | null | undefined,
+): string {
+  const content = [
+    event.description,
+    ...event.faqItems.flatMap((item) => [item.question, item.answer]),
+    websiteContent?.overview?.title,
+    websiteContent?.overview?.content,
+    websiteContent?.overview?.terrain,
+    websiteContent?.course?.title,
+    websiteContent?.course?.description,
+    websiteContent?.schedule?.title,
+    websiteContent?.schedule?.packetPickup,
+    websiteContent?.schedule?.parking,
+    websiteContent?.schedule?.raceDay,
+    ...(websiteContent?.schedule?.startTimes ?? []).flatMap((item) => [
+      item.distanceLabel,
+      item.time,
+      item.notes,
+    ]),
+  ];
+
+  return content
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+    .join('\n\n');
+}
+
+function buildParticipantContentTruthBlockers(
+  event: EventEditionDetail,
+  websiteContent: WebsiteContentBlocks | null | undefined,
+): EventWizardIssue[] {
+  const participantFacingContent = collectParticipantFacingContent(event, websiteContent);
+  if (!participantFacingContent) {
+    return [];
+  }
+
+  const blockers: EventWizardIssue[] = [];
+
+  if ((event.startsAt || event.endsAt) && SCHEDULE_UNCONFIRMED_PATTERNS.some((pattern) => pattern.test(participantFacingContent))) {
+    blockers.push({
+      id: 'publish-content-schedule-truth-conflict',
+      stepId: 'website',
+      labelKey: 'wizard.issues.publishContentScheduleTruthConflict',
+      href: eventPath(event.id, '/website'),
+      code: 'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+      severity: 'blocker',
+    });
+  }
+
+  if (hasConfirmedLocationTruth(event) && LOCATION_UNCONFIRMED_PATTERNS.some((pattern) => pattern.test(participantFacingContent))) {
+    blockers.push({
+      id: 'publish-content-location-truth-conflict',
+      stepId: 'website',
+      labelKey: 'wizard.issues.publishContentLocationTruthConflict',
+      href: eventPath(event.id, '/website'),
+      code: 'CONTENT_LOCATION_TRUTH_CONFLICT',
+      severity: 'blocker',
+    });
+  }
+
+  return blockers;
+}
 
 export function getEventWizardSteps(eventId: string): EventWizardStep[] {
   return EVENT_WIZARD_STEP_MODULES.map((module) => ({
@@ -232,6 +322,7 @@ export function buildEventWizardAggregate(
   {
     selectedPath,
     hasWebsiteContent = false,
+    websiteContent = null,
     questionCount = 0,
     addOnCount = 0,
     capabilityLocks = {},
@@ -379,6 +470,7 @@ export function buildEventWizardAggregate(
       severity: 'blocker',
     });
   }
+  publishBlockers.push(...buildParticipantContentTruthBlockers(event, websiteContent));
 
   const completionByStepId: Record<EventWizardStepId, boolean> = {
     choose_path: selectedPath !== null,

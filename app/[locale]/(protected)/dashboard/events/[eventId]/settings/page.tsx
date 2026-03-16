@@ -281,6 +281,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
     const aggregate = buildEventWizardAggregate(event, {
       selectedPath: 'manual',
       hasWebsiteContent: websiteEnabled,
+      websiteContent,
       questionCount: questions.length,
       addOnCount: addOns.length,
       capabilityLocks: {

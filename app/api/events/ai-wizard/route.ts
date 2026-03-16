@@ -37,6 +37,7 @@ import type {
 } from '@/lib/events/ai-wizard/ui-types';
 import { buildEventWizardAggregate } from '@/lib/events/wizard/orchestrator';
 import { getPublicWebsiteContent, hasWebsiteContent } from '@/lib/events/website/queries';
+import type { WebsiteContentBlocks } from '@/lib/events/website/types';
 import {
   buildAssistantLocationResolutionOptions,
   buildLocationResolutionQueryFromEditionUpdate,
@@ -1297,12 +1298,93 @@ export async function enrichPatchWithResolvedLocation(
 
 type WizardAggregateInput = Parameters<typeof buildEventWizardAggregate>[1];
 
+function appendProjectedMarkdown(existing: string | null | undefined, incoming: string): string {
+  const previous = (existing ?? '').trim();
+  const next = incoming.trim();
+
+  if (!previous) return next;
+  if (!next || previous.includes(next)) return previous;
+  return `${previous}\n\n${next}`;
+}
+
+function projectWebsiteContent(
+  websiteContent: WebsiteContentBlocks | null | undefined,
+  patch: EventAiWizardPatch,
+): WebsiteContentBlocks | null {
+  let projectedBlocks: WebsiteContentBlocks | null = websiteContent
+    ? {
+        ...websiteContent,
+        overview: websiteContent.overview ? { ...websiteContent.overview } : undefined,
+        course: websiteContent.course ? { ...websiteContent.course } : undefined,
+        schedule: websiteContent.schedule
+          ? {
+              ...websiteContent.schedule,
+              startTimes: websiteContent.schedule.startTimes?.map((item) => ({ ...item })),
+            }
+          : undefined,
+      }
+    : null;
+
+  for (const op of patch.ops) {
+    if (op.type !== 'append_website_section_markdown') continue;
+
+    if (!projectedBlocks) {
+      projectedBlocks = {};
+    }
+
+    if (op.data.section === 'overview') {
+      const previous = projectedBlocks.overview ?? { type: 'overview' as const, enabled: true, content: '' };
+      projectedBlocks.overview = {
+        ...previous,
+        enabled: true,
+        title: previous.title ?? op.data.title,
+        content: op.data.markdown.trim(),
+      };
+      continue;
+    }
+
+    if (op.data.section === 'course') {
+      const previous = projectedBlocks.course ?? { type: 'course' as const, enabled: true };
+      projectedBlocks.course = {
+        ...previous,
+        enabled: true,
+        title: previous.title ?? op.data.title,
+        description: appendProjectedMarkdown(previous.description, op.data.markdown),
+      };
+      continue;
+    }
+
+    const previous = projectedBlocks.schedule ?? { type: 'schedule' as const, enabled: true };
+    projectedBlocks.schedule = {
+      ...previous,
+      enabled: true,
+      title: previous.title ?? op.data.title,
+      raceDay: appendProjectedMarkdown(previous.raceDay, op.data.markdown),
+    };
+  }
+
+  return projectedBlocks;
+}
+
 function buildProjectedAggregate(
   event: NonNullable<Awaited<ReturnType<typeof getEventEditionDetail>>>,
   patch: EventAiWizardPatch,
   aggregateInput: WizardAggregateInput,
 ) {
-  const addedFaqCount = patch.ops.filter((op) => op.type === 'create_faq_item').length;
+  const projectedFaqItems = [
+    ...event.faqItems,
+    ...patch.ops
+      .filter(
+        (op): op is Extract<EventAiWizardPatch['ops'][number], { type: 'create_faq_item' }> =>
+          op.type === 'create_faq_item',
+      )
+      .map((op, index) => ({
+        id: `projected-faq-${index}`,
+        question: op.data.question,
+        answer: op.data.answerMarkdown,
+        sortOrder: event.faqItems.length + index,
+      })),
+  ];
   const addedWaiverCount = patch.ops.filter((op) => op.type === 'create_waiver').length;
   const addedQuestionCount = patch.ops.filter((op) => op.type === 'create_question').length;
   const addedAddOnCount = patch.ops.filter((op) => op.type === 'create_add_on').length;
@@ -1322,24 +1404,33 @@ function buildProjectedAggregate(
     (op): op is Extract<EventAiWizardPatch['ops'][number], { type: 'update_policy_config' }> =>
       op.type === 'update_policy_config',
   );
-  const faqTemplate = event.faqItems[0];
   const waiverTemplate = event.waivers[0];
   const distanceTemplate = event.distances[0];
+  const projectedWebsiteContent = projectWebsiteContent(aggregateInput.websiteContent, patch);
 
   const projectedEvent = {
     ...event,
     description: descriptionOp?.data.description ?? event.description,
+    timezone: descriptionOp?.data.timezone ?? event.timezone,
+    startsAt:
+      descriptionOp?.data.startsAt !== undefined
+        ? descriptionOp.data.startsAt
+          ? new Date(descriptionOp.data.startsAt)
+          : null
+        : event.startsAt,
+    endsAt:
+      descriptionOp?.data.endsAt !== undefined
+        ? descriptionOp.data.endsAt
+          ? new Date(descriptionOp.data.endsAt)
+          : null
+        : event.endsAt,
     locationDisplay: descriptionOp?.data.locationDisplay ?? event.locationDisplay,
     city: descriptionOp?.data.city ?? event.city,
     state: descriptionOp?.data.state ?? event.state,
     address: descriptionOp?.data.address ?? event.address,
-    faqItems: [
-      ...event.faqItems,
-      ...Array.from({ length: addedFaqCount }, (_, index) => ({
-        ...(faqTemplate ?? ({} as (typeof event.faqItems)[number])),
-        id: `projected-faq-${index}`,
-      })),
-    ],
+    latitude: descriptionOp?.data.latitude ?? event.latitude,
+    longitude: descriptionOp?.data.longitude ?? event.longitude,
+    faqItems: projectedFaqItems,
     waivers: [
       ...event.waivers,
       ...Array.from({ length: addedWaiverCount }, (_, index) => ({
@@ -1417,6 +1508,7 @@ function buildProjectedAggregate(
   return buildEventWizardAggregate(projectedEvent, {
     ...aggregateInput,
     hasWebsiteContent: aggregateInput.hasWebsiteContent || addsWebsiteContent,
+    websiteContent: projectedWebsiteContent,
     questionCount: (aggregateInput.questionCount ?? 0) + addedQuestionCount,
     addOnCount: (aggregateInput.addOnCount ?? 0) + addedAddOnCount,
   });
@@ -1488,6 +1580,10 @@ function getLocalizedIssueText(
       MISSING_HERO_IMAGE: 'Sería bueno subir una imagen principal antes de publicar.',
       MISSING_DISTANCE: 'Todavía falta crear al menos una distancia.',
       MISSING_PRICING: 'Todavía falta configurar al menos una tarifa válida por distancia.',
+      CONTENT_SCHEDULE_TRUTH_CONFLICT:
+        'El contenido para participantes todavía dice que la fecha u hora no están confirmadas aunque la programación estructurada ya está guardada.',
+      CONTENT_LOCATION_TRUTH_CONFLICT:
+        'El contenido para participantes todavía dice que la ubicación no está confirmada aunque la ubicación estructurada del evento ya está guardada.',
       RECOMMEND_PRICING_WINDOWS:
         'Sería recomendable definir ventanas claras de preventa, regular o cierre.',
       RECOMMEND_WAIVERS: 'Sería recomendable agregar una exención para que los participantes acepten términos.',
@@ -1505,6 +1601,10 @@ function getLocalizedIssueText(
       MISSING_HERO_IMAGE: 'It would help to upload a main event image before publishing.',
       MISSING_DISTANCE: 'At least one distance still needs to be created.',
       MISSING_PRICING: 'At least one valid price per distance is still missing.',
+      CONTENT_SCHEDULE_TRUTH_CONFLICT:
+        'Participant-facing content still says the event date or time is unconfirmed even though the structured schedule is already saved.',
+      CONTENT_LOCATION_TRUTH_CONFLICT:
+        'Participant-facing content still says the location is unconfirmed even though the structured event location is already saved.',
       RECOMMEND_PRICING_WINDOWS:
         'It would still be helpful to define clear early, regular, or late price windows.',
       RECOMMEND_WAIVERS: 'It would help to add a waiver so participants can accept the event terms.',
@@ -2246,6 +2346,7 @@ export async function POST(req: Request) {
   const aggregateInput = {
     selectedPath: null,
     hasWebsiteContent: websiteEnabled,
+    websiteContent,
     questionCount: questions.length,
     addOnCount: addOns.length,
   } satisfies WizardAggregateInput;
