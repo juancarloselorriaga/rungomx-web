@@ -1970,6 +1970,168 @@ describe('POST /api/events/ai-wizard', () => {
     });
   });
 
+  it('routes a natural mixed basics prompt with location and schedule signals through the general proposePatch path', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-mixed-natural',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Será el 12 de octubre de 2026. Empezamos a las 7:00 am y terminamos a la 1:00 pm. La salida será en Bosque de Chapultepec.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).not.toBeNull();
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual(['proposePatch']);
+    expect(capturedStreamParts.find((part) => part.type === 'data-event-patch')).toBeUndefined();
+  });
+
+  it('routes an explicit labeled mixed basics prompt with location and schedule signals through the general proposePatch path', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-mixed-labeled',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Fecha: 12 de octubre de 2026. Hora de inicio: 7:00 am. Hora de fin: 1:00 pm. Ubicación: Bosque de Chapultepec.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).not.toBeNull();
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual(['proposePatch']);
+    expect(capturedStreamParts.find((part) => part.type === 'data-event-patch')).toBeUndefined();
+  });
+
+  it('keeps the deterministic basics location shortcut for location-only prompts', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockForwardGeocode.mockResolvedValue([
+      {
+        provider: 'mapbox',
+        placeId: 'place-location-only',
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        city: 'Ciudad de México',
+        region: 'Ciudad de México',
+        countryCode: 'MX',
+        lat: 19.4204,
+        lng: -99.1819,
+      },
+    ]);
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-location-only',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Ubicación: Bosque de Chapultepec.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toBeNull();
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    expect(capturedStreamParts.find((part) => part.type === 'data-event-patch')?.data).toMatchObject({
+      title: 'Confirmar la ubicación del evento',
+      ops: [
+        {
+          type: 'update_edition',
+          data: expect.objectContaining({
+            locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
+            latitude: '19.4204',
+            longitude: '-99.1819',
+          }),
+        },
+      ],
+    });
+  });
+
   it('synthesizes an immediate ambiguous basics location patch with a clickable choice request', async () => {
     mockCanUserAccessSeries.mockResolvedValue({
       organizationId: 'org-1',

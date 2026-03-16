@@ -217,6 +217,29 @@ function normalizeFastPathText(text: string) {
     .toLowerCase();
 }
 
+function hasScheduleSignalsForBasicsRouting(latestUserText: string) {
+  const normalized = normalizeFastPathText(latestUserText);
+  if (!normalized.trim()) return false;
+
+  const hasDateCue =
+    /\b\d{1,2}\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)\s+de\s+\d{4}\b/.test(
+      normalized,
+    ) ||
+    /\b\d{1,2}\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{4}\b/.test(
+      normalized,
+    ) ||
+    normalized.includes('fecha:');
+  const hasTimeCue =
+    normalized.includes('hora de inicio') ||
+    normalized.includes('hora de fin') ||
+    /\b(empezamos|empezar|empieza|empezara|iniciamos|inicia|iniciar|terminamos|termina|terminar)\b/.test(
+      normalized,
+    ) ||
+    /\b\d{1,2}(?::\d{2})?\s?(am|pm)\b/.test(normalized);
+
+  return hasTimeCue && (hasDateCue || /\b\d{1,2}:\d{2}\b/.test(normalized) || normalized.includes(' a las '));
+}
+
 function isStepGapDiagnosisRequest(
   stepId: z.infer<typeof requestSchema>['stepId'],
   latestUserText: string,
@@ -290,6 +313,7 @@ function shouldForceBasicsFollowUpProposal(
   locationIntentQuery: string | null,
 ) {
   if (stepId !== 'basics') return false;
+  if (locationIntentQuery && hasScheduleSignalsForBasicsRouting(latestUserText)) return false;
 
   const normalized = normalizeFastPathText(latestUserText);
   if (!normalized.trim()) return false;
