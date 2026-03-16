@@ -72,3 +72,4 @@ tmp/
 .tmp/
 
 .agents
+skills-lock.json
