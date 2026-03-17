@@ -847,6 +847,121 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByRole('button', { name: 'apply' })).toBeEnabled();
   });
 
+  it('applies the chosen ambiguous location with structured address hierarchy', async () => {
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, applied: [] }),
+    });
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-location-choice-structured',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Choose the exact event location',
+                summary: 'Pick the right location before applying it to the event.',
+                ops: [
+                  {
+                    type: 'update_edition',
+                    editionId: 'evt-1',
+                    data: {
+                      locationDisplay: 'Parque Metropolitano de Guadalajara',
+                    },
+                  },
+                ],
+                locationResolution: {
+                  status: 'ambiguous',
+                  query: 'Parque Metropolitano de Guadalajara',
+                  candidates: [
+                    {
+                      lat: 20.67046657,
+                      lng: -103.43992534,
+                      formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+                      address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+                      city: 'Zapopan',
+                      region: 'Jalisco',
+                      country: 'México',
+                      countryCode: 'MX',
+                      placeId: 'mapbox-park-1',
+                      provider: 'mapbox',
+                    },
+                  ],
+                },
+                choiceRequest: {
+                  kind: 'location_candidate_selection',
+                  selectionMode: 'single',
+                  sourceStepId: 'basics',
+                  targetField: 'event_location',
+                  query: 'Parque Metropolitano de Guadalajara',
+                  options: [
+                    {
+                      lat: 20.67046657,
+                      lng: -103.43992534,
+                      formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+                      address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+                      city: 'Zapopan',
+                      region: 'Jalisco',
+                      country: 'México',
+                      countryCode: 'MX',
+                      placeId: 'mapbox-park-1',
+                      provider: 'mapbox',
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="basics"
+        stepTitle="Event basics"
+        suggestions={['Use my rough notes to start this event.']}
+        initialEventBrief={null}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use this location' }));
+    fireEvent.click(screen.getByRole('button', { name: 'apply' }));
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/events/ai-wizard/apply',
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
+    });
+
+    const [, requestInit] = mockFetch.mock.calls.at(-1) as [string, RequestInit];
+    const payload = JSON.parse(String(requestInit.body));
+
+    expect(payload.patch.ops).toEqual([
+      {
+        type: 'update_edition',
+        editionId: 'evt-1',
+        data: {
+          locationDisplay: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+          address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+          city: 'Zapopan',
+          state: 'Jalisco',
+          country: 'MX',
+          latitude: '20.67046657',
+          longitude: '-103.43992534',
+        },
+      },
+    ]);
+  });
+
   it('renders a truthful no-match review card when the place could not be resolved', () => {
     mockChatState = {
       messages: [

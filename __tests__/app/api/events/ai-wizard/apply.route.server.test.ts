@@ -67,7 +67,7 @@ jest.mock('next/headers', () => ({
 }));
 
 import { POST } from '@/app/api/events/ai-wizard/apply/route';
-import { updateEventEdition, updateEventPolicyConfig } from '@/lib/events/actions';
+import { createFaqItem, updateEventEdition, updateEventPolicyConfig } from '@/lib/events/actions';
 import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
 
 describe('POST /api/events/ai-wizard/apply', () => {
@@ -76,6 +76,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockRequireProFeature.mockReset();
     mockGetEventEditionDetail.mockReset();
     mockCanUserAccessSeries.mockReset();
+    (createFaqItem as jest.Mock).mockReset();
     (updateEventEdition as jest.Mock).mockReset();
     (updateEventPolicyConfig as jest.Mock).mockReset();
     (getWebsiteContent as jest.Mock).mockReset();
@@ -87,7 +88,21 @@ describe('POST /api/events/ai-wizard/apply', () => {
     });
     mockHeaders.mockResolvedValue(new Headers());
     mockRequireProFeature.mockResolvedValue(undefined);
+    (createFaqItem as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'faq-1' } });
     (updateEventEdition as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'edition-1' } });
+    (getWebsiteContent as jest.Mock).mockResolvedValue({
+      ok: true,
+      data: {
+        id: 'content-1',
+        editionId: '11111111-1111-4111-8111-111111111111',
+        locale: 'es',
+        blocks: {},
+      },
+    });
+    (updateWebsiteContent as jest.Mock).mockResolvedValue({
+      ok: true,
+      data: { id: 'content-1' },
+    });
     mockGetEventEditionDetail.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
       seriesId: 'series-1',
@@ -287,6 +302,68 @@ describe('POST /api/events/ai-wizard/apply', () => {
     }
   });
 
+  it('passes structured location fields through to edition persistence, including country', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      seriesId: 'series-1',
+      slug: 'trail-2026',
+      timezone: 'America/Mexico_City',
+      organizerBrief: null,
+      policyConfig: null,
+      faqItems: [],
+      waivers: [],
+      distances: [],
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Confirmar la ubicación del evento',
+            summary: 'Guarda la ubicación confirmada con jerarquía estructurada.',
+            ops: [
+              {
+                type: 'update_edition',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
+                  address: 'Gran Avenida, 11580 Ciudad de México, México',
+                  city: 'Ciudad de México',
+                  state: 'Ciudad de México',
+                  country: 'MX',
+                  latitude: '19.41666781',
+                  longitude: '-99.18333064',
+                },
+              },
+            ],
+            markdownOutputs: [],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateEventEdition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        editionId: '11111111-1111-4111-8111-111111111111',
+        locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
+        address: 'Gran Avenida, 11580 Ciudad de México, México',
+        city: 'Ciudad de México',
+        state: 'Ciudad de México',
+        country: 'MX',
+        latitude: '19.41666781',
+        longitude: '-99.18333064',
+      }),
+    );
+  });
+
   it('preserves explicit offset semantics for edition datetimes', async () => {
     mockCanUserAccessSeries.mockResolvedValue({
       organizationId: 'org-1',
@@ -405,5 +482,60 @@ describe('POST /api/events/ai-wizard/apply', () => {
         },
       },
     });
+  });
+
+  it('does not block grounded mixed patches that say they are avoiding invented logistics', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Actualizar contenido confirmado para participantes',
+            summary: 'Aclara el overview y el FAQ con datos confirmados, evitando inventar logística o promesas.',
+            ops: [
+              {
+                type: 'create_faq_item',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  question: '¿Qué incluye la inscripción?',
+                  answerMarkdown: 'Incluye acceso al evento y seguimiento de tiempos ya confirmados.',
+                },
+              },
+              {
+                type: 'append_website_section_markdown',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  section: 'overview',
+                  title: 'Resumen',
+                  markdown: 'Contenido redactado solo con la información ya confirmada por el organizador.',
+                  locale: 'es',
+                },
+              },
+            ],
+            markdownOutputs: [
+              {
+                domain: 'faq',
+                contentMarkdown: 'Incluye acceso al evento y seguimiento de tiempos ya confirmados.',
+              },
+              {
+                domain: 'website',
+                contentMarkdown: 'Contenido redactado solo con la información ya confirmada por el organizador.',
+              },
+            ],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createFaqItem).toHaveBeenCalledTimes(1);
+    expect(updateWebsiteContent).toHaveBeenCalledTimes(1);
   });
 });

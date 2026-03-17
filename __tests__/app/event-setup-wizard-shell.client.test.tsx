@@ -141,6 +141,38 @@ describe('EventSetupWizardShell', () => {
     expect(screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i })).toBeInTheDocument();
   });
 
+  it('uses the softer review state when blockers are clear but recommendations remain', () => {
+    renderShell({
+      steps: buildSteps({ review: { completed: true } }),
+      initialStepId: 'review',
+      reviewRecommendations: [
+        {
+          id: 'recommend-waivers',
+          label: 'Add participant waiver',
+          stepId: 'policies',
+          severity: 'optional',
+          kind: 'optional',
+        },
+      ],
+    });
+
+    expect(screen.getByText('wizardShell.review.reviewRecommendedTitle')).toBeInTheDocument();
+    expect(screen.getByText('wizardShell.review.noRequiredBlockers')).toBeInTheDocument();
+    expect(screen.queryByText('wizardShell.review.readyTitle')).not.toBeInTheDocument();
+  });
+
+  it('keeps the truly ready state available when review has no blockers or recommendations', () => {
+    renderShell({
+      steps: buildSteps({ review: { completed: true } }),
+      initialStepId: 'review',
+      reviewRecommendations: [],
+    });
+
+    expect(screen.getByText('wizardShell.review.readyTitle')).toBeInTheDocument();
+    expect(screen.getByText('wizardShell.review.noBlockers')).toBeInTheDocument();
+    expect(screen.queryByText('wizardShell.review.reviewRecommendedTitle')).not.toBeInTheDocument();
+  });
+
   it('prefers an explicit initial step over saved session state', () => {
     window.sessionStorage.setItem('event-setup-wizard:active-step:evt-1', 'pricing');
 

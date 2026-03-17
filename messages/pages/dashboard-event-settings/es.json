@@ -80,7 +80,7 @@
       "step": "Paso activo",
       "completedLabel": "Completados",
       "completedValue": "de {total} pasos",
-      "blockersValue": "{publish, plural, =0 {Sin bloqueos de publicación} one {# bloqueo de publicación} other {# bloqueos de publicación}}{required, plural, =0 {} one { · # paso obligatorio pendiente} other { · # pasos obligatorios pendientes}}",
+      "blockersValue": "{publish, plural, =0 {Sin bloqueos obligatorios de publicación} one {# bloqueo obligatorio de publicación} other {# bloqueos obligatorios de publicación}}{required, plural, =0 {} one { · # paso obligatorio pendiente} other { · # pasos obligatorios pendientes}}",
       "skippedValue": "{count, plural, =0 {Sin pasos opcionales pausados} one {# paso opcional pausado} other {# pasos opcionales pausados}}"
     },
     "sidebar": {
@@ -131,8 +131,10 @@
       "finishLineLabel": "Recta final",
       "readyTitle": "Este evento está listo para revisar su publicación",
       "readyDescription": "La configuración obligatoria ya está completa. Revisa abajo la visibilidad y los controles de publicación cuando quieras hacer visible el evento.",
+      "reviewRecommendedTitle": "La estructura ya está cubierta, pero conviene revisar antes de publicar",
+      "reviewRecommendedDescription": "La configuración obligatoria ya está completa. Aún hay {count, plural, one {# punto recomendado} other {# puntos recomendados}} para reforzar claridad y confianza antes de hacer visible el evento.",
       "blockedTitle": "Resuelve estos bloqueos antes de publicar",
-      "blockedDescription": "{publish, plural, =0 {No quedan bloqueos de publicación.} one {Queda # bloqueo de publicación.} other {Quedan # bloqueos de publicación.}} {required, plural, =0 {} one {Aún falta # requisito de configuración.} other {Aún faltan # requisitos de configuración.}}",
+      "blockedDescription": "{publish, plural, =0 {No quedan bloqueos obligatorios de publicación.} one {Queda # bloqueo obligatorio de publicación.} other {Quedan # bloqueos obligatorios de publicación.}} {required, plural, =0 {} one {Aún falta # requisito de configuración.} other {Aún faltan # requisitos de configuración.}}",
       "serverAuthority": "Las verificaciones finales de publicación siguen siendo autoritativas del servidor. Los controles de abajo confirman el estado real del backend antes de cambiar la visibilidad.",
       "goToFirstBlocker": "Corregir primer bloqueo",
       "openPublishControls": "Abrir controles de publicación",
@@ -143,6 +145,7 @@
       "blockersTitle": "Bloqueos obligatorios",
       "blockersDescription": "Estos puntos deben resolverse antes de confiar en la preparación para publicar.",
       "noBlockers": "Ya no quedan bloqueos. El evento está estructuralmente listo para revisar su publicación.",
+      "noRequiredBlockers": "Ya no quedan bloqueos obligatorios de publicación, pero todavía conviene revisar las recomendaciones de abajo antes de hacerlo visible.",
       "recommendationsTitle": "Mejoras recomendadas",
       "recommendationsDescription": "Estos puntos son opcionales, pero mejoran la claridad y la confianza de los participantes.",
       "noRecommendations": "No hay recomendaciones extra por ahora.",

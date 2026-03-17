@@ -109,6 +109,18 @@ type EventAiWizardResolvedLocationCandidate = Extract<
   { status: 'matched' }
 >['candidate'];
 
+function buildResolvedLocationEditionData(candidate: EventAiWizardResolvedLocationCandidate) {
+  return {
+    locationDisplay: candidate.formattedAddress,
+    address: candidate.address ?? candidate.formattedAddress,
+    city: candidate.city ?? candidate.locality ?? null,
+    state: candidate.region ?? null,
+    country: candidate.countryCode ?? null,
+    latitude: String(candidate.lat),
+    longitude: String(candidate.lng),
+  };
+}
+
 function isEventPatchPart(
   part: UIMessagePart<EventAiWizardDataTypes, UnknownUITools>,
 ): part is { type: 'data-event-patch'; id?: string; data: EventAiWizardPatch } {
@@ -312,14 +324,7 @@ function buildPatchWithSelectedLocation(
         (op): op is Extract<EventAiWizardOp, { type: 'update_edition' }> =>
           op.type === 'update_edition',
       )?.editionId ?? editionScopedOp.editionId,
-    data: {
-      locationDisplay: candidate.formattedAddress,
-      address: candidate.formattedAddress,
-      city: candidate.city ?? null,
-      state: candidate.region ?? null,
-      latitude: String(candidate.lat),
-      longitude: String(candidate.lng),
-    },
+    data: buildResolvedLocationEditionData(candidate),
   };
 
   const ops = [...patch.ops];

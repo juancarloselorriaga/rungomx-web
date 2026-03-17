@@ -80,7 +80,7 @@
       "step": "Active step",
       "completedLabel": "Completed",
       "completedValue": "of {total} steps",
-      "blockersValue": "{publish, plural, =0 {No publish blockers} one {# publish blocker} other {# publish blockers}}{required, plural, =0 {} one { · # required step still pending} other { · # required steps still pending}}",
+      "blockersValue": "{publish, plural, =0 {No required publish blockers} one {# required publish blocker} other {# required publish blockers}}{required, plural, =0 {} one { · # required step still pending} other { · # required steps still pending}}",
       "skippedValue": "{count, plural, =0 {No optional steps paused} one {# optional step paused} other {# optional steps paused}}"
     },
     "sidebar": {
@@ -131,8 +131,10 @@
       "finishLineLabel": "Finish line",
       "readyTitle": "This event is ready for publish review",
       "readyDescription": "Required setup is complete. Review visibility and publish controls below when you are ready to make the event visible.",
+      "reviewRecommendedTitle": "Required setup is covered, but review is still recommended before publishing",
+      "reviewRecommendedDescription": "Required setup is complete. There {count, plural, one {is still # recommended point} other {are still # recommended points}} worth reviewing to improve participant clarity and confidence before making the event visible.",
       "blockedTitle": "Resolve these blockers before publishing",
-      "blockedDescription": "{publish, plural, =0 {No publish blockers remain.} one {# publish blocker remains.} other {# publish blockers remain.}} {required, plural, =0 {} one {# setup requirement still needs attention.} other {# setup requirements still need attention.}}",
+      "blockedDescription": "{publish, plural, =0 {No required publish blockers remain.} one {# required publish blocker remains.} other {# required publish blockers remain.}} {required, plural, =0 {} one {# setup requirement still needs attention.} other {# setup requirements still need attention.}}",
       "serverAuthority": "Final publish checks remain server-authoritative. The controls below confirm the real backend state before visibility changes.",
       "goToFirstBlocker": "Fix first blocker",
       "openPublishControls": "Open publish controls",
@@ -143,6 +145,7 @@
       "blockersTitle": "Required blockers",
       "blockersDescription": "These items must be resolved before publish readiness can be trusted.",
       "noBlockers": "No blockers remain. The event is structurally ready for publish review.",
+      "noRequiredBlockers": "No required publish blockers remain, but the recommendations below are still worth reviewing before making the event visible.",
       "recommendationsTitle": "Recommended polish",
       "recommendationsDescription": "These items are optional, but they improve clarity and participant confidence.",
       "noRecommendations": "No extra recommendations right now.",

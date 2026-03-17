@@ -78,15 +78,15 @@ type EventWizardAggregateOptions = {
 const SCHEDULE_UNCONFIRMED_PATTERNS = [
   /\b(event date|race date|start date|date and time|start time|race starts?)\b[\s\S]{0,40}\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b/i,
   /\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b[\s\S]{0,40}\b(event date|race date|start date|date and time|start time|race starts?)\b/i,
-  /\b(fecha del evento|fecha de salida|fecha y hora|hora de salida|hora de inicio)\b[\s\S]{0,40}\b(por confirmar|sin confirmar|pendiente|por definirse)\b/i,
-  /\b(por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(fecha del evento|fecha de salida|fecha y hora|hora de salida|hora de inicio)\b/i,
+  /\b(fecha del evento|fecha de salida|fechas? y hora|hora de salida|hora de inicio|horarios?)\b[\s\S]{0,40}\b(a confirmar|por confirmar|sin confirmar|pendiente|por definirse)\b/i,
+  /\b(a confirmar|por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(fecha del evento|fecha de salida|fechas? y hora|hora de salida|hora de inicio|horarios?)\b/i,
 ] as const;
 
 const LOCATION_UNCONFIRMED_PATTERNS = [
   /\b(event location|race location|start location|location)\b[\s\S]{0,40}\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b/i,
   /\b(not confirmed|unconfirmed|tbd|to be confirmed|pending confirmation)\b[\s\S]{0,40}\b(event location|race location|start location|location)\b/i,
-  /\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b[\s\S]{0,40}\b(por confirmar|sin confirmar|pendiente|por definirse)\b/i,
-  /\b(por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b/i,
+  /\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b[\s\S]{0,40}\b(a confirmar|por confirmar|sin confirmar|pendiente|por definirse)\b/i,
+  /\b(a confirmar|por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b/i,
 ] as const;
 
 function hasConfirmedLocationTruth(event: EventEditionDetail): boolean {

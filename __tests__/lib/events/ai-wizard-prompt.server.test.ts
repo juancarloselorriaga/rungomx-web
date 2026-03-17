@@ -240,7 +240,7 @@ describe('event ai wizard prompt', () => {
     expect(prompt).not.toContain('Grounding and anti-generic rules:');
   });
 
-  it('includes persisted structured schedule and core location truth in the compact snapshot', () => {
+  it('keeps compact participant-content grounding human-readable without leaking technical schedule or location fields', () => {
     const prompt = buildEventAiWizardSystemPrompt(
       buildEvent({
         startsAt: new Date('2026-03-15T06:00:00.000Z'),
@@ -262,13 +262,14 @@ describe('event ai wizard prompt', () => {
       },
     );
 
-    expect(prompt).toContain('"startsAt":"2026-03-15T06:00:00.000Z"');
-    expect(prompt).toContain('"endsAt":"2026-03-15T14:00:00.000Z"');
-    expect(prompt).toContain('"timezone":"America/Mexico_City"');
-    expect(prompt).toContain('"locationDisplay":"Bosque de Chapultepec"');
+    expect(prompt).toContain('"schedule":{"summary":"15 de marzo de 2026 from 12:00 a.m. to 8:00 a.m."');
+    expect(prompt).toContain('"label":"Bosque de Chapultepec"');
     expect(prompt).toContain('"address":"Av. Paseo de la Reforma"');
-    expect(prompt).toContain('"latitude":"19.4204"');
-    expect(prompt).toContain('"longitude":"-99.1819"');
+    expect(prompt).not.toContain('"startsAt":"2026-03-15T06:00:00.000Z"');
+    expect(prompt).not.toContain('"endsAt":"2026-03-15T14:00:00.000Z"');
+    expect(prompt).not.toContain('America/Mexico_City');
+    expect(prompt).not.toContain('"latitude":"19.4204"');
+    expect(prompt).not.toContain('"longitude":"-99.1819"');
   });
 
   it('grounds participant-facing schedule in local event time instead of defaulting to UTC phrasing', () => {
@@ -286,12 +287,38 @@ describe('event ai wizard prompt', () => {
     );
 
     expect(prompt).toContain(
-      'Participant-facing local schedule is known: October 12, 2026 from 7:00 AM to 1:00 PM (America/Mexico_City).',
+      'Participant-facing local schedule is known: October 12, 2026 from 7:00 AM to 1:00 PM.',
     );
     expect(prompt).toContain(
       'When the event timezone is known, describe participant-facing schedule details in local event time, not as UTC or raw ISO timestamps, unless the organizer explicitly asks for UTC.',
     );
     expect(prompt).not.toContain('Structured event schedule is known: startsAt 2026-10-12T13:00:00.000Z');
+    expect(prompt).not.toContain('America/Mexico_City');
+    expect(prompt).not.toContain('"latitude"');
+    expect(prompt).toContain('"summary": "October 12, 2026 from 7:00 AM to 1:00 PM"');
+    expect(prompt).toContain('"label": "Guadalajara, Jalisco, MX"');
+  });
+
+  it('treats midnight UTC schedules as date-only facts for participant-facing content', () => {
+    const prompt = buildEventAiWizardSystemPrompt(
+      buildEvent({
+        startsAt: new Date('2026-03-22T00:00:00.000Z'),
+        timezone: 'America/Mexico_City',
+      }),
+      {
+        activeStepId: 'content',
+        checklist: [],
+        locale: 'es',
+      },
+    );
+
+    expect(prompt).toContain(
+      'Participant-facing local schedule is known: 22 de marzo de 2026.',
+    );
+    expect(prompt).toContain('"summary": "22 de marzo de 2026"');
+    expect(prompt).toContain('"startsAtLocal": null');
+    expect(prompt).not.toContain('18:00');
+    expect(prompt).not.toContain('6:00 p.m.');
   });
 
   it('reserves clarify-first behavior for structural operational gaps', () => {

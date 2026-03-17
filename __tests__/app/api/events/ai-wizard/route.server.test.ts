@@ -10,6 +10,8 @@ const mockGetAddOnsForEdition = jest.fn();
 const mockBuildEventWizardAggregate = jest.fn();
 const mockCheckRateLimit = jest.fn();
 const mockForwardGeocode = jest.fn();
+const mockSearchPlaces = jest.fn();
+const mockReverseGeocode = jest.fn();
 let capturedSystemPrompt: string | null = null;
 let capturedStreamParts: Array<{ type: string; data?: unknown; id?: string; delta?: string }> = [];
 let capturedModelName: string | null = null;
@@ -67,7 +69,8 @@ jest.mock('@/lib/pro-features/server/tracking', () => ({
 jest.mock('@/lib/location/location-provider', () => ({
   getLocationProvider: () => ({
     forwardGeocode: (...args: unknown[]) => mockForwardGeocode(...args),
-    reverseGeocode: jest.fn(),
+    searchPlaces: (...args: unknown[]) => mockSearchPlaces(...args),
+    reverseGeocode: (...args: unknown[]) => mockReverseGeocode(...args),
   }),
 }));
 
@@ -142,6 +145,7 @@ import {
 } from '@/app/api/events/ai-wizard/route';
 import { resolveAssistantLocationQuery, buildAssistantLocationResolutionOptions } from '@/lib/events/ai-wizard/location-resolution';
 import type { EventEditionDetail } from '@/lib/events/queries';
+import type { WebsiteContentBlocks } from '@/lib/events/website/types';
 
 function buildEvent(overrides: Partial<EventEditionDetail> = {}) {
   return {
@@ -197,6 +201,7 @@ describe('POST /api/events/ai-wizard', () => {
     mockGetAddOnsForEdition.mockReset();
     mockBuildEventWizardAggregate.mockReset();
     mockCheckRateLimit.mockReset();
+    mockSearchPlaces.mockReset();
     capturedSystemPrompt = null;
     capturedStreamParts = [];
     capturedModelName = null;
@@ -222,6 +227,8 @@ describe('POST /api/events/ai-wizard', () => {
       prioritizedChecklist: [],
     });
     mockForwardGeocode.mockResolvedValue([]);
+    mockSearchPlaces.mockResolvedValue([]);
+    mockReverseGeocode.mockResolvedValue(null);
     mockCheckRateLimit.mockResolvedValue({
       allowed: true,
       resetAt: new Date('2026-03-12T00:00:00.000Z'),
@@ -597,13 +604,14 @@ describe('POST /api/events/ai-wizard', () => {
       country: 'MX',
       proximity: undefined,
     });
-    expect(resolution).toEqual({
+    expect(resolution).toMatchObject({
       status: 'matched',
       query: 'Bosque de Chapultepec, Ciudad de México',
       match: {
         lat: 19.4204,
         lng: -99.1821,
         formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        address: 'Bosque de Chapultepec, Ciudad de México, México',
         city: 'Ciudad de México',
         region: 'Ciudad de México',
         placeId: 'mapbox-1',
@@ -657,11 +665,190 @@ describe('POST /api/events/ai-wizard', () => {
           address: 'Bosque de Chapultepec, Ciudad de México, México',
           city: 'Ciudad de México',
           state: 'Ciudad de México',
+          country: undefined,
           latitude: '19.4204',
           longitude: '-99.1821',
         },
       },
     ]);
+  });
+
+  it('emits a structured Bosque de Chapultepec patch with meaningful address hierarchy', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockSearchPlaces.mockResolvedValue([
+      {
+        lat: 19.41666781,
+        lng: -99.18333064,
+        name: 'Bosque de Chapultepec',
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        address: '11580 Ciudad de México, México',
+        city: 'Ciudad de México',
+        country: 'México',
+        countryCode: 'MX',
+        placeId: 'bosque-poi',
+        provider: 'mapbox',
+      },
+    ]);
+    mockForwardGeocode.mockResolvedValue([]);
+    mockReverseGeocode.mockResolvedValue({
+      lat: 19.41666781,
+      lng: -99.18333064,
+      formattedAddress: 'Gran Avenida, 11580 Ciudad de México, México',
+      address: 'Gran Avenida, 11580 Ciudad de México, México',
+      city: 'Ciudad de México',
+      locality: 'Miguel Hidalgo',
+      region: 'Ciudad de México',
+      country: 'México',
+      countryCode: 'MX',
+      postalCode: '11580',
+      placeId: 'bosque-reverse',
+      provider: 'mapbox',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-bosque-structured',
+              role: 'user',
+              parts: [{ type: 'text', text: 'La salida será en Bosque de Chapultepec.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch?.data).toMatchObject({
+      ops: [
+        {
+          type: 'update_edition',
+          data: {
+            locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
+            address: 'Gran Avenida, 11580 Ciudad de México, México',
+            city: 'Ciudad de México',
+            state: 'Ciudad de México',
+            country: 'MX',
+            latitude: '19.41666781',
+            longitude: '-99.18333064',
+          },
+        },
+      ],
+      locationResolution: {
+        status: 'matched',
+        candidate: {
+          formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+          address: 'Gran Avenida, 11580 Ciudad de México, México',
+          city: 'Ciudad de México',
+          locality: 'Miguel Hidalgo',
+          region: 'Ciudad de México',
+          country: 'México',
+          countryCode: 'MX',
+        },
+      },
+    });
+  });
+
+  it('keeps Parque Metropolitano de Guadalajara candidate text human-readable in ambiguous proposals', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockSearchPlaces.mockResolvedValue([
+      {
+        lat: 20.67046657,
+        lng: -103.43992534,
+        name: 'Parque Metropolitano de Guadalajara',
+        formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, México',
+        address: 'Calz. Circunvalacion Ote. 381, 45010 Zapopan, México',
+        city: 'Zapopan',
+        country: 'México',
+        countryCode: 'MX',
+        placeId: 'parque-poi',
+        provider: 'mapbox',
+      },
+      {
+        lat: 21.17306556,
+        lng: -101.68672443,
+        name: 'Parque Metropolitano de Leon',
+        formattedAddress: 'Parque Metropolitano de Leon, León, México',
+        address: 'Prol. Blvd. Adolfo López Mateos Nte. S/N, 37138 León, México',
+        city: 'León',
+        country: 'México',
+        countryCode: 'MX',
+        placeId: 'parque-leon',
+        provider: 'mapbox',
+      },
+    ]);
+    mockForwardGeocode.mockResolvedValue([]);
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-parque-structured',
+              role: 'user',
+              parts: [{ type: 'text', text: 'La salida será en Parque Metropolitano de Guadalajara.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch?.data).toMatchObject({
+      ops: [
+        {
+          type: 'update_edition',
+          data: {
+            locationDisplay: 'Parque Metropolitano de Guadalajara, Zapopan, México',
+          },
+        },
+      ],
+      locationResolution: {
+        status: 'matched',
+        candidate: {
+          formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, México',
+          address: 'Calz. Circunvalacion Ote. 381, 45010 Zapopan, México',
+          city: 'Zapopan',
+        },
+      },
+    });
   });
 
   it('classifies multiple non-exact results as ambiguous', async () => {
@@ -838,12 +1025,94 @@ describe('POST /api/events/ai-wizard', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(capturedSystemPrompt).toContain('"startsAt":"2026-03-15T06:00:00.000Z"');
-    expect(capturedSystemPrompt).toContain('"endsAt":"2026-03-15T14:00:00.000Z"');
-    expect(capturedSystemPrompt).toContain('"timezone":"America/Mexico_City"');
+    expect(capturedSystemPrompt).toContain(
+      '"schedule":{"summary":"15 de marzo de 2026 from 12:00 a.m. to 8:00 a.m."',
+    );
+    expect(capturedSystemPrompt).toContain('"label":"Bosque de Chapultepec"');
+    expect(capturedSystemPrompt).not.toContain('"startsAt":"2026-03-15T06:00:00.000Z"');
+    expect(capturedSystemPrompt).not.toContain('"endsAt":"2026-03-15T14:00:00.000Z"');
+    expect(capturedSystemPrompt).not.toContain('"timezone":"America/Mexico_City"');
     expect(capturedSystemPrompt).toContain(
       'Persisted startsAt/endsAt mean the event date/time is confirmed for this draft. Do not call it unconfirmed, TBD, or pending.',
     );
+  });
+
+  it('drops stale assistant patches and generated markdown before converting follow-up history for the model', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockGetEventEditionDetail.mockResolvedValue({
+      ...buildEvent(),
+      startsAt: new Date('2026-03-22T00:00:00.000Z'),
+      timezone: 'America/Mexico_City',
+      locationDisplay: 'Bosque de Chapultepec',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-initial-user',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Redacta contenido para participantes.' }],
+            },
+            {
+              id: 'msg-stale-assistant',
+              role: 'assistant',
+              parts: [
+                { type: 'text', text: '## Horarios\nLa salida será el 21 de marzo a las 18:00.' },
+                {
+                  type: 'data-event-patch',
+                  data: {
+                    title: 'Horario incorrecto',
+                    summary: 'Arrastra un horario inventado.',
+                    ops: [],
+                    markdownOutputs: [
+                      {
+                        domain: 'website',
+                        title: 'Horario',
+                        contentMarkdown: '## Horarios\nLa salida será el 21 de marzo a las 18:00.',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+            {
+              id: 'msg-follow-up-user',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Hazlo más claro con lo ya confirmado.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockConvertToModelMessages).toHaveBeenCalled();
+    const lastModelCall = mockConvertToModelMessages.mock.calls.at(-1) as [Array<Record<string, unknown>>] | undefined;
+    const convertedMessages = lastModelCall?.[0] as
+      | Array<Record<string, unknown>>
+      | undefined;
+    expect(convertedMessages).toEqual([
+      expect.objectContaining({
+        role: 'user',
+        parts: [{ type: 'text', text: 'Redacta contenido para participantes.' }],
+      }),
+      expect.objectContaining({
+        role: 'user',
+        parts: [{ type: 'text', text: 'Hazlo más claro con lo ya confirmado.' }],
+      }),
+    ]);
+    expect(JSON.stringify(convertedMessages)).not.toContain('18:00');
+    expect(JSON.stringify(convertedMessages)).not.toContain('data-event-patch');
+    expect(capturedSystemPrompt).toContain('"summary":"22 de marzo de 2026"');
   });
 
   it('tells basics proposals to write confirmed location into structured edition fields', async () => {
@@ -1009,6 +1278,9 @@ describe('POST /api/events/ai-wizard', () => {
     expect(capturedSystemPrompt).toContain(
       'The first proposal should update only the clearest participant-facing policy block for this step.',
     );
+    expect(capturedSystemPrompt).toContain(
+      'In Policies, explicit organizer constraints about eligibility, proof, deadlines, or no-deferral rules are the highest-priority source of truth for the draft.',
+    );
     expect(capturedSystemPrompt).toContain('Goal: move quickly to one grounded, reviewable patch for the active wizard step.');
   });
 
@@ -1085,6 +1357,199 @@ describe('POST /api/events/ai-wizard', () => {
     });
   });
 
+  it('keeps generic refinements on the content bundle fast path after a prior content bundle turn', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-content-bundle-user',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Agrega FAQ para participantes y un resumen del sitio usando solo lo ya confirmado.',
+                },
+              ],
+            },
+            {
+              id: 'msg-content-bundle-assistant',
+              role: 'assistant',
+              parts: [
+                {
+                  type: 'data-fast-path-structure',
+                  data: {
+                    kind: 'content_bundle',
+                    sectionKeys: ['faq_answers', 'website_summary', 'confirmed_boundaries'],
+                  },
+                },
+                {
+                  type: 'data-event-patch',
+                  data: {
+                    title: 'Bundle inicial',
+                    summary: 'Incluye FAQ y resumen del sitio.',
+                    ops: [],
+                    markdownOutputs: [],
+                  },
+                },
+              ],
+            },
+            {
+              id: 'msg-content-bundle-refine',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Hazlo más claro y confiable, usando solo lo ya confirmado y sin inventar logística.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeContentBundlePatch' });
+    expect(capturedToolNames).toEqual(['proposeContentBundlePatch']);
+    expect(capturedStreamParts).toContainEqual({
+      type: 'data-fast-path-structure',
+      data: {
+        kind: 'content_bundle',
+        sectionKeys: ['faq_answers', 'website_summary', 'confirmed_boundaries'],
+      },
+      transient: true,
+    });
+  });
+
+  it('recovers content bundle from browser-style assistant history without fast-path structure', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-content-bundle-user',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Agrega FAQ para participantes y un resumen del sitio usando solo lo ya confirmado.',
+                },
+              ],
+            },
+            {
+              id: 'msg-content-bundle-assistant-browser',
+              role: 'assistant',
+              parts: [
+                {
+                  type: 'tool-proposeContentBundlePatch',
+                  toolCallId: 'tool-content-bundle-1',
+                  state: 'output-available',
+                  input: {
+                    title: 'Bundle inicial',
+                    summary: 'Incluye FAQ y resumen del sitio.',
+                    faqItems: [
+                      {
+                        question: '¿Qué incluye la experiencia?',
+                        answerMarkdown: 'Incluye la experiencia confirmada del evento.',
+                      },
+                      {
+                        question: '¿Qué falta por confirmar?',
+                        answerMarkdown: 'La logística pendiente seguirá marcada como pendiente.',
+                      },
+                    ],
+                    websiteOverviewMarkdown: 'Resumen del sitio con solo información confirmada.',
+                    websiteSectionTitle: 'Resumen para participantes',
+                  },
+                  output: { patchId: 'patch-content-bundle-1' },
+                },
+                {
+                  type: 'data-event-patch',
+                  data: {
+                    title: 'Bundle inicial',
+                    summary: 'Incluye FAQ y resumen del sitio.',
+                    ops: [
+                      {
+                        type: 'create_faq_item',
+                        editionId: '11111111-1111-4111-8111-111111111111',
+                        data: {
+                          question: '¿Qué incluye la experiencia?',
+                          answerMarkdown: 'Incluye la experiencia confirmada del evento.',
+                        },
+                      },
+                      {
+                        type: 'append_website_section_markdown',
+                        editionId: '11111111-1111-4111-8111-111111111111',
+                        data: {
+                          section: 'overview',
+                          markdown: 'Resumen del sitio con solo información confirmada.',
+                          title: 'Resumen para participantes',
+                          locale: 'es',
+                        },
+                      },
+                    ],
+                    markdownOutputs: [
+                      {
+                        domain: 'faq',
+                        contentMarkdown: 'Incluye la experiencia confirmada del evento.',
+                      },
+                      {
+                        domain: 'website',
+                        contentMarkdown: 'Resumen del sitio con solo información confirmada.',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+            {
+              id: 'msg-content-bundle-refine-browser',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Hazlo más claro y confiable, usando solo lo ya confirmado y sin inventar logística.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeContentBundlePatch' });
+    expect(capturedToolNames).toEqual(['proposeContentBundlePatch']);
+    expect(capturedStreamParts).toContainEqual({
+      type: 'data-fast-path-structure',
+      data: {
+        kind: 'content_bundle',
+        sectionKeys: ['faq_answers', 'website_summary', 'confirmed_boundaries'],
+      },
+      transient: true,
+    });
+  });
+
   it('keeps generic content refinements on the website overview fast path from the content step', async () => {
     mockCanUserAccessSeries.mockResolvedValue({
       organizationId: 'org-1',
@@ -1101,6 +1566,102 @@ describe('POST /api/events/ai-wizard', () => {
           messages: [
             {
               id: 'msg-content-refine',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Hazlo más claro y confiable, usando solo lo ya confirmado y sin inventar logística.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeWebsiteOverviewPatch' });
+    expect(capturedToolNames).toEqual(['proposeWebsiteOverviewPatch']);
+    expect(capturedStreamParts).toContainEqual({
+      type: 'data-fast-path-structure',
+      data: {
+        kind: 'website_overview',
+        sectionKeys: ['hero_positioning', 'confirmed_experience', 'what_to_confirm'],
+      },
+      transient: true,
+    });
+  });
+
+  it('does not reclassify browser-style website overview history as a content bundle', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'content',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-website-user',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Redacta un resumen del sitio con lo ya confirmado.',
+                },
+              ],
+            },
+            {
+              id: 'msg-website-assistant-browser',
+              role: 'assistant',
+              parts: [
+                {
+                  type: 'tool-proposeWebsiteOverviewPatch',
+                  toolCallId: 'tool-website-1',
+                  state: 'output-available',
+                  input: {
+                    title: 'Resumen del sitio',
+                    summary: 'Cubre solo el overview.',
+                    markdown: 'Resumen del sitio con enfoque en información confirmada.',
+                    sectionTitle: 'Resumen del sitio',
+                  },
+                  output: { patchId: 'patch-website-1' },
+                },
+                {
+                  type: 'data-event-patch',
+                  data: {
+                    title: 'Resumen del sitio',
+                    summary: 'Cubre solo el overview.',
+                    ops: [
+                      {
+                        type: 'append_website_section_markdown',
+                        editionId: '11111111-1111-4111-8111-111111111111',
+                        data: {
+                          section: 'overview',
+                          markdown: 'Resumen del sitio con enfoque en información confirmada.',
+                          title: 'Resumen del sitio',
+                          locale: 'es',
+                        },
+                      },
+                    ],
+                    markdownOutputs: [
+                      {
+                        domain: 'website',
+                        contentMarkdown: 'Resumen del sitio con enfoque en información confirmada.',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+            {
+              id: 'msg-website-refine-browser',
               role: 'user',
               parts: [
                 {
@@ -1625,7 +2186,10 @@ describe('POST /api/events/ai-wizard', () => {
       .map((part) => part.delta)
       .join('');
     expect(diagnosisDelta).toContain('Qué ya tiene Revisión y publicación ahora');
-    expect(diagnosisDelta).toContain('Ya no hay bloqueos de publicación.');
+    expect(diagnosisDelta).toContain('Ya no quedan bloqueos obligatorios de publicación.');
+    expect(diagnosisDelta).toContain(
+      'No hay bloqueos obligatorios de publicación, pero todavía conviene revisar estos puntos antes de publicar con más confianza.',
+    );
     expect(diagnosisDelta).toContain(
       'Sería recomendable agregar una exención para que los participantes acepten términos.',
     );
@@ -1636,6 +2200,7 @@ describe('POST /api/events/ai-wizard', () => {
       'Sería recomendable configurar complementos si planeas ofrecer extras.',
     );
     expect(diagnosisDelta).toContain('Puedes seguir con Políticas y exenciones.');
+    expect(diagnosisDelta).not.toContain('Ya no hay bloqueos de publicación.');
     expect(diagnosisDelta).not.toContain('RECOMMEND_WAIVERS');
     expect(diagnosisDelta).not.toContain('RECOMMEND_QUESTIONS');
     expect(diagnosisDelta).not.toContain('RECOMMEND_ADD_ONS');
@@ -1646,34 +2211,50 @@ describe('POST /api/events/ai-wizard', () => {
       organizationId: 'org-1',
       role: 'owner',
     });
-    mockBuildEventWizardAggregate.mockReturnValue({
-      missingRequired: [],
-      publishBlockers: [
-        {
-          id: 'publish-content-schedule-truth-conflict',
-          stepId: 'website',
-          labelKey: 'wizard.issues.publishContentScheduleTruthConflict',
-          href: '/website',
-          code: 'CONTENT_SCHEDULE_TRUTH_CONFLICT',
-          severity: 'blocker',
-        },
-      ],
-      optionalRecommendations: [],
-      prioritizedChecklist: [
-        {
-          id: 'publish-content-schedule-truth-conflict',
-          stepId: 'website',
-          labelKey: 'wizard.issues.publishContentScheduleTruthConflict',
-          href: '/website',
-          code: 'CONTENT_SCHEDULE_TRUTH_CONFLICT',
-          severity: 'blocker',
-        },
-      ],
-      completionByStepId: {} as never,
-      setupStepStateById: {} as never,
-      capabilityLocks: {} as never,
-      progress: { completedRequired: 6, totalRequired: 6, percent: 100 },
-    });
+    const actualOrchestrator = jest.requireActual('@/lib/events/wizard/orchestrator') as typeof import('@/lib/events/wizard/orchestrator');
+    const websiteContent: WebsiteContentBlocks = {
+      overview: {
+        type: 'overview',
+        enabled: true,
+        content: 'Modalidad y horarios por confirmar',
+      },
+    };
+    mockGetEventEditionDetail.mockResolvedValue(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+    );
+    mockGetPublicWebsiteContent.mockResolvedValue(websiteContent);
+    mockHasWebsiteContent.mockResolvedValue(true);
+    mockBuildEventWizardAggregate.mockImplementation((event, aggregateInput) =>
+      actualOrchestrator.buildEventWizardAggregate(
+        event as EventEditionDetail,
+        aggregateInput as Parameters<typeof actualOrchestrator.buildEventWizardAggregate>[1],
+      ),
+    );
 
     const response = await POST(
       new Request('http://localhost/api/events/ai-wizard', {
@@ -1702,8 +2283,53 @@ describe('POST /api/events/ai-wizard', () => {
     expect(diagnosisDelta).toContain(
       'El contenido para participantes todavía dice que la fecha u hora no están confirmadas aunque la programación estructurada ya está guardada.',
     );
-    expect(diagnosisDelta).not.toContain('Ya no hay bloqueos de publicación.');
+    expect(diagnosisDelta).not.toContain('Ya no quedan bloqueos obligatorios de publicación.');
     expect(diagnosisDelta).not.toContain('Puedes revisar la visibilidad y publicar cuando quieras.');
+  });
+
+  it('keeps a genuinely ready review diagnosis available when no blockers or recommendations remain', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 6, totalRequired: 6, percent: 100 },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'review',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-review-clean',
+              role: 'user',
+              parts: [{ type: 'text', text: 'Explícame qué sigue bloqueando la publicación.' }],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    const diagnosisDelta = capturedStreamParts
+      .filter((part): part is { type: 'text-delta'; delta: string } => part.type === 'text-delta')
+      .map((part) => part.delta)
+      .join('');
+    expect(diagnosisDelta).toContain('Ya no quedan bloqueos obligatorios de publicación.');
+    expect(diagnosisDelta).toContain('No hay bloqueos obligatorios de publicación ni mejoras recomendadas pendientes.');
+    expect(diagnosisDelta).toContain('Puedes revisar la visibilidad y publicar cuando quieras.');
+    expect(diagnosisDelta).not.toContain('todavía conviene revisar estos puntos');
   });
 
   it('uses the deterministic policy follow-up path when a policies request spans refunds, transfers, and deferrals', async () => {
@@ -1750,6 +2376,138 @@ describe('POST /api/events/ai-wizard', () => {
     expect(capturedToolNames).toEqual([]);
     const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
     expect(emittedPatch).toBeTruthy();
+  });
+
+  it('synthesizes a deterministic deferral patch when the organizer provides an explicit deferment rule', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+    mockBuildEventWizardAggregate.mockReturnValue({
+      missingRequired: [],
+      publishBlockers: [],
+      optionalRecommendations: [],
+      prioritizedChecklist: [],
+      completionByStepId: {} as never,
+      setupStepStateById: {} as never,
+      capabilityLocks: {} as never,
+      progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
+    });
+    mockGetEventEditionDetail.mockResolvedValue(
+      buildEvent({
+        startsAt: new Date('2026-05-16T00:00:00.000Z'),
+        policyConfig: {
+          refundsAllowed: false,
+          refundPolicyText: null,
+          refundDeadline: null,
+          transfersAllowed: false,
+          transferPolicyText: null,
+          transferDeadline: null,
+          deferralsAllowed: false,
+          deferralPolicyText: null,
+          deferralDeadline: null,
+        },
+      }),
+    );
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'policies',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-policies-deferral-explicit',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'El diferimiento solo se permite por lesión con comprobante médico hasta 14 días antes del evento.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedSystemPrompt).toBeNull();
+    expect(capturedToolChoice).toBeNull();
+    expect(capturedToolNames).toEqual([]);
+    const emittedPatch = capturedStreamParts.find((part) => part.type === 'data-event-patch');
+    expect(emittedPatch?.data).toMatchObject({
+      title: 'Aclarar políticas para participantes',
+      ops: [
+        {
+          type: 'update_policy_config',
+          data: expect.objectContaining({
+            deferralsAllowed: true,
+            deferralDeadline: '2026-05-02T00:00:00.000Z',
+          }),
+        },
+      ],
+      markdownOutputs: [
+        expect.objectContaining({
+          domain: 'policy',
+          contentMarkdown: expect.stringContaining('solo se permite en casos de lesión'),
+        }),
+      ],
+    });
+    expect(emittedPatch?.data).toMatchObject({
+      markdownOutputs: [
+        expect.objectContaining({
+          domain: 'policy',
+          contentMarkdown: expect.stringContaining('comprobante médico'),
+        }),
+      ],
+    });
+    expect(emittedPatch?.data).toMatchObject({
+      markdownOutputs: [
+        expect.objectContaining({
+          domain: 'policy',
+          contentMarkdown: expect.stringContaining('2 de mayo de 2026'),
+        }),
+      ],
+    });
+  });
+
+  it('keeps the normal policy fast path when no explicit deferment rule is provided', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'policies',
+          locale: 'es',
+          messages: [
+            {
+              id: 'msg-policies-deferral-vague',
+              role: 'user',
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Ayúdame a redactar una política clara de diferimiento para participantes.',
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(capturedStepBudget).toBe(4);
+    expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposePolicyPatch' });
+    expect(capturedToolNames).toEqual(['proposePolicyPatch']);
+    expect(capturedStreamParts.find((part) => part.type === 'data-event-patch')).toBeUndefined();
   });
 
   it('synthesizes a deterministic basics follow-up patch when the organizer confirms location and first distance details', async () => {

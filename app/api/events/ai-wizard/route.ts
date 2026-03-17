@@ -145,15 +145,69 @@ function normalizeUiMessagesForModelConversion(messages: unknown[]): EventAiWiza
           : typeof message.content === 'string' && message.content.trim()
             ? [{ type: 'text', text: message.content }]
             : [];
+      const filteredParts =
+        role === 'assistant'
+          ? filterAssistantHistoryParts(normalizedParts)
+          : normalizedParts;
+
+      if (filteredParts.length === 0) {
+        return null;
+      }
 
       return {
         ...(message as Record<string, unknown>),
         id: typeof message.id === 'string' && message.id ? message.id : `msg-${index}`,
         role,
-        parts: normalizedParts,
+        parts: filteredParts,
       } as EventAiWizardUIMessage;
     })
     .filter((message): message is EventAiWizardUIMessage => Boolean(message));
+}
+
+function filterAssistantHistoryParts(parts: unknown[]) {
+  if (parts.some((part) => getAssistantHistoryPatchPart(part))) {
+    return [];
+  }
+
+  return parts.filter((part): part is { type: 'text'; text: string } => {
+    if (!part || typeof part !== 'object' || (part as { type?: unknown }).type !== 'text') {
+      return false;
+    }
+
+    const text = typeof (part as { text?: unknown }).text === 'string' ? (part as { text: string }).text : '';
+    return isMinimalAssistantIntentText(text);
+  });
+}
+
+function getAssistantHistoryPatchPart(part: unknown) {
+  return Boolean(
+    part &&
+      typeof part === 'object' &&
+      (part as { type?: unknown }).type === 'data-event-patch',
+  );
+}
+
+function isMinimalAssistantIntentText(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  if (trimmed.length > 240) return false;
+  if (looksLikeAssistantGeneratedMarkdown(trimmed)) return false;
+
+  return (
+    trimmed.endsWith('?') ||
+    /^(puedo|quieres|quieres que|si confirmas|si quieres|necesito|te confirmo|would you like|do you want|if you confirm|i need|can you|should i)\b/i.test(
+      trimmed,
+    )
+  );
+}
+
+function looksLikeAssistantGeneratedMarkdown(text: string) {
+  return (
+    /\n#{1,6}\s/.test(text) ||
+    /\n[-*]\s/.test(text) ||
+    /\n\d+\.\s/.test(text) ||
+    /\*\*[^*]+\*\*/.test(text)
+  );
 }
 
 function mapIssueStepId(
@@ -597,6 +651,58 @@ function formatPolicyDateLabel(isoDate: string, locale: string | undefined) {
   return formatter.format(new Date(isoDate));
 }
 
+function parseRelativeDaysBeforeEvent(fragment: string | null | undefined) {
+  const normalized = fragment
+    ?.trim()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+  if (!normalized) return null;
+
+  const spanishMatch = normalized.match(/\b(\d{1,3})\s+dias?\s+antes\s+del?\s+evento\b/i);
+  if (spanishMatch) {
+    return Number(spanishMatch[1]);
+  }
+
+  const englishMatch = normalized.match(/\b(\d{1,3})\s+days?\s+before\s+the\s+event\b/i);
+  if (englishMatch) {
+    return Number(englishMatch[1]);
+  }
+
+  return null;
+}
+
+function subtractUtcDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setUTCDate(next.getUTCDate() - days);
+  return next.toISOString();
+}
+
+function hasExplicitDeferralConstraint(latestUserText: string) {
+  const normalized = normalizeFastPathText(latestUserText);
+  if (!normalized.trim()) return false;
+  if (
+    !normalized.includes('diferimiento') &&
+    !normalized.includes('diferimientos') &&
+    !normalized.includes('diferir') &&
+    !normalized.includes('deferral') &&
+    !normalized.includes('deferrals')
+  ) {
+    return false;
+  }
+
+  return (
+    /\bsolo\b|\bonly\b/.test(normalized) ||
+    /\blesion\b|\binjury\b/.test(normalized) ||
+    /\bcomprobante\b|\bmedical\b|\bproof\b/.test(normalized) ||
+    /\b\d{1,3}\s+dias?\s+antes\s+del?\s+evento\b|\b\d{1,3}\s+days?\s+before\s+the\s+event\b/.test(
+      normalized,
+    ) ||
+    /\bsin\s+diferimientos?\b|\bno\s+hay\s+diferimientos?\b|\bwithout\s+deferrals?\b|\bno\s+deferrals?\b/.test(
+      normalized,
+    )
+  );
+}
+
 type DeterministicPolicyClause = {
   kind: 'refund' | 'transfer' | 'deferral';
   enabled: boolean;
@@ -692,20 +798,72 @@ function buildDeterministicPoliciesFollowUpPatch(args: {
     });
   }
 
-  if (deferralClause || /\bsin\s+diferimientos?\b|no\s+hay\s+diferimientos?\b|without\s+deferrals?\b|no\s+deferrals?\b/i.test(text)) {
+  const deferralDisallowed =
+    /\bsin\s+diferimientos?\b|no\s+hay\s+diferimientos?\b|without\s+deferrals?\b|no\s+deferrals?\b/i.test(
+      text,
+    );
+
+  if (deferralClause || deferralDisallowed) {
+    const relativeDeadlineDays = parseRelativeDaysBeforeEvent(deferralClause);
+    const deadline =
+      parseIsoDateFromFragment(deferralClause) ||
+      (relativeDeadlineDays !== null && args.event.startsAt
+        ? subtractUtcDays(args.event.startsAt, relativeDeadlineDays)
+        : null);
+    const deadlineLabel = deadline ? formatPolicyDateLabel(deadline, locale) : null;
+    const normalizedDeferralClause = normalizeFastPathText(deferralClause ?? '');
+    const mentionsInjuryOnly = /\blesion\b|\binjury\b/i.test(normalizedDeferralClause);
+    const requiresMedicalProof =
+      /\bcomprobante\b|\bconstancia\b|\bcertificado\b|\bmedical\b|\bproof\b/i.test(
+        normalizedDeferralClause,
+      );
+
     clauses.push({
       kind: 'deferral',
-      enabled: false,
-      deadline: null,
-      markdown: isEnglish
-        ? [
-            '### Deferrals',
-            'Deferrals are not available for this event.',
-          ].join('\n\n')
-        : [
-            '### Diferimientos',
-            'No hay opción de diferir la inscripción para otra edición de este evento.',
-          ].join('\n\n'),
+      enabled: !deferralDisallowed,
+      deadline,
+      markdown:
+        deferralDisallowed
+          ? isEnglish
+            ? ['### Deferrals', 'Deferrals are not available for this event.'].join('\n\n')
+            : ['### Diferimientos', 'No hay opción de diferir la inscripción para otra edición de este evento.'].join(
+                '\n\n',
+              )
+          : isEnglish
+            ? [
+                '### Deferrals',
+                mentionsInjuryOnly
+                  ? 'Deferrals are allowed only for injury cases confirmed by the organizer.'
+                  : 'Deferrals are allowed only under the organizer rule described below.',
+                requiresMedicalProof
+                  ? 'Medical proof is required to review and approve the deferral request.'
+                  : 'The organizer will review the request against the documented eligibility rule.',
+                deadlineLabel
+                  ? `The request must be submitted no later than **${deadlineLabel}**.`
+                  : relativeDeadlineDays !== null
+                    ? `The request must be submitted no later than **${relativeDeadlineDays} days before the event**.`
+                    : 'The request must respect the organizer deadline already provided.',
+                requiresMedicalProof || mentionsInjuryOnly
+                  ? 'Requests that do not meet these conditions will not qualify for deferral.'
+                  : 'Requests that fall outside these conditions will not qualify for deferral.',
+              ].join('\n\n')
+            : [
+                '### Diferimientos',
+                mentionsInjuryOnly
+                  ? 'El diferimiento solo se permite en casos de lesión confirmados por el organizador.'
+                  : 'El diferimiento solo se permite bajo la regla específica indicada por el organizador.',
+                requiresMedicalProof
+                  ? 'Se debe presentar comprobante médico para revisar y aprobar la solicitud.'
+                  : 'La solicitud se revisa conforme a la condición documentada por el organizador.',
+                deadlineLabel
+                  ? `La solicitud debe enviarse a más tardar el **${deadlineLabel}**.`
+                  : relativeDeadlineDays !== null
+                    ? `La solicitud debe enviarse a más tardar **${relativeDeadlineDays} días antes del evento**.`
+                    : 'La solicitud debe respetar el plazo ya indicado por el organizador.',
+                requiresMedicalProof || mentionsInjuryOnly
+                  ? 'Las solicitudes fuera de estas condiciones no califican para diferimiento.'
+                  : 'Las solicitudes que no cumplan con estas condiciones no califican para diferimiento.',
+              ].join('\n\n'),
     });
   }
 
@@ -780,14 +938,7 @@ function buildDeterministicBasicsFollowUpPatch(args: {
     ops.push({
       type: 'update_edition',
       editionId: args.editionId,
-      data: {
-        locationDisplay: args.resolvedLocation.candidate.formattedAddress,
-        address: args.resolvedLocation.candidate.formattedAddress,
-        city: args.resolvedLocation.candidate.city ?? null,
-        state: args.resolvedLocation.candidate.region ?? null,
-        latitude: String(args.resolvedLocation.candidate.lat),
-        longitude: String(args.resolvedLocation.candidate.lng),
-      },
+      data: buildResolvedLocationEditionData(args.resolvedLocation.candidate),
     });
   }
 
@@ -1008,13 +1159,229 @@ function countRequestedPolicyKinds(latestUserText: string) {
   return count;
 }
 
+function isGenericContentRefinementRequest(
+  stepId: z.infer<typeof requestSchema>['stepId'],
+  latestUserText: string,
+) {
+  if (stepId !== 'content' && stepId !== 'review') {
+    return false;
+  }
+
+  const normalized = normalizeFastPathText(latestUserText).trim();
+  if (!normalized) return false;
+
+  const explicitScopeCue =
+    /\bfaq\b/.test(normalized) ||
+    normalized.includes('preguntas frecuentes') ||
+    normalized.includes('website') ||
+    normalized.includes('sitio') ||
+    normalized.includes('landing') ||
+    normalized.includes('pagina') ||
+    normalized.includes('overview');
+  if (explicitScopeCue) {
+    return false;
+  }
+
+  return (
+    normalized.includes('hazlo') ||
+    normalized.includes('mejoralo') ||
+    normalized.includes('mejora') ||
+    normalized.includes('pule') ||
+    normalized.includes('pulir') ||
+    normalized.includes('refina') ||
+    normalized.includes('refinar') ||
+    normalized.includes('mas claro') ||
+    normalized.includes('mas confiable') ||
+    normalized.includes('mas directo') ||
+    normalized.includes('mas simple') ||
+    normalized.includes('clearer') ||
+    normalized.includes('more clear') ||
+    normalized.includes('more trustworthy') ||
+    normalized.includes('refine') ||
+    normalized.includes('polish')
+  );
+}
+
+function resolveFastPathKindFromStructurePart(part: unknown): EventAiWizardFastPathKind | null {
+  if (!part || typeof part !== 'object' || (part as { type?: unknown }).type !== 'data-fast-path-structure') {
+    return null;
+  }
+
+  const data = (part as { data?: unknown }).data;
+  const kind = data && typeof data === 'object' ? (data as { kind?: unknown }).kind : null;
+  if (
+    kind === 'event_description' ||
+    kind === 'faq' ||
+    kind === 'content_bundle' ||
+    kind === 'website_overview' ||
+    kind === 'policy'
+  ) {
+    return kind;
+  }
+
+  return null;
+}
+
+function resolveFastPathKindFromToolName(toolName: string): EventAiWizardFastPathKind | null {
+  switch (toolName) {
+    case 'proposeDescriptionPatch':
+      return 'event_description';
+    case 'proposeFaqPatch':
+      return 'faq';
+    case 'proposeContentBundlePatch':
+      return 'content_bundle';
+    case 'proposeWebsiteOverviewPatch':
+      return 'website_overview';
+    case 'proposePolicyPatch':
+      return 'policy';
+    default:
+      return null;
+  }
+}
+
+function resolveFastPathKindFromToolPart(part: unknown): EventAiWizardFastPathKind | null {
+  if (!part || typeof part !== 'object') {
+    return null;
+  }
+
+  const rawType = (part as { type?: unknown }).type;
+  const toolName =
+    typeof rawType === 'string' && rawType.startsWith('tool-')
+      ? rawType.slice('tool-'.length)
+      : rawType === 'dynamic-tool' && typeof (part as { toolName?: unknown }).toolName === 'string'
+        ? (part as { toolName: string }).toolName
+        : null;
+  return toolName ? resolveFastPathKindFromToolName(toolName) : null;
+}
+
+function resolveFastPathKindFromPatchPart(part: unknown): EventAiWizardFastPathKind | null {
+  if (!part || typeof part !== 'object' || (part as { type?: unknown }).type !== 'data-event-patch') {
+    return null;
+  }
+
+  const data = (part as { data?: unknown }).data;
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  const ops = Array.isArray((data as { ops?: unknown[] }).ops) ? (data as { ops: unknown[] }).ops : [];
+  const markdownOutputs = Array.isArray((data as { markdownOutputs?: unknown[] }).markdownOutputs)
+    ? (data as { markdownOutputs: unknown[] }).markdownOutputs
+    : [];
+
+  const hasFaqOp = ops.some(
+    (op) => op && typeof op === 'object' && (op as { type?: unknown }).type === 'create_faq_item',
+  );
+  const hasWebsiteOverviewOp = ops.some((op) => {
+    if (!op || typeof op !== 'object' || (op as { type?: unknown }).type !== 'append_website_section_markdown') {
+      return false;
+    }
+
+    const opData = (op as { data?: unknown }).data;
+    return opData && typeof opData === 'object' && (opData as { section?: unknown }).section === 'overview';
+  });
+  const hasPolicyOp = ops.some(
+    (op) => op && typeof op === 'object' && (op as { type?: unknown }).type === 'append_policy_markdown',
+  );
+  const hasDescriptionOp = ops.some((op) => {
+    if (!op || typeof op !== 'object' || (op as { type?: unknown }).type !== 'update_edition') {
+      return false;
+    }
+
+    const opData = (op as { data?: unknown }).data;
+    return opData && typeof opData === 'object' && typeof (opData as { description?: unknown }).description === 'string';
+  });
+
+  const hasFaqOutput = markdownOutputs.some(
+    (output) =>
+      output && typeof output === 'object' && (output as { domain?: unknown }).domain === 'faq',
+  );
+  const hasWebsiteOutput = markdownOutputs.some(
+    (output) =>
+      output && typeof output === 'object' && (output as { domain?: unknown }).domain === 'website',
+  );
+  const hasPolicyOutput = markdownOutputs.some(
+    (output) =>
+      output && typeof output === 'object' && (output as { domain?: unknown }).domain === 'policy',
+  );
+  const hasDescriptionOutput = markdownOutputs.some(
+    (output) =>
+      output && typeof output === 'object' && (output as { domain?: unknown }).domain === 'description',
+  );
+
+  if ((hasFaqOp || hasFaqOutput) && (hasWebsiteOverviewOp || hasWebsiteOutput)) {
+    return 'content_bundle';
+  }
+
+  if (hasFaqOp || hasFaqOutput) {
+    return 'faq';
+  }
+
+  if (hasWebsiteOverviewOp || hasWebsiteOutput) {
+    return 'website_overview';
+  }
+
+  if (hasPolicyOp || hasPolicyOutput) {
+    return 'policy';
+  }
+
+  if (hasDescriptionOp || hasDescriptionOutput) {
+    return 'event_description';
+  }
+
+  return null;
+}
+
+function resolvePreviousAssistantFastPathKind(messages: unknown[]): EventAiWizardFastPathKind | null {
+  for (let messageIndex = messages.length - 1; messageIndex >= 0; messageIndex -= 1) {
+    const message = messages[messageIndex];
+    if (!message || typeof message !== 'object' || (message as { role?: unknown }).role !== 'assistant') {
+      continue;
+    }
+
+    const rawParts = Array.isArray((message as { parts?: unknown[] }).parts)
+      ? (message as { parts: unknown[] }).parts
+      : [];
+    let patchKind: EventAiWizardFastPathKind | null = null;
+    let toolKind: EventAiWizardFastPathKind | null = null;
+
+    for (let partIndex = rawParts.length - 1; partIndex >= 0; partIndex -= 1) {
+      const part = rawParts[partIndex];
+      const structureKind = resolveFastPathKindFromStructurePart(part);
+      if (structureKind) {
+        return structureKind;
+      }
+
+      if (!patchKind) {
+        patchKind = resolveFastPathKindFromPatchPart(part);
+      }
+      if (!toolKind) {
+        toolKind = resolveFastPathKindFromToolPart(part);
+      }
+    }
+
+    if (patchKind) return patchKind;
+    if (toolKind) return toolKind;
+  }
+
+  return null;
+}
+
 function resolvePreferredFastPathKind(
   stepId: z.infer<typeof requestSchema>['stepId'],
   latestUserText: string,
   crossStepIntent: EventAiWizardCrossStepIntent | null,
+  previousFastPathKind: EventAiWizardFastPathKind | null,
 ): EventAiWizardFastPathKind | null {
   if (stepId === 'policies' && countRequestedPolicyKinds(latestUserText) > 1) {
     return null;
+  }
+
+  if (
+    previousFastPathKind === 'content_bundle' &&
+    isGenericContentRefinementRequest(stepId, latestUserText)
+  ) {
+    return 'content_bundle';
   }
 
   const directFastPathKind = detectFastPathKind(stepId, latestUserText);
@@ -1299,12 +1666,10 @@ export async function enrichPatchWithResolvedLocation(
         ...op,
         data: {
           ...op.data,
-          locationDisplay: resolution.match.formattedAddress,
-          address: resolution.match.formattedAddress,
+          ...buildResolvedLocationEditionData(resolution.match),
           city: resolution.match.city ?? op.data.city,
           state: resolution.match.region ?? op.data.state,
-          latitude: String(resolution.match.lat),
-          longitude: String(resolution.match.lng),
+          country: resolution.match.countryCode ?? op.data.country,
         },
       };
     }),
@@ -1861,12 +2226,13 @@ function buildDeterministicDiagnosisText({
   if (stepId === 'review') {
     const publishBlockers = aggregate.publishBlockers ?? [];
     const optionalRecommendations = aggregate.optionalRecommendations ?? [];
+    const hasReviewRecommendations = optionalRecommendations.length > 0;
 
     lines.push(
       locale === 'es' ? 'Qué ya tiene Revisión y publicación ahora' : 'What Review & publish already has',
       publishBlockers.length === 0
         ? locale === 'es'
-          ? 'Ya no quedan bloqueos obligatorios para publicar.'
+          ? 'Ya no quedan bloqueos obligatorios de publicación.'
           : 'There are no required publish blockers left.'
         : locale === 'es'
           ? `Todavía hay ${publishBlockers.length} bloqueo(s) obligatorio(s) para publicar.`
@@ -1887,8 +2253,12 @@ function buildDeterministicDiagnosisText({
     if (publishBlockers.length === 0) {
       lines.push(
         locale === 'es'
-          ? 'Ya no hay bloqueos de publicación.'
-          : 'There are no publication blockers left.',
+          ? hasReviewRecommendations
+            ? 'No hay bloqueos obligatorios de publicación, pero todavía conviene revisar estos puntos antes de publicar con más confianza.'
+            : 'No hay bloqueos obligatorios de publicación ni mejoras recomendadas pendientes.'
+          : hasReviewRecommendations
+            ? 'There are no required publication blockers, but these points are still worth reviewing before publishing with more confidence.'
+            : 'There are no required publication blockers or recommended improvements pending.',
       );
     } else {
       lines.push(...publishBlockers.map((issue) => `- ${getLocalizedIssueText(issue, locale)}`));
@@ -1907,8 +2277,12 @@ function buildDeterministicDiagnosisText({
     } else {
       lines.push(
         locale === 'es'
-          ? 'Puedes revisar la visibilidad y publicar cuando quieras.'
-          : 'You can review visibility and publish whenever you are ready.',
+          ? hasReviewRecommendations
+            ? 'Puedes revisar estos últimos detalles o abrir los controles de visibilidad cuando lo decidas.'
+            : 'Puedes revisar la visibilidad y publicar cuando quieras.'
+          : hasReviewRecommendations
+            ? 'You can review these last details or open the visibility controls whenever you decide.'
+            : 'You can review visibility and publish whenever you are ready.',
       );
     }
 
@@ -1982,13 +2356,47 @@ function serializeResolvedLocationCandidate(
     >['candidate']
   >,
 ) {
+  return buildSerializableResolvedLocationCandidate(candidate);
+}
+
+function buildResolvedLocationEditionData(
+  candidate: NonNullable<
+    Extract<
+      Awaited<ReturnType<typeof resolveAiWizardLocationIntent>>,
+      { status: 'matched' }
+    >['candidate']
+  >,
+) {
+  return {
+    locationDisplay: candidate.formattedAddress,
+    address: candidate.address ?? candidate.formattedAddress,
+    city: candidate.city ?? null,
+    state: candidate.region ?? null,
+    country: candidate.countryCode ?? null,
+    latitude: String(candidate.lat),
+    longitude: String(candidate.lng),
+  };
+}
+
+function buildSerializableResolvedLocationCandidate(
+  candidate: NonNullable<
+    Extract<
+      Awaited<ReturnType<typeof resolveAiWizardLocationIntent>>,
+      { status: 'matched' }
+    >['candidate']
+  >,
+) {
   return {
     formattedAddress: candidate.formattedAddress,
+    name: candidate.name,
+    address: candidate.address,
     lat: candidate.lat,
     lng: candidate.lng,
     city: candidate.city,
+    locality: candidate.locality,
     region: candidate.region,
     countryCode: candidate.countryCode,
+    country: candidate.country,
     placeId: candidate.placeId,
     provider: candidate.provider,
   };
@@ -2287,14 +2695,15 @@ export async function POST(req: Request) {
   const resolvedEventBrief = event.organizerBrief?.trim() || eventBrief?.trim() || null;
   const diagnosisMode = isStepGapDiagnosisRequest(stepId, latestUserText);
   const crossStepIntent = diagnosisMode ? null : resolveCrossStepIntent(stepId, latestUserText);
+  const previousFastPathKind = resolvePreviousAssistantFastPathKind(messages);
   const fastPathKind = diagnosisMode
     ? null
-    : resolvePreferredFastPathKind(stepId, latestUserText, crossStepIntent);
+    : resolvePreferredFastPathKind(stepId, latestUserText, crossStepIntent, previousFastPathKind);
   const locationIntentQuery = stepId === 'basics' ? extractLocationIntentQuery(latestUserText) : null;
   const forcePoliciesFollowUpProposal =
     !diagnosisMode &&
     stepId === 'policies' &&
-    countRequestedPolicyKinds(latestUserText) > 1;
+    (countRequestedPolicyKinds(latestUserText) > 1 || hasExplicitDeferralConstraint(latestUserText));
   const forceBasicsFollowUpProposal =
     !diagnosisMode &&
     !fastPathKind &&

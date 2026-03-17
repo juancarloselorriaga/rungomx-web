@@ -1,6 +1,6 @@
 import { getLocationProvider } from '@/lib/location/location-provider';
 import type { EventEditionDetail } from '@/lib/events/queries';
-import type { PublicLocationValue } from '@/types/location';
+import type { LocationValue, PublicLocationValue } from '@/types/location';
 
 export type EventAiWizardLocationResolution =
   | {
@@ -53,6 +53,119 @@ function normalizeText(value: string) {
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
+}
+
+function normalizeWhitespace(value: string | null | undefined) {
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function joinLocationParts(parts: Array<string | null | undefined>) {
+  const seen = new Set<string>();
+  const values: string[] = [];
+
+  for (const part of parts) {
+    const normalized = normalizeWhitespace(part);
+    if (!normalized) continue;
+
+    const key = normalized.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    values.push(normalized);
+  }
+
+  return values.join(', ');
+}
+
+function isCoordinateOnlyText(value: string) {
+  return /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(value.trim());
+}
+
+function isMeaninglessLocationDisplay(value: string | null | undefined) {
+  const normalized = normalizeWhitespace(value).toLocaleLowerCase();
+  if (!normalized) return true;
+  if (isCoordinateOnlyText(normalized)) return true;
+
+  const [firstSegment] = normalized.split(',');
+  return /^(parque|bosque|calle|avenida|av|road|street|st|venue|sede|lugar)$/.test(
+    firstSegment?.trim() ?? '',
+  );
+}
+
+function buildCleanLocationDisplay(
+  location: Pick<LocationValue, 'formattedAddress' | 'name' | 'city' | 'locality' | 'region' | 'country'>,
+  fallbackQuery: string,
+) {
+  const namedDisplay = location.name
+    ? joinLocationParts([
+        location.name,
+        location.city ?? location.locality,
+        location.region,
+        location.country,
+      ])
+    : '';
+
+  if (namedDisplay && !isMeaninglessLocationDisplay(namedDisplay)) {
+    return namedDisplay;
+  }
+
+  if (
+    location.formattedAddress &&
+    !isMeaninglessLocationDisplay(location.formattedAddress)
+  ) {
+    return normalizeWhitespace(location.formattedAddress);
+  }
+
+  return (
+    joinLocationParts([location.city ?? location.locality, location.region, location.country]) ||
+    normalizeWhitespace(fallbackQuery)
+  );
+}
+
+async function enrichMatchedLocation(
+  location: LocationValue,
+  query: string,
+  options: ResolveLocationIntentOptions,
+) {
+  const provider = getLocationProvider();
+  const reverseMatch = await provider
+    .reverseGeocode(location.lat, location.lng, {
+      language: options.locale ?? undefined,
+      country: options.country ?? undefined,
+    })
+    .catch(() => null);
+
+  const merged: LocationValue = {
+    ...reverseMatch,
+    ...location,
+    address: reverseMatch?.address ?? location.address,
+    city: reverseMatch?.city ?? location.city ?? reverseMatch?.locality ?? location.locality,
+    locality: reverseMatch?.locality ?? location.locality,
+    region: reverseMatch?.region ?? location.region,
+    country: reverseMatch?.country ?? location.country,
+    countryCode: reverseMatch?.countryCode ?? location.countryCode,
+    postalCode: reverseMatch?.postalCode ?? location.postalCode,
+    name: location.name ?? reverseMatch?.name,
+    raw: location.raw ?? reverseMatch?.raw,
+  };
+
+  const formattedAddress = buildCleanLocationDisplay(merged, query);
+
+  return {
+    ...merged,
+    formattedAddress,
+    address:
+      normalizeWhitespace(merged.address) ||
+      normalizeWhitespace(reverseMatch?.formattedAddress) ||
+      normalizeWhitespace(location.address) ||
+      formattedAddress,
+    city: normalizeWhitespace(merged.city) || undefined,
+    locality: normalizeWhitespace(merged.locality) || undefined,
+    region: normalizeWhitespace(merged.region) || undefined,
+    country: normalizeWhitespace(merged.country) || undefined,
+    countryCode: normalizeWhitespace(merged.countryCode) || undefined,
+    postalCode: normalizeWhitespace(merged.postalCode) || undefined,
+    name: normalizeWhitespace(merged.name) || undefined,
+  };
 }
 
 function tokenize(value: string) {
@@ -284,7 +397,7 @@ export async function resolveAiWizardLocationIntent(
       return {
         status: 'matched',
         query: candidateQuery,
-        candidate: best.candidate,
+        candidate: await enrichMatchedLocation(best.candidate, normalizedQuery, options),
       };
     }
 
@@ -300,7 +413,7 @@ export async function resolveAiWizardLocationIntent(
       return {
         status: 'matched',
         query: candidateQuery,
-        candidate: best.candidate,
+        candidate: await enrichMatchedLocation(best.candidate, normalizedQuery, options),
       };
     }
 

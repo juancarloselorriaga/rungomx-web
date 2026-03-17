@@ -42,6 +42,60 @@ function buildLocalizedScheduleFact(
   event: Pick<EventEditionDetail, 'startsAt' | 'endsAt' | 'timezone'>,
   locale: string | null | undefined,
 ): string | null {
+  const participantFacingSchedule = buildParticipantFacingScheduleDetails(event, locale);
+  if (!participantFacingSchedule) return null;
+
+  const { dateLabel, startsAtLocal, endsAtLocal } = participantFacingSchedule;
+  if (dateLabel && startsAtLocal && endsAtLocal) {
+    return `${dateLabel} from ${startsAtLocal} to ${endsAtLocal}`;
+  }
+
+  if (dateLabel && startsAtLocal) {
+    return `${dateLabel} at ${startsAtLocal}`;
+  }
+
+  if (dateLabel && endsAtLocal) {
+    return `${dateLabel} at ${endsAtLocal}`;
+  }
+
+  return dateLabel;
+}
+
+function isUtcMidnightDateOnly(value: Date | null | undefined) {
+  return Boolean(
+    value &&
+      value.getUTCHours() === 0 &&
+      value.getUTCMinutes() === 0 &&
+      value.getUTCSeconds() === 0 &&
+      value.getUTCMilliseconds() === 0,
+  );
+}
+
+function resolvePromptLocale(locale: string | null | undefined) {
+  const normalized = locale?.trim();
+  if (!normalized) return 'es-MX';
+
+  const baseLocale = normalized.split('-')[0]?.toLowerCase();
+  if (baseLocale === 'en') return 'en-US';
+  if (baseLocale === 'es') return 'es-MX';
+  return normalized;
+}
+
+function formatDateOnlyFactLabel(value: Date, locale: string | null | undefined) {
+  try {
+    return new Intl.DateTimeFormat(resolvePromptLocale(locale), {
+      dateStyle: 'long',
+      timeZone: 'UTC',
+    }).format(value);
+  } catch {
+    return value.toISOString().slice(0, 10);
+  }
+}
+
+function buildParticipantFacingScheduleDetails(
+  event: Pick<EventEditionDetail, 'startsAt' | 'endsAt' | 'timezone'>,
+  locale: string | null | undefined,
+) {
   const facts = getEventLocalScheduleFacts({
     startsAt: event.startsAt,
     endsAt: event.endsAt,
@@ -50,19 +104,59 @@ function buildLocalizedScheduleFact(
   });
   if (!facts) return null;
 
-  if (facts.dateLabel && facts.startsAtLocal && facts.endsAtLocal) {
-    return `${facts.dateLabel} from ${facts.startsAtLocal} to ${facts.endsAtLocal} (${facts.timeZone})`;
-  }
+  const startsAtIsDateOnly = isUtcMidnightDateOnly(event.startsAt);
+  const endsAtIsDateOnly = isUtcMidnightDateOnly(event.endsAt);
+  const dateOnlySource = startsAtIsDateOnly ? event.startsAt : endsAtIsDateOnly ? event.endsAt : null;
 
-  if (facts.dateLabel && facts.startsAtLocal) {
-    return `${facts.dateLabel} at ${facts.startsAtLocal} (${facts.timeZone})`;
-  }
+  return {
+    dateLabel: dateOnlySource ? formatDateOnlyFactLabel(dateOnlySource, locale) : facts.dateLabel ?? null,
+    startsAtLocal: startsAtIsDateOnly ? null : facts.startsAtLocal ?? null,
+    endsAtLocal: endsAtIsDateOnly ? null : facts.endsAtLocal ?? null,
+  };
+}
 
-  if (facts.dateLabel && facts.endsAtLocal) {
-    return `${facts.dateLabel} at ${facts.endsAtLocal} (${facts.timeZone})`;
-  }
+function isParticipantFacingGroundingContext(
+  context: Pick<EventAiWizardPromptContext, 'activeStepId' | 'fastPathKind'>,
+) {
+  return (
+    context.activeStepId === 'content' ||
+    context.activeStepId === 'review' ||
+    context.fastPathKind === 'event_description' ||
+    context.fastPathKind === 'faq' ||
+    context.fastPathKind === 'content_bundle' ||
+    context.fastPathKind === 'website_overview'
+  );
+}
 
-  return facts.dateLabel;
+function buildHumanReadableLocationFact(
+  event: Pick<EventEditionDetail, 'locationDisplay' | 'address' | 'city' | 'state' | 'country'>,
+): string | null {
+  const preferredLabel = sanitizeAiWizardText(event.locationDisplay ?? '');
+  if (preferredLabel) return preferredLabel;
+
+  const preferredAddress = sanitizeAiWizardText(event.address ?? '');
+  if (preferredAddress) return preferredAddress;
+
+  const fallback = [event.city, event.state, event.country]
+    .map((value) => sanitizeAiWizardText(value ?? ''))
+    .filter(Boolean)
+    .join(', ');
+
+  return fallback || null;
+}
+
+function buildParticipantFacingScheduleSnapshot(
+  event: Pick<EventEditionDetail, 'startsAt' | 'endsAt' | 'timezone'>,
+  locale: string | null | undefined,
+) {
+  const facts = buildParticipantFacingScheduleDetails(event, locale);
+
+  return {
+    summary: buildLocalizedScheduleFact(event, locale),
+    dateLabel: facts?.dateLabel ?? null,
+    startsAtLocal: facts?.startsAtLocal ?? null,
+    endsAtLocal: facts?.endsAtLocal ?? null,
+  };
 }
 
 function describeGroundingRules(
@@ -72,6 +166,7 @@ function describeGroundingRules(
 ): string[] {
   const knownFacts: string[] = [];
   const localizedScheduleFact = buildLocalizedScheduleFact(event, locale);
+  const humanReadableLocation = buildHumanReadableLocationFact(event);
 
   if (localizedScheduleFact) {
     knownFacts.push(`- Participant-facing local schedule is known: ${localizedScheduleFact}.`);
@@ -85,10 +180,8 @@ function describeGroundingRules(
     knownFacts.push(`- Structured event schedule is known: ${scheduleParts.join(', ')}.`);
   }
 
-  if (event.locationDisplay || event.city || event.state) {
-    knownFacts.push(
-      `- Location is known: ${event.locationDisplay ?? [event.city, event.state].filter(Boolean).join(', ')}.`,
-    );
+  if (humanReadableLocation) {
+    knownFacts.push(`- Location is known: ${humanReadableLocation}.`);
   }
 
   if (event.distances.length > 0) {
@@ -123,7 +216,7 @@ function describeGroundingRules(
     ...(event.startsAt || event.endsAt
       ? ['- When startsAt or endsAt are present in the snapshot, treat the event date/time as confirmed. Do not describe it as TBD, pending, or unconfirmed.']
       : []),
-    ...(event.locationDisplay || event.city || event.state || (event.latitude && event.longitude)
+    ...(event.locationDisplay || event.address || event.city || event.state || (event.latitude && event.longitude)
       ? ['- When structured location fields are present in the snapshot, treat the core event location as confirmed. Do not describe it as TBD or unconfirmed, even if separate logistics still need confirmation.']
       : []),
     '- If the organizer gives rough notes, first normalize them into a short list of confirmed facts and constraints, then draft only from those confirmed facts.',
@@ -473,6 +566,7 @@ function buildCompactSnapshot(
   event: EventEditionDetail,
   context: Pick<EventAiWizardPromptContext, 'activeStepId' | 'fastPathKind' | 'locale'>,
 ) {
+  const participantFacingGrounding = isParticipantFacingGroundingContext(context);
   const localSchedule = getEventLocalScheduleFacts({
     startsAt: event.startsAt,
     endsAt: event.endsAt,
@@ -485,19 +579,33 @@ function buildCompactSnapshot(
     editionLabel: event.editionLabel,
     visibility: event.visibility,
     description: event.description,
-    timezone: event.timezone,
-    startsAt: event.startsAt ? event.startsAt.toISOString() : null,
-    endsAt: event.endsAt ? event.endsAt.toISOString() : null,
-    localSchedule,
-    location: {
-      locationDisplay: event.locationDisplay,
-      address: event.address,
-      city: event.city,
-      state: event.state,
-      country: event.country,
-      latitude: event.latitude,
-      longitude: event.longitude,
-    },
+    ...(participantFacingGrounding
+      ? {
+          schedule: buildParticipantFacingScheduleSnapshot(event, context.locale),
+        }
+      : {
+          timezone: event.timezone,
+          startsAt: event.startsAt ? event.startsAt.toISOString() : null,
+          endsAt: event.endsAt ? event.endsAt.toISOString() : null,
+          localSchedule,
+        }),
+    location: participantFacingGrounding
+      ? {
+          label: buildHumanReadableLocationFact(event),
+          address: event.address,
+          city: event.city,
+          state: event.state,
+          country: event.country,
+        }
+      : {
+          locationDisplay: event.locationDisplay,
+          address: event.address,
+          city: event.city,
+          state: event.state,
+          country: event.country,
+          latitude: event.latitude,
+          longitude: event.longitude,
+        },
     distances: event.distances.map((distance) => distance.label),
   };
 
@@ -564,6 +672,8 @@ function describeActiveStep(
         'Active step: Policies and Waivers.',
         '- Focus on participant-facing policy clarity and strong waiver markdown.',
         '- Generate structured, readable markdown that looks polished in the renderer.',
+        '- Treat explicit organizer policy constraints as authoritative, especially eligibility, proof requirements, deadlines, and no-deferral instructions.',
+        '- Default policy language may fill clarity gaps, but it must never override or contradict the organizer\'s explicit rule.',
       ];
     case 'content':
       return [
@@ -604,6 +714,7 @@ export function buildEventAiWizardSystemPrompt(
 ): string {
   const sharedBrief = resolveEventAiWizardSharedBrief(event, context);
   const localizedScheduleFact = buildLocalizedScheduleFact(event, context.locale);
+  const participantFacingGrounding = isParticipantFacingGroundingContext(context);
   const localSchedule = getEventLocalScheduleFacts({
     startsAt: event.startsAt,
     endsAt: event.endsAt,
@@ -621,19 +732,33 @@ export function buildEventAiWizardSystemPrompt(
     editionLabel: event.editionLabel,
     visibility: event.visibility,
     description: event.description,
-    timezone: event.timezone,
-    startsAt: event.startsAt ? event.startsAt.toISOString() : null,
-    endsAt: event.endsAt ? event.endsAt.toISOString() : null,
-    localSchedule,
-    location: {
-      locationDisplay: event.locationDisplay,
-      address: event.address,
-      city: event.city,
-      state: event.state,
-      country: event.country,
-      latitude: event.latitude,
-      longitude: event.longitude,
-    },
+    ...(participantFacingGrounding
+      ? {
+          schedule: buildParticipantFacingScheduleSnapshot(event, context.locale),
+        }
+      : {
+          timezone: event.timezone,
+          startsAt: event.startsAt ? event.startsAt.toISOString() : null,
+          endsAt: event.endsAt ? event.endsAt.toISOString() : null,
+          localSchedule,
+        }),
+    location: participantFacingGrounding
+      ? {
+          label: buildHumanReadableLocationFact(event),
+          address: event.address,
+          city: event.city,
+          state: event.state,
+          country: event.country,
+        }
+      : {
+          locationDisplay: event.locationDisplay,
+          address: event.address,
+          city: event.city,
+          state: event.state,
+          country: event.country,
+          latitude: event.latitude,
+          longitude: event.longitude,
+        },
     registration: {
       opensAt: event.registrationOpensAt ? event.registrationOpensAt.toISOString() : null,
       closesAt: event.registrationClosesAt ? event.registrationClosesAt.toISOString() : null,
@@ -721,6 +846,12 @@ export function buildEventAiWizardSystemPrompt(
         ? ['- Persisted structured location fields mean the core event location is confirmed for this draft. Do not call it unconfirmed or TBD.']
         : []),
       '- If the organizer says not to invent or not to promise something, treat that as a strict omission rule.',
+      ...(context.activeStepId === 'policies' || context.fastPathKind === 'policy'
+        ? [
+            '- In Policies, explicit organizer constraints about eligibility, proof, deadlines, or no-deferral rules are the highest-priority source of truth for the draft.',
+            '- Do not replace explicit organizer policy rules with generic defaults. Use template language only to clarify gaps the organizer did not specify.',
+          ]
+        : []),
       '- Participant-facing markdown should read polished, specific, and renderer-ready, not generic or hypey.',
       ...(fastPathPatchScope.length > 0 ? ['', ...fastPathPatchScope] : []),
       '',

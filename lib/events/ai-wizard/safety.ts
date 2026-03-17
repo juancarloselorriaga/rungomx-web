@@ -29,6 +29,7 @@ const PROMPT_INJECTION_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
 const NEGATED_FACT_FABRICATION_PATTERNS: RegExp[] = [
   /(?:do not|don't|please don't)\s+(?:make up|invent|fabricate|fill in)\b/i,
   /(?:^|[\s,.;:])(no|sin)\s+(?:quiero\s+que\s+)?(?:invent(?:es|ar|en)?|fabric(?:a|ar|an)?|rellen(?:a|ar|en)?)(?:\b|$)/i,
+  /(?:^|[\s,.;:])(?:evita(?:r|ndo)?|para\s+evitar|avoid(?:ing)?)\s+(?:invent(?:ar|ing)?|fabric(?:ar|ating)?|rellen(?:ar)?|mak(?:e|ing)\s+up)(?:\b|$)/i,
 ];
 
 const POLICY_BLOCK_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [

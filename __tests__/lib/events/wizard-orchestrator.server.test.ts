@@ -203,6 +203,97 @@ describe('event wizard orchestrator', () => {
     expect(aggregate.setupStepStateById.review.completed).toBe(false);
   });
 
+  it('blocks publish readiness when the event description still says "Fechas y hora: por confirmar"', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        description: 'Fechas y hora: por confirmar',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+      },
+    );
+
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).toContain(
+      'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+    );
+    expect(aggregate.completionByStepId.publish).toBe(false);
+    expect(aggregate.setupStepStateById.review.completed).toBe(false);
+  });
+
+  it('blocks publish readiness when website overview says "Modalidad y horarios por confirmar"', () => {
+    const websiteContent: WebsiteContentBlocks = {
+      overview: {
+        type: 'overview',
+        enabled: true,
+        content: 'Modalidad y horarios por confirmar',
+      },
+    };
+
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+        hasWebsiteContent: true,
+        websiteContent,
+      },
+    );
+
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).toContain(
+      'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+    );
+    expect(aggregate.completionByStepId.publish).toBe(false);
+    expect(aggregate.setupStepStateById.review.completed).toBe(false);
+  });
+
   it('marks pricing diagnosis as covered when bounded pricing windows already exist', () => {
     const aggregate = buildEventWizardAggregate(
       buildEvent({

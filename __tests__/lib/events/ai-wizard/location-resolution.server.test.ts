@@ -1,10 +1,12 @@
 const mockForwardGeocode = jest.fn();
 const mockSearchPlaces = jest.fn();
+const mockReverseGeocode = jest.fn();
 
 jest.mock('@/lib/location/location-provider', () => ({
   getLocationProvider: () => ({
     forwardGeocode: (...args: unknown[]) => mockForwardGeocode(...args),
     searchPlaces: (...args: unknown[]) => mockSearchPlaces(...args),
+    reverseGeocode: (...args: unknown[]) => mockReverseGeocode(...args),
   }),
 }));
 
@@ -17,6 +19,8 @@ describe('ai wizard location resolution', () => {
   beforeEach(() => {
     mockForwardGeocode.mockReset();
     mockSearchPlaces.mockReset();
+    mockReverseGeocode.mockReset();
+    mockReverseGeocode.mockResolvedValue(null);
   });
 
   it('extracts a location query from explicit basics phrasing', () => {
@@ -58,8 +62,10 @@ describe('ai wizard location resolution', () => {
         lat: 19.4204,
         lng: -99.1819,
         formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        address: 'Bosque de Chapultepec, Ciudad de México, México',
         city: 'Ciudad de México',
         region: 'Ciudad de México',
+        country: 'México',
         countryCode: 'MX',
         placeId: 'chapultepec',
         provider: 'mapbox',
@@ -204,6 +210,119 @@ describe('ai wizard location resolution', () => {
         formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
         lat: 19.4204,
         lng: -99.1819,
+      },
+    });
+  });
+
+  it('keeps Bosque de Chapultepec human-readable and backfills structured hierarchy from reverse geocoding', async () => {
+    mockSearchPlaces.mockResolvedValue([
+      {
+        lat: 19.41666781,
+        lng: -99.18333064,
+        name: 'Bosque de Chapultepec',
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        address: '11580 Ciudad de México, México',
+        city: 'Ciudad de México',
+        country: 'México',
+        countryCode: 'MX',
+        placeId: 'bosque-poi',
+        provider: 'mapbox',
+      },
+    ]);
+    mockForwardGeocode.mockResolvedValue([]);
+    mockReverseGeocode.mockResolvedValue({
+      lat: 19.41666781,
+      lng: -99.18333064,
+      formattedAddress: 'Gran Avenida, 11580 Ciudad de México, México',
+      address: 'Gran Avenida, 11580 Ciudad de México, México',
+      city: 'Ciudad de México',
+      locality: 'Miguel Hidalgo',
+      region: 'Ciudad de México',
+      country: 'México',
+      countryCode: 'MX',
+      postalCode: '11580',
+      placeId: 'bosque-reverse',
+      provider: 'mapbox',
+    });
+
+    await expect(
+      resolveAiWizardLocationIntent('Bosque de Chapultepec', {
+        locale: 'es',
+        country: 'MX',
+      }),
+    ).resolves.toMatchObject({
+      status: 'matched',
+      query: 'Bosque de Chapultepec',
+      candidate: {
+        lat: 19.41666781,
+        lng: -99.18333064,
+        name: 'Bosque de Chapultepec',
+        formattedAddress: 'Bosque de Chapultepec, Ciudad de México, México',
+        address: 'Gran Avenida, 11580 Ciudad de México, México',
+        city: 'Ciudad de México',
+        locality: 'Miguel Hidalgo',
+        region: 'Ciudad de México',
+        country: 'México',
+        countryCode: 'MX',
+        postalCode: '11580',
+        placeId: 'bosque-poi',
+        provider: 'mapbox',
+      },
+    });
+  });
+
+  it('keeps Parque Metropolitano de Guadalajara from degrading into a generic fragment', async () => {
+    mockSearchPlaces.mockResolvedValue([
+      {
+        lat: 20.67046657,
+        lng: -103.43992534,
+        name: 'Parque Metropolitano de Guadalajara',
+        formattedAddress: 'Parque, 45010 Zapopan, México',
+        address: 'Calz. Circunvalacion Ote. 381, 45010 Zapopan, México',
+        city: 'Zapopan',
+        country: 'México',
+        countryCode: 'MX',
+        placeId: 'parque-poi',
+        provider: 'mapbox',
+      },
+    ]);
+    mockForwardGeocode.mockResolvedValue([]);
+    mockReverseGeocode.mockResolvedValue({
+      lat: 20.67046657,
+      lng: -103.43992534,
+      formattedAddress: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+      address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+      city: 'Zapopan',
+      region: 'Jalisco',
+      country: 'México',
+      countryCode: 'MX',
+      postalCode: '45010',
+      placeId: 'parque-reverse',
+      provider: 'mapbox',
+    });
+
+    await expect(
+      resolveAiWizardLocationIntent('Parque Metropolitano de Guadalajara', {
+        locale: 'es',
+        country: 'MX',
+      }),
+    ).resolves.toMatchObject({
+      status: 'matched',
+      query: 'Parque Metropolitano de Guadalajara',
+      candidate: {
+        lat: 20.67046657,
+        lng: -103.43992534,
+        name: 'Parque Metropolitano de Guadalajara',
+        formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+        address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+        city: 'Zapopan',
+        locality: undefined,
+        region: 'Jalisco',
+        country: 'México',
+        countryCode: 'MX',
+        postalCode: '45010',
+        placeId: 'parque-poi',
+        provider: 'mapbox',
       },
     });
   });

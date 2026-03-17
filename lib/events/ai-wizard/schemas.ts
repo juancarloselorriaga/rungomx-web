@@ -40,6 +40,7 @@ export const eventAiWizardUpdateEditionOpSchema = z
         endsAt: z.string().nullable().optional(),
         city: z.string().max(100).nullable().optional(),
         state: z.string().max(100).nullable().optional(),
+        country: z.string().max(100).nullable().optional(),
         locationDisplay: z.string().max(255).nullable().optional(),
         address: z.string().max(500).nullable().optional(),
         latitude: z.string().nullable().optional(),
@@ -328,11 +329,15 @@ export type EventAiWizardMarkdownOutput = z.infer<typeof eventAiWizardMarkdownOu
 const eventAiWizardResolvedLocationSchema = z
   .object({
     formattedAddress: z.string().min(1).max(500),
+    name: z.string().max(255).optional(),
+    address: z.string().max(500).optional(),
     lat: z.number(),
     lng: z.number(),
     city: z.string().max(120).optional(),
+    locality: z.string().max(120).optional(),
     region: z.string().max(120).optional(),
     countryCode: z.string().max(8).optional(),
+    country: z.string().max(120).optional(),
     placeId: z.string().max(1024).optional(),
     provider: z.string().max(40).optional(),
   })

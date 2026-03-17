@@ -459,6 +459,7 @@ export async function POST(req: Request) {
         endsAt,
         city: data.city,
         state: data.state,
+        country: data.country,
         locationDisplay: data.locationDisplay,
         address: data.address,
         latitude: data.latitude,

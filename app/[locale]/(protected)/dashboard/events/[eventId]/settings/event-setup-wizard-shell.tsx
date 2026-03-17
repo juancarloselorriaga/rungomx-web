@@ -192,6 +192,9 @@ export function EventSetupWizardShell({
   const activeStep = steps[activeStepIndex] ?? steps[0];
   const publishBlockerCount = reviewBlockers.filter((issue) => issue.kind === 'publish').length;
   const setupBlockerCount = reviewBlockers.filter((issue) => issue.kind === 'required').length;
+  const hasReviewRecommendations = reviewRecommendations.length > 0;
+  const reviewState =
+    reviewBlockers.length > 0 ? 'blocked' : hasReviewRecommendations ? 'reviewRecommended' : 'ready';
   const totalCompletedSteps = steps.filter((step) => step.completed).length;
   const canGoBack = activeStepIndex > 0;
   const isCurrentSatisfied = activeStep.completed || sanitizedSkippedStepIds.includes(activeStep.id);
@@ -531,9 +534,11 @@ export function EventSetupWizardShell({
                 <div
                   className={cn(
                     'rounded-[28px] border p-6 shadow-sm',
-                    reviewBlockers.length === 0
+                    reviewState === 'ready'
                       ? 'border-emerald-500/35 bg-emerald-500/12'
-                      : 'border-destructive/20 bg-destructive/5',
+                      : reviewState === 'reviewRecommended'
+                        ? 'border-amber-400/45 bg-amber-500/10'
+                        : 'border-destructive/20 bg-destructive/5',
                   )}
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -542,17 +547,23 @@ export function EventSetupWizardShell({
                         {t('wizardShell.review.finishLineLabel')}
                       </p>
                       <h2 className="mt-3 text-2xl font-semibold text-foreground">
-                        {reviewBlockers.length === 0
+                        {reviewState === 'ready'
                           ? t('wizardShell.review.readyTitle')
-                          : t('wizardShell.review.blockedTitle')}
+                          : reviewState === 'reviewRecommended'
+                            ? t('wizardShell.review.reviewRecommendedTitle')
+                            : t('wizardShell.review.blockedTitle')}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {reviewBlockers.length === 0
+                        {reviewState === 'ready'
                           ? t('wizardShell.review.readyDescription')
-                          : t('wizardShell.review.blockedDescription', {
-                              publish: publishBlockerCount,
-                              required: setupBlockerCount,
-                            })}
+                          : reviewState === 'reviewRecommended'
+                            ? t('wizardShell.review.reviewRecommendedDescription', {
+                                count: reviewRecommendations.length,
+                              })
+                            : t('wizardShell.review.blockedDescription', {
+                                publish: publishBlockerCount,
+                                required: setupBlockerCount,
+                              })}
                       </p>
                       <p className="mt-3 text-xs leading-5 text-muted-foreground">
                         {t('wizardShell.review.serverAuthority')}
@@ -608,8 +619,17 @@ export function EventSetupWizardShell({
                     </p>
                     <div className="mt-4 space-y-3">
                       {reviewBlockers.length === 0 ? (
-                        <div className="rounded-2xl border border-emerald-500/35 bg-emerald-500/12 p-4 text-sm text-emerald-100">
-                          {t('wizardShell.review.noBlockers')}
+                        <div
+                          className={cn(
+                            'rounded-2xl border p-4 text-sm',
+                            reviewState === 'ready'
+                              ? 'border-emerald-500/35 bg-emerald-500/12 text-emerald-100'
+                              : 'border-amber-400/45 bg-amber-500/10 text-amber-950',
+                          )}
+                        >
+                          {reviewState === 'ready'
+                            ? t('wizardShell.review.noBlockers')
+                            : t('wizardShell.review.noRequiredBlockers')}
                         </div>
                       ) : (
                         reviewBlockers.map((issue) => (
