@@ -76,6 +76,24 @@ type EventSettingsFormProps = {
   surface?: EventSettingsSurface;
 };
 
+type EventSettingsDetailsFormValues = {
+  editionLabel: string;
+  slug: string;
+  description: string;
+  timezone: string;
+  startsAt: string;
+  endsAt: string;
+  city: string;
+  state: string;
+  locationDisplay: string;
+  address: string;
+  latitude: string;
+  longitude: string;
+  externalUrl: string;
+  registrationOpensAt: string;
+  registrationClosesAt: string;
+};
+
 type VisibilityType = 'draft' | 'published' | 'unlisted' | 'archived';
 type SlugStatus = 'idle' | 'checking' | 'available' | 'taken' | 'error';
 
@@ -94,6 +112,39 @@ const visibilityStyles: Record<VisibilityType, string> = {
   unlisted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
   archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
+
+export function buildEventEditionPayload({
+  editionId,
+  surface,
+  values,
+}: {
+  editionId: string;
+  surface: EventSettingsSurface;
+  values: EventSettingsDetailsFormValues;
+}) {
+  return {
+    editionId,
+    editionLabel: values.editionLabel || undefined,
+    slug: values.slug || undefined,
+    description: values.description.trim() || null,
+    timezone: values.timezone || undefined,
+    ...(surface === 'wizard-registration'
+      ? {}
+      : {
+          startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : null,
+          endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+        }),
+    city: values.city || null,
+    state: values.state || null,
+    locationDisplay: values.locationDisplay || null,
+    address: values.address || null,
+    latitude: values.latitude || null,
+    longitude: values.longitude || null,
+    externalUrl: values.externalUrl || null,
+    registrationOpensAt: values.registrationOpensAt ? new Date(values.registrationOpensAt).toISOString() : null,
+    registrationClosesAt: values.registrationClosesAt ? new Date(values.registrationClosesAt).toISOString() : null,
+  };
+}
 
 export function EventSettingsForm({
   event,
@@ -138,23 +189,7 @@ export function EventSettingsForm({
   const editorFocusStorageKey = `event-ai-wizard:editor-focus:${event.id}`;
 
   // Event details form
-  const detailsForm = useForm<{
-    editionLabel: string;
-    slug: string;
-    description: string;
-    timezone: string;
-    startsAt: string;
-    endsAt: string;
-    city: string;
-    state: string;
-    locationDisplay: string;
-    address: string;
-    latitude: string;
-    longitude: string;
-    externalUrl: string;
-    registrationOpensAt: string;
-    registrationClosesAt: string;
-  }>({
+  const detailsForm = useForm<EventSettingsDetailsFormValues>({
     defaultValues: {
       editionLabel: event.editionLabel,
       slug: event.slug,
@@ -177,24 +212,13 @@ export function EventSettingsForm({
         return { ok: false, error: 'VALIDATION_ERROR', message: tSlug('slugStatus.taken') };
       }
 
-      const result = await updateEventEdition({
-        editionId: event.id,
-        editionLabel: values.editionLabel || undefined,
-        slug: values.slug || undefined,
-        description: values.description.trim() || null,
-        timezone: values.timezone || undefined,
-        startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : null,
-        endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
-        city: values.city || null,
-        state: values.state || null,
-        locationDisplay: values.locationDisplay || null,
-        address: values.address || null,
-        latitude: values.latitude || null,
-        longitude: values.longitude || null,
-        externalUrl: values.externalUrl || null,
-        registrationOpensAt: values.registrationOpensAt ? new Date(values.registrationOpensAt).toISOString() : null,
-        registrationClosesAt: values.registrationClosesAt ? new Date(values.registrationClosesAt).toISOString() : null,
-      });
+      const result = await updateEventEdition(
+        buildEventEditionPayload({
+          editionId: event.id,
+          surface,
+          values,
+        }),
+      );
 
       if (!result.ok) {
         return { ok: false, error: 'SERVER_ERROR', message: result.error };
