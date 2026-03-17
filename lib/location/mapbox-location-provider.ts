@@ -24,13 +24,14 @@ type MapboxFeature = {
     feature_type?: string;
     // Context/hierarchy
     country_code?: string;
+    country?: string;
     region?: string;
     place?: string;
     city?: string;
     postcode?: string;
     locality?: string;
     neighborhood?: string;
-    context?: Record<string, unknown>;
+    context?: MapboxContext;
   } & Record<string, unknown>;
 };
 
@@ -38,12 +39,34 @@ type MapboxGeocodeResponse = {
   features?: MapboxFeature[];
 };
 
+type MapboxContextEntry = {
+  id?: string;
+  name?: string;
+  address_number?: string;
+  street_name?: string;
+  country_code?: string;
+  region_code?: string;
+  region_code_full?: string;
+} & Record<string, unknown>;
+
+type MapboxContext = {
+  address?: MapboxContextEntry;
+  street?: MapboxContextEntry;
+  postcode?: MapboxContextEntry;
+  neighborhood?: MapboxContextEntry;
+  locality?: MapboxContextEntry;
+  place?: MapboxContextEntry;
+  region?: MapboxContextEntry;
+  country?: MapboxContextEntry;
+} & Record<string, unknown>;
+
 type MapboxSearchBoxSuggestSuggestion = {
   name?: string;
   mapbox_id?: string;
   full_address?: string;
   place_formatted?: string;
   country_code?: string;
+  address?: string;
   coordinates?: {
     latitude?: number;
     longitude?: number;
@@ -64,6 +87,14 @@ type MapboxSearchBoxSuggestSuggestion = {
       name?: string;
     };
     postcode?: {
+      name?: string;
+    };
+    address?: {
+      name?: string;
+      address_number?: string;
+      street_name?: string;
+    };
+    street?: {
       name?: string;
     };
   };
@@ -180,43 +211,211 @@ function buildReverseUrl(lat: number, lng: number, options?: ReverseGeocodeOptio
   return url;
 }
 
+function normalizeWhitespace(value: string | undefined | null) {
+  return value?.replace(/\s+/g, ' ').trim() ?? '';
+}
+
+function joinLocationParts(parts: Array<string | undefined | null>) {
+  const seen = new Set<string>();
+  const values: string[] = [];
+
+  for (const part of parts) {
+    const normalized = normalizeWhitespace(part);
+    if (!normalized) continue;
+
+    const key = normalized.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    values.push(normalized);
+  }
+
+  return values.join(', ');
+}
+
+function isCoordinateLike(value: string) {
+  return /^-?\d+(?:\.\d+)?\s*,\s*-?\d+(?:\.\d+)?$/.test(value.trim());
+}
+
+function isMeaninglessDisplayLabel(value: string) {
+  const normalized = normalizeWhitespace(value).toLocaleLowerCase();
+  if (!normalized) return true;
+  if (isCoordinateLike(normalized)) return true;
+
+  const commaFree = normalized.replace(/,/g, ' ').trim();
+  if (!commaFree) return true;
+
+  if (!commaFree.includes(' ')) {
+    return /^(parque|bosque|calle|avenida|av|road|street|st|venue|sede|lugar)$/.test(commaFree);
+  }
+
+  const [firstSegment] = normalized.split(',');
+  return /^(parque|bosque|calle|avenida|av|road|street|st)$/.test(firstSegment?.trim() ?? '');
+}
+
+function getContextName(context: MapboxContext | undefined, key: keyof MapboxContext) {
+  const entry = context?.[key];
+  if (!entry || typeof entry !== 'object' || !('name' in entry)) {
+    return '';
+  }
+
+  return normalizeWhitespace(
+    typeof entry.name === 'string' ? entry.name : undefined,
+  );
+}
+
+function getContextCountryCode(context: MapboxContext | undefined) {
+  return normalizeWhitespace(context?.country?.country_code);
+}
+
+function normalizeCountryCodeValue(value: string | undefined | null) {
+  const normalized = normalizeWhitespace(value).toUpperCase();
+  return /^[A-Z]{2}$/.test(normalized) ? normalized : '';
+}
+
+function buildStreetAddress(
+  directAddress: string | undefined,
+  addressContext: MapboxContextEntry | undefined,
+) {
+  const direct = normalizeWhitespace(directAddress);
+  if (direct) return direct;
+
+  const contextName = normalizeWhitespace(addressContext?.name);
+  if (contextName) return contextName;
+
+  const streetName = normalizeWhitespace(addressContext?.street_name);
+  const addressNumber = normalizeWhitespace(addressContext?.address_number);
+  return joinLocationParts([streetName, addressNumber]).replace(', ', ' ').trim();
+}
+
+function buildAddressValue(options: {
+  streetAddress?: string;
+  fullAddress?: string;
+  postalCode?: string;
+  city?: string;
+  locality?: string;
+  region?: string;
+  country?: string;
+}) {
+  const streetAddress = normalizeWhitespace(options.streetAddress);
+  const fullAddress = normalizeWhitespace(options.fullAddress);
+  const city = normalizeWhitespace(options.city);
+  const locality = normalizeWhitespace(options.locality);
+  const region = normalizeWhitespace(options.region);
+  const country = normalizeWhitespace(options.country);
+  const postalCode = normalizeWhitespace(options.postalCode);
+  const cityOrLocality = city || locality;
+
+  if (fullAddress) {
+    const normalizedFullAddress = fullAddress.toLocaleLowerCase();
+    const hierarchy = [postalCode, cityOrLocality, region, country].filter(Boolean);
+    const containsHierarchy = hierarchy.some((part) =>
+      normalizedFullAddress.includes(part.toLocaleLowerCase()),
+    );
+
+    if (!streetAddress || fullAddress.includes(',') || containsHierarchy) {
+      return fullAddress;
+    }
+  }
+
+  return (
+    joinLocationParts([streetAddress, postalCode, cityOrLocality, region, country]) || fullAddress
+  );
+}
+
+function buildPoiDisplayLabel(options: {
+  name?: string;
+  city?: string;
+  locality?: string;
+  region?: string;
+  country?: string;
+  fallback?: string;
+}) {
+  const name = normalizeWhitespace(options.name);
+  const city = normalizeWhitespace(options.city);
+  const locality = normalizeWhitespace(options.locality);
+  const region = normalizeWhitespace(options.region);
+  const country = normalizeWhitespace(options.country);
+  const fallback = normalizeWhitespace(options.fallback);
+
+  const display = joinLocationParts([name, city || locality, region, country]);
+  if (display && !isMeaninglessDisplayLabel(display)) {
+    return display;
+  }
+
+  if (fallback && !isMeaninglessDisplayLabel(fallback)) {
+    return fallback;
+  }
+
+  return display || fallback;
+}
+
 function normalizeFeature(feature: MapboxFeature): LocationValue | null {
   const coordinates = feature.geometry?.coordinates;
   if (!coordinates || coordinates.length < 2) return null;
 
   const [lng, lat] = coordinates;
   const properties = feature.properties ?? {};
+  const context = properties.context;
+  const featureType = normalizeWhitespace(properties.feature_type as string | undefined);
 
-  // v6 API: For address types, 'name' contains street+number, 'place_formatted' has the rest
-  // We need to combine them for a complete address
-  const name = properties.name as string | undefined;
-  const placeFormatted = properties.place_formatted as string | undefined;
-  const fullAddress = properties.full_address as string | undefined;
+  const name = normalizeWhitespace(
+    (properties.name_preferred as string | undefined) ?? (properties.name as string | undefined),
+  );
+  const placeFormatted = normalizeWhitespace(properties.place_formatted as string | undefined);
+  const fullAddress = normalizeWhitespace(properties.full_address as string | undefined);
+  const postalCode =
+    normalizeWhitespace(properties.postcode as string | undefined) || getContextName(context, 'postcode');
+  const locality =
+    normalizeWhitespace(properties.locality as string | undefined) || getContextName(context, 'locality');
+  const city =
+    normalizeWhitespace(properties.city as string | undefined) ||
+    normalizeWhitespace(properties.place as string | undefined) ||
+    getContextName(context, 'place') ||
+    locality;
+  const region =
+    normalizeWhitespace(properties.region as string | undefined) ||
+    normalizeWhitespace(properties.state as string | undefined) ||
+    getContextName(context, 'region');
+  const country = getContextName(context, 'country') || normalizeWhitespace(properties.country as string | undefined);
+  const streetAddress = buildStreetAddress(
+    properties.address as string | undefined,
+    context?.address,
+  );
+  const address = buildAddressValue({
+    streetAddress,
+    fullAddress,
+    postalCode,
+    city,
+    locality,
+    region,
+    country,
+  });
 
-  let formattedAddress = '';
-  if (fullAddress) {
-    // full_address is the most complete
-    formattedAddress = fullAddress;
-  } else if (name && placeFormatted) {
-    // Combine name (street + number) with place_formatted (city, region, country)
-    formattedAddress = `${name}, ${placeFormatted}`;
-  } else {
-    formattedAddress = placeFormatted ?? name ?? '';
-  }
+  const fallbackFormattedAddress =
+    fullAddress ||
+    (name && placeFormatted
+      ? `${name}, ${placeFormatted}`
+      : placeFormatted || name || joinLocationParts([city || locality, region, country]));
+  const formattedAddress =
+    featureType === 'poi'
+      ? buildPoiDisplayLabel({
+          name,
+          city,
+          locality,
+          region,
+          country,
+          fallback: fullAddress || joinLocationParts([name, placeFormatted, country]),
+        })
+      : fallbackFormattedAddress;
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || !formattedAddress) {
     return null;
   }
 
   const countryCode =
-    (properties.country_code as string | undefined) ?? (properties.country as string | undefined);
-
-  const city = (properties.city as string | undefined) ?? (properties.place as string | undefined);
-
-  const region =
-    (properties.region as string | undefined) ?? (properties.state as string | undefined);
-
-  const postalCode = properties.postcode as string | undefined;
+    normalizeCountryCodeValue(properties.country_code as string | undefined) ||
+    normalizeCountryCodeValue(getContextCountryCode(context)) ||
+    normalizeCountryCodeValue(properties.country as string | undefined);
 
   const placeId = (properties.mapbox_id as string | undefined) ?? feature.id;
 
@@ -224,10 +423,14 @@ function normalizeFeature(feature: MapboxFeature): LocationValue | null {
     lat,
     lng,
     formattedAddress,
+    name: name || undefined,
+    address: address || fallbackFormattedAddress || undefined,
     placeId: placeId || undefined,
     countryCode: countryCode || undefined,
+    country: country || undefined,
     region: region || undefined,
     city: city || undefined,
+    locality: locality || undefined,
     postalCode: postalCode || undefined,
     provider: 'mapbox',
     raw: feature,
@@ -237,9 +440,37 @@ function normalizeFeature(feature: MapboxFeature): LocationValue | null {
 function normalizeSearchBoxSuggestion(suggestion: MapboxSearchBoxSuggestSuggestion): LocationValue | null {
   const lat = suggestion.coordinates?.latitude ?? suggestion.center?.[1];
   const lng = suggestion.coordinates?.longitude ?? suggestion.center?.[0];
-  const formattedAddress =
-    suggestion.full_address ??
-    [suggestion.name, suggestion.place_formatted].filter(Boolean).join(', ');
+  const name = normalizeWhitespace(suggestion.name);
+  const locality = normalizeWhitespace(suggestion.context?.locality?.name);
+  const city = normalizeWhitespace(suggestion.context?.place?.name) || locality;
+  const region = normalizeWhitespace(suggestion.context?.region?.name);
+  const country = normalizeWhitespace(suggestion.context?.country?.name);
+  const postalCode = normalizeWhitespace(suggestion.context?.postcode?.name);
+  const streetAddress =
+    normalizeWhitespace(suggestion.address) ||
+    buildStreetAddress(undefined, {
+      ...suggestion.context?.address,
+      name: suggestion.context?.address?.name,
+    });
+  const address = buildAddressValue({
+    streetAddress,
+    fullAddress: suggestion.full_address,
+    postalCode,
+    city,
+    locality,
+    region,
+    country,
+  });
+  const formattedAddress = buildPoiDisplayLabel({
+    name,
+    city,
+    locality,
+    region,
+    country,
+    fallback:
+      normalizeWhitespace(suggestion.full_address) ||
+      joinLocationParts([name, suggestion.place_formatted, country]),
+  });
 
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || !formattedAddress) {
     return null;
@@ -252,16 +483,42 @@ function normalizeSearchBoxSuggestion(suggestion: MapboxSearchBoxSuggestSuggesti
     lat: safeLat,
     lng: safeLng,
     formattedAddress,
+    name: name || undefined,
+    address: address || undefined,
     placeId: suggestion.mapbox_id || undefined,
     countryCode:
-      suggestion.country_code ??
-      suggestion.context?.country?.country_code ??
+      normalizeCountryCodeValue(suggestion.country_code) ||
+      normalizeCountryCodeValue(suggestion.context?.country?.country_code) ||
       undefined,
-    region: suggestion.context?.region?.name ?? undefined,
-    city: suggestion.context?.place?.name ?? suggestion.context?.locality?.name ?? undefined,
-    postalCode: suggestion.context?.postcode?.name ?? undefined,
+    country: country || undefined,
+    region: region || undefined,
+    city: city || undefined,
+    locality: locality || undefined,
+    postalCode: postalCode || undefined,
     provider: 'mapbox',
     raw: suggestion,
+  };
+}
+
+function mergeLocations(primary: LocationValue, fallback: LocationValue | null): LocationValue {
+  if (!fallback) return primary;
+
+  return {
+    ...fallback,
+    ...primary,
+    formattedAddress:
+      !isMeaninglessDisplayLabel(primary.formattedAddress) && primary.formattedAddress
+        ? primary.formattedAddress
+        : fallback.formattedAddress,
+    address: primary.address ?? fallback.address,
+    city: primary.city ?? fallback.city,
+    locality: primary.locality ?? fallback.locality,
+    region: primary.region ?? fallback.region,
+    country: primary.country ?? fallback.country,
+    countryCode: primary.countryCode ?? fallback.countryCode,
+    postalCode: primary.postalCode ?? fallback.postalCode,
+    name: primary.name ?? fallback.name,
+    raw: primary.raw ?? fallback.raw,
   };
 }
 
@@ -334,8 +591,9 @@ export const mapboxLocationProvider: LocationProvider = {
     const suggestions = data.suggestions ?? [];
     const retrievedLocations = await Promise.all(
       suggestions.map(async (suggestion) => {
+        const suggestionLocation = normalizeSearchBoxSuggestion(suggestion);
         if (!suggestion.mapbox_id) {
-          return normalizeSearchBoxSuggestion(suggestion);
+          return suggestionLocation;
         }
 
         try {
@@ -346,9 +604,14 @@ export const mapboxLocationProvider: LocationProvider = {
           );
           const retrieved = await fetchSearchBoxRetrieve(retrieveUrl);
           const feature = retrieved.features?.[0];
-          return feature ? normalizeFeature(feature) : normalizeSearchBoxSuggestion(suggestion);
+          if (!feature) {
+            return suggestionLocation;
+          }
+
+          const featureLocation = normalizeFeature(feature);
+          return featureLocation ? mergeLocations(featureLocation, suggestionLocation) : suggestionLocation;
         } catch {
-          return normalizeSearchBoxSuggestion(suggestion);
+          return suggestionLocation;
         }
       }),
     );
