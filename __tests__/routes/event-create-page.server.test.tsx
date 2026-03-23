@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import CreateEventPage from '@/app/[locale]/(protected)/dashboard/events/new/page';
+import CreateEventPage from '@/app/[locale]/(protected-fullscreen)/dashboard/events/new/page';
 import { getAuthContext } from '@/lib/auth/server';
 import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { getOrganizationEventSeries } from '@/lib/events/queries';
@@ -9,7 +9,7 @@ import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 
 const mockCreateEventForm = jest.fn((_props?: unknown) => null);
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/new/create-event-form', () => ({
+jest.mock('@/app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form', () => ({
   CreateEventForm: (props: unknown) => mockCreateEventForm(props),
 }));
 

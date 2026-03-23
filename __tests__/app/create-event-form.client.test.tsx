@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import { CreateEventForm } from '@/app/[locale]/(protected)/dashboard/events/new/create-event-form';
+import { CreateEventForm } from '@/app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form';
 
 const mockPush = jest.fn();
 const mockCreateOrganization = jest.fn();
