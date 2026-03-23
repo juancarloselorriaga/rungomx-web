@@ -94,6 +94,71 @@ describe('ai wizard patch schema', () => {
     expect(parsed.success).toBe(false);
   });
 
+  it('drops ambiguous clock-only start times from distance ops', () => {
+    const parsed = eventAiWizardPatchSchema.safeParse({
+      title: 'Create first distance',
+      summary: 'Add the first published distance proposal.',
+      ops: [
+        {
+          type: 'create_distance',
+          editionId: EDITION_ID,
+          data: {
+            label: '10K',
+            distanceValue: 10,
+            distanceUnit: 'km',
+            startTimeLocal: '7:00 a.m.',
+            price: 350,
+          },
+        },
+      ],
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+
+    expect(JSON.stringify(parsed.data)).not.toContain('startTimeLocal');
+    expect(parsed.data.ops[0]).toMatchObject({
+      type: 'create_distance',
+      data: {
+        label: '10K',
+        distanceValue: 10,
+        distanceUnit: 'km',
+        price: 350,
+      },
+    });
+  });
+
+  it('preserves valid machine-usable distance start times', () => {
+    const parsed = eventAiWizardPatchSchema.safeParse({
+      title: 'Create first distance',
+      summary: 'Add the first published distance proposal.',
+      ops: [
+        {
+          type: 'create_distance',
+          editionId: EDITION_ID,
+          data: {
+            label: '21K',
+            distanceValue: 21,
+            distanceUnit: 'km',
+            startTimeLocal: '2026-03-29T13:00:00.000Z',
+            price: 550,
+          },
+        },
+      ],
+    });
+
+    expect(parsed.success).toBe(true);
+    if (!parsed.success) return;
+
+    expect(parsed.data.ops[0]).toMatchObject({
+      type: 'create_distance',
+      data: {
+        label: '21K',
+        startTimeLocal: '2026-03-29T13:00:00.000Z',
+      },
+    });
+  });
+
   it('rejects invalid step ids in intent routing payloads', () => {
     const parsed = eventAiWizardPatchSchema.safeParse({
       title: 'Invalid step route',

@@ -67,7 +67,7 @@ jest.mock('next/headers', () => ({
 }));
 
 import { POST } from '@/app/api/events/ai-wizard/apply/route';
-import { createFaqItem, updateEventEdition, updateEventPolicyConfig } from '@/lib/events/actions';
+import { createDistance, createFaqItem, updateEventEdition, updateEventPolicyConfig } from '@/lib/events/actions';
 import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
 
 describe('POST /api/events/ai-wizard/apply', () => {
@@ -76,6 +76,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockRequireProFeature.mockReset();
     mockGetEventEditionDetail.mockReset();
     mockCanUserAccessSeries.mockReset();
+    (createDistance as jest.Mock).mockReset();
     (createFaqItem as jest.Mock).mockReset();
     (updateEventEdition as jest.Mock).mockReset();
     (updateEventPolicyConfig as jest.Mock).mockReset();
@@ -88,6 +89,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     });
     mockHeaders.mockResolvedValue(new Headers());
     mockRequireProFeature.mockResolvedValue(undefined);
+    (createDistance as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'distance-1' } });
     (createFaqItem as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'faq-1' } });
     (updateEventEdition as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'edition-1' } });
     (getWebsiteContent as jest.Mock).mockResolvedValue({
@@ -112,6 +114,147 @@ describe('POST /api/events/ai-wizard/apply', () => {
       waivers: [],
       distances: [],
     });
+  });
+
+  it('drops ambiguous human-readable distance start times instead of failing apply', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Crear la primera distancia',
+            summary: 'Agrega la primera distancia sin inventar un horario inválido.',
+            ops: [
+              {
+                type: 'create_distance',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  label: '10K',
+                  distanceValue: 10,
+                  distanceUnit: 'km',
+                  startTimeLocal: '7:00 a.m.',
+                  price: 350,
+                },
+              },
+            ],
+            markdownOutputs: [],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ok: true,
+      applied: [
+        {
+          opIndex: 0,
+          type: 'create_distance',
+          result: { id: 'distance-1' },
+        },
+      ],
+    });
+    expect(createDistance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        editionId: '11111111-1111-4111-8111-111111111111',
+        label: '10K',
+        startTimeLocal: undefined,
+      }),
+    );
+  });
+
+  it('still applies distance patches with no start time', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Crear la primera distancia',
+            summary: 'Agrega la primera distancia con los datos confirmados.',
+            ops: [
+              {
+                type: 'create_distance',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  label: '5K',
+                  distanceValue: 5,
+                  distanceUnit: 'km',
+                  price: 250,
+                },
+              },
+            ],
+            markdownOutputs: [],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createDistance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        editionId: '11111111-1111-4111-8111-111111111111',
+        label: '5K',
+        startTimeLocal: undefined,
+      }),
+    );
+  });
+
+  it('preserves valid machine-usable distance start times through apply', async () => {
+    mockCanUserAccessSeries.mockResolvedValue({
+      organizationId: 'org-1',
+      role: 'owner',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Crear la primera distancia',
+            summary: 'Agrega la primera distancia con un horario válido.',
+            ops: [
+              {
+                type: 'create_distance',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  label: '21K',
+                  distanceValue: 21,
+                  distanceUnit: 'km',
+                  startTimeLocal: '2026-03-29T13:00:00.000Z',
+                  price: 550,
+                },
+              },
+            ],
+            markdownOutputs: [],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(createDistance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        editionId: '11111111-1111-4111-8111-111111111111',
+        label: '21K',
+        startTimeLocal: '2026-03-29T13:00:00.000Z',
+      }),
+    );
   });
 
   it('returns READ_ONLY for viewer memberships before applying assistant changes', async () => {

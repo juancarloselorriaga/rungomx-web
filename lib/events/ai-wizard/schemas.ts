@@ -19,9 +19,20 @@ const addOnTypeSchema = z.enum(['merch', 'donation']);
 const addOnDeliveryMethodSchema = z.enum(['pickup', 'shipping', 'none']);
 const websiteSectionSchema = z.enum(['overview', 'course', 'schedule']);
 const policyKindSchema = z.enum(['refund', 'transfer', 'deferral']);
+const ambiguousClockOnlyTimePattern = /^\d{1,2}(?::\d{2})?\s*(?:a\.?\s*m\.?|p\.?\s*m\.?)$/i;
 
 function hasPrice(data: { priceCents?: number; price?: number }): boolean {
   return data.priceCents !== undefined || data.price !== undefined;
+}
+
+function sanitizeAssistantDistanceStartTimeLocal(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (ambiguousClockOnlyTimePattern.test(trimmed)) return undefined;
+
+  return trimmed;
 }
 
 // Keep schemas strict and allowlisted. Unknown keys must fail validation.
@@ -63,7 +74,10 @@ export const eventAiWizardCreateDistanceOpSchema = z
         distanceValue: z.number().positive().optional(),
         distanceUnit: z.enum(['km', 'mi']).optional(),
         kind: z.enum(['distance', 'timed']).optional(),
-        startTimeLocal: z.string().nullable().optional(),
+        startTimeLocal: z.preprocess(
+          sanitizeAssistantDistanceStartTimeLocal,
+          z.string().nullable().optional(),
+        ),
         timeLimitMinutes: z.number().int().positive().nullable().optional(),
         terrain: z.enum(['road', 'trail', 'mixed']).nullable().optional(),
         isVirtual: z.boolean().optional(),
