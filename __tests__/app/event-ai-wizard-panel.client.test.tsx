@@ -2052,6 +2052,7 @@ describe('EventAiWizardPanel', () => {
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('applied');
     });
+    expect(mockSetAssistantOpen).not.toHaveBeenCalled();
     expect(mockRefresh).toHaveBeenCalled();
     expect(screen.getByText('Changes already applied')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'See them in the editor' }));
@@ -2172,7 +2173,7 @@ describe('EventAiWizardPanel', () => {
     expect(mockRefresh).not.toHaveBeenCalled();
   });
 
-  it('shows a localized invalid-patch message when the visible Apply UI fails validation', async () => {
+  it('closes the assistant workspace after an apply failure while keeping the error visible', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       json: async () => ({ code: 'INVALID_PATCH', applied: [] }),
@@ -2221,5 +2222,7 @@ describe('EventAiWizardPanel', () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('errors.invalid');
     });
+    expect(mockSetAssistantOpen).toHaveBeenCalledWith(false);
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 });

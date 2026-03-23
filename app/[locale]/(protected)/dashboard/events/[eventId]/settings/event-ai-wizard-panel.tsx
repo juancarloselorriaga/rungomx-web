@@ -1155,6 +1155,7 @@ function PatchCard({
   activeStepId,
   applied,
   onApplied,
+  onApplyFailure,
   onRevealEditor,
   onNavigateToStep,
   onRequestManualClarification,
@@ -1166,6 +1167,7 @@ function PatchCard({
   activeStepId: EventAiAssistantStepId;
   applied: boolean;
   onApplied: (appliedState: EventAiWizardAppliedState) => void;
+  onApplyFailure?: () => void;
   onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
   onNavigateToStep: (stepId: EventAiAssistantStepId) => void;
   onRequestManualClarification: (query: string) => void;
@@ -1187,6 +1189,11 @@ function PatchCard({
     return buildPatchWithSelectedLocation(patch, selectedLocationCandidate);
   }, [patch, selectedLocationCandidate]);
   const requiresLocationSelection = Boolean(patch.choiceRequest && !selectedLocationCandidate);
+
+  function handleApplyFailure(message: string) {
+    toast.error(message);
+    onApplyFailure?.();
+  }
 
   function formatOpLabel(op: EventAiWizardOp): string {
     switch (op.type) {
@@ -1261,44 +1268,45 @@ function PatchCard({
           | { code?: string; category?: string; applied?: unknown }
           | null;
         if (data?.code === 'PRO_REQUIRED') {
-          toast.error(t('errors.proRequired'));
+          handleApplyFailure(t('errors.proRequired'));
           return;
         }
         if (data?.code === 'FEATURE_DISABLED') {
-          toast.error(t('errors.disabled'));
+          handleApplyFailure(t('errors.disabled'));
           return;
         }
         if (data?.code === 'RATE_LIMITED') {
-          toast.error(t('errors.rateLimited'));
+          handleApplyFailure(t('errors.rateLimited'));
           return;
         }
         if (data?.code === 'READ_ONLY') {
-          toast.error(t('errors.readOnlyDescription'));
+          handleApplyFailure(t('errors.readOnlyDescription'));
           return;
         }
         if (data?.code === 'SAFETY_BLOCKED') {
           if (data.category === 'prompt_injection') {
-            toast.error(t('errors.safety.promptInjection'));
+            handleApplyFailure(t('errors.safety.promptInjection'));
             return;
           }
-          toast.error(t('errors.safety.policyViolation'));
+          handleApplyFailure(t('errors.safety.policyViolation'));
           return;
         }
         if (data?.code === 'INVALID_PATCH') {
-          toast.error(t('errors.invalid'));
+          handleApplyFailure(t('errors.invalid'));
           return;
         }
         if (data?.code === 'RETRY_LATER') {
-          toast.error(t('errors.retryLater'));
+          handleApplyFailure(t('errors.retryLater'));
           return;
         }
         if (Array.isArray(data?.applied) && data.applied.length > 0) {
           toast.error(t('errors.partialApplied'));
           onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
           router.refresh();
+          onApplyFailure?.();
           return;
         }
-        toast.error(t('errors.failed'));
+        handleApplyFailure(t('errors.failed'));
         return;
       }
 
@@ -1412,7 +1420,8 @@ export function EventAiWizardPanel({
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const locale = useLocale();
   const router = useRouter();
-  const { setOpen: setAssistantOpen } = useAssistantWorkspaceQueryState();
+  const { isOpen: isAssistantWorkspaceOpen, setOpen: setAssistantOpen } =
+    useAssistantWorkspaceQueryState();
   const composerId = useId();
   const composerHintId = useId();
   const briefEditorId = useId();
@@ -1882,6 +1891,11 @@ export function EventAiWizardPanel({
     setAssistantOpen(false);
   }
 
+  function handleApplyFailure() {
+    if (!isAssistantWorkspaceOpen) return;
+    setAssistantOpen(false);
+  }
+
   function handleReuseRequest(requestText: string) {
     setInput(requestText);
     window.requestAnimationFrame(() => {
@@ -1989,6 +2003,7 @@ export function EventAiWizardPanel({
                     setAppliedPatchIds((prev) => new Set([...prev, patchId]));
                     setLastAppliedPatch(appliedState);
                   }}
+                  onApplyFailure={handleApplyFailure}
                   onRevealEditor={handleRevealEditor}
                   onNavigateToStep={handleNavigateToStep}
                   onRequestManualClarification={handleRequestManualLocationClarification}
