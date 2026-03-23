@@ -12,20 +12,20 @@ export function evaluateProFeatureDecision({
   isPro: boolean;
   isInternal: boolean;
 }): ProFeatureDecision<ProFeatureKey> {
-  if (isInternal) {
-    return {
-      featureKey,
-      status: 'enabled',
-      reason: 'internal_bypass',
-      config,
-    };
-  }
-
   if (!config.enabled) {
     return {
       featureKey,
       status: 'disabled',
       reason: 'config_disabled',
+      config,
+    };
+  }
+
+  if (isInternal) {
+    return {
+      featureKey,
+      status: 'enabled',
+      reason: 'internal_bypass',
       config,
     };
   }

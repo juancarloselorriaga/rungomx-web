@@ -178,4 +178,26 @@ describe('CreateEventForm', () => {
 
     expect(await screen.findByText('pages.dashboardEvents.createEvent.event.errors.editionLabelTaken')).toBeInTheDocument();
   });
+
+  it('does not submit organizer brief when the AI disclosure is disabled', async () => {
+    render(<CreateEventForm organizations={organizations} showAiContextDisclosure={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'pages.dashboardEvents.createEvent.steps.continue' }));
+    fireEvent.change(screen.getByPlaceholderText('pages.dashboardEvents.createEvent.event.seriesNamePlaceholder'), {
+      target: { value: 'Valle Trail' },
+    });
+    fireEvent.change(screen.getAllByPlaceholderText('2025')[0], {
+      target: { value: '2027' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'pages.dashboardEvents.createEvent.submit' }));
+
+    await waitFor(() => {
+      expect(mockCreateEventEdition).toHaveBeenCalledWith(
+        expect.objectContaining({
+          organizerBrief: undefined,
+        }),
+      );
+    });
+  });
 });

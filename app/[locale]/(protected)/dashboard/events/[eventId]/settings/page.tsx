@@ -270,6 +270,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
 
   if (wizardMode) {
     const assistantGate = await guardProFeaturePage('event_ai_wizard', authContext);
+    const assistantFeatureEnabled = assistantGate.decision.status !== 'disabled';
     const [pricingData, questions, addOns, websiteEnabled, websiteContent] = await Promise.all([
       getPricingScheduleForEdition(eventId),
       getQuestionsForEdition(eventId),
@@ -327,6 +328,9 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
     const assistantLayoutMode = assistantCanEdit ? 'workspace' : 'inline';
 
     function renderAssistant(stepId: Exclude<EventAiAssistantStepId, 'registration' | 'extras'>) {
+      if (!assistantFeatureEnabled) {
+        return null;
+      }
       if (!assistantGate.allowed) {
         return <div className="rounded-[28px] border border-border/70 bg-background/80 p-2">{assistantGate.disabled ?? assistantGate.upsell}</div>;
       }

@@ -48,6 +48,19 @@ describe('evaluateProFeatureDecision', () => {
     expect(decision.reason).toBe('config_disabled');
   });
 
+  it('does not allow internal bypass when config is disabled', () => {
+    const config = buildConfig('event_ai_wizard', { enabled: false });
+    const decision = evaluateProFeatureDecision({
+      featureKey: 'event_ai_wizard',
+      config,
+      isPro: false,
+      isInternal: true,
+    });
+
+    expect(decision.status).toBe('disabled');
+    expect(decision.reason).toBe('config_disabled');
+  });
+
   it('enables feature for Pro members', () => {
     const config = buildConfig('event_clone');
     const decision = evaluateProFeatureDecision({

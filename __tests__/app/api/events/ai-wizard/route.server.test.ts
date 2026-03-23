@@ -257,6 +257,26 @@ describe('POST /api/events/ai-wizard', () => {
     expect(await response.json()).toEqual({ code: 'READ_ONLY' });
   });
 
+  it('returns FEATURE_DISABLED when the shared Pro-feature guard disables the assistant', async () => {
+    const { ProFeatureAccessError } = jest.requireMock('@/lib/pro-features/server/guard');
+    mockRequireProFeature.mockRejectedValueOnce(new ProFeatureAccessError('disabled'));
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          locale: 'es',
+          messages: [],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: 'FEATURE_DISABLED' });
+  });
+
   it('rebuilds follow-up checklist and routing from the server-owned aggregate', () => {
     mockBuildEventWizardAggregate.mockReturnValue({
       missingRequired: [

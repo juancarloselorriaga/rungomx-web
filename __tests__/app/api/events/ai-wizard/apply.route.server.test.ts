@@ -3,6 +3,7 @@ const mockRequireProFeature = jest.fn();
 const mockGetEventEditionDetail = jest.fn();
 const mockCanUserAccessSeries = jest.fn();
 const mockHeaders = jest.fn();
+const mockTrackProFeatureEvent = jest.fn();
 
 jest.mock('@/lib/auth/guards', () => ({
   requireAuthenticatedUser: (...args: unknown[]) => mockRequireAuthenticatedUser(...args),
@@ -54,6 +55,10 @@ jest.mock('@/lib/rate-limit', () => ({
   })),
 }));
 
+jest.mock('@/lib/pro-features/server/tracking', () => ({
+  trackProFeatureEvent: (...args: unknown[]) => mockTrackProFeatureEvent(...args),
+}));
+
 jest.mock('@/lib/organizations/permissions', () => {
   const actual = jest.requireActual('@/lib/organizations/permissions');
   return {
@@ -76,6 +81,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockRequireProFeature.mockReset();
     mockGetEventEditionDetail.mockReset();
     mockCanUserAccessSeries.mockReset();
+    mockTrackProFeatureEvent.mockReset();
     (createDistance as jest.Mock).mockReset();
     (createFaqItem as jest.Mock).mockReset();
     (updateEventEdition as jest.Mock).mockReset();
@@ -89,6 +95,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     });
     mockHeaders.mockResolvedValue(new Headers());
     mockRequireProFeature.mockResolvedValue(undefined);
+    mockTrackProFeatureEvent.mockResolvedValue(undefined);
     (createDistance as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'distance-1' } });
     (createFaqItem as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'faq-1' } });
     (updateEventEdition as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'edition-1' } });
@@ -295,6 +302,41 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ code: 'READ_ONLY' });
+  });
+
+  it('returns FEATURE_DISABLED when the shared Pro-feature guard disables apply', async () => {
+    const { ProFeatureAccessError } = jest.requireMock('@/lib/pro-features/server/guard');
+    mockRequireProFeature.mockRejectedValueOnce(new ProFeatureAccessError('disabled'));
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          editionId: '11111111-1111-4111-8111-111111111111',
+          locale: 'es',
+          patch: {
+            title: 'Create a distance',
+            summary: 'Valid payload for the guard check.',
+            ops: [
+              {
+                type: 'create_distance',
+                editionId: '11111111-1111-4111-8111-111111111111',
+                data: {
+                  label: '5K',
+                  distanceValue: 5,
+                  distanceUnit: 'km',
+                  price: 250,
+                },
+              },
+            ],
+            markdownOutputs: [],
+          },
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: 'FEATURE_DISABLED' });
   });
 
   it('applies a deterministic policy-config update patch in one write', async () => {

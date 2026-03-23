@@ -23,6 +23,7 @@ import {
 } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
+import { isEventAiWizardEnabled } from '@/lib/features/flags';
 import { safeRefresh, safeUpdateTag } from '@/lib/next-cache';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
@@ -103,6 +104,28 @@ function shiftDateByYears(value: Date | null, years: number): Date | null {
   const next = new Date(value);
   next.setUTCFullYear(next.getUTCFullYear() + years);
   return next;
+}
+
+function normalizeOrganizerBriefForAiAvailability(organizerBrief: string | null | undefined): string | null {
+  if (!isEventAiWizardEnabled()) {
+    return null;
+  }
+
+  return organizerBrief?.trim() || null;
+}
+
+function buildEditionActionSuccess(edition: Pick<EventEditionData, 'id' | 'publicCode' | 'editionLabel' | 'slug' | 'visibility' | 'seriesId'>) {
+  return {
+    ok: true as const,
+    data: {
+      id: edition.id,
+      publicCode: edition.publicCode,
+      editionLabel: edition.editionLabel,
+      slug: edition.slug,
+      visibility: edition.visibility,
+      seriesId: edition.seriesId,
+    },
+  };
 }
 
 // =============================================================================
@@ -599,7 +622,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     }
   }
 
-  const normalizedOrganizerBrief = organizerBrief?.trim() || null;
+  const normalizedOrganizerBrief = normalizeOrganizerBriefForAiAvailability(organizerBrief);
   if (normalizedOrganizerBrief) {
     try {
       await requireProFeature('event_ai_wizard', authContext);
@@ -783,7 +806,14 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     }
   }
 
-  if (updates.organizerBrief !== undefined && updates.organizerBrief !== null && updates.organizerBrief.trim().length > 0) {
+  const nextOrganizerBrief =
+    updates.organizerBrief !== undefined
+      ? isEventAiWizardEnabled()
+        ? updates.organizerBrief?.trim() || null
+        : undefined
+      : undefined;
+
+  if (nextOrganizerBrief) {
     try {
       await requireProFeature('event_ai_wizard', authContext);
     } catch (error) {
@@ -811,11 +841,11 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
   if (updates.description !== undefined) updateData.description = updates.description;
-  if (updates.organizerBrief !== undefined) updateData.organizerBrief = updates.organizerBrief?.trim() || null;
+  if (nextOrganizerBrief !== undefined) updateData.organizerBrief = nextOrganizerBrief;
   if (updates.heroImageMediaId !== undefined) updateData.heroImageMediaId = updates.heroImageMediaId;
 
   if (Object.keys(updateData).length === 0) {
-    return { ok: false, error: 'No fields to update', code: 'VALIDATION_ERROR' };
+    return buildEditionActionSuccess(edition);
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -869,17 +899,7 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     safeUpdateTag(publicEventBySlugTag(edition.series.slug, updated.slug));
   }
 
-  return {
-    ok: true,
-    data: {
-      id: updated.id,
-      publicCode: updated.publicCode,
-      editionLabel: updated.editionLabel,
-      slug: updated.slug,
-      visibility: updated.visibility,
-      seriesId: updated.seriesId,
-    },
-  };
+  return buildEditionActionSuccess(updated);
 });
 
 // =============================================================================
