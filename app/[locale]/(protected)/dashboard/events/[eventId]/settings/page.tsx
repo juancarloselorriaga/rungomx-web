@@ -591,6 +591,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       ...stepBodies.map((step) => `${step.id}:${step.completed ? '1' : '0'}:${step.required ? '1' : '0'}`),
       reviewBlockers.map((issue) => `${issue.id}:${issue.stepId}:${issue.kind}`).join(','),
     ].join('|');
+    const reviewPayloadToken = crypto.randomUUID();
 
     return (
       <EventSetupWizardShell
@@ -604,6 +605,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         initialStepId={initialWizardStepId}
         reviewBlockers={reviewBlockers}
         reviewRecommendations={reviewRecommendations}
+        reviewPayloadToken={reviewPayloadToken}
         reviewControls={
           <StepSurface
             title={t('wizardShell.steps.review')}

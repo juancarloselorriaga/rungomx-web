@@ -5,6 +5,8 @@ import {
   type EventSetupWizardStep,
 } from '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell';
 
+const refreshMock = jest.fn();
+
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
     if (values && 'current' in values && 'total' in values) {
@@ -23,6 +25,12 @@ jest.mock('@/i18n/navigation', () => ({
       {children}
     </a>
   ),
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: refreshMock,
+  }),
 }));
 
 function buildSteps(overrides?: Partial<Record<EventSetupWizardStep['id'], Partial<EventSetupWizardStep>>>) {
@@ -45,6 +53,7 @@ function renderShell({
   initialStepId,
   reviewBlockers = [],
   reviewRecommendations = [],
+  reviewPayloadToken = 'review-token-stale',
 }: {
   steps?: EventSetupWizardStep[];
   initialStepId?: EventSetupWizardStep['id'];
@@ -62,6 +71,7 @@ function renderShell({
     severity: 'required' | 'blocker' | 'optional';
     kind: 'publish' | 'required' | 'optional';
   }>;
+  reviewPayloadToken?: string;
 }) {
   return render(
     <EventSetupWizardShell
@@ -74,6 +84,7 @@ function renderShell({
       reviewControls={<div>review-controls</div>}
       reviewBlockers={reviewBlockers}
       reviewRecommendations={reviewRecommendations}
+      reviewPayloadToken={reviewPayloadToken}
       initialStepId={initialStepId}
     />,
   );
@@ -86,6 +97,7 @@ describe('EventSetupWizardShell', () => {
     window.sessionStorage.clear();
     window.history.replaceState({}, '', '/');
     pushStateSpy = jest.spyOn(window.history, 'pushState');
+    refreshMock.mockClear();
   });
 
   afterEach(() => {
@@ -138,6 +150,70 @@ describe('EventSetupWizardShell', () => {
 
     expect(screen.getByText('review-controls')).toBeInTheDocument();
     expect(screen.getByText('wizardShell.review.readyTitle')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i })).toBeInTheDocument();
+  });
+
+  it('holds review in a rechecking state instead of showing stale blockers when entering review', () => {
+    renderShell({
+      steps: buildSteps({ content: { completed: true } }),
+      initialStepId: 'content',
+      reviewBlockers: [
+        {
+          id: 'publish-content',
+          label: 'Participant content still blocks publish',
+          stepId: 'content',
+          severity: 'blocker',
+          kind: 'publish',
+        },
+      ],
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /wizardShell.steps.review/i })[0]!);
+
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('wizardShell.review.recheckingTitle')).toBeInTheDocument();
+    expect(screen.getByText('wizardShell.review.recheckingBody')).toBeInTheDocument();
+    expect(screen.queryByText('Participant content still blocks publish')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /wizardShell.review.goToFirstBlocker/i })).not.toBeInTheDocument();
+  });
+
+  it('shows refreshed review readiness once fresh server props arrive', () => {
+    const view = renderShell({
+      steps: buildSteps({ content: { completed: true } }),
+      initialStepId: 'content',
+      reviewBlockers: [
+        {
+          id: 'publish-content',
+          label: 'Participant content still blocks publish',
+          stepId: 'content',
+          severity: 'blocker',
+          kind: 'publish',
+        },
+      ],
+      reviewPayloadToken: 'review-token-stale',
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /wizardShell.steps.review/i })[0]!);
+
+    view.rerender(
+      <EventSetupWizardShell
+        eventId="evt-1"
+        eventName="TrailMX 2026"
+        organizationName="TrailMX"
+        statusLabel="Draft"
+        exitHref={{ pathname: '/dashboard/events/[eventId]/settings', params: { eventId: 'evt-1' } }}
+        steps={buildSteps({ content: { completed: true }, review: { completed: true } })}
+        reviewControls={<div>review-controls</div>}
+        reviewBlockers={[]}
+        reviewRecommendations={[]}
+        reviewPayloadToken="review-token-fresh"
+        initialStepId="content"
+      />,
+    );
+
+    expect(screen.queryByText('wizardShell.review.recheckingTitle')).not.toBeInTheDocument();
+    expect(screen.getByText('wizardShell.review.readyTitle')).toBeInTheDocument();
+    expect(screen.getByText('wizardShell.review.noBlockers')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i })).toBeInTheDocument();
   });
 

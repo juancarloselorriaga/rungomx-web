@@ -13,8 +13,9 @@ import {
   SkipForward,
   X,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ComponentProps, type ReactNode, useEffect, useRef, useState } from 'react';
+import { ComponentProps, startTransition, type ReactNode, useEffect, useRef, useState } from 'react';
 
 export type EventSetupWizardStepId =
   | 'basics'
@@ -51,6 +52,7 @@ type EventSetupWizardShellProps = {
   reviewControls: ReactNode;
   reviewBlockers: ReviewIssue[];
   reviewRecommendations: ReviewIssue[];
+  reviewPayloadToken: string;
   initialStepId?: EventSetupWizardStepId;
 };
 
@@ -157,9 +159,11 @@ export function EventSetupWizardShell({
   reviewControls,
   reviewBlockers,
   reviewRecommendations,
+  reviewPayloadToken,
   initialStepId,
 }: EventSetupWizardShellProps) {
   const t = useTranslations('pages.dashboardEventSettings');
+  const router = useRouter();
   const reviewControlsRef = useRef<HTMLDivElement>(null);
   const activeStepStorageKey = `event-setup-wizard:active-step:${eventId}`;
   const skippedStepsStorageKey = `event-setup-wizard:skipped:${eventId}`;
@@ -189,7 +193,9 @@ export function EventSetupWizardShell({
     const step = steps.find((candidate) => candidate.id === stepId);
     return step && !step.required && !step.completed;
   });
+  const [pendingReviewPayloadToken, setPendingReviewPayloadToken] = useState<string | null>(null);
   const activeStep = steps[activeStepIndex] ?? steps[0];
+  const isReviewRefreshPending = activeStep?.id === 'review' && pendingReviewPayloadToken !== null;
   const publishBlockerCount = reviewBlockers.filter((issue) => issue.kind === 'publish').length;
   const setupBlockerCount = reviewBlockers.filter((issue) => issue.kind === 'required').length;
   const hasReviewRecommendations = reviewRecommendations.length > 0;
@@ -231,6 +237,13 @@ export function EventSetupWizardShell({
     }
   };
 
+  const startReviewRefreshBoundary = () => {
+    setPendingReviewPayloadToken(reviewPayloadToken);
+    startTransition(() => {
+      router.refresh();
+    });
+  };
+
   useEffect(() => {
     if (typeof window === 'undefined' || !activeStep) return;
     window.sessionStorage.setItem(activeStepStorageKey, activeStep.id);
@@ -247,6 +260,19 @@ export function EventSetupWizardShell({
   }, [sanitizedSkippedStepIds, skippedStepsStorageKey]);
 
   useEffect(() => {
+    if (!activeStep || activeStep.id !== 'review') {
+      if (pendingReviewPayloadToken !== null) {
+        setPendingReviewPayloadToken(null);
+      }
+      return;
+    }
+
+    if (pendingReviewPayloadToken !== null && reviewPayloadToken !== pendingReviewPayloadToken) {
+      setPendingReviewPayloadToken(null);
+    }
+  }, [activeStep, pendingReviewPayloadToken, reviewPayloadToken]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
 
     const handlePopState = () => {
@@ -259,12 +285,16 @@ export function EventSetupWizardShell({
         writeWizardStepToHistory(canonicalStep.id, 'replace');
       }
 
+      if (canonicalStep.id === 'review' && activeStep?.id !== 'review') {
+        startReviewRefreshBoundary();
+      }
+
       setActiveStepIndex(canonicalIndex);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [steps]);
+  }, [activeStep, reviewPayloadToken, router, steps]);
 
   const navigateToStep = (targetIndex: number, mode: 'push' | 'replace' = 'push') => {
     if (targetIndex < 0 || targetIndex >= steps.length) return;
@@ -273,6 +303,10 @@ export function EventSetupWizardShell({
     const canonicalIndex = resolveCanonicalStepIndex(steps, targetStep.id);
     const canonicalStep = steps[canonicalIndex];
     if (!canonicalStep) return;
+
+    if (canonicalStep.id === 'review' && activeStep?.id !== 'review') {
+      startReviewRefreshBoundary();
+    }
 
     writeWizardStepToHistory(canonicalStep.id, mode);
     setActiveStepIndex(canonicalIndex);
@@ -380,10 +414,12 @@ export function EventSetupWizardShell({
                 </div>
                 <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm">
                   <span className="text-muted-foreground">
-                    {t('wizardShell.progress.blockersValue', {
-                      publish: publishBlockerCount,
-                      required: setupBlockerCount,
-                    })}
+                    {isReviewRefreshPending
+                      ? t('wizardShell.review.recheckingCounts')
+                      : t('wizardShell.progress.blockersValue', {
+                          publish: publishBlockerCount,
+                          required: setupBlockerCount,
+                        })}
                   </span>
                 </div>
                 <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm">
@@ -530,172 +566,153 @@ export function EventSetupWizardShell({
         <div className="px-5 py-6 sm:px-6 lg:px-8">
           <div className={cn('mx-auto', activeStep.id === 'review' ? 'max-w-[1280px]' : 'max-w-[1240px]')}>
             {activeStep.id === 'review' ? (
-              <div className="space-y-6">
-                <div
-                  className={cn(
-                    'rounded-[28px] border p-6 shadow-sm',
-                    reviewState === 'ready'
-                      ? 'border-emerald-500/35 bg-emerald-500/12'
-                      : reviewState === 'reviewRecommended'
-                        ? 'border-amber-400/45 bg-amber-500/10'
-                        : 'border-destructive/20 bg-destructive/5',
-                  )}
-                >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="max-w-2xl">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                        {t('wizardShell.review.finishLineLabel')}
-                      </p>
-                      <h2 className="mt-3 text-2xl font-semibold text-foreground">
-                        {reviewState === 'ready'
-                          ? t('wizardShell.review.readyTitle')
-                          : reviewState === 'reviewRecommended'
-                            ? t('wizardShell.review.reviewRecommendedTitle')
-                            : t('wizardShell.review.blockedTitle')}
-                      </h2>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {reviewState === 'ready'
-                          ? t('wizardShell.review.readyDescription')
-                          : reviewState === 'reviewRecommended'
-                            ? t('wizardShell.review.reviewRecommendedDescription', {
-                                count: reviewRecommendations.length,
-                              })
-                            : t('wizardShell.review.blockedDescription', {
-                                publish: publishBlockerCount,
-                                required: setupBlockerCount,
-                              })}
-                      </p>
-                      <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                        {t('wizardShell.review.serverAuthority')}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3">
-                      {reviewBlockers.length > 0 ? (
-                        <Button type="button" onClick={() => jumpToStep(reviewBlockers[0]!.stepId)}>
-                          {t('wizardShell.review.goToFirstBlocker')}
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      ) : (
-                        <Button type="button" onClick={scrollToReviewControls}>
-                          {t('wizardShell.review.openPublishControls')}
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-3">
-                  <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+              isReviewRefreshPending ? (
+                <div className="space-y-6">
+                  <div className="rounded-[28px] border border-primary/20 bg-primary/5 p-6 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                      {t('wizardShell.review.blockersTitle')}
+                      {t('wizardShell.review.finishLineLabel')}
                     </p>
-                    <p className="mt-2 text-3xl font-semibold text-foreground">{reviewBlockers.length}</p>
-                  </div>
-                  <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                      {t('wizardShell.review.recommendationsTitle')}
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-foreground">{reviewRecommendations.length}</p>
-                  </div>
-                  <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                      {t('wizardShell.review.skippedTitle')}
-                    </p>
-                    <p className="mt-2 text-3xl font-semibold text-foreground">
-                      {sanitizedSkippedStepIds.length}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
-                    <h2 className="text-lg font-semibold text-foreground">
-                      {t('wizardShell.review.blockersTitle')}
+                    <h2 className="mt-3 text-2xl font-semibold text-foreground">
+                      {t('wizardShell.review.recheckingTitle')}
                     </h2>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {t('wizardShell.review.blockersDescription')}
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {t('wizardShell.review.recheckingDescription')}
                     </p>
-                    <div className="mt-4 space-y-3">
-                      {reviewBlockers.length === 0 ? (
-                        <div
-                          className={cn(
-                            'rounded-2xl border p-4 text-sm',
-                            reviewState === 'ready'
-                              ? 'border-emerald-500/35 bg-emerald-500/12 text-emerald-100'
-                              : 'border-amber-400/45 bg-amber-500/10 text-amber-950',
-                          )}
-                        >
+                    <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                      {t('wizardShell.review.serverAuthority')}
+                    </p>
+                  </div>
+
+                  <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
+                    <p className="text-sm text-muted-foreground">
+                      {t('wizardShell.review.recheckingBody')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div
+                    className={cn(
+                      'rounded-[28px] border p-6 shadow-sm',
+                      reviewState === 'ready'
+                        ? 'border-emerald-500/35 bg-emerald-500/12'
+                        : reviewState === 'reviewRecommended'
+                          ? 'border-amber-400/45 bg-amber-500/10'
+                          : 'border-destructive/20 bg-destructive/5',
+                    )}
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="max-w-2xl">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                          {t('wizardShell.review.finishLineLabel')}
+                        </p>
+                        <h2 className="mt-3 text-2xl font-semibold text-foreground">
                           {reviewState === 'ready'
-                            ? t('wizardShell.review.noBlockers')
-                            : t('wizardShell.review.noRequiredBlockers')}
-                        </div>
-                      ) : (
-                        reviewBlockers.map((issue) => (
-                          <button
-                            key={issue.id}
-                            type="button"
-                            onClick={() => jumpToStep(issue.stepId)}
-                            className="flex w-full items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition hover:bg-destructive/10"
-                          >
-                            <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
-                            <span className="min-w-0 flex-1">
-                              <span className="flex flex-wrap items-center gap-2">
-                                <span
-                                  className={cn(
-                                    'rounded-full px-2 py-0.5 text-[11px] font-medium',
-                                    issue.kind === 'publish'
-                                      ? 'bg-destructive/10 text-destructive'
-                                      : 'bg-amber-100 text-amber-900',
-                                  )}
-                                >
-                                  {issue.kind === 'publish'
-                                    ? t('wizardShell.review.publishBadge')
-                                    : t('wizardShell.review.requiredBadge')}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {getStepLabel(issue.stepId)}
-                                </span>
-                              </span>
-                              <span className="mt-1 block text-sm text-foreground">{issue.label}</span>
-                              <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground">
-                                {t('wizardShell.review.goToStep', { step: getStepLabel(issue.stepId) })}
-                                <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                              </span>
-                            </span>
-                          </button>
-                        ))
-                      )}
+                            ? t('wizardShell.review.readyTitle')
+                            : reviewState === 'reviewRecommended'
+                              ? t('wizardShell.review.reviewRecommendedTitle')
+                              : t('wizardShell.review.blockedTitle')}
+                        </h2>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {reviewState === 'ready'
+                            ? t('wizardShell.review.readyDescription')
+                            : reviewState === 'reviewRecommended'
+                              ? t('wizardShell.review.reviewRecommendedDescription', {
+                                  count: reviewRecommendations.length,
+                                })
+                              : t('wizardShell.review.blockedDescription', {
+                                  publish: publishBlockerCount,
+                                  required: setupBlockerCount,
+                                })}
+                        </p>
+                        <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                          {t('wizardShell.review.serverAuthority')}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        {reviewBlockers.length > 0 ? (
+                          <Button type="button" onClick={() => jumpToStep(reviewBlockers[0]!.stepId)}>
+                            {t('wizardShell.review.goToFirstBlocker')}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button type="button" onClick={scrollToReviewControls}>
+                            {t('wizardShell.review.openPublishControls')}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                        {t('wizardShell.review.blockersTitle')}
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-foreground">{reviewBlockers.length}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                        {t('wizardShell.review.recommendationsTitle')}
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-foreground">{reviewRecommendations.length}</p>
+                    </div>
+                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                        {t('wizardShell.review.skippedTitle')}
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-foreground">
+                        {sanitizedSkippedStepIds.length}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-2">
                     <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
                       <h2 className="text-lg font-semibold text-foreground">
-                        {t('wizardShell.review.recommendationsTitle')}
+                        {t('wizardShell.review.blockersTitle')}
                       </h2>
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {t('wizardShell.review.recommendationsDescription')}
+                        {t('wizardShell.review.blockersDescription')}
                       </p>
                       <div className="mt-4 space-y-3">
-                        {reviewRecommendations.length === 0 ? (
-                          <div className="rounded-2xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
-                            {t('wizardShell.review.noRecommendations')}
+                        {reviewBlockers.length === 0 ? (
+                          <div
+                            className={cn(
+                              'rounded-2xl border p-4 text-sm',
+                              reviewState === 'ready'
+                                ? 'border-emerald-500/35 bg-emerald-500/12 text-emerald-100'
+                                : 'border-amber-400/45 bg-amber-500/10 text-amber-950',
+                            )}
+                          >
+                            {reviewState === 'ready'
+                              ? t('wizardShell.review.noBlockers')
+                              : t('wizardShell.review.noRequiredBlockers')}
                           </div>
                         ) : (
-                          reviewRecommendations.map((issue) => (
+                          reviewBlockers.map((issue) => (
                             <button
                               key={issue.id}
                               type="button"
                               onClick={() => jumpToStep(issue.stepId)}
-                              className="flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3 text-left transition hover:bg-muted/50"
+                              className="flex w-full items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition hover:bg-destructive/10"
                             >
-                              <CircleDashed className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                              <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
                               <span className="min-w-0 flex-1">
                                 <span className="flex flex-wrap items-center gap-2">
-                                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                                    {t('wizardShell.review.recommendationBadge')}
+                                  <span
+                                    className={cn(
+                                      'rounded-full px-2 py-0.5 text-[11px] font-medium',
+                                      issue.kind === 'publish'
+                                        ? 'bg-destructive/10 text-destructive'
+                                        : 'bg-amber-100 text-amber-900',
+                                    )}
+                                  >
+                                    {issue.kind === 'publish'
+                                      ? t('wizardShell.review.publishBadge')
+                                      : t('wizardShell.review.requiredBadge')}
                                   </span>
                                   <span className="text-xs text-muted-foreground">
                                     {getStepLabel(issue.stepId)}
@@ -713,43 +730,87 @@ export function EventSetupWizardShell({
                       </div>
                     </div>
 
-                    <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
-                      <h2 className="text-lg font-semibold text-foreground">
-                        {t('wizardShell.review.skippedTitle')}
-                      </h2>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {t('wizardShell.review.skippedDescription')}
-                      </p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                    {sanitizedSkippedStepIds.length === 0 ? (
-                          <span className="text-sm text-muted-foreground">
-                            {t('wizardShell.review.noSkipped')}
-                          </span>
-                        ) : (
-                          sanitizedSkippedStepIds.map((stepId) => (
-                            <button
-                              key={stepId}
-                              type="button"
-                              onClick={() => jumpToStep(stepId)}
-                              className="flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800"
-                            >
-                              <SkipForward className="h-3.5 w-3.5" />
-                              <span>{getStepLabel(stepId)}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                      {sanitizedSkippedStepIds.length > 0 ? (
-                        <p className="mt-4 text-xs leading-5 text-muted-foreground">
-                          {t('wizardShell.review.skippedHelp')}
+                    <div className="space-y-4">
+                      <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
+                        <h2 className="text-lg font-semibold text-foreground">
+                          {t('wizardShell.review.recommendationsTitle')}
+                        </h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {t('wizardShell.review.recommendationsDescription')}
                         </p>
-                      ) : null}
+                        <div className="mt-4 space-y-3">
+                          {reviewRecommendations.length === 0 ? (
+                            <div className="rounded-2xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
+                              {t('wizardShell.review.noRecommendations')}
+                            </div>
+                          ) : (
+                            reviewRecommendations.map((issue) => (
+                              <button
+                                key={issue.id}
+                                type="button"
+                                onClick={() => jumpToStep(issue.stepId)}
+                                className="flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3 text-left transition hover:bg-muted/50"
+                              >
+                                <CircleDashed className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex flex-wrap items-center gap-2">
+                                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                      {t('wizardShell.review.recommendationBadge')}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {getStepLabel(issue.stepId)}
+                                    </span>
+                                  </span>
+                                  <span className="mt-1 block text-sm text-foreground">{issue.label}</span>
+                                  <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground">
+                                    {t('wizardShell.review.goToStep', { step: getStepLabel(issue.stepId) })}
+                                    <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                                  </span>
+                                </span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
+                        <h2 className="text-lg font-semibold text-foreground">
+                          {t('wizardShell.review.skippedTitle')}
+                        </h2>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {t('wizardShell.review.skippedDescription')}
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {sanitizedSkippedStepIds.length === 0 ? (
+                            <span className="text-sm text-muted-foreground">
+                              {t('wizardShell.review.noSkipped')}
+                            </span>
+                          ) : (
+                            sanitizedSkippedStepIds.map((stepId) => (
+                              <button
+                                key={stepId}
+                                type="button"
+                                onClick={() => jumpToStep(stepId)}
+                                className="flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800"
+                              >
+                                <SkipForward className="h-3.5 w-3.5" />
+                                <span>{getStepLabel(stepId)}</span>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                        {sanitizedSkippedStepIds.length > 0 ? (
+                          <p className="mt-4 text-xs leading-5 text-muted-foreground">
+                            {t('wizardShell.review.skippedHelp')}
+                          </p>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div ref={reviewControlsRef}>{reviewControls}</div>
-              </div>
+                  <div ref={reviewControlsRef}>{reviewControls}</div>
+                </div>
+              )
             ) : (
               activeStep.content
             )}
