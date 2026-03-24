@@ -101,6 +101,7 @@ describe('event wizard orchestrator', () => {
       'MISSING_DISTANCE',
       'MISSING_EVENT_DATE',
       'MISSING_EVENT_LOCATION',
+      'MISSING_HERO_IMAGE',
       'RECOMMEND_FAQ',
       'RECOMMEND_WAIVERS',
       'RECOMMEND_QUESTIONS',

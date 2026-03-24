@@ -610,6 +610,17 @@ export function buildEventWizardAggregate(
       severity: 'optional',
     }));
 
+  if (!hasHeroImage) {
+    optionalRecommendations.unshift({
+      id: 'missing-hero-image',
+      stepId: 'event_details',
+      labelKey: 'wizard.issues.missingHeroImage',
+      href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
+      code: 'MISSING_HERO_IMAGE',
+      severity: 'optional',
+    });
+  }
+
   const prioritizedChecklist = [...publishBlockers, ...missingRequired, ...optionalRecommendations].filter(
     (issue, index, list) => list.findIndex((candidate) => candidate.code === issue.code) === index,
   );
