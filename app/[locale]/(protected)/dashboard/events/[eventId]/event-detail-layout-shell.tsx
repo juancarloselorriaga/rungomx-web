@@ -1,9 +1,10 @@
 'use client';
 
 import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
+import { useSlidingNavOptional } from '@/components/layout/navigation/sliding-nav-context';
 import type { SubmenuFooterLink } from '@/components/layout/navigation/submenu-types';
 import { useSearchParams } from 'next/navigation';
-import type { ReactNode } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 type EventDetailLayoutShellProps = {
   title: string;
@@ -36,6 +37,16 @@ export function EventDetailLayoutShell({
 }: EventDetailLayoutShellProps) {
   const searchParams = useSearchParams();
   const wizardMode = searchParams.get('wizard') === '1';
+  const slidingNav = useSlidingNavOptional();
+
+  // Hide the sidebar when in wizard mode, restore on exit
+  useEffect(() => {
+    if (!slidingNav) return;
+    if (wizardMode) {
+      slidingNav.setSidebarHidden(true);
+      return () => slidingNav.setSidebarHidden(false);
+    }
+  }, [wizardMode, slidingNav]);
 
   const content = (
     <>

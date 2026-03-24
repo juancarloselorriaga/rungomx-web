@@ -53,7 +53,8 @@ interface SlidingSidebarProps {
 export function SlidingSidebar({ items, sections, isPro }: SlidingSidebarProps) {
   const t = useTranslations('navigation');
   const tBilling = useTranslations('common.billing');
-  const { displayLevel, detectedSubmenuId, submenuContext, goToRoot } = useSlidingNav();
+  const { displayLevel, detectedSubmenuId, submenuContext, sidebarHidden, goToRoot } =
+    useSlidingNav();
   const [fetchedIsPro, setFetchedIsPro] = useState<boolean | undefined>(undefined);
   const resolvedIsPro = isPro !== undefined ? isPro : fetchedIsPro;
 
@@ -82,7 +83,7 @@ export function SlidingSidebar({ items, sections, isPro }: SlidingSidebarProps) 
     };
   }, [isPro]);
 
-  if (resolvedSections.length === 0) return null;
+  if (resolvedSections.length === 0 || sidebarHidden) return null;
 
   return (
     <aside className="hidden md:sticky md:top-16 md:flex h-[calc(100vh-4rem-1px)] w-64 flex-col border-r bg-background-surface overflow-hidden">

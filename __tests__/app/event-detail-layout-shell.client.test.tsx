@@ -9,6 +9,10 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => mockSearchParams,
 }));
 
+jest.mock('@/components/layout/navigation/sliding-nav-context', () => ({
+  useSlidingNavOptional: () => ({ setSidebarHidden: jest.fn() }),
+}));
+
 jest.mock('@/components/layout/navigation/submenu-context-provider', () => ({
   SubmenuContextProvider: ({
     children,
