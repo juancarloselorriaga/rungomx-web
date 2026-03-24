@@ -10,6 +10,7 @@ import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
 import { checkSlugAvailability, createEventSeries, createEventEdition } from '@/lib/events/actions';
 import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
+import { normalizeEditionDateTimeForPersistence } from '@/lib/events/ai-wizard/datetime';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, ChevronDown, Loader2, Sparkles } from 'lucide-react';
@@ -276,7 +277,9 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
         organizerBrief: showAiContextDisclosure ? values.organizerBrief.trim() || undefined : undefined,
         timezone: 'America/Mexico_City',
         country: 'MX',
-        startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : undefined,
+        startsAt: values.startsAt
+          ? normalizeEditionDateTimeForPersistence(`${values.startsAt}T07:00`, 'America/Mexico_City') ?? undefined
+          : undefined,
         city: values.city.trim() || undefined,
         state: values.state.trim() || undefined,
         latitude: values.latitude || undefined,
