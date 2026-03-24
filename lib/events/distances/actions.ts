@@ -153,7 +153,7 @@ export const createDistance = withAuthenticatedUser<ActionResult<DistanceData>>(
     // Create initial pricing tier (v1: single price)
     await tx.insert(pricingTiers).values({
       distanceId: newDistance.id,
-      label: 'Standard',
+      label: null,
       priceCents,
       currency: 'MXN',
       sortOrder: 0,
@@ -435,7 +435,7 @@ export const updateDistancePrice = withAuthenticatedUser<ActionResult>({
       // Create if doesn't exist
       await tx.insert(pricingTiers).values({
         distanceId,
-        label: 'Standard',
+        label: null,
         priceCents,
         currency: 'MXN',
         sortOrder: 0,
