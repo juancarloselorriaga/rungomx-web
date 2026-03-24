@@ -14,6 +14,11 @@ type EventLocalScheduleFacts = {
   endsAtLocal: string | null;
 };
 
+type EventTimeZoneInputParts = {
+  date: string;
+  time: string;
+};
+
 const DATE_TIME_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 const EXPLICIT_OFFSET_RE = /(Z|[+-]\d{2}:\d{2})$/i;
 
@@ -126,6 +131,20 @@ function convertNaiveLocalDateTimeToUtcIso(
   return new Date(candidate).toISOString();
 }
 
+function formatInputParts(parts: NaiveLocalDateTimeParts): EventTimeZoneInputParts {
+  return {
+    date: `${String(parts.year).padStart(4, '0')}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`,
+    time: `${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`,
+  };
+}
+
+function getFallbackUtcInputParts(date: Date): EventTimeZoneInputParts {
+  return {
+    date: `${String(date.getUTCFullYear()).padStart(4, '0')}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`,
+    time: `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')}`,
+  };
+}
+
 function resolveLocale(locale: string | null | undefined): string {
   const normalized = locale?.trim();
   if (!normalized) return 'es-MX';
@@ -166,6 +185,46 @@ export function normalizeEditionDateTimeForPersistence(
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) return null;
   return parsed.toISOString();
+}
+
+export function formatEditionDateForInputInTimeZone(
+  date: Date,
+  timeZone?: string | null,
+): string {
+  const parts = timeZone ? getTimeZoneParts(date, timeZone) : null;
+  return parts ? formatInputParts(parts).date : getFallbackUtcInputParts(date).date;
+}
+
+export function formatEditionTimeForInputInTimeZone(
+  date: Date,
+  timeZone?: string | null,
+): string {
+  const parts = timeZone ? getTimeZoneParts(date, timeZone) : null;
+  return parts ? formatInputParts(parts).time : getFallbackUtcInputParts(date).time;
+}
+
+export function formatEditionDateTimeForInputInTimeZone(
+  date: Date,
+  timeZone?: string | null,
+): string {
+  const parts = timeZone ? getTimeZoneParts(date, timeZone) : null;
+  const inputParts = parts ? formatInputParts(parts) : getFallbackUtcInputParts(date);
+  return `${inputParts.date}T${inputParts.time}`;
+}
+
+export function hasTrustedEventStartTime(
+  startsAt?: Date | null,
+  timeZone?: string | null,
+): boolean {
+  if (!startsAt) return false;
+  if (!timeZone || timeZone === 'UTC') return true;
+
+  return !(
+    startsAt.getUTCHours() === 0 &&
+    startsAt.getUTCMinutes() === 0 &&
+    startsAt.getUTCSeconds() === 0 &&
+    startsAt.getUTCMilliseconds() === 0
+  );
 }
 
 export function getEventLocalScheduleFacts(params: {
