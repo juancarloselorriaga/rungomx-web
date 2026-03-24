@@ -11,6 +11,7 @@ import { GripVertical, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-rea
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
 type FaqItem = {
   id: string;
@@ -75,6 +76,8 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
         },
       ]);
 
+      toast.success(t('saved'));
+
       // Reset form
       setFormQuestion('');
       setFormAnswer('');
@@ -130,6 +133,8 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
             : item,
         ),
       );
+
+      toast.success(t('saved'));
 
       // Reset form
       setFormQuestion('');
@@ -263,11 +268,16 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                   </Button>
                   <Button type="submit" size="sm" disabled={isPending}>
                     {isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        {t('saving')}
+                      </>
                     ) : (
+                      <>
                       <Save className="h-4 w-4 mr-1" />
+                        {t('save')}
+                      </>
                     )}
-                    {t('save')}
                   </Button>
                 </div>
               </form>

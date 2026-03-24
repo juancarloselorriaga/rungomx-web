@@ -9,7 +9,7 @@ import { updateEventPolicyConfig } from '@/lib/events/actions';
 import type { EventPolicyConfig } from '@/lib/events/queries';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, Save } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -46,6 +46,7 @@ function toFormValues(policies: EventPolicyConfig | null): PolicyFormValues {
 
 export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
   const t = useTranslations('pages.dashboardEvents.policies');
+  const locale = useLocale();
   const router = useRouter();
 
   const form = useForm<PolicyFormValues, null>({
@@ -93,6 +94,7 @@ export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
         policyLabel={t('refund.textLabel')}
         deadlineLabel={t('refund.deadlineLabel')}
         form={form}
+        locale={locale}
       />
 
       <PolicySection
@@ -104,6 +106,7 @@ export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
         policyLabel={t('transfer.textLabel')}
         deadlineLabel={t('transfer.deadlineLabel')}
         form={form}
+        locale={locale}
       />
 
       <PolicySection
@@ -115,6 +118,7 @@ export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
         policyLabel={t('deferral.textLabel')}
         deadlineLabel={t('deferral.deadlineLabel')}
         form={form}
+        locale={locale}
       />
 
       <div className="flex justify-end">
@@ -140,6 +144,7 @@ type PolicySectionProps = {
   policyLabel: string;
   deadlineLabel: string;
   form: ReturnType<typeof useForm<PolicyFormValues, null>>;
+  locale: string;
 };
 
 function PolicySection({
@@ -151,6 +156,7 @@ function PolicySection({
   policyLabel,
   deadlineLabel,
   form,
+  locale,
 }: PolicySectionProps) {
   const enabled = form.values[enabledKey] as boolean;
   const policyValue = form.values[policyKey] as string;
@@ -182,6 +188,7 @@ function PolicySection({
 
       <FormField label={deadlineLabel} error={form.errors[deadlineKey]}>
         <DateTimePicker
+          locale={locale}
           value={deadlineValue}
           onChangeAction={(v) => form.setFieldValue(deadlineKey, v as never)}
           disabled={!enabled || form.isSubmitting}

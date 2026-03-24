@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import {
@@ -63,11 +63,39 @@ const EMPTY_TIER: TierFormData = {
   endsAt: '',
 };
 
+const INTERNAL_DEFAULT_TIER_LABEL = 'Standard';
+
 function formatPrice(cents: number, currency: string, locale: string): string {
   return (cents / 100).toLocaleString(locale, {
     style: 'currency',
     currency,
   });
+}
+
+function isInternalDefaultTierLabel(label: string | null | undefined): boolean {
+  return label === INTERNAL_DEFAULT_TIER_LABEL;
+}
+
+function getTierDisplayLabel(
+  label: string | null | undefined,
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.pricing'>>,
+): string {
+  if (isInternalDefaultTierLabel(label)) {
+    return t('tier.defaultLabel');
+  }
+
+  return label || t('tier.unnamed');
+}
+
+function getTierEditLabel(
+  label: string | null | undefined,
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.pricing'>>,
+): string {
+  if (isInternalDefaultTierLabel(label)) {
+    return t('tier.defaultLabel');
+  }
+
+  return label ?? '';
 }
 
 function getTierStatus(tier: PricingTierData): 'current' | 'upcoming' | 'expired' {
@@ -92,6 +120,7 @@ export function PricingTiersManager({
   initialPricingData,
 }: PricingTiersManagerProps) {
   const t = useTranslations('pages.dashboardEvents.pricing');
+  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [pricingData, setPricingData] = useState(initialPricingData);
@@ -100,6 +129,7 @@ export function PricingTiersManager({
   );
   const [expandedTiers, setExpandedTiers] = useState<Set<string>>(new Set());
   const [editingTier, setEditingTier] = useState<string | null>(null);
+  const [editingTierOriginalLabel, setEditingTierOriginalLabel] = useState<string | null>(null);
   const [deletingTierId, setDeletingTierId] = useState<string | null>(null);
   const [tierFormData, setTierFormData] = useState<TierFormData>(EMPTY_TIER);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -130,8 +160,9 @@ export function PricingTiersManager({
 
   const startEditTier = (tier: PricingTierData) => {
     setEditingTier(tier.id);
+    setEditingTierOriginalLabel(tier.label ?? null);
     setTierFormData({
-      label: tier.label ?? '',
+      label: getTierEditLabel(tier.label, t),
       priceCents: tier.priceCents,
       startsAt: formatDatetimeLocal(tier.startsAt),
       endsAt: formatDatetimeLocal(tier.endsAt),
@@ -143,11 +174,13 @@ export function PricingTiersManager({
   const startAddTier = () => {
     setIsAddingNew(true);
     setEditingTier(null);
+    setEditingTierOriginalLabel(null);
     setTierFormData(EMPTY_TIER);
   };
 
   const cancelEdit = () => {
     setEditingTier(null);
+    setEditingTierOriginalLabel(null);
     setIsAddingNew(false);
     setTierFormData(EMPTY_TIER);
   };
@@ -155,13 +188,18 @@ export function PricingTiersManager({
   const handleSaveTier = () => {
     if (!selectedDistanceId) return;
 
+    const nextLabel = editingTierOriginalLabel === INTERNAL_DEFAULT_TIER_LABEL
+      && tierFormData.label === t('tier.defaultLabel')
+      ? INTERNAL_DEFAULT_TIER_LABEL
+      : tierFormData.label || null;
+
     startTransition(async () => {
       try {
         if (isAddingNew) {
           // Create new tier
           const result = await createPricingTier({
             distanceId: selectedDistanceId,
-            label: tierFormData.label || null,
+            label: nextLabel,
             startsAt: tierFormData.startsAt || null,
             endsAt: tierFormData.endsAt || null,
             priceCents: tierFormData.priceCents,
@@ -179,6 +217,7 @@ export function PricingTiersManager({
             );
             toast.success(t('tier.saved'));
             setIsAddingNew(false);
+            setEditingTierOriginalLabel(null);
             setTierFormData(EMPTY_TIER);
             router.refresh();
           } else {
@@ -188,7 +227,7 @@ export function PricingTiersManager({
           // Update existing tier
           const result = await updatePricingTier({
             tierId: editingTier,
-            label: tierFormData.label || null,
+            label: nextLabel,
             startsAt: tierFormData.startsAt || null,
             endsAt: tierFormData.endsAt || null,
             priceCents: tierFormData.priceCents,
@@ -210,6 +249,7 @@ export function PricingTiersManager({
             );
             toast.success(t('tier.saved'));
             setEditingTier(null);
+            setEditingTierOriginalLabel(null);
             setTierFormData(EMPTY_TIER);
             router.refresh();
           } else {
@@ -311,7 +351,7 @@ export function PricingTiersManager({
         <div className="rounded-lg border bg-card shadow-sm">
           <div className="border-b px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">
-              {distances.find((d) => d.id === selectedDistanceId)?.label} - Pricing Tiers
+              {distances.find((d) => d.id === selectedDistanceId)?.label} - {t('title')}
             </h2>
             <Button
               variant="outline"
@@ -344,7 +384,7 @@ export function PricingTiersManager({
             {tiers.length === 0 && !isAddingNew ? (
               <div className="p-8 text-center text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No pricing tiers configured yet.</p>
+                <p>{t('tier.emptyState')}</p>
                 <Button
                   variant="outline"
                   size="sm"
@@ -376,9 +416,7 @@ export function PricingTiersManager({
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">
-                              {tier.label || 'Unnamed Tier'}
-                            </span>
+                            <span className="font-medium">{getTierDisplayLabel(tier.label, t)}</span>
                             <span
                               className={cn(
                                 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
@@ -389,14 +427,14 @@ export function PricingTiersManager({
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
-                            {formatPrice(tier.priceCents, tier.currency, 'es-MX')}
+                            {formatPrice(tier.priceCents, tier.currency, locale)}
                             {tier.startsAt || tier.endsAt ? (
                               <span className="mx-2">•</span>
                             ) : null}
                             {tier.startsAt && (
                               <span>
-                                From{' '}
-                                {new Date(tier.startsAt).toLocaleDateString('es-MX', {
+                                {t('tier.from')}{' '}
+                                {new Date(tier.startsAt).toLocaleDateString(locale, {
                                   dateStyle: 'medium',
                                 })}
                               </span>
@@ -404,8 +442,8 @@ export function PricingTiersManager({
                             {tier.startsAt && tier.endsAt && ' - '}
                             {tier.endsAt && (
                               <span>
-                                {tier.startsAt ? '' : 'Until '}
-                                {new Date(tier.endsAt).toLocaleDateString('es-MX', {
+                                {tier.startsAt ? '' : `${t('tier.until')} `}
+                                {new Date(tier.endsAt).toLocaleDateString(locale, {
                                   dateStyle: 'medium',
                                 })}
                               </span>
@@ -418,7 +456,7 @@ export function PricingTiersManager({
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-semibold">
-                          {formatPrice(tier.priceCents, tier.currency, 'es-MX')}
+                          {formatPrice(tier.priceCents, tier.currency, locale)}
                         </span>
                       </div>
                     </button>
@@ -476,7 +514,7 @@ export function PricingTiersManager({
             ? formatPrice(
                 tiers.find((tier) => tier.id === deletingTierId)!.priceCents,
                 tiers.find((tier) => tier.id === deletingTierId)!.currency,
-                'es-MX',
+                locale,
               )
             : undefined
         }
@@ -499,6 +537,8 @@ type TierFormProps = {
 };
 
 function TierForm({ formData, setFormData, onSave, onCancel, isPending, t }: TierFormProps) {
+  const locale = useLocale();
+
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
@@ -540,27 +580,29 @@ function TierForm({ formData, setFormData, onSave, onCancel, isPending, t }: Tie
         <div className="space-y-2">
           <FormField label={t('tier.startsAtField')}>
             <DateTimePicker
+              locale={locale}
               value={formData.startsAt}
               onChangeAction={(v) => setFormData((prev) => ({ ...prev, startsAt: v }))}
             />
           </FormField>
-          <p className="text-xs text-muted-foreground">Leave empty for no start date restriction</p>
+          <p className="text-xs text-muted-foreground">{t('tier.startsAtHint')}</p>
         </div>
 
         <div className="space-y-2">
           <FormField label={t('tier.endsAtField')}>
             <DateTimePicker
+              locale={locale}
               value={formData.endsAt}
               onChangeAction={(v) => setFormData((prev) => ({ ...prev, endsAt: v }))}
             />
           </FormField>
-          <p className="text-xs text-muted-foreground">Leave empty for no end date restriction</p>
+          <p className="text-xs text-muted-foreground">{t('tier.endsAtHint')}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel} disabled={isPending}>
-          Cancel
+          {t('tier.cancel')}
         </Button>
         <Button onClick={onSave} disabled={isPending}>
           {isPending ? (
