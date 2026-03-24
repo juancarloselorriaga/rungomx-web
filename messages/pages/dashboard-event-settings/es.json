@@ -544,6 +544,7 @@
   "visibility": {
     "title": "Visibilidad del Evento",
     "description": "Controla quién puede ver y acceder a tu evento. Los eventos publicados aparecen en el directorio público.",
+    "success": "Visibilidad actualizada.",
     "errors": {
       "missingDistances": "Agrega al menos una distancia antes de publicar.",
       "missingPrices": "Agrega al menos un precio para cada distancia antes de publicar.",

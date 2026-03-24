@@ -298,6 +298,8 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       },
     });
 
+    const publishHasBlockers = aggregate.publishBlockers.length > 0;
+
     const reviewBlockers: WizardReviewIssue[] = [...aggregate.publishBlockers, ...aggregate.missingRequired]
       .filter((issue, index, list) => list.findIndex((candidate) => candidate.code === issue.code) === index)
       .map((issue) => ({
@@ -634,7 +636,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
                 step: t('wizardShell.steps.review'),
               })}
             >
-              <EventSettingsForm event={event} surface="wizard-review" />
+              <EventSettingsForm event={event} surface="wizard-review" disablePublish={publishHasBlockers} />
             </StepWithAssistant>
           </StepSurface>
         }

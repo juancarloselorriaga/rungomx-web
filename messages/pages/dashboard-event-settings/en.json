@@ -544,6 +544,7 @@
   "visibility": {
     "title": "Event Visibility",
     "description": "Control who can see and access your event. Published events appear in the public directory.",
+    "success": "Visibility updated.",
     "errors": {
       "missingDistances": "Add at least one distance before publishing.",
       "missingPrices": "Add at least one price for every distance before publishing.",

@@ -80,7 +80,12 @@ const LocationField = dynamic(
 type EventSettingsFormProps = {
   event: EventEditionDetail;
   surface?: EventSettingsSurface;
+  disablePublish?: boolean;
 };
+
+export function isPublishButtonBlocked(vis: string, disablePublish: boolean): boolean {
+  return vis === 'published' && disablePublish;
+}
 
 type EventSettingsDetailsFormValues = {
   editionLabel: string;
@@ -175,6 +180,7 @@ export function buildEventEditionPayload({
 export function EventSettingsForm({
   event,
   surface = 'full',
+  disablePublish = false,
 }: EventSettingsFormProps) {
   const t = useTranslations('pages.dashboardEventSettings');
   const tSlug = useTranslations('pages.dashboardEvents');
@@ -324,6 +330,7 @@ export function EventSettingsForm({
       });
       if (result.ok) {
         setVisibility(newVisibility);
+        toast.success(t('visibility.success'));
       } else {
         const errorKey =
           result.code === 'MISSING_DISTANCE'
@@ -635,7 +642,7 @@ export function EventSettingsForm({
                 key={vis}
                 variant={visibility === vis ? 'default' : 'outline'}
                 size="sm"
-                disabled={isUpdatingVisibility}
+                disabled={isUpdatingVisibility || isPublishButtonBlocked(vis, disablePublish)}
                 onClick={() => handleVisibilityChange(vis as VisibilityType)}
               >
                 {isUpdatingVisibility && visibility !== vis ? null : visibility === vis ? (
