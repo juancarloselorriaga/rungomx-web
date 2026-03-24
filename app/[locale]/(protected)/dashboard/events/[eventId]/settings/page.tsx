@@ -285,6 +285,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       websiteContent,
       questionCount: questions.length,
       addOnCount: addOns.length,
+      addOns,
       capabilityLocks: {
         canUseAiAssistant:
           assistantGate.allowed &&

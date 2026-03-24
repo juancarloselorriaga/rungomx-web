@@ -110,6 +110,7 @@ describe('event settings payload shaping', () => {
     description: ' Sunrise start with real schedule already set. ',
     timezone: 'America/Mexico_City',
     startsAt: '2026-10-18',
+    startsAtTime: '07:00',
     endsAt: '2026-10-19',
     city: 'Monterrey',
     state: 'Nuevo Leon',
@@ -141,7 +142,7 @@ describe('event settings payload shaping', () => {
         values: baseValues,
       });
 
-      expect(payload.startsAt).toBe(new Date(baseValues.startsAt).toISOString());
+      expect(payload.startsAt).toBe('2026-10-18T13:00:00.000Z');
       expect(payload.endsAt).toBe(new Date(baseValues.endsAt).toISOString());
     }
   });
@@ -156,11 +157,26 @@ describe('event settings payload shaping', () => {
     expect(payload).toEqual(
       expect.objectContaining({
         editionId: 'evt-1',
-        registrationOpensAt: new Date(baseValues.registrationOpensAt).toISOString(),
-        registrationClosesAt: new Date(baseValues.registrationClosesAt).toISOString(),
+        registrationOpensAt: '2026-05-01T12:30:00.000Z',
+        registrationClosesAt: '2026-10-11T05:15:00.000Z',
       }),
     );
     expect(payload).not.toHaveProperty('startsAt');
     expect(payload).not.toHaveProperty('endsAt');
+  });
+
+  it('serializes registration date-only boundaries in the event timezone without previous-day drift', () => {
+    const payload = buildEventEditionPayload({
+      editionId: 'evt-1',
+      surface: 'wizard-registration',
+      values: {
+        ...baseValues,
+        registrationOpensAt: '2026-09-01T00:00',
+        registrationClosesAt: '2026-09-01T23:59',
+      },
+    });
+
+    expect(payload.registrationOpensAt).toBe('2026-09-01T06:00:00.000Z');
+    expect(payload.registrationClosesAt).toBe('2026-09-02T05:59:00.000Z');
   });
 });

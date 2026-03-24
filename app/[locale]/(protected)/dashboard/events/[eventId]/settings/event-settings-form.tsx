@@ -36,6 +36,12 @@ import {
 } from '@/lib/events/media/constants';
 import { validateEventImageFile } from '@/lib/events/media/utils';
 import type { EventEditionDetail, EventDistanceDetail } from '@/lib/events/queries';
+import {
+  formatEditionDateTimeForInputInTimeZone,
+  formatEditionDateForInputInTimeZone,
+  formatEditionTimeForInputInTimeZone,
+  normalizeEditionDateTimeForPersistence,
+} from '@/lib/events/ai-wizard/datetime';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import {
@@ -82,6 +88,7 @@ type EventSettingsDetailsFormValues = {
   description: string;
   timezone: string;
   startsAt: string;
+  startsAtTime: string;
   endsAt: string;
   city: string;
   state: string;
@@ -113,6 +120,17 @@ const visibilityStyles: Record<VisibilityType, string> = {
   archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
+function getTerrainLabel(
+  terrain: TerrainType | string,
+  t: ReturnType<typeof useTranslations<'pages.dashboardEventSettings.distances'>>,
+) {
+  if (terrain === 'road' || terrain === 'trail' || terrain === 'mixed') {
+    return t(`terrainTypes.${terrain}`);
+  }
+
+  return terrain;
+}
+
 export function buildEventEditionPayload({
   editionId,
   surface,
@@ -122,6 +140,8 @@ export function buildEventEditionPayload({
   surface: EventSettingsSurface;
   values: EventSettingsDetailsFormValues;
 }) {
+  const startsAtInput = buildDateTimeInputValue(values.startsAt, values.startsAtTime);
+
   return {
     editionId,
     editionLabel: values.editionLabel || undefined,
@@ -131,7 +151,9 @@ export function buildEventEditionPayload({
     ...(surface === 'wizard-registration'
       ? {}
       : {
-          startsAt: values.startsAt ? new Date(values.startsAt).toISOString() : null,
+          startsAt: startsAtInput
+            ? normalizeEditionDateTimeForPersistence(startsAtInput, values.timezone)
+            : null,
           endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
         }),
     city: values.city || null,
@@ -141,8 +163,12 @@ export function buildEventEditionPayload({
     latitude: values.latitude || null,
     longitude: values.longitude || null,
     externalUrl: values.externalUrl || null,
-    registrationOpensAt: values.registrationOpensAt ? new Date(values.registrationOpensAt).toISOString() : null,
-    registrationClosesAt: values.registrationClosesAt ? new Date(values.registrationClosesAt).toISOString() : null,
+    registrationOpensAt: values.registrationOpensAt
+      ? normalizeEditionDateTimeForPersistence(values.registrationOpensAt, values.timezone)
+      : null,
+    registrationClosesAt: values.registrationClosesAt
+      ? normalizeEditionDateTimeForPersistence(values.registrationClosesAt, values.timezone)
+      : null,
   };
 }
 
@@ -195,8 +221,9 @@ export function EventSettingsForm({
       slug: event.slug,
       description: event.description || '',
       timezone: event.timezone,
-      startsAt: event.startsAt ? formatDateForInput(event.startsAt) : '',
-      endsAt: event.endsAt ? formatDateForInput(event.endsAt) : '',
+      startsAt: event.startsAt ? formatEditionDateForInputInTimeZone(event.startsAt, event.timezone) : '',
+      startsAtTime: event.startsAt ? formatEditionTimeForInputInTimeZone(event.startsAt, event.timezone) : '',
+      endsAt: event.endsAt ? formatEditionDateForInputInTimeZone(event.endsAt, event.timezone) : '',
       city: event.city || '',
       state: event.state || '',
       locationDisplay: event.locationDisplay || '',
@@ -204,21 +231,35 @@ export function EventSettingsForm({
       latitude: event.latitude || '',
       longitude: event.longitude || '',
       externalUrl: event.externalUrl || '',
-      registrationOpensAt: event.registrationOpensAt ? formatDateTimeForInput(event.registrationOpensAt) : '',
-      registrationClosesAt: event.registrationClosesAt ? formatDateTimeForInput(event.registrationClosesAt) : '',
+      registrationOpensAt: event.registrationOpensAt
+        ? formatEditionDateTimeForInputInTimeZone(event.registrationOpensAt, event.timezone)
+        : '',
+      registrationClosesAt: event.registrationClosesAt
+        ? formatEditionDateTimeForInputInTimeZone(event.registrationClosesAt, event.timezone)
+        : '',
     },
     onSubmit: async (values) => {
       if (editionSlugStatus === 'taken') {
         return { ok: false, error: 'VALIDATION_ERROR', message: tSlug('slugStatus.taken') };
       }
 
-      const result = await updateEventEdition(
-        buildEventEditionPayload({
-          editionId: event.id,
-          surface,
-          values,
-        }),
-      );
+      if (surface === 'wizard-basics') {
+        if (!values.startsAt || !values.startsAtTime) {
+          return { ok: false, error: 'VALIDATION_ERROR', message: t('details.startTimeRequired') };
+        }
+      }
+
+      const payload = buildEventEditionPayload({
+        editionId: event.id,
+        surface,
+        values,
+      });
+
+      if (surface !== 'wizard-registration' && values.startsAt && values.startsAtTime && !payload.startsAt) {
+        return { ok: false, error: 'VALIDATION_ERROR', message: t('details.startTimeInvalid') };
+      }
+
+      const result = await updateEventEdition(payload);
 
       if (!result.ok) {
         return { ok: false, error: 'SERVER_ERROR', message: result.error };
@@ -801,12 +842,24 @@ export function EventSettingsForm({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
-                    <DatePicker
-                      locale={locale}
-                      value={detailsForm.values.startsAt || ''}
-                      onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
-                      clearLabel={t('details.clearDate')}
-                    />
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+                      <DatePicker
+                        locale={locale}
+                        value={detailsForm.values.startsAt || ''}
+                        onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
+                        clearLabel={t('details.clearDate')}
+                      />
+                      <input
+                        type="time"
+                        step={60}
+                        value={detailsForm.values.startsAtTime}
+                        onChange={(event) => detailsForm.setFieldValue('startsAtTime', event.target.value)}
+                        className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                        disabled={detailsForm.isSubmitting}
+                        aria-label={t('details.startsAtTime')}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{t('details.startsAtTimeHelp')}</p>
                   </FormField>
 
                   <FormField label={t('details.endsAt')} error={detailsForm.errors.endsAt}>
@@ -1085,12 +1138,9 @@ export function EventSettingsForm({
 }
 
 // Helper functions
-function formatDateForInput(date: Date): string {
-  return date.toISOString().split('T')[0];
-}
-
-function formatDateTimeForInput(date: Date): string {
-  return date.toISOString().slice(0, 16);
+function buildDateTimeInputValue(date: string, time: string): string | null {
+  if (!date || !time) return null;
+  return `${date}T${time}`;
 }
 
 // Add Distance Form
@@ -1204,7 +1254,7 @@ function AddDistanceForm({
             <option value="">-</option>
             {TERRAIN_TYPES.map((type) => (
               <option key={type} value={type}>
-                {type}
+                {getTerrainLabel(type, t)}
               </option>
             ))}
           </select>
@@ -1262,7 +1312,7 @@ function AddDistanceForm({
 }
 
 // Distance Item Component
-function DistanceItem({
+export function DistanceItem({
   distance,
   isEditing,
   sharedCapacityEnabled,
@@ -1326,21 +1376,29 @@ function DistanceItem({
       ...(sharedCapacityEnabled ? {} : { capacity: capacityValue }),
     });
 
-    // Update price if changed
-    if (distanceResult.ok && newPriceCents !== distance.priceCents) {
-      await updateDistancePrice({
-        distanceId: distance.id,
-        priceCents: newPriceCents,
-      });
-    }
-
-    setIsUpdating(false);
-
     if (!distanceResult.ok) {
+      setIsUpdating(false);
       setError(distanceResult.error);
+      toast.error(t('errorSaving'));
       return;
     }
 
+    if (newPriceCents !== distance.priceCents) {
+      const priceResult = await updateDistancePrice({
+        distanceId: distance.id,
+        priceCents: newPriceCents,
+      });
+
+      if (!priceResult.ok) {
+        setIsUpdating(false);
+        setError(priceResult.error);
+        toast.error(t('errorSaving'));
+        return;
+      }
+    }
+
+    setIsUpdating(false);
+    toast.success(t('saved'));
     onUpdate({
       ...distance,
       label: formData.get('label') as string,
@@ -1390,7 +1448,7 @@ function DistanceItem({
               <option value="">-</option>
               {TERRAIN_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type}
+                  {getTerrainLabel(type, t)}
                 </option>
               ))}
             </select>
@@ -1446,8 +1504,14 @@ function DistanceItem({
             {t('cancel')}
           </Button>
           <Button type="submit" size="sm" disabled={isUpdating}>
-            {isUpdating ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-            {t('save')}
+            {isUpdating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                {t('saving')}
+              </>
+            ) : (
+              t('save')
+            )}
           </Button>
         </div>
       </form>
@@ -1460,7 +1524,7 @@ function DistanceItem({
         <h3 className="font-medium">{distance.label}</h3>
         <p className="text-sm text-muted-foreground">
           {distance.distanceValue} {distance.distanceUnit}
-          {distance.terrain && ` • ${distance.terrain}`}
+          {distance.terrain && ` • ${getTerrainLabel(distance.terrain, t)}`}
           {sharedCapacityEnabled
             ? ` • ${tCapacity('sharedPoolTag')}`
             : distance.capacity
