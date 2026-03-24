@@ -1,5 +1,6 @@
 import type { EventEditionDetail } from '@/lib/events/queries';
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
+import { hasTrustedEventStartTime } from '@/lib/events/ai-wizard/datetime';
 import { EVENT_WIZARD_STEP_MODULES } from './step-modules';
 import type {
   EventCreationPath,
@@ -72,6 +73,12 @@ type EventWizardAggregateOptions = {
   websiteContent?: WebsiteContentBlocks | null;
   questionCount?: number;
   addOnCount?: number;
+  addOns?: Array<{
+    isActive: boolean;
+    options: Array<{
+      isActive: boolean;
+    }>;
+  }>;
   capabilityLocks?: Partial<EventWizardCapabilityLocks>;
 };
 
@@ -88,6 +95,86 @@ const LOCATION_UNCONFIRMED_PATTERNS = [
   /\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b[\s\S]{0,40}\b(a confirmar|por confirmar|sin confirmar|pendiente|por definirse)\b/i,
   /\b(a confirmar|por confirmar|sin confirmar|pendiente|por definirse)\b[\s\S]{0,40}\b(ubicacion del evento|ubicación del evento|ubicacion exacta|ubicación exacta|lugar del evento|sede)\b/i,
 ] as const;
+
+function normalizeLocationFragment(value: string | null | undefined): string {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\./g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function looksLikeStreetAddress(value: string): boolean {
+  const normalized = normalizeLocationFragment(value);
+  if (!normalized) return false;
+
+  return (
+    /\d/.test(normalized) ||
+    /\b(av|ave|avenida|blvd|boulevard|calle|carretera|circuito|km|road|rd|street|st)\b/.test(
+      normalized,
+    )
+  );
+}
+
+function buildLocationTrustedFragments(event: EventEditionDetail): Set<string> {
+  const fragments = new Set<string>();
+
+  for (const value of [event.city, event.state, event.country]) {
+    const normalized = normalizeLocationFragment(value);
+    if (normalized) {
+      fragments.add(normalized);
+    }
+  }
+
+  if (normalizeLocationFragment(event.country) === 'mx') {
+    fragments.add('mexico');
+  }
+
+  return fragments;
+}
+
+function hasVenueLevelLocationTrust(event: EventEditionDetail): boolean {
+  const hasCoordinates = Boolean(
+    String(event.latitude ?? '').trim() && String(event.longitude ?? '').trim(),
+  );
+  if (!hasCoordinates) {
+    return false;
+  }
+
+  const locationDisplay = String(event.locationDisplay ?? '').trim();
+  if (!locationDisplay) {
+    return false;
+  }
+
+  if (String(event.address ?? '').trim()) {
+    return true;
+  }
+
+  const trustedFragments = buildLocationTrustedFragments(event);
+  if (!trustedFragments.size) {
+    return false;
+  }
+
+  const displayParts = locationDisplay
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (displayParts.length === 0) {
+    return false;
+  }
+
+  const unmatchedParts = displayParts.filter(
+    (part) => !trustedFragments.has(normalizeLocationFragment(part)),
+  );
+  if (unmatchedParts.length === 0) {
+    return true;
+  }
+
+  return unmatchedParts.every((part) => looksLikeStreetAddress(part));
+}
 
 function hasConfirmedLocationTruth(event: EventEditionDetail): boolean {
   return Boolean(
@@ -325,6 +412,7 @@ export function buildEventWizardAggregate(
     websiteContent = null,
     questionCount = 0,
     addOnCount = 0,
+    addOns,
     capabilityLocks = {},
   }: EventWizardAggregateOptions,
 ): EventWizardAggregate {
@@ -343,14 +431,19 @@ export function buildEventWizardAggregate(
   );
   const hasContent = hasWebsiteContent || event.faqItems.length > 0 || Boolean(event.description?.trim());
   const hasPolicies = event.policyConfig !== null || event.waivers.length > 0;
-  const hasExtras = questionCount > 0 || addOnCount > 0;
+  const resolvedAddOnCount = addOns?.length ?? addOnCount;
+  const invalidActiveAddOnCount =
+    addOns?.filter((addOn) => addOn.isActive && !addOn.options.some((option) => option.isActive))
+      .length ?? 0;
+  const hasExtras = questionCount > 0 || resolvedAddOnCount > 0;
   const hasHeroImage = Boolean(event.heroImageMediaId || event.heroImageUrl);
   const hasEndDate = Boolean(event.endsAt);
   const hasDescription = Boolean(event.description?.trim());
+  const hasTrustedStartTime = hasTrustedEventStartTime(event.startsAt, event.timezone);
 
   const missingRequired: EventWizardIssue[] = [];
   const basicsDiagnosis: EventWizardIssue[] = [];
-  if (!event.startsAt) {
+  if (!hasTrustedStartTime) {
     const issue = {
       id: 'missing-event-date',
       stepId: 'event_details',
@@ -470,11 +563,31 @@ export function buildEventWizardAggregate(
       severity: 'blocker',
     });
   }
+  if (invalidActiveAddOnCount > 0) {
+    publishBlockers.push({
+      id: 'publish-active-add-on-without-options',
+      stepId: 'add_ons',
+      labelKey: 'wizard.issues.publishActiveAddOnWithoutOptions',
+      href: stepById.get('add_ons')?.href ?? eventPath(event.id, '/add-ons'),
+      code: 'ACTIVE_ADD_ON_WITHOUT_OPTIONS',
+      severity: 'blocker',
+    });
+  }
+  if (String(event.locationDisplay ?? '').trim() && hasLocation && !hasVenueLevelLocationTrust(event)) {
+    publishBlockers.push({
+      id: 'publish-location-needs-venue-confirmation',
+      stepId: 'event_details',
+      labelKey: 'wizard.issues.publishLocationNeedsVenueConfirmation',
+      href: stepById.get('event_details')?.href ?? eventPath(event.id, '/settings'),
+      code: 'LOCATION_NEEDS_VENUE_CONFIRMATION',
+      severity: 'blocker',
+    });
+  }
   publishBlockers.push(...buildParticipantContentTruthBlockers(event, websiteContent));
 
   const completionByStepId: Record<EventWizardStepId, boolean> = {
     choose_path: selectedPath !== null,
-    event_details: Boolean(event.startsAt && hasLocation),
+    event_details: Boolean(hasTrustedStartTime && hasLocation),
     distances: hasDistances,
     pricing: hasDistances && !hasMissingPricing,
     faq: event.faqItems.length > 0,
@@ -482,8 +595,8 @@ export function buildEventWizardAggregate(
     questions: questionCount > 0,
     policies: event.policyConfig !== null,
     website: hasWebsiteContent,
-    add_ons: addOnCount > 0,
-    publish: publishBlockers.length === 0,
+    add_ons: resolvedAddOnCount > 0 && invalidActiveAddOnCount === 0,
+    publish: publishBlockers.length === 0 && missingRequired.length === 0,
   };
 
   const optionalRecommendations: EventWizardIssue[] = OPTIONAL_RECOMMENDATION_DEFINITIONS
@@ -516,8 +629,20 @@ export function buildEventWizardAggregate(
     registration: buildSetupStepState('registration', false, hasRegistrationConfig, blockerStepIds, recommendationStepIds),
     policies: buildSetupStepState('policies', false, hasPolicies, blockerStepIds, recommendationStepIds),
     content: buildSetupStepState('content', false, hasContent, blockerStepIds, recommendationStepIds),
-    extras: buildSetupStepState('extras', false, hasExtras, blockerStepIds, recommendationStepIds),
-    review: buildSetupStepState('review', true, publishBlockers.length === 0, blockerStepIds, recommendationStepIds),
+    extras: buildSetupStepState(
+      'extras',
+      false,
+      hasExtras && invalidActiveAddOnCount === 0,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
+    review: buildSetupStepState(
+      'review',
+      true,
+      publishBlockers.length === 0 && missingRequired.length === 0,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
   };
 
   return {

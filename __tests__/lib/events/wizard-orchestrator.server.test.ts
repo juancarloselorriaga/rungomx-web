@@ -114,7 +114,7 @@ describe('event wizard orchestrator', () => {
   it('detects missing pricing tiers as publish blocker', () => {
     const result = evaluateEventWizardCompleteness(
       buildEvent({
-        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
         city: 'Guadalajara',
         distances: [
           {
@@ -146,6 +146,45 @@ describe('event wizard orchestrator', () => {
     expect(result.completionByStepId.pricing).toBe(false);
   });
 
+  it('treats legacy UTC-midnight schedule values as missing a real start time in review', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-10-12T00:00:00.000Z'),
+        city: 'Ciudad de México',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+      },
+    );
+
+    expect(aggregate.missingRequired.map((issue) => issue.code)).toContain('MISSING_EVENT_DATE');
+    expect(aggregate.completionByStepId.event_details).toBe(false);
+    expect(aggregate.completionByStepId.publish).toBe(false);
+    expect(aggregate.setupStepStateById.review.completed).toBe(false);
+  });
+
   it('blocks publish readiness when participant-facing content contradicts persisted schedule or location truth', () => {
     const websiteContent: WebsiteContentBlocks = {
       schedule: {
@@ -164,7 +203,9 @@ describe('event wizard orchestrator', () => {
       buildEvent({
         startsAt: new Date('2026-03-15T06:00:00.000Z'),
         endsAt: new Date('2026-03-15T14:00:00.000Z'),
-        locationDisplay: 'Bosque de Chapultepec',
+        locationDisplay: 'Ciudad de México, México',
+        city: 'Ciudad de México',
+        state: 'Ciudad de México',
         distances: [
           {
             id: 'distance-1',
@@ -294,10 +335,99 @@ describe('event wizard orchestrator', () => {
     expect(aggregate.setupStepStateById.review.completed).toBe(false);
   });
 
+  it('keeps sufficiently structured saved locations publish-ready', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        locationDisplay: 'Ciudad de México, México',
+        city: 'Ciudad de México',
+        state: 'Ciudad de México',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+      },
+    );
+
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).not.toContain(
+      'LOCATION_NEEDS_VENUE_CONFIRMATION',
+    );
+    expect(aggregate.completionByStepId.publish).toBe(true);
+    expect(aggregate.setupStepStateById.review.completed).toBe(true);
+  });
+
+  it('blocks publish readiness when the saved location still looks like a plausible poi match', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        locationDisplay: 'Jardin Botanico del Bosque de Chapultepec, Ciudad de Mexico, Mexico',
+        city: 'Ciudad de Mexico',
+        state: 'Ciudad de Mexico',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+      },
+    );
+
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).toContain(
+      'LOCATION_NEEDS_VENUE_CONFIRMATION',
+    );
+    expect(aggregate.publishBlockers.map((issue) => issue.labelKey)).toContain(
+      'wizard.issues.publishLocationNeedsVenueConfirmation',
+    );
+    expect(aggregate.completionByStepId.publish).toBe(false);
+    expect(aggregate.setupStepStateById.review.completed).toBe(false);
+  });
+
   it('marks pricing diagnosis as covered when bounded pricing windows already exist', () => {
     const aggregate = buildEventWizardAggregate(
       buildEvent({
-        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
         city: 'Guadalajara',
         distances: [
           {
@@ -337,7 +467,7 @@ describe('event wizard orchestrator', () => {
   it('builds truthful setup-step state for registration, content, extras, and capability locks', () => {
     const aggregate = buildEventWizardAggregate(
       buildEvent({
-        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
         city: 'Guadalajara',
         description: 'A focused trail race weekend.',
         registrationOpensAt: new Date('2025-12-01T00:00:00.000Z'),
@@ -400,7 +530,7 @@ describe('event wizard orchestrator', () => {
   it('uses authoritative website, question, and add-on signals instead of synthetic placeholders', () => {
     const aggregate = buildEventWizardAggregate(
       buildEvent({
-        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
         city: 'Guadalajara',
         distances: [
           {
@@ -440,10 +570,108 @@ describe('event wizard orchestrator', () => {
     expect(aggregate.setupStepStateById.extras.completed).toBe(true);
   });
 
+  it('marks extras incomplete and blocks review when an active add-on has zero active options', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
+        city: 'Guadalajara',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+        addOnCount: 1,
+        addOns: [
+          {
+            isActive: true,
+            options: [],
+          },
+        ],
+      },
+    );
+
+    expect(aggregate.completionByStepId.add_ons).toBe(false);
+    expect(aggregate.setupStepStateById.extras.completed).toBe(false);
+    expect(aggregate.setupStepStateById.extras.blockerCount).toBe(1);
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).toContain(
+      'ACTIVE_ADD_ON_WITHOUT_OPTIONS',
+    );
+    expect(aggregate.publishBlockers.map((issue) => issue.labelKey)).toContain(
+      'wizard.issues.publishActiveAddOnWithoutOptions',
+    );
+  });
+
+  it('keeps valid active add-ons healthy in extras and review', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
+        city: 'Guadalajara',
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: 'manual',
+        addOnCount: 1,
+        addOns: [
+          {
+            isActive: true,
+            options: [{ isActive: true }],
+          },
+        ],
+      },
+    );
+
+    expect(aggregate.completionByStepId.add_ons).toBe(true);
+    expect(aggregate.setupStepStateById.extras.completed).toBe(true);
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).not.toContain(
+      'ACTIVE_ADD_ON_WITHOUT_OPTIONS',
+    );
+  });
+
   it('builds a basics-only diagnosis from the canonical basics fields', () => {
     const aggregate = buildEventWizardAggregate(
       buildEvent({
-        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
         city: 'Ciudad de México',
         state: 'CDMX',
         description: 'Trail urbano de noche.',
@@ -465,7 +693,7 @@ describe('event wizard orchestrator', () => {
   it('marks required progress complete when path, details, distance, and pricing are complete', () => {
     const result = evaluateEventWizardCompleteness(
       buildEvent({
-        startsAt: new Date('2026-03-15T00:00:00.000Z'),
+        startsAt: new Date('2026-03-15T13:00:00.000Z'),
         city: 'Guadalajara',
         distances: [
           {

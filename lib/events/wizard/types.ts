@@ -22,6 +22,8 @@ export type EventWizardIssueLabelKey =
   | 'wizard.issues.missingDistance'
   | 'wizard.issues.publishMissingDistance'
   | 'wizard.issues.publishMissingPricing'
+  | 'wizard.issues.publishActiveAddOnWithoutOptions'
+  | 'wizard.issues.publishLocationNeedsVenueConfirmation'
   | 'wizard.issues.publishContentScheduleTruthConflict'
   | 'wizard.issues.publishContentLocationTruthConflict'
   | 'wizard.issues.recommendPricingWindows'
