@@ -7,6 +7,7 @@
 - Projection correctness overrides legacy compatibility. Incorrect reprojection behavior must be fixed even if the current UI has normalized around it.
 - Step identity is canonical and singular. There will be one exported runtime step list, one setup-step type, and one mapping from canonical wizard issues to setup steps.
 - Shared contracts are first-class modules. UI, routes, and services consume explicit contracts rather than re-deriving shapes from route-local helpers.
+- `WizardAggregateView` is owned by the canonical wizard domain, or by a thin adapter directly over it. The AI subsystem consumes that view and may not build a parallel AI-specific aggregate interpretation from raw event facts.
 - Import direction is enforced. Base wizard -> neutral shared only. AI contracts -> base wizard contracts only. AI server -> contracts + base wizard + neutral shared. UI -> contracts only. Routes -> coordinators/contracts only.
 - UI may not mutate domain proposals into different server commands. Client-side selection state stays client-side; proposal mutation and apply input shaping stay server-owned.
 - Tests must target extracted modules, not route monolith internals. If a rule needs `import { x } from '@/app/api/.../route'`, the module boundary is wrong.
@@ -114,7 +115,6 @@
 - Owns:
   - proposal core contract
   - finalized proposal meta contract
-  - execution plan contract
   - scoped context contract
   - apply request/result contract
   - location resolution/choice contract
@@ -183,7 +183,6 @@ lib/events/
       steps.ts
       proposal.ts
       ui-stream.ts
-      execution-plan.ts
       scoped-context.ts
       apply.ts
       location.ts
@@ -191,6 +190,7 @@ lib/events/
       access.ts
       telemetry.ts
       planning/
+        types.ts
         build-execution-plan.ts
         detect-fast-path.ts
         resolve-cross-step-intent.ts
@@ -271,6 +271,11 @@ Notes:
 - `lib/events/ai-wizard/contracts/**`
   - May import base wizard step contracts from `lib/events/wizard/steps` or `lib/events/wizard/types`.
   - May not import from `lib/events/ai-wizard/server/**`, `app/**`, `next/*`, db modules, or React.
+
+- `lib/events/ai-wizard/server/planning/**`
+  - Owns server-only planning contracts such as `ExecutionPlan`.
+  - May import from `lib/events/ai-wizard/contracts/**`, `lib/events/wizard/**`, and other server modules.
+  - May not be imported by client UI modules.
 
 - `lib/events/ai-wizard/server/**`
   - May import from `lib/events/ai-wizard/contracts/**`, `lib/events/wizard/**`, neutral event-domain modules, db/actions/queries, and telemetry/auth/permissions helpers.
@@ -366,6 +371,7 @@ type ExecutionPlan = {
 Rules:
 - The route does not infer mode on the fly.
 - Everything downstream consumes an explicit plan.
+- `ExecutionPlan` is server-internal. It belongs under `lib/events/ai-wizard/server/planning/**`, not the shared client/server contracts surface.
 
 ### `ScopedAssistantContext`
 
@@ -390,6 +396,7 @@ type ScopedAssistantContext = {
 Rules:
 - Context is a built object, not ad hoc pulls from the route.
 - Only the context builder decides what gets loaded for a given plan.
+- `ScopedAssistantContext` is not permission to fetch everything. The builder loads only what `ExecutionPlan.contextScope` requires; optional fields staying empty is a success case, not a deficiency.
 
 ### Proposal contract split: core vs server-owned meta
 
@@ -536,6 +543,7 @@ type WizardAggregateView = {
 Rules:
 - AI consumes this view, not route-local re-mappings.
 - Settings page review summaries also consume this view.
+- The canonical wizard domain, or a thin adapter directly over it, owns construction of `WizardAggregateView`. The AI subsystem consumes it and may not build a competing aggregate interpretation from raw event facts.
 
 ## 7. Adapter vs service ownership
 
@@ -595,6 +603,7 @@ Rules:
   - apply fetch and result handling into `use-event-ai-wizard-apply`
   - location selection logic into `use-event-ai-wizard-location-choice`
   - client-side proposal mutation out entirely; replaced by selection payloads submitted to apply hook
+- Rule during implementation: the top-level panel stays dumb. If a new coordination concern appears later, it goes into a hook or presenter module, not back into `event-ai-wizard-panel.tsx`.
 
 ## 8. Revised migration plan
 
