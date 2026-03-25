@@ -374,7 +374,7 @@ function generateSelectionHelpers(
 ): string {
   const defaultBaseStr = rootNamespaces.map((n) => `'${n}'`).join(', ');
   const routeBaseStr = rootNamespaces
-    .filter((n) => n !== 'emails')
+    .filter((n) => n !== 'emails' && n !== 'auth')
     .map((n) => `'${n}'`)
     .join(', ');
   const defaultComponentsStr = componentNamespaces.map((n) => `'${n}'`).join(', ');

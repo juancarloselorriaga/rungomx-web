@@ -354,7 +354,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
 
       if (seriesSlugRequestIdRef.current !== requestId) return;
 
-      if (!result.ok) {
+      if (!result || !result.ok) {
         setSeriesSlugStatus('error');
         return;
       }
@@ -387,7 +387,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
 
         if (editionSlugRequestIdRef.current !== requestId) return;
 
-        if (!result.ok) {
+        if (!result || !result.ok) {
           setEditionSlugStatus('error');
           return;
         }

@@ -7,9 +7,8 @@ import type { getTestDb } from './db';
 import * as schema from '@/db/schema';
 import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { grantAdminOverride } from '@/lib/billing/commands';
+import { auth } from '@/lib/auth';
 import { and, eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import { hashPassword } from 'better-auth/crypto';
 import type { Page } from '@playwright/test';
 
 const USER_PERSISTENCE_MAX_RETRIES = 20;
@@ -112,7 +111,6 @@ async function waitForCredentialAccountPersistence(
         and(
           eq(schema.accounts.userId, userId),
           eq(schema.accounts.providerId, 'credential'),
-          eq(schema.accounts.accountId, userId),
         ),
       )
       .limit(1);
@@ -156,39 +154,26 @@ export async function signUpTestUser(
   const name = overrides?.name ?? `${prefix}${timestamp}`;
   const password = overrides?.password ?? `TestE2E!${timestamp}Pass`;
 
-  const userId = randomUUID();
-
-  // Use Better Auth's own hash implementation to avoid format drift.
-  const hashedPassword = await hashPassword(password);
-
   const { getTestDb } = await import('./db');
   const db = getTestDb();
 
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.users).values({
-      id: userId,
-      name,
+  const signUpResult = await auth.api.signUpEmail({
+    body: {
       email,
-      emailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Better Auth seeds credential accounts with accountId=userId.
-    await tx.insert(schema.accounts).values({
-      id: randomUUID(),
-      userId,
-      accountId: userId,
-      providerId: 'credential',
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      name,
+      password,
+    },
   });
 
-  await waitForCredentialAccountPersistence(db, userId, 'signUpTestUser');
+  const signedUpUser = (signUpResult as { user?: { id: string } }).user;
+  if (!signedUpUser?.id) {
+    throw new Error('[E2E fixtures] signUpEmail did not return a user id');
+  }
 
-  return { id: userId, email, password, name };
+  await waitForCredentialAccountPersistence(db, signedUpUser.id, 'signUpTestUser');
+  await setUserVerified(db, email);
+
+  return { id: signedUpUser.id, email, password, name };
 }
 
 /**
