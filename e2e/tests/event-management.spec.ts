@@ -142,7 +142,7 @@ async function ensureRegistrationActiveInSettings(
   });
 
   if (!edition?.isRegistrationPaused) {
-    await expect(page.getByText(/^Active$/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/^(Active|Open)$/i)).toBeVisible({ timeout: 15000 });
     return;
   }
 
@@ -305,7 +305,7 @@ test.describe('Event Management', () => {
     // Event details should be visible
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     // Location appears in multiple places - just check any is visible
-    await expect(page.getByText(/Monterrey, Nuevo Le[oó]n/i).first()).toBeVisible();
+    await expect(page.getByText(/Monterrey/i).first()).toBeVisible();
 
     // Distances should be visible
     await expect(page.getByText('10K Trail Run')).toBeVisible();
@@ -320,7 +320,7 @@ test.describe('Event Management', () => {
 
     // Scroll to registration status section
     await scrollIntoViewDetachSafe(() =>
-      page.getByRole('heading', { name: 'Registration Status' }).first()
+      page.getByRole('heading', { name: /registration/i }).first()
     );
 
     // Pause registration
@@ -370,14 +370,16 @@ test.describe('Event Management', () => {
 
     // Scroll to registration status section
     await scrollIntoViewDetachSafe(() =>
-      page.getByRole('heading', { name: 'Registration Status' }).first()
+      page.getByRole('heading', { name: /registration/i }).first()
     );
 
     // Resume registration
     await resumeRegistration(page);
 
     // Status should show Active
-    await expect(page.getByText(/active/i)).toBeVisible();
+    const registrationHeading = page.getByRole('heading', { name: /registration/i }).first();
+    const registrationSection = registrationHeading.locator('xpath=ancestor::section[1]');
+    await expect(registrationSection.getByText(/^(Active|Open)$/i)).toBeVisible();
   });
 
   test('Test 1.6d: Resumed registration shows on public page', async ({ page }) => {

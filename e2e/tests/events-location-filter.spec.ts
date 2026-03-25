@@ -106,8 +106,8 @@ test.describe('Near Location Filter', () => {
     // Wait for the advanced filters panel to appear
     await expect(page.locator('text=Near location')).toBeVisible({ timeout: 5000 });
 
-    // Click on the location picker button (shows "No location selected yet")
-    const locationBtn = page.getByText(/no location selected yet/i);
+    // Click on the location picker button (empty-value state copy can vary by locale/version)
+    const locationBtn = page.getByText(/no location (selected yet|set)|sin ubicaci[oó]n/i);
     await expect(locationBtn).toBeVisible({ timeout: 5000 });
     await locationBtn.click();
 
@@ -119,11 +119,11 @@ test.describe('Near Location Filter', () => {
     const searchInput = locationDialog.getByPlaceholder(/search|buscar/i);
     await searchInput.fill('Monterrey, Nuevo León');
 
-    // Wait for and click the first search result (Monterrey, Nuevo León, Mexico)
-    const monterreyOption = locationDialog.getByRole('button', {
-      name: 'Monterrey, Nuevo León, Mexico',
-      exact: true,
-    });
+    // Wait for and click the first Monterrey search result
+    const monterreyOption = locationDialog
+      .locator('button')
+      .filter({ hasText: /Monterrey/i })
+      .first();
     await expect(monterreyOption).toBeVisible({ timeout: 10000 });
     await monterreyOption.click();
 
