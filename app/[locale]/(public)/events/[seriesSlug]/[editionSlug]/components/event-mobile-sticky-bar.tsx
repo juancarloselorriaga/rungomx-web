@@ -32,15 +32,12 @@ export function EventMobileStickyBar({
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Show sticky bar when scrolled past hero section (roughly 400px)
     const SCROLL_THRESHOLD = 400;
 
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setIsVisible(scrollY > SCROLL_THRESHOLD);
+      setIsVisible(window.scrollY > SCROLL_THRESHOLD);
     };
 
-    // Initial check
     handleScroll();
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -50,35 +47,33 @@ export function EventMobileStickyBar({
   return (
     <div
       className={cn(
-        'fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b transition-all duration-300 lg:hidden',
-        isVisible
-          ? 'translate-y-0 opacity-100'
-          : '-translate-y-full opacity-0 pointer-events-none',
+        'fixed left-0 right-0 top-0 z-40 border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_88%,var(--background-surface)_12%)]/95 backdrop-blur-md transition-all duration-300 lg:hidden',
+        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 pointer-events-none',
       )}
     >
-      <div className="container mx-auto px-4 py-3 max-w-7xl">
+      <div className="mx-auto max-w-7xl px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
               onClick={onInfoClick}
-              className="flex-shrink-0 p-2 -m-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/85 text-muted-foreground transition-colors hover:text-foreground"
               aria-label={labels.infoButtonLabel}
             >
-              <Info className="h-5 w-5" />
+              <Info className="h-4 w-4" />
             </button>
             <div className="min-w-0">
-              <p className="font-semibold text-sm truncate">{eventName}</p>
-              {price !== null && (
-                <p className="text-xs text-muted-foreground">
+              <p className="truncate text-sm font-semibold text-foreground">{eventName}</p>
+              {price !== null ? (
+                <p className="mt-0.5 text-xs uppercase tracking-[0.14em] text-muted-foreground">
                   {price === '0' ? labels.free : price}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
 
-          {isRegistrationOpen && (
-            <Button size="sm" asChild className="flex-shrink-0">
+          {isRegistrationOpen ? (
+            <Button size="sm" asChild className="shrink-0">
               <Link
                 href={{
                   pathname: '/events/[seriesSlug]/[editionSlug]/register',
@@ -88,7 +83,7 @@ export function EventMobileStickyBar({
                 {labels.registerNow}
               </Link>
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

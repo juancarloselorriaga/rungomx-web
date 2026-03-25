@@ -277,6 +277,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         groupDiscountRules={event.groupDiscountRules}
         labels={{
           backToEvents: t('title'),
+          eventDate: t('detail.eventDate'),
+          location: t('detail.location'),
           registrationOpen: t('detail.registrationOpen'),
           registrationClosed: t('detail.registrationClosed'),
           fromPrice: formattedMinPrice ? t('detail.fromPrice', { price: formattedMinPrice }) : '',
@@ -298,10 +300,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
       )}
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-12 max-w-7xl">
-        <div className="grid gap-12 lg:grid-cols-3">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 md:py-16">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.7fr)] lg:gap-14">
           {/* Main content */}
-          <div className="lg:col-span-2 space-y-12">
+          <div className="space-y-14">
             {/* Overview */}
             {hasDescription && (
               <SectionWrapper id="overview" title={t('detail.sections.overview')}>
@@ -330,27 +332,27 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             {hasDistances && (
               <SectionWrapper id="distances" title={t('detail.sections.distances')}>
                 {hasSharedPool && event.sharedCapacity && (
-                  <div className="rounded-lg border bg-muted/40 p-4 mb-4">
+                  <div className="mb-4 rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-4 md:p-5">
                     <div className="flex items-start gap-3">
                       <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-                      <p className="text-sm font-medium">
+                      <p className="text-sm font-medium leading-7">
                         {t('detail.capacity.sharedPoolBanner', { total: event.sharedCapacity })}
                       </p>
                     </div>
                   </div>
                 )}
                 {hasGroupDiscounts && bestGroupDiscount ? (
-                  <div className="rounded-lg border bg-emerald-500/5 p-4 mb-4">
+                  <div className="mb-4 rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] p-4 md:p-5">
                     <div className="flex items-start gap-3">
                       <Users className="h-5 w-5 text-emerald-700 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="space-y-2">
                         <div>
                           <p className="text-sm font-semibold">{t('detail.groupDiscount.title')}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm leading-7 text-muted-foreground">
                             {t('detail.groupDiscount.description', { percent: bestGroupDiscount.percentOff })}
                           </p>
                         </div>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
+                        <ul className="space-y-1 text-sm leading-7 text-muted-foreground">
                           {event.groupDiscountRules.map((rule) => (
                             <li key={rule.minParticipants}>
                               {t('detail.groupDiscount.tierLine', {
@@ -361,8 +363,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                           ))}
                         </ul>
                         <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground">{t('detail.groupDiscount.howTo')}</p>
-                          <p className="text-xs text-muted-foreground">{t('detail.groupDiscount.lockNote')}</p>
+                          <p className="text-xs leading-6 text-muted-foreground">{t('detail.groupDiscount.howTo')}</p>
+                          <p className="text-xs leading-6 text-muted-foreground">{t('detail.groupDiscount.lockNote')}</p>
                         </div>
                       </div>
                     </div>
@@ -434,16 +436,16 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               <SectionWrapper id="faq" title={t('detail.sections.faq')} collapsible defaultCollapsed={false}>
                 <div className="space-y-4">
                   {event.faqItems.map((item) => (
-                    <details key={item.id} className="group rounded-lg border bg-card p-4">
-                      <summary className="font-medium cursor-pointer list-none flex items-center justify-between">
+                    <details key={item.id} className="group">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-4 font-medium">
                         {item.question}
                         <span className="ml-2 text-muted-foreground transition-transform group-open:rotate-180">▼</span>
                       </summary>
                       {item.answer ? (
-                        <div className="mt-3">
+                        <div className="mt-3 px-1">
                           <MarkdownContent
                             content={item.answer}
-                            className="text-sm text-muted-foreground [&_p]:m-0"
+                            className="text-sm leading-7 text-muted-foreground [&_p]:m-0"
                           />
                         </div>
                       ) : null}
@@ -460,24 +462,24 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   {media.documents!.map((doc, index) => {
                     const url = mediaUrls?.get(doc.mediaId);
                     return url ? (
-                      <a
-                        key={doc.mediaId}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border bg-card p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors group"
-                      >
-                        <FileText className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-sm font-medium flex-1">{doc.label}</span>
+                        <a
+                          key={doc.mediaId}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="group flex items-center gap-3 rounded-[1.1rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 transition-colors hover:bg-background"
+                        >
+                          <FileText className="h-5 w-5 text-primary shrink-0" />
+                          <span className="text-sm font-medium flex-1">{doc.label}</span>
                         <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
                           {t('detail.website.download')}
                         </span>
                       </a>
                     ) : (
-                      <div key={doc.mediaId || index} className="rounded-lg border bg-card p-3 flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                        <span className="text-sm font-medium">{doc.label}</span>
-                      </div>
+                       <div key={doc.mediaId || index} className="flex items-center gap-3 rounded-[1.1rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3">
+                         <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                         <span className="text-sm font-medium">{doc.label}</span>
+                       </div>
                     );
                   })}
                 </div>
@@ -494,20 +496,20 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: event.timezone }).format(new Date(policy.deadline))
                       : null;
                     return (
-                      <div key={policy.key} className="rounded-lg border bg-card p-4">
-                        <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
-                        {policy.text && (
-                          <div className="mt-2">
-                            <MarkdownContent
-                              content={policy.text}
-                              className="text-sm text-muted-foreground [&_p]:m-0"
-                            />
-                          </div>
-                        )}
-                        {deadlineText && <p className="text-xs text-muted-foreground mt-3">{policyCopy[policy.key].deadline(deadlineText)}</p>}
-                      </div>
-                    );
-                  })}
+                       <div key={policy.key} className="rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5">
+                         <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
+                         {policy.text && (
+                            <div className="mt-2">
+                              <MarkdownContent
+                                content={policy.text}
+                                className="text-sm leading-7 text-muted-foreground [&_p]:m-0"
+                              />
+                            </div>
+                          )}
+                        {deadlineText && <p className="mt-3 text-xs leading-6 text-muted-foreground">{policyCopy[policy.key].deadline(deadlineText)}</p>}
+                       </div>
+                     );
+                   })}
                 </div>
               </SectionWrapper>
             )}
@@ -526,6 +528,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             registrationOpensAt={registrationOpensAt}
             registrationClosesAt={registrationClosesAt}
             isRegistrationPaused={event.isRegistrationPaused}
+            isRegistrationOpen={event.isRegistrationOpen}
             otherEditions={otherEditions}
             locale={locale}
             labels={{

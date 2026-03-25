@@ -1,5 +1,6 @@
 'use client';
 
+import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -95,100 +96,105 @@ export function EventMobileInfoSheet({
   };
 
   const getEditionLocation = (edition: OtherEdition) => {
-    return (
-      edition.locationDisplay ||
-      [edition.city, edition.state].filter(Boolean).join(', ')
-    );
+    return edition.locationDisplay || [edition.city, edition.state].filter(Boolean).join(', ');
   };
+
+  const currentRegistrationLabel = isRegistrationPaused
+    ? labels.registrationPaused
+    : isRegistrationOpen
+      ? labels.registrationOpen
+      : labels.registrationClosed;
+
+  const currentRegistrationVariant: 'green' | 'indigo' | 'outline' = isRegistrationPaused
+    ? 'indigo'
+    : isRegistrationOpen
+      ? 'green'
+      : 'outline';
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-xl">
-        <SheetHeader className="border-b pb-4">
-          <SheetTitle>{labels.eventDetails}</SheetTitle>
+      <SheetContent
+        side="bottom"
+        className="max-h-[85vh] overflow-y-auto rounded-t-[1.75rem] border border-border/60 bg-background px-0"
+      >
+        <SheetHeader className="px-5 pb-4 pt-2 text-left">
+          <SheetTitle className="font-display text-[clamp(1.6rem,4vw,2rem)] font-medium tracking-[-0.03em]">
+            {labels.eventDetails}
+          </SheetTitle>
         </SheetHeader>
 
-        <div className="py-4 space-y-6">
-          {/* Event Date */}
-          <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-1">
-              {labels.eventDate}
-            </h3>
-            <p className="text-sm">
-              {eventDate || <span className="italic">{labels.tba}</span>}
-            </p>
-          </div>
+        <div className="space-y-6 px-5 pb-8">
+          <section className="border-t border-border/70 pt-4">
+            <Badge variant={currentRegistrationVariant}>{currentRegistrationLabel}</Badge>
+          </section>
 
-          {/* Location */}
-          {location && (
-            <div>
-              <h3 className="font-semibold text-sm text-muted-foreground mb-1">
+          <section className="border-t border-border/70 pt-4">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+              {labels.eventDate}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-foreground">{eventDate || labels.tba}</p>
+          </section>
+
+          {location ? (
+            <section className="border-t border-border/70 pt-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
                 {labels.location}
-              </h3>
-              <p className="text-sm">{location}</p>
-              {address && (
-                <p className="text-sm text-muted-foreground mt-0.5">{address}</p>
-              )}
-              {latitude && longitude && (
+              </p>
+              <p className="mt-2 text-sm leading-7 text-foreground">{location}</p>
+              {address ? <p className="mt-1 text-sm leading-7 text-muted-foreground">{address}</p> : null}
+              {latitude && longitude ? (
                 <a
                   href={`https://www.google.com/maps?q=${latitude},${longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
                 >
                   {labels.viewMap}
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLink className="h-3.5 w-3.5" />
                 </a>
-              )}
-            </div>
-          )}
+              ) : null}
+            </section>
+          ) : null}
 
-          {/* Organizer */}
-          <div>
-            <h3 className="font-semibold text-sm text-muted-foreground mb-1">
+          <section className="border-t border-border/70 pt-4">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
               {labels.organizer}
-            </h3>
-            <p className="text-sm">{organizationName}</p>
-            {externalUrl && (
+            </p>
+            <p className="mt-2 text-sm leading-7 text-foreground">{organizationName}</p>
+            {externalUrl ? (
               <a
                 href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline inline-flex items-center gap-1 mt-1"
+                className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
               >
                 {labels.officialWebsite}
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink className="h-3.5 w-3.5" />
               </a>
-            )}
-          </div>
+            ) : null}
+          </section>
 
-          {/* Registration Details */}
-          {hasRegistrationDetails && (
-            <div className="border-t pt-4">
-              <h3 className="font-semibold text-sm text-muted-foreground mb-2">
+          {hasRegistrationDetails ? (
+            <section className="border-t border-border/70 pt-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
                 {labels.registrationDetails}
-              </h3>
-              <div className="space-y-1 text-sm">
-                {registrationOpensAt && labels.registrationOpens && (
-                  <p>{labels.registrationOpens}</p>
-                )}
-                {registrationClosesAt && labels.registrationCloses && (
-                  <p>{labels.registrationCloses}</p>
-                )}
-                {isRegistrationPaused && (
-                  <p className="text-destructive">{labels.registrationPaused}</p>
-                )}
+              </p>
+              <div className="mt-3 space-y-2 text-sm leading-7 text-muted-foreground">
+                {registrationOpensAt && labels.registrationOpens ? <p>{labels.registrationOpens}</p> : null}
+                {registrationClosesAt && labels.registrationCloses ? <p>{labels.registrationCloses}</p> : null}
+                {isRegistrationPaused ? (
+                  <p className="text-[var(--brand-indigo)]">{labels.registrationPaused}</p>
+                ) : null}
               </div>
-            </div>
-          )}
+            </section>
+          ) : null}
 
-          {/* Other Editions */}
-          {otherEditions.length > 0 && (
-            <div className="border-t pt-4">
-              <h3 className="font-semibold text-sm text-muted-foreground mb-3">
+          {otherEditions.length > 0 ? (
+            <section className="border-t border-border/70 pt-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
                 {labels.otherEditionsTitle}
-              </h3>
-              <ul className="space-y-2">
+              </p>
+              <ul className="mt-3 space-y-3">
                 {otherEditions.map((edition) => {
                   const editionDate = formatEditionDate(edition);
                   const editionLocation = getEditionLocation(edition);
@@ -201,23 +207,23 @@ export function EventMobileInfoSheet({
                           params: { seriesSlug, editionSlug: edition.slug },
                         }}
                         onClick={() => onOpenChange(false)}
-                        className="group block rounded-md -mx-2 px-2 py-2 hover:bg-muted/50 transition-colors"
+                        className="group block rounded-[1.1rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] px-4 py-3 transition-colors hover:bg-background"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
+                            <p className="truncate text-sm font-semibold text-foreground">
                               {edition.editionLabel}
                             </p>
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
                               {[editionDate, editionLocation].filter(Boolean).join(' · ')}
                             </p>
                           </div>
                           <span
                             className={cn(
-                              'text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap',
+                              'shrink-0 text-[0.68rem] font-semibold uppercase tracking-[0.14em]',
                               edition.isRegistrationOpen
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                                : 'bg-muted text-muted-foreground',
+                                ? 'text-[var(--brand-green-dark)]'
+                                : 'text-muted-foreground',
                             )}
                           >
                             {edition.isRegistrationOpen
@@ -230,12 +236,11 @@ export function EventMobileInfoSheet({
                   );
                 })}
               </ul>
-            </div>
-          )}
+            </section>
+          ) : null}
 
-          {/* Register CTA */}
-          {isRegistrationOpen && (
-            <div className="border-t pt-4">
+          {isRegistrationOpen ? (
+            <section className="border-t border-border/70 pt-4">
               <Button asChild className="w-full">
                 <Link
                   href={{
@@ -247,8 +252,8 @@ export function EventMobileInfoSheet({
                   {labels.registerNow}
                 </Link>
               </Button>
-            </div>
-          )}
+            </section>
+          ) : null}
         </div>
       </SheetContent>
     </Sheet>

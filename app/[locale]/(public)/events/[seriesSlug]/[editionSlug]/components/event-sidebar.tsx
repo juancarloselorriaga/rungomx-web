@@ -1,3 +1,4 @@
+import { Badge } from '@/components/common/badge';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { ExternalLink } from 'lucide-react';
@@ -26,6 +27,7 @@ type EventSidebarProps = {
   registrationOpensAt: string | null;
   registrationClosesAt: string | null;
   isRegistrationPaused: boolean;
+  isRegistrationOpen: boolean;
   otherEditions: OtherEdition[];
   locale: string;
   labels: {
@@ -57,6 +59,7 @@ export function EventSidebar({
   registrationOpensAt,
   registrationClosesAt,
   isRegistrationPaused,
+  isRegistrationOpen,
   otherEditions,
   locale,
   labels,
@@ -76,118 +79,138 @@ export function EventSidebar({
   };
 
   const getEditionLocation = (edition: OtherEdition) => {
-    return (
-      edition.locationDisplay ||
-      [edition.city, edition.state].filter(Boolean).join(', ')
-    );
+    return edition.locationDisplay || [edition.city, edition.state].filter(Boolean).join(', ');
   };
 
-  return (
-    <div className="hidden lg:block space-y-6">
-      <div className="rounded-lg border bg-card p-6 space-y-4 sticky top-24">
-        <h3 className="font-semibold">{labels.eventDate}</h3>
-        {eventDate ? (
-          <p className="text-sm text-muted-foreground">{eventDate}</p>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">{labels.tba}</p>
-        )}
+  const currentRegistrationLabel = isRegistrationPaused
+    ? labels.registrationPaused
+    : isRegistrationOpen
+      ? labels.registrationOpen
+      : labels.registrationClosed;
 
-        {location && (
-          <>
-            <h3 className="font-semibold pt-2">{labels.location}</h3>
-            <p className="text-sm text-muted-foreground">{location}</p>
-            {address && <p className="text-sm text-muted-foreground">{address}</p>}
-            {latitude && longitude && (
+  const currentRegistrationVariant: 'green' | 'indigo' | 'outline' = isRegistrationPaused
+    ? 'indigo'
+    : isRegistrationOpen
+      ? 'green'
+      : 'outline';
+
+  return (
+    <aside className="hidden lg:block">
+      <div className="sticky top-24 rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-6 shadow-[0_24px_70px_-56px_rgba(15,23,42,0.45)]">
+        <Badge variant={currentRegistrationVariant}>{currentRegistrationLabel}</Badge>
+
+        <div className="mt-6 space-y-5 text-sm text-muted-foreground">
+          <section className="border-t border-border/70 pt-4">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+              {labels.eventDate}
+            </p>
+            <p className="mt-2 leading-7 text-foreground">{eventDate || labels.tba}</p>
+          </section>
+
+          {location ? (
+            <section className="border-t border-border/70 pt-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                {labels.location}
+              </p>
+              <p className="mt-2 leading-7 text-foreground">{location}</p>
+              {address ? <p className="mt-1 leading-7">{address}</p> : null}
+              {latitude && longitude ? (
+                <a
+                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
+                >
+                  {labels.viewMap}
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              ) : null}
+            </section>
+          ) : null}
+
+          <section className="border-t border-border/70 pt-4">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+              {labels.organizer}
+            </p>
+            <p className="mt-2 leading-7 text-foreground">{organizationName}</p>
+            {externalUrl ? (
               <a
-                href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                href={externalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-foreground underline-offset-4 hover:underline"
               >
-                {labels.viewMap}
-                <ExternalLink className="h-3 w-3" />
+                {labels.officialWebsite}
+                <ExternalLink className="h-3.5 w-3.5" />
               </a>
-            )}
-          </>
-        )}
+            ) : null}
+          </section>
 
-        <h3 className="font-semibold pt-2">{labels.organizer}</h3>
-        <p className="text-sm text-muted-foreground">{organizationName}</p>
+          {hasRegistrationDetails ? (
+            <section className="border-t border-border/70 pt-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                {labels.registrationDetails}
+              </p>
+              <div className="mt-3 space-y-2 leading-7">
+                {registrationOpensAt && labels.registrationOpens ? <p>{labels.registrationOpens}</p> : null}
+                {registrationClosesAt && labels.registrationCloses ? <p>{labels.registrationCloses}</p> : null}
+                {isRegistrationPaused ? (
+                  <p className="text-[var(--brand-indigo)]">{labels.registrationPaused}</p>
+                ) : null}
+              </div>
+            </section>
+          ) : null}
 
-        {externalUrl && (
-          <a
-            href={externalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-          >
-            {labels.officialWebsite}
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        )}
+          {otherEditions.length > 0 ? (
+            <section className="border-t border-border/70 pt-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                {labels.otherEditionsTitle}
+              </p>
+              <ul className="mt-3 space-y-3">
+                {otherEditions.map((edition) => {
+                  const editionDate = formatEditionDate(edition);
+                  const editionLocation = getEditionLocation(edition);
 
-        {hasRegistrationDetails && (
-          <div className="border-t pt-4 space-y-2">
-            <h3 className="font-semibold">{labels.registrationDetails}</h3>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              {registrationOpensAt && labels.registrationOpens && (
-                <p>{labels.registrationOpens}</p>
-              )}
-              {registrationClosesAt && labels.registrationCloses && (
-                <p>{labels.registrationCloses}</p>
-              )}
-              {isRegistrationPaused && (
-                <p className="text-destructive">{labels.registrationPaused}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {otherEditions.length > 0 && (
-          <div className="border-t pt-4 space-y-3">
-            <h3 className="font-semibold">{labels.otherEditionsTitle}</h3>
-            <ul className="space-y-2">
-              {otherEditions.map((edition) => {
-                const editionDate = formatEditionDate(edition);
-                const editionLocation = getEditionLocation(edition);
-
-                return (
-                  <li key={edition.id}>
-                    <Link
-                      href={{
-                        pathname: '/events/[seriesSlug]/[editionSlug]',
-                        params: { seriesSlug, editionSlug: edition.slug },
-                      }}
-                      className="group block rounded-md -mx-2 px-2 py-1.5 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{edition.editionLabel}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {[editionDate, editionLocation].filter(Boolean).join(' · ')}
-                          </p>
+                  return (
+                    <li key={edition.id}>
+                      <Link
+                        href={{
+                          pathname: '/events/[seriesSlug]/[editionSlug]',
+                          params: { seriesSlug, editionSlug: edition.slug },
+                        }}
+                        className="group block rounded-[1.1rem] border border-border/50 bg-background/70 px-4 py-3 transition-colors hover:bg-background"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {edition.editionLabel}
+                            </p>
+                            <p className="mt-1 truncate text-xs text-muted-foreground">
+                              {[editionDate, editionLocation].filter(Boolean).join(' · ')}
+                            </p>
+                          </div>
+                          <span
+                            className={cn(
+                              'shrink-0 text-[0.68rem] font-semibold uppercase tracking-[0.14em]',
+                              edition.isRegistrationOpen
+                                ? 'text-[var(--brand-green-dark)]'
+                                : 'text-muted-foreground',
+                            )}
+                          >
+                            {edition.isRegistrationOpen
+                              ? labels.registrationOpen
+                              : labels.registrationClosed}
+                          </span>
                         </div>
-                        <span
-                          className={cn(
-                            'text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap',
-                            edition.isRegistrationOpen
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-muted text-muted-foreground',
-                          )}
-                        >
-                          {edition.isRegistrationOpen
-                            ? labels.registrationOpen
-                            : labels.registrationClosed}
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+        </div>
       </div>
-    </div>
+    </aside>
   );
 }

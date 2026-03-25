@@ -14,6 +14,21 @@ type SectionWrapperProps = {
   className?: string;
 };
 
+function SectionHeading({ title, icon }: Pick<SectionWrapperProps, 'title' | 'icon'>) {
+  if (!title) return null;
+
+  return (
+    <div className="mb-6 border-t border-border/70 pt-5 md:mb-7 md:pt-6">
+      <div className="flex items-center gap-3 text-muted-foreground">
+        {icon ? <span className="shrink-0 opacity-80">{icon}</span> : null}
+        <h2 className="font-display text-[clamp(1.85rem,3vw,2.6rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+          {title}
+        </h2>
+      </div>
+    </div>
+  );
+}
+
 export function SectionWrapper({
   id,
   title,
@@ -24,49 +39,46 @@ export function SectionWrapper({
   className,
 }: SectionWrapperProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-
-  // Scroll margin to account for mobile sticky bar (64px) + some padding
-  const scrollMarginClass = 'scroll-mt-20';
+  const baseClassName = cn('scroll-mt-24', className);
 
   if (!collapsible) {
     return (
-      <section id={id} className={cn(scrollMarginClass, className)}>
-        {title && (
-          <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-            {icon}
-            {title}
-          </h2>
-        )}
-        {children}
+      <section id={id} className={baseClassName}>
+        {title ? <SectionHeading title={title} icon={icon} /> : null}
+        <div className={cn(!title && 'border-t border-border/70 pt-5 md:pt-6')}>{children}</div>
       </section>
     );
   }
 
   return (
-    <section id={id} className={cn(scrollMarginClass, className)}>
-      <button
-        type="button"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full flex items-center justify-between py-2 text-left group"
-        aria-expanded={!isCollapsed}
-        aria-controls={`${id}-content`}
-      >
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          {icon}
-          {title}
-        </h2>
-        <ChevronDown
-          className={cn(
-            'h-5 w-5 text-muted-foreground transition-transform duration-200',
-            isCollapsed ? '' : 'rotate-180',
-          )}
-        />
-      </button>
+    <section id={id} className={baseClassName}>
+      <div className="border-t border-border/70 pt-5 md:pt-6">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="group flex w-full items-center justify-between gap-4 text-left"
+          aria-expanded={!isCollapsed}
+          aria-controls={`${id}-content`}
+        >
+          <div className="flex items-center gap-3 text-muted-foreground">
+            {icon ? <span className="shrink-0 opacity-80">{icon}</span> : null}
+            <h2 className="font-display text-[clamp(1.85rem,3vw,2.6rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+              {title}
+            </h2>
+          </div>
+          <ChevronDown
+            className={cn(
+              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
+              isCollapsed ? '' : 'rotate-180',
+            )}
+          />
+        </button>
+      </div>
       <div
         id={`${id}-content`}
         className={cn(
           'overflow-hidden transition-all duration-300 ease-in-out',
-          isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[5000px] opacity-100 mt-4',
+          isCollapsed ? 'max-h-0 opacity-0' : 'mt-6 max-h-[5000px] opacity-100',
         )}
       >
         {children}

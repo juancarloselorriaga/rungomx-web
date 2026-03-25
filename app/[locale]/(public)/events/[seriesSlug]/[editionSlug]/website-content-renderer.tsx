@@ -3,6 +3,7 @@ import { MapPin, Clock, FileText, Image as ImageIcon, Download, Award } from 'lu
 import { PhotoGallery } from '@/components/events/photo-gallery';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { SponsorTierDisplay } from '@/components/events/sponsor-tier-display';
+import { Badge } from '@/components/common/badge';
 
 type WebsiteContentRendererProps = {
   blocks: WebsiteContentBlocks;
@@ -34,7 +35,15 @@ type WebsiteContentRendererProps = {
   };
 };
 
-export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false, labels }: WebsiteContentRendererProps) {
+const surfaceClassName =
+  'rounded-[1.3rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5';
+
+export function WebsiteContentRenderer({
+  blocks,
+  mediaUrls,
+  showSponsors = false,
+  labels,
+}: WebsiteContentRendererProps) {
   const overview = blocks.overview;
   const course = blocks.course;
   const schedule = blocks.schedule;
@@ -47,26 +56,24 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
     Boolean(course?.enabled) &&
     Boolean(
       course?.title ||
-      course?.description ||
-      course?.elevationGain ||
-      course?.elevationProfileUrl ||
-      course?.mapUrl ||
-      (course?.aidStations?.length ?? 0) > 0,
+        course?.description ||
+        course?.elevationGain ||
+        course?.elevationProfileUrl ||
+        course?.mapUrl ||
+        (course?.aidStations?.length ?? 0) > 0,
     );
   const hasScheduleContent =
     Boolean(schedule?.enabled) &&
     Boolean(
       schedule?.title ||
-      schedule?.packetPickup ||
-      schedule?.parking ||
-      schedule?.raceDay ||
-      (schedule?.startTimes?.length ?? 0) > 0,
+        schedule?.packetPickup ||
+        schedule?.parking ||
+        schedule?.raceDay ||
+        (schedule?.startTimes?.length ?? 0) > 0,
     );
   const hasMediaContent =
     Boolean(media?.enabled) &&
     Boolean((media?.photos?.length ?? 0) > 0 || (media?.documents?.length ?? 0) > 0);
-
-  // Check if any tier has at least one sponsor (only when showSponsors is enabled)
   const hasSponsorsContent =
     showSponsors &&
     Boolean(sponsors?.enabled) &&
@@ -80,236 +87,263 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
     !hasSponsorsContent
   ) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
+      <div className="rounded-[1.3rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] px-5 py-6 text-sm leading-7 text-muted-foreground">
         <p>{labels?.noAdditionalContent || 'More event details will be added soon.'}</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Overview Section */}
-	    {hasOverviewContent && overview && (
-	        <section>
-	          {overview.title && <h2 className="text-2xl font-bold mb-4">{overview.title}</h2>}
-	          {overview.content && <MarkdownContent content={overview.content} />}
-	          {overview.terrain && (
-	            <div className="mt-4 rounded-lg border bg-muted/30 p-4">
-	              <h3 className="font-semibold mb-2 flex items-center gap-2">
-	                <MapPin className="h-4 w-4" />
-	                {labels?.terrain || 'Terrain'}
-	              </h3>
-	              <MarkdownContent
-	                content={overview.terrain}
-	                className="text-sm text-muted-foreground"
-	              />
-	            </div>
-	          )}
-	        </section>
-	      )}
+    <div className="space-y-10">
+      {hasOverviewContent && overview ? (
+        <section className="space-y-5">
+          {overview.title ? (
+            <h2 className="font-display text-[clamp(1.45rem,2.6vw,1.95rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+              {overview.title}
+            </h2>
+          ) : null}
+          {overview.content ? <MarkdownContent content={overview.content} /> : null}
+          {overview.terrain ? (
+            <div className={surfaceClassName}>
+              <Badge variant="blue" size="sm" icon={<MapPin className="h-3.5 w-3.5" />}>
+                {labels?.terrain || 'Terrain'}
+              </Badge>
+              <div className="mt-4">
+                <MarkdownContent
+                  content={overview.terrain}
+                  className="text-sm leading-7 text-muted-foreground"
+                />
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
-      {/* Course Section */}
-	      {hasCourseContent && course && (
-	        <section>
-	          {course.title && <h2 className="text-2xl font-bold mb-4">{course.title}</h2>}
-	          {course.description && (
-	            <div className="mb-6">
-	              <MarkdownContent content={course.description} />
-	            </div>
-	          )}
+      {hasCourseContent && course ? (
+        <section className="space-y-5">
+          {course.title ? (
+            <h2 className="font-display text-[clamp(1.45rem,2.6vw,1.95rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+              {course.title}
+            </h2>
+          ) : null}
+          {course.description ? (
+            <div>
+              <MarkdownContent content={course.description} />
+            </div>
+          ) : null}
 
           <div className="grid gap-4">
-            {/* Elevation */}
-            {course.elevationGain && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-2">{labels?.elevationGain || 'Elevation gain'}</h3>
-                <p className="text-sm text-muted-foreground">{course.elevationGain}</p>
+            {course.elevationGain ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.elevationGain || 'Elevation gain'}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  {course.elevationGain}
+                </p>
               </div>
-            )}
+            ) : null}
 
-            {/* Elevation Profile */}
-            {course.elevationProfileUrl && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-3">{labels?.elevationProfile || 'Elevation profile'}</h3>
+            {course.elevationProfileUrl ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.elevationProfile || 'Elevation profile'}
+                </p>
                 <a
                   href={course.elevationProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
+                  className="mt-2 inline-flex text-sm font-semibold text-foreground underline-offset-4 hover:underline"
                 >
                   {labels?.viewElevationProfile || 'View elevation profile'}
                 </a>
               </div>
-            )}
+            ) : null}
 
-            {/* Course Map */}
-            {course.mapUrl && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-3">{labels?.courseMap || 'Course map'}</h3>
+            {course.mapUrl ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.courseMap || 'Course map'}
+                </p>
                 <a
                   href={course.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-primary hover:underline"
+                  className="mt-2 inline-flex text-sm font-semibold text-foreground underline-offset-4 hover:underline"
                 >
                   {labels?.viewCourseMap || 'View course map'}
                 </a>
               </div>
-            )}
+            ) : null}
 
-            {/* Aid Stations */}
-            {course.aidStations && course.aidStations.length > 0 && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-4">{labels?.aidStations || 'Aid stations'}</h3>
-                <div className="space-y-3">
+            {course.aidStations && course.aidStations.length > 0 ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.aidStations || 'Aid stations'}
+                </p>
+                <div className="mt-4 space-y-4">
                   {course.aidStations.map((station, index) => (
-                    <div key={index} className="border-l-2 border-primary pl-4">
-                      <p className="font-medium">{station.name}</p>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        {station.distanceKm !== undefined && (
-                          <p>{labels?.distance || 'Distance'}: {station.distanceKm} km</p>
-                        )}
-                        {station.cutoffTime && <p>{labels?.cutoff || 'Cutoff'}: {station.cutoffTime}</p>}
-                        {station.services && <p>{station.services}</p>}
+                    <div key={index} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
+                      <p className="text-sm font-semibold text-foreground">{station.name}</p>
+                      <div className="mt-1 space-y-1 text-sm leading-7 text-muted-foreground">
+                        {station.distanceKm !== undefined ? (
+                          <p>
+                            {labels?.distance || 'Distance'}: {station.distanceKm} km
+                          </p>
+                        ) : null}
+                        {station.cutoffTime ? (
+                          <p>
+                            {labels?.cutoff || 'Cutoff'}: {station.cutoffTime}
+                          </p>
+                        ) : null}
+                        {station.services ? <p>{station.services}</p> : null}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Schedule Section */}
-      {hasScheduleContent && schedule && (
-        <section>
-          {schedule.title && (
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Clock className="h-6 w-6" />
+      {hasScheduleContent && schedule ? (
+        <section className="space-y-5">
+          {schedule.title ? (
+            <h2 className="font-display flex items-center gap-3 text-[clamp(1.45rem,2.6vw,1.95rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+              <Clock className="h-5 w-5 text-muted-foreground" />
               {schedule.title}
             </h2>
-          )}
+          ) : null}
 
           <div className="grid gap-4">
-            {/* Packet Pickup */}
-	            {schedule.packetPickup && (
-	              <div className="rounded-lg border bg-card p-4">
-	                <h3 className="font-semibold mb-2">{labels?.packetPickup || 'Packet pickup'}</h3>
-	                <MarkdownContent
-	                  content={schedule.packetPickup}
-	                  className="text-sm text-muted-foreground"
-	                />
-	              </div>
-	            )}
+            {schedule.packetPickup ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.packetPickup || 'Packet pickup'}
+                </p>
+                <div className="mt-3">
+                  <MarkdownContent
+                    content={schedule.packetPickup}
+                    className="text-sm leading-7 text-muted-foreground"
+                  />
+                </div>
+              </div>
+            ) : null}
 
-            {/* Parking */}
-	            {schedule.parking && (
-	              <div className="rounded-lg border bg-card p-4">
-	                <h3 className="font-semibold mb-2">{labels?.parking || 'Parking'}</h3>
-	                <MarkdownContent
-	                  content={schedule.parking}
-	                  className="text-sm text-muted-foreground"
-	                />
-	              </div>
-	            )}
+            {schedule.parking ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.parking || 'Parking'}
+                </p>
+                <div className="mt-3">
+                  <MarkdownContent
+                    content={schedule.parking}
+                    className="text-sm leading-7 text-muted-foreground"
+                  />
+                </div>
+              </div>
+            ) : null}
 
-            {/* Race Day */}
-	            {schedule.raceDay && (
-	              <div className="rounded-lg border bg-card p-4">
-	                <h3 className="font-semibold mb-2">{labels?.raceDay || 'Race day'}</h3>
-	                <MarkdownContent
-	                  content={schedule.raceDay}
-	                  className="text-sm text-muted-foreground"
-	                />
-	              </div>
-	            )}
+            {schedule.raceDay ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.raceDay || 'Race day'}
+                </p>
+                <div className="mt-3">
+                  <MarkdownContent
+                    content={schedule.raceDay}
+                    className="text-sm leading-7 text-muted-foreground"
+                  />
+                </div>
+              </div>
+            ) : null}
 
-            {/* Start Times */}
-            {schedule.startTimes && schedule.startTimes.length > 0 && (
-              <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-3">{labels?.startTimes || 'Start times'}</h3>
-                <div className="space-y-2">
+            {schedule.startTimes && schedule.startTimes.length > 0 ? (
+              <div className={surfaceClassName}>
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                  {labels?.startTimes || 'Start times'}
+                </p>
+                <div className="mt-4 space-y-3">
                   {schedule.startTimes.map((startTime, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between py-2 border-b last:border-0"
+                      className="flex items-center justify-between gap-4 border-t border-border/60 pt-3 first:border-t-0 first:pt-0"
                     >
-                      <span className="font-medium">{startTime.distanceLabel}</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {startTime.distanceLabel}
+                      </span>
                       <div className="text-right">
-                        <p className="text-sm">{startTime.time}</p>
-                        {startTime.notes && (
+                        <p className="text-sm text-foreground">{startTime.time}</p>
+                        {startTime.notes ? (
                           <p className="text-xs text-muted-foreground">{startTime.notes}</p>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
         </section>
-      )}
+      ) : null}
 
-      {/* Media Section */}
-      {hasMediaContent && media && (
-        <section>
-          {media.title && (
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <ImageIcon className="h-6 w-6" />
+      {hasMediaContent && media ? (
+        <section className="space-y-6">
+          {media.title ? (
+            <h2 className="font-display flex items-center gap-3 text-[clamp(1.45rem,2.6vw,1.95rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
               {media.title}
             </h2>
-          )}
+          ) : null}
 
-          <div className="grid gap-6">
-            {/* Documents */}
-            {media.documents && media.documents.length > 0 && (
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  {labels?.documents || 'Documents'}
-                </h3>
-                <div className="grid gap-2">
-                  {media.documents.map((doc, index) => {
-                    const url = mediaUrls?.get(doc.mediaId);
-                    return url ? (
-                      <a
-                        key={doc.mediaId}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border bg-card p-3 flex items-center gap-3 hover:bg-muted/50 transition-colors group"
-                      >
-                        <FileText className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-sm font-medium flex-1">{doc.label}</span>
-                        <div className="flex items-center gap-2 text-muted-foreground group-hover:text-primary transition-colors">
-                          <span className="text-xs hidden sm:inline">
-                            {labels?.download || 'Download'}
-                          </span>
-                          <Download className="h-4 w-4" />
-                        </div>
-                      </a>
-                    ) : (
-                      <div
-                        key={doc.mediaId || index}
-                        className="rounded-lg border bg-card p-3 flex items-center gap-3"
-                      >
-                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                        <span className="text-sm font-medium">{doc.label}</span>
+          {media.documents && media.documents.length > 0 ? (
+            <div>
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                {labels?.documents || 'Documents'}
+              </p>
+              <div className="mt-3 grid gap-2">
+                {media.documents.map((doc, index) => {
+                  const url = mediaUrls?.get(doc.mediaId);
+                  return url ? (
+                    <a
+                      key={doc.mediaId}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-[1.1rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 transition-colors hover:bg-background"
+                    >
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+                        {doc.label}
+                      </span>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="hidden text-xs sm:inline">
+                          {labels?.download || 'Download'}
+                        </span>
+                        <Download className="h-4 w-4" />
                       </div>
-                    );
-                  })}
-                </div>
+                    </a>
+                  ) : (
+                    <div
+                      key={doc.mediaId || index}
+                      className="flex items-center gap-3 rounded-[1.1rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3"
+                    >
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <span className="text-sm font-semibold text-foreground">{doc.label}</span>
+                    </div>
+                  );
+                })}
               </div>
-            )}
+            </div>
+          ) : null}
 
-            {/* Photos Gallery */}
-            {media.photos && media.photos.length > 0 && (
-              <div>
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <ImageIcon className="h-5 w-5" />
-                  {labels?.photos || 'Photos'}
-                </h3>
+          {media.photos && media.photos.length > 0 ? (
+            <div>
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                {labels?.photos || 'Photos'}
+              </p>
+              <div className="mt-4">
                 <PhotoGallery
                   photos={media.photos
                     .slice()
@@ -325,23 +359,22 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
                   labels={labels?.gallery}
                 />
               </div>
-            )}
-          </div>
+            </div>
+          ) : null}
         </section>
-      )}
+      ) : null}
 
-      {/* Sponsors Section */}
-      {hasSponsorsContent && sponsors && (
-        <section>
-          {sponsors.title && (
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-              <Award className="h-6 w-6" />
+      {hasSponsorsContent && sponsors ? (
+        <section className="space-y-6">
+          {sponsors.title ? (
+            <h2 className="font-display flex items-center gap-3 text-[clamp(1.45rem,2.6vw,1.95rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+              <Award className="h-5 w-5 text-muted-foreground" />
               {sponsors.title}
             </h2>
-          )}
-          {sponsors.subtitle && (
-            <p className="text-muted-foreground mb-6">{sponsors.subtitle}</p>
-          )}
+          ) : null}
+          {sponsors.subtitle ? (
+            <p className="max-w-[42rem] text-sm leading-7 text-muted-foreground">{sponsors.subtitle}</p>
+          ) : null}
           <div className="space-y-6">
             {sponsors.tiers
               ?.slice()
@@ -351,7 +384,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
               ))}
           </div>
         </section>
-      )}
+      ) : null}
     </div>
   );
 }
