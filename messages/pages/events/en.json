@@ -176,8 +176,8 @@
     },
     "addons": {
       "title": "Add-ons",
-      "description": "Optional add-ons for your event.",
-      "noAddons": "No add-ons available for this event.",
+      "description": "Optional add-ons for your race.",
+      "noAddons": "No add-ons available for this race.",
       "merchandise": "Merchandise",
       "donation": "Donation",
       "quantity": "Quantity",
@@ -200,7 +200,7 @@
     },
     "waiver": {
       "title": "Waiver agreement",
-      "description": "Please read and accept the waiver(s) to continue.",
+      "description": "Read and accept the waiver to continue.",
       "waiverNumber": "Waiver {number} of {total}",
       "accept": "I have read and agree to the waiver terms",
       "acceptThis": "I have read and agree to the terms of \"{title}\"",
@@ -246,7 +246,7 @@
     },
     "confirmation": {
       "title": "Registration complete!",
-      "description": "You have successfully registered for {eventName}.",
+      "description": "You're registered for {eventName}.",
       "registrationId": "Ticket code",
       "distance": "Distance",
       "documents": "Event Documents",
@@ -267,11 +267,11 @@
       "yourRegistration": "Your registration"
     },
     "errors": {
-      "distanceRequired": "Please select a distance",
+      "distanceRequired": "Select a distance",
       "soldOut": "This distance is sold out",
-      "registrationClosed": "Registration is closed for this event",
-      "alreadyRegistered": "You are already registered for this event",
-      "registrationNotOpen": "Registration has not opened yet for this event",
+      "registrationClosed": "Registration is closed for this race",
+      "alreadyRegistered": "You're already registered for this race",
+      "registrationNotOpen": "Registration is not open yet for this race",
       "activeInviteTitle": "You already have an invite reservation",
       "activeInvite": "Check your email for the invite link before starting a new registration.",
       "viewMyRegistrations": "View my registrations"
@@ -284,7 +284,7 @@
     },
     "loginRequired": {
       "title": "Sign in required",
-      "description": "You need to be signed in to register for this event.",
+      "description": "You need to be signed in to register for this race.",
       "signIn": "Sign in",
       "signUp": "Create account"
     }
@@ -319,7 +319,7 @@
       }
     },
     "errors": {
-      "dobRequired": "Please enter your date of birth to claim.",
+      "dobRequired": "Enter your date of birth to claim.",
       "EMAIL_MISMATCH": "This invite was sent to a different email address. Sign in with the invited email to claim it.",
       "DOB_MISMATCH": "This invite doesn't match that date of birth. Ask the coordinator to resend it or contact the Race Director.",
       "DOB_REQUIRED": "Date of birth is required to claim this invite.",
@@ -327,10 +327,10 @@
       "INVITE_INVALID": "This invite is no longer active.",
       "INVITE_CANCELLED": "This invite was cancelled by the coordinator.",
       "ALREADY_CLAIMED": "This invite has already been claimed.",
-      "ALREADY_REGISTERED": "You already have a registration for this event.",
-      "RATE_LIMITED": "Too many attempts. Please try again later.",
-      "EMAIL_NOT_VERIFIED": "Please verify your email before claiming.",
-      "UNAUTHENTICATED": "Please sign in to claim this invite."
+      "ALREADY_REGISTERED": "You already have a registration for this race.",
+      "RATE_LIMITED": "Too many attempts. Try again later.",
+      "EMAIL_NOT_VERIFIED": "Verify your email before claiming.",
+      "UNAUTHENTICATED": "Sign in to claim this invite."
     }
   },
   "groupUpload": {

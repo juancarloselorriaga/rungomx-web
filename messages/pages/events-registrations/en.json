@@ -46,8 +46,8 @@
     "registrationsDescription": "All registrant data with custom answers",
     "addOns": "Add-On Sales CSV",
     "addOnsDescription": "Add-on quantities and revenue summary",
-    "success": "Registrations exported successfully",
-    "successAddOns": "Add-on sales exported successfully",
-    "error": "Failed to export. Please try again."
+    "success": "Registrations exported.",
+    "successAddOns": "Add-on sales exported.",
+    "error": "Couldn't export. Try again."
   }
 }

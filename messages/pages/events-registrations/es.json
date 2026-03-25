@@ -46,8 +46,8 @@
     "registrationsDescription": "Todos los datos de participantes con respuestas",
     "addOns": "Ventas de Extras CSV",
     "addOnsDescription": "Resumen de cantidades e ingresos de extras",
-    "success": "Inscripciones exportadas exitosamente",
-    "successAddOns": "Ventas de extras exportadas exitosamente",
-    "error": "Error al exportar. Inténtalo de nuevo."
+    "success": "Inscripciones exportadas.",
+    "successAddOns": "Ventas de extras exportadas.",
+    "error": "No se pudo exportar. Inténtalo de nuevo."
   }
 }
