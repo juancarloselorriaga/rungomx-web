@@ -1,13 +1,13 @@
 {
   "field": {
     "mapButton": "Map",
-    "emptyValue": "No location selected yet"
+    "emptyValue": "No location set"
   },
   "picker": {
-    "title": "Choose location on map",
-    "description": "Search for a place or click on the map to fine-tune the exact point.",
+    "title": "Set event location",
+    "description": "Search for a place or click on the map to pin the exact spot.",
     "searchPlaceholder": "Search for a place or address",
-    "emptySelectionHelper": "Select a point on the map to set your location.",
+    "emptySelectionHelper": "Click on the map to set a location.",
     "actions": {
       "cancel": "Cancel",
       "confirm": "Use this location",

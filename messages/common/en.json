@@ -46,7 +46,7 @@
   "proFeatures": {
     "event_ai_wizard": {
       "title": "Setup assistant",
-      "description": "Create distances and pricing faster with an AI-guided wizard.",
+      "description": "Set up distances, pricing, and content faster with AI-assisted setup.",
       "ctaLabel": "Upgrade to Pro"
     },
     "event_clone": {
@@ -60,8 +60,8 @@
       "ctaLabel": "Upgrade to Pro"
     },
     "disabled": {
-      "title": "Feature unavailable",
-      "description": "This feature is currently disabled for everyone."
+      "title": "Unavailable right now",
+      "description": "This feature is currently disabled."
     }
   }
 }

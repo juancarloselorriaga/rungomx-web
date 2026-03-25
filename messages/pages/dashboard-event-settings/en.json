@@ -1,29 +1,29 @@
 {
   "title": "Event Settings",
-  "description": "Configure your event details, visibility, distances, and registration settings.",
+  "description": "Manage your event details, visibility, distances, and registration.",
   "wizard": {
-    "title": "Finish setting up your event",
-    "description": "Add your first distance, then publish when you are ready to share.",
+    "title": "Let's finish setting up your event",
+    "description": "Add at least one distance, then publish when you're ready.",
     "stepZeroLabel": "Step 0",
-    "stepZeroDescription": "Choose how you want to set up this event first. You can switch paths at any time.",
+    "stepZeroDescription": "Choose how you want to set up this event. You can switch at any time.",
     "pending": "Pending",
-    "switchPath": "Switch path",
+    "switchPath": "Switch setup method",
     "path": {
-      "ai": "AI Setup",
-      "manual": "Manual Setup"
+      "ai": "AI-assisted",
+      "manual": "Manual"
     },
     "pathHint": {
-      "ai": "AI path selected. Use the assistant to draft updates, then continue editing manually as needed.",
-      "manual": "Manual path selected. Fill each section directly and switch to AI anytime."
+      "ai": "AI-assisted setup selected. Use the assistant to draft updates, then edit manually as needed.",
+      "manual": "Manual setup selected. Fill in each section directly and switch to AI any time."
     },
     "progress": {
       "required": "Required steps",
-      "percent": "Completion",
+      "percent": "Progress",
       "publishBlockers": "Publish blockers"
     },
     "registry": {
-      "choosePath": "Choose setup path",
-      "eventDetails": "Event details",
+      "choosePath": "Choose setup method",
+      "eventDetails": "Event basics",
       "distances": "Distances",
       "pricing": "Pricing",
       "faq": "FAQ",
@@ -35,61 +35,61 @@
       "publish": "Publish readiness"
     },
     "issues": {
-      "missingEventDate": "Add a confirmed event start date and time before publishing.",
-      "missingEventEndDate": "Add an end date if you want the event window to feel fully defined.",
-      "missingEventLocation": "Add an event location (city/state or map location).",
-      "missingEventDescription": "Add a public description so participants immediately understand what the event is about.",
-      "missingHeroImage": "Add a hero image so the event feels complete and more compelling at a glance.",
+      "missingEventDate": "Add a confirmed start date and time before publishing.",
+      "missingEventEndDate": "Add an end date to make the event schedule feel complete.",
+      "missingEventLocation": "Add an event location — city and state, or a map pin.",
+      "missingEventDescription": "Add a public description so runners know what to expect.",
+      "missingHeroImage": "Add a cover image to make your event stand out.",
       "missingDistance": "Add at least one distance for this edition.",
-      "publishMissingDistance": "Publish blocked: add at least one distance before publishing.",
-      "publishMissingPricing": "Publish blocked: each distance needs at least one price tier.",
-      "publishActiveAddOnWithoutOptions": "Publish blocked: every active add-on needs at least one active option.",
-      "publishLocationNeedsVenueConfirmation": "Publish blocked: this saved location still looks like a map match or landmark, not a confirmed event venue. Recheck Basics and save a more exact venue or address.",
-      "publishContentScheduleTruthConflict": "Publish blocked: participant-facing content still says the event date or time is unconfirmed even though the structured schedule is already saved.",
-      "publishContentLocationTruthConflict": "Publish blocked: participant-facing content still says the location is unconfirmed even though the structured event location is already saved.",
-      "recommendPricingWindows": "Recommended: define clear early, regular, or late pricing windows.",
-      "recommendFaq": "Recommended: add at least one FAQ item to answer common participant questions.",
-      "recommendWaivers": "Recommended: add a waiver so participants can acknowledge event terms.",
-      "recommendQuestions": "Recommended: add registration questions for logistics and participant preferences.",
-      "recommendWebsite": "Recommended: add website content so participants can review event details.",
-      "recommendAddOns": "Recommended: configure add-ons if you plan to offer extras.",
-      "recommendPolicies": "Recommended: review refund/transfer/deferral policies before publishing."
+      "publishMissingDistance": "Can't publish yet — add at least one distance first.",
+      "publishMissingPricing": "Can't publish yet — every distance needs at least one price.",
+      "publishActiveAddOnWithoutOptions": "Can't publish yet — every active add-on needs at least one active option.",
+      "publishLocationNeedsVenueConfirmation": "Can't publish yet — the saved location looks like a map match, not a confirmed venue. Go to Basics and confirm the exact address.",
+      "publishContentScheduleTruthConflict": "Can't publish yet — your event content says the date is unconfirmed, but the schedule is already saved. Update the content to match.",
+      "publishContentLocationTruthConflict": "Can't publish yet — your event content says the location is unconfirmed, but it's already saved. Update the content to match.",
+      "recommendPricingWindows": "Consider adding early bird and regular pricing windows.",
+      "recommendFaq": "Add at least one FAQ to help runners with common questions.",
+      "recommendWaivers": "Add a waiver so runners can acknowledge race terms at registration.",
+      "recommendQuestions": "Add registration questions to collect logistics info or preferences.",
+      "recommendWebsite": "Add website content so runners can review race details.",
+      "recommendAddOns": "Set up add-ons if you plan to offer extras like shirts or gear.",
+      "recommendPolicies": "Review your refund, transfer, and deferral policies before going live."
     },
     "adaptive": {
-      "title": "Adaptive next steps",
-      "description": "Prioritized guidance from your current setup state.",
-      "goToStep": "Go to step: {step}",
+      "title": "What to do next",
+      "description": "Prioritized based on your current setup.",
+      "goToStep": "Go to: {step}",
       "severity": {
-        "blocker": "Blocker",
+        "blocker": "Blocked",
         "required": "Required",
         "optional": "Recommended"
       }
     },
-    "assistantHint": "Need help with setup? Use the assistant to draft suggested changes.",
+    "assistantHint": "Need help? The setup assistant can draft changes for any step.",
     "assistantAction": "Open setup assistant",
     "steps": {
-      "distance": "Add at least one distance with pricing.",
-      "publish": "Publish the event to make it visible."
+      "distance": "Add at least one distance with a price.",
+      "publish": "Publish to make your event visible."
     }
   },
   "wizardShell": {
-    "eyebrow": "Setup wizard",
-    "title": "Build your event step by step",
-    "description": "Stay focused on the current step, move forward with confidence, and switch back to the full editor only when you choose to.",
+    "eyebrow": "Event setup",
+    "title": "Set up your event step by step",
+    "description": "Work through each section at your own pace. Come back to anything you skip.",
     "progress": {
-      "label": "Current progress",
+      "label": "Your progress",
       "current": "Step {current} of {total}",
-      "step": "Active step",
+      "step": "Current step",
       "completedLabel": "Completed",
       "completedValue": "of {total} steps",
-      "blockersValue": "{publish, plural, =0 {No required publish blockers} one {# required publish blocker} other {# required publish blockers}}{required, plural, =0 {} one { · # required step still pending} other { · # required steps still pending}}",
-      "skippedValue": "{count, plural, =0 {No optional steps paused} one {# optional step paused} other {# optional steps paused}}"
+      "blockersValue": "{publish, plural, =0 {No publish blockers} one {# publish blocker} other {# publish blockers}}{required, plural, =0 {} one { · # required step pending} other { · # required steps pending}}",
+      "skippedValue": "{count, plural, =0 {No optional steps skipped} one {# optional step skipped} other {# optional steps skipped}}"
     },
     "sidebar": {
-      "title": "Wizard steps",
+      "title": "Setup steps",
       "required": "Required",
       "optional": "Optional",
-      "complete": "Complete",
+      "complete": "Done",
       "skipped": "Skipped"
     },
     "steps": {
@@ -98,88 +98,88 @@
       "pricing": "Pricing",
       "registration": "Registration",
       "policies": "Policies & waivers",
-      "content": "Participant content",
-      "extras": "Questions & extras",
+      "content": "Event content",
+      "extras": "Questions & add-ons",
       "review": "Review & publish"
     },
     "stepDescriptions": {
-      "basics": "Define the essential event identity, schedule, and location details that anchor the rest of setup.",
-      "distances": "Create the distances runners can register for and configure how capacity should be managed.",
-      "pricing": "Make sure every distance has a usable pricing structure before you move toward publishing.",
-      "registration": "Set the registration window and control whether registrations are currently paused or active.",
-      "policies": "Review organizer-facing policy settings and the participant waivers that will appear in registration.",
-      "content": "Shape the participant-facing story with FAQ answers and rich website content.",
-      "extras": "Add registration questions and optional extras only if they add real value for your event.",
-      "review": "Check blockers, revisit skipped optional work, and control when the event becomes visible."
+      "basics": "Set the event name, date, location, and the details that everything else builds on.",
+      "distances": "Add the distances runners can register for and configure capacity.",
+      "pricing": "Make sure every distance has a working price before you publish.",
+      "registration": "Set the registration window and control whether sign-ups are open or paused.",
+      "policies": "Set participant waivers and review your refund and transfer policies.",
+      "content": "Write your FAQ and add content for the race page.",
+      "extras": "Add registration questions and optional extras if they add real value.",
+      "review": "Clear any blockers, revisit skipped steps, and control when the event goes live."
     },
     "navigation": {
       "previous": "Previous",
       "next": "Next",
       "skip": "Skip for now",
-      "exit": "Exit wizard"
+      "exit": "Exit setup"
     },
     "footer": {
-      "description": "This shell sets the foundation for the full numbered wizard. Later stories will wire each step body into this flow.",
-      "completeRequired": "Complete {step} before moving forward.",
-      "optionalHint": "You can complete this step now or skip it and revisit it later.",
-      "ready": "This step is in good shape. Continue when you're ready."
+      "description": "Work through each step or jump to any section from the sidebar.",
+      "completeRequired": "Finish {step} before moving on.",
+      "optionalHint": "You can complete this now or come back to it later.",
+      "ready": "This step looks good. Continue when you're ready."
     },
     "placeholder": {
-      "eyebrow": "Step scaffold",
-      "description": "{step} will be connected to its dedicated editor surface in the next wizard stories.",
+      "eyebrow": "Coming soon",
+      "description": "{step} will be available in a future update.",
       "returnToBasics": "Return to basics"
     },
     "review": {
       "finishLineLabel": "Finish line",
-      "readyTitle": "This event is ready for publish review",
-      "readyDescription": "Required setup is complete. Review visibility and publish controls below when you are ready to make the event visible.",
-      "reviewRecommendedTitle": "Required setup is covered, but review is still recommended before publishing",
-      "reviewRecommendedDescription": "Required setup is complete. There {count, plural, one {is still # recommended point} other {are still # recommended points}} worth reviewing to improve participant clarity and confidence before making the event visible.",
-      "blockedTitle": "Resolve these blockers before publishing",
+      "readyTitle": "Everything looks good. Publish when you're ready.",
+      "readyDescription": "All required setup is complete. Review visibility and publish controls below when you're ready to go live.",
+      "reviewRecommendedTitle": "Required setup is done — a few things worth checking before you publish",
+      "reviewRecommendedDescription": "Required setup is complete. There {count, plural, one {is still # recommended improvement} other {are still # recommended improvements}} worth reviewing before going live.",
+      "blockedTitle": "Fix these issues before publishing",
       "blockedDescription": "{publish, plural, =0 {No required publish blockers remain.} one {# required publish blocker remains.} other {# required publish blockers remain.}} {required, plural, =0 {} one {# setup requirement still needs attention.} other {# setup requirements still need attention.}}",
-      "recheckingTitle": "Refreshing publish review",
-      "recheckingDescription": "We are rechecking the latest participant-facing content and setup state before showing publish blockers or readiness.",
-      "recheckingBody": "Review is waiting for a fresh server payload. Old blocker counts stay hidden until the updated state arrives.",
-      "recheckingCounts": "Rechecking review status…",
-      "serverAuthority": "Final publish checks remain server-authoritative. The controls below confirm the real backend state before visibility changes.",
-      "goToFirstBlocker": "Fix first blocker",
+      "recheckingTitle": "Checking publish readiness",
+      "recheckingDescription": "Reviewing your latest event content and setup before showing blockers or readiness.",
+      "recheckingBody": "Checking the latest event state. Current counts will update in a moment.",
+      "recheckingCounts": "Checking status…",
+      "serverAuthority": "Publish status reflects the current saved state. The controls below update visibility once all checks pass.",
+      "goToFirstBlocker": "Fix first issue",
       "openPublishControls": "Open publish controls",
       "publishBadge": "Publish blocker",
       "requiredBadge": "Required setup",
       "recommendationBadge": "Recommended",
       "goToStep": "Go to {step}",
-      "blockersTitle": "Required blockers",
-      "blockersDescription": "These items must be resolved before publish readiness can be trusted.",
-      "noBlockers": "No blockers remain. The event is structurally ready for publish review.",
-      "noRequiredBlockers": "No required publish blockers remain, but the recommendations below are still worth reviewing before making the event visible.",
-      "recommendationsTitle": "Recommended polish",
-      "recommendationsDescription": "These items are optional, but they improve clarity and participant confidence.",
+      "blockersTitle": "Publish blockers",
+      "blockersDescription": "Resolve these before publishing.",
+      "noBlockers": "No blockers. Everything looks good.",
+      "noRequiredBlockers": "No publish blockers remaining. The recommendations below are still worth a look before going live.",
+      "recommendationsTitle": "Recommended improvements",
+      "recommendationsDescription": "These are optional, but they make the experience better for runners.",
       "noRecommendations": "No extra recommendations right now.",
       "skippedTitle": "Skipped steps",
       "skippedDescription": "Optional steps you intentionally skipped stay visible here so they are easy to revisit.",
       "noSkipped": "No optional steps have been skipped.",
-      "skippedHelp": "Skipped steps do not block publish, but they remain worth revisiting if you want a more complete participant experience."
+      "skippedHelp": "Skipped steps won't block publish, but they're worth revisiting for a better runner experience."
     }
   },
   "assistant": {
     "title": "Setup assistant",
-    "description": "Describe your event in one message. I’ll propose changes you can review and apply.",
-    "contract": "I only suggest updates. Nothing changes until you apply each proposal.",
+    "description": "Describe your event and I'll suggest changes you can review and apply.",
+    "contract": "I suggest changes, but nothing updates until you apply them.",
     "historyLabel": "Setup assistant conversation",
     "composer": {
-      "sectionTitle": "What do you want help with in this step?",
-      "label": "Message for setup assistant",
-      "hint": "Describe what you want for this step and I will propose reviewable changes. Rough notes are fine.",
-      "briefHint": "Use this box for what you want to solve right now. Rough notes are fine. Saved event notes stay above.",
-      "savedBriefHint": "The assistant already has your saved event notes. Add any rough extra details you want for this step here.",
+      "sectionTitle": "What do you need help with in this step?",
+      "label": "Message",
+      "hint": "Describe what you want and I'll propose changes. Rough notes are fine.",
+      "briefHint": "Use this box for what you want to solve right now. Your saved notes stay above.",
+      "savedBriefHint": "I already have your saved event notes. Add any extra details here — rough is fine.",
       "roughNotesTitle": "Paste rough notes. I will turn them into a clear proposal.",
       "roughNotesExample": "Examples: \"10K at night in Guadalajara, first-timers welcome, music at the finish\" or \"Need FAQ and site copy, but keep logistics grounded in confirmed details.\""
     },
     "inline": {
-      "title": "AI assistant for {step}",
+      "title": "Assistant for {step}",
       "description": "Get help for this step without leaving this setup flow.",
-      "markdownBadge": "Ready-to-publish copy",
-      "markdownHint": "Use it to leave this section ready to publish."
+      "markdownBadge": "Ready to publish",
+      "markdownHint": "Use this to leave the section ready to go."
     },
     "mobile": {
       "open": "Open assistant",
@@ -187,107 +187,107 @@
     },
     "desktop": {
       "open": "Open assistant",
-      "stepHint": "Keep the editor comfortable and open a wider AI workspace for {step} only when you need it.",
-      "workspaceTitle": "AI assistant for {step}",
-      "workspaceDescription": "Use this expanded workspace to review proposals, refine prompts, and apply changes without squeezing the main editor."
+      "stepHint": "Open the assistant for {step} when you need a wider workspace.",
+      "workspaceTitle": "Assistant for {step}",
+      "workspaceDescription": "Review proposals, refine your request, and apply changes without cramping the editor."
     },
     "latestProposal": {
       "title": "Latest proposal",
-      "description": "Review the newest AI recommendation first, then keep iterating from there.",
+      "description": "Review the latest suggestion, then keep refining from here.",
       "detailsTitle": "Show proposal details",
       "contextTitle": "Show context",
       "supportingContextTitle": "Supporting context",
       "supportingContextDescription": "{count, plural, =0 {See the latest request and response if you need extra context.} one {See the latest request and response plus # earlier message.} other {See the latest request and response plus # earlier messages.}}",
-      "requestLabel": "Latest request",
+      "requestLabel": "Your request",
       "responseLabel": "What I have so far",
-      "pendingTitle": "What I’m putting together"
+      "pendingTitle": "Working on it"
     },
     "pending": {
       "requestLabel": "What you asked for"
     },
     "handoff": {
-      "eyebrow": "Best place to continue",
-      "titleCrossStep": "The strongest next move is in {step}",
-      "titleMixed": "I can keep helping here, but the main work belongs in {step}",
-      "descriptionCrossStep": "This request fits better in {step}, which is where that kind of work lives in the assistant flow.",
+      "eyebrow": "Better place to continue",
+      "titleCrossStep": "This belongs in {step}",
+      "titleMixed": "I can keep going here, but the main work fits in {step}",
+      "descriptionCrossStep": "This request fits better in {step}, which is where that kind of work lives.",
       "descriptionMixed": "Part of this still touches {currentStep}, but the clearest next step to keep moving is in {step}.",
       "secondaryTargets": "This may also touch: {steps}.",
       "primaryAction": "Continue in {step}",
       "stayHereAction": "Stay in {step}",
       "reason": {
-        "event_description": "What you asked for is mainly about drafting or improving the main participant-facing event description.",
-        "participant_content": "This is more participant-facing content work than event-basics setup.",
-        "faq": "This fits best where participant questions and answers are built out.",
-        "website_overview": "This belongs with the event website content, not the core setup fields in this step.",
-        "policy": "This is better handled in policies and waivers, where participant-facing rules and organizer commitments stay organized.",
-        "extras": "This is best handled in questions and extras, where those optional setup pieces already live.",
-        "mixed_content": "Your request mixes participant-facing content areas together, so it is best to continue where that work naturally belongs.",
-        "mixed_general": "Your request spans more than one setup area, so this is the clearest place to continue without losing context."
+        "event_description": "You're asking about the main event description runners see on the race page.",
+        "participant_content": "This is more about what runners read than about the core event setup.",
+        "faq": "This fits better in the FAQ section, where participant questions and answers live.",
+        "website_overview": "This belongs on the event website, not in this step's settings.",
+        "policy": "Policies and waivers have their own step where this fits best.",
+        "extras": "Questions and add-ons have their own step for exactly this.",
+        "mixed_content": "Your request spans a few content areas — continuing in the right step will keep things clean.",
+        "mixed_general": "Your request covers more than one setup area. This is the clearest place to continue."
       }
     },
     "progress": {
       "analyzing": {
         "title": "Reviewing your request",
-        "description": "Checking your notes and the current {step} setup so the next proposal stays grounded."
+        "description": "Checking your notes and the current {step} setup."
       },
       "grounding": {
-        "title": "Grounding the proposal",
-        "description": "Cross-checking saved event details, existing setup, and open blockers before drafting {step}."
+        "title": "Checking the details",
+        "description": "Cross-referencing saved event details and any open blockers before drafting {step}."
       },
       "drafting": {
-        "title": "Drafting your next move",
-        "description": "Shaping organizer-friendly guidance for {step} before the reviewable proposal is ready."
+        "title": "Drafting your proposal",
+        "description": "Putting together a clear, actionable proposal for {step}."
       },
       "finalizing": {
-        "title": "Preparing the proposal card",
-        "description": "Packaging the final recommendation so you can review and apply it safely."
+        "title": "Getting the proposal ready",
+        "description": "Almost there — preparing the final version for you to review and apply."
       }
     },
     "fastPath": {
-      "eyebrow": "Early structure",
+      "eyebrow": "In progress",
       "event_description": {
-        "title": "Starting with a grounded event description",
-        "description": "I can shape the first useful draft around these pieces before the full proposal is ready.",
+        "title": "Building your event description",
+        "description": "Working on the first useful draft while the full proposal is being prepared.",
         "sections": {
-          "lead": "A clear opening that frames the race in one confident paragraph.",
-          "confirmed_highlights": "Specific highlights pulled only from confirmed details and tone cues.",
-          "pending_logistics": "Logistics that should stay pending or omitted until they are confirmed."
+          "lead": "A clear opening paragraph that sets up the race.",
+          "confirmed_highlights": "Highlights pulled only from confirmed details.",
+          "pending_logistics": "Logistics that stay pending until you confirm them."
         }
       },
       "faq": {
-        "title": "Starting with a usable FAQ structure",
-        "description": "I can draft the first answers faster by organizing the FAQ around the most likely participant questions.",
+        "title": "Building your FAQ",
+        "description": "Drafting the first answers around the questions runners are most likely to ask.",
         "sections": {
-          "event_basics": "What the event is, who it is for, and the essentials participants need first.",
-          "route_and_distances": "Grounded route or distance details that are already confirmed.",
-          "registration_and_logistics": "Registration, timing, and logistics only where the current setup supports them."
+          "event_basics": "What the event is, who it's for, and the key details runners need first.",
+          "route_and_distances": "Route and distance info based only on confirmed details.",
+          "registration_and_logistics": "Registration and logistics where the current setup supports them."
         }
       },
       "content_bundle": {
-        "title": "Starting with FAQ plus the website overview",
-        "description": "I can leave a more useful first layer of content by drafting the key FAQs and the main website summary together.",
+        "title": "Building FAQ and website overview",
+        "description": "Drafting the key FAQs and the main website summary together for a stronger first pass.",
         "sections": {
-          "faq_answers": "Short answers to the most likely participant questions using only confirmed event details.",
+          "faq_answers": "Short answers to likely questions using only confirmed event details.",
           "website_summary": "A main website summary that introduces the event without inventing logistics.",
-          "confirmed_boundaries": "Clear boundaries around what is still pending so we do not over-promise."
+          "confirmed_boundaries": "Clear notes on what's still pending so we don't overpromise."
         }
       },
       "website_overview": {
-        "title": "Starting with a website overview scaffold",
-        "description": "I can move faster by framing the site copy around the confirmed event story before expanding it.",
+        "title": "Building the website overview",
+        "description": "Framing the site copy around the confirmed event story before expanding it.",
         "sections": {
-          "hero_positioning": "A grounded hero message that sets the tone without overpromising.",
-          "confirmed_experience": "Specific event qualities or race-day feel that the snapshot already supports.",
-          "what_to_confirm": "Items to keep tentative until the organizer confirms them."
+          "hero_positioning": "A strong opening that sets the tone without overpromising.",
+          "confirmed_experience": "Specific race qualities the current setup already supports.",
+          "what_to_confirm": "Items to mark as tentative until you confirm them."
         }
       },
       "policy": {
-        "title": "Starting with a policy draft structure",
-        "description": "I can prepare a clearer first draft by organizing the policy into the sections participants expect.",
+        "title": "Building the policy draft",
+        "description": "Organizing the policy into the sections runners expect to see.",
         "sections": {
-          "core_rule": "The main rule or commitment participants need to understand first.",
-          "participant_responsibility": "Participant-facing responsibilities or acknowledgements stated plainly.",
-          "open_logistics": "Operational details that should remain open until they are confirmed."
+          "core_rule": "The main rule or commitment runners need to understand first.",
+          "participant_responsibility": "What participants agree to, stated plainly.",
+          "open_logistics": "Operational details that stay open until confirmed."
         }
       }
     },
@@ -295,96 +295,96 @@
       "eyebrow": "Early draft"
     },
     "scaffold": {
-      "eyebrow": "What I’m drafting",
+      "eyebrow": "In progress",
       "basics": {
-        "title": "I’m already shaping your first basics draft",
-        "description": "With what I already know about the event, I can move this forward without inventing what is still unconfirmed.",
+        "title": "Working on your basics draft",
+        "description": "Using what I already know to move forward without guessing what's still unconfirmed.",
         "sections": {
-          "first_pass": "I’m starting with the event identity and overall framing without guessing on the exact date or venue details.",
-          "confirmed_facts": "I’m leaning only on confirmed basics like the current title, location, timezone, and your saved notes.",
-          "open_points": "Anything still unclear stays marked as pending instead of getting invented."
+          "first_pass": "Starting with the event name, overall framing, and confirmed details.",
+          "confirmed_facts": "Using only confirmed details — title, location, timezone, and your notes.",
+          "open_points": "Anything unclear stays marked as pending rather than guessed."
         }
       },
       "content": {
-        "title": "I’m already building the content draft",
-        "description": "The final proposal is still on the way, but I already have a useful structure to make this feel publishable.",
+        "title": "Working on the content draft",
+        "description": "The full proposal is on its way — starting with the most useful part now.",
         "sections": {
-          "first_pass": "I’m starting with the most useful participant-facing section instead of waiting on every detail.",
-          "confirmed_facts": "The copy stays anchored in confirmed event details, saved notes, and content already on the event.",
-          "open_points": "Anything missing stays clearly pending instead of turning into generic filler."
+          "first_pass": "Starting with the section that matters most for runners.",
+          "confirmed_facts": "Keeping copy anchored in confirmed event details and existing content.",
+          "open_points": "Missing details stay pending rather than filled with generic copy."
         }
       },
       "policies": {
-        "title": "I’m already organizing the policy draft",
-        "description": "Before the final proposal lands, I’m shaping the policy so it reads clearly and stays grounded.",
+        "title": "Working on the policy draft",
+        "description": "Shaping the policy so it reads clearly before the final proposal arrives.",
         "sections": {
-          "first_pass": "I’m starting with the clearest participant-facing rule or waiver structure first.",
-          "confirmed_facts": "I’m using only the rules, constraints, and event context that are already confirmed.",
+          "first_pass": "Starting with the clearest participant-facing rule or waiver structure.",
+          "confirmed_facts": "Using only confirmed rules, constraints, and event context.",
           "open_points": "Operational details stay open until you confirm them."
         }
       },
       "review": {
-        "title": "I’m lining up the next move to get this ready",
-        "description": "The final proposal is still coming together, but I already know the clearest way to keep this review useful.",
+        "title": "Working on the next step to unblock publish",
+        "description": "The final proposal is coming — already focused on what will help most.",
         "sections": {
-          "first_pass": "I’m prioritizing the blocker fix or content improvement that will help most first.",
-          "confirmed_facts": "The recommendation stays tied to current blockers, saved notes, and existing event content.",
-          "open_points": "Anything unresolved stays visible instead of getting hidden behind polished filler."
+          "first_pass": "Prioritizing the blocker or improvement that makes the biggest difference.",
+          "confirmed_facts": "Tied to current blockers, your notes, and existing event content.",
+          "open_points": "Unresolved items stay visible rather than hidden."
         }
       },
       "generic": {
-        "title": "I’m turning this into a useful first pass",
-        "description": "The final proposal is still on the way, but I’m already organizing something you can trust and review.",
+        "title": "Working on a first draft",
+        "description": "The full proposal is on its way — getting something useful together now.",
         "sections": {
-          "first_pass": "I’m starting with the smallest useful draft this step can support safely.",
-          "confirmed_facts": "I’m leaning on confirmed event details and your saved context before making claims.",
-          "open_points": "Unknowns stay visible so the proposal stays honest and reviewable."
+          "first_pass": "Starting with the smallest useful draft this step can support.",
+          "confirmed_facts": "Using confirmed event details and your saved context.",
+          "open_points": "Unknowns stay visible so the proposal stays honest."
         }
       }
     },
     "latency": {
       "slow": {
-        "title": "Still shaping a grounded proposal",
-        "description": "This request needs a little more time because I am cross-checking your event details before I suggest anything."
+        "title": "Still working on it",
+        "description": "This one needs a bit more time — cross-checking your event details before suggesting anything."
       },
       "verySlow": {
-        "title": "Taking extra care with the final proposal",
-        "description": "I am still working through your notes and confirmed event data so the recommendation stays useful and safe to apply."
+        "title": "Almost there",
+        "description": "Still going through your notes and confirmed event details to make sure the proposal is accurate."
       }
     },
     "archive": {
-      "title": "Earlier conversation",
+      "title": "Earlier in this conversation",
       "description": "{count, plural, one {# earlier message} other {# earlier messages}}",
       "expand": "Show history",
       "collapse": "Hide history"
     },
     "continuity": {
-      "eyebrow": "Your thread is still here",
-      "title": "I am still carrying your latest proposal from {step}",
+      "eyebrow": "Picking up where we left off",
+      "title": "I still have your latest proposal from {step}",
       "description": "If you moved here from a suggestion, the last useful exchange stays visible while you continue.",
-      "proposalLabel": "What I had already drafted",
-      "reuseRequest": "Keep going from this request"
+      "proposalLabel": "My last proposal",
+      "reuseRequest": "Continue from this request"
     },
     "appliedState": {
-      "eyebrow": "Changes already applied",
+      "eyebrow": "Changes applied",
       "revealEditor": "See them in the editor",
       "goToStep": "Go to {step}"
     },
     "suggestions": {
       "basics": {
-        "draftFromBrief": "Use my rough notes to start this event.",
-        "suggestStrongerPositioning": "Make the title and summary feel stronger.",
+        "draftFromBrief": "Use my notes to start this event.",
+        "suggestStrongerPositioning": "Make the title and summary stronger.",
         "reviewMostImportantMissingDetails": "Tell me the most important basics still missing."
       },
       "distances": {
-        "createDistanceLineup": "Use my notes to suggest the distance lineup.",
-        "suggestCommonDistanceSet": "What distance mix would fit this event best?",
+        "createDistanceLineup": "Use my notes to suggest the distances.",
+        "suggestCommonDistanceSet": "What distance lineup would fit this event?",
         "reviewMissingDistances": "Review what is still missing."
       },
       "pricing": {
         "draftPricingStructure": "Suggest realistic pricing for this event.",
         "proposeMarketReadyPricing": "Suggest prices that feel realistic for this event.",
-        "fixNextPricingBlocker": "Tell me which pricing blocker to fix next."
+        "fixNextPricingBlocker": "Tell me which pricing issue to fix first."
       },
       "policies": {
         "draftPolicyMarkdown": "Draft clear policies.",
@@ -392,29 +392,29 @@
         "improvePolicyClarity": "Review this step and improve the biggest clarity issue."
       },
       "content": {
-        "draftParticipantContent": "Draft participant content.",
+        "draftParticipantContent": "Draft the event content.",
         "createFaqAndWebsiteCopy": "Draft FAQ and site copy.",
         "improveContentClarity": "Make it clearer and more trustworthy."
       },
       "review": {
         "explainCurrentBlockers": "Explain what is still blocking publish.",
         "fixNextRequiredStep": "Help me with the next required step.",
-        "improveParticipantCopyBeforePublish": "Polish participant-facing copy before publish."
+        "improveParticipantCopyBeforePublish": "Clean up the race page copy before I publish."
       }
     },
     "brief": {
       "savedLabel": "Saved event notes",
-      "description": "Key context the assistant can keep using across the wizard.",
+      "description": "Context I use throughout the setup process.",
       "empty": "No saved event notes yet.",
-      "emptyHint": "Save the event vision, audience, tone, and must-haves once so the assistant can build from them later.",
-      "inputLabel": "Saved event notes",
-      "inputHint": "Edit the event notes you want the assistant to keep using throughout setup.",
+      "emptyHint": "Save your event vision, target audience, tone, and key details once — I'll use them across every step.",
+      "inputLabel": "Event notes",
+      "inputHint": "Edit the notes you want me to keep using throughout setup.",
       "add": "Add notes",
       "edit": "Edit notes",
       "save": "Save notes",
       "cancel": "Cancel",
       "useForStep": "Start from saved notes",
-      "useForStepPrompt": "Use the event notes you already have and help me with {step}.",
+      "useForStepPrompt": "Use my saved event notes to help with {step}.",
       "clear": "Clear notes"
     },
     "messages": {
@@ -422,17 +422,17 @@
       "assistant": "Assistant"
     },
     "ops": {
-      "updateEvent": "Update event {fields}",
+      "updateEvent": "Update event — {fields}",
       "addDistance": "Add distance: {label}{value} at {price}",
       "updateDistancePrice": "Update distance price to {price}",
       "addTier": "Add tier: {label} at {price}",
-      "addFaq": "Add FAQ item: {question}",
+      "addFaq": "Add FAQ: {question}",
       "addWaiver": "Add waiver: {title}",
       "addQuestion": "Add registration question: {prompt}",
       "addAddOn": "Add add-on: {title} ({price})",
       "appendWebsite": "Update website section: {section}",
-      "appendPolicy": "Append policy text: {policy}",
-      "updatePolicies": "Update participant policies",
+      "appendPolicy": "Update policy: {policy}",
+      "updatePolicies": "Update policies",
       "defaultTier": "Pricing tier",
       "sections": {
         "overview": "Overview",
@@ -447,16 +447,16 @@
       "fields": {
         "date": "date",
         "location": "location",
-        "label": "label",
+        "label": "name",
         "description": "description",
         "details": "details"
       }
     },
     "outputs": {
-      "title": "Proposed content",
+      "title": "Proposed changes",
       "previewLabel": "Preview",
-      "participantBadge": "Participant-facing copy",
-      "structuredBadge": "Structured update",
+      "participantBadge": "Race page copy",
+      "structuredBadge": "Event update",
       "domain": {
         "description": "Description",
         "faq": "FAQ",
@@ -475,11 +475,11 @@
       "intentStepFallback": "Continue in {step}",
       "stepActions": {
         "basics": "Finish event basics",
-        "distances": "Define the distances",
+        "distances": "Set up the distances",
         "pricing": "Set pricing and capacity",
         "registration": "Configure registration",
         "policies": "Set policies and waivers",
-        "content": "Prepare participant content",
+        "content": "Add event content",
         "extras": "Add questions and extras",
         "review": "Review before publishing"
       },
@@ -487,10 +487,10 @@
         "draft_website_overview": "Draft website overview"
       }
     },
-    "placeholder": "Tell me what you want to improve in this step...",
+    "placeholder": "What do you need help with in this step?",
     "empty": {
-      "heading": "Rough notes are enough to start.",
-      "example": "For example: evening 10K in Guadalajara, friendly vibe, live music at the finish, help me write the event summary and tell me what still matters most."
+      "heading": "Rough notes are enough to get started.",
+      "example": "For example: evening 10K in Guadalajara, friendly vibe, live music at the finish, help me write the event summary and tell me what still needs attention."
     },
     "send": "Send",
     "stop": "Stop",
@@ -499,71 +499,71 @@
     "applied": "Applied",
     "locationResolution": {
       "matched": {
-        "eyebrow": "Location found",
-        "title": "This is the real location that will be applied",
-        "description": "It will be saved into the actual event location field, not only inside public-facing copy."
+        "eyebrow": "Location confirmed",
+        "title": "This is the location that will be saved",
+        "description": "It will be saved to the actual event location field, not just in the public-facing copy."
       },
       "ambiguous": {
-        "eyebrow": "Location needs confirmation",
-        "title": "I found several likely locations",
-        "description": "I will not pin an exact location yet. Review these options or clarify the place before applying."
+        "eyebrow": "Confirm the location",
+        "title": "I found a few possible matches",
+        "description": "I won't set a location yet. Review these options or clarify the place before applying."
       },
       "choice": {
-        "title": "Choose the correct location",
-        "description": "Click the right option so I can use it in the final proposal before you apply changes.",
+        "title": "Which location is correct?",
+        "description": "Select the right one and I'll use it in the final proposal before you apply changes.",
         "useThis": "Use this location",
-        "selected": "Location selected",
+        "selected": "Selected",
         "noneOfThese": "None of these",
         "searchInEditor": "Search in the editor",
-        "manualClarificationPrompt": "None of these options is correct for \"{query}\". The right location is: "
+        "manualClarificationPrompt": "None of these is the right place for \"{query}\". The correct location is: "
       },
       "noMatch": {
-        "eyebrow": "Location still unresolved",
-        "title": "I could not pin a safe location yet",
-        "description": "I can still help with copy, but the real event location still needs confirmation."
+        "eyebrow": "Location not found",
+        "title": "I couldn't pin a safe location yet",
+        "description": "I can still help with copy, but the event location still needs to be confirmed separately."
       }
     },
     "errors": {
-      "title": "Assistant error",
-      "proRequired": "Setup assistant is a Pro feature.",
-      "disabled": "Setup assistant is temporarily unavailable.",
-      "readOnlyTitle": "Assistant is read-only for this membership",
-      "readOnlyDescription": "You can keep working through the wizard, but only organizers with edit access can use or apply assistant proposals.",
-      "rateLimited": "Too many assistant requests. Please wait a moment and try again.",
-      "requestFailedHint": "Something went wrong with the assistant request. Please try again.",
-      "invalid": "That proposal could not be applied as written. Review the step details and try again.",
-      "retryLater": "The assistant could not apply that proposal right now. Please try again in a moment.",
+      "title": "Something went wrong",
+      "proRequired": "The setup assistant is a Pro feature.",
+      "disabled": "The setup assistant is temporarily unavailable.",
+      "readOnlyTitle": "View-only access",
+      "readOnlyDescription": "You can work through the wizard, but only race directors with edit access can apply proposals.",
+      "rateLimited": "Too many requests. Wait a moment and try again.",
+      "requestFailedHint": "Something went wrong. Please try again.",
+      "invalid": "That proposal couldn't be applied. Review the step and try again.",
+      "retryLater": "Couldn't apply that proposal right now. Try again in a moment.",
       "safety": {
-        "promptInjection": "That request looks unrelated to event setup. Try asking for help with this step.",
-        "policyViolation": "That request can't be handled here. Try a more specific event-setup request."
+        "promptInjection": "That request doesn't look like event setup. Try asking for help with this step.",
+        "policyViolation": "That request can't be handled here. Try a more specific event-setup question."
       },
       "partialApplied": "Some changes were applied, but something failed. Please review your event settings.",
-      "failed": "Could not apply changes. Please try again."
+      "failed": "Couldn't apply changes. Please try again."
     }
   },
   "visibility": {
     "title": "Event Visibility",
-    "description": "Control who can see and access your event. Published events appear in the public directory.",
+    "description": "Control who can see your event. Published events appear in the public directory.",
     "success": "Visibility updated.",
     "errors": {
       "missingDistances": "Add at least one distance before publishing.",
       "missingPrices": "Add at least one price for every distance before publishing.",
-      "generic": "Unable to update visibility. Please try again."
+      "generic": "Couldn't update visibility. Please try again."
     }
   },
   "registration": {
-    "title": "Registration Status",
-    "description": "Pause or resume registration for this event. Paused events won't accept new registrations.",
-    "active": "Active",
+    "title": "Registration",
+    "description": "Pause or reopen registration. Paused events won't accept new sign-ups.",
+    "active": "Open",
     "paused": "Paused",
-    "pause": "Pause Registration",
-    "resume": "Resume Registration"
+    "pause": "Pause registration",
+    "resume": "Reopen registration"
   },
   "heroImage": {
-    "title": "Hero image",
-    "description": "Show a wide image on your event page and directory card.",
-    "helper": "Recommended 16:9. Max size {maxSize}MB.",
-    "empty": "No hero image yet",
+    "title": "Cover image",
+    "description": "Shown on your event page and in search results.",
+    "helper": "Recommended 16:9. Max {maxSize}MB.",
+    "empty": "No cover image yet",
     "actions": {
       "upload": "Upload image",
       "change": "Change image",
@@ -571,14 +571,14 @@
       "removing": "Removing..."
     },
     "success": {
-      "uploaded": "Hero image updated.",
-      "removed": "Hero image removed."
+      "uploaded": "Cover image updated.",
+      "removed": "Cover image removed."
     },
     "errors": {
       "invalidType": "Please upload a JPG, PNG, WebP, or GIF.",
       "fileTooLarge": "Image must be smaller than {maxSize}MB.",
       "uploadFailed": "Upload failed. Please try again.",
-      "saveFailed": "Could not save the hero image."
+      "saveFailed": "Couldn't save the image."
     }
   },
   "capacity": {
@@ -595,23 +595,23 @@
     "success": "Capacity settings updated.",
     "errors": {
       "required": "Enter a total capacity to enable shared pool mode.",
-      "saveFailed": "Could not update capacity settings."
+      "saveFailed": "Couldn't update capacity settings."
     }
   },
   "descriptionField": {
     "label": "Event description",
-    "help": "Give participants a clear overview of the event."
+    "help": "Give runners a clear overview of the event."
   },
   "details": {
     "title": "Event Details",
     "editionLabel": "Edition Label",
-    "slug": "Edition URL slug",
+    "slug": "Edition URL",
     "slugRedirectInfo": "Old edition links are automatically forwarded to the new URL.",
     "slugConfirm": {
       "title": "Update edition URL?",
-      "description": "We’ll automatically forward your old edition links to the new URL, so existing shares and marketing keep working.",
+      "description": "We'll automatically forward your old edition links to the new URL, so existing shares and marketing keep working.",
       "cancel": "Keep editing",
-      "confirm": "Update slug"
+      "confirm": "Update URL"
     },
     "timezone": "Timezone",
     "startsAt": "Start Date",
@@ -622,8 +622,8 @@
     "endsAt": "End Date",
     "locationSection": "Location",
     "locationLabel": "Event Location",
-    "locationAppliedTitle": "The AI-suggested location is now in the editor",
-    "locationAppliedDescription": "Review this field to confirm the exact place before you continue with the rest of the event.",
+    "locationAppliedTitle": "Location suggestion applied",
+    "locationAppliedDescription": "Review this field to confirm the exact venue before continuing.",
     "city": "City",
     "state": "State",
     "address": "Address",
@@ -635,9 +635,9 @@
   },
   "distances": {
     "title": "Distances",
-    "add": "Add Distance",
-    "empty": "No distances added yet. Add your first distance to enable registration.",
-    "labelField": "Label",
+    "add": "Add distance",
+    "empty": "No distances yet. Add at least one to enable registration.",
+    "labelField": "Distance name",
     "distanceValue": "Distance (km)",
     "terrain": "Terrain",
     "terrainTypes": {
@@ -649,13 +649,13 @@
     "capacity": "Capacity",
     "unlimited": "Unlimited",
     "registered": "registered",
-    "addDistance": "Add Distance",
+    "addDistance": "Add distance",
     "save": "Save",
     "saving": "Saving...",
     "saved": "Distance saved",
     "errorSaving": "Failed to save distance",
     "cancel": "Cancel",
-    "deleteTitle": "Delete Distance",
-    "confirmDelete": "Are you sure you want to delete this distance? This action cannot be undone."
+    "deleteTitle": "Delete distance",
+    "confirmDelete": "Delete this distance? This can't be undone."
   }
 }
