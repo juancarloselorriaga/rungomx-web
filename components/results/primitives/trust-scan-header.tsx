@@ -73,35 +73,49 @@ export function TrustScanHeader({
   const fallback = labels.fallback;
 
   return (
-    <section className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-5 md:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-sm font-semibold">{labels.title}</h2>
-          <p className="text-xs text-muted-foreground">{labels.description}</p>
+          <Badge variant={statusValue.badgeVariant}>{statusValue.label}</Badge>
+          <h2 className="font-display mt-5 text-[clamp(1.45rem,2.5vw,1.95rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+            {labels.title}
+          </h2>
+          <p className="mt-3 max-w-[32rem] text-sm leading-7 text-muted-foreground">
+            {labels.description}
+          </p>
         </div>
-        <Badge variant={statusValue.badgeVariant}>{statusValue.label}</Badge>
       </div>
 
-      <dl className="mt-4 grid gap-3 text-sm md:grid-cols-2 xl:grid-cols-5">
+      <dl className="mt-6 grid gap-4 border-t border-border/70 pt-5 text-sm leading-7 text-muted-foreground sm:grid-cols-2 xl:grid-cols-3">
         <div>
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{labels.fields.organizer}</dt>
-          <dd className="font-medium text-foreground">{toFieldValue(organizerName, fallback)}</dd>
+          <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+            {labels.fields.organizer}
+          </dt>
+          <dd className="mt-1 text-foreground">{toFieldValue(organizerName, fallback)}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{labels.fields.scope}</dt>
-          <dd className="font-medium text-foreground">{toFieldValue(scope, fallback)}</dd>
+          <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+            {labels.fields.scope}
+          </dt>
+          <dd className="mt-1 text-foreground">{toFieldValue(scope, fallback)}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{labels.fields.version}</dt>
-          <dd className="font-medium text-foreground">{toFieldValue(version, fallback)}</dd>
+          <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+            {labels.fields.version}
+          </dt>
+          <dd className="mt-1 text-foreground">{toFieldValue(version, fallback)}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{labels.fields.updatedAt}</dt>
-          <dd className="font-medium text-foreground">{toFieldValue(updatedAt, fallback)}</dd>
+          <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+            {labels.fields.updatedAt}
+          </dt>
+          <dd className="mt-1 text-foreground">{toFieldValue(updatedAt, fallback)}</dd>
         </div>
         <div>
-          <dt className="text-xs uppercase tracking-wide text-muted-foreground">{labels.fields.correction}</dt>
-          <dd className="font-medium text-foreground">{statusValue.correctionLabel}</dd>
+          <dt className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-foreground/75">
+            {labels.fields.correction}
+          </dt>
+          <dd className="mt-1 text-foreground">{statusValue.correctionLabel}</dd>
         </div>
       </dl>
     </section>

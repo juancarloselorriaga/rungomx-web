@@ -1,4 +1,4 @@
-import { Badge } from '@/components/common/badge';
+import { Badge, Hero, Section, TextBlock } from '@/components/common';
 import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box';
 import { TrustScanHeader } from '@/components/results/primitives/trust-scan-header';
 import { Link } from '@/i18n/navigation';
@@ -95,40 +95,55 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
 
   if (pageData.state === 'not_finalized') {
     return (
-      <div className="space-y-5">
-        <header className="space-y-2">
-          <h1 className="text-3xl font-bold">
-            {t('title', {
-              seriesName: pageData.edition.seriesName,
-              editionLabel: pageData.edition.editionLabel,
-            })}
-          </h1>
-          <p className="text-muted-foreground">{t('nonOfficial.description')}</p>
-        </header>
+      <div className="w-full">
+        <Hero
+          badge={t('nonOfficial.badge')}
+          badgeVariant="outline"
+          title={t('title', {
+            seriesName: pageData.edition.seriesName,
+            editionLabel: pageData.edition.editionLabel,
+          })}
+          description={t('nonOfficial.description')}
+          variant="gradient-green"
+          titleSize="lg"
+          align="left"
+        />
 
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-          <Badge variant="outline">{t('nonOfficial.badge')}</Badge>
-          <p className="mt-3 text-sm text-muted-foreground">{t('nonOfficial.noDraftDisclosure')}</p>
-          {startsAtLabel ? (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t('eventDate', { date: startsAtLabel })}
-            </p>
-          ) : null}
-          <div className="mt-4">
-            <Link
-              href={{
-                pathname: '/events/[seriesSlug]/[editionSlug]',
-                params: {
-                  seriesSlug: pageData.edition.seriesSlug,
-                  editionSlug: pageData.edition.editionSlug,
-                },
-              }}
-              className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-            >
-              {t('viewEventLink')}
-            </Link>
+        <Section padding="md" size="lg">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-8">
+            <div className="rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-5 md:p-6">
+              <p className="text-sm leading-7 text-muted-foreground">
+                {t('nonOfficial.noDraftDisclosure')}
+              </p>
+              <div className="mt-5 border-t border-border/70 pt-4 text-sm leading-7 text-muted-foreground">
+                {startsAtLabel ? <p>{t('eventDate', { date: startsAtLabel })}</p> : null}
+              </div>
+              <p className="mt-5">
+                <Link
+                  href={{
+                    pathname: '/events/[seriesSlug]/[editionSlug]',
+                    params: {
+                      seriesSlug: pageData.edition.seriesSlug,
+                      editionSlug: pageData.edition.editionSlug,
+                    },
+                  }}
+                  className="text-sm font-semibold text-foreground underline-offset-4 hover:underline"
+                >
+                  {t('viewEventLink')}
+                </Link>
+              </p>
+            </div>
+
+            <HowItWorksBox
+              title={tResults('howItWorks.panel.title')}
+              description={tResults('howItWorks.panel.description')}
+              bulletOne={tResults('howItWorks.panel.point1')}
+              bulletTwo={tResults('howItWorks.panel.point2')}
+              bulletThree={tResults('howItWorks.panel.point3')}
+              ctaLabel={tResults('howItWorks.panel.cta')}
+            />
           </div>
-        </div>
+        </Section>
       </div>
     );
   }
@@ -146,85 +161,123 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
     t('fallback.notAvailable'),
   );
 
+  const statusBadgeVariant: 'green' | 'indigo' =
+    pageData.activeVersion.status === 'corrected' ? 'indigo' : 'green';
+
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold">
-          {t('title', {
-            seriesName: pageData.edition.seriesName,
-            editionLabel: pageData.edition.editionLabel,
-          })}
-        </h1>
-        <p className="text-muted-foreground">{t('subtitle')}</p>
-      </header>
+    <div className="w-full">
+      <Hero
+        badge={
+          pageData.activeVersion.status === 'corrected'
+            ? t('status.corrected')
+            : t('status.official')
+        }
+        badgeVariant={statusBadgeVariant}
+        title={t('title', {
+          seriesName: pageData.edition.seriesName,
+          editionLabel: pageData.edition.editionLabel,
+        })}
+        description={t('subtitle')}
+        variant="gradient-green"
+        titleSize="lg"
+        align="left"
+      >
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-8">
+          <div className="rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-5 md:p-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant={statusBadgeVariant}>{t('version', { versionNumber: pageData.activeVersion.versionNumber })}</Badge>
+              {pageData.edition.visibility !== 'published' ? (
+                <Badge variant="outline">{t('status.unlisted')}</Badge>
+              ) : null}
+            </div>
 
-      <TrustScanHeader
-        status={pageData.activeVersion.status}
-        organizerName={pageData.edition.organizerName}
-        scope={t('trustScan.scopeValue')}
-        version={t('version', { versionNumber: pageData.activeVersion.versionNumber })}
-        updatedAt={versionUpdatedAtLabel}
-        labels={{
-          title: t('trustScan.title'),
-          description: t('trustScan.description'),
-          fallback: t('fallback.notAvailable'),
-          fields: {
-            organizer: t('trustScan.fields.organizer'),
-            scope: t('trustScan.fields.scope'),
-            version: t('trustScan.fields.version'),
-            updatedAt: t('trustScan.fields.updatedAt'),
-            correction: t('trustScan.fields.correction'),
-          },
-          status: {
-            official: t('status.official'),
-            corrected: t('status.corrected'),
-            unknown: t('trustScan.status.unknown'),
-          },
-          correction: {
-            corrected: t('trustScan.correction.corrected'),
-            none: t('trustScan.correction.none'),
-          },
-        }}
-      />
+            <div className="mt-6 border-t border-border/70 pt-5 text-sm leading-7 text-muted-foreground">
+              {startsAtLabel ? <p>{t('eventDate', { date: startsAtLabel })}</p> : null}
+              <p>{t('updatedAt', { value: versionUpdatedAtLabel })}</p>
+              <p>{t('finalizedAt', { value: versionFinalizedAtLabel })}</p>
+            </div>
 
-      <HowItWorksBox
-        title={tResults('howItWorks.panel.title')}
-        description={tResults('howItWorks.panel.description')}
-        bulletOne={tResults('howItWorks.panel.point1')}
-        bulletTwo={tResults('howItWorks.panel.point2')}
-        bulletThree={tResults('howItWorks.panel.point3')}
-        ctaLabel={tResults('howItWorks.panel.cta')}
-      />
+            <p className="mt-5">
+              <Link
+                href={{
+                  pathname: '/events/[seriesSlug]/[editionSlug]',
+                  params: {
+                    seriesSlug: pageData.edition.seriesSlug,
+                    editionSlug: pageData.edition.editionSlug,
+                  },
+                }}
+                className="text-sm font-semibold text-foreground underline-offset-4 hover:underline"
+              >
+                {t('viewEventLink')}
+              </Link>
+            </p>
+          </div>
 
-      <section className="rounded-xl border bg-card p-4 text-sm text-muted-foreground shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          {pageData.edition.visibility !== 'published' ? (
-            <Badge variant="outline">{t('status.unlisted')}</Badge>
-          ) : null}
-          <p>{t('finalizedAt', { value: versionFinalizedAtLabel })}</p>
-          {startsAtLabel ? <p>{t('eventDate', { date: startsAtLabel })}</p> : null}
+          <TrustScanHeader
+            status={pageData.activeVersion.status}
+            organizerName={pageData.edition.organizerName}
+            scope={t('trustScan.scopeValue')}
+            version={t('version', { versionNumber: pageData.activeVersion.versionNumber })}
+            updatedAt={versionUpdatedAtLabel}
+            labels={{
+              title: t('trustScan.title'),
+              description: t('trustScan.description'),
+              fallback: t('fallback.notAvailable'),
+              fields: {
+                organizer: t('trustScan.fields.organizer'),
+                scope: t('trustScan.fields.scope'),
+                version: t('trustScan.fields.version'),
+                updatedAt: t('trustScan.fields.updatedAt'),
+                correction: t('trustScan.fields.correction'),
+              },
+              status: {
+                official: t('status.official'),
+                corrected: t('status.corrected'),
+                unknown: t('trustScan.status.unknown'),
+              },
+              correction: {
+                corrected: t('trustScan.correction.corrected'),
+                none: t('trustScan.correction.none'),
+              },
+            }}
+          />
         </div>
-      </section>
+      </Hero>
 
-      <section className="rounded-xl border bg-card shadow-sm">
-        <div className="border-b px-4 py-3">
-          <h2 className="text-sm font-semibold">{t('table.title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('table.description')}</p>
-        </div>
+      <Section variant="muted" padding="md" size="lg">
+        <HowItWorksBox
+          title={tResults('howItWorks.panel.title')}
+          description={tResults('howItWorks.panel.description')}
+          bulletOne={tResults('howItWorks.panel.point1')}
+          bulletTwo={tResults('howItWorks.panel.point2')}
+          bulletThree={tResults('howItWorks.panel.point3')}
+          ctaLabel={tResults('howItWorks.panel.cta')}
+        />
+      </Section>
+
+      <Section padding="lg" size="lg">
+        <TextBlock
+          title={t('table.title')}
+          description={t('table.description')}
+          size="md"
+          className="max-w-[44rem]"
+        />
 
         {pageData.entries.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">{t('table.empty')}</div>
+          <div className="mt-12 rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-8 text-sm leading-7 text-muted-foreground">
+            {t('table.empty')}
+          </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="mt-12 overflow-x-auto rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)]">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.place')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.runner')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.bib')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.distance')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.status')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.finishTime')}</th>
+                <tr className="border-b border-border/70 text-left text-[0.72rem] uppercase tracking-[0.16em] text-muted-foreground">
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.place')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.runner')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.bib')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.distance')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.status')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.finishTime')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,7 +291,7 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
                   );
 
                   return (
-                    <tr key={entry.id} className="border-b last:border-b-0">
+                    <tr key={entry.id} className="border-b border-border/60 last:border-b-0">
                       <td className="px-4 py-3 text-foreground">
                         {entry.overallPlace ?? t('fallback.notAvailableShort')}
                       </td>
@@ -249,10 +302,8 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
                       <td className="px-4 py-3 text-muted-foreground">
                         {entry.distanceLabel ?? t('fallback.notAvailableShort')}
                       </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" size="sm">
-                          {resolveEntryStatusLabel(entry.status)}
-                        </Badge>
+                      <td className="px-4 py-3 text-foreground">
+                        {resolveEntryStatusLabel(entry.status)}
                       </td>
                       <td className="px-4 py-3 text-foreground">
                         {formatFinishTime(entry.finishTimeMillis)}
@@ -264,7 +315,7 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
             </table>
           </div>
         )}
-      </section>
+      </Section>
     </div>
   );
 }
