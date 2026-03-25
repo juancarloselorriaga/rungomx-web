@@ -1,216 +1,785 @@
-# Event AI Wizard Layer: Production-Grade Redesign Plan
+## 1. Architecture enforcement summary
 
-## 1. Executive diagnosis
+- The canonical event setup wizard stays AI-agnostic. `lib/events/wizard/**` may not import from `lib/events/ai-wizard/**`, AI prompts, AI transport types, AI schemas, or model-selection logic.
+- The AI event wizard is a bounded subsystem. Its concerns are proposal planning, prompting, message normalization, fast-path routing, model execution, proposal finalization, location resolution, diagnostics, and apply orchestration.
+- API routes are adapters only. `app/api/events/ai-wizard/route.ts` and `app/api/events/ai-wizard/apply/route.ts` may parse transport input, call a coordinator/service, and translate the result into HTTP/stream output. They may not own planning, reprojection, preflight, or domain execution logic.
+- Proposal generation and apply execution are separate trust boundaries. Proposal generation may be heuristic and model-assisted. Apply execution must be deterministic, schema-validated, replay-safe, auditable, and transactional where possible.
+- Projection correctness overrides legacy compatibility. Incorrect reprojection behavior must be fixed even if the current UI has normalized around it.
+- Step identity is canonical and singular. There will be one exported runtime step list, one setup-step type, and one mapping from canonical wizard issues to setup steps.
+- Shared contracts are first-class modules. UI, routes, and services consume explicit contracts rather than re-deriving shapes from route-local helpers.
+- Import direction is enforced. Base wizard -> neutral shared only. AI contracts -> base wizard contracts only. AI server -> contracts + base wizard + neutral shared. UI -> contracts only. Routes -> coordinators/contracts only.
+- UI may not mutate domain proposals into different server commands. Client-side selection state stays client-side; proposal mutation and apply input shaping stay server-owned.
+- Tests must target extracted modules, not route monolith internals. If a rule needs `import { x } from '@/app/api/.../route'`, the module boundary is wrong.
 
-The current system already *behaves* like a proposal-first assistant with explicit apply, but architecturally it is still implemented as two “god modules” plus scattered step identity logic.
+## 2. Current boundary violations
 
-- The AI proposal pipeline is collapsed into a single 3,113-line route handler that mixes: request parsing, permissions + Pro gating + rate limiting, intent routing, deterministic handlers, prompt construction, tool wiring, model selection, patch enrichment, patch reprojection, and UI stream shaping. See [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts).
-- The client-side assistant UI is likewise monolithic (2,282 lines) and mixes: chat transport, proposal extraction, location choice UX, apply execution calls, continuity/session storage, and latency marks in one file. See [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-ai-wizard-panel.tsx).
-- Step identity is duplicated in at least four places (Zod enum, UI unions, wizard shell unions, route request schema) and the “issue step → assistant step” mapping is copy/pasted in multiple modules, which guarantees drift. See [lib/events/ai-wizard/schemas.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/schemas.ts), [lib/events/wizard/types.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/types.ts), [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-setup-wizard-shell.tsx), and the duplicated mapping in [app/[locale]/(protected)/dashboard/events/[eventId]/settings/page.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/page.tsx) and [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts).
-- The “AI subsystem” is not cleanly separated from the non-AI wizard domain today: core wizard readiness uses utilities living under the AI folder (datetime trust/normalization), creating an inverted dependency. See the import from `@/lib/events/ai-wizard/datetime` in [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts) and the shared usage in [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-settings-form.tsx) and [app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected-fullscreen)/dashboard/events/new/create-event-form.tsx).
-- Patch “reprojection” (server recomputation of checklist/routing after a proposal) is directionally correct, but the current projection implementation contains approximations that can misstate readiness, especially around pricing and new distances. See `buildProjectedAggregate()` in [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) (e.g. setting `hasPricingTier` across *all* distances when *any* pricing op exists, and projecting new distances from templates instead of op data).
-- Deterministic and model-driven behaviors are mixed in one route; adding a new deterministic handler or fast path requires editing route monolith, increasing regression risk. Evidence: the stream route contains `resolveCrossStepIntent`, `detectFastPathKind`, deterministic follow-up patch builders, prompt building, tool definitions, and model selection in one file. See [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts).
-- Observability exists for “blocked” and “applied” events, but there is no first-class telemetry for proposal routing/mode selection, proposal validity, reprojection correction rate, and clarification rate. See `trackProFeatureEvent()` usage in [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) and [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts).
+- `lib/events/wizard/orchestrator.ts`
+  - Violation: base wizard imports `hasTrustedEventStartTime` from `@/lib/events/ai-wizard/datetime`.
+  - Why it matters: the canonical wizard domain depends on an AI-namespaced module, which makes AI folder churn a risk to non-AI readiness logic.
 
-Net: the *design* is mostly right; the main problems are boundary/ownership violations and implementation debt (route+UI monoliths, duplicated step identity, and projection correctness).
+- `app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form.tsx` and `app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form.tsx`
+  - Violation: non-AI forms import `normalizeEditionDateTimeForPersistence` and formatting helpers from `@/lib/events/ai-wizard/datetime`.
+  - Why it matters: neutral date/time behavior is physically placed inside the AI subsystem, so the folder structure lies about ownership.
 
-## 2. What should be preserved
+- `app/api/events/ai-wizard/route.ts`
+  - Violation: the route owns request parsing, message-history normalization, auth, Pro gating, role gating, rate limiting, intent routing, deterministic diagnosis, fast-path detection, location-resolution triggering, prompt assembly, model selection, tool definitions, proposal enrichment, projection, proposal finalization, and stream shaping.
+  - Why it matters: the route is the orchestration owner instead of an adapter. This is the main regression surface in the subsystem.
 
-- Proposal-first + explicit user apply: stream emits proposals (`data-event-patch`) and apply is a separate strict boundary. See [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) and [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts), plus the UI apply call in [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-ai-wizard-panel.tsx).
-- Narrow, allowlisted, reviewable patches: Zod discriminated union ops, strict payloads, and the `markdownOutputs` “must mirror writes exactly” invariant. See [lib/events/ai-wizard/schemas.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/schemas.ts) and its tests in [__tests__/lib/events/ai-wizard-schemas.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/lib/events/ai-wizard-schemas.server.test.ts).
-- Server-owned readiness semantics and truth conflict blockers: the base wizard orchestrator is the canonical source of “missing/blockers/recommendations” and publish readiness. See [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts).
-- Server-owned reprojection of patch meta: `finalizeWizardPatchForUi()` rebuilds checklist and routing from the projected aggregate, ignoring model-supplied values. See [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) and the behavior tests in [__tests__/app/api/events/ai-wizard/route.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/app/api/events/ai-wizard/route.server.test.ts).
-- Deterministic safety and guardrails: text/patch safety filters and rate limiting. See [lib/events/ai-wizard/safety.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/safety.ts) and [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts).
-- Location resolution as a first-class, server-owned workflow (matched/ambiguous/no_match + explicit user choice when ambiguous). See [lib/events/ai-wizard/location-resolution.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/location-resolution.ts), the choiceRequest shaping in [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts), and the UI in [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-ai-wizard-panel.tsx).
-- Fast-path compact prompt mode and forced tool choice for copy heavy tasks: route chooses fast model and step budgets; prompt has compactMode. Evidence: model selection in [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) and compact prompt behavior in [lib/events/ai-wizard/prompt.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/prompt.ts).
-- “No generic chat drift”: history normalization strips prior patch blobs and long markdown before model conversion. See `normalizeUiMessagesForModelConversion()` in [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts).
+- `app/api/events/ai-wizard/apply/route.ts`
+  - Violation: the route owns auth, gating, rate limiting, preflight, op execution, partial-failure handling, some audit behavior, and response shaping.
+  - Why it matters: the strict trust boundary is not isolated. The route is both adapter and apply engine.
 
-## 3. Target architecture
+- `app/[locale]/(protected)/dashboard/events/[eventId]/settings/page.tsx`
+  - Violation: the page duplicates `mapIssueStepId`, computes review projections, resolves assistant capability behavior, and builds assistant configuration inline.
+  - Why it matters: setup page composition is mixed with assistant-specific mapping and view-model logic. The page is doing policy and transformation work that should live in base wizard or assistant presenter modules.
 
-### Bounded subsystem: “Event AI Wizard”
+- `app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx`
+  - Violation: one client file owns transport setup, stream part handling, proposal extraction, continuity persistence, latency tracking, apply mutation, location choice handling, navigation handoff, and presentation.
+  - Why it matters: the assistant UI is a client monolith, difficult to test and unsafe to evolve incrementally.
 
-A production subsystem responsible for turning organizer intent into *proposals* (patches) and safely applying them, without polluting the base wizard domain.
+- `app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx`
+  - Violation: `buildPatchWithSelectedLocation()` turns an ambiguous proposal plus user selection into a mutated `update_edition` op on the client.
+  - Why it matters: the client is crossing from UI selection into server command construction. That is an apply-boundary violation.
 
-### Modules (proposed ownership boundaries)
+- `lib/events/ai-wizard/schemas.ts`
+  - Violation: one module mixes core patch ops, UI-facing checklist metadata, cross-step routing, location resolution payloads, choice requests, and apply request schema.
+  - Why it matters: proposal core and server-owned proposal meta are not explicitly separated. Client/server contract boundaries are implied rather than enforced.
 
-- Base wizard domain (canonical truth and readiness):
-  - `WizardReadinessService` (existing): `buildEventWizardAggregate()` stays authoritative. See [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts).
-  - Canonical step model + mappings live here (not in AI).
-- AI wizard subsystem (bounded “assistant” domain):
-  - Request parsing + message normalization (currently embedded in route).
-  - Intent router (diagnosis vs deterministic vs fast-path vs general model).
-  - Scoped context builder (step + intent + mode driven).
-  - Proposal generator (deterministic handlers and model-driven tool invocations).
-  - Patch finalizer (server reprojection + location metadata + UI contract shaping).
-  - Apply engine (strict preflight + transactional execution + audit/telemetry).
-  - Telemetry/evaluation hooks (mode selection, validity, correction rates).
+- `lib/events/ai-wizard/location-resolution.ts`
+  - Violation: server-only provider-backed resolution logic sits beside shared contracts at the subsystem root.
+  - Why it matters: the physical structure suggests this module is safely shareable when it is server-only.
 
-### Main request-to-proposal flow (explicit pipeline)
+- `lib/events/ai-wizard/prompt.ts`
+  - Violation: server-only prompting logic sits beside shared types/contracts and duplicates step identity locally.
+  - Why it matters: prompt construction should be inside the AI server subsystem, not in the shared contract surface.
 
-1. Parse request (validate, normalize UI messages, extract latest user intent).
-2. Canonicalize step + intent (single router output: `ExecutionPlan`).
-3. Build scoped context (fetch only what this step/mode needs; resolve location only when needed).
-4. Choose execution mode (deterministic vs model-driven, fast-path tool selection, model/budget).
-5. Generate proposal or clarification/diagnosis text (deterministic path never touches model).
-6. Validate + reproject patch against server truth (compute checklist/routing from projected aggregate).
-7. Emit stable UI contract (stream parts + patch data).
-8. Emit observability events.
+- Step identity duplication across:
+  - `lib/events/wizard/types.ts`
+  - `lib/events/ai-wizard/schemas.ts`
+  - `lib/events/ai-wizard/prompt.ts`
+  - `app/api/events/ai-wizard/route.ts`
+  - `app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell.tsx`
+  - `app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx`
+  - `app/[locale]/(protected)/dashboard/events/[eventId]/settings/page.tsx`
+  - Why it matters: drift is guaranteed. Review routing, request validation, UI navigation, and prompt grounding can diverge independently.
 
-### Main proposal-to-apply flow (separate trust boundary)
+- `app/api/events/ai-wizard/route.ts` reprojection logic
+  - Violation: `buildProjectedAggregate()` marks all existing distances as having pricing whenever any pricing op exists, and invents projected distances from a template instead of the actual `create_distance` op payload.
+  - Why it matters: proposal finalization is authoritative server output. Wrong reprojection creates wrong checklist and routing signals.
 
-1. Apply endpoint validates patch schema + safety.
-2. Strict preflight (IDs exist, tier overlaps, slug collisions, datetime normalization).
-3. Execute ops through server actions / transactional DB writes (audit logs where needed).
-4. Track apply outcome and return applied op results.
+- `app/api/events/ai-wizard/apply/route.ts`
+  - Violation: apply is mostly sequential and patch-global transactionality is absent; only add-on creation is wrapped in `db.transaction` and only that op writes audit records.
+  - Why it matters: duplicate requests, partial failures, and replay after timeout are not first-class. Auditability is inconsistent by operation.
 
-### Integration with base wizard (decoupled)
+- `__tests__/app/api/events/ai-wizard/route.server.test.ts`
+  - Violation: tests import `finalizeWizardPatchForUi`, `resolveCrossStepIntent`, and `enrichPatchWithResolvedLocation` directly from the route file.
+  - Why it matters: tests are reinforcing the wrong ownership model. Pure subsystem logic should be tested through extracted modules, not through the transport adapter.
 
-- Base wizard shell remains a pure step-orchestrator and editor host. See [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-setup-wizard-shell.tsx).
-- The settings page integrates via a thin “assistant slot” component and stable API endpoints, not by embedding AI routing/prompt logic. Today that coupling exists in [app/[locale]/(protected)/dashboard/events/[eventId]/settings/page.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/page.tsx); the redesign should remove AI-specific decision-making from that page.
+## 3. Target subsystem boundaries
 
-## 4. Canonical interfaces and contracts
+### Canonical base wizard domain
+- Responsibility: event setup truth, completeness, readiness, step registry, step-to-route mapping, issue-to-setup-step mapping, and wizard aggregate derivation.
+- Owns:
+  - canonical step identities
+  - wizard aggregate / aggregate view
+  - readiness and publish blocker semantics
+  - step diagnosis semantics
+- Must not own:
+  - prompt construction
+  - model selection
+  - AI continuity/session behavior
+  - proposal generation
+  - AI location choice workflows
 
-### Canonical step model
+### AI wizard server subsystem
+- Responsibility: convert organizer intent into proposals and strict apply commands without contaminating the base wizard.
+- Owns:
+  - request normalization
+  - execution planning
+  - scoped assistant context assembly
+  - deterministic handlers
+  - model execution and tool forcing
+  - proposal enrichment/finalization
+  - location resolution workflow
+  - apply preflight and execution
+  - AI telemetry
+- Must not own:
+  - canonical readiness rules
+  - wizard step registry
+  - page composition
+  - client session storage
 
-- Single exported runtime list + type for setup steps (used by Zod enums, URL parsing, UI unions, and routing). Today it is duplicated across:
-  - [lib/events/ai-wizard/schemas.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/schemas.ts)
-  - [lib/events/wizard/types.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/types.ts)
-  - [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-setup-wizard-shell.tsx)
-  - [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-ai-wizard-panel.tsx)
+### AI wizard contracts
+- Responsibility: stable DTOs shared by server adapters and client UI.
+- Owns:
+  - proposal core contract
+  - finalized proposal meta contract
+  - execution plan contract
+  - scoped context contract
+  - apply request/result contract
+  - location resolution/choice contract
+  - stream event contract
+- Must not own:
+  - database access
+  - Next.js request/response types
+  - React components/hooks
+  - prompt text
 
-### Base wizard → AI subsystem boundary
+### API transport adapters
+- Responsibility: HTTP/stream boundary only.
+- Owns:
+  - request parsing/validation at transport edge
+  - auth context lookup and adapter-level response mapping
+  - stream/JSON response formatting
+- Must not own:
+  - planning
+  - deterministic branching rules
+  - projection correctness logic
+  - op execution
 
-- `WizardAggregateView` (derived, stable) that exposes:
-  - prioritized checklist items already mapped to setup steps
-  - step diagnosis (basics/pricing today; review/policies/content can be computed deterministically as now)
-  - publish blockers and truth-conflict blockers
-- This eliminates duplicated `mapIssueStepId()` currently present in both [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) and [app/[locale]/(protected)/dashboard/events/[eventId]/settings/page.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/page.tsx), and centralizes mapping currently hidden as `mapIssueToSetupStepId()` inside [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts).
+### Assistant UI layer
+- Responsibility: render assistant state and collect user input.
+- Owns:
+  - transport hook wiring
+  - proposal display
+  - continuity persistence
+  - client-only selection state
+  - mutation trigger UX
+  - navigation handoff UX
+- Must not own:
+  - proposal mutation into domain ops
+  - final routing derivation
+  - location-to-edition conversion rules
+  - apply result interpretation beyond display logic
 
-### AI stream contract
+### Shared neutral event-domain utilities
+- Responsibility: reusable non-AI behavior used by both wizard and AI server.
+- Owns:
+  - datetime normalization/formatting
+  - content merge helpers if genuinely shared
+  - event snapshot helper types
+- Must not own:
+  - AI prompting
+  - AI contracts
+  - UI stream types
 
-- Keep `EventAiWizardUIMessage` and stream data parts as the stable UI protocol. See [lib/events/ai-wizard/ui-types.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/ui-types.ts).
+## 4. Target folder/module structure
 
-### Proposal contract
+```text
+lib/events/
+  datetime/
+    normalize-edition-datetime.ts
+    format-edition-datetime.ts
+    schedule-facts.ts
+  wizard/
+    steps.ts
+    types.ts
+    step-modules.ts
+    aggregate-builder.ts
+    aggregate-view.ts
+    review-view.ts
+  ai-wizard/
+    contracts/
+      steps.ts
+      proposal.ts
+      ui-stream.ts
+      execution-plan.ts
+      scoped-context.ts
+      apply.ts
+      location.ts
+    server/
+      access.ts
+      telemetry.ts
+      planning/
+        build-execution-plan.ts
+        detect-fast-path.ts
+        resolve-cross-step-intent.ts
+        normalize-message-history.ts
+      context/
+        build-scoped-assistant-context.ts
+        build-wizard-aggregate-view.ts
+        resolve-location-context.ts
+      prompt/
+        build-system-prompt.ts
+      proposals/
+        deterministic/
+          build-basics-follow-up.ts
+          build-policies-follow-up.ts
+          build-step-diagnosis.ts
+        fast-path/
+          build-fast-path-patch.ts
+        finalize/
+          finalize-proposal.ts
+          project-aggregate-from-proposal.ts
+          project-website-content.ts
+          enrich-location-proposal.ts
+      apply/
+        apply-engine.ts
+        preflight.ts
+        idempotency.ts
+        execute-op.ts
+        op-handlers/
+          update-edition.ts
+          create-distance.ts
+          create-pricing-tier.ts
+          append-website-section.ts
+          append-policy.ts
+          create-add-on.ts
+      coordinators/
+        stream-proposal-coordinator.ts
+        apply-proposal-coordinator.ts
+app/api/events/ai-wizard/
+  route.ts
+  apply/route.ts
+app/[locale]/(protected)/dashboard/events/[eventId]/settings/
+  assistant/
+    step-config.ts
+    event-ai-wizard-panel.tsx
+    use-event-ai-wizard-transport.ts
+    use-event-ai-wizard-proposal-view.ts
+    use-event-ai-wizard-continuity.ts
+    use-event-ai-wizard-apply.ts
+    use-event-ai-wizard-location-choice.ts
+    components/
+      proposal-card.tsx
+      proposal-details.tsx
+      supporting-context-panel.tsx
+      continuity-snapshot-card.tsx
+      apply-confirmation-card.tsx
+      location-choice-card.tsx
+      progress-state-card.tsx
+      composer.tsx
+      brief-editor.tsx
+```
 
-- Keep `EventAiWizardPatch` and `EventAiWizardOp` as the allowlisted patch language (schema-backed). See [lib/events/ai-wizard/schemas.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/schemas.ts).
-- Split “proposal core” vs “server UI meta” conceptually even if the wire shape stays the same:
-  - Proposal core: `{ title, summary, ops, markdownOutputs }`
-  - Server meta: `{ missingFieldsChecklist, intentRouting, crossStepIntent, locationResolution, choiceRequest }`
-  - Server meta must be overwritten by the patch finalizer, never trusted from the model (already mostly true via `finalizeWizardPatchForUi()`).
+Notes:
+- `lib/events/ai-wizard/contracts/**` is the only AI subtree that client code may import.
+- `prompt.ts`, `location-resolution.ts`, and projection/finalization logic move under `server/**` because they are not shared contracts.
+- `datetime.ts` leaves the AI folder entirely.
+- The existing settings page remains the composition entry point, but assistant-specific factories/configuration move into `settings/assistant/**`.
+
+## 5. Import direction rules
+
+- `lib/events/datetime/**`
+  - May import from neutral shared libs only.
+  - May not import from `lib/events/ai-wizard/**`, `app/**`, or React.
+
+- `lib/events/wizard/**`
+  - May import from `lib/events/datetime/**`, `lib/events/queries`, `lib/events/website/types`, and other neutral event-domain modules.
+  - May not import from `lib/events/ai-wizard/**`, `app/**`, or `@ai-sdk/*`.
+
+- `lib/events/ai-wizard/contracts/**`
+  - May import base wizard step contracts from `lib/events/wizard/steps` or `lib/events/wizard/types`.
+  - May not import from `lib/events/ai-wizard/server/**`, `app/**`, `next/*`, db modules, or React.
+
+- `lib/events/ai-wizard/server/**`
+  - May import from `lib/events/ai-wizard/contracts/**`, `lib/events/wizard/**`, neutral event-domain modules, db/actions/queries, and telemetry/auth/permissions helpers.
+  - May not import from `app/[locale]/**`, UI components, or client hooks.
+
+- `app/api/events/ai-wizard/**`
+  - May import from `lib/events/ai-wizard/contracts/**` and `lib/events/ai-wizard/server/coordinators/**` plus minimal auth/response helpers.
+  - May not import from `lib/events/ai-wizard/server/*` internals other than the top-level coordinator entry points.
+  - May not import from `app/[locale]/**`.
+
+- `app/[locale]/.../settings/assistant/**`
+  - May import from `lib/events/ai-wizard/contracts/**`, `@ai-sdk/react`, local hooks/components, and neutral UI utilities.
+  - May not import from `lib/events/ai-wizard/server/**`, route files, db modules, or `next/server`.
+
+- `app/[locale]/.../settings/page.tsx`
+  - May import from base wizard view-model builders and local assistant slot/render config.
+  - May not define step mapping logic or assistant execution rules inline.
+
+- Tests
+  - Route adapter tests import route handlers only.
+  - Subsystem tests import extracted planner/finalizer/apply modules.
+  - No test may import route internals as a surrogate for missing modules.
+
+These rules are concrete enough for lint enforcement with `no-restricted-imports` or a dependency-cruiser policy.
+
+## 6. First-class contracts and types
+
+### Canonical setup step contract
+
+```ts
+export const SETUP_STEP_IDS = [
+  'basics',
+  'distances',
+  'pricing',
+  'registration',
+  'policies',
+  'content',
+  'extras',
+  'review',
+] as const;
+
+export type SetupStepId = typeof SETUP_STEP_IDS[number];
+
+export type SetupStepDefinition = {
+  id: SetupStepId;
+  required: boolean;
+  labelKey: string;
+  routeSurface: 'settings' | 'pricing' | 'faq' | 'waivers' | 'questions' | 'policies' | 'website' | 'add_ons';
+  assistantMode: 'structured' | 'markdown' | 'diagnostic' | 'none';
+  canonicalWizardStepIds: readonly EventWizardStepId[];
+};
+
+export function mapWizardIssueStepToSetupStep(stepId: EventWizardStepId): SetupStepId;
+```
+
+Rules:
+- This is the only runtime source of truth for setup step identity.
+- `z.enum`, client unions, URL parsing, prompt context, and routing all derive from this export.
+
+### `ExecutionPlan`
+
+```ts
+type ExecutionMode =
+  | 'diagnosis'
+  | 'deterministic_follow_up'
+  | 'fast_path_generation'
+  | 'general_generation';
+
+type ExecutionPlan = {
+  stepId: SetupStepId;
+  locale: string;
+  latestUserIntent: string;
+  mode: ExecutionMode;
+  fastPathKind?: 'event_description' | 'faq' | 'content_bundle' | 'website_overview' | 'policy';
+  deterministicHandler?: 'step_diagnosis' | 'basics_follow_up' | 'policies_follow_up';
+  requiresLocationResolution: boolean;
+  contextScope: {
+    includeWebsiteContent: boolean;
+    includeQuestions: boolean;
+    includeAddOns: boolean;
+    includeLocationContext: boolean;
+    includePriorProposalContext: boolean;
+  };
+  modelPlan?: {
+    model: string;
+    stepBudget: number;
+    reasoningEffort?: 'minimal' | 'low' | 'medium';
+    forcedTool?: string;
+  };
+};
+```
+
+Rules:
+- The route does not infer mode on the fly.
+- Everything downstream consumes an explicit plan.
+
+### `ScopedAssistantContext`
+
+```ts
+type ScopedAssistantContext = {
+  editionId: string;
+  stepId: SetupStepId;
+  locale: string;
+  organizerBrief: string | null;
+  eventSnapshot: EventEditionDetail;
+  wizardView: WizardAggregateView;
+  activeStepDiagnosis: WizardChecklistItem[];
+  diagnosisNextStep: WizardChecklistItem | null;
+  websiteContent?: WebsiteContentBlocks | null;
+  questions?: QuestionSummary[];
+  addOns?: AddOnSummary[];
+  locationResolution?: LocationResolutionResult | null;
+  normalizedHistory: AssistantHistoryMessage[];
+};
+```
+
+Rules:
+- Context is a built object, not ad hoc pulls from the route.
+- Only the context builder decides what gets loaded for a given plan.
+
+### Proposal contract split: core vs server-owned meta
+
+```ts
+type ProposalCore = {
+  title: string;
+  summary: string;
+  risky?: boolean;
+  ops: EventAiWizardOp[];
+  markdownOutputs?: EventAiWizardMarkdownOutput[];
+};
+
+type ProposalMeta = {
+  proposalId: string;
+  proposalVersion: 1;
+  proposalFingerprint: string;
+  missingFieldsChecklist: WizardChecklistItem[];
+  intentRouting: IntentRoute[];
+  crossStepIntent?: CrossStepIntent;
+  locationResolution?: LocationResolutionResult;
+  choiceRequest?: ChoiceRequest;
+  executionTrace: {
+    mode: ExecutionMode;
+    stepId: SetupStepId;
+    fastPathKind?: string;
+  };
+};
+
+type FinalizedProposal = {
+  core: ProposalCore;
+  meta: ProposalMeta;
+};
+```
+
+Rules:
+- `ProposalCore` is the only input the apply engine trusts.
+- `ProposalMeta` is server-owned output. The server derives it and may overwrite model-supplied values.
+- Wire compatibility can temporarily flatten these into the existing patch shape, but the internal boundary must still exist.
 
 ### Apply engine contract
 
-- `ApplyRequest`: (already) `eventAiWizardApplyRequestSchema`.
-- `ApplyResult`: `{ ok: true, applied: Array<{ opIndex, type, result? }> }` plus structured error codes (already in apply route responses). See [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts).
+```ts
+type ApplySelection =
+  | {
+      kind: 'location_candidate_selection';
+      candidate: ResolvedLocationCandidate;
+    };
 
-### Location subsystem contract
+type ApplyEngineInput = {
+  editionId: string;
+  locale: string;
+  actorUserId: string;
+  organizationId: string;
+  proposalId: string;
+  proposalFingerprint: string;
+  idempotencyKey: string;
+  core: ProposalCore;
+  selections?: ApplySelection[];
+  requestContext: AuditRequestContext;
+};
 
-- Keep location resolution server-owned (`matched`/`ambiguous`/`no_match`) and encode user choice via `choiceRequest`. See [lib/events/ai-wizard/location-resolution.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/location-resolution.ts) and [lib/events/ai-wizard/schemas.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/schemas.ts).
+type AppliedOpResult = {
+  opIndex: number;
+  type: EventAiWizardOp['type'];
+  status: 'applied' | 'skipped' | 'already_applied';
+  result?: unknown;
+  auditId?: string;
+};
 
-## 5. Refactor plan by phases
+type ApplyEngineResult =
+  | {
+      outcome: 'applied' | 'already_applied';
+      proposalId: string;
+      idempotencyKey: string;
+      appliedOps: AppliedOpResult[];
+    }
+  | {
+      outcome: 'rejected';
+      code: 'INVALID_PATCH' | 'READ_ONLY' | 'RATE_LIMITED' | 'RETRY_LATER';
+      failedOpIndex?: number;
+      appliedOps: AppliedOpResult[];
+      retryable: boolean;
+    };
+```
 
-### Phase 1: Canonicalize step IDs + centralize step mapping (low risk, high leverage)
+Rules:
+- The apply route submits a proposal id, fingerprint, and idempotency key.
+- Client-side location selection is carried as `selections`, not by mutating `ProposalCore.ops`.
 
-- Create a single runtime `SETUP_STEP_IDS` export and type, and use it everywhere.
-- Export the “issue step → setup step” mapping from the base wizard domain and remove duplicates.
-- Likely touch:
-  - [lib/events/wizard/types.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/types.ts)
-  - [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts)
-  - [lib/events/ai-wizard/schemas.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/schemas.ts)
-  - [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts)
-  - [app/[locale]/(protected)/dashboard/events/[eventId]/settings/page.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/page.tsx)
+### Location resolution contract
 
-### Phase 2: Fix ownership inversion by moving shared datetime utilities out of AI
+```ts
+type LocationResolutionRequest = {
+  query: string;
+  locale: string;
+  country?: string | null;
+  proximity?: { lat: number; lng: number };
+};
 
-- Move `hasTrustedEventStartTime`, date/time normalization/formatters currently in [lib/events/ai-wizard/datetime.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/datetime.ts) into a neutral domain module (`lib/events/datetime/*` or `lib/events/wizard/datetime/*`).
-- Update imports in:
-  - [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts)
-  - [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-settings-form.tsx)
-  - [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts)
-  - [app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected-fullscreen)/dashboard/events/new/create-event-form.tsx)
+type LocationResolutionResult =
+  | { status: 'matched'; query: string; candidate: ResolvedLocationCandidate }
+  | { status: 'ambiguous'; query: string; candidates: ResolvedLocationCandidate[] }
+  | { status: 'no_match'; query: string };
 
-### Phase 3: Extract the patch finalizer (projection + meta rebuild) into a first-class module
+type ChoiceRequest = {
+  kind: 'location_candidate_selection';
+  sourceStepId: 'basics';
+  targetField: 'event_location';
+  query: string;
+  options: ResolvedLocationCandidate[];
+};
+```
 
-- Move these out of the stream route into `lib/events/ai-wizard/server/*`:
-  - projection (`projectWebsiteContent`, `buildProjectedAggregate`)
-  - finalization (`finalizeWizardPatchForUi`, choiceRequest shaping, location serialization)
-- Tighten correctness during extraction (especially per-distance pricing projection), backed by tests.
-- Likely touch:
-  - [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts)
-  - [__tests__/app/api/events/ai-wizard/route.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/app/api/events/ai-wizard/route.server.test.ts)
+Rules:
+- Location resolution is server-owned.
+- UI only renders `ChoiceRequest` and returns a selected candidate.
 
-### Phase 4: Make execution modes explicit via a pipeline coordinator
+### Wizard aggregate view contract
 
-- Extract “plan selection” and “execution” from the route into modules:
-  - router (`diagnosis`, `deterministic follow-up`, `fast path`, `general patch`)
-  - context builder (fetch + readiness + location resolution only when needed)
-  - model runner (tools + budgets + model selection)
-- Keep the wire protocol unchanged so the UI doesn’t move.
-- Likely touch:
-  - [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts)
-  - [lib/events/ai-wizard/prompt.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/prompt.ts)
+```ts
+type WizardChecklistItem = {
+  code: string;
+  stepId: SetupStepId;
+  severity: 'required' | 'blocker' | 'optional';
+  labelKey: string;
+};
 
-### Phase 5: Extract apply engine + shared guards
+type WizardAggregateView = {
+  checklist: WizardChecklistItem[];
+  publishBlockers: WizardChecklistItem[];
+  missingRequired: WizardChecklistItem[];
+  optionalRecommendations: WizardChecklistItem[];
+  stepDiagnosisById: Partial<Record<SetupStepId, WizardChecklistItem[]>>;
+  setupStepStateById: Record<SetupStepId, {
+    completed: boolean;
+    blockerCount: number;
+    recommendationCount: number;
+    required: boolean;
+  }>;
+  capabilityLocks: EventWizardCapabilityLocks;
+};
+```
 
-- Turn apply route into an adapter; move preflight + op execution into `ApplyEngine`.
-- Consolidate duplicated guard logic between stream/apply (auth, Pro gate, membership role checks, rate limiting, error mapping).
-- Likely touch:
-  - [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts)
-  - [__tests__/app/api/events/ai-wizard/apply.route.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/app/api/events/ai-wizard/apply.route.server.test.ts)
+Rules:
+- AI consumes this view, not route-local re-mappings.
+- Settings page review summaries also consume this view.
 
-### Phase 6: Observability + evaluation hooks
+## 7. Adapter vs service ownership
 
-- Add structured events for:
-  - mode selection
-  - proposal emitted
-  - reprojection correction deltas
-  - apply outcomes and failure categories
-- Keep using the existing `trackProFeatureEvent` pipeline unless there’s a concrete need for a new sink. See current tracking in [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts) and blocked tracking in [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts).
+### `app/api/events/ai-wizard/route.ts`
+- Remains in adapter:
+  - parse request body
+  - resolve auth context
+  - map domain/service errors to HTTP/stream responses
+  - call `streamProposalCoordinator.execute()`
+- Moves out:
+  - message normalization
+  - step mapping
+  - execution mode selection
+  - deterministic diagnosis/follow-up builders
+  - fast-path detection
+  - context assembly
+  - prompt construction
+  - model selection/tool forcing
+  - proposal enrichment and finalization
+  - location serialization / choice shaping
 
-## 6. Risks and regressions to watch
+### `app/api/events/ai-wizard/apply/route.ts`
+- Remains in adapter:
+  - parse apply request
+  - resolve auth context
+  - map `ApplyEngineResult` to JSON/HTTP
+- Moves out:
+  - membership capability rules
+  - rate-limit policy
+  - patch preflight
+  - op loop / execution dispatch
+  - per-op audit behavior
+  - partial-failure bookkeeping
+  - idempotency and replay behavior
 
-- Step drift regressions: wrong checklist routing, wrong cross-step handoff, wrong “go to step” behavior if step IDs/mappings remain duplicated.
-- Stream protocol regressions: the UI depends on `data-notification`, `data-fast-path-structure`, `data-early-prose`, and `data-event-patch` semantics. See [lib/events/ai-wizard/ui-types.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/ui-types.ts) and the client onData handlers in [app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/%5Blocale%5D/(protected)/dashboard/events/%5BeventId%5D/settings/event-ai-wizard-panel.tsx).
-- Projection regressions: fixing projection correctness will change missingFieldsChecklist/intentRouting behavior. That’s correct, but it will be user-visible and needs tight tests.
-- Location workflow regressions: ambiguous choice requests must remain stable and apply-safe (no accidental coordinate invention). See [lib/events/ai-wizard/location-resolution.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/ai-wizard/location-resolution.ts).
-- Apply semantics regressions: timezone conversion, website overview replacement vs append, pricing overlap preflight, slug collision behavior. See [app/api/events/ai-wizard/apply/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/apply/route.ts).
-- Prompt regressions: refactoring context assembly can change model outputs; protect with prompt invariants in tests. See [__tests__/lib/events/ai-wizard-prompt.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/lib/events/ai-wizard-prompt.server.test.ts).
+### Settings page
+- Remains in page composition:
+  - load event and wizard view data
+  - decide whether wizard mode is active
+  - render step surfaces and assistant slots
+- Moves out:
+  - step mapping duplication
+  - review issue view-model assembly
+  - assistant per-step config table
+  - assistant capability/gating presenter logic
+- Target: page consumes `buildWizardReviewView()` and `buildAssistantSlotProps(stepId, locale, event)`.
 
-## 7. Evaluation plan
+### Assistant panel
+- Remains in panel composition:
+  - top-level layout
+  - hook composition
+  - render cards/components
+- Moves out:
+  - `useChat` transport setup into `use-event-ai-wizard-transport`
+  - stream part interpretation into proposal-view hook/reducer
+  - continuity session storage into `use-event-ai-wizard-continuity`
+  - apply fetch and result handling into `use-event-ai-wizard-apply`
+  - location selection logic into `use-event-ai-wizard-location-choice`
+  - client-side proposal mutation out entirely; replaced by selection payloads submitted to apply hook
 
-### Minimum metrics to add (server-owned)
+## 8. Revised migration plan
 
-- Route selection correctness:
-  - `mode` (diagnosis / deterministic_patch / fast_path / general_patch)
-  - `fastPathKind` and `crossStepIntent`
-- Proposal validity:
-  - patch schema pass rate (should be near-100)
-  - preflight-at-proposal failures (IDs, overlaps) if added
-- Reprojection correction rate:
-  - how often model-supplied `missingFieldsChecklist/intentRouting` differs from server recomputation (today server overwrites; log the delta before overwrite)
-- Clarification rate:
-  - % of turns that end without a patch proposal
-- Apply outcomes:
-  - success/failure counts by error code (`INVALID_PATCH`, `READ_ONLY`, `RATE_LIMITED`, etc)
-  - op distribution and “domain touched” distribution (description/website/policy/etc)
-- Contradiction + readiness outcomes:
-  - post-apply aggregate blockers count deltas (especially truth conflicts from [lib/events/wizard/orchestrator.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/lib/events/wizard/orchestrator.ts))
-- Location resolution outcomes:
-  - matched/ambiguous/no_match rates and “choice selected” completion rate
+### Phase 1: canonical contracts and neutral extraction
+- Objective: eliminate identity drift and remove AI namespace leakage from the base wizard.
+- Architectural outcome:
+  - one canonical setup-step contract
+  - wizard issue-to-setup-step mapping exported from base wizard
+  - datetime utilities moved to neutral `lib/events/datetime/**`
+- Likely files/modules touched:
+  - `lib/events/wizard/types.ts`
+  - new `lib/events/wizard/steps.ts`
+  - `lib/events/wizard/orchestrator.ts`
+  - `lib/events/ai-wizard/schemas.ts`
+  - `lib/events/ai-wizard/prompt.ts`
+  - `app/api/events/ai-wizard/route.ts`
+  - `app/[locale]/.../settings/page.tsx`
+  - `app/[locale]/.../settings/event-setup-wizard-shell.tsx`
+  - `app/[locale]/.../settings/event-ai-wizard-panel.tsx`
+  - `app/[locale]/.../settings/event-settings-form.tsx`
+  - `app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form.tsx`
+- Risk level: low.
+- Why this ordering is safe: no behavioral change is required beyond replacing duplicated literals and imports.
 
-### Testing strategy (keep it boring and comprehensive)
+### Phase 2: extract proposal finalization and projection seam
+- Objective: isolate the most correctness-sensitive server logic behind a pure module.
+- Architectural outcome:
+  - `finalize-proposal.ts` becomes the authoritative owner of server-owned proposal meta
+  - projection correctness is testable without route imports
+- Likely files/modules touched:
+  - new `lib/events/ai-wizard/server/proposals/finalize/*`
+  - `app/api/events/ai-wizard/route.ts`
+  - `__tests__/app/api/events/ai-wizard/route.server.test.ts`
+  - new focused tests for projection/finalizer modules
+- Risk level: medium.
+- Why this ordering is safe: the route wire protocol stays unchanged while the highest-risk logic moves into pure functions.
 
-- Preserve and expand existing route/apply tests:
-  - [__tests__/app/api/events/ai-wizard/route.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/app/api/events/ai-wizard/route.server.test.ts)
-  - [__tests__/app/api/events/ai-wizard/apply.route.server.test.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/app/api/events/ai-wizard/apply.route.server.test.ts)
-- Add focused tests for projection correctness around pricing per distance (currently under-tested).
-- Keep the UI contract stable with the existing client tests in [__tests__/app/event-ai-wizard-panel.client.test.tsx](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/__tests__/app/event-ai-wizard-panel.client.test.tsx).
+### Phase 3: extract stream coordinator and explicit execution planning
+- Objective: make route orchestration boring and explicit.
+- Architectural outcome:
+  - explicit `ExecutionPlan`
+  - route delegates to `stream-proposal-coordinator`
+  - prompt/model/handler selection moves into server modules
+- Likely files/modules touched:
+  - `app/api/events/ai-wizard/route.ts`
+  - new `lib/events/ai-wizard/server/planning/**`
+  - new `lib/events/ai-wizard/server/context/**`
+  - new `lib/events/ai-wizard/server/prompt/**`
+  - new `lib/events/ai-wizard/server/coordinators/stream-proposal-coordinator.ts`
+- Risk level: medium.
+- Why this ordering is safe: the finalizer seam already exists, so coordinator extraction does not need to solve projection and transport at once.
 
-## 8. Recommended first implementation slice
+### Phase 4: extract apply engine with idempotency and op journals
+- Objective: move the strict trust boundary out of the route and make replay behavior explicit.
+- Architectural outcome:
+  - apply route becomes a thin adapter
+  - `ApplyEngineInput` / `ApplyEngineResult` are first-class
+  - idempotency and audit become uniform
+- Likely files/modules touched:
+  - `app/api/events/ai-wizard/apply/route.ts`
+  - new `lib/events/ai-wizard/server/apply/**`
+  - new op-handler modules
+  - apply tests updated to target engine and adapter separately
+- Risk level: medium-high.
+- Why this ordering is safe: by this point proposal contracts and planner/finalizer contracts are stable, so apply can adopt them without moving UI at the same time.
 
-Extract the “patch finalizer” (projection + server-owned checklist/routing rebuild + location choice shaping) into a dedicated module and make the stream route a thin adapter that calls it, while simultaneously centralizing the step ID list + step mapping in one canonical place. This is the highest-leverage seam because it:
+### Phase 5: client decomposition without changing behavior
+- Objective: break the assistant panel into stable hooks and components while preserving current UX.
+- Architectural outcome:
+  - transport, continuity, proposal extraction, apply mutation, and presentation are separated
+  - location selection stops mutating proposals client-side
+- Likely files/modules touched:
+  - `app/[locale]/.../settings/assistant/**`
+  - existing assistant panel tests split toward smaller hooks/components
+- Risk level: medium.
+- Why this ordering is safe: the server contract surface is already stable, so the client can refactor against a fixed protocol.
 
-- removes the largest correctness and drift risk (step identity + reprojection)
-- reduces the size/complexity of [app/api/events/ai-wizard/route.ts](/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web-wt/ai-event/app/api/events/ai-wizard/route.ts) without changing the UI protocol
-- sets up a clean pipeline extraction next, without a big-bang rewrite
+### Phase 6: enforcement and telemetry hardening
+- Objective: stop regression back to the old shape.
+- Architectural outcome:
+  - import rules codified
+  - tests target modules at the right boundaries
+  - telemetry records plan mode, proposal finalization, apply outcome, and replay behavior
+- Likely files/modules touched:
+  - lint/dependency policy config
+  - telemetry helpers
+  - targeted tests
+- Risk level: low.
+- Why this ordering is safe: after structure exists, enforcement becomes precise instead of aspirational.
 
+## 9. UI decomposition target
+
+The client target is not a rewrite. It is a controlled split around current seams.
+
+- `event-ai-wizard-panel.tsx`
+  - Becomes a composition component only.
+  - Owns layout and hook wiring.
+
+- `use-event-ai-wizard-transport.ts`
+  - Owns `useChat`, `DefaultChatTransport`, stream part intake, and transport error normalization.
+  - Exposes normalized stream state, not raw `useChat` internals.
+
+- `use-event-ai-wizard-proposal-view.ts`
+  - Owns proposal extraction from message history.
+  - Computes `latestProposal`, `latestRequest`, `archiveMessages`, `latestAssistantWithoutPatch`, and routing/checklist presentation data.
+
+- `use-event-ai-wizard-continuity.ts`
+  - Owns continuity snapshot persistence and recovery from `sessionStorage`.
+  - Removes continuity bookkeeping from the panel body.
+
+- `use-event-ai-wizard-apply.ts`
+  - Owns apply mutation, idempotency key generation, request dispatch, error decoding, and refresh/reveal decisions.
+  - Consumes `FinalizedProposal` + `selections`, not a client-mutated patch.
+
+- `use-event-ai-wizard-location-choice.ts`
+  - Owns selected candidate state and validation of whether apply is enabled.
+  - Does not translate a candidate into `update_edition` ops.
+
+- Presentation components
+  - `proposal-card.tsx`
+  - `proposal-details.tsx`
+  - `location-choice-card.tsx`
+  - `routing-card.tsx`
+  - `supporting-context-panel.tsx`
+  - `continuity-snapshot-card.tsx`
+  - `progress-state-card.tsx`
+  - `composer.tsx`
+  - `brief-editor.tsx`
+
+Migration-aware rule:
+- Keep the current stream protocol and visual behavior while splitting internals.
+- Do not replace `useChat` or redesign the entire interaction model during the architectural extraction.
+
+## 10. Reliability and replay-safety requirements
+
+- Duplicate apply attempts
+  - Every finalized proposal must carry `proposalId` and `proposalFingerprint`.
+  - Every apply request must carry an `idempotencyKey`.
+  - If the same proposal and idempotency key arrive twice, return the original result as `already_applied`, not a second mutation.
+
+- Network retries
+  - Client retries after timeout must reuse the same `idempotencyKey`.
+  - Apply adapter must be able to return a completed result for a previously committed request.
+
+- Partial failures
+  - Partial application is allowed only as an explicit reported outcome, never as an implicit side effect.
+  - The engine must return `appliedOps`, `failedOpIndex`, `retryable`, and `proposalId`.
+  - UI must not blindly retry an entire partially-applied patch.
+
+- Transactional vs compensating behavior
+  - A patch should execute in one DB transaction where handlers can share a transaction boundary.
+  - Where that is not yet possible, the engine must execute per-op with an operation journal and stop on first failure.
+  - Compensation is only acceptable for explicitly reversible operations. If reversal is not guaranteed, report partial application instead of pretending atomicity.
+
+- Auditability per op
+  - Every applied op must record actor, organization, edition, proposalId, idempotencyKey, opIndex, opType, status, and before/after summary where feasible.
+  - Add-on creation cannot remain the only audited path.
+  - Audit records must be queryable by proposalId to reconstruct what happened.
+
+- Proposal/apply contract integrity
+  - Apply must consume `ProposalCore` plus server-issued identifiers. It must ignore client-edited checklist/routing/meta fields.
+  - If `proposalFingerprint` does not match `ProposalCore`, reject as `INVALID_PATCH`.
+
+- Replay-safe location choice
+  - Ambiguous location resolution must be applied via a server-handled `ApplySelection`, not by client-side op mutation.
+  - Selected candidates must be serialized through the contract and revalidated server-side before execution.
+
+- Correctness-over-compatibility hotspots
+  - Reprojection must stop marking unrelated distances as priced.
+  - Reprojection must derive projected distances from `create_distance` op data, not placeholder templates.
+  - Review checklist/routing can change if that is the correct result of accurate projection.
+
+## 11. Recommended next implementation slice
+
+Build the canonical step contract and extract proposal finalization into a dedicated server module in one slice.
+
+Scope:
+- introduce `lib/events/wizard/steps.ts` as the single source of truth for setup step identity and issue-to-setup-step mapping
+- move neutral datetime helpers out of `lib/events/ai-wizard/datetime.ts`
+- extract `finalizeWizardPatchForUi`, `buildProjectedAggregate`, `projectWebsiteContent`, and location-choice shaping into `lib/events/ai-wizard/server/proposals/finalize/**`
+- update the route, settings page, prompt, shell, panel, and tests to consume the new step contract and finalizer module
+
+Why this slice comes next:
+- it removes the largest structural drift immediately: duplicated step identity
+- it isolates the highest-risk correctness logic immediately: proposal reprojection/finalization
+- it preserves the current transport and UI behavior, so regression risk stays contained
+- it creates the seam needed for the next extraction: an explicit stream coordinator that can call a tested finalizer instead of route-local helpers
+- it is the smallest slice that simultaneously protects the base wizard from AI churn and improves proposal correctness
