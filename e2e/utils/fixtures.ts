@@ -171,7 +171,6 @@ export async function signUpTestUser(
   }
 
   await waitForCredentialAccountPersistence(db, signedUpUser.id, 'signUpTestUser');
-  await setUserVerified(db, email);
 
   return { id: signedUpUser.id, email, password, name };
 }

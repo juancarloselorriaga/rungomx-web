@@ -12,6 +12,7 @@ import {
   createTestPricingTier,
   createTestProfile,
   seedActiveProEntitlement,
+  setUserVerified,
   signUpTestUser,
 } from '../utils/fixtures';
 import { signInAsOrganizer } from '../utils/helpers';
@@ -178,6 +179,11 @@ test.describe('Event wizard regression coverage', () => {
     viewerOrganizerCreds = await signUpTestUser(page, 'wizard-regression-viewer-', {
       name: 'Wizard Regression Viewer Organizer',
     });
+    await Promise.all([
+      setUserVerified(db, nonProOrganizerCreds.email),
+      setUserVerified(db, proOrganizerCreds.email),
+      setUserVerified(db, viewerOrganizerCreds.email),
+    ]);
 
     await Promise.all([
       createTestProfile(db, nonProOrganizerCreds.id, {

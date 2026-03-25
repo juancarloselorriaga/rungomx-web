@@ -9,6 +9,7 @@ import {
   assignExternalRole,
   createTestProfile,
   seedActiveProEntitlement,
+  setUserVerified,
   signUpTestUser,
 } from '../utils/fixtures';
 import { signInAsOrganizer } from '../utils/helpers';
@@ -100,6 +101,8 @@ test.describe('Event create AI brief continuity', () => {
     proOrganizerCreds = await signUpTestUser(page, 'create-ai-brief-pro-', {
       name: 'Create AI Brief Pro Organizer',
     });
+    await setUserVerified(db, nonProOrganizerCreds.email);
+    await setUserVerified(db, proOrganizerCreds.email);
 
     await createTestProfile(db, nonProOrganizerCreds.id, {
       dateOfBirth: new Date('1990-01-01'),
