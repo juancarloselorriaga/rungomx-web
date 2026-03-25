@@ -2,7 +2,7 @@ import { Providers } from '@/components/providers/providers';
 import { Toaster } from '@/components/ui/sonner';
 import { AppLocale, routing } from '@/i18n/routing';
 import type { Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Newsreader } from 'next/font/google';
 import './globals.css';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
@@ -21,6 +21,11 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+const newsreader = Newsreader({
+  variable: '--font-newsreader',
   subsets: ['latin'],
 });
 
@@ -61,7 +66,9 @@ export default async function RootLayout({ children, params }: RootLayoutProps) 
           }}
         />
       </head>
-      <body className={` ${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} antialiased`}
+      >
         <Providers>
           <Suspense fallback={null}>
             <Toaster />

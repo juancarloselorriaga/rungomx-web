@@ -4,7 +4,7 @@ import * as React from 'react';
 
 import { Badge, type BadgeProps } from './badge';
 
-const textBlockVariants = cva('', {
+const textBlockVariants = cva('flex flex-col', {
   variants: {
     align: {
       left: 'text-left',
@@ -24,13 +24,13 @@ const textBlockVariants = cva('', {
   },
 });
 
-const titleVariants = cva('font-bold tracking-tight', {
+const titleVariants = cva('font-display font-medium tracking-[-0.035em] text-balance', {
   variants: {
     titleSize: {
-      sm: 'text-2xl md:text-3xl',
-      md: 'text-3xl md:text-4xl',
-      lg: 'text-4xl md:text-5xl',
-      xl: 'text-5xl md:text-6xl',
+      sm: 'text-[clamp(1.9rem,4vw,2.4rem)] leading-[1.02]',
+      md: 'text-[clamp(2.3rem,5vw,3.35rem)] leading-[0.98]',
+      lg: 'text-[clamp(2.8rem,6vw,4.35rem)] leading-[0.95]',
+      xl: 'text-[clamp(3.35rem,7vw,5.4rem)] leading-[0.92]',
     },
   },
   defaultVariants: {
@@ -64,10 +64,13 @@ export function TextBlock({
   children,
   ...props
 }: TextBlockProps) {
+  const centered = align === 'center';
+  const rightAligned = align === 'right';
+
   return (
     <div className={cn(textBlockVariants({ align, size }), className)} {...props}>
       {eyebrow && (
-        <Badge variant={eyebrowVariant} className="mb-4">
+        <Badge variant={eyebrowVariant} className="mb-5">
           {eyebrow}
         </Badge>
       )}
@@ -75,16 +78,30 @@ export function TextBlock({
       <TitleTag className={cn(titleVariants({ titleSize }), 'text-foreground')}>{title}</TitleTag>
 
       {subtitle && (
-        <p className="mt-4 text-lg md:text-xl font-medium text-foreground/80">{subtitle}</p>
+        <p
+          className={cn(
+            'mt-4 max-w-[48rem] text-lg font-medium leading-8 text-foreground/80 md:text-xl',
+            centered && 'mx-auto',
+            rightAligned && 'ml-auto',
+          )}
+        >
+          {subtitle}
+        </p>
       )}
 
       {description && (
-        <p className="mt-4 text-base md:text-lg text-muted-foreground leading-relaxed">
+        <p
+          className={cn(
+            'mt-5 max-w-[65ch] text-base leading-8 text-muted-foreground md:text-lg',
+            centered && 'mx-auto',
+            rightAligned && 'ml-auto',
+          )}
+        >
           {description}
         </p>
       )}
 
-      {children && <div className="mt-6">{children}</div>}
+      {children && <div className="mt-8">{children}</div>}
     </div>
   );
 }

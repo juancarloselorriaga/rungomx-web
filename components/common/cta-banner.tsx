@@ -4,16 +4,18 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-const bannerVariants = cva('rounded-2xl p-8 md:p-12 text-center', {
+const bannerVariants = cva('rounded-[1.75rem] border p-8 md:p-10', {
   variants: {
     variant: {
-      default: 'bg-card border border-border',
+      default:
+        'bg-[color-mix(in_oklch,var(--background)_58%,var(--background-surface)_42%)] border-border/75',
       gradient:
-        'bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-indigo)] text-white shadow-lg',
+        'bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-blue)_16%)] border-[color-mix(in_oklch,var(--brand-blue)_22%,var(--border))] text-foreground',
       'gradient-green':
-        'bg-gradient-to-r from-[var(--brand-green)] to-[var(--brand-green-dark)] text-white shadow-lg',
-      dark: 'bg-muted border border-border',
-      muted: 'bg-muted/30 border border-border',
+        'bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] border-[color-mix(in_oklch,var(--brand-green)_22%,var(--border))] text-foreground',
+      dark: 'bg-muted border-border/80',
+      muted:
+        'bg-[color-mix(in_oklch,var(--background)_64%,var(--background-surface)_36%)] border-border/75',
     },
   },
   defaultVariants: {
@@ -50,48 +52,49 @@ export function CtaBanner({
 
   return (
     <div className={cn(bannerVariants({ variant }), className)} {...props}>
-      <h2
-        className={cn(
-          'text-2xl md:text-3xl font-bold',
-          isGradient ? 'text-white' : 'text-foreground',
-        )}
-      >
-        {title}
-      </h2>
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-[42rem]">
+          <h2 className="font-display text-[clamp(2rem,4vw,3.25rem)] font-medium leading-[0.95] tracking-[-0.04em] text-foreground">
+            {title}
+          </h2>
 
-      {subtitle && (
-        <p
-          className={cn(
-            'mt-3 text-lg md:text-xl',
-            isGradient ? 'text-white/90' : 'text-muted-foreground',
+          {subtitle && (
+            <p
+              className={cn(
+                'mt-4 text-base leading-8 md:text-lg',
+                isGradient ? 'text-foreground/80' : 'text-muted-foreground',
+              )}
+            >
+              {subtitle}
+            </p>
           )}
-        >
-          {subtitle}
-        </p>
-      )}
 
-      {children}
-
-      {actions && actions.length > 0 && (
-        <div className="mt-8 flex flex-wrap justify-center gap-4">
-          {actions.map((action, index) => {
-            const buttonVariant = action.variant || (index === 0 ? 'secondary' : 'outline');
-            return (
-              <Button
-                key={index}
-                variant={buttonVariant}
-                size="lg"
-                className={cn(
-                  isGradient && buttonVariant === 'outline' && 'border-white/50 text-white hover:bg-white/10',
-                )}
-                asChild
-              >
-                <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
-              </Button>
-            );
-          })}
+          {children && <div className="mt-6">{children}</div>}
         </div>
-      )}
+
+        {actions && actions.length > 0 && (
+          <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+            {actions.map((action, index) => {
+              const buttonVariant = action.variant || (index === 0 ? 'default' : 'outline');
+              return (
+                <Button
+                  key={index}
+                  variant={buttonVariant}
+                  size="lg"
+                  className={cn(
+                    isGradient &&
+                      buttonVariant === 'outline' &&
+                      'border-foreground/15 bg-transparent text-foreground hover:bg-foreground/5',
+                  )}
+                  asChild
+                >
+                  <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
+                </Button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

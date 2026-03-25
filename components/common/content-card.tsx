@@ -2,21 +2,22 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-const cardVariants = cva('rounded-2xl p-8 md:p-10', {
+const cardVariants = cva('rounded-[1.75rem] p-7 md:p-9', {
   variants: {
     variant: {
-      default: 'bg-card border border-border',
+      default:
+        'bg-[color-mix(in_oklch,var(--background)_58%,var(--background-surface)_42%)] border border-border/75',
       'branded-blue':
-        'bg-[var(--brand-blue)]/10 border border-[var(--brand-blue)]/20 text-foreground',
+        'bg-[color-mix(in_oklch,var(--background)_82%,var(--brand-blue)_18%)] border border-[color-mix(in_oklch,var(--brand-blue)_22%,var(--border))] text-foreground',
       'branded-green':
-        'bg-[var(--brand-green)]/10 border border-[var(--brand-green)]/20 text-foreground',
+        'bg-[color-mix(in_oklch,var(--background)_82%,var(--brand-green)_18%)] border border-[color-mix(in_oklch,var(--brand-green)_22%,var(--border))] text-foreground',
       'branded-indigo':
-        'bg-[var(--brand-indigo)]/10 border border-[var(--brand-indigo)]/20 text-foreground',
+        'bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-indigo)_16%)] border border-[color-mix(in_oklch,var(--brand-indigo)_22%,var(--border))] text-foreground',
       'solid-blue':
-        'bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-blue-dark)] text-white shadow-lg',
+        'bg-[color-mix(in_oklch,var(--brand-blue)_78%,var(--background)_22%)] border border-[color-mix(in_oklch,var(--brand-blue)_38%,var(--border))] text-white',
       'solid-green':
-        'bg-gradient-to-br from-[var(--brand-green)] to-[var(--brand-green-dark)] text-white shadow-lg',
-      dark: 'bg-muted/50 border border-border text-foreground',
+        'bg-[color-mix(in_oklch,var(--brand-green)_78%,var(--background)_22%)] border border-[color-mix(in_oklch,var(--brand-green)_38%,var(--border))] text-white',
+      dark: 'bg-muted/45 border border-border/80 text-foreground',
     },
   },
   defaultVariants: {
@@ -38,19 +39,19 @@ export function ContentCard({ title, children, variant, className }: ContentCard
       {title && (
         <h2
           className={cn(
-            'mb-6 text-2xl md:text-3xl font-bold',
+            'font-display mb-6 text-[clamp(1.55rem,3.4vw,2.4rem)] font-medium leading-tight tracking-[-0.03em]',
             isSolid ? 'text-inherit' : 'text-foreground',
           )}
         >
           {title}
         </h2>
       )}
-      <div
-        className={cn(
-          'space-y-4 text-base md:text-lg leading-relaxed',
-          isSolid ? 'text-white/90' : 'text-muted-foreground',
-        )}
-      >
+        <div
+          className={cn(
+            'space-y-4 text-[0.98rem] leading-7 md:text-[1.05rem]',
+            isSolid ? 'text-white/90' : 'text-muted-foreground',
+          )}
+        >
         {children}
       </div>
     </div>

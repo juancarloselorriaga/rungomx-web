@@ -1,9 +1,6 @@
 import {
-  BentoGrid,
-  BentoGridItem,
   ContentCard,
   CtaBanner,
-  FeatureCard,
   Hero,
   IconList,
   Section,
@@ -37,6 +34,13 @@ const publicRoutes = {
   results: '/results',
   rankings: '/rankings',
   about: '/about',
+} as const;
+
+const proofPathIconClasses = {
+  blue: 'border-[var(--brand-blue)]/15 bg-[var(--brand-blue)]/8 text-[var(--brand-blue-dark)]',
+  green:
+    'border-[var(--brand-green)]/15 bg-[var(--brand-green)]/8 text-[var(--brand-green-dark)]',
+  indigo: 'border-[var(--brand-indigo)]/15 bg-[var(--brand-indigo)]/8 text-[var(--brand-indigo)]',
 } as const;
 
 export default async function Home({ params }: LocalePageProps) {
@@ -84,8 +88,8 @@ export default async function Home({ params }: LocalePageProps) {
       description: t('resultsRankings.highlights.results'),
       cta: t('ctas.viewResults'),
       href: publicRoutes.results,
-      iconClassName: 'text-[var(--brand-green)]',
-      iconBackgroundClassName: 'bg-[var(--brand-green)]/12',
+      iconClassName: 'text-[var(--brand-green-dark)]',
+      iconBackgroundClassName: 'border-[var(--brand-green)]/15 bg-[var(--brand-green)]/8',
     },
     {
       icon: Trophy,
@@ -94,7 +98,7 @@ export default async function Home({ params }: LocalePageProps) {
       cta: t('ctas.viewRankings'),
       href: publicRoutes.rankings,
       iconClassName: 'text-[var(--brand-indigo)]',
-      iconBackgroundClassName: 'bg-[var(--brand-indigo)]/12',
+      iconBackgroundClassName: 'border-[var(--brand-indigo)]/15 bg-[var(--brand-indigo)]/8',
     },
     {
       icon: Flag,
@@ -102,8 +106,8 @@ export default async function Home({ params }: LocalePageProps) {
       description: t('aboutBridge.description'),
       cta: t('aboutBridge.cta'),
       href: publicRoutes.about,
-      iconClassName: 'text-[var(--brand-blue)]',
-      iconBackgroundClassName: 'bg-[var(--brand-blue)]/12',
+      iconClassName: 'text-[var(--brand-blue-dark)]',
+      iconBackgroundClassName: 'border-[var(--brand-blue)]/15 bg-[var(--brand-blue)]/8',
     },
   ];
 
@@ -115,7 +119,10 @@ export default async function Home({ params }: LocalePageProps) {
         title={t('hero.title')}
         description={t('hero.description')}
         variant="gradient-blue"
+        titleSize="xl"
+        align="left"
         padding="lg"
+        className="border-t border-border/60"
         actions={[
           { label: t('hero.primaryCta'), href: publicRoutes.events },
           { label: t('hero.secondaryCta'), href: publicRoutes.results, variant: 'outline' },
@@ -123,43 +130,58 @@ export default async function Home({ params }: LocalePageProps) {
       />
 
       <Section padding="md" size="lg">
-        <TextBlock
-          title={t('proofPaths.title')}
-          description={t('proofPaths.description')}
-          size="md"
-          className="mb-8"
-        />
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:items-start">
+          <TextBlock
+            title={t('proofPaths.title')}
+            description={t('proofPaths.description')}
+            size="sm"
+            className="lg:sticky lg:top-24"
+          />
 
-        <BentoGrid columns={3}>
-          {proofPaths.map((path, index) => (
-            <BentoGridItem key={path.href} span={index === 0 ? 2 : 1}>
-              <FeatureCard
-                icon={path.icon}
-                iconVariant={path.variant}
-                title={path.title}
-                description={path.description}
-                variant={path.variant}
-                size={index === 0 ? 'lg' : 'md'}
-                className="h-full"
-              >
-                <Button asChild variant="link" className="mt-4 h-auto px-0 text-base">
-                  <Link href={path.href}>
+          <div className="grid gap-4">
+            {proofPaths.map((path, index) => {
+              const Icon = path.icon;
+              const iconClasses = proofPathIconClasses[path.variant];
+
+              return (
+                <Link
+                  key={path.href}
+                  href={path.href}
+                  className="group block rounded-[1.75rem] border border-border/75 bg-[color-mix(in_oklch,var(--background)_60%,var(--background-surface)_40%)] p-6 transition-colors duration-200 hover:border-foreground/12 hover:bg-[color-mix(in_oklch,var(--background)_54%,var(--background-surface)_46%)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:p-7"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      0{index + 1}
+                    </span>
+                    <span
+                      className={`inline-flex rounded-md border p-3 transition-transform duration-200 group-hover:-translate-y-0.5 ${iconClasses}`}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
+                  </div>
+                  <h2 className="font-display mt-6 text-[clamp(1.7rem,3.3vw,2.5rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+                    {path.title}
+                  </h2>
+                  <p className="mt-3 max-w-[44ch] text-sm leading-7 text-muted-foreground md:text-base">
+                    {path.description}
+                  </p>
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
                     {path.cta}
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </FeatureCard>
-            </BentoGridItem>
-          ))}
-        </BentoGrid>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </Section>
 
-      <Section variant="muted" padding="md" size="lg">
+      <Section variant="muted" padding="lg" size="lg">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
           <TextBlock
             title={t('eventPages.title')}
             description={t('eventPages.description')}
-            size="md"
+            size="sm"
           >
             <Button asChild className="w-fit">
               <Link href={publicRoutes.events}>{t('ctas.browseEvents')}</Link>
@@ -167,8 +189,8 @@ export default async function Home({ params }: LocalePageProps) {
           </TextBlock>
 
           <ContentCard title={t('eventPages.cardTitle')} variant="default" className="h-full">
-            <div className="inline-flex rounded-xl bg-[var(--brand-blue)]/15 p-3">
-              <FileText className="h-6 w-6 text-[var(--brand-blue)]" />
+            <div className="inline-flex rounded-md border border-[var(--brand-blue)]/15 bg-[var(--brand-blue)]/8 p-3">
+              <FileText className="h-6 w-6 text-[var(--brand-blue-dark)]" />
             </div>
             <IconList items={eventPageHighlights} iconVariant="blue" spacing="relaxed" />
           </ContentCard>
@@ -180,41 +202,46 @@ export default async function Home({ params }: LocalePageProps) {
           <TextBlock
             title={t('resultsRankings.title')}
             description={t('resultsRankings.description')}
-            size="md"
+            size="sm"
           />
 
-          <div className="overflow-hidden rounded-3xl border border-border bg-card">
+          <div className="overflow-hidden rounded-[1.85rem] border border-border/75 bg-[color-mix(in_oklch,var(--background)_58%,var(--background-surface)_42%)]">
             {supportingLinks.map((item, index) => {
               const Icon = item.icon;
 
               return (
-                <div
+                <Link
                   key={item.href}
-                  className={index === 0 ? 'p-6 md:p-8' : 'border-t border-border p-6 md:p-8'}
+                  href={item.href}
+                  className={index === 0 ? 'group block p-6 md:p-8' : 'group block border-t border-border p-6 md:p-8'}
                 >
                   <div className="flex items-start gap-4">
-                    <div className={`inline-flex rounded-xl p-3 ${item.iconBackgroundClassName}`}>
+                    <div
+                      className={`inline-flex rounded-md border p-3 ${item.iconBackgroundClassName}`}
+                    >
                       <Icon className={`h-5 w-5 ${item.iconClassName}`} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-                      <Button asChild variant="link" className="mt-3 h-auto px-0 text-sm">
-                        <Link href={item.href}>
-                          {item.cta}
-                          <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </Button>
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="font-display text-[clamp(1.45rem,2.8vw,1.9rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                          {item.title}
+                        </h3>
+                        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1" />
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                      <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                        {item.cta}
+                      </span>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
         </div>
       </Section>
 
-      <Section padding="md" size="md">
+      <Section padding="sm" size="md">
         <CtaBanner
           title={t('finalCta.title')}
           subtitle={t('finalCta.description')}

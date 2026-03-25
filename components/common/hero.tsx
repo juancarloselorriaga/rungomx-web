@@ -6,13 +6,13 @@ import * as React from 'react';
 import { Badge, type BadgeProps } from './badge';
 import { Button } from '@/components/ui/button';
 
-const heroVariants = cva('relative overflow-hidden', {
+const heroVariants = cva('relative overflow-hidden border-y border-border/60', {
   variants: {
     variant: {
       default: 'bg-background',
-      gradient: 'bg-background',
-      'gradient-blue': 'bg-background',
-      'gradient-green': 'bg-background',
+      gradient: 'bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)]',
+      'gradient-blue': 'bg-[color-mix(in_oklch,var(--background)_89%,var(--brand-blue)_11%)]',
+      'gradient-green': 'bg-[color-mix(in_oklch,var(--background)_89%,var(--brand-green)_11%)]',
       dark: 'bg-foreground text-background',
     },
     padding: {
@@ -29,16 +29,16 @@ const heroVariants = cva('relative overflow-hidden', {
   defaultVariants: {
     variant: 'gradient',
     padding: 'lg',
-    align: 'center',
+    align: 'left',
   },
 });
 
-const titleVariants = cva('font-bold tracking-tight', {
+const titleVariants = cva('font-display font-medium tracking-[-0.04em] text-balance', {
   variants: {
     titleSize: {
-      md: 'text-3xl md:text-4xl lg:text-5xl',
-      lg: 'text-4xl md:text-5xl lg:text-6xl',
-      xl: 'text-5xl md:text-6xl lg:text-7xl',
+      md: 'text-[clamp(2.4rem,5vw,3.5rem)] leading-[0.97]',
+      lg: 'text-[clamp(3rem,6vw,4.8rem)] leading-[0.94]',
+      xl: 'text-[clamp(3.65rem,7vw,6rem)] leading-[0.9]',
     },
   },
   defaultVariants: {
@@ -79,70 +79,61 @@ export function Hero({
   children,
   ...props
 }: HeroProps) {
-  const isCenter = align === 'center' || align === undefined;
+  const resolvedAlign = align ?? 'left';
+  const isCenter = resolvedAlign === 'center';
   const isDark = variant === 'dark';
-  const hasGradientGlow = variant === 'gradient-blue' || variant === 'gradient-green';
 
   return (
-    <section className={cn(heroVariants({ variant, padding, align }), className)} {...props}>
-      {/* Subtle gradient glow effect */}
-      {hasGradientGlow && (
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <div
-            className={cn(
-              'absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] rounded-full blur-3xl opacity-20',
-              variant === 'gradient-blue' && 'bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-indigo)]',
-              variant === 'gradient-green' && 'bg-gradient-to-br from-[var(--brand-green)] to-[var(--brand-blue)]',
-            )}
-          />
-        </div>
-      )}
-
+    <section className={cn(heroVariants({ variant, padding, align: resolvedAlign }), className)} {...props}>
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={cn('max-w-4xl', isCenter && 'mx-auto')}>
-          {badge && (
-            <Badge variant={badgeVariant} className="mb-6">
-              {badge}
-            </Badge>
-          )}
+        <div className={cn('max-w-5xl', isCenter && 'mx-auto')}>
+          <div className={cn(!isCenter && 'border-l border-border/70 pl-5 md:pl-8')}>
+            {badge && (
+              <Badge variant={badgeVariant} className="mb-6">
+                {badge}
+              </Badge>
+            )}
 
-          <h1 className={cn(titleVariants({ titleSize }), isDark ? 'text-inherit' : 'text-foreground')}>
-            {title}
-          </h1>
-
-          {description && (
-            <p
-              className={cn(
-                'mt-6 text-lg md:text-xl leading-relaxed',
-                isDark ? 'opacity-80' : 'text-muted-foreground',
-                isCenter && 'max-w-2xl mx-auto',
-              )}
+            <h1
+              className={cn(titleVariants({ titleSize }), isDark ? 'text-inherit' : 'text-foreground')}
             >
-              {description}
-            </p>
-          )}
+              {title}
+            </h1>
 
-          {actions && actions.length > 0 && (
-            <div
-              className={cn(
-                'mt-8 flex flex-wrap gap-4',
-                isCenter && 'justify-center',
-              )}
-            >
-              {actions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant={action.variant || (index === 0 ? 'default' : 'outline')}
-                  size="lg"
-                  asChild
-                >
-                  <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
-                </Button>
-              ))}
-            </div>
-          )}
+            {description && (
+              <p
+                className={cn(
+                  'mt-6 max-w-[42rem] text-lg leading-8 md:text-xl',
+                  isDark ? 'opacity-80' : 'text-muted-foreground',
+                  isCenter && 'mx-auto',
+                )}
+              >
+                {description}
+              </p>
+            )}
 
-          {children}
+            {actions && actions.length > 0 && (
+              <div
+                className={cn(
+                  'mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap',
+                  isCenter && 'justify-center',
+                )}
+              >
+                {actions.map((action, index) => (
+                  <Button
+                    key={index}
+                    variant={action.variant || (index === 0 ? 'default' : 'outline')}
+                    size="lg"
+                    asChild
+                  >
+                    <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
+                  </Button>
+                ))}
+              </div>
+            )}
+
+            {children && <div className="mt-12">{children}</div>}
+          </div>
         </div>
       </div>
     </section>

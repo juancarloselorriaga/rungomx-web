@@ -76,9 +76,11 @@ const focusIcons = {
   support: CircleHelp,
 } as const;
 const focusIconClasses = {
-  discover: 'bg-[var(--brand-blue)]/12 text-[var(--brand-blue)]',
-  follow: 'bg-[var(--brand-green)]/12 text-[var(--brand-green)]',
-  support: 'bg-[var(--brand-indigo)]/12 text-[var(--brand-indigo)]',
+  discover:
+    'border-[var(--brand-blue)]/15 bg-[var(--brand-blue)]/8 text-[var(--brand-blue-dark)]',
+  follow:
+    'border-[var(--brand-green)]/15 bg-[var(--brand-green)]/8 text-[var(--brand-green-dark)]',
+  support: 'border-[var(--brand-indigo)]/15 bg-[var(--brand-indigo)]/8 text-[var(--brand-indigo)]',
 } as const;
 
 export default async function AboutPage({ params }: LocalePageProps) {
@@ -96,7 +98,10 @@ export default async function AboutPage({ params }: LocalePageProps) {
         title={page.hero.title}
         description={page.hero.description}
         variant="gradient-blue"
+        titleSize="xl"
+        align="left"
         padding="lg"
+        className="border-t border-border/60"
         actions={[
           { label: page.hero.primaryCta, href: '/events' },
           { label: page.hero.secondaryCta, href: '/results', variant: 'outline' },
@@ -110,7 +115,7 @@ export default async function AboutPage({ params }: LocalePageProps) {
             eyebrowVariant="green"
             title={page.story.title}
             description={page.story.description}
-            size="md"
+            size="sm"
           >
             <div className="space-y-4 text-base leading-7 text-muted-foreground">
               <p>{page.story.paragraph1}</p>
@@ -134,43 +139,48 @@ export default async function AboutPage({ params }: LocalePageProps) {
         </div>
       </Section>
 
-      <Section variant="muted" padding="md" size="lg">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
+      <Section variant="muted" padding="lg" size="lg">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
           <TextBlock
             eyebrow={page.focus.eyebrow}
             eyebrowVariant="blue"
             title={page.focus.title}
             description={page.focus.description}
-            size="md"
+            size="sm"
           />
 
-          <div className="overflow-hidden rounded-3xl border border-border bg-card">
+          <div className="grid gap-5 md:grid-cols-3">
             {focusOrder.map((key, index) => {
               const item = page.focus.items[key];
               const Icon = focusIcons[key];
 
               return (
-                <div
+                <article
                   key={key}
-                  className={index === 0 ? 'p-6 md:p-8' : 'border-t border-border p-6 md:p-8'}
+                  className="flex h-full flex-col rounded-[1.5rem] border border-border/75 bg-[color-mix(in_oklch,var(--background)_60%,var(--background-surface)_40%)] p-6 md:p-7"
                 >
-                  <div className="flex items-start gap-4">
-                    <div className={`inline-flex rounded-xl p-3 ${focusIconClasses[key]}`}>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      0{index + 1}
+                    </span>
+                    <div className={`inline-flex rounded-md border p-3 ${focusIconClasses[key]}`}>
                       <Icon className="h-5 w-5" />
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
-                    </div>
                   </div>
-                </div>
+                  <div className="mt-6 min-w-0">
+                    <h3 className="font-display text-[clamp(1.5rem,2.8vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                      {item.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                  </div>
+                </article>
               );
             })}
           </div>
         </div>
       </Section>
 
-      <Section padding="md" size="md">
+      <Section padding="sm" size="md">
         <CtaBanner
           title={page.cta.title}
           subtitle={page.cta.description}

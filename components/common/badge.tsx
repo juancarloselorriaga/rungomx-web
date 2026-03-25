@@ -3,25 +3,24 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
 const badgeVariants = cva(
-  'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em]',
+  'inline-flex items-center gap-2.5 rounded-none bg-transparent px-0 py-0 text-[0.72rem] font-semibold uppercase tracking-[0.2em]',
   {
     variants: {
       variant: {
-        default: 'bg-muted text-muted-foreground',
-        primary: 'bg-primary/10 text-primary',
-        secondary: 'bg-secondary text-secondary-foreground',
-        blue: 'bg-[var(--brand-blue)]/10 text-[var(--brand-blue)]',
-        green: 'bg-[var(--brand-green)]/10 text-[var(--brand-green)]',
-        indigo:
-          'bg-[var(--brand-indigo)]/15 text-[var(--brand-indigo)] dark:bg-[var(--brand-indigo)]/35 dark:text-[oklch(0.86_0.11_278.3)]',
-        pro: 'bg-[var(--brand-gold)]/15 text-[var(--brand-gold-dark)] dark:text-[var(--brand-gold)]',
-        outline: 'border border-border bg-transparent text-foreground',
-        ghost: 'bg-transparent text-muted-foreground',
+        default: 'text-muted-foreground',
+        primary: 'text-foreground/80',
+        secondary: 'text-muted-foreground',
+        blue: 'text-[var(--brand-blue-dark)]',
+        green: 'text-[var(--brand-green-dark)]',
+        indigo: 'text-[var(--brand-indigo)] dark:text-[oklch(0.86_0.11_278.3)]',
+        pro: 'text-[var(--brand-gold-dark)] dark:text-[var(--brand-gold)]',
+        outline: 'text-foreground',
+        ghost: 'text-muted-foreground/80',
       },
       size: {
-        sm: 'px-2 py-0.5 text-[10px]',
-        md: 'px-3 py-1 text-xs',
-        lg: 'px-4 py-1.5 text-sm',
+        sm: 'gap-2 text-[0.68rem]',
+        md: 'gap-2.5 text-[0.72rem]',
+        lg: 'gap-3 text-[0.8rem]',
       },
     },
     defaultVariants: {
@@ -38,8 +37,11 @@ export interface BadgeProps
 }
 
 export function Badge({ children, variant, size, icon, className, ...props }: BadgeProps) {
+  const railClassName = size === 'sm' ? 'w-4' : size === 'lg' ? 'w-8' : 'w-6';
+
   return (
     <span className={cn(badgeVariants({ variant, size }), className)} {...props}>
+      <span aria-hidden className={cn('h-px shrink-0 bg-current opacity-35', railClassName)} />
       {icon}
       {children}
     </span>
