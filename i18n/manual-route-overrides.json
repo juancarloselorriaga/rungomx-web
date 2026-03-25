@@ -42,6 +42,18 @@
     "selection": "protected",
     "pages": ["dashboardEvents"]
   },
+  "/dashboard/events/[eventId]/payments": {
+    "selection": "protected",
+    "pages": ["dashboardEvents", "dashboardPayments"]
+  },
+  "/dashboard/events/[eventId]/payments/payouts": {
+    "selection": "protected",
+    "pages": ["dashboardEvents", "dashboardPayments"]
+  },
+  "/dashboard/events/[eventId]/payments/payouts/[payoutRequestId]": {
+    "selection": "protected",
+    "pages": ["dashboardEvents", "dashboardPayments"]
+  },
   "/dashboard/payments": { "selection": "protected", "pages": ["dashboardPayments"] },
   "/dashboard/payments/payouts": { "selection": "protected", "pages": ["dashboardPayments"] },
   "/dashboard/payments/payouts/[payoutRequestId]": {

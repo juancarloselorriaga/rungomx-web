@@ -18,6 +18,7 @@ export type PublicNavIconName =
   | 'Mail'
   | 'CircleHelp'
   | 'Trophy'
+  | 'Medal'
   | 'Calendar'
   | 'Newspaper';
 
@@ -35,6 +36,7 @@ export interface NavItem<TIcon extends NavIconName = NavIconName> {
   href: LinkHref;
   labelKey: NavigationMessageKey;
   iconName: TIcon;
+  emphasis?: 'primary' | 'secondary';
 }
 
 export interface NavSection<TIcon extends NavIconName = NavIconName> {

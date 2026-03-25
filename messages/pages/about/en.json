@@ -2,111 +2,98 @@
   "hero": {
     "badge": "About RunGoMX",
     "title": "Who we are",
-    "description": "RunGoMX was born in Mexico to transform the way race directors and runners experience running. We are an end-to-end platform that simplifies registrations, payments, timing, results and rankings, all in one place.",
-    "primaryCta": "Get Started",
-    "secondaryCta": "Create Account"
+    "description": "RunGoMX brings together event pages, registrations, official results, rankings, and support so runners always know where to go next.",
+    "primaryCta": "Browse events",
+    "secondaryCta": "View official results"
   },
-  "vision": {
-    "eyebrow": "Our Vision",
-    "title": "Our vision",
-    "paragraph1": "We want Mexico to be a reference in sports innovation in Latin America. That every race, regardless of its size, has access to world-class tools without paying world-class prices.",
-    "paragraph2": "We believe that technology should serve the sport, not complicate it. That's why we build solutions designed for the Mexican context: simple, accessible and powerful."
+  "story": {
+    "eyebrow": "What you can do here today",
+    "title": "A running platform should make the important things easy to verify",
+    "description": "RunGoMX is built around the public pages people actually use before and after race day.",
+    "paragraph1": "That includes finding events, checking registration details, reviewing official results, following rankings, and getting practical help before signing in.",
+    "paragraph2": "Our job is to make it easy for runners and Race Directors to move between the pages that matter most: event pages, results, rankings, and support.",
+    "cardTitle": "What visitors can do on RunGoMX",
+    "highlights": {
+      "eventDiscovery": "Explore public event listings and live event pages.",
+      "registrationContext": "Check registration status, payment context, and event details published by the Race Director.",
+      "officialResults": "Review official results tied to published race outcomes.",
+      "rankings": "Follow rankings built from published results.",
+      "helpAndTrust": "Reach support, privacy, and terms when you need more context."
+    }
   },
-  "whyWeExist": {
-    "eyebrow": "The Challenge",
-    "title": "Why we exist",
-    "intro": "Running in Mexico has grown enormously, but the digital infrastructure has not grown at the same pace. Organizers and runners face recurring problems:",
-    "butText": "But that's changing.",
-    "problems": [
-      "Complicated registration websites",
-      "Insecure or confusing payments",
-      "Scattered or slow results",
-      "Zero data for race directors",
-      "Minimal marketing tools",
-      "Systems that don't talk to each other"
-    ],
-    "solution": "RunGoMX comes to solve that."
-  },
-  "whatWeDo": {
-    "eyebrow": "Our Platform",
-    "title": "What we do",
-    "subtitle": "We create a complete ecosystem for running in Mexico:",
-    "forRunners": {
-      "title": "For runners",
-      "features": [
-        "Super simple registrations for any race",
-        "Secure payments with any method (card, transfer, cash)",
-        "Real-time results on event day",
-        "Automatic personal and national rankings",
-        "Race recommendations based on your level and location"
-      ]
-    },
-    "forOrganizers": {
-      "title": "For race directors",
-      "features": [
-        "Comprehensive event management (registrations, payments, communication)",
-        "Automated payments and bank reconciliation",
-        "Integrated timing with professional chips",
-        "Marketing and communication with your runners",
-        "Real-time event analytics",
-        "Local technical support in Spanish"
-      ]
-    },
-    "tagline": "One platform for the entire lifecycle of your race."
-  },
-  "philosophy": {
-    "eyebrow": "Our Values",
-    "title": "Our philosophy",
-    "intro": "We are a team of Mexican technologists passionate about running and innovation. We don't copy foreign models; we build from scratch with a local mindset.",
-    "believeIn": "We believe in:",
-    "values": [
-      {
-        "title": "Simplicity",
-        "description": "Technology should be invisible. Let the runner focus on running and the race director on creating experiences."
+  "focus": {
+    "eyebrow": "Who these pages are for",
+    "title": "RunGoMX helps runners and Race Directors move from interest to proof",
+    "description": "Each public page should make the next step obvious, whether someone is choosing a race or managing one.",
+    "items": {
+      "discover": {
+        "title": "Discover events",
+        "description": "Visitors can start with the event directory and event pages to see what is happening, when it happens, and whether registration is open."
       },
-      {
-        "title": "Transparency",
-        "description": "Clear prices, no surprises. Open data for everyone. Reliable and auditable code."
+      "follow": {
+        "title": "Follow official outcomes",
+        "description": "Published results and rankings give runners a public place to confirm official outcomes and compare where they stand."
       },
-      {
-        "title": "Quality",
-        "description": "We don't launch half-baked features. Each functionality goes through rigorous testing before reaching production."
-      },
-      {
-        "title": "Community",
-        "description": "Running is community. We listen to race directors and runners to build what they really need."
-      },
-      {
-        "title": "Constant innovation",
-        "description": "The market evolves fast. We evolve faster. Weekly releases, new features every month."
+      "support": {
+        "title": "Get practical support",
+        "description": "Help, contact, privacy, and terms give people a clear path when they need policy details or support with a real event or registration."
       }
-    ]
+    }
   },
-  "mexicanTechnology": {
-    "title": "We are Mexican technology for Mexican running",
-    "subtitle": "We are not an adaptation of something that works in the United States or Europe. RunGoMX is born and grows in Mexico, with deep knowledge of the local market.",
-    "weKnow": "We know:",
-    "knowledge": [
-      "The areas where people run (CDMX, Guadalajara, Monterrey, Puebla, Querétaro...)",
-      "The payment methods that work (OXXO, transfers, cards, interest-free installments)",
-      "Local regulations (permits, insurance, road management)",
-      "The language and culture (clear communication in Mexican Spanish)",
-      "Real operational challenges (logistics, weather, altitude, traffic)"
-    ],
-    "tagline": "That's why our platform doesn't just work technically: it works for the real context of Mexico."
+  "proof": {
+    "eyebrow": "Where trust comes from",
+    "title": "The strongest proof lives on real public pages",
+    "description": "RunGoMX feels most credible when it points people to real event pages, official results, and rankings instead of broad promises.",
+    "items": {
+      "events": {
+        "title": "Event pages and discovery",
+        "description": "The events area is the public starting point for browsing races, reviewing editions, and opening a specific event page."
+      },
+      "registration": {
+        "title": "Registration and payment context",
+        "description": "Public event pages show registration status and key participation details before a runner moves into account-based steps."
+      },
+      "results": {
+        "title": "Official results",
+        "description": "Results pages publish official outcomes and make it easy to verify them."
+      },
+      "rankings": {
+        "title": "Rankings connected to results",
+        "description": "Rankings stay tied to published results, so they feel like part of the product, not a disconnected claim."
+      }
+    }
   },
-  "commitment": {
-    "eyebrow": "Our Commitment",
-    "title": "Our commitment",
-    "goals": [
-      "RunGoMX is not just software. It's a long-term commitment to the running community in Mexico.",
-      "We work side by side with race directors to understand their real needs. We listen to runners to improve their experience. We invest in cutting-edge technology to always stay ahead.",
-      "We constantly innovate. What is today the most complete platform on the market, tomorrow will be even better.",
-      "Because at the end of the day, our success is measured in successful races, happy runners and an increasingly strong running community."
-    ],
-    "mission": "Our mission is clear:",
-    "tagline": "Mexican technology. Mexican running.",
-    "primaryCta": "Get Started",
-    "secondaryCta": "Contact Us"
+  "relatedLinks": {
+    "eyebrow": "Start with a real page",
+    "title": "Go where the proof already lives",
+    "description": "These routes show what RunGoMX supports today better than any broad platform claim.",
+    "items": {
+      "events": {
+        "href": "/events",
+        "title": "Browse events",
+        "description": "Open the public event directory and continue into live event pages."
+      },
+      "results": {
+        "href": "/results",
+        "title": "Review official results",
+        "description": "Check published results and confirm the official outcome for a race."
+      },
+      "rankings": {
+        "href": "/rankings",
+        "title": "See rankings",
+        "description": "Follow rankings that update from published results."
+      },
+      "contact": {
+        "href": "/contact",
+        "title": "Contact the team",
+        "description": "Reach the team when you need help with an event, account, or public-site issue."
+      }
+    }
+  },
+  "cta": {
+    "title": "Need a place to start?",
+    "description": "Browse events if you are exploring the platform, or contact the team if your question is tied to a real event or registration.",
+    "primaryActionLabel": "Browse events",
+    "secondaryActionLabel": "Contact RunGoMX"
   }
 }

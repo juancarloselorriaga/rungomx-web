@@ -6,19 +6,17 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   // Override default ignores of eslint-config-next.
-	  globalIgnores([
-	    // Default ignores of eslint-config-next:
-	    '**/.next/**',
-	    '.next/**',
-	    '**/.next-e2e/**',
-	    '.next-e2e/**',
-	    '**/.next-test/**',
-	    '.next-test/**',
-	    'out/**',
-	    'build/**',
-	    'next-env.d.ts',
-    // Scripts directory (utility scripts, not production code)
-    'scripts/**',
+  globalIgnores([
+    // Default ignores of eslint-config-next:
+    '**/.next/**',
+    '.next/**',
+    '**/.next-e2e/**',
+    '.next-e2e/**',
+    '**/.next-test/**',
+    '.next-test/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
     // Local artifacts
     'coverage/**',
     'test-results/**',

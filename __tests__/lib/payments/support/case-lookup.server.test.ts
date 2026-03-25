@@ -50,8 +50,8 @@ describe('financial case lookup projection helpers', () => {
       {
         normalizedIdentifier: 'payout-req-001',
         displayIdentifier: 'PAYOUT-REQ-001',
+        reasonCode: 'multiple_traces_matched',
         traceIds: ['trace-1', 'trace-2'],
-        reason: '2 traces matched this identifier',
       },
     ]);
   });
@@ -120,6 +120,9 @@ describe('lookupFinancialCases DB-backed branches', () => {
       query: '',
       normalizedQuery: '',
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: 20,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     });
@@ -140,6 +143,9 @@ describe('lookupFinancialCases DB-backed branches', () => {
       query: 'missing-identifier',
       normalizedQuery: 'missing-identifier',
       totalCaseCount: 0,
+      returnedCaseCount: 0,
+      resultLimit: 20,
+      isResultLimitApplied: false,
       cases: [],
       disambiguationGroups: [],
     });
@@ -205,6 +211,8 @@ describe('lookupFinancialCases DB-backed branches', () => {
     expect(mockSelect).toHaveBeenCalledTimes(8);
     expect(selectLimitCalls).toEqual([80, 80, 80, 80, 80, 80, 20]);
     expect(result.totalCaseCount).toBe(2);
+    expect(result.returnedCaseCount).toBe(2);
+    expect(result.isResultLimitApplied).toBe(false);
     expect(result.cases.map((entry) => entry.traceId)).toEqual([
       'trace-from-quote',
       'trace-from-request',
@@ -218,7 +226,7 @@ describe('lookupFinancialCases DB-backed branches', () => {
         normalizedIdentifier: uuid,
         displayIdentifier: uuid,
         traceIds: ['trace-from-quote', 'trace-from-request'],
-        reason: '2 traces matched this identifier',
+        reasonCode: 'multiple_traces_matched',
       },
     ]);
   });
@@ -275,7 +283,7 @@ describe('lookupFinancialCases DB-backed branches', () => {
         normalizedIdentifier: sharedIdentifier,
         displayIdentifier: 'shared-i…7890',
         traceIds: ['trace-a', 'trace-b'],
-        reason: '2 traces matched this identifier',
+        reasonCode: 'multiple_traces_matched',
       },
     ]);
   });
@@ -332,7 +340,8 @@ describe('lookupFinancialCases DB-backed branches', () => {
     });
 
     expect(selectLimitCalls).toEqual([80, 80, 80, 80, 2]);
-    expect(result.totalCaseCount).toBe(1);
+    expect(result.totalCaseCount).toBe(2);
+    expect(result.returnedCaseCount).toBe(1);
     expect(result.cases).toHaveLength(1);
     expect(result.cases[0]?.traceId).toBe('trace-two');
   });

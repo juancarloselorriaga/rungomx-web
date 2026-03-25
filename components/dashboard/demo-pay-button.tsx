@@ -11,9 +11,10 @@ import { demoPayRegistration } from '@/lib/events/payments/actions';
 
 type DemoPayButtonProps = {
   registrationId: string;
+  onSuccess?: (status: string) => void;
 };
 
-export function DemoPayButton({ registrationId }: DemoPayButtonProps) {
+export function DemoPayButton({ registrationId, onSuccess }: DemoPayButtonProps) {
   const t = useTranslations('pages.dashboard.myRegistrations');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -28,6 +29,7 @@ export function DemoPayButton({ registrationId }: DemoPayButtonProps) {
       }
 
       toast.success(t('detail.demoPaySuccess'));
+      onSuccess?.(result.data.status);
       router.refresh();
     });
   };
@@ -39,4 +41,3 @@ export function DemoPayButton({ registrationId }: DemoPayButtonProps) {
     </Button>
   );
 }
-

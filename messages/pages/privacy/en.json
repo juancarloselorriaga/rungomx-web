@@ -1,0 +1,134 @@
+{
+  "hero": {
+    "badge": "Privacy Policy",
+    "title": "How RunGoMX handles your information",
+    "description": "This page explains what information RunGoMX may receive, why it is used, when it may be shared, and how to contact us with privacy questions.",
+    "primaryCta": "Contact support",
+    "secondaryCta": "Review terms"
+  },
+  "summary": {
+    "eyebrow": "Plain-language summary",
+    "title": "The short version",
+    "description": "RunGoMX supports event pages, registrations, payments, results, rankings, and Race Director workflows. Privacy decisions follow those flows, and some event information is provided by event organizers.",
+    "highlights": [
+      "We collect the information needed to run accounts, registrations, support conversations, and related event workflows.",
+      "We use information to operate the platform, confirm transactions, communicate about events or support, and protect the service.",
+      "We may share relevant data with event organizers and service providers involved in payments, communications, hosting, and security.",
+      "Questions about privacy, corrections, or account-related concerns can be sent through our contact page."
+    ]
+  },
+  "sections": {
+    "eyebrow": "Policy details",
+    "title": "Privacy details for runners, Race Directors, and visitors",
+    "description": "These sections are written to be clear and readable. They describe the usual ways information moves through RunGoMX.",
+    "items": {
+      "informationWeCollect": {
+        "title": "Information we collect",
+        "intro": "The information we receive depends on how you use RunGoMX.",
+        "paragraphs": [
+          "When you browse public pages, we may receive basic technical information needed to render pages safely, keep the service reliable, and understand platform usage at a high level.",
+          "When you create an account, register for an event, contact support, or use Race Director workflows, we may receive profile details, contact information, registration details, payment-related confirmations, and support messages."
+        ],
+        "bullets": [
+          "Account and contact details you provide",
+          "Registration and participant information submitted for an event",
+          "Operational or support messages you send to the team",
+          "Basic device, browser, and usage information used for reliability and security"
+        ]
+      },
+      "howInformationIsUsed": {
+        "title": "How information is used",
+        "intro": "We use information to deliver the product you are actively using.",
+        "paragraphs": [
+          "That includes operating event pages, processing registrations, confirming payments or registration states, showing results and rankings where applicable, and responding to support requests.",
+          "We may also use information to improve platform reliability, investigate misuse, prevent fraud, comply with legal or accounting obligations, and keep Race Directors and participants informed about event-related activity."
+        ],
+        "bullets": [
+          "Operate accounts, registrations, and Race Director workflows",
+          "Send confirmations, updates, and support responses",
+          "Protect the platform, users, Race Directors, and payment flows",
+          "Maintain records needed for compliance, reconciliation, and service improvement"
+        ]
+      },
+      "whenInformationIsShared": {
+        "title": "When information is shared",
+        "intro": "RunGoMX does not treat all information the same way. Sharing depends on the transaction or workflow involved.",
+        "paragraphs": [
+          "Relevant participant or transaction details may be shared with the event organizer responsible for the event you interact with, because event organizers need information to manage registrations, event logistics, check-in, support, and post-event operations.",
+          "We may also rely on service providers that support payments, communications, hosting, analytics, or security. Information may be disclosed when reasonably necessary to comply with law, enforce platform rules, or respond to legitimate legal requests."
+        ],
+        "bullets": [
+          "Event organizers for the events they manage",
+          "Payment, communications, hosting, and security providers supporting the platform",
+          "Authorities or legal processes when disclosure is required or reasonably necessary"
+        ]
+      },
+      "eventOrganizerRelationship": {
+        "title": "Event and event organizer relationship context",
+        "intro": "RunGoMX provides the platform, but event organizers often control important event-specific decisions.",
+        "paragraphs": [
+          "Event descriptions, pricing, schedules, logistics, race-day instructions, cancellation terms, waivers, and some participant-facing communications may come from the organizer of a specific event.",
+          "That means some information you submit through RunGoMX is used to help that event organizer operate their event. Event organizers may have their own policies, notices, or obligations in addition to what is described on this page."
+        ],
+        "bullets": [
+          "Event organizers are typically responsible for their event-specific details and decisions",
+          "RunGoMX operates the platform layer that powers registrations, discovery, results, rankings, and related workflows"
+        ]
+      },
+      "communicationsAndSupport": {
+        "title": "Communications and support",
+        "intro": "Some communications are necessary to operate the service you requested.",
+        "paragraphs": [
+          "If you contact us, create an account, register for an event, or use a Race Director workflow, we may send operational messages related to confirmations, important updates, support replies, or issues affecting the service.",
+          "Support conversations may be stored so the team can follow up, understand prior context, and resolve future issues more accurately."
+        ],
+        "bullets": [
+          "Registration confirmations and payment-related updates",
+          "Support replies and troubleshooting communications",
+          "Important notices about event or platform operations"
+        ]
+      },
+      "dataRetentionAndAccounts": {
+        "title": "Data retention and account-related considerations",
+        "intro": "Retention depends on why the information exists in the first place.",
+        "paragraphs": [
+          "RunGoMX may keep information for as long as it is needed to operate accounts, support registrations, show event participation history, maintain results or rankings, resolve disputes, perform accounting tasks, or protect the platform.",
+          "If an account is changed or closed, some records may still need to be retained because they are tied to completed registrations, event operations, public results, legal obligations, or security review."
+        ],
+        "bullets": [
+          "Operational records may outlast an individual session or account change",
+          "Completed event and transaction history may need to remain available for support, event operations, or compliance"
+        ]
+      },
+      "userChoicesAndContact": {
+        "title": "User choices and contact for privacy questions",
+        "intro": "We want privacy questions to have a clear path.",
+        "paragraphs": [
+          "If you need help with a privacy concern, want to report inaccurate information, or have an account-related question connected to personal data, contact the RunGoMX team through the public contact page.",
+          "Requests may require us to verify context and may be limited when records are needed for event administration, completed transactions, public results, security, or legal compliance."
+        ],
+        "bullets": [
+          "Use the contact page for privacy and account-related questions",
+          "Please include enough detail for us to identify the event, account, or situation involved"
+        ]
+      }
+    }
+  },
+  "cta": {
+    "title": "Questions about privacy or your account?",
+    "description": "Send the RunGoMX team the details needed to identify the event, account, or transaction involved.",
+    "primaryActionLabel": "Go to contact"
+  },
+  "relatedLinks": {
+    "eyebrow": "Related legal page",
+    "title": "Also review our terms of service",
+    "description": "Privacy explains information handling. Our terms explain platform use, event organizer responsibilities, and transaction expectations.",
+    "items": {
+      "terms": {
+        "href": "/terms",
+        "title": "Terms of Service",
+        "description": "Read the rules, responsibilities, and limitations that apply when using RunGoMX."
+      }
+    }
+  }
+}

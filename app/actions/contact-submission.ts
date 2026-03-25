@@ -9,6 +9,7 @@ import {
   createContactSubmission,
   notifySupportOfSubmission,
 } from '@/lib/contact-submissions';
+import { extractFieldErrors } from '@/lib/forms';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { extractLocaleFromRequest } from '@/lib/utils/locale';
 import { headers } from 'next/headers';
@@ -39,7 +40,8 @@ export async function submitContactSubmission(payload: SubmitContactSubmissionIn
       return {
         ok: false as const,
         error: 'INVALID_INPUT',
-        details: z.treeifyError(parsed.error),
+        fieldErrors: extractFieldErrors(parsed.error),
+        message: 'INVALID_INPUT',
       };
     }
 

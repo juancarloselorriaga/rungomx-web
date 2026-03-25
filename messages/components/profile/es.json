@@ -52,8 +52,8 @@
     },
     "roles": {
       "organizer": {
-        "title": "Organizador",
-        "description": "Gestiona carreras, equipos y eventos."
+        "title": "Director de Carrera",
+        "description": "Administra carreras, eventos y la experiencia pública para corredores."
       },
       "athlete": {
         "title": "Atleta",

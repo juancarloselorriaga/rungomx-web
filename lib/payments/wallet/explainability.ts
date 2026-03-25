@@ -57,80 +57,80 @@ function buildReasonText(event: PersistedExplainabilityEvent): string {
 
   switch (event.eventName) {
     case 'payment.captured':
-      return 'A registration payment was captured, and the net proceeds were added to your available balance.';
+      return 'A registration payment cleared, and the net proceeds were added to your available balance.';
     case 'refund.executed':
-      return 'A refund was executed for a participant, reducing your available balance by the refunded amount.';
+      return 'A participant received a refund, so the refunded amount was removed from your available balance.';
     case 'dispute.opened':
-      return 'A dispute opened for this payment, and the at-risk amount was moved into a frozen state while review is in progress.';
+      return 'A dispute was opened for this payment, so the amount at risk was moved into reserved funds while the case is reviewed.';
     case 'dispute.funds_released':
-      return 'Dispute settlement released frozen funds back into available balance according to the deterministic freeze policy.';
+      return 'The dispute was resolved in your favor, so the reserved funds were returned to your available balance.';
     case 'dispute.debt_posted':
-      return 'Dispute settlement posted a debt-impacting amount after loss, preserving explicit at-risk conversion tracking.';
+      return 'The dispute was lost, so the remaining amount was recorded as debt.';
     case 'payout.queued':
-      return 'A payout intent was queued because immediate eligibility was not met; it can auto-activate when deterministic conditions recover.';
+      return "A payout was queued because it couldn't start yet. It can activate automatically once the blocker clears.";
     case 'payout.requested':
-      return 'A payout request was created, moving funds from available balance into processing.';
+      return 'A payout request was created, so the requested amount moved out of available balance and into payout processing.';
     case 'payout.processing':
-      return 'Payout processing started in the asynchronous payout lifecycle.';
+      return 'This payout is currently being processed.';
     case 'payout.paused':
-      return 'Payout processing was paused by risk policy with an explicit reason code.';
+      return "This payout was paused for review, so it can't continue until the blocker is cleared.";
     case 'payout.resumed':
-      return 'A paused payout resumed processing after policy conditions allowed continuation.';
+      return 'A paused payout resumed after the review conditions were cleared.';
     case 'payout.completed':
-      return 'Payout processing completed and the lifecycle reached terminal settlement state.';
+      return 'This payout completed and reached its final settled state.';
     case 'payout.failed':
-      return 'Payout processing failed with explicit policy reason metadata for follow-up actions.';
+      return 'This payout failed and needs follow-up before another payout replaces it.';
     case 'payout.adjusted':
-      return 'Payout amount was decreased by risk policy to keep payout execution within safe deterministic limits.';
+      return 'This payout amount was reduced during review to keep the payout within the safe amount available.';
     case 'subscription.renewal_failed':
-      return 'A subscription renewal failed, which may trigger grace and access policy workflows.';
+      return "A subscription renewal failed, which can affect access to payments tools if billing isn't updated.";
     case 'financial.adjustment_posted': {
       const adjustmentAmount = readNestedAmountMinor(payload, 'amount') ?? 0;
       if (adjustmentAmount >= 0) {
-        return 'A positive financial adjustment was posted to correct or reconcile your organizer balance.';
+        return 'A positive balance adjustment was posted to correct or reconcile your organizer balance.';
       }
 
-      return 'A negative financial adjustment was posted, increasing outstanding debt obligations.';
+      return 'A negative balance adjustment was posted, increasing the amount that still needs to be covered.';
     }
     default:
-      return 'A balance-impacting financial event was recorded for your wallet timeline.';
+      return 'A balance-affecting payment event was recorded in your timeline.';
   }
 }
 
 function buildPolicyDisclosure(event: PersistedExplainabilityEvent): string {
   switch (event.eventName) {
     case 'payment.captured':
-      return 'Net proceeds follow your configured fee model at capture time.';
+      return 'Net proceeds are calculated using your payout settings at the time of capture.';
     case 'refund.executed':
-      return 'Refund execution follows refund-policy eligibility and deterministic refundable-balance constraints.';
+      return "Refunds follow the event's refund rules and cannot exceed the balance that can be refunded.";
     case 'dispute.opened':
-      return 'Dispute-at-risk balances remain frozen until the dispute lifecycle reaches an outcome.';
+      return 'Funds tied to an open dispute stay reserved until the dispute is resolved.';
     case 'dispute.funds_released':
-      return 'Winning and settled dispute outcomes release frozen balances through explicit canonical postings.';
+      return 'When a dispute is resolved in your favor or settled without loss, reserved funds return to the available balance.';
     case 'dispute.debt_posted':
-      return 'Loss outcomes apply deterministic debt postings that remain trace-linked for repayment policy processing.';
+      return 'When a dispute ends in loss, the unpaid amount is recorded as debt and remains linked to the original trace.';
     case 'payout.queued':
-      return 'Queued payout intents retain eligibility criteria snapshots and activate deterministically when policy allows.';
+      return 'Queued payouts keep the eligibility snapshot from the moment they were created and activate only when the rules allow it.';
     case 'payout.requested':
-      return 'Payout requests enter an async lifecycle and can pause/adjust under risk policy controls.';
+      return 'Payout requests move through a tracked review and processing flow and can be paused or adjusted when needed.';
     case 'payout.processing':
-      return 'Processing transitions are handled by async payout worker orchestration with deterministic state updates.';
+      return 'Processing updates are recorded as the payout moves through review and settlement.';
     case 'payout.paused':
-      return 'Risk pause transitions require explicit reason codes and preserve trace-linked lifecycle context.';
+      return 'Paused payouts keep their full audit trail, including the reason code that triggered the hold.';
     case 'payout.resumed':
-      return 'Resume transitions are policy-governed and trace-linked to prior paused state context.';
+      return 'A payout resumes only after the blocking condition is cleared and the change is recorded in its audit trail.';
     case 'payout.completed':
-      return 'Completion transitions finalize payout lifecycle state with immutable trace-linked history.';
+      return 'Completed payouts keep an immutable history of the full payout flow.';
     case 'payout.failed':
-      return 'Failure transitions preserve explicit reason coding and deterministic retry/audit boundaries.';
+      return 'Failed payouts keep the reason code and trace history needed for support and audit follow-up.';
     case 'payout.adjusted':
-      return 'Risk adjustments are decrease-only and recorded with immutable before/after requested amounts.';
+      return 'Payout adjustments only reduce the requested amount and keep the before-and-after values in the audit trail.';
     case 'subscription.renewal_failed':
-      return 'Subscription continuity follows grace, reminder, and recovery rules for your plan.';
+      return "Subscription recovery follows your plan's grace and billing recovery rules.";
     case 'financial.adjustment_posted':
-      return 'Manual adjustments require explicit reason codes and remain trace-linked for auditability.';
+      return 'Manual balance adjustments require a reason code and remain linked to the trace for audit review.';
     default:
-      return 'This event follows the platform financial policy controls and trace-linked evidence requirements.';
+      return 'This event follows the platform financial controls and keeps a traceable audit record.';
   }
 }
 
@@ -140,7 +140,7 @@ function buildImpactedEntities(event: PersistedExplainabilityEvent): WalletExpla
     {
       entityType: event.entityType,
       entityId: event.entityId,
-      label: 'Primary financial entity',
+      label: 'Primary record',
     },
   ];
 
@@ -176,7 +176,7 @@ function buildImpactedEntities(event: PersistedExplainabilityEvent): WalletExpla
     entities.push({
       entityType: 'payout_queued_intent',
       entityId: payoutQueuedIntentId,
-      label: 'Queued payout intent',
+      label: 'Queued payout',
     });
   }
 
@@ -204,17 +204,17 @@ function buildEvidenceReferences(event: PersistedExplainabilityEvent): WalletExp
   return [
     {
       kind: 'trace',
-      label: 'Trace reference',
+      label: 'Trace',
       value: event.traceId,
     },
     {
       kind: 'entity',
-      label: 'Primary entity',
+      label: 'Primary record',
       value: `${event.entityType}:${event.entityId}`,
     },
     {
       kind: 'timeline',
-      label: 'Timeline view',
+      label: 'Timeline',
       href: `/dashboard/payments/activity?traceId=${encodeURIComponent(event.traceId)}`,
     },
   ];

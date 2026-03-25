@@ -1,6 +1,7 @@
 import { getPathname, Link } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -255,10 +256,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 </div>
                 <div className="text-right">
                   <p className="font-medium">
-                    {(distance.priceCents / 100).toLocaleString(locale, {
-                      style: 'currency',
-                      currency: distance.currency,
-                    })}
+                    {formatMoneyFromMinor(distance.priceCents, distance.currency, locale)}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {distance.registrationCount}

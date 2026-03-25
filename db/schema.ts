@@ -1,5 +1,6 @@
 import {
   AnyPgColumn,
+  bigint,
   boolean,
   check,
   date,
@@ -545,6 +546,9 @@ export const moneyEvents = pgTable(
     uniqueIndex('money_events_trace_idempotency_idx')
       .on(table.traceId, table.idempotencyKey)
       .where(sql`${table.idempotencyKey} is not null`),
+    uniqueIndex('money_events_payment_captured_trace_idx')
+      .on(table.traceId, table.eventName)
+      .where(sql`${table.eventName} = 'payment.captured'`),
     check('money_events_event_version_positive_chk', sql`${table.eventVersion} > 0`),
   ],
 );
@@ -579,6 +583,112 @@ export const moneyCommandIngestions = pgTable(
     ),
     index('money_command_ingestions_trace_idx').on(table.traceId),
     index('money_command_ingestions_status_idx').on(table.status),
+  ],
+);
+
+export const paymentCaptureVolumeDaily = pgTable(
+  'payment_capture_volume_daily',
+  {
+    bucketDate: date('bucket_date', { mode: 'date' }).notNull(),
+    sourceCurrency: varchar('source_currency', { length: 3 }).notNull(),
+    grossProcessedMinor: bigint('gross_processed_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    platformFeeMinor: bigint('platform_fee_minor', { mode: 'number' }).notNull().default(0),
+    organizerProceedsMinor: bigint('organizer_proceeds_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    captureCount: integer('capture_count').notNull().default(0),
+    firstOccurredAt: timestamp('first_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    lastOccurredAt: timestamp('last_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    sampleTraceIds: text('sample_trace_ids').array().notNull().default(sql`ARRAY[]::text[]`),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('payment_capture_volume_daily_bucket_currency_idx').on(
+      table.bucketDate,
+      table.sourceCurrency,
+    ),
+    index('payment_capture_volume_daily_bucket_idx').on(table.bucketDate, table.sourceCurrency),
+    check('payment_capture_volume_daily_count_nonnegative_chk', sql`${table.captureCount} >= 0`),
+  ],
+);
+
+export const paymentCaptureVolumeOrganizerDaily = pgTable(
+  'payment_capture_volume_organizer_daily',
+  {
+    bucketDate: date('bucket_date', { mode: 'date' }).notNull(),
+    organizerId: uuid('organizer_id').notNull(),
+    sourceCurrency: varchar('source_currency', { length: 3 }).notNull(),
+    grossProcessedMinor: bigint('gross_processed_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    platformFeeMinor: bigint('platform_fee_minor', { mode: 'number' }).notNull().default(0),
+    organizerProceedsMinor: bigint('organizer_proceeds_minor', { mode: 'number' })
+      .notNull()
+      .default(0),
+    captureCount: integer('capture_count').notNull().default(0),
+    firstOccurredAt: timestamp('first_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    lastOccurredAt: timestamp('last_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    sampleTraceIds: text('sample_trace_ids').array().notNull().default(sql`ARRAY[]::text[]`),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('payment_capture_volume_organizer_daily_bucket_org_currency_idx').on(
+      table.bucketDate,
+      table.organizerId,
+      table.sourceCurrency,
+    ),
+    index('payment_capture_volume_organizer_daily_org_bucket_idx').on(
+      table.organizerId,
+      table.bucketDate,
+      table.sourceCurrency,
+    ),
+    index('payment_capture_volume_organizer_daily_bucket_idx').on(
+      table.bucketDate,
+      table.sourceCurrency,
+    ),
+    check(
+      'payment_capture_volume_organizer_daily_count_nonnegative_chk',
+      sql`${table.captureCount} >= 0`,
+    ),
+  ],
+);
+
+export const paymentCaptureVolumeReconciliationDaily = pgTable(
+  'payment_capture_volume_reconciliation_daily',
+  {
+    bucketDate: date('bucket_date', { mode: 'date' }).notNull(),
+    captureEventCount: integer('capture_event_count').notNull().default(0),
+    excludedEventCount: integer('excluded_event_count').notNull().default(0),
+    firstOccurredAt: timestamp('first_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    lastOccurredAt: timestamp('last_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    sampleTraceIds: text('sample_trace_ids').array().notNull().default(sql`ARRAY[]::text[]`),
+    excludedEventSamplesJson: jsonb('excluded_event_samples_json')
+      .$type<Record<string, unknown>[]>()
+      .notNull()
+      .default([]),
+    updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex('payment_capture_volume_reconciliation_daily_bucket_idx').on(table.bucketDate),
+    check(
+      'payment_capture_volume_reconciliation_daily_capture_count_nonnegative_chk',
+      sql`${table.captureEventCount} >= 0`,
+    ),
+    check(
+      'payment_capture_volume_reconciliation_daily_excluded_count_nonnegative_chk',
+      sql`${table.excludedEventCount} >= 0`,
+    ),
   ],
 );
 

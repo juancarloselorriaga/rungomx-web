@@ -1,109 +1,238 @@
 'use client';
 
 import { Badge } from '@/components/common/badge';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
+import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerWalletIssueActivityItem } from '@/lib/payments/organizer/ui';
+import { getOrganizerQueueEventCopy } from '@/lib/payments/organizer/presentation';
 import { useTranslations } from 'next-intl';
+import {
+  PaymentsCountPill,
+  PaymentsMetaLabel,
+  PaymentsMetadataText,
+  PaymentsMonoValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+  PaymentsTimestamp,
+} from './payments-typography';
+import { PaymentsPanel } from './payments-surfaces';
 
 type OrganizerActionQueueProps = {
+  locale: 'es' | 'en';
   actionNeeded: OrganizerWalletIssueActivityItem[];
   inProgress: OrganizerWalletIssueActivityItem[];
+  eventId?: string;
 };
 
 type QueueSectionProps = {
+  testId: string;
   title: string;
   description: string;
   emptyMessage: string;
   items: OrganizerWalletIssueActivityItem[];
   badgeLabel: string;
-  whatChangedLabel: string;
-  whyItMattersLabel: string;
-  whatYouCanDoNowLabel: string;
-  guidanceLabel: string;
+  locale: 'es' | 'en';
+  eventId?: string;
 };
 
+function splitVisibleItems<T>(items: T[], maxVisible = 3): { visible: T[]; hidden: T[] } {
+  return {
+    visible: items.slice(0, maxVisible),
+    hidden: items.slice(maxVisible),
+  };
+}
+
 function QueueSection({
+  testId,
   title,
   description,
   emptyMessage,
   items,
   badgeLabel,
-  whatChangedLabel,
-  whyItMattersLabel,
-  whatYouCanDoNowLabel,
-  guidanceLabel,
+  locale,
+  eventId,
 }: QueueSectionProps) {
+  const t = useTranslations('pages.dashboardPayments');
+  const { visible, hidden } = splitVisibleItems(items);
+  const tWithRaw = t as typeof t & { raw: (key: string) => unknown };
+
+  function formatDate(value: string) {
+    const dateValue = new Date(value);
+    if (Number.isNaN(dateValue.getTime())) return value;
+
+    return new Intl.DateTimeFormat(locale === 'es' ? 'es-MX' : 'en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(dateValue);
+  }
+
+  function getDetailHref(item: OrganizerWalletIssueActivityItem) {
+    if (item.entityType !== 'payout') return null;
+    return getPayoutDetailHref(item.entityId, { eventId });
+  }
+
+  function readDynamicLabel(key: string): string {
+    const value = tWithRaw.raw(key);
+    return typeof value === 'string' ? value : String(value ?? '');
+  }
+
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm" aria-label={title}>
+    <PaymentsPanel
+      className="space-y-3"
+      aria-label={title}
+      data-testid={testId}
+    >
       <div className="space-y-1">
-        <h3 className="text-base font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <PaymentsSectionTitle compact className="text-base sm:text-lg">{title}</PaymentsSectionTitle>
+          <PaymentsCountPill>{items.length}</PaymentsCountPill>
+        </div>
+        <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
       </div>
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        <div className="rounded-lg border border-dashed bg-muted/15 px-4 py-4">
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        </div>
       ) : (
-        <ul className="space-y-3">
-          {items.map((item) => (
-            <li key={item.eventId} className="rounded-md border bg-background px-4 py-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {item.eventName}
-                </p>
-                <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
-                  {badgeLabel}
-                </Badge>
-              </div>
+        <div className="space-y-3">
+          <ul className="space-y-3">
+            {visible.map((item) => {
+              const eventCopy = getOrganizerQueueEventCopy(item.eventName);
 
-              <div className="mt-2 space-y-2 text-sm">
-                <p>
-                  <span className="font-medium">{whatChangedLabel}</span> {item.eventName}
-                </p>
-                <p>
-                  <span className="font-medium">{whyItMattersLabel}</span> {item.stateDescription}
-                </p>
-                <p>
-                  <span className="font-medium">{whatYouCanDoNowLabel}</span> {guidanceLabel}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
+              return (
+                <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <p className="text-base font-semibold leading-tight">
+                        {readDynamicLabel(eventCopy.titleKey)}
+                      </p>
+                      <PaymentsMetadataText>
+                        {readDynamicLabel(eventCopy.descriptionKey)}
+                      </PaymentsMetadataText>
+                    </div>
+                    <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
+                      {badgeLabel}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap gap-4">
+                    <PaymentsTimestamp>{formatDate(item.occurredAt)}</PaymentsTimestamp>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {getDetailHref(item) ? (
+                      <div>
+                        <Button asChild size="sm" variant="outline">
+                          <Link href={getDetailHref(item)!}>{t('wallet.queue.openPayoutAction')}</Link>
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    <details className="rounded-lg border bg-muted/25 px-4 py-3">
+                      <summary className="cursor-pointer text-sm font-medium text-primary">
+                        {t('wallet.queue.detailsLabel')}
+                      </summary>
+                      <dl className="mt-3 space-y-2 text-sm">
+                        <div>
+                          <PaymentsMetaLabel>{t('wallet.queue.entityLabel')}</PaymentsMetaLabel>
+                          <PaymentsMonoValue>{item.entityId}</PaymentsMonoValue>
+                        </div>
+                      </dl>
+                    </details>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+
+          {hidden.length > 0 ? (
+            <details className="rounded-lg border bg-background/70 px-4 py-3">
+              <summary className="cursor-pointer text-sm font-medium text-primary">
+                {t('wallet.queue.moreItems', { count: hidden.length })}
+              </summary>
+              <ul className="mt-3 space-y-3">
+                {hidden.map((item) => {
+                  const eventCopy = getOrganizerQueueEventCopy(item.eventName);
+
+                  return (
+                    <li key={item.eventId} className="rounded-lg border bg-background/80 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <p className="font-medium">{readDynamicLabel(eventCopy.titleKey)}</p>
+                          <PaymentsMetadataText>
+                            {readDynamicLabel(eventCopy.descriptionKey)}
+                          </PaymentsMetadataText>
+                        </div>
+                        <Badge variant={item.state === 'action_needed' ? 'indigo' : 'outline'}>
+                          {badgeLabel}
+                        </Badge>
+                      </div>
+                      <PaymentsTimestamp className="mt-3">{formatDate(item.occurredAt)}</PaymentsTimestamp>
+                    </li>
+                  );
+                })}
+              </ul>
+            </details>
+          ) : null}
+        </div>
       )}
-    </section>
+    </PaymentsPanel>
   );
 }
 
-export function OrganizerActionQueue({ actionNeeded, inProgress }: OrganizerActionQueueProps) {
+export function OrganizerActionQueue({
+  locale,
+  actionNeeded,
+  inProgress,
+  eventId,
+}: OrganizerActionQueueProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const isCompletelyEmpty = actionNeeded.length === 0 && inProgress.length === 0;
 
   return (
-    <section className="space-y-4" aria-label={t('wallet.queue.title')}>
-      <h2 className="text-lg font-semibold">{t('wallet.queue.title')}</h2>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <QueueSection
-          title={t('wallet.queue.actionNeeded')}
-          description={t('wallet.queue.actionNeededDescription')}
-          emptyMessage={t('wallet.queue.emptyActionNeeded')}
-          items={actionNeeded}
-          badgeLabel={t('wallet.queue.actionNeeded')}
-          whatChangedLabel={t('wallet.queue.whatChanged')}
-          whyItMattersLabel={t('wallet.queue.whyItMatters')}
-          whatYouCanDoNowLabel={t('wallet.queue.whatYouCanDoNow')}
-          guidanceLabel={t('wallet.queue.actionNeededGuidance')}
-        />
-        <QueueSection
-          title={t('wallet.queue.inProgress')}
-          description={t('wallet.queue.inProgressDescription')}
-          emptyMessage={t('wallet.queue.emptyInProgress')}
-          items={inProgress}
-          badgeLabel={t('wallet.queue.inProgress')}
-          whatChangedLabel={t('wallet.queue.whatChanged')}
-          whyItMattersLabel={t('wallet.queue.whyItMatters')}
-          whatYouCanDoNowLabel={t('wallet.queue.whatYouCanDoNow')}
-          guidanceLabel={t('wallet.queue.inProgressGuidance')}
-        />
+    <section
+      className="space-y-4"
+      aria-label={t('wallet.queue.title')}
+      data-testid="payments-action-queue"
+    >
+      <div className="space-y-1">
+        <PaymentsSectionTitle>{t('wallet.queue.title')}</PaymentsSectionTitle>
+        <PaymentsSectionDescription>{t('wallet.queue.description')}</PaymentsSectionDescription>
       </div>
+
+      {isCompletelyEmpty ? (
+        <div className="rounded-xl border border-dashed bg-muted/15 px-5 py-5">
+          <p className="font-medium">{t('wallet.queue.emptyTitle')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {t('wallet.queue.emptyDescription')}
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <QueueSection
+            testId="payments-action-needed-section"
+            title={t('wallet.queue.actionNeeded')}
+            description={t('wallet.queue.actionNeededDescription')}
+            emptyMessage={t('wallet.queue.emptyActionNeeded')}
+            items={actionNeeded}
+            badgeLabel={t('wallet.queue.actionNeeded')}
+            locale={locale}
+            eventId={eventId}
+          />
+          <QueueSection
+            testId="payments-in-progress-section"
+            title={t('wallet.queue.inProgress')}
+            description={t('wallet.queue.inProgressDescription')}
+            emptyMessage={t('wallet.queue.emptyInProgress')}
+            items={inProgress}
+            badgeLabel={t('wallet.queue.inProgress')}
+            locale={locale}
+            eventId={eventId}
+          />
+        </div>
+      )}
     </section>
   );
 }

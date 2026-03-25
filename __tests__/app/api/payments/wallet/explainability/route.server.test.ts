@@ -145,19 +145,19 @@ describe('GET /api/payments/wallet/explainability', () => {
       eventName: 'payment.captured',
       traceId: 'trace-pay-1',
       reasonText:
-        'A registration payment was captured, and the net proceeds were added to your available balance.',
-      policyDisclosure: 'Net proceeds follow your configured fee model at capture time.',
+        'A registration payment cleared, and the net proceeds were added to your available balance.',
+      policyDisclosure: 'Net proceeds are calculated using your payout settings at the time of capture.',
       impactedEntities: [
         {
           entityType: 'registration',
           entityId: 'registration-1',
-          label: 'Primary financial entity',
+          label: 'Primary record',
         },
       ],
       evidenceReferences: [
         {
           kind: 'trace',
-          label: 'Trace reference',
+          label: 'Trace',
           value: 'trace-pay-1',
         },
       ],

@@ -16,6 +16,7 @@ type EventMobileStickyBarProps = {
   labels: {
     registerNow: string;
     free: string;
+    infoButtonLabel: string;
   };
 };
 
@@ -62,7 +63,7 @@ export function EventMobileStickyBar({
               type="button"
               onClick={onInfoClick}
               className="flex-shrink-0 p-2 -m-2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Event information"
+              aria-label={labels.infoButtonLabel}
             >
               <Info className="h-5 w-5" />
             </button>

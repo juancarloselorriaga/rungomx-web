@@ -13,6 +13,21 @@ import type {
   ArtifactGovernanceSummary,
   ArtifactVersionRecord,
 } from '@/lib/payments/artifacts/governance';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
+} from '@/components/payments/payments-data-table';
+import { PaymentsCountPill } from '@/components/payments/payments-typography';
+import { PaymentsPanel } from '@/components/payments/payments-surfaces';
+import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 
 type ArtifactGovernanceLabels = {
@@ -20,6 +35,7 @@ type ArtifactGovernanceLabels = {
   sectionDescription: string;
   formTitle: string;
   formDescription: string;
+  operationActionLabel: string;
   operationFieldLabel: string;
   operationRebuildLabel: string;
   operationResendLabel: string;
@@ -35,6 +51,7 @@ type ArtifactGovernanceLabels = {
   successPrefix: string;
   policyDeniedPrefix: string;
   genericErrorMessage: string;
+  errorMessages: Record<string, string>;
   recentVersionsTitle: string;
   recentVersionsDescription: string;
   recentDeliveriesTitle: string;
@@ -45,6 +62,8 @@ type ArtifactGovernanceLabels = {
   versionNumberHeader: string;
   versionFingerprintHeader: string;
   versionLineageHeader: string;
+  versionLineageRootLabel: string;
+  versionLineageFromPrefixLabel: string;
   versionReasonHeader: string;
   versionRequestedByHeader: string;
   versionCreatedAtHeader: string;
@@ -55,6 +74,7 @@ type ArtifactGovernanceLabels = {
   deliveryReasonHeader: string;
   deliveryRequestedByHeader: string;
   deliveryCreatedAtHeader: string;
+  operationSelectAriaLabel: string;
 };
 
 type ArtifactGovernanceDashboardProps = {
@@ -102,8 +122,16 @@ function formatDate(value: Date | string, locale: 'es' | 'en'): string {
   }).format(dateValue);
 }
 
-function formatLineageValue(row: ArtifactVersionRecord): string {
-  return row.rebuiltFromVersionId ? `from ${row.rebuiltFromVersionId}` : 'root';
+function formatLineageValue(
+  row: ArtifactVersionRecord,
+  labels: Pick<
+    ArtifactGovernanceLabels,
+    'versionLineageFromPrefixLabel' | 'versionLineageRootLabel'
+  >,
+): string {
+  return row.rebuiltFromVersionId
+    ? `${labels.versionLineageFromPrefixLabel} ${truncateMiddle(row.rebuiltFromVersionId)}`
+    : labels.versionLineageRootLabel;
 }
 
 function renderOperationValue(
@@ -113,12 +141,41 @@ function renderOperationValue(
   return operation === 'rebuild' ? labels.operationRebuildLabel : labels.operationResendLabel;
 }
 
+function resolveArtifactGovernanceErrorMessage(
+  labels: ArtifactGovernanceLabels,
+  code: string | null | undefined,
+  fallbackCode = 'UNKNOWN_ERROR',
+): string {
+  const normalized = code?.trim() || fallbackCode;
+  return labels.errorMessages[normalized] ?? labels.errorMessages[fallbackCode];
+}
+
+function translateArtifactGovernanceFieldErrors(
+  labels: ArtifactGovernanceLabels,
+  fieldErrors: Record<string, string[]>,
+): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(fieldErrors).map(([field, codes]) => [
+      field,
+      codes.map((code) =>
+        resolveArtifactGovernanceErrorMessage(labels, code, 'VALIDATION_FAILED'),
+      ),
+    ]),
+  );
+}
+
 function versionSortKey(value: ArtifactVersionRecord): string {
   return `${value.traceId}:${value.artifactVersion.toString().padStart(8, '0')}:${value.id}`;
 }
 
 function deliverySortKey(value: ArtifactDeliveryRecord): string {
   return `${value.traceId}:${value.id}`;
+}
+
+function truncateMiddle(value: string | null | undefined, start = 10, end = 6): string {
+  if (!value) return '—';
+  if (value.length <= start + end + 1) return value;
+  return `${value.slice(0, start)}…${value.slice(-end)}`;
 }
 
 export function ArtifactGovernanceDashboard({
@@ -167,12 +224,32 @@ export function ArtifactGovernanceDashboard({
       });
 
       if (!result.ok) {
-        const code = result.error || 'UNKNOWN_ERROR';
-        const detail = result.message || labels.genericErrorMessage;
+        if (result.error === 'INVALID_INPUT') {
+          const fieldErrors =
+            'fieldErrors' in result && result.fieldErrors
+              ? translateArtifactGovernanceFieldErrors(labels, result.fieldErrors)
+              : undefined;
+
+          return {
+            ok: false as const,
+            error: result.error,
+            fieldErrors,
+            message: resolveArtifactGovernanceErrorMessage(
+              labels,
+              result.message,
+              'VALIDATION_FAILED',
+            ),
+          };
+        }
+
+        const detail = resolveArtifactGovernanceErrorMessage(
+          labels,
+          result.error || 'UNKNOWN_ERROR',
+        );
         return {
           ok: false,
           error: result.error,
-          message: `${labels.policyDeniedPrefix}: ${code} (${detail})`,
+          message: `${labels.policyDeniedPrefix}: ${detail}`,
         };
       }
 
@@ -201,18 +278,25 @@ export function ArtifactGovernanceDashboard({
   );
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" data-testid="admin-payments-artifact-governance-dashboard">
       <div>
         <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
       </div>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.formTitle}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">{labels.formDescription}</p>
+      <details className="rounded-xl border bg-card/80 p-4 shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">{labels.formTitle}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{labels.formDescription}</p>
+          </div>
+          <span className="inline-flex rounded-md border px-3 py-1.5 text-sm font-medium">
+            {labels.operationActionLabel}
+          </span>
+        </summary>
 
-        <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <FormError className="md:col-span-2 xl:col-span-5" />
+        <Form form={form} className="mt-4 grid gap-3 md:grid-cols-2">
+          <FormError className="md:col-span-2" />
 
           <FormField
             label={
@@ -224,7 +308,7 @@ export function ArtifactGovernanceDashboard({
           >
             <select
               {...form.register('operation')}
-              aria-label="Artifact operation select"
+              aria-label={labels.operationSelectAriaLabel}
               data-testid="artifact-operation-select"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             >
@@ -241,7 +325,7 @@ export function ArtifactGovernanceDashboard({
             }
             required
             error={form.errors.traceId}
-            className="space-y-1 text-xs"
+            className="space-y-1 text-xs md:col-span-2"
           >
             <input
               {...form.register('traceId')}
@@ -295,7 +379,7 @@ export function ArtifactGovernanceDashboard({
             }
             required
             error={form.errors.reasonCode}
-            className="space-y-1 text-xs"
+            className="space-y-1 text-xs md:col-span-2"
           >
             <input
               {...form.register('reasonCode')}
@@ -306,22 +390,18 @@ export function ArtifactGovernanceDashboard({
             />
           </FormField>
 
-          <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-5">
-            <button
-              type="submit"
-              disabled={form.isSubmitting}
-              className="rounded-md border bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-60"
-            >
+          <div className="flex flex-wrap gap-2 md:col-span-2">
+            <Button type="submit" disabled={form.isSubmitting}>
               {form.isSubmitting ? labels.submittingLabel : labels.submitLabel}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               disabled={isRefreshing}
               onClick={refreshSummary}
-              className="rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-60"
             >
               {isRefreshing ? labels.refreshingLabel : labels.refreshLabel}
-            </button>
+            </Button>
           </div>
         </Form>
 
@@ -336,89 +416,198 @@ export function ArtifactGovernanceDashboard({
             {feedback.message}
           </p>
         ) : null}
-      </div>
+      </details>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.recentVersionsTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{labels.recentVersionsTitle}</h3>
+          <PaymentsCountPill>{sortedVersions.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.recentVersionsDescription}</p>
         {sortedVersions.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{labels.versionsEmpty}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[64rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <>
+            <PaymentsResponsiveList className="mt-4">
+              {sortedVersions.map((version) => (
+                <PaymentsResponsiveListItem key={version.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="font-mono text-xs">{truncateMiddle(version.traceId)}</p>
+                    <PaymentsCountPill>{String(version.artifactVersion)}</PaymentsCountPill>
+                  </div>
+                  <PaymentsResponsiveListGrid className="mt-4">
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.versionFingerprintHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(version.fingerprint)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.versionLineageHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatLineageValue(version, labels)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.versionReasonHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs">{version.reasonCode}</PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.versionCreatedAtHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatDate(version.createdAt, locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.versionRequestedByHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(version.requestedByUserId)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                  </PaymentsResponsiveListGrid>
+                </PaymentsResponsiveListItem>
+              ))}
+            </PaymentsResponsiveList>
+            <div className="hidden md:block">
+              <PaymentsDataTable minWidthClassName="min-w-[64rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.versionTraceHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionNumberHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionFingerprintHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionLineageHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionReasonHeader}</th>
-                  <th className="pb-2 pr-4">{labels.versionRequestedByHeader}</th>
-                  <th className="pb-2">{labels.versionCreatedAtHeader}</th>
+                  <PaymentsDataTableHeader>{labels.versionTraceHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionNumberHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionFingerprintHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionLineageHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionReasonHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionRequestedByHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.versionCreatedAtHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {sortedVersions.map((version) => (
-                  <tr key={version.id} className="border-t align-top">
-                    <td className="py-2 pr-4 font-mono text-xs">{version.traceId}</td>
-                    <td className="py-2 pr-4 tabular-nums">{version.artifactVersion}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{version.fingerprint}</td>
-                    <td className="py-2 pr-4 text-xs text-muted-foreground">
-                      {formatLineageValue(version)}
-                    </td>
-                    <td className="py-2 pr-4 text-xs">{version.reasonCode}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{version.requestedByUserId}</td>
-                    <td className="py-2 text-xs text-muted-foreground">
+                  <PaymentsDataTableRow key={version.id}>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.traceId}>
+                      {truncateMiddle(version.traceId)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="tabular-nums whitespace-nowrap">
+                      {version.artifactVersion}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.fingerprint}>
+                      {truncateMiddle(version.fingerprint)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell
+                      className="text-xs text-muted-foreground"
+                      title={version.rebuiltFromVersionId ?? labels.versionLineageRootLabel}
+                    >
+                      {formatLineageValue(version, labels)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs">{version.reasonCode}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.requestedByUserId}>
+                      {truncateMiddle(version.requestedByUserId)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(version.createdAt, locale)}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </PaymentsDataTable>
+            </div>
+          </>
         )}
-      </div>
+      </PaymentsPanel>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.recentDeliveriesTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-semibold">{labels.recentDeliveriesTitle}</h3>
+          <PaymentsCountPill>{sortedDeliveries.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.recentDeliveriesDescription}</p>
         {sortedDeliveries.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{labels.deliveriesEmpty}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[64rem] text-sm">
-              <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <>
+            <PaymentsResponsiveList className="mt-4">
+              {sortedDeliveries.map((delivery) => (
+                <PaymentsResponsiveListItem key={delivery.id}>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold">{delivery.channel}</p>
+                    <PaymentsCountPill>{truncateMiddle(delivery.artifactVersionId, 8, 4)}</PaymentsCountPill>
+                  </div>
+                  <PaymentsResponsiveListGrid className="mt-4">
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.deliveryTraceHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(delivery.traceId)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.deliveryRecipientHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {truncateMiddle(delivery.recipientReference, 14, 6)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div>
+                      <PaymentsResponsiveListLabel>{labels.deliveryReasonHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs">
+                        {delivery.reasonCode}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.deliveryRequestedByHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="font-mono text-xs">
+                        {truncateMiddle(delivery.requestedByUserId)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                    <div className="col-span-2">
+                      <PaymentsResponsiveListLabel>{labels.deliveryCreatedAtHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
+                        {formatDate(delivery.createdAt, locale)}
+                      </PaymentsResponsiveListValue>
+                    </div>
+                  </PaymentsResponsiveListGrid>
+                </PaymentsResponsiveListItem>
+              ))}
+            </PaymentsResponsiveList>
+            <div className="hidden md:block">
+              <PaymentsDataTable minWidthClassName="min-w-[64rem]">
+              <PaymentsDataTableHead>
                 <tr>
-                  <th className="pb-2 pr-4">{labels.deliveryTraceHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryVersionHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryChannelHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryRecipientHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryReasonHeader}</th>
-                  <th className="pb-2 pr-4">{labels.deliveryRequestedByHeader}</th>
-                  <th className="pb-2">{labels.deliveryCreatedAtHeader}</th>
+                  <PaymentsDataTableHeader>{labels.deliveryTraceHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryVersionHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryChannelHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryRecipientHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryReasonHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryRequestedByHeader}</PaymentsDataTableHeader>
+                  <PaymentsDataTableHeader>{labels.deliveryCreatedAtHeader}</PaymentsDataTableHeader>
                 </tr>
-              </thead>
+              </PaymentsDataTableHead>
               <tbody>
                 {sortedDeliveries.map((delivery) => (
-                  <tr key={delivery.id} className="border-t align-top">
-                    <td className="py-2 pr-4 font-mono text-xs">{delivery.traceId}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{delivery.artifactVersionId}</td>
-                    <td className="py-2 pr-4 text-xs">{delivery.channel}</td>
-                    <td className="py-2 pr-4 text-xs text-muted-foreground">
-                      {delivery.recipientReference || '—'}
-                    </td>
-                    <td className="py-2 pr-4 text-xs">{delivery.reasonCode}</td>
-                    <td className="py-2 pr-4 font-mono text-xs">{delivery.requestedByUserId}</td>
-                    <td className="py-2 text-xs text-muted-foreground">
+                  <PaymentsDataTableRow key={delivery.id}>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={delivery.traceId}>
+                      {truncateMiddle(delivery.traceId)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={delivery.artifactVersionId}>
+                      {truncateMiddle(delivery.artifactVersionId)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs whitespace-nowrap">{delivery.channel}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {truncateMiddle(delivery.recipientReference, 14, 6)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs">{delivery.reasonCode}</PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={delivery.requestedByUserId}>
+                      {truncateMiddle(delivery.requestedByUserId)}
+                    </PaymentsDataTableCell>
+                    <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {formatDate(delivery.createdAt, locale)}
-                    </td>
-                  </tr>
+                    </PaymentsDataTableCell>
+                  </PaymentsDataTableRow>
                 ))}
               </tbody>
-            </table>
-          </div>
+              </PaymentsDataTable>
+            </div>
+          </>
         )}
-      </div>
+      </PaymentsPanel>
     </section>
   );
 }

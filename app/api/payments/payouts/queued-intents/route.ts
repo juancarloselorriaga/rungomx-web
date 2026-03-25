@@ -1,15 +1,18 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { organizations } from '@/db/schema';
-import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
+import {
+  findActivePaymentsOrganization,
+  parsePaymentsJsonBody,
+  paymentsServerErrorResponse,
+  requireOrganizerWriteAccess,
+  requireAuthenticatedPaymentsContext,
+  withNoStore,
+} from '@/app/api/payments/_shared';
 import {
   createQueuedPayoutIntent,
   PayoutQueueIntentError,
 } from '@/lib/payments/payouts/queue-intents';
-import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
 const createQueuedIntentSchema = z.object({
   organizationId: z.string().uuid(),
@@ -26,19 +29,17 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const authContext = authResult.context;
 
-  let payload: unknown;
-  try {
-    payload = await request.json();
-  } catch {
-    return withNoStore(NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 }));
+  const payloadResult = await parsePaymentsJsonBody(request);
+  if (!payloadResult.ok) {
+    return payloadResult.response;
   }
 
-  const parseResult = createQueuedIntentSchema.safeParse(payload);
+  const parseResult = createQueuedIntentSchema.safeParse(payloadResult.payload);
   if (!parseResult.success) {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid queued payout payload',
+          error: 'INVALID_QUEUED_PAYOUT_PAYLOAD',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -48,22 +49,14 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { organizationId, requestedAmountMinor, idempotencyKey } = parseResult.data;
 
-  if (!authContext.permissions.canManageEvents) {
-    const membership = await getOrgMembership(authContext.user.id, organizationId);
-    try {
-      requireOrgPermission(membership, 'canEditRegistrationSettings');
-    } catch {
-      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
-    }
+  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  if (!accessResult.ok) {
+    return accessResult.response;
   }
 
-  const organization = await db.query.organizations.findFirst({
-    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
-    columns: { id: true },
-  });
-
-  if (!organization) {
-    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
+  const organizationResult = await findActivePaymentsOrganization(organizationId);
+  if (!organizationResult.ok) {
+    return organizationResult.response;
   }
 
   try {
@@ -106,12 +99,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         return withNoStore(
           NextResponse.json(
             {
-              error:
-                error.code === 'PAYOUT_QUEUE_ALREADY_ACTIVE'
-                  ? 'Queued payout intent already exists for organizer'
-                  : 'Queued payout intent is not required',
+              error: 'QUEUED_PAYOUT_CONFLICT',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 409 },
           ),
@@ -125,9 +115,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Queued payout intent could not be persisted',
+              error: 'QUEUED_PAYOUT_PERSIST_FAILED',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 500 },
           ),
@@ -137,9 +127,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return withNoStore(
         NextResponse.json(
           {
-            error: 'Invalid queued payout request',
+            error: 'INVALID_QUEUED_PAYOUT',
             code: error.code,
-            reason: error.message,
+            reasonCode: error.code,
           },
           { status: 400 },
         ),
@@ -152,6 +142,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       error,
     });
 
-    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+    return paymentsServerErrorResponse();
   }
 }

@@ -56,6 +56,43 @@ async function waitForUserPersistence(
   );
 }
 
+function isUserForeignKeyViolation(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  const cause =
+    'cause' in error && error.cause && typeof error.cause === 'object'
+      ? error.cause
+      : error;
+
+  const code = 'code' in cause ? String(cause.code) : '';
+  const constraint = 'constraint' in cause ? String(cause.constraint) : '';
+
+  return code === '23503' && constraint === 'user_roles_user_id_users_id_fk';
+}
+
+async function insertUserRoleWithPersistenceRetry<T>(
+  db: ReturnType<typeof getTestDb>,
+  userId: string,
+  context: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  for (let attempt = 1; attempt <= USER_PERSISTENCE_MAX_RETRIES; attempt += 1) {
+    await waitForUserPersistence(db, userId, context);
+
+    try {
+      return await operation();
+    } catch (error) {
+      if (!isUserForeignKeyViolation(error) || attempt === USER_PERSISTENCE_MAX_RETRIES) {
+        throw error;
+      }
+
+      await sleep(USER_PERSISTENCE_DELAY_MS);
+    }
+  }
+
+  throw new Error(`[E2E fixtures] exhausted user-role retries during ${context}`);
+}
+
 async function waitForCredentialAccountPersistence(
   db: ReturnType<typeof getTestDb>,
   userId: string,
@@ -348,15 +385,19 @@ export async function assignUserRole(
   userId: string,
   roleId: string,
 ) {
-  await waitForUserPersistence(db, userId, 'assignUserRole');
-
-  const [userRole] = await db
-    .insert(schema.userRoles)
-    .values({
-      userId,
-      roleId,
-    })
-    .returning();
+  const [userRole] = await insertUserRoleWithPersistenceRetry(
+    db,
+    userId,
+    'assignUserRole',
+    () =>
+      db
+        .insert(schema.userRoles)
+        .values({
+          userId,
+          roleId,
+        })
+        .returning(),
+  );
 
   return userRole;
 }
@@ -375,8 +416,6 @@ export async function assignExternalRole(
   userId: string,
   roleName: 'organizer' | 'athlete' | 'volunteer',
 ) {
-  await waitForUserPersistence(db, userId, 'assignExternalRole');
-
   // First, check if the role already exists
   let role = await db.query.roles.findFirst({
     where: eq(schema.roles.name, roleName),
@@ -405,13 +444,19 @@ export async function assignExternalRole(
   }
 
   // Assign the role to the user
-  const [userRole] = await db
-    .insert(schema.userRoles)
-    .values({
-      userId,
-      roleId: role.id,
-    })
-    .returning();
+  const [userRole] = await insertUserRoleWithPersistenceRetry(
+    db,
+    userId,
+    'assignExternalRole',
+    () =>
+      db
+        .insert(schema.userRoles)
+        .values({
+          userId,
+          roleId: role.id,
+        })
+        .returning(),
+  );
 
   return userRole;
 }
@@ -435,19 +480,26 @@ export async function createTestOrganization(
   await waitForUserPersistence(db, userId, 'createTestOrganization');
 
   const timestamp = Date.now();
-  const [organization] = await db
-    .insert(schema.organizations)
-    .values({
-      name: overrides.name ?? `Test Org ${timestamp}`,
-      slug: overrides.slug ?? `test-org-${timestamp}`,
-    })
-    .returning();
+  const organization = await db.transaction(async (tx) => {
+    const [createdOrganization] = await tx
+      .insert(schema.organizations)
+      .values({
+        name: overrides.name ?? `Test Org ${timestamp}`,
+        slug: overrides.slug ?? `test-org-${timestamp}`,
+      })
+      .returning();
 
-  // Add owner membership
-  await db.insert(schema.organizationMemberships).values({
-    organizationId: organization.id,
-    userId,
-    role: 'owner',
+    if (!createdOrganization) {
+      throw new Error('createTestOrganization failed to insert organization');
+    }
+
+    await tx.insert(schema.organizationMemberships).values({
+      organizationId: createdOrganization.id,
+      userId,
+      role: 'owner',
+    });
+
+    return createdOrganization;
   });
 
   return organization;

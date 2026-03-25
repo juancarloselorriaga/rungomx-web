@@ -1,23 +1,55 @@
 'use client';
 
-import { Link } from '@/i18n/navigation';
+import { Link, useRouter } from '@/i18n/navigation';
+import { Button } from '@/components/ui/button';
+import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerPayoutListItem } from '@/lib/payments/organizer/payout-views';
-import { Badge } from '@/components/common/badge';
+import { shortIdentifier } from '@/lib/payments/organizer/presentation';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
+import { ChevronRightIcon } from 'lucide-react';
+
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableMeta,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
+  PaymentsDataTableRow,
+} from './payments-data-table';
+import { PaymentsStatePanel } from './payments-state-panel';
+import { PayoutStatusBadge } from './payout-status-badge';
+import { PaymentsMutedPanel, PaymentsPanel } from './payments-surfaces';
+import {
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
+
+type PayoutHistoryHref = Parameters<typeof Link>[0]['href'];
 
 type PayoutHistoryTableProps = {
   items: OrganizerPayoutListItem[];
   locale: 'es' | 'en';
+  title?: string;
+  description?: string;
+  eventId?: string;
+  scopeSummary?: string;
+  scopeHint?: string;
+  pageStatus?: string;
+  firstPageHref?: PayoutHistoryHref | null;
+  previousPageHref?: PayoutHistoryHref | null;
+  nextPageHref?: PayoutHistoryHref | null;
+  lastPageHref?: PayoutHistoryHref | null;
+  firstPageLabel?: string;
+  previousPageLabel?: string;
+  nextPageLabel?: string;
+  lastPageLabel?: string;
 };
-
-function formatMoney(minor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
-}
 
 function formatDate(value: Date, locale: 'es' | 'en'): string {
   return new Intl.DateTimeFormat(locale === 'es' ? 'es-MX' : 'en-US', {
@@ -26,80 +58,232 @@ function formatDate(value: Date, locale: 'es' | 'en'): string {
   }).format(value);
 }
 
-function badgeVariantForStatus(status: OrganizerPayoutListItem['status']) {
-  switch (status) {
-    case 'completed':
-      return 'green' as const;
-    case 'failed':
-      return 'indigo' as const;
-    case 'paused':
-      return 'outline' as const;
-    case 'processing':
-      return 'primary' as const;
-    case 'requested':
-    default:
-      return 'default' as const;
-  }
-}
-
-export function PayoutHistoryTable({ items, locale }: PayoutHistoryTableProps) {
+export function PayoutHistoryTable({
+  items,
+  locale,
+  title,
+  description,
+  eventId,
+  scopeSummary,
+  scopeHint,
+  pageStatus,
+  firstPageHref,
+  previousPageHref,
+  nextPageHref,
+  lastPageHref,
+  firstPageLabel,
+  previousPageLabel,
+  nextPageLabel,
+  lastPageLabel,
+}: PayoutHistoryTableProps) {
   const t = useTranslations('pages.dashboardPayments');
+  const router = useRouter();
 
   if (items.length === 0) {
     return (
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-2">
-        <h2 className="text-lg font-semibold">{t('payouts.emptyTitle')}</h2>
-        <p className="text-sm text-muted-foreground">{t('payouts.emptyDescription')}</p>
-      </section>
+      <PaymentsStatePanel
+        title={title ?? t('payouts.historyTitle')}
+        description={description ?? t('payouts.emptyDescription')}
+        dashed
+        className="bg-card/80"
+      >
+        <div className="rounded-lg border border-dashed bg-background/70 p-6 text-sm text-muted-foreground">
+          {t('payouts.emptyTitle')}
+        </div>
+      </PaymentsStatePanel>
     );
   }
 
   return (
-    <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-      <h2 className="text-lg font-semibold">{t('payouts.title')}</h2>
+    <PaymentsPanel className="space-y-4">
+      {title || description || scopeSummary || pageStatus || scopeHint ? (
+        <div className="space-y-3">
+          {title || description ? (
+            <div className="space-y-1.5">
+              {title ? <PaymentsSectionTitle compact>{title}</PaymentsSectionTitle> : null}
+              {description ? <PaymentsSectionDescription>{description}</PaymentsSectionDescription> : null}
+            </div>
+          ) : null}
+          {scopeSummary || pageStatus || scopeHint ? (
+            <PaymentsMutedPanel className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1">
+                {scopeSummary ? <p className="font-medium text-foreground">{scopeSummary}</p> : null}
+                {scopeHint ? <p>{scopeHint}</p> : null}
+              </div>
+              {pageStatus ? <p className="text-xs uppercase tracking-[0.16em]">{pageStatus}</p> : null}
+            </PaymentsMutedPanel>
+          ) : null}
+        </div>
+      ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[720px] text-left text-sm">
-          <thead className="text-muted-foreground">
-            <tr>
-              <th className="py-2 pr-4">{t('payouts.table.requestId')}</th>
-              <th className="py-2 pr-4">{t('payouts.table.status')}</th>
-              <th className="py-2 pr-4">{t('payouts.table.requested')}</th>
-              <th className="py-2 pr-4">{t('payouts.table.currentAmount')}</th>
-              <th className="py-2">{t('payouts.table.requestedAt')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.payoutRequestId} className="border-t align-top">
-                <td className="py-3 pr-4">
+      <PaymentsResponsiveList>
+        {items.map((item) => {
+          const detailHref = getPayoutDetailHref(item.payoutRequestId, { eventId });
+
+          return (
+            <PaymentsResponsiveListItem key={item.payoutRequestId} data-testid="payout-history-mobile-card">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1">
                   <Link
-                    href={{
-                      pathname: '/dashboard/payments/payouts/[payoutRequestId]',
-                      params: { payoutRequestId: item.payoutRequestId },
-                    }}
-                    className="font-medium text-primary underline-offset-2 hover:underline"
+                    href={detailHref}
+                    className="block font-medium text-primary underline-offset-2 hover:underline"
                   >
-                    {item.payoutRequestId}
+                    {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
                   </Link>
-                </td>
-                <td className="py-3 pr-4">
-                  <Badge variant={badgeVariantForStatus(item.status)}>
-                    {t(`payouts.statuses.${item.status}`)}
-                  </Badge>
-                </td>
-                <td className="py-3 pr-4">
-                  {formatMoney(item.requestedAmountMinor, item.currency, locale)}
-                </td>
-                <td className="py-3 pr-4">
-                  {formatMoney(item.currentRequestedAmountMinor, item.currency, locale)}
-                </td>
-                <td className="py-3">{formatDate(item.requestedAt, locale)}</td>
-              </tr>
-            ))}
+                  <PaymentsDataTableMeta className="font-mono">
+                    {shortIdentifier(item.payoutRequestId)}
+                  </PaymentsDataTableMeta>
+                </div>
+                <PayoutStatusBadge
+                  status={item.status}
+                  label={t(`payouts.statuses.${item.status}`)}
+                />
+              </div>
+
+              <PaymentsResponsiveListGrid className="mt-4">
+                <div>
+                  <PaymentsResponsiveListLabel>{t('payouts.table.requested')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue className="tabular-nums">
+                    {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
+                  </PaymentsResponsiveListValue>
+                </div>
+                <div>
+                  <PaymentsResponsiveListLabel>{t('payouts.table.currentAmount')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue className="tabular-nums">
+                    {formatMoneyFromMinor(
+                      item.currentRequestedAmountMinor,
+                      item.currency,
+                      locale,
+                    )}
+                  </PaymentsResponsiveListValue>
+                </div>
+                <div className="col-span-2">
+                  <PaymentsResponsiveListLabel>{t('payouts.table.requestedAt')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue>{formatDate(item.requestedAt, locale)}</PaymentsResponsiveListValue>
+                </div>
+              </PaymentsResponsiveListGrid>
+
+              <div className="mt-4 flex justify-end">
+                <Button asChild variant="outline" size="sm" className="rounded-xl">
+                  <Link href={detailHref}>{t('actions.openDetails')}</Link>
+                </Button>
+              </div>
+            </PaymentsResponsiveListItem>
+          );
+        })}
+      </PaymentsResponsiveList>
+
+      <div className="hidden md:block">
+      <PaymentsDataTable minWidthClassName="min-w-[48rem]">
+          <PaymentsDataTableHead>
+            <tr>
+              <PaymentsDataTableHeader>{t('payouts.table.requestId')}</PaymentsDataTableHeader>
+              <PaymentsDataTableHeader>{t('payouts.table.status')}</PaymentsDataTableHeader>
+              <PaymentsDataTableHeader align="right">
+                {t('payouts.table.requested')}
+              </PaymentsDataTableHeader>
+              <PaymentsDataTableHeader align="right">
+                {t('payouts.table.currentAmount')}
+              </PaymentsDataTableHeader>
+              <PaymentsDataTableHeader>{t('payouts.table.requestedAt')}</PaymentsDataTableHeader>
+              <PaymentsDataTableHeader align="right" className="w-12">
+                {t('payouts.table.open')}
+              </PaymentsDataTableHeader>
+            </tr>
+          </PaymentsDataTableHead>
+          <tbody>
+            {items.map((item) => {
+              const detailHref = getPayoutDetailHref(item.payoutRequestId, { eventId });
+              const navigateToDetail = () =>
+                router.push(detailHref as Parameters<typeof router.push>[0]);
+
+              return (
+                <PaymentsDataTableRow
+                  key={item.payoutRequestId}
+                  className="cursor-pointer transition hover:bg-muted/15"
+                  role="link"
+                  tabIndex={0}
+                  onClick={navigateToDetail}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      navigateToDetail();
+                    }
+                  }}
+                >
+                  <PaymentsDataTableCell>
+                    <Link
+                      href={detailHref}
+                      className="font-medium text-primary underline-offset-2 hover:underline"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
+                    </Link>
+                    <PaymentsDataTableMeta className="font-mono">
+                      {shortIdentifier(item.payoutRequestId)}
+                    </PaymentsDataTableMeta>
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell>
+                    <PayoutStatusBadge
+                      status={item.status}
+                      label={t(`payouts.statuses.${item.status}`)}
+                    />
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+                    {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+                    {formatMoneyFromMinor(
+                      item.currentRequestedAmountMinor,
+                      item.currency,
+                      locale,
+                    )}
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell className="whitespace-nowrap">
+                    {formatDate(item.requestedAt, locale)}
+                  </PaymentsDataTableCell>
+                  <PaymentsDataTableCell align="right">
+                    <Link
+                      href={detailHref}
+                      aria-label={t('actions.openDetails')}
+                      className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <ChevronRightIcon className="size-4" />
+                    </Link>
+                  </PaymentsDataTableCell>
+                </PaymentsDataTableRow>
+              );
+            })}
           </tbody>
-        </table>
+      </PaymentsDataTable>
       </div>
-    </section>
+
+      {firstPageLabel && previousPageLabel && nextPageLabel && lastPageLabel ? (
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button asChild={Boolean(firstPageHref)} variant="outline" size="sm" disabled={!firstPageHref}>
+            {firstPageHref ? <Link href={firstPageHref}>{firstPageLabel}</Link> : <span>{firstPageLabel}</span>}
+          </Button>
+          <Button
+            asChild={Boolean(previousPageHref)}
+            variant="outline"
+            size="sm"
+            disabled={!previousPageHref}
+          >
+            {previousPageHref ? (
+              <Link href={previousPageHref}>{previousPageLabel}</Link>
+            ) : (
+              <span>{previousPageLabel}</span>
+            )}
+          </Button>
+          <Button asChild={Boolean(nextPageHref)} variant="outline" size="sm" disabled={!nextPageHref}>
+            {nextPageHref ? <Link href={nextPageHref}>{nextPageLabel}</Link> : <span>{nextPageLabel}</span>}
+          </Button>
+          <Button asChild={Boolean(lastPageHref)} variant="outline" size="sm" disabled={!lastPageHref}>
+            {lastPageHref ? <Link href={lastPageHref}>{lastPageLabel}</Link> : <span>{lastPageLabel}</span>}
+          </Button>
+        </div>
+      ) : null}
+    </PaymentsPanel>
   );
 }

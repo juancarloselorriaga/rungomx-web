@@ -4,6 +4,7 @@ import { db } from '@/db';
 import { organizationMemberships, organizations, users } from '@/db/schema';
 import type { OrgMembershipRole } from '@/lib/events/constants';
 import { ORG_MEMBERSHIP_ROLES } from '@/lib/events/constants';
+import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 
 export type UserOrganization = {
   id: string;
@@ -36,6 +37,10 @@ export type OrganizationWithMembers = OrganizationSummary & {
  * Get all organizations a user is a member of.
  */
 export async function getUserOrganizations(userId: string): Promise<UserOrganization[]> {
+  'use cache: private';
+  safeCacheTag(`user-organizations:${userId}`);
+  safeCacheLife({ expire: 60 });
+
   const memberships = await db
     .select({
       id: organizations.id,
@@ -70,6 +75,10 @@ export async function getUserOrganizations(userId: string): Promise<UserOrganiza
  * Get all organizations (staff/support listing).
  */
 export async function getAllOrganizations(): Promise<OrganizationSummary[]> {
+  'use cache: remote';
+  safeCacheTag('organizations:all');
+  safeCacheLife({ expire: 120 });
+
   const rows = await db.query.organizations.findMany({
     where: isNull(organizations.deletedAt),
     orderBy: [asc(organizations.name)],
@@ -89,6 +98,10 @@ export async function getAllOrganizations(): Promise<OrganizationSummary[]> {
 export async function getOrganizationSummary(
   organizationId: string,
 ): Promise<OrganizationSummary | null> {
+  'use cache: remote';
+  safeCacheTag(`organization:${organizationId}`);
+  safeCacheLife({ expire: 120 });
+
   const org = await db.query.organizations.findFirst({
     where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
   });
@@ -109,6 +122,10 @@ export async function getOrganizationSummary(
 export async function getOrganizationMembers(
   organizationId: string,
 ): Promise<OrganizationMember[]> {
+  'use cache: remote';
+  safeCacheTag(`organization-members:${organizationId}`);
+  safeCacheLife({ expire: 60 });
+
   const members = await db
     .select({
       membershipId: organizationMemberships.id,

@@ -6,6 +6,7 @@
   "organizations": "Organizations",
   "news": "News",
   "results": "Results",
+  "rankings": "Rankings",
   "help": "Help",
   "dashboard": "Dashboard",
   "payments": "Payments",
@@ -36,5 +37,7 @@
   "feedback": "Feedback",
   "collapseMenu": "Collapse menu",
   "expandMenu": "Expand menu",
-  "sectionGeneral": "General"
+  "sectionGeneral": "General",
+  "openSubmenu": "Open {label} submenu",
+  "backToMainMenu": "Go back to main menu"
 }

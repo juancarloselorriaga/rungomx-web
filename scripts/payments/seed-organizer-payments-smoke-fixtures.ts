@@ -386,14 +386,11 @@ async function main() {
     },
   };
 
-  // eslint-disable-next-line no-console
   console.log(JSON.stringify(output, null, 2));
 }
 
 main().catch((error) => {
-  // eslint-disable-next-line no-console
   console.error('[seed-organizer-payments-smoke-fixtures] Failed');
-  // eslint-disable-next-line no-console
   console.error(error);
   process.exit(1);
 });

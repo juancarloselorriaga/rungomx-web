@@ -7,8 +7,10 @@ import { withStaffUser } from '@/lib/auth/action-wrapper';
 import { getRequestContext } from '@/lib/audit';
 import type { FormActionResult } from '@/lib/forms';
 import { validateInput } from '@/lib/forms';
+import { safeRevalidateTag } from '@/lib/next-cache';
 import {
   ArtifactGovernanceError,
+  artifactGovernanceSummaryTag,
   getArtifactGovernanceSummary,
   rebuildArtifactForTrace,
   resendArtifactForTrace,
@@ -17,7 +19,6 @@ import {
 
 const governanceOperationSchema = z.enum(['rebuild', 'resend']);
 const artifactTypeSchema = z.enum(['payout_statement']);
-
 const governanceActionSchema = z
   .object({
     operation: governanceOperationSchema,
@@ -40,6 +41,43 @@ const governanceActionSchema = z
   .strict();
 
 type GovernanceOperation = z.infer<typeof governanceOperationSchema>;
+type ArtifactGovernanceValidationCode =
+  | 'VALIDATION_FAILED'
+  | 'REQUIRED_FIELD'
+  | 'INVALID_NUMBER'
+  | 'INVALID_STRING'
+  | 'INVALID_ENUM';
+
+function mapArtifactGovernanceValidationIssue(
+  issue: z.ZodError['issues'][number],
+): ArtifactGovernanceValidationCode | null {
+  switch (issue.code) {
+    case z.ZodIssueCode.invalid_type: {
+      if (issue.path[0] === 'artifactVersion') {
+        return 'INVALID_NUMBER';
+      }
+
+      return 'INVALID_STRING';
+    }
+    case z.ZodIssueCode.invalid_value:
+      return 'INVALID_ENUM';
+    case z.ZodIssueCode.too_small: {
+      if (issue.origin === 'string') {
+        return issue.minimum === 1 ? 'REQUIRED_FIELD' : 'INVALID_STRING';
+      }
+
+      if (issue.origin === 'number') {
+        return 'INVALID_NUMBER';
+      }
+
+      return 'VALIDATION_FAILED';
+    }
+    case z.ZodIssueCode.too_big:
+      return issue.origin === 'number' ? 'INVALID_NUMBER' : 'INVALID_STRING';
+    default:
+      return 'VALIDATION_FAILED';
+  }
+}
 
 export type ArtifactGovernanceActionResult = {
   operation: GovernanceOperation;
@@ -99,7 +137,10 @@ export const runArtifactGovernanceAdminAction = withStaffUser<
   unauthenticated: () => ({ ok: false, error: 'UNAUTHENTICATED', message: 'UNAUTHENTICATED' }),
   forbidden: () => ({ ok: false, error: 'FORBIDDEN', message: 'FORBIDDEN' }),
 })(async (authContext, input: unknown) => {
-  const validation = validateInput(governanceActionSchema, parseActionInput(input));
+  const validation = validateInput(governanceActionSchema, parseActionInput(input), {
+    issueMapper: mapArtifactGovernanceValidationIssue,
+    validationMessage: 'VALIDATION_FAILED',
+  });
   if (!validation.success) {
     return validation.error;
   }
@@ -118,6 +159,7 @@ export const runArtifactGovernanceAdminAction = withStaffUser<
         request: requestContext,
       });
 
+      safeRevalidateTag(artifactGovernanceSummaryTag, { expire: 0 });
       return {
         ok: true,
         data: {
@@ -143,6 +185,7 @@ export const runArtifactGovernanceAdminAction = withStaffUser<
       request: requestContext,
     });
 
+    safeRevalidateTag(artifactGovernanceSummaryTag, { expire: 0 });
     return {
       ok: true,
       data: {
@@ -161,7 +204,7 @@ export const runArtifactGovernanceAdminAction = withStaffUser<
       return {
         ok: false,
         error: error.code,
-        message: error.message,
+        message: error.code,
       };
     }
 

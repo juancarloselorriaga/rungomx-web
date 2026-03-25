@@ -35,11 +35,15 @@
     "registerWithFriends": "Inscribirme con amigos",
     "selectDistance": "Seleccionar distancia",
     "eventDate": "Fecha del evento",
+    "eventDetails": "Detalles del evento",
+    "infoButtonLabel": "Detalles del evento",
     "location": "Ubicación",
-    "organizer": "Organizado por",
+    "organizer": "Director de Carrera",
+    "officialWebsite": "Sitio oficial",
     "about": "Acerca del evento",
     "distances": "Distancias",
     "faq": "Preguntas Frecuentes",
+    "tba": "Por anunciar",
     "policies": {
       "title": "Políticas",
       "refund": {
@@ -75,7 +79,7 @@
       "title": "Descuentos para grupos",
       "description": "Ahorra hasta {percent}% en grupo.",
       "tierLine": "{minParticipants}+ participantes: {percent}% de descuento",
-      "howTo": "Usa el enlace de invitación del organizador para el descuento.",
+      "howTo": "Usa el enlace de invitación que compartió el Director de Carrera para obtener el descuento.",
       "lockNote": "El descuento se fija al reservar los lugares del grupo."
     },
     "virtualEvent": "Evento virtual",
@@ -101,9 +105,22 @@
       "always": "Siempre"
     },
     "website": {
+      "noAdditionalContent": "Pronto habrá más información del evento.",
       "documents": "Documentos",
       "photos": "Fotos",
       "terrain": "Terreno",
+      "elevationGain": "Desnivel acumulado",
+      "elevationProfile": "Perfil de elevación",
+      "viewElevationProfile": "Ver perfil de elevación",
+      "courseMap": "Mapa del recorrido",
+      "viewCourseMap": "Ver mapa del recorrido",
+      "aidStations": "Puntos de abastecimiento",
+      "distance": "Distancia",
+      "cutoff": "Hora límite",
+      "packetPickup": "Entrega de paquetes",
+      "parking": "Estacionamiento",
+      "raceDay": "Día de la carrera",
+      "startTimes": "Horarios de salida",
       "download": "Descargar",
       "sponsors": "Patrocinadores",
       "gallery": {
@@ -151,7 +168,7 @@
     },
     "questions": {
       "title": "Preguntas adicionales",
-      "description": "Responde las preguntas del organizador.",
+      "description": "Responde las preguntas del Director de Carrera.",
       "required": "Requerido",
       "optional": "Opcional",
       "continue": "Continuar",
@@ -223,8 +240,8 @@
       "tax": "Impuestos",
       "total": "Total",
       "paymentMethods": "Métodos de pago",
-      "comingSoon": "Pago en línea próximamente. Por ahora, contacta al organizador para completar tu inscripción.",
-      "contactOrganizer": "Contactar organizador",
+      "comingSoon": "El pago en línea estará disponible pronto. Por ahora, contacta al Director de Carrera para completar tu inscripción.",
+      "contactOrganizer": "Contactar Director de Carrera",
       "complete": "Completar inscripción"
     },
     "confirmation": {
@@ -290,7 +307,7 @@
       },
       "EXPIRED": {
         "title": "Invitación expirada",
-        "description": "Esta reserva expiró. Contacta al organizador para una nueva invitación."
+        "description": "Esta reserva expiró. Contacta al Director de Carrera para recibir una nueva invitación."
       },
       "CANCELLED": {
         "title": "Invitación cancelada",
@@ -304,7 +321,7 @@
     "errors": {
       "dobRequired": "Ingresa tu fecha de nacimiento para reclamar.",
       "EMAIL_MISMATCH": "Esta invitación fue enviada a otro correo. Inicia sesión con el correo invitado para reclamarla.",
-      "DOB_MISMATCH": "La fecha de nacimiento no coincide con la invitación. Pide al coordinador que reenvíe tu invitación o contacta al organizador.",
+      "DOB_MISMATCH": "La fecha de nacimiento no coincide con la invitación. Pide al coordinador que reenvíe tu invitación o contacta al Director de Carrera.",
       "DOB_REQUIRED": "La fecha de nacimiento es obligatoria para reclamar.",
       "INVITE_EXPIRED": "Esta invitación ha expirado.",
       "INVITE_INVALID": "Esta invitación ya no está activa.",

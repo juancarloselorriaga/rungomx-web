@@ -121,6 +121,18 @@ export const routing = defineRouting({
       es: '/tablero/eventos/[eventId]',
       en: '/dashboard/events/[eventId]',
     },
+    '/dashboard/events/[eventId]/payments': {
+      es: '/tablero/eventos/[eventId]/pagos',
+      en: '/dashboard/events/[eventId]/payments',
+    },
+    '/dashboard/events/[eventId]/payments/payouts': {
+      es: '/tablero/eventos/[eventId]/pagos/retiros',
+      en: '/dashboard/events/[eventId]/payments/payouts',
+    },
+    '/dashboard/events/[eventId]/payments/payouts/[payoutRequestId]': {
+      es: '/tablero/eventos/[eventId]/pagos/retiros/[payoutRequestId]',
+      en: '/dashboard/events/[eventId]/payments/payouts/[payoutRequestId]',
+    },
     '/dashboard/events/[eventId]/editions': {
       es: '/tablero/eventos/[eventId]/ediciones',
       en: '/dashboard/events/[eventId]/editions',

@@ -1,9 +1,9 @@
 {
   "title": "Results",
-  "description": "View competition results and standings here.",
+  "description": "Find official race results and review the latest published standings.",
   "discovery": {
     "title": "Find official results",
-    "description": "Filter by event context and search by name or bib to locate the official page quickly.",
+    "description": "Search by runner name, bib, or event to find the official results page fast.",
     "searchNameLabel": "Runner name",
     "searchNamePlaceholder": "e.g. Ana Martinez",
     "searchBibLabel": "Bib",
@@ -15,14 +15,14 @@
   },
   "directory": {
     "title": "Official results directory",
-    "description": "Published official result pages by edition.",
+    "description": "Official results published for each event edition.",
     "empty": "No official editions match the selected context.",
     "eventDate": "Event date: {date}",
     "openOfficial": "Open official page"
   },
   "searchResults": {
     "title": "Search matches",
-    "description": "Official-entry matches for your current name/bib filters.",
+    "description": "Official matches based on your current search.",
     "empty": "No official matches found for this search.",
     "context": "Bib {bib} · Place {place} · {status} · {finishTime}",
     "openOfficial": "Open official page"
@@ -30,19 +30,19 @@
   "howItWorks": {
     "panel": {
       "title": "How it works",
-      "description": "Quick trust summary for official results and rankings.",
-      "point1": "Official means organizer-finalized publication for this edition.",
-      "point2": "Corrections publish as new versions with visible history.",
+      "description": "A quick explanation of how official results and rankings work.",
+      "point1": "Official means the Race Director has published the results for that edition.",
+      "point2": "If a correction is made, a new version is published with visible history.",
       "point3": "Rankings use published official versions only.",
       "cta": "Read the full explainer"
     },
     "explainer": {
       "eyebrow": "How it works",
-      "title": "Official results and rankings transparency",
-      "description": "This page explains what official means, how corrections are published, and how rankings consume official versions.",
+      "title": "How official results and rankings work",
+      "description": "This page explains what “Official” means, how corrections are published, and how rankings use those results.",
       "officialMeaning": {
         "title": "What “Official” means",
-        "point1": "Official results are published by the event organizer as the accountable authority.",
+        "point1": "Official results are published by the Race Director for that edition.",
         "point2": "Draft data is not presented as official public record."
       },
       "correctionProcess": {
@@ -52,14 +52,14 @@
       },
       "rankingsRules": {
         "title": "How rankings use results",
-        "point1": "Rankings are computed from published official/corrected versions only.",
-        "point2": "Ruleset references are versioned so outputs remain reproducible."
+        "point1": "Rankings are computed from published official or corrected versions only.",
+        "point2": "The rules reference is versioned so each published ranking can be traced back."
       }
     }
   },
   "corrections": {
-    "title": "Recent correction summaries",
-    "description": "When official data is corrected, we publish a concise summary with attribution and timing.",
+    "title": "Recent corrections",
+    "description": "When official data changes, we publish a short summary with timing and attribution.",
     "empty": "No published corrections yet.",
     "fields": {
       "reason": "Reason",
@@ -69,14 +69,14 @@
       "versionTransition": "Version transition"
     },
     "fallback": {
-      "unknownApprover": "Organizer",
+      "unknownApprover": "Race Director",
       "unknownTime": "Not available",
       "noChanges": "No detailed field changes were provided."
     }
   },
   "official": {
-    "title": "{seriesName} {editionLabel} Official Results",
-    "subtitle": "This stable URL always points to the latest official or corrected publication for this edition.",
+    "title": "{seriesName} {editionLabel} Official results",
+    "subtitle": "This link always points to the latest official or corrected results for this edition.",
     "status": {
       "official": "Official",
       "corrected": "Corrected",
@@ -94,27 +94,27 @@
       "dq": "DQ"
     },
     "trustScan": {
-      "title": "Trust scan",
-      "description": "Immediate legitimacy cues for this official publication.",
-      "scopeValue": "Official edition results ledger",
+      "title": "Quick check",
+      "description": "Key details for this official publication.",
+      "scopeValue": "Official results for this edition",
       "fields": {
-        "organizer": "Organizer authority",
+        "organizer": "Race Director",
         "scope": "Scope",
         "version": "Version",
         "updatedAt": "Last update",
-        "correction": "Correction indicator"
+        "correction": "Correction status"
       },
       "status": {
         "unknown": "Status unavailable"
       },
       "correction": {
         "corrected": "Corrections applied",
-        "none": "No correction publication"
+        "none": "No corrections published"
       }
     },
     "table": {
-      "title": "Official ledger rows",
-      "description": "Public row sample from the active official publication.",
+      "title": "Published results",
+      "description": "Sample rows from the latest official publication.",
       "empty": "No published entries are available yet for this official version.",
       "headers": {
         "place": "Place",
@@ -126,9 +126,9 @@
       }
     },
     "nonOfficial": {
-      "badge": "Pending official publication",
+      "badge": "Official results not published yet",
       "description": "Official results are not finalized for this edition yet.",
-      "noDraftDisclosure": "Draft and non-official data are not exposed from this public URL."
+      "noDraftDisclosure": "Draft and non-official data are not shown on this public URL."
     },
     "fallback": {
       "notAvailable": "Not available",

@@ -14,6 +14,7 @@ import {
 import type { SportType } from '@/lib/events/constants';
 import { getPathname } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { generateAlternateMetadata } from '@/utils/seo';
 import { FileText, Image as ImageIcon, Info, Users } from 'lucide-react';
@@ -52,8 +53,9 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
   const event = await getPublicEventBySlug(seriesSlug, editionSlug);
 
   if (!event) {
+    const t = await getTranslations({ locale, namespace: 'pages.events' });
     return {
-      title: 'Event Not Found | RunGoMX',
+      title: `${t('detail.notFound.title')} | RunGoMX`,
       robots: { index: false, follow: false },
     };
   }
@@ -180,7 +182,10 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
   const minPrice = event.distances.reduce((min, d) => (d.priceCents < min ? d.priceCents : min), event.distances[0]?.priceCents ?? 0);
   const formatPrice = (cents: number, currency: string) =>
-    new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(cents / 100);
+    formatMoneyFromMinor(cents, currency, locale, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    });
   const formattedMinPrice = minPrice > 0 ? formatPrice(minPrice, event.distances[0]?.currency ?? 'MXN') : null;
 
   const bestGroupDiscount = event.groupDiscountRules.reduce<
@@ -239,9 +244,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         labels={{
           registerNow: t('detail.registerNow'),
           free: t('detail.free'),
+          infoButtonLabel: t('detail.infoButtonLabel'),
+          eventDetails: t('detail.eventDetails'),
           eventDate: t('detail.eventDate'),
           location: t('detail.location'),
           organizer: t('detail.organizer'),
+          officialWebsite: t('detail.officialWebsite'),
           viewMap: t('detail.viewMap'),
           registrationDetails: t('detail.registrationDetails'),
           registrationOpens: registrationOpensAt ? t('detail.registrationOpens', { date: registrationOpensAt }) : '',
@@ -250,6 +258,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           registrationOpen: t('detail.registrationOpen'),
           registrationClosed: t('detail.registrationClosed'),
           otherEditionsTitle: t('detail.otherEditions.title'),
+          tba: t('detail.tba'),
         }}
       />
 
@@ -387,7 +396,18 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 <WebsiteContentRenderer
                   blocks={{ course, overview: undefined, schedule: undefined, media: undefined, sponsors: undefined }}
                   mediaUrls={mediaUrls}
-                  labels={{ terrain: t('detail.website.terrain') }}
+                  labels={{
+                    noAdditionalContent: t('detail.website.noAdditionalContent'),
+                    terrain: t('detail.website.terrain'),
+                    elevationGain: t('detail.website.elevationGain'),
+                    elevationProfile: t('detail.website.elevationProfile'),
+                    viewElevationProfile: t('detail.website.viewElevationProfile'),
+                    courseMap: t('detail.website.courseMap'),
+                    viewCourseMap: t('detail.website.viewCourseMap'),
+                    aidStations: t('detail.website.aidStations'),
+                    distance: t('detail.website.distance'),
+                    cutoff: t('detail.website.cutoff'),
+                  }}
                 />
               </SectionWrapper>
             )}
@@ -398,6 +418,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 <WebsiteContentRenderer
                   blocks={{ schedule, overview: undefined, course: undefined, media: undefined, sponsors: undefined }}
                   mediaUrls={mediaUrls}
+                  labels={{
+                    noAdditionalContent: t('detail.website.noAdditionalContent'),
+                    packetPickup: t('detail.website.packetPickup'),
+                    parking: t('detail.website.parking'),
+                    raceDay: t('detail.website.raceDay'),
+                    startTimes: t('detail.website.startTimes'),
+                  }}
                 />
               </SectionWrapper>
             )}
@@ -505,6 +532,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               eventDate: t('detail.eventDate'),
               location: t('detail.location'),
               organizer: t('detail.organizer'),
+              officialWebsite: t('detail.officialWebsite'),
               viewMap: t('detail.viewMap'),
               registrationDetails: t('detail.registrationDetails'),
               registrationOpens: registrationOpensAt ? t('detail.registrationOpens', { date: registrationOpensAt }) : '',
@@ -513,6 +541,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               registrationOpen: t('detail.registrationOpen'),
               registrationClosed: t('detail.registrationClosed'),
               otherEditionsTitle: t('detail.otherEditions.title'),
+              tba: t('detail.tba'),
             }}
           />
         </div>

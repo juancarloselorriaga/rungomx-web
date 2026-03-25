@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: RegisterCompletePageProps): P
 
   if (!event) {
     return {
-      title: 'Registration | RunGoMX',
+      title: `${t('title')} | RunGoMX`,
       robots: { index: false, follow: false },
     };
   }

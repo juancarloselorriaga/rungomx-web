@@ -1,13 +1,36 @@
 'use client';
 
+import {
+  queueOrganizerPayoutIntentAction,
+  requestOrganizerPayoutAction,
+} from '@/app/actions/payments-organizer-payouts';
+import { FormField } from '@/components/ui/form-field';
 import { Link } from '@/i18n/navigation';
+import { Form, FormError, useForm } from '@/lib/forms';
+import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
+import {
+  getOrganizerPayoutRequestErrorKey,
+  getOrganizerPayoutReasonFamily,
+} from '@/lib/payments/organizer/presentation';
 import { Button } from '@/components/ui/button';
-import { useTranslations } from 'next-intl';
-import { FormEvent, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRef, useState } from 'react';
+import {
+  PaymentsEyebrow,
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsMonoValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from './payments-typography';
 
 type PayoutRequestFormProps = {
   organizationId: string;
+  presentation?: 'card' | 'dialog';
+  eventId?: string;
 };
 
 type PayoutRequestSuccess = {
@@ -24,225 +47,227 @@ type QueueIntentSuccess = {
   blockedReasonCode: string;
 };
 
-type RequestedAmountParseResult =
-  | { kind: 'empty' }
-  | { kind: 'invalid' }
-  | { kind: 'valid'; value: number };
+type RequestErrorPayload = {
+  code?: string;
+  reasonCode?: string;
+};
 
-function createIdempotencyKey(prefix: string): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `${prefix}:${crypto.randomUUID()}`;
-  }
-
-  return `${prefix}:${Date.now()}`;
-}
-
-function parseRequestedAmount(rawValue: string): RequestedAmountParseResult {
+function readRequestedAmountMinor(rawValue: string): number | null {
   const trimmed = rawValue.trim();
-  if (!trimmed) return { kind: 'empty' };
+  if (!trimmed) return null;
 
-  const parsed = Number(trimmed);
-  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
-    return { kind: 'invalid' };
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
   }
 
-  return { kind: 'valid', value: parsed };
+  return parsed;
 }
 
-function formatMoney(minor: number): string {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
+function resolveLocalizedRequestError(
+  t: ReturnType<typeof useTranslations>,
+  payload: RequestErrorPayload,
+): string {
+  const errorKey = getOrganizerPayoutRequestErrorKey(payload.reasonCode ?? payload.code);
+
+  if (errorKey) {
+    return t(`request.errors.${errorKey}`);
+  }
+
+  return t('request.errors.unknownAction');
 }
 
-export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
+export function PayoutRequestForm({
+  organizationId,
+  presentation = 'card',
+  eventId,
+}: PayoutRequestFormProps) {
   const t = useTranslations('pages.dashboardPayments');
-  const [requestedAmount, setRequestedAmount] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const locale = useLocale() as 'en' | 'es';
   const [isQueueSubmitting, setIsQueueSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [queueErrorMessage, setQueueErrorMessage] = useState<string | null>(null);
   const [pendingQueueAmountMinor, setPendingQueueAmountMinor] = useState<number | null>(null);
   const [requestSuccess, setRequestSuccess] = useState<PayoutRequestSuccess | null>(null);
   const [queueSuccess, setQueueSuccess] = useState<QueueIntentSuccess | null>(null);
-  const submitInFlightRef = useRef(false);
-  const queueSubmitInFlightRef = useRef(false);
+  const inFlightRequestRef = useRef<Promise<
+    | { ok: true; data: PayoutRequestSuccess }
+    | { ok: false; error: string; message?: string; fieldErrors?: Record<string, string[]> }
+  > | null>(null);
+  const form = useForm<{ requestedAmountMinor: string }, PayoutRequestSuccess>({
+    defaultValues: {
+      requestedAmountMinor: '',
+    },
+    onSubmit: async (values) => {
+      if (inFlightRequestRef.current) {
+        return inFlightRequestRef.current;
+      }
 
-  const submitPayoutRequest = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+      setQueueErrorMessage(null);
+      setQueueSuccess(null);
+      setRequestSuccess(null);
+      setPendingQueueAmountMinor(null);
 
-    // Keep a sync in-flight lock to guard against double-click races before state updates flush.
-    if (submitInFlightRef.current || queueSubmitInFlightRef.current) {
-      return;
-    }
-
-    const formData = new FormData(event.currentTarget);
-    const requestedAmountResult = parseRequestedAmount(
-      String(formData.get('requestedAmountMinor') ?? ''),
-    );
-
-    if (requestedAmountResult.kind === 'invalid') {
-      setErrorMessage(t('request.errors.invalidAmount'));
-      return;
-    }
-
-    const requestedAmountMinor =
-      requestedAmountResult.kind === 'valid' ? requestedAmountResult.value : null;
-
-    submitInFlightRef.current = true;
-    setErrorMessage(null);
-    setQueueSuccess(null);
-    setRequestSuccess(null);
-    setPendingQueueAmountMinor(null);
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/payments/payouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const requestPromise = (async () => {
+        const result = await requestOrganizerPayoutAction({
           organizationId,
-          requestedAmountMinor: requestedAmountMinor ?? undefined,
-          idempotencyKey: createIdempotencyKey('organizer-request'),
-          activeConflictPolicy: 'queue',
-        }),
-      });
-
-      const payload = (await response.json()) as {
-        error?: string;
-        code?: string;
-        reason?: string;
-        suggestedAction?: string;
-        data?: {
-          payoutQuoteId: string;
-          payoutRequestId: string;
-          payoutContractId: string;
-          maxWithdrawableAmountMinor: number;
-          requestedAmountMinor: number;
-        };
-      };
-
-      if (response.ok && payload.data) {
-        setRequestSuccess(payload.data);
-        emitOrganizerPaymentsTelemetry({
-          eventName: 'organizer_payout_request_submitted',
-          organizationId,
-          payoutRequestId: payload.data.payoutRequestId,
-          requestedAmountMinor: payload.data.requestedAmountMinor,
+          requestedAmountMinor: values.requestedAmountMinor,
         });
-        return;
+
+        if (!result.ok) {
+          if (result.error === 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED') {
+            setPendingQueueAmountMinor(readRequestedAmountMinor(values.requestedAmountMinor));
+            return {
+              ok: false as const,
+              error: 'INVALID_INPUT',
+              message: t('request.conflictDescription'),
+            };
+          }
+
+          const fieldErrors =
+            result.error === 'INVALID_INPUT' && 'fieldErrors' in result
+              ? result.fieldErrors
+              : undefined;
+          const message =
+            typeof result.error === 'string' && result.error.startsWith('PAYOUT_')
+              ? resolveLocalizedRequestError(t, { code: result.error })
+              : (result.message ?? t('request.errors.submitFailed'));
+          return {
+            ok: false as const,
+            error: result.error,
+            message,
+            ...(fieldErrors ? { fieldErrors } : {}),
+          };
+        }
+
+        return result;
+      })();
+
+      inFlightRequestRef.current = requestPromise;
+      try {
+        return await requestPromise;
+      } finally {
+        inFlightRequestRef.current = null;
       }
-
-      const isActiveConflict =
-        response.status === 409 &&
-        (payload.suggestedAction === 'submit_queue_intent' ||
-          payload.code === 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED' ||
-          payload.code === 'PAYOUT_REQUEST_ACTIVE_CONFLICT_REJECTED');
-
-      if (isActiveConflict) {
-        setPendingQueueAmountMinor(requestedAmountMinor);
-        setErrorMessage(t('request.conflictDescription'));
-        return;
-      }
-
-      setErrorMessage(payload.reason || t('request.errors.submitFailed'));
-    } catch {
-      setErrorMessage(t('request.errors.submitFailed'));
-    } finally {
-      submitInFlightRef.current = false;
-      setIsSubmitting(false);
-    }
-  };
+    },
+    onSuccess: (data) => {
+      setRequestSuccess(data);
+      emitOrganizerPaymentsTelemetry({
+        eventName: 'organizer_payout_request_submitted',
+        organizationId,
+        payoutRequestId: data.payoutRequestId,
+        requestedAmountMinor: data.requestedAmountMinor,
+      });
+    },
+  });
 
   const submitQueueIntent = async () => {
-    if (queueSubmitInFlightRef.current || submitInFlightRef.current) {
+    if (isQueueSubmitting || form.isSubmitting) {
       return;
     }
 
     if (pendingQueueAmountMinor == null) {
-      setErrorMessage(t('request.errors.queueRequiresAmount'));
+      setQueueErrorMessage(t('request.errors.queueRequiresAmount'));
       return;
     }
 
-    queueSubmitInFlightRef.current = true;
-    setErrorMessage(null);
+    setQueueErrorMessage(null);
     setIsQueueSubmitting(true);
 
     try {
-      const response = await fetch('/api/payments/payouts/queued-intents', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          organizationId,
-          requestedAmountMinor: pendingQueueAmountMinor,
-          idempotencyKey: createIdempotencyKey('organizer-queue'),
-        }),
+      const result = await queueOrganizerPayoutIntentAction({
+        organizationId,
+        requestedAmountMinor: pendingQueueAmountMinor,
       });
 
-      const payload = (await response.json()) as {
-        reason?: string;
-        data?: {
-          payoutQueuedIntentId: string;
-          requestedAmountMinor: number;
-          blockedReasonCode: string;
-        };
-      };
-
-      if (response.ok && payload.data) {
-        setQueueSuccess(payload.data);
+      if (result.ok) {
+        setQueueSuccess(result.data);
         setPendingQueueAmountMinor(null);
         emitOrganizerPaymentsTelemetry({
           eventName: 'organizer_payout_queue_intent_submitted',
           organizationId,
-          payoutQueuedIntentId: payload.data.payoutQueuedIntentId,
-          requestedAmountMinor: payload.data.requestedAmountMinor,
+          payoutQueuedIntentId: result.data.payoutQueuedIntentId,
+          requestedAmountMinor: result.data.requestedAmountMinor,
         });
         return;
       }
 
-      setErrorMessage(payload.reason || t('request.errors.queueFailed'));
+      const message =
+        typeof result.error === 'string' && result.error.startsWith('PAYOUT_')
+          ? resolveLocalizedRequestError(t, { code: result.error })
+          : (result.message ?? t('request.errors.queueFailed'));
+      setQueueErrorMessage(message);
     } catch {
-      setErrorMessage(t('request.errors.queueFailed'));
+      setQueueErrorMessage(t('request.errors.queueFailed'));
     } finally {
-      queueSubmitInFlightRef.current = false;
       setIsQueueSubmitting(false);
     }
   };
 
   return (
-    <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('request.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('request.description')}</p>
-      </div>
+    <section
+      className={cn(
+        'space-y-5',
+        presentation === 'card' ? 'rounded-2xl border bg-card/80 p-4 shadow-sm sm:p-6' : '',
+      )}
+    >
+      {presentation === 'card' ? (
+        <div className="space-y-2">
+          <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>
+          <PaymentsSectionTitle compact>{t('request.title')}</PaymentsSectionTitle>
+          <PaymentsSectionDescription>{t('request.description')}</PaymentsSectionDescription>
+        </div>
+      ) : null}
 
-      <form className="space-y-3" onSubmit={submitPayoutRequest}>
-        <label htmlFor="requestedAmountMinor" className="block text-sm font-medium">
-          {t('request.amountLabel')}
-        </label>
-        <input
-          id="requestedAmountMinor"
-          name="requestedAmountMinor"
-          type="number"
-          min={1}
-          step={1}
-          value={requestedAmount}
-          onChange={(event) => setRequestedAmount(event.target.value)}
-          placeholder="150000"
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-        />
+      <Form form={form} className="space-y-4">
+        <FormError />
+        <div
+          className={cn(
+            'grid gap-4',
+            presentation === 'dialog'
+              ? 'lg:grid-cols-[minmax(0,1fr)_16rem]'
+              : 'xl:grid-cols-[minmax(0,1fr)_16rem]',
+          )}
+        >
+          <div className="space-y-3">
+            <FormField
+              label={t('request.amountLabel')}
+              error={form.errors.requestedAmountMinor}
+              className="space-y-2"
+            >
+              <input
+                id="requestedAmountMinor"
+                type="number"
+                min={1}
+                step={1}
+                placeholder={t('request.amountPlaceholder')}
+                className="h-14 w-full rounded-xl border bg-background px-4 text-3xl font-semibold tracking-tight tabular-nums shadow-sm sm:text-[2rem]"
+                {...form.register('requestedAmountMinor')}
+                disabled={form.isSubmitting || isQueueSubmitting}
+              />
+            </FormField>
 
-        <p className="text-xs text-muted-foreground">{t('request.amountHint')}</p>
+            <div className="rounded-xl border bg-muted/20 px-4 py-3">
+              <p className="text-sm text-foreground">{t('request.amountHint')}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t('request.amountExample')}</p>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={isSubmitting || isQueueSubmitting}>
-            {isSubmitting ? t('home.shell.loadingTitle') : t('actions.requestPayout')}
+          <aside className="rounded-xl border bg-muted/25 px-4 py-4">
+            <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>
+            <div className="mt-3 space-y-3">
+              <p className="text-sm font-medium text-foreground">{t('request.submitHint')}</p>
+              <p className="text-sm text-muted-foreground">{t('request.queuedHint')}</p>
+            </div>
+          </aside>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="submit"
+            disabled={form.isSubmitting || isQueueSubmitting}
+            className="w-full sm:w-auto"
+          >
+            {form.isSubmitting ? t('request.submittingAction') : t('actions.requestPayout')}
           </Button>
 
           {pendingQueueAmountMinor != null ? (
@@ -250,43 +275,53 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
               type="button"
               variant="outline"
               onClick={() => void submitQueueIntent()}
-              disabled={isSubmitting || isQueueSubmitting}
+              disabled={form.isSubmitting || isQueueSubmitting}
+              className="w-full sm:w-auto"
             >
-              {isQueueSubmitting ? t('home.shell.loadingTitle') : t('actions.queuePayoutRequest')}
+              {isQueueSubmitting ? t('request.queueSubmittingAction') : t('actions.queuePayoutRequest')}
             </Button>
           ) : null}
         </div>
-      </form>
+      </Form>
 
-      {errorMessage ? (
+      {queueErrorMessage ? (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          {errorMessage}
+          {queueErrorMessage}
         </p>
       ) : null}
 
       {requestSuccess ? (
-        <div className="rounded-md border bg-background p-4 space-y-2">
-          <p className="font-medium">{t('request.successTitle')}</p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.requestId')} {requestSuccess.payoutRequestId}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.quoteId')} {requestSuccess.payoutQuoteId}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.contractId')} {requestSuccess.payoutContractId}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.maxWithdrawable')}{' '}
-            {formatMoney(requestSuccess.maxWithdrawableAmountMinor)}
-          </p>
-          <Button asChild variant="outline">
-            <Link
-              href={{
-                pathname: '/dashboard/payments/payouts/[payoutRequestId]',
-                params: { payoutRequestId: requestSuccess.payoutRequestId },
-              }}
-            >
+        <div className="space-y-4 rounded-xl border bg-background/80 p-4 sm:p-5">
+          <div className="space-y-1">
+            <p className="font-medium">{t('request.successTitle')}</p>
+            <p className="text-sm text-muted-foreground">{t('request.successDescription')}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.requestedAmount')}</PaymentsMetricLabel>
+              <PaymentsMetricValue className="mt-2">
+                {formatMoneyFromMinor(requestSuccess.requestedAmountMinor, 'MXN', locale)}
+              </PaymentsMetricValue>
+            </div>
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.maxWithdrawable')}</PaymentsMetricLabel>
+              <PaymentsMetricValue compact className="mt-2">
+                {formatMoneyFromMinor(requestSuccess.maxWithdrawableAmountMinor, 'MXN', locale)}
+              </PaymentsMetricValue>
+            </div>
+          </div>
+          <details className="rounded-lg border bg-muted/25 px-3 py-3">
+            <summary className="cursor-pointer text-sm font-medium text-primary">
+              {t('request.technicalDetailsLabel')}
+            </summary>
+            <div className="mt-3 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                {t('request.summary.requestId')} <PaymentsMonoValue as="span">{requestSuccess.payoutRequestId}</PaymentsMonoValue>
+              </p>
+            </div>
+          </details>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href={getPayoutDetailHref(requestSuccess.payoutRequestId, { eventId })}>
               {t('actions.openDetails')}
             </Link>
           </Button>
@@ -294,18 +329,36 @@ export function PayoutRequestForm({ organizationId }: PayoutRequestFormProps) {
       ) : null}
 
       {queueSuccess ? (
-        <div className="rounded-md border bg-background p-4 space-y-2">
-          <p className="font-medium">{t('request.queueSuccessTitle')}</p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.queueIntentId')} {queueSuccess.payoutQueuedIntentId}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.requestedAmount')}{' '}
-            {formatMoney(queueSuccess.requestedAmountMinor)}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {t('request.summary.blockedReason')} {queueSuccess.blockedReasonCode}
-          </p>
+        <div className="space-y-4 rounded-xl border bg-background/80 p-4 sm:p-5">
+          <div className="space-y-1">
+            <p className="font-medium">{t('request.queueSuccessTitle')}</p>
+            <p className="text-sm text-muted-foreground">{t('request.queueSuccessDescription')}</p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.requestedAmount')}</PaymentsMetricLabel>
+              <PaymentsMetricValue className="mt-2">
+                {formatMoneyFromMinor(queueSuccess.requestedAmountMinor, 'MXN', locale)}
+              </PaymentsMetricValue>
+            </div>
+            <div className="rounded-lg border bg-muted/20 px-4 py-3">
+              <PaymentsMetricLabel>{t('request.summary.blockedReasonHuman')}</PaymentsMetricLabel>
+              <p className="mt-2 text-sm font-medium leading-6">
+                {t(`detail.reasonFamilies.${getOrganizerPayoutReasonFamily(queueSuccess.blockedReasonCode)}`)}
+              </p>
+            </div>
+          </div>
+          <details className="rounded-lg border bg-muted/25 px-3 py-3">
+            <summary className="cursor-pointer text-sm font-medium text-primary">
+              {t('request.technicalDetailsLabel')}
+            </summary>
+            <div className="mt-3 space-y-2 text-sm">
+              <p className="text-muted-foreground">
+                {t('request.summary.queueIntentId')} {' '}
+                <PaymentsMonoValue as="span">{queueSuccess.payoutQueuedIntentId}</PaymentsMonoValue>
+              </p>
+            </div>
+          </details>
         </div>
       ) : null}
     </section>

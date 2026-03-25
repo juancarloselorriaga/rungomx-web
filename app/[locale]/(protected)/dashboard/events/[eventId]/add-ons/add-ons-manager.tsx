@@ -22,6 +22,7 @@ import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-di
 import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
 import {
@@ -79,10 +80,7 @@ const EMPTY_OPTION: OptionFormData = {
 };
 
 function formatPrice(cents: number, locale: string): string {
-  return (cents / 100).toLocaleString(locale, {
-    style: 'currency',
-    currency: 'MXN',
-  });
+  return formatMoneyFromMinor(cents, 'MXN', locale);
 }
 
 export function AddOnsManager({

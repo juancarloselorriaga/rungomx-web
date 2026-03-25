@@ -1,123 +1,330 @@
 {
   "metadata": {
-    "title": "Payments workspace",
-    "description": "Track wallet status, payout readiness, and payout lifecycle details."
+    "title": "Payments",
+    "description": "Review available balance, payout status, and payout history."
   },
   "home": {
     "title": "Payments",
-    "description": "Review your wallet, action queue, and payout readiness in one place.",
+    "description": "See your available balance, payouts, and the next step for this organization.",
     "organization": {
-      "label": "Organization",
+      "title": "Active organization",
+      "label": "Switch organization",
+      "current": "Current",
+      "count": "{count, plural, one {# organization available} other {# organizations available}}",
+      "selectedBadge": "Selected",
+      "slugLabel": "Slug",
       "none": "No organizations available",
-      "help": "Choose the organization wallet to review.",
+      "help": "You’re viewing payments for this organization. Switch only if you need a different one.",
       "invalidTitle": "This organization is not available",
       "invalidDescription": "The selected organization could not be loaded for your account. Choose another organization and retry."
     },
+    "nextStep": {
+      "eyebrow": "Next step",
+      "requestTitle": "Request a payout",
+      "requestDescription": "{organization} has money ready to pay out. Request the payout whenever you're ready.",
+      "queueTitle": "A payout is already underway",
+      "queueDescription": "Review the active payout for {organization} first. If needed, you can line up the next one from here.",
+      "idleTitle": "Check recent payment activity",
+      "idleDescription": "{organization} does not have money ready for payout yet. Review recent activity while funds clear.",
+      "secondaryTitle": "History and status",
+      "secondaryDescription": "Use payout history to review requests, open details, and keep up with status changes."
+    },
     "shell": {
-      "loadingTitle": "Loading payments workspace",
-      "loadingDescription": "We are preparing wallet and payout information for this organization.",
-      "emptyTitle": "No organization wallet available yet",
-      "emptyDescription": "Create or join an organization to start managing payout cycles from this workspace.",
-      "degradedTitle": "Payments data is temporarily unavailable",
-      "degradedDescription": "We could not load the latest payments information. Retry to refresh this workspace."
+      "loadingTitle": "Loading payments",
+      "loadingAriaLabel": "Loading payments",
+      "loadingDescription": "Getting balance and payout details ready for this organization.",
+      "emptyTitle": "No payments balance yet",
+      "emptyDescription": "Create or join an organization to manage payouts here.",
+      "partialTitle": "Some payment details are temporarily unavailable",
+      "partialWalletDescription": "Your balance and payout controls are temporarily unavailable. Recent payment activity is still shown below.",
+      "partialQueueDescription": "Your balance and payout controls loaded, but recent payment activity is temporarily unavailable.",
+      "degradedTitle": "Payments are temporarily unavailable",
+      "degradedDescription": "We couldn't load the latest payments details. Try again to refresh."
     }
   },
   "actions": {
     "retry": "Retry",
     "requestPayout": "Request payout",
-    "queuePayoutRequest": "Queue payout request",
-    "viewPayouts": "View payouts",
-    "openDetails": "Open details",
-    "viewStatement": "View statement"
+    "queuePayoutRequest": "Line up next payout",
+    "viewPayouts": "View payout history",
+    "viewCurrentPayout": "Open current payout",
+    "newPayout": "Request payout",
+    "openDetails": "Open payout details",
+    "viewStatement": "View payout statement"
   },
   "wallet": {
-    "asOf": "As of {timestamp}",
+    "title": "Balance summary",
+    "description": "Your balance, grouped by payment stage.",
+    "asOf": "Updated {timestamp}",
     "buckets": {
       "available": "Available",
       "processing": "Processing",
-      "frozen": "Frozen",
+      "frozen": "Reserved",
       "debt": "Debt"
     },
     "queue": {
-      "title": "Action queue",
-      "actionNeeded": "Action Needed",
-      "inProgress": "In Progress",
-      "actionNeededDescription": "Items that need organizer action to continue payout readiness.",
-      "inProgressDescription": "Items currently managed by platform processing.",
-      "emptyActionNeeded": "No action-needed items right now.",
-      "emptyInProgress": "No in-progress items right now.",
+      "title": "Follow-up and next steps",
+      "description": "Recent payment activity that may need review or follow-up.",
+      "actionNeeded": "Needs attention",
+      "inProgress": "In progress",
+      "actionNeededDescription": "Items to review before the next payout can move forward.",
+      "inProgressDescription": "Items that are still moving and only need monitoring for now.",
+      "emptyActionNeeded": "Nothing needs attention right now.",
+      "emptyInProgress": "Nothing is in progress right now.",
+      "emptyTitle": "Nothing needs follow-up right now",
+      "emptyDescription": "Pauses, validations, and other important payment updates will appear here.",
+      "moreItems": "View {count, plural, one {# more update} other {# more updates}}",
       "whatChanged": "What changed:",
       "whyItMatters": "Why it matters:",
       "whatYouCanDoNow": "What you can do now:",
-      "actionNeededGuidance": "Review this item before requesting the next payout cycle.",
-      "inProgressGuidance": "Keep monitoring this item while platform processing continues."
+      "actionNeededGuidance": "Review this before requesting another payout.",
+      "inProgressGuidance": "Keep an eye on this while we finish processing it.",
+      "detailsLabel": "Support details",
+      "openPayoutAction": "Open payout",
+      "technicalEventLabel": "Internal event",
+      "traceLabel": "Support trace",
+      "entityLabel": "Reference",
+      "rawReasonLabel": "Support code",
+      "referenceLabel": "Reference #{id}",
+      "genericTitle": "We're updating this payment status",
+      "genericDescription": "There was a recent payment update for this organization.",
+      "events": {
+        "payoutQueued": {
+          "title": "Your next payout is lined up",
+          "description": "We'll start it automatically when the current payout is no longer blocking it."
+        },
+        "payoutRequested": {
+          "title": "Your payout request was received",
+          "description": "We created the request and started the payout process."
+        },
+        "payoutProcessing": {
+          "title": "Your payout is being reviewed",
+          "description": "We're validating the request and moving it through processing."
+        },
+        "payoutPaused": {
+          "title": "Your payout is on hold",
+          "description": "The payout is being reviewed right now. If you need to do anything, you'll see it here."
+        },
+        "payoutResumed": {
+          "title": "Your payout is moving again",
+          "description": "The review finished and the payout process continued."
+        },
+        "payoutCompleted": {
+          "title": "Your payout was completed",
+          "description": "The payout finished successfully and is now closed."
+        },
+        "payoutFailed": {
+          "title": "Your payout couldn't be completed",
+          "description": "This payout needs follow-up before you request another one."
+        },
+        "payoutAdjusted": {
+          "title": "Your payout amount changed",
+          "description": "The payout amount or status changed during review."
+        },
+        "debtPauseRequired": {
+          "title": "Debt is blocking the next payout",
+          "description": "A balance rule paused the payout flow until the debt is reduced."
+        },
+        "debtResumeAllowed": {
+          "title": "Debt no longer blocks payouts",
+          "description": "The balance improved and the payout flow can continue."
+        },
+        "disputeOpened": {
+          "title": "A payment dispute needs review",
+          "description": "A dispute may require evidence or follow-up before payouts can continue normally."
+        },
+        "subscriptionRenewalFailed": {
+          "title": "Your subscription payment failed",
+          "description": "Update billing to avoid interruptions in your payment tools."
+        },
+        "refundExecuted": {
+          "title": "A refund was completed",
+          "description": "A refund was applied and now appears in your financial history."
+        }
+      }
     }
   },
   "request": {
-    "title": "Payout request",
-    "description": "Enter an amount in MXN minor units to request the next payout cycle.",
-    "amountLabel": "Requested amount (minor units)",
-    "amountHint": "Leave empty to request the current max withdrawable amount.",
-    "submitHint": "Submitting creates a payout quote and lifecycle request.",
-    "queuedHint": "If an active payout exists, you can queue this request as the next intent.",
-    "successTitle": "Payout request created",
-    "queueSuccessTitle": "Payout intent queued",
+    "title": "Request payout",
+    "description": "Request a payout here. If one is already underway, you can line up the next one instead.",
+    "amountLabel": "Payout amount",
+    "amountPlaceholder": "150000",
+    "amountHint": "Enter a whole-number amount, or leave it blank to request everything currently available.",
+    "amountExample": "Example: 150000 equals MXN $1,500.00.",
+    "submitHint": "Submitting sends your payout request and starts the payout review.",
+    "queuedHint": "If another payout is already moving, you can line up this one to go next.",
+    "submittingAction": "Submitting payout request",
+    "queueSubmittingAction": "Saving next payout",
+    "successTitle": "Payout requested",
+    "successDescription": "Your payout request is in. You can track it from the payout detail.",
+    "queueSuccessTitle": "Next payout lined up",
+    "queueSuccessDescription": "This request will start automatically after the current payout finishes.",
     "conflictTitle": "Active payout already exists",
-    "conflictDescription": "This organizer already has an active payout lifecycle. Queue a request to run when the current cycle finishes.",
+    "conflictDescription": "This organization already has a payout in progress. You can line up the next one to start after it finishes.",
+    "technicalDetailsLabel": "Support details",
     "errors": {
-      "invalidAmount": "Enter a valid positive amount in minor units.",
-      "submitFailed": "Payout request could not be created right now.",
-      "queueRequiresAmount": "A valid amount is required to queue a payout intent.",
-      "queueFailed": "Queued payout intent could not be created right now."
+      "invalidAmount": "Enter a valid positive whole-number amount.",
+      "submitFailed": "We couldn't create the payout request right now.",
+      "queueRequiresAmount": "Enter a valid amount to line up the next payout.",
+      "queueFailed": "We couldn't line up the next payout right now.",
+      "unknownAction": "We couldn't complete this action. Please try again or contact support.",
+      "notEligible": "This organization does not have money ready for payout right now.",
+      "amountExceedsAvailable": "The amount entered is higher than what is currently available for payout.",
+      "queueNotNeeded": "A payout can be requested now, so there is no need to line up another one.",
+      "queueAlreadyExists": "There is already a payout lined up for this organization."
     },
     "summary": {
-      "requestId": "Request ID:",
-      "quoteId": "Quote ID:",
-      "contractId": "Contract ID:",
-      "maxWithdrawable": "Max withdrawable:",
-      "queueIntentId": "Queue intent ID:",
+      "requestId": "Payout reference:",
+      "quoteId": "Calculation reference:",
+      "contractId": "Processing reference:",
+      "maxWithdrawable": "Available at request time:",
+      "queueIntentId": "Next payout reference:",
       "requestedAmount": "Requested amount:",
-      "blockedReason": "Blocked reason:"
+      "blockedReason": "Internal reason:",
+      "blockedReasonHuman": "Why it will start later",
+      "rawBlockedReason": "Support code:"
     }
   },
   "payouts": {
     "title": "Payouts",
-    "description": "Review current and historical payout lifecycle states.",
-    "emptyTitle": "No payout history yet",
-    "emptyDescription": "Your payout requests will appear here once you submit the first payout cycle.",
+    "description": "Review past payouts and open one when you need more detail.",
+    "historyTitle": "History",
+    "historyDescription": "Track statuses, amounts, and dates without mixing payout history into the request form.",
+    "scopeSummary": "Showing {start}-{end} of {total} {total, plural, one {payout} other {payouts}}",
+    "scopeHint": "Newest payouts first. This view shows up to {pageSize} rows per page.",
+    "pageStatus": "Page {page} of {pageCount}",
+    "firstPageLabel": "First",
+    "previousPageLabel": "Previous",
+    "nextPageLabel": "Next",
+    "lastPageLabel": "Last",
+    "emptyTitle": "No payouts yet",
+    "emptyDescription": "Your first payout will appear here with its status and request date.",
     "table": {
       "requestId": "Request",
+      "requestLabel": "Request #{id}",
       "status": "Status",
       "requested": "Requested",
       "currentAmount": "Current amount",
-      "requestedAt": "Requested at"
+      "requestedAt": "Date",
+      "open": "Open"
     },
     "statuses": {
       "requested": "Requested",
       "processing": "Processing",
       "paused": "Paused",
       "completed": "Completed",
-      "failed": "Failed"
+      "failed": "Not completed"
     }
   },
   "detail": {
     "title": "Payout detail",
-    "description": "Inspect lifecycle progress, reason codes, and statement availability.",
-    "stateTimeline": "Lifecycle timeline",
-    "noEvents": "No lifecycle events are available for this payout request yet.",
+    "pageTitle": "Payout #{id}",
+    "loadingAriaLabel": "Loading payout detail",
+    "description": "See the current status, timeline, and key amounts for this payout.",
+    "summaryTitle": "Payout summary",
+    "summaryDescription": "This summary shows the current status and the key amounts for this payout.",
+    "organizationLabel": "Organization:",
+    "requestedAmountLabel": "Requested amount",
+    "currentAmountLabel": "Current amount",
+    "maxWithdrawableLabel": "Available when requested",
+    "requestedAtLabel": "Requested",
+    "includedAmountLabel": "Included amount",
+    "deductionAmountLabel": "Deductions",
+    "traceIdLabel": "Support trace",
+    "stateTimeline": "Payout history",
+    "stateTimelineDescription": "Each update shows what changed and when it happened.",
+    "noEvents": "There are no payout updates yet for this request.",
     "stateReason": "Reason",
-    "amountSummary": "Amount summary",
+    "amountSummary": "Amount",
+    "technicalDetailsLabel": "Support details",
+    "technicalEventLabel": "Internal event",
+    "rawReasonLabel": "Support code",
+    "eventReferenceLabel": "Support reference",
     "notFoundTitle": "Payout request not found",
     "notFoundDescription": "The selected payout request could not be found for this organization.",
+    "reasonFamilies": {
+      "activePayout": "Another payout is already underway",
+      "manualReview": "This payout needs manual review",
+      "bankRejected": "Bank account details need attention",
+      "processing": "This payout is still being processed",
+      "paused": "This payout is on hold",
+      "failed": "This payout couldn't move forward",
+      "genericReview": "The payments team needs to review this payout"
+    },
+    "events": {
+      "genericTitle": "We're updating this payout status",
+      "genericDescription": "There was an update in this payout.",
+      "requested": {
+        "title": "The payout request was created",
+        "description": "We registered the payout and started its processing flow."
+      },
+      "processing": {
+        "title": "The payout moved into processing",
+        "description": "We're validating the payout and reconciling the request."
+      },
+      "paused": {
+        "title": "The payout was put on hold",
+        "description": "The payout is being reviewed. If you need to do anything, you'll see it here."
+      },
+      "resumed": {
+        "title": "The payout resumed",
+        "description": "The review finished and the payout continued."
+      },
+      "completed": {
+        "title": "The payout completed",
+        "description": "The payout finished successfully and is now closed."
+      },
+      "failed": {
+        "title": "The payout couldn't be completed",
+        "description": "The payout ended with an issue. Review it before requesting another payout."
+      },
+      "adjusted": {
+        "title": "The payout amount changed",
+        "description": "The payout amount or payout settings changed during review."
+      }
+    },
     "statement": {
-      "ready": "Statement available",
-      "notFound": "Statement is not available for this payout request.",
-      "notTerminal": "Statement will be available after payout reaches a terminal status.",
-      "error": "Statement could not be loaded right now."
+      "title": "Payout statement",
+      "description": "When the payout finishes, you can review the final summary here. The support reference is only needed if our team asks for it.",
+      "loadingAction": "Opening statement",
+      "ready": "The statement is available.",
+      "notFound": "We don't have a statement for this payout yet.",
+      "notTerminal": "The statement will appear once this payout reaches a final state.",
+      "error": "We couldn't load the statement right now.",
+      "summaryTitle": "Statement summary",
+      "summaryDescription": "Use this summary to confirm the payout result without digging into internal references.",
+      "finalStatusLabel": "Final status",
+      "finalAmountLabel": "Final amount",
+      "requestedAmountLabel": "Requested amount",
+      "generatedAtLabel": "Generated on",
+      "adjustedSummary": "The payout finished at {terminal} after being adjusted from {original}.",
+      "technicalDetailsLabel": "Support reference",
+      "fingerprintLabel": "Statement reference",
+      "fingerprintDescription": "Keep this reference only if support asks for it. Most payout follow-up does not need it.",
+      "showFingerprint": "Show fingerprint",
+      "hideFingerprint": "Hide fingerprint",
+      "copyAction": "Copy reference",
+      "copySuccess": "Reference copied",
+      "copyError": "The reference could not be copied."
     }
   },
   "nav": {
-    "backToPayments": "Back to payments",
-    "backToPayouts": "Back to payouts"
+    "backToPayments": "Back to payments overview",
+    "backToPayouts": "Back to payout history"
+  },
+  "eventContext": {
+    "eyebrow": "Organization payments",
+    "note": "Payouts are managed at the organization level. This event shares the same balance and payout history.",
+    "organizationLabel": "Organization",
+    "scopeLabel": "What to expect",
+    "viewPayoutsAction": "View payouts",
+    "homeDescription": "Review {organization}'s available balance, check the current payout, and request the next one without leaving this event.",
+    "payoutsDescription": "This event shares {organization}'s payout history. You're viewing the organization's payout activity here.",
+    "payoutsHistoryTitle": "Organization payouts",
+    "payoutsHistoryDescription": "Shared payout history for {organization}, so you can review statuses, amounts, and dates without leaving the event.",
+    "detailDescription": "This payout belongs to {organization}'s shared finance workflow.",
+    "detailNotFoundDescription": "We couldn't find this payout in the event organization's shared finance workflow.",
+    "backToEvent": "Back to event",
+    "backToOverview": "Overview"
   }
 }

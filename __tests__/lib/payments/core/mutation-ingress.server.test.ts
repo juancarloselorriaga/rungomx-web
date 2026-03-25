@@ -1,11 +1,20 @@
 const mockTransaction = jest.fn();
 const mockSelect = jest.fn();
+const mockUpsertPaymentCaptureVolumeRollupsInTransaction = jest.fn();
+const mockRevalidateAdminPaymentCaptureVolumeCaches = jest.fn();
 
 jest.mock('@/db', () => ({
   db: {
     transaction: (...args: unknown[]) => mockTransaction(...args),
     select: (...args: unknown[]) => mockSelect(...args),
   },
+}));
+
+jest.mock('@/lib/payments/volume/payment-capture-volume-rollups', () => ({
+  upsertPaymentCaptureVolumeRollupsInTransaction: (...args: unknown[]) =>
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction(...args),
+  revalidateAdminPaymentCaptureVolumeCaches: (...args: unknown[]) =>
+    mockRevalidateAdminPaymentCaptureVolumeCaches(...args),
 }));
 
 import { moneyCommandIngestions, moneyEvents, moneyTraces } from '@/db/schema';
@@ -85,13 +94,27 @@ const financialAdjustmentSensitiveEvent = {
   },
 } as const;
 
+const malformedPaymentCapturedEvent = {
+  ...paymentCapturedEvent,
+  traceId: 'trace-malformed-capture-1',
+  eventId: '99999999-9999-4999-8999-999999999999',
+  idempotencyKey: 'idem-malformed-1',
+  payload: {
+    ...paymentCapturedEvent.payload,
+    netAmount: { amountMinor: 9000, currency: 'MXN' },
+  },
+} as const;
+
 describe('money mutation ingress', () => {
   const traceInsertValues: unknown[] = [];
   const eventInsertValues: unknown[] = [];
   const commandInsertValues: unknown[] = [];
   const commandUpdateValues: unknown[] = [];
+  const deletedTraceIds: unknown[] = [];
+  const operationOrder: string[] = [];
   const commandInsertReturningQueue: Array<Array<{ traceId: string }>> = [];
   const commandLookupQueue: Array<Array<{ traceId: string }>> = [];
+  const traceInsertReturningQueue: Array<Array<{ traceId: string }>> = [];
 
   beforeEach(() => {
     mockTransaction.mockReset();
@@ -100,14 +123,21 @@ describe('money mutation ingress', () => {
     eventInsertValues.length = 0;
     commandInsertValues.length = 0;
     commandUpdateValues.length = 0;
+    deletedTraceIds.length = 0;
+    operationOrder.length = 0;
     commandInsertReturningQueue.length = 0;
     commandLookupQueue.length = 0;
+    traceInsertReturningQueue.length = 0;
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction.mockReset();
+    mockRevalidateAdminPaymentCaptureVolumeCaches.mockReset();
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction.mockResolvedValue({ wroteRollups: true });
 
     mockTransaction.mockImplementation(async (callback: (tx: unknown) => Promise<unknown>) => {
       const tx = {
         insert: (table: unknown) => ({
           values: (values: unknown) => {
             if (table === moneyCommandIngestions) {
+              operationOrder.push('command-insert');
               commandInsertValues.push(values);
               return {
                 onConflictDoNothing: () => ({
@@ -117,13 +147,17 @@ describe('money mutation ingress', () => {
             }
 
             if (table === moneyTraces) {
+              operationOrder.push('trace-insert');
               traceInsertValues.push(values);
               return {
-                onConflictDoNothing: jest.fn().mockResolvedValue(undefined),
+                onConflictDoNothing: () => ({
+                  returning: async () => traceInsertReturningQueue.shift() ?? [],
+                }),
               };
             }
 
             if (table === moneyEvents) {
+              operationOrder.push('event-insert');
               eventInsertValues.push(values);
               return Promise.resolve(undefined);
             }
@@ -131,6 +165,18 @@ describe('money mutation ingress', () => {
             throw new Error('Unexpected table passed to tx.insert');
           },
         }),
+        delete: (table: unknown) => {
+          if (table !== moneyTraces) {
+            throw new Error('Unexpected table passed to tx.delete');
+          }
+
+          return {
+            where: async (condition: unknown) => {
+              deletedTraceIds.push(condition);
+              return undefined;
+            },
+          };
+        },
         select: () => ({
           from: () => ({
             where: () => ({
@@ -153,6 +199,7 @@ describe('money mutation ingress', () => {
   });
 
   it('persists trace and canonical events atomically via a single transaction', async () => {
+    traceInsertReturningQueue.push([{ traceId: 'trace-shared-1' }]);
     commandInsertReturningQueue.push([{ traceId: 'trace-shared-1' }]);
 
     const result = await moneyMutationIngress({
@@ -168,6 +215,17 @@ describe('money mutation ingress', () => {
     expect(traceInsertValues).toHaveLength(1);
     expect(eventInsertValues).toHaveLength(1);
     expect(commandUpdateValues).toHaveLength(1);
+    expect(operationOrder.slice(0, 3)).toEqual(['trace-insert', 'command-insert', 'event-insert']);
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.arrayContaining([
+        expect.objectContaining({
+          eventName: 'payment.captured',
+        }),
+      ]),
+    );
+    expect(mockRevalidateAdminPaymentCaptureVolumeCaches).toHaveBeenCalledTimes(1);
 
     expect(traceInsertValues[0]).toMatchObject({
       traceId: 'trace-shared-1',
@@ -184,8 +242,9 @@ describe('money mutation ingress', () => {
   });
 
   it('returns deterministic duplicate response and skips event writes on repeated idempotency key', async () => {
+    traceInsertReturningQueue.push([{ traceId: 'trace-shared-1' }]);
     commandInsertReturningQueue.push([]);
-    commandLookupQueue.push([{ traceId: 'trace-original-1' }]);
+    commandLookupQueue.push([{ traceId: 'trace-shared-1' }]);
 
     const result = await moneyMutationIngress({
       traceId: 'trace-shared-1',
@@ -196,13 +255,58 @@ describe('money mutation ingress', () => {
     });
 
     expect(result.deduplicated).toBe(true);
-    expect(result.traceId).toBe('trace-original-1');
-    expect(result.duplicateOfTraceId).toBe('trace-original-1');
+    expect(result.traceId).toBe('trace-shared-1');
+    expect(result.duplicateOfTraceId).toBe('trace-shared-1');
     expect(result.persistedEvents).toHaveLength(0);
 
-    expect(traceInsertValues).toHaveLength(0);
+    expect(traceInsertValues).toHaveLength(1);
     expect(eventInsertValues).toHaveLength(0);
     expect(commandUpdateValues).toHaveLength(0);
+    expect(deletedTraceIds).toHaveLength(0);
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).not.toHaveBeenCalled();
+    expect(mockRevalidateAdminPaymentCaptureVolumeCaches).not.toHaveBeenCalled();
+  });
+
+  it('invalidates volume caches when reconciliation rollups are written for malformed captures', async () => {
+    traceInsertReturningQueue.push([{ traceId: 'trace-malformed-capture-1' }]);
+    commandInsertReturningQueue.push([{ traceId: 'trace-malformed-capture-1' }]);
+    mockUpsertPaymentCaptureVolumeRollupsInTransaction.mockResolvedValueOnce({
+      wroteRollups: true,
+    });
+
+    await moneyMutationIngress({
+      traceId: 'trace-malformed-capture-1',
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      idempotencyKey: 'command-key-malformed',
+      source: 'api',
+      events: [malformedPaymentCapturedEvent],
+    });
+
+    expect(mockUpsertPaymentCaptureVolumeRollupsInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockRevalidateAdminPaymentCaptureVolumeCaches).toHaveBeenCalledTimes(1);
+  });
+
+  it('cleans up a newly inserted trace when a duplicate idempotency key resolves to another trace', async () => {
+    traceInsertReturningQueue.push([{ traceId: 'trace-new-1' }]);
+    commandInsertReturningQueue.push([]);
+    commandLookupQueue.push([{ traceId: 'trace-original-1' }]);
+
+    const result = await moneyMutationIngress({
+      traceId: 'trace-new-1',
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      idempotencyKey: 'command-key-duplicate',
+      source: 'worker',
+      events: [
+        {
+          ...paymentCapturedEvent,
+          traceId: 'trace-new-1',
+        },
+      ],
+    });
+
+    expect(result.deduplicated).toBe(true);
+    expect(result.traceId).toBe('trace-original-1');
+    expect(deletedTraceIds).toHaveLength(1);
   });
 
   it('rejects commands when any canonical event trace id differs from command trace id', async () => {

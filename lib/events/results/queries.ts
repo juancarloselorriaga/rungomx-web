@@ -30,6 +30,10 @@ import {
   resultsOfficialTag,
   resultsSearchTag,
 } from '@/lib/events/results/cache-tags';
+import {
+  toResultEntryRecord,
+  toResultVersionRecord,
+} from '@/lib/events/results/shared/mappers';
 import { resultEntryLookupSchema, type ResultEntryLookupInput } from '@/lib/events/results/schemas';
 import type {
   CorrectionLifecycleAgingHighlightItem,
@@ -61,48 +65,6 @@ import type {
   ResultVersionStatus,
 } from '@/lib/events/results/types';
 import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
-
-function toResultVersionRecord(row: typeof resultVersions.$inferSelect): ResultVersionRecord {
-  return {
-    id: row.id,
-    editionId: row.editionId,
-    status: row.status,
-    source: row.source,
-    versionNumber: row.versionNumber,
-    parentVersionId: row.parentVersionId,
-    createdByUserId: row.createdByUserId,
-    finalizedByUserId: row.finalizedByUserId,
-    finalizedAt: row.finalizedAt,
-    sourceFileChecksum: row.sourceFileChecksum,
-    sourceReference: row.sourceReference,
-    provenanceJson: row.provenanceJson,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
-}
-
-function toResultEntryRecord(row: typeof resultEntries.$inferSelect): ResultEntryRecord {
-  return {
-    id: row.id,
-    resultVersionId: row.resultVersionId,
-    distanceId: row.distanceId,
-    userId: row.userId,
-    discipline: row.discipline,
-    runnerFullName: row.runnerFullName,
-    bibNumber: row.bibNumber,
-    gender: row.gender,
-    age: row.age,
-    status: row.status,
-    finishTimeMillis: row.finishTimeMillis,
-    overallPlace: row.overallPlace,
-    genderPlace: row.genderPlace,
-    ageGroupPlace: row.ageGroupPlace,
-    identitySnapshot: row.identitySnapshot,
-    rawSourceData: row.rawSourceData,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-  };
-}
 
 export async function getDraftResultVersionById(
   resultVersionId: string,

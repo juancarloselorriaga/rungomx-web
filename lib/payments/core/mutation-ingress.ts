@@ -12,6 +12,13 @@ import {
   type CanonicalMoneyEventV1,
 } from '@/lib/payments/core/contracts/events';
 import { redactCanonicalEventForPersistence } from '@/lib/payments/core/payload-redaction';
+import {
+  revalidateAdminPaymentCaptureVolumeCaches,
+  upsertPaymentCaptureVolumeRollupsInTransaction,
+} from '@/lib/payments/volume/payment-capture-volume-rollups';
+
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type DbClient = typeof db | DbTransaction;
 
 export const moneyMutationIngressSources = [
   'api',
@@ -21,6 +28,7 @@ export const moneyMutationIngressSources = [
 ] as const satisfies ReadonlyArray<(typeof moneyMutationSourceEnum.enumValues)[number]>;
 
 export type MoneyMutationIngressSource = (typeof moneyMutationIngressSources)[number];
+export type MoneyMutationIngressTransaction = DbTransaction;
 
 export type MoneyMutationIngressCommand = {
   traceId: string;
@@ -67,14 +75,9 @@ function normalizeCanonicalEvents(command: MoneyMutationIngressCommand): Canonic
   return parsedEvents;
 }
 
-export async function moneyMutationIngress(command: MoneyMutationIngressCommand): Promise<{
-  traceId: string;
-  persistedEvents: CanonicalMoneyEventV1[];
-  deduplicated: boolean;
-  duplicateOfTraceId?: string;
-}> {
+function sanitizeCanonicalEvents(command: MoneyMutationIngressCommand): CanonicalMoneyEventV1[] {
   const parsedEvents = normalizeCanonicalEvents(command);
-  const sanitizedEvents: CanonicalMoneyEventV1[] = parsedEvents.map((event) => {
+  return parsedEvents.map((event) => {
     const redaction = redactCanonicalEventForPersistence({
       payload: event.payload,
       metadata: event.metadata,
@@ -89,117 +92,178 @@ export async function moneyMutationIngress(command: MoneyMutationIngressCommand)
       },
     } as CanonicalMoneyEventV1;
   });
+}
 
+async function persistMoneyMutation(params: {
+  dbClient: DbClient;
+  command: MoneyMutationIngressCommand;
+  sanitizedEvents: CanonicalMoneyEventV1[];
+}): Promise<{
+  traceId: string;
+  persistedEvents: CanonicalMoneyEventV1[];
+  deduplicated: boolean;
+  duplicateOfTraceId?: string;
+  volumeRollupsWritten: boolean;
+}> {
+  const { dbClient, command, sanitizedEvents } = params;
   const rootEvent = sanitizedEvents[0];
+  const insertedTrace = await dbClient
+    .insert(moneyTraces)
+    .values({
+      traceId: command.traceId,
+      organizerId: command.organizerId ?? null,
+      rootEntityType: rootEvent.entityType,
+      rootEntityId: rootEvent.entityId,
+      createdBySource: command.source,
+      metadataJson: {
+        eventCount: sanitizedEvents.length,
+        initialEventName: rootEvent.eventName,
+        initialEventVersion: rootEvent.version,
+      },
+    })
+    .onConflictDoNothing()
+    .returning({
+      traceId: moneyTraces.traceId,
+    });
 
-  const result = await db.transaction(async (tx) => {
-    if (command.idempotencyKey) {
-      if (!command.organizerId) {
-        throw new Error('Organizer-scoped idempotency requires organizerId.');
-      }
-
-      const ingestionInsert = await tx
-        .insert(moneyCommandIngestions)
-        .values({
-          organizerId: command.organizerId,
-          idempotencyKey: command.idempotencyKey,
-          traceId: command.traceId,
-          status: 'processing',
-          eventCount: sanitizedEvents.length,
-          responseSummaryJson: {
-            stage: 'accepted',
-          },
-        })
-        .onConflictDoNothing()
-        .returning({
-          traceId: moneyCommandIngestions.traceId,
-        });
-
-      if (ingestionInsert.length === 0) {
-        const [existingIngestion] = await tx
-          .select({
-            traceId: moneyCommandIngestions.traceId,
-          })
-          .from(moneyCommandIngestions)
-          .where(
-            and(
-              eq(moneyCommandIngestions.organizerId, command.organizerId),
-              eq(moneyCommandIngestions.idempotencyKey, command.idempotencyKey),
-            ),
-          )
-          .limit(1);
-
-        const duplicateTraceId = existingIngestion?.traceId ?? command.traceId;
-        return {
-          traceId: duplicateTraceId,
-          persistedEvents: [] as CanonicalMoneyEventV1[],
-          deduplicated: true,
-          duplicateOfTraceId: duplicateTraceId,
-        };
-      }
+  if (command.idempotencyKey) {
+    if (!command.organizerId) {
+      throw new Error('Organizer-scoped idempotency requires organizerId.');
     }
 
-    await tx
-      .insert(moneyTraces)
+    const ingestionInsert = await dbClient
+      .insert(moneyCommandIngestions)
       .values({
+        organizerId: command.organizerId,
+        idempotencyKey: command.idempotencyKey,
         traceId: command.traceId,
-        organizerId: command.organizerId ?? null,
-        rootEntityType: rootEvent.entityType,
-        rootEntityId: rootEvent.entityId,
-        createdBySource: command.source,
-        metadataJson: {
-          eventCount: sanitizedEvents.length,
-          initialEventName: rootEvent.eventName,
-          initialEventVersion: rootEvent.version,
+        status: 'processing',
+        eventCount: sanitizedEvents.length,
+        responseSummaryJson: {
+          stage: 'accepted',
         },
       })
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({
+        traceId: moneyCommandIngestions.traceId,
+      });
 
-    await tx.insert(moneyEvents).values(
-      sanitizedEvents.map((event) => ({
-        traceId: event.traceId,
-        organizerId: command.organizerId ?? null,
-        eventName: event.eventName,
-        eventVersion: event.version,
-        entityType: event.entityType,
-        entityId: event.entityId,
-        source: command.source,
-        idempotencyKey: event.idempotencyKey ?? null,
-        occurredAt: new Date(event.occurredAt),
-        payloadJson: event.payload as Record<string, unknown>,
-        metadataJson: event.metadata,
-      })),
-    );
-
-    if (command.idempotencyKey && command.organizerId) {
-      await tx
-        .update(moneyCommandIngestions)
-        .set({
-          status: 'completed',
-          eventCount: sanitizedEvents.length,
-          responseSummaryJson: {
-            stage: 'completed',
-            traceId: command.traceId,
-            eventCount: sanitizedEvents.length,
-          },
-          lastSeenAt: new Date(),
+    if (ingestionInsert.length === 0) {
+      const [existingIngestion] = await dbClient
+        .select({
+          traceId: moneyCommandIngestions.traceId,
         })
+        .from(moneyCommandIngestions)
         .where(
           and(
             eq(moneyCommandIngestions.organizerId, command.organizerId),
             eq(moneyCommandIngestions.idempotencyKey, command.idempotencyKey),
           ),
-        );
-    }
+        )
+        .limit(1);
 
-    return {
-      traceId: command.traceId,
-      persistedEvents: sanitizedEvents,
-      deduplicated: false,
-    };
-  });
+      const duplicateTraceId = existingIngestion?.traceId ?? command.traceId;
+      if (insertedTrace.length > 0 && duplicateTraceId !== command.traceId) {
+        await dbClient.delete(moneyTraces).where(eq(moneyTraces.traceId, command.traceId));
+      }
+
+      return {
+        traceId: duplicateTraceId,
+        persistedEvents: [] as CanonicalMoneyEventV1[],
+        deduplicated: true,
+        duplicateOfTraceId: duplicateTraceId,
+        volumeRollupsWritten: false,
+      };
+    }
+  }
+
+  await dbClient.insert(moneyEvents).values(
+    sanitizedEvents.map((event) => ({
+      traceId: event.traceId,
+      organizerId: command.organizerId ?? null,
+      eventName: event.eventName,
+      eventVersion: event.version,
+      entityType: event.entityType,
+      entityId: event.entityId,
+      source: command.source,
+      idempotencyKey: event.idempotencyKey ?? null,
+      occurredAt: new Date(event.occurredAt),
+      payloadJson: event.payload as Record<string, unknown>,
+      metadataJson: event.metadata,
+    })),
+  );
+
+  const rollupResult = await upsertPaymentCaptureVolumeRollupsInTransaction(dbClient, sanitizedEvents);
+
+  if (command.idempotencyKey && command.organizerId) {
+    await dbClient
+      .update(moneyCommandIngestions)
+      .set({
+        status: 'completed',
+        eventCount: sanitizedEvents.length,
+        responseSummaryJson: {
+          stage: 'completed',
+          traceId: command.traceId,
+          eventCount: sanitizedEvents.length,
+        },
+        lastSeenAt: new Date(),
+      })
+      .where(
+        and(
+          eq(moneyCommandIngestions.organizerId, command.organizerId),
+          eq(moneyCommandIngestions.idempotencyKey, command.idempotencyKey),
+        ),
+      );
+  }
+
+  return {
+    traceId: command.traceId,
+    persistedEvents: sanitizedEvents,
+    deduplicated: false,
+    volumeRollupsWritten: rollupResult.wroteRollups,
+  };
+}
+
+export async function moneyMutationIngress(command: MoneyMutationIngressCommand): Promise<{
+  traceId: string;
+  persistedEvents: CanonicalMoneyEventV1[];
+  deduplicated: boolean;
+  duplicateOfTraceId?: string;
+}> {
+  const sanitizedEvents = sanitizeCanonicalEvents(command);
+  const result = await db.transaction((tx) =>
+    persistMoneyMutation({
+      dbClient: tx,
+      command,
+      sanitizedEvents,
+    }),
+  );
+
+  if (
+    !result.deduplicated &&
+    result.volumeRollupsWritten
+  ) {
+    revalidateAdminPaymentCaptureVolumeCaches();
+  }
 
   return result;
+}
+
+export async function moneyMutationIngressInTransaction(
+  tx: MoneyMutationIngressTransaction,
+  command: MoneyMutationIngressCommand,
+): Promise<{
+  traceId: string;
+  persistedEvents: CanonicalMoneyEventV1[];
+  deduplicated: boolean;
+  duplicateOfTraceId?: string;
+}> {
+  const sanitizedEvents = sanitizeCanonicalEvents(command);
+  return persistMoneyMutation({
+    dbClient: tx,
+    command,
+    sanitizedEvents,
+  });
 }
 
 async function getMoneyTraceEvents(traceId: string): Promise<PersistedMoneyEvent[]> {

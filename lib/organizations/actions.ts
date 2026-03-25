@@ -11,6 +11,7 @@ import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import type { AuthContext } from '@/lib/auth/server';
 import type { OrgMembershipRole } from '@/lib/events/constants';
 import { ORG_MEMBERSHIP_ROLES } from '@/lib/events/constants';
+import { safeRevalidateTag } from '@/lib/next-cache';
 
 import { getOrgMembership, requireOrgPermission } from './permissions';
 import { lookupUserByEmail as lookupUserByEmailQuery } from './queries';
@@ -100,6 +101,35 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
   return null;
 }
 
+function userOrganizationsTag(userId: string): string {
+  return `user-organizations:${userId}`;
+}
+
+function organizationTag(organizationId: string): string {
+  return `organization:${organizationId}`;
+}
+
+function organizationMembersTag(organizationId: string): string {
+  return `organization-members:${organizationId}`;
+}
+
+function revalidateOrganizationQueryTags(params: {
+  organizationId?: string;
+  userIds?: string[];
+}) {
+  safeRevalidateTag('organizations:all', { expire: 0 });
+
+  if (params.organizationId) {
+    safeRevalidateTag(organizationTag(params.organizationId), { expire: 0 });
+    safeRevalidateTag(organizationMembersTag(params.organizationId), { expire: 0 });
+  }
+
+  const uniqueUserIds = [...new Set((params.userIds ?? []).filter((value) => value.length > 0))];
+  for (const userId of uniqueUserIds) {
+    safeRevalidateTag(userOrganizationsTag(userId), { expire: 0 });
+  }
+}
+
 // =============================================================================
 // Actions
 // =============================================================================
@@ -170,6 +200,11 @@ export const createOrganization = withAuthenticatedUser<ActionResult<Organizatio
     }
 
     return org;
+  });
+
+  revalidateOrganizationQueryTags({
+    organizationId: result.id,
+    userIds: [authContext.user.id],
   });
 
   return {
@@ -262,6 +297,11 @@ export const updateOrganization = withAuthenticatedUser<ActionResult<Organizatio
     return updatedOrg;
   });
 
+  revalidateOrganizationQueryTags({
+    organizationId,
+    userIds: [authContext.user.id],
+  });
+
   return {
     ok: true,
     data: {
@@ -345,6 +385,11 @@ export const addOrgMember = withAuthenticatedUser<ActionResult<{ membershipId: s
     }
 
     return membership;
+  });
+
+  revalidateOrganizationQueryTags({
+    organizationId,
+    userIds: [authContext.user.id, userId],
   });
 
   return { ok: true, data: { membershipId: newMembership.id } };
@@ -433,6 +478,11 @@ export const updateOrgMember = withAuthenticatedUser<ActionResult>({
     }
   });
 
+  revalidateOrganizationQueryTags({
+    organizationId,
+    userIds: [authContext.user.id, userId],
+  });
+
   return { ok: true, data: undefined };
 });
 
@@ -516,6 +566,11 @@ export const removeOrgMember = withAuthenticatedUser<ActionResult>({
     if (!auditResult.ok) {
       throw new Error('Failed to create audit log');
     }
+  });
+
+  revalidateOrganizationQueryTags({
+    organizationId,
+    userIds: [authContext.user.id, userId],
   });
 
   return { ok: true, data: undefined };
@@ -627,6 +682,15 @@ export const deleteOrganization = withAuthenticatedUser<ActionResult>({
     };
   }
 
+  const activeMemberships = await db.query.organizationMemberships.findMany({
+    where: and(
+      eq(organizationMemberships.organizationId, organizationId),
+      isNull(organizationMemberships.deletedAt),
+    ),
+    columns: { userId: true },
+  });
+  const affectedUserIds = activeMemberships.map((membershipRow) => membershipRow.userId);
+
   // Soft delete organization and all memberships in a transaction
   const requestContext = await getRequestContext(await headers());
   await db.transaction(async (tx) => {
@@ -664,6 +728,11 @@ export const deleteOrganization = withAuthenticatedUser<ActionResult>({
     if (!auditResult.ok) {
       throw new Error('Failed to create audit log');
     }
+  });
+
+  revalidateOrganizationQueryTags({
+    organizationId,
+    userIds: [authContext.user.id, ...affectedUserIds],
   });
 
   return { ok: true, data: undefined };

@@ -27,20 +27,35 @@ describe('PayoutLifecycleRail', () => {
             reasonCode: 'risk_check_required',
             amountMinor: 120_000,
           },
+          {
+            eventId: 'evt-unknown',
+            eventName: 'payout.retrying',
+            status: 'processing',
+            occurredAt: new Date('2026-03-03T10:20:00.000Z'),
+            reasonCode: null,
+            amountMinor: null,
+          } as never,
         ]}
       />,
     );
 
     const timelineItems = screen.getAllByRole('listitem');
-    expect(timelineItems).toHaveLength(2);
-    expect(within(timelineItems[0]).getByText('payout.requested')).toBeInTheDocument();
+    expect(timelineItems).toHaveLength(3);
+    expect(within(timelineItems[0]).getByText('detail.events.requested.title')).toBeInTheDocument();
     expect(within(timelineItems[0]).getByText('payouts.statuses.requested')).toBeInTheDocument();
-    expect(within(timelineItems[1]).getByText('payout.paused')).toBeInTheDocument();
+    expect(within(timelineItems[1]).getByText('detail.events.paused.title')).toBeInTheDocument();
     expect(within(timelineItems[1]).getByText('payouts.statuses.paused')).toBeInTheDocument();
-    expect(within(timelineItems[1]).getByText('detail.stateReason')).toBeInTheDocument();
-    expect(within(timelineItems[1]).getByText('risk_check_required')).toBeInTheDocument();
-    expect(within(timelineItems[1]).getByText('detail.amountSummary')).toBeInTheDocument();
+    expect(within(timelineItems[1]).getByText(/detail\.stateReason/)).toBeInTheDocument();
+    expect(
+      within(timelineItems[1]).getByText(/detail\.reasonFamilies\.genericReview/),
+    ).toBeInTheDocument();
+    expect(within(timelineItems[1]).queryByText('risk_check_required')).not.toBeInTheDocument();
+    expect(within(timelineItems[1]).getByText('evt-paused')).toBeInTheDocument();
+    expect(within(timelineItems[1]).getByText(/detail\.amountSummary/)).toBeInTheDocument();
     expect(within(timelineItems[1]).getByText(/1,200\.00/)).toBeInTheDocument();
+    expect(within(timelineItems[2]).getByText('detail.events.genericTitle')).toBeInTheDocument();
+    expect(within(timelineItems[2]).getByText('detail.events.genericDescription')).toBeInTheDocument();
+    expect(within(timelineItems[2]).queryByText('Payout Retrying')).not.toBeInTheDocument();
   });
 
   it('shows empty-state copy when there are no lifecycle events', () => {

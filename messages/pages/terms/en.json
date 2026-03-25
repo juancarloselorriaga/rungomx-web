@@ -1,0 +1,142 @@
+{
+  "hero": {
+    "badge": "Terms of Service",
+    "title": "Terms for using RunGoMX",
+    "description": "These terms explain the main expectations for using RunGoMX public pages, registrations, accounts, Race Director workflows, results, and related features.",
+    "primaryCta": "Contact support",
+    "secondaryCta": "Review privacy"
+  },
+  "summary": {
+    "eyebrow": "Plain-language summary",
+    "title": "What these terms are meant to cover",
+    "description": "RunGoMX powers public event pages, registrations, payments, results, rankings, and Race Director workflows. These terms explain how that platform relationship works without replacing event-specific rules set by event organizers.",
+    "highlights": [
+      "Use the platform with accurate information and in ways that do not harm the service, event organizers, or other users.",
+      "Event details, pricing, waivers, cancellations, and race-day logistics may come from event organizers, not only from RunGoMX.",
+      "Registrations, payments, refunds, and event availability can depend on event organizer terms, payment processing, and operational conditions.",
+      "Results, rankings, and public event information may remain visible as part of the platform’s normal public sports context."
+    ]
+  },
+  "sections": {
+    "eyebrow": "Terms details",
+    "title": "Terms for public pages, registrations, and event operations",
+    "description": "These sections are written to be clear and practical. They focus on the real platform flows visible in RunGoMX today.",
+    "items": {
+      "usingThePlatform": {
+        "title": "Using the platform",
+        "intro": "RunGoMX provides public pages and platform workflows for races and sporting events.",
+        "paragraphs": [
+          "You may use RunGoMX to browse public event information, create an account, register for events, review results, follow rankings, contact support, and participate in Race Director workflows made available on the platform.",
+          "Using the platform means agreeing to follow these terms, any event-specific conditions presented in context, and any reasonable rules needed to protect the service, event organizers, participants, and public visitors."
+        ],
+        "bullets": [
+          "Use RunGoMX only for legitimate event and platform activity",
+          "Follow any event-specific conditions shown during the relevant flow"
+        ]
+      },
+      "accountsAndResponsibility": {
+        "title": "Accounts and user responsibility",
+        "intro": "If you create or use an account, you are responsible for the accuracy of the information tied to it.",
+        "paragraphs": [
+          "Please provide accurate contact, participant, and transaction-related information when the platform asks for it. Keep your account credentials under your control and notify support if you believe an account is being used improperly.",
+          "You are responsible for actions taken through your account or the information you submit, especially when that information affects registrations, event operations, communication, results, or payments."
+        ],
+        "bullets": [
+          "Use accurate information",
+          "Protect account access and credentials",
+          "Do not impersonate other people or organizations"
+        ]
+      },
+      "eventInformationAndOrganizerContent": {
+        "title": "Event information and event organizer content",
+        "intro": "RunGoMX hosts and presents event-related information, but event organizers often control the event itself.",
+        "paragraphs": [
+          "Event names, descriptions, pricing, dates, schedules, policies, logistics, waivers, route details, participant instructions, and availability may be provided or controlled by the event organizer responsible for that event.",
+          "RunGoMX is the platform layer for discovery, registration, operational workflows, and public sports information, but event organizers remain responsible for their event decisions, representations, and event-specific policies."
+        ],
+        "bullets": [
+          "Event organizers may define event-specific rules or requirements",
+          "Users should review event details carefully before registering or participating"
+        ]
+      },
+      "registrationsPaymentsAndTransactions": {
+        "title": "Registrations, payments, and transaction expectations",
+        "intro": "Registrations and payments are operational workflows, not just static page content.",
+        "paragraphs": [
+          "Submitting a registration or payment request through RunGoMX does not eliminate event organizer rules, inventory limits, eligibility criteria, cancellation conditions, or operational review. Confirmation depends on the full workflow completing successfully.",
+          "Payment processing, refunds, charge disputes, and event changes may involve event organizers or third-party payment services. Timing and outcomes can vary depending on the event, the event organizer’s rules, and the payment context."
+        ],
+        "bullets": [
+          "Registration status depends on successful completion of the relevant flow",
+          "Refund or cancellation expectations may be controlled by the event organizer or payment context"
+        ]
+      },
+      "resultsRankingsAndPublicInfo": {
+        "title": "Results, rankings, and public event information",
+        "intro": "RunGoMX supports public sports information as part of the platform experience.",
+        "paragraphs": [
+          "Official results, rankings, event pages, and related public information may be visible to other users or visitors. That visibility is part of the normal sports and event context the platform supports.",
+          "We aim to present information clearly, but results, classifications, updates from event organizers, and event details may change, be corrected, or depend on data provided by the event organizer and operational timing."
+        ],
+        "bullets": [
+          "Public sports information may stay visible as part of event history",
+          "Corrections or disputes may require event organizer review or support follow-up"
+        ]
+      },
+      "acceptableUse": {
+        "title": "Acceptable use",
+        "intro": "The platform must remain trustworthy and usable for everyone involved.",
+        "paragraphs": [
+          "You may not use RunGoMX to submit false information, interfere with platform operations, attempt unauthorized access, abuse event workflows, copy or scrape protected areas in harmful ways, or disrupt the experience for event organizers, runners, or visitors.",
+          "We may limit or suspend access when reasonably necessary to protect the platform, investigate misuse, enforce platform rules, or respond to security, fraud, or legal issues."
+        ],
+        "bullets": [
+          "No fraudulent, abusive, or misleading activity",
+          "No interference with platform security or normal operation",
+          "No misuse of event registrations, participant data, or support channels"
+        ]
+      },
+      "platformChangesInterruptionsAndLimitations": {
+        "title": "Platform changes, interruptions, and limitations",
+        "intro": "A live event platform changes over time.",
+        "paragraphs": [
+          "RunGoMX may update, improve, pause, or remove features, workflows, or public content as the product evolves. Availability can also be affected by event organizer decisions, maintenance, operational incidents, or third-party dependencies.",
+          "While we work to keep the service reliable, platform availability, event accuracy, and uninterrupted access cannot be guaranteed in every situation. Use of the platform remains subject to operational realities and applicable law."
+        ],
+        "bullets": [
+          "Features and workflows may evolve over time",
+          "Temporary interruptions or inaccuracies can happen in real-world event operations"
+        ]
+      },
+      "contactAndLegalQuestions": {
+        "title": "Contact and legal questions",
+        "intro": "Questions should have a clear route.",
+        "paragraphs": [
+          "If you have a question about these terms, need support related to an event workflow, or want to raise a legal concern, contact the RunGoMX team through the public contact page.",
+          "Please include enough detail for us to identify the event, event organizer context, account, registration, or issue involved so the request can be routed correctly."
+        ],
+        "bullets": [
+          "Use the contact page for legal or support questions",
+          "Provide enough context for the team to identify the relevant workflow or event"
+        ]
+      }
+    }
+  },
+  "cta": {
+    "title": "Need help with terms or an event-related issue?",
+    "description": "Send us the event, event organizer, account, or registration details so we can review the request accurately.",
+    "primaryActionLabel": "Go to contact"
+  },
+  "relatedLinks": {
+    "eyebrow": "Related legal page",
+    "title": "Also review our privacy policy",
+    "description": "These terms explain platform use. Our privacy page explains what information may be collected, used, and shared through those workflows.",
+    "items": {
+      "privacy": {
+        "href": "/privacy",
+        "title": "Privacy Policy",
+        "description": "Read how RunGoMX handles account, registration, support, and event-related information."
+      }
+    }
+  }
+}

@@ -2,9 +2,14 @@ import { PayoutRequestForm } from '@/components/payments/payout-request-form';
 import { organizerPaymentsTelemetryStorageKey } from '@/lib/payments/organizer/telemetry';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
+import {
+  queueOrganizerPayoutIntentAction,
+  requestOrganizerPayoutAction,
+} from '@/app/actions/payments-organizer-payouts';
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+  useLocale: () => 'en',
 }));
 
 jest.mock('@/i18n/navigation', () => ({
@@ -25,47 +30,58 @@ jest.mock('@/i18n/navigation', () => ({
   },
 }));
 
-function mockJsonResponse(body: unknown, options?: { ok?: boolean; status?: number }): Response {
-  const ok = options?.ok ?? true;
-  const status = options?.status ?? (ok ? 200 : 500);
-  return {
-    ok,
-    status,
-    json: async () => body,
-  } as Response;
-}
+jest.mock('@/app/actions/payments-organizer-payouts', () => ({
+  requestOrganizerPayoutAction: jest.fn(),
+  queueOrganizerPayoutIntentAction: jest.fn(),
+}));
 
 describe('PayoutRequestForm', () => {
-  const originalFetch = global.fetch;
+  const mockRequestOrganizerPayoutAction = requestOrganizerPayoutAction as jest.MockedFunction<
+    typeof requestOrganizerPayoutAction
+  >;
+  const mockQueueOrganizerPayoutIntentAction =
+    queueOrganizerPayoutIntentAction as jest.MockedFunction<typeof queueOrganizerPayoutIntentAction>;
 
   beforeEach(() => {
-    global.fetch = jest.fn();
+    mockRequestOrganizerPayoutAction.mockReset();
+    mockQueueOrganizerPayoutIntentAction.mockReset();
     delete (window as typeof window & { __RUNGO_PAYMENTS_SMOKE_TELEMETRY__?: unknown })
       .__RUNGO_PAYMENTS_SMOKE_TELEMETRY__;
     window.sessionStorage.removeItem(organizerPaymentsTelemetryStorageKey);
   });
 
   afterEach(() => {
-    global.fetch = originalFetch;
     jest.clearAllMocks();
   });
 
   it('submits a payout request and renders outcome summary', async () => {
-    const fetchMock = global.fetch as jest.Mock;
-
-    fetchMock.mockResolvedValueOnce(
-      mockJsonResponse({
-        data: {
-          payoutQuoteId: 'quote-1',
-          payoutRequestId: 'request-1',
-          payoutContractId: 'contract-1',
-          maxWithdrawableAmountMinor: 100_000,
-          requestedAmountMinor: 50_000,
-        },
-      }),
+    mockRequestOrganizerPayoutAction.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve(
+                {
+                  ok: true,
+                  data: {
+                    payoutQuoteId: 'quote-1',
+                    payoutRequestId: 'request-1',
+                    payoutContractId: 'contract-1',
+                    maxWithdrawableAmountMinor: 100_000,
+                    requestedAmountMinor: 50_000,
+                  },
+                } as never,
+              ),
+            10,
+          );
+        }),
     );
 
     render(<PayoutRequestForm organizationId="org-1" />);
+
+    expect(screen.getByPlaceholderText('request.amountPlaceholder')).toBeInTheDocument();
+    expect(screen.getByText('request.submitHint')).toBeInTheDocument();
+    expect(screen.getByText('request.queuedHint')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('request.amountLabel'), {
       target: { value: '50000' },
@@ -73,13 +89,17 @@ describe('PayoutRequestForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'actions.requestPayout' }));
 
+    expect(
+      screen.getByRole('button', { name: 'request.submittingAction' }),
+    ).toBeInTheDocument();
+
     await waitFor(() => {
       expect(screen.getByText('request.successTitle')).toBeInTheDocument();
     });
 
     expect(screen.getByText(/request.summary.requestId/)).toBeInTheDocument();
-    expect(screen.getByText(/request.summary.quoteId/)).toBeInTheDocument();
-    expect(screen.getByText(/request.summary.contractId/)).toBeInTheDocument();
+    expect(screen.queryByText(/request.summary.quoteId/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/request.summary.contractId/)).not.toBeInTheDocument();
     expect(window.__RUNGO_PAYMENTS_SMOKE_TELEMETRY__).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -89,30 +109,26 @@ describe('PayoutRequestForm', () => {
         }),
       ]),
     );
+    expect(mockRequestOrganizerPayoutAction).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      requestedAmountMinor: '50000',
+    });
   });
 
   it('handles active conflict and submits queued payout intent fallback', async () => {
-    const fetchMock = global.fetch as jest.Mock;
-
-    fetchMock
-      .mockResolvedValueOnce(
-        mockJsonResponse(
-          {
-            code: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED',
-            suggestedAction: 'submit_queue_intent',
-          },
-          { ok: false, status: 409 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        mockJsonResponse({
-          data: {
-            payoutQueuedIntentId: 'queued-1',
-            requestedAmountMinor: 50_000,
-            blockedReasonCode: 'active_payout_lifecycle_conflict',
-          },
-        }),
-      );
+    mockRequestOrganizerPayoutAction.mockResolvedValueOnce({
+      ok: false,
+      error: 'PAYOUT_REQUEST_ACTIVE_CONFLICT_QUEUE_REQUIRED',
+      message: 'active conflict',
+    } as never);
+    mockQueueOrganizerPayoutIntentAction.mockResolvedValueOnce({
+      ok: true,
+      data: {
+        payoutQueuedIntentId: 'queued-1',
+        requestedAmountMinor: 50_000,
+        blockedReasonCode: 'active_payout_lifecycle_conflict',
+      },
+    } as never);
 
     render(<PayoutRequestForm organizationId="org-1" />);
 
@@ -133,6 +149,9 @@ describe('PayoutRequestForm', () => {
     });
 
     expect(screen.getByText(/request.summary.queueIntentId/)).toBeInTheDocument();
+    expect(screen.getByText('request.summary.blockedReasonHuman')).toBeInTheDocument();
+    expect(screen.queryByText(/^request\.summary\.blockedReason$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^request\.summary\.rawBlockedReason$/)).not.toBeInTheDocument();
     expect(window.__RUNGO_PAYMENTS_SMOKE_TELEMETRY__).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -142,18 +161,21 @@ describe('PayoutRequestForm', () => {
         }),
       ]),
     );
+    expect(mockQueueOrganizerPayoutIntentAction).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      requestedAmountMinor: 50000,
+    });
   });
 
   it('guards against duplicate submit while the payout request is in flight', async () => {
-    const fetchMock = global.fetch as jest.Mock;
-
-    fetchMock.mockImplementation(
+    mockRequestOrganizerPayoutAction.mockImplementation(
       () =>
         new Promise((resolve) => {
           setTimeout(
             () =>
               resolve(
-                mockJsonResponse({
+                {
+                  ok: true,
                   data: {
                     payoutQuoteId: 'quote-dup',
                     payoutRequestId: 'request-dup',
@@ -161,7 +183,7 @@ describe('PayoutRequestForm', () => {
                     maxWithdrawableAmountMinor: 100_000,
                     requestedAmountMinor: 50_000,
                   },
-                }),
+                } as never,
               ),
             25,
           );
@@ -182,6 +204,25 @@ describe('PayoutRequestForm', () => {
       expect(screen.getByText('request.successTitle')).toBeInTheDocument();
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mockRequestOrganizerPayoutAction).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a safe localized fallback when the API returns an unknown code', async () => {
+    mockRequestOrganizerPayoutAction.mockResolvedValueOnce({
+      ok: false,
+      error: 'PAYOUT_UNKNOWN_CONDITION',
+    } as never);
+
+    render(<PayoutRequestForm organizationId="org-1" />);
+
+    fireEvent.change(screen.getByLabelText('request.amountLabel'), {
+      target: { value: '50000' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'actions.requestPayout' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('request.errors.unknownAction')).toBeInTheDocument();
+    });
   });
 });

@@ -1,123 +1,330 @@
 {
   "metadata": {
-    "title": "Espacio de pagos",
-    "description": "Sigue el estado de tu cartera, elegibilidad de retiro y ciclo de pagos."
+    "title": "Pagos",
+    "description": "Consulta tu saldo disponible, el estado de tus retiros y el historial."
   },
   "home": {
     "title": "Pagos",
-    "description": "Revisa tu cartera, cola de acciones y elegibilidad de retiros en un solo lugar.",
+    "description": "Consulta tu saldo disponible, tus retiros y el siguiente paso para esta organización.",
     "organization": {
-      "label": "Organización",
+      "title": "Organización activa",
+      "label": "Cambiar organización",
+      "current": "Actual",
+      "count": "{count, plural, one {# organización disponible} other {# organizaciones disponibles}}",
+      "selectedBadge": "Seleccionada",
+      "slugLabel": "Slug",
       "none": "No hay organizaciones disponibles",
-      "help": "Elige la organización que quieres revisar.",
+      "help": "Estás viendo los pagos de esta organización. Cámbiala sólo si necesitas otra.",
       "invalidTitle": "Esta organización no está disponible",
       "invalidDescription": "La organización seleccionada no se pudo cargar para tu cuenta. Elige otra organización e inténtalo de nuevo."
     },
+    "nextStep": {
+      "eyebrow": "Siguiente paso",
+      "requestTitle": "Solicitar un retiro",
+      "requestDescription": "{organization} ya tiene saldo listo para retiro. Solicítalo cuando quieras.",
+      "queueTitle": "Ya hay un retiro en curso",
+      "queueDescription": "Revisa primero el retiro activo de {organization}. Si hace falta, desde aquí también puedes dejar listo el siguiente.",
+      "idleTitle": "Revisa la actividad reciente",
+      "idleDescription": "{organization} todavía no tiene saldo listo para retiro. Mientras tanto, puedes revisar la actividad reciente.",
+      "secondaryTitle": "Historial y estado",
+      "secondaryDescription": "Usa el historial para revisar solicitudes, abrir detalles y seguir cambios de estado."
+    },
     "shell": {
       "loadingTitle": "Cargando espacio de pagos",
-      "loadingDescription": "Estamos preparando la información de cartera y retiros para esta organización.",
-      "emptyTitle": "Aún no hay cartera de organización",
-      "emptyDescription": "Crea o únete a una organización para empezar a gestionar ciclos de retiro desde este espacio.",
-      "degradedTitle": "Los datos de pagos no están disponibles temporalmente",
-      "degradedDescription": "No pudimos cargar la información más reciente de pagos. Reintenta para actualizar este espacio."
+      "loadingAriaLabel": "Cargando pagos",
+      "loadingDescription": "Preparando el saldo y los detalles de retiro de esta organización.",
+      "emptyTitle": "Aún no hay saldo disponible en pagos",
+      "emptyDescription": "Crea o únete a una organización para gestionar retiros aquí.",
+      "partialTitle": "Parte de la información de pagos no está disponible por ahora",
+      "partialWalletDescription": "El saldo y los controles de retiro no están disponibles por ahora. La actividad reciente sigue visible abajo.",
+      "partialQueueDescription": "El saldo y los controles de retiro cargaron, pero la actividad reciente no está disponible por ahora.",
+      "degradedTitle": "Pagos no disponibles por ahora",
+      "degradedDescription": "No pudimos cargar la información más reciente de pagos. Inténtalo de nuevo."
     }
   },
   "actions": {
     "retry": "Reintentar",
     "requestPayout": "Solicitar retiro",
-    "queuePayoutRequest": "Encolar solicitud de retiro",
-    "viewPayouts": "Ver retiros",
-    "openDetails": "Abrir detalle",
-    "viewStatement": "Ver estado"
+    "queuePayoutRequest": "Dejar listo el siguiente retiro",
+    "viewPayouts": "Ver historial de retiros",
+    "viewCurrentPayout": "Abrir retiro actual",
+    "newPayout": "Solicitar retiro",
+    "openDetails": "Abrir detalle del retiro",
+    "viewStatement": "Ver comprobante del retiro"
   },
   "wallet": {
-    "asOf": "Al corte de {timestamp}",
+    "title": "Resumen de saldo",
+    "description": "Tu saldo, agrupado por etapa del flujo de pagos.",
+    "asOf": "Actualizado al {timestamp}",
     "buckets": {
       "available": "Disponible",
       "processing": "En proceso",
-      "frozen": "Congelado",
+      "frozen": "Reservado",
       "debt": "Deuda"
     },
     "queue": {
-      "title": "Cola de acciones",
-      "actionNeeded": "Acción requerida",
-      "inProgress": "En progreso",
-      "actionNeededDescription": "Elementos que requieren una acción del organizador para continuar.",
-      "inProgressDescription": "Elementos actualmente gestionados por el procesamiento de plataforma.",
-      "emptyActionNeeded": "No hay elementos con acción requerida en este momento.",
-      "emptyInProgress": "No hay elementos en progreso en este momento.",
+      "title": "Seguimiento y próximos pasos",
+      "description": "Actividad reciente de pagos que puede requerir revisión o seguimiento.",
+      "actionNeeded": "Requiere atención",
+      "inProgress": "En proceso",
+      "actionNeededDescription": "Elementos que conviene revisar antes de que avance el siguiente retiro.",
+      "inProgressDescription": "Elementos que siguen avanzando y por ahora sólo necesitan monitoreo.",
+      "emptyActionNeeded": "No hay elementos que requieran atención ahora mismo.",
+      "emptyInProgress": "No hay nada en proceso ahora mismo.",
+      "emptyTitle": "No hay seguimiento pendiente por ahora",
+      "emptyDescription": "Aquí verás pausas, validaciones y otras actualizaciones importantes de pagos.",
+      "moreItems": "Ver {count, plural, one {# actualización más} other {# actualizaciones más}}",
       "whatChanged": "Qué cambió:",
       "whyItMatters": "Por qué importa:",
       "whatYouCanDoNow": "Qué puedes hacer ahora:",
-      "actionNeededGuidance": "Revisa este elemento antes de solicitar el siguiente ciclo de retiro.",
-      "inProgressGuidance": "Sigue monitoreando este elemento mientras continúa el procesamiento."
+      "actionNeededGuidance": "Revísalo antes de solicitar otro retiro.",
+      "inProgressGuidance": "Mantenlo en seguimiento mientras terminamos de procesarlo.",
+      "detailsLabel": "Datos para soporte",
+      "openPayoutAction": "Abrir retiro",
+      "technicalEventLabel": "Evento interno",
+      "traceLabel": "Traza para soporte",
+      "entityLabel": "Referencia",
+      "rawReasonLabel": "Código para soporte",
+      "referenceLabel": "Referencia #{id}",
+      "genericTitle": "Estamos actualizando este estado de pago",
+      "genericDescription": "Hay una actualización reciente de pagos para esta organización.",
+      "events": {
+        "payoutQueued": {
+          "title": "Tu siguiente retiro ya quedó listo",
+          "description": "Lo iniciaremos automáticamente cuando el retiro actual deje de bloquearlo."
+        },
+        "payoutRequested": {
+          "title": "Recibimos tu solicitud de retiro",
+          "description": "Registramos la solicitud y comenzó el proceso."
+        },
+        "payoutProcessing": {
+          "title": "Tu retiro se está revisando",
+          "description": "Estamos validando la solicitud y avanzando con el procesamiento."
+        },
+        "payoutPaused": {
+          "title": "Tu retiro está en pausa",
+          "description": "El retiro está en revisión. Si necesitas hacer algo, lo verás aquí."
+        },
+        "payoutResumed": {
+          "title": "El retiro volvió a avanzar",
+          "description": "La revisión terminó y el proceso siguió avanzando."
+        },
+        "payoutCompleted": {
+          "title": "Tu retiro se completó",
+          "description": "El retiro terminó correctamente y quedó cerrado."
+        },
+        "payoutFailed": {
+          "title": "Tu retiro no pudo completarse",
+          "description": "Este retiro necesita seguimiento antes de solicitar otro."
+        },
+        "payoutAdjusted": {
+          "title": "Cambió el monto del retiro",
+          "description": "Durante la revisión cambió el monto o el estado del retiro."
+        },
+        "debtPauseRequired": {
+          "title": "La deuda está frenando el siguiente retiro",
+          "description": "Una regla de saldo pausó el flujo hasta que la deuda baje."
+        },
+        "debtResumeAllowed": {
+          "title": "La deuda ya no bloquea los retiros",
+          "description": "El saldo mejoró y el flujo de retiro puede seguir."
+        },
+        "disputeOpened": {
+          "title": "Hay una disputa de pago por revisar",
+          "description": "La disputa puede requerir evidencia o seguimiento antes de que los retiros sigan normalmente."
+        },
+        "subscriptionRenewalFailed": {
+          "title": "Falló el cobro de tu suscripción",
+          "description": "Actualiza tu facturación para evitar interrupciones en tus herramientas de pago."
+        },
+        "refundExecuted": {
+          "title": "Se completó un reembolso",
+          "description": "Se aplicó un reembolso y ya forma parte de tu historial financiero."
+        }
+      }
     }
   },
   "request": {
-    "title": "Solicitud de retiro",
-    "description": "Ingresa un monto en unidades menores MXN para iniciar el siguiente ciclo de retiro.",
-    "amountLabel": "Monto solicitado (unidades menores)",
-    "amountHint": "Déjalo vacío para solicitar el máximo retirable actual.",
-    "submitHint": "Al enviar se crea una cotización de retiro y su ciclo.",
-    "queuedHint": "Si ya existe un retiro activo, puedes encolar esta solicitud como siguiente intento.",
-    "successTitle": "Solicitud de retiro creada",
-    "queueSuccessTitle": "Intento de retiro encolado",
+    "title": "Solicitar retiro",
+    "description": "Solicita un retiro aquí. Si ya hay uno en curso, puedes dejar listo el siguiente.",
+    "amountLabel": "Monto a retirar",
+    "amountPlaceholder": "150000",
+    "amountHint": "Escribe un monto entero o deja el campo vacío para solicitar todo lo disponible en este momento.",
+    "amountExample": "Ejemplo: 150000 equivale a $1,500.00 MXN.",
+    "submitHint": "Al enviar, registramos tu solicitud y comienza la revisión del retiro.",
+    "queuedHint": "Si otro retiro ya va avanzando, puedes dejar listo éste para que siga después.",
+    "submittingAction": "Enviando solicitud de retiro",
+    "queueSubmittingAction": "Guardando siguiente retiro",
+    "successTitle": "Retiro solicitado",
+    "successDescription": "Tu solicitud ya quedó registrada. Puedes seguirla desde el detalle del retiro.",
+    "queueSuccessTitle": "Siguiente retiro listo",
+    "queueSuccessDescription": "Esta solicitud se activará automáticamente cuando termine el retiro actual.",
     "conflictTitle": "Ya existe un retiro activo",
-    "conflictDescription": "Esta organización ya tiene un ciclo de retiro activo. Encola una solicitud para ejecutarla cuando termine el ciclo actual.",
+    "conflictDescription": "Esta organización ya tiene un retiro en curso. Puedes dejar listo el siguiente para que se active cuando termine.",
+    "technicalDetailsLabel": "Datos para soporte",
     "errors": {
-      "invalidAmount": "Ingresa un monto positivo válido en unidades menores.",
-      "submitFailed": "No se pudo crear la solicitud de retiro en este momento.",
-      "queueRequiresAmount": "Se requiere un monto válido para encolar el intento de retiro.",
-      "queueFailed": "No se pudo crear el intento de retiro en cola en este momento."
+      "invalidAmount": "Ingresa un monto entero y positivo.",
+      "submitFailed": "No pudimos crear la solicitud de retiro en este momento.",
+      "queueRequiresAmount": "Ingresa un monto válido para dejar listo el siguiente retiro.",
+      "queueFailed": "No pudimos dejar listo el siguiente retiro en este momento.",
+      "unknownAction": "No pudimos completar esta acción. Intenta nuevamente o contacta soporte.",
+      "notEligible": "Esta organización todavía no tiene saldo listo para retiro.",
+      "amountExceedsAvailable": "El monto que ingresaste es mayor al saldo disponible para retiro.",
+      "queueNotNeeded": "Ya puedes solicitar el retiro directamente, así que no hace falta dejar otro listo.",
+      "queueAlreadyExists": "Ya hay un retiro listo para esta organización."
     },
     "summary": {
-      "requestId": "ID de solicitud:",
-      "quoteId": "ID de cotización:",
-      "contractId": "ID de contrato:",
-      "maxWithdrawable": "Máximo retirable:",
-      "queueIntentId": "ID de intento en cola:",
+      "requestId": "Referencia del retiro:",
+      "quoteId": "Referencia de cálculo:",
+      "contractId": "Referencia de procesamiento:",
+      "maxWithdrawable": "Disponible al momento de solicitar:",
+      "queueIntentId": "Referencia del siguiente retiro:",
       "requestedAmount": "Monto solicitado:",
-      "blockedReason": "Razón de bloqueo:"
+      "blockedReason": "Motivo interno:",
+      "blockedReasonHuman": "Por qué empezará después",
+      "rawBlockedReason": "Código para soporte:"
     }
   },
   "payouts": {
     "title": "Retiros",
-    "description": "Revisa estados actuales e históricos del ciclo de retiros.",
-    "emptyTitle": "Aún no hay historial de retiros",
-    "emptyDescription": "Tus solicitudes aparecerán aquí cuando envíes el primer ciclo de retiro.",
+    "description": "Revisa tus retiros anteriores y abre uno sólo cuando necesites más contexto.",
+    "historyTitle": "Historial",
+    "historyDescription": "Sigue estados, montos y fechas sin mezclar el historial con el formulario de retiro.",
+    "scopeSummary": "Mostrando {start}-{end} de {total} {total, plural, one {retiro} other {retiros}}",
+    "scopeHint": "Los retiros más recientes aparecen primero. Esta vista muestra hasta {pageSize} filas por página.",
+    "pageStatus": "Página {page} de {pageCount}",
+    "firstPageLabel": "Primera",
+    "previousPageLabel": "Anterior",
+    "nextPageLabel": "Siguiente",
+    "lastPageLabel": "Última",
+    "emptyTitle": "Aún no hay retiros registrados",
+    "emptyDescription": "Tu primer retiro aparecerá aquí con su estado y fecha.",
     "table": {
       "requestId": "Solicitud",
+      "requestLabel": "Solicitud #{id}",
       "status": "Estado",
       "requested": "Solicitado",
       "currentAmount": "Monto actual",
-      "requestedAt": "Solicitado en"
+      "requestedAt": "Fecha",
+      "open": "Abrir"
     },
     "statuses": {
       "requested": "Solicitado",
       "processing": "En proceso",
-      "paused": "Pausado",
+      "paused": "En pausa",
       "completed": "Completado",
-      "failed": "Fallido"
+      "failed": "No completado"
     }
   },
   "detail": {
-    "title": "Detalle de retiro",
-    "description": "Inspecciona el progreso del ciclo, códigos de razón y disponibilidad de estado.",
-    "stateTimeline": "Línea de tiempo del ciclo",
-    "noEvents": "Aún no hay eventos de ciclo disponibles para esta solicitud.",
-    "stateReason": "Razón",
-    "amountSummary": "Resumen de montos",
+    "title": "Detalle del retiro",
+    "pageTitle": "Retiro #{id}",
+    "loadingAriaLabel": "Cargando detalle del retiro",
+    "description": "Consulta el estado actual, el historial y los montos clave de este retiro.",
+    "summaryTitle": "Resumen del retiro",
+    "summaryDescription": "Este resumen muestra el estado actual y los montos clave de este retiro.",
+    "organizationLabel": "Organización:",
+    "requestedAmountLabel": "Monto solicitado",
+    "currentAmountLabel": "Monto actual",
+    "maxWithdrawableLabel": "Disponible al solicitar",
+    "requestedAtLabel": "Solicitado",
+    "includedAmountLabel": "Monto incluido",
+    "deductionAmountLabel": "Deducciones",
+    "traceIdLabel": "Traza para soporte",
+    "stateTimeline": "Historial del retiro",
+    "stateTimelineDescription": "Cada actualización muestra qué cambió y cuándo pasó.",
+    "noEvents": "Todavía no hay actualizaciones para esta solicitud.",
+    "stateReason": "Motivo",
+    "amountSummary": "Monto",
+    "technicalDetailsLabel": "Datos para soporte",
+    "technicalEventLabel": "Evento interno",
+    "rawReasonLabel": "Código para soporte",
+    "eventReferenceLabel": "Referencia para soporte",
     "notFoundTitle": "No se encontró la solicitud",
     "notFoundDescription": "La solicitud seleccionada no se encontró para esta organización.",
+    "reasonFamilies": {
+      "activePayout": "Ya existe otro retiro en curso",
+      "manualReview": "Este retiro necesita revisión manual",
+      "bankRejected": "Los datos bancarios requieren atención",
+      "processing": "Este retiro sigue en proceso",
+      "paused": "Este retiro está en pausa",
+      "failed": "Este retiro no pudo avanzar",
+      "genericReview": "El equipo de pagos necesita revisar este retiro"
+    },
+    "events": {
+      "genericTitle": "Estamos actualizando este estado del retiro",
+      "genericDescription": "Hubo una actualización en este retiro.",
+      "requested": {
+        "title": "Se creó la solicitud de retiro",
+        "description": "Registramos el retiro y comenzó su proceso."
+      },
+      "processing": {
+        "title": "El retiro pasó a proceso",
+        "description": "Estamos validando y conciliando la solicitud."
+      },
+      "paused": {
+        "title": "El retiro se puso en pausa",
+        "description": "El retiro está en revisión. Si necesitas hacer algo, aparecerá aquí."
+      },
+      "resumed": {
+        "title": "El retiro volvió a avanzar",
+        "description": "La revisión terminó y el retiro siguió avanzando."
+      },
+      "completed": {
+        "title": "El retiro se completó",
+        "description": "El ciclo terminó correctamente y el retiro quedó cerrado."
+      },
+      "failed": {
+        "title": "El retiro no pudo completarse",
+        "description": "El retiro terminó con un problema. Revísalo antes de solicitar otro."
+      },
+      "adjusted": {
+        "title": "Cambió el monto del retiro",
+        "description": "Durante la revisión cambió el monto o la configuración del retiro."
+      }
+    },
     "statement": {
-      "ready": "Estado disponible",
-      "notFound": "El estado no está disponible para esta solicitud.",
-      "notTerminal": "El estado estará disponible cuando el retiro llegue a un estado terminal.",
-      "error": "No se pudo cargar el estado en este momento."
+      "title": "Comprobante del retiro",
+      "description": "Cuando el retiro termine, aquí podrás revisar el resumen final. La referencia para soporte sólo se usa si nuestro equipo te la pide.",
+      "loadingAction": "Abriendo comprobante",
+      "ready": "El comprobante ya está listo.",
+      "notFound": "Todavía no hay comprobante para este retiro.",
+      "notTerminal": "El comprobante aparecerá cuando el retiro llegue a un estado final.",
+      "error": "No pudimos cargar el comprobante en este momento.",
+      "summaryTitle": "Resumen del comprobante",
+      "summaryDescription": "Usa este resumen para confirmar el resultado del retiro sin entrar a referencias internas.",
+      "finalStatusLabel": "Estado final",
+      "finalAmountLabel": "Monto final",
+      "requestedAmountLabel": "Monto solicitado",
+      "generatedAtLabel": "Generado el",
+      "adjustedSummary": "El retiro terminó en {terminal} después de ajustarse desde {original}.",
+      "technicalDetailsLabel": "Referencia para soporte",
+      "fingerprintLabel": "Referencia del comprobante",
+      "fingerprintDescription": "Guarda esta referencia sólo si soporte te la pide. Para el seguimiento normal del retiro casi nunca hace falta.",
+      "showFingerprint": "Mostrar huella",
+      "hideFingerprint": "Ocultar huella",
+      "copyAction": "Copiar referencia",
+      "copySuccess": "Referencia copiada",
+      "copyError": "No se pudo copiar la referencia."
     }
   },
   "nav": {
     "backToPayments": "Volver a pagos",
-    "backToPayouts": "Volver a retiros"
+    "backToPayouts": "Volver al historial de retiros"
+  },
+  "eventContext": {
+    "eyebrow": "Pagos de la organización",
+    "note": "Los retiros se gestionan a nivel organización. Este evento comparte el mismo saldo y el mismo historial de retiros.",
+    "organizationLabel": "Organización",
+    "scopeLabel": "Qué esperar",
+    "viewPayoutsAction": "Ver retiros",
+    "homeDescription": "Consulta el saldo disponible de {organization}, revisa el retiro actual y solicita el siguiente sin salir de este evento.",
+    "payoutsDescription": "Este evento comparte el historial de retiros de {organization}. Aquí estás viendo la actividad de la organización.",
+    "payoutsHistoryTitle": "Retiros de la organización",
+    "payoutsHistoryDescription": "Historial compartido de retiros de {organization}, para revisar estados, montos y fechas sin salir del evento.",
+    "detailDescription": "Este retiro forma parte del flujo financiero compartido de {organization}.",
+    "detailNotFoundDescription": "No pudimos encontrar este retiro dentro del flujo financiero compartido de la organización del evento.",
+    "backToEvent": "Volver al evento",
+    "backToOverview": "Resumen"
   }
 }

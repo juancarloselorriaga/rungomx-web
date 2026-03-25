@@ -11,6 +11,7 @@
   "noAccount": "Don't have an account?",
   "hasAccount": "Already have an account?",
   "createAccount": "Create account",
+  "guest": "Guest",
   "welcome": "Welcome",
   "welcomeBack": "Welcome back",
   "continueWithGoogle": "Continue with Google",

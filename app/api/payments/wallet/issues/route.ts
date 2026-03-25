@@ -1,11 +1,13 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { organizations } from '@/db/schema';
-import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
-import { getOrgMembership } from '@/lib/organizations/permissions';
+import {
+  findActivePaymentsOrganization,
+  parsePaymentsQuery,
+  requireAuthenticatedPaymentsContext,
+  requireOrganizerReadAccess,
+  withNoStore,
+} from '@/app/api/payments/_shared';
 import { getOrganizerWalletIssueActivity } from '@/lib/payments/wallet/issue-activity';
 
 const querySchema = z.object({
@@ -21,16 +23,15 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const authContext = authResult.context;
 
-  const url = new URL(request.url);
-  const parseResult = querySchema.safeParse({
-    organizationId: url.searchParams.get('organizationId'),
-  });
+  const parseResult = parsePaymentsQuery(request, querySchema, (searchParams) => ({
+    organizationId: searchParams.get('organizationId'),
+  }));
 
   if (!parseResult.success) {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid organizationId',
+          error: 'INVALID_ORGANIZATION_ID',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -40,20 +41,14 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const { organizationId } = parseResult.data;
 
-  if (!authContext.permissions.canManageEvents) {
-    const membership = await getOrgMembership(authContext.user.id, organizationId);
-    if (!membership) {
-      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
-    }
+  const accessResult = await requireOrganizerReadAccess(authContext, organizationId);
+  if (!accessResult.ok) {
+    return accessResult.response;
   }
 
-  const organization = await db.query.organizations.findFirst({
-    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
-    columns: { id: true },
-  });
-
-  if (!organization) {
-    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
+  const organizationResult = await findActivePaymentsOrganization(organizationId);
+  if (!organizationResult.ok) {
+    return organizationResult.response;
   }
 
   try {
@@ -71,10 +66,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       meta: {
         actionNeededCount: activity.actionNeededCount,
         inProgressCount: activity.inProgressCount,
-        semantics: {
-          actionNeededLabel: 'Action Needed',
-          inProgressLabel: 'In Progress',
-        },
       },
     });
 
@@ -87,6 +78,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       error,
     });
 
-    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+    return withNoStore(NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 }));
   }
 }

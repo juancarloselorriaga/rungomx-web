@@ -312,19 +312,19 @@
     },
     "payout": {
       "title": "Payout Settings",
-      "description": "Configure how you receive event registration payments.",
-      "accessRestriction": "Only organization owners and admins can view and edit payout settings.",
-      "emptyState": "No payout profile configured yet. Add your banking information to receive payments.",
+      "description": "Add the legal and bank details we use to send payouts from your event registrations.",
+      "accessRestriction": "Only organization owners and admins can view or update payout details.",
+      "emptyState": "No payout profile yet. Add your bank details so we can send payouts.",
       "fields": {
         "legalName": {
-          "label": "Legal Name",
+          "label": "Legal name",
           "placeholder": "Business or Individual Name",
-          "hint": "The name that will appear on bank transfers"
+          "hint": "This is the name that will appear on bank transfers."
         },
         "rfc": {
           "label": "RFC (Tax ID)",
           "placeholder": "XAXX010101000",
-          "hint": "Mexican Tax Identification Number (12-13 characters)"
+          "hint": "Mexican tax ID number (12-13 characters)."
         },
         "bankName": {
           "label": "Bank Name",
@@ -336,30 +336,30 @@
           "hint": "18-digit interbank account number"
         },
         "accountHolder": {
-          "label": "Account Holder Name",
-          "placeholder": "Name as it appears on bank account"
+          "label": "Account holder name",
+          "placeholder": "Name as it appears on the bank account"
         }
       },
       "sections": {
-        "taxInfo": "Tax Information",
-        "bankInfo": "Bank Account"
+        "taxInfo": "Tax details",
+        "bankInfo": "Bank account"
       },
       "buttons": {
-        "save": "Save Payout Settings",
+        "save": "Save payout details",
         "saving": "Saving..."
       },
       "success": {
-        "toast": "Payout settings saved successfully"
+        "toast": "Payout details saved"
       },
       "errors": {
-        "forbidden": "Only owners and admins can update payout settings.",
-        "invalidRfc": "Invalid RFC format. Please enter a valid Mexican Tax ID.",
+        "forbidden": "Only owners and admins can update payout details.",
+        "invalidRfc": "Enter a valid RFC.",
         "invalidClabe": "CLABE must be exactly 18 digits.",
-        "generic": "Failed to save payout settings. Please try again."
+        "generic": "We couldn't save the payout details. Please try again."
       },
       "help": {
-        "title": "Why do we need this?",
-        "description": "Payout information is required to transfer registration fees collected from your events. We use this to process secure bank transfers to your account."
+        "title": "Why we ask for this",
+        "description": "We use this information to verify who should receive payouts and to send secure bank transfers for your event registrations."
       }
     }
   }

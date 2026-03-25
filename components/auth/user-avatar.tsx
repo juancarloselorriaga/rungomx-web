@@ -47,7 +47,7 @@ const UserAvatar: FC<UserAvatarProps> = ({
   const avatarElement = (
     <Avatar className={cn(avatarVariants({ size }), className)}>
       {imageUrl && (
-        <AvatarImage src={imageUrl} alt={user?.name || 'User avatar'} className="object-cover" />
+        <AvatarImage src={imageUrl} alt={user?.name || user?.email || ''} className="object-cover" />
       )}
       <AvatarFallback className={cn('cursor-pointer', avatarClassName)}>
         {fallbackContent}

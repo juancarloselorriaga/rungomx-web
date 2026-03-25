@@ -9,9 +9,22 @@ type WebsiteContentRendererProps = {
   mediaUrls?: Map<string, string>;
   showSponsors?: boolean;
   labels?: {
+    noAdditionalContent?: string;
     documents?: string;
     photos?: string;
     terrain?: string;
+    elevationGain?: string;
+    elevationProfile?: string;
+    viewElevationProfile?: string;
+    courseMap?: string;
+    viewCourseMap?: string;
+    aidStations?: string;
+    distance?: string;
+    cutoff?: string;
+    packetPickup?: string;
+    parking?: string;
+    raceDay?: string;
+    startTimes?: string;
     download?: string;
     sponsors?: string;
     gallery?: {
@@ -68,7 +81,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
   ) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>No additional content available at this time.</p>
+        <p>{labels?.noAdditionalContent || 'More event details will be added soon.'}</p>
       </div>
     );
   }
@@ -109,7 +122,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Elevation */}
             {course.elevationGain && (
               <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-2">Elevation Gain</h3>
+                <h3 className="font-semibold mb-2">{labels?.elevationGain || 'Elevation gain'}</h3>
                 <p className="text-sm text-muted-foreground">{course.elevationGain}</p>
               </div>
             )}
@@ -117,14 +130,14 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Elevation Profile */}
             {course.elevationProfileUrl && (
               <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-3">Elevation Profile</h3>
+                <h3 className="font-semibold mb-3">{labels?.elevationProfile || 'Elevation profile'}</h3>
                 <a
                   href={course.elevationProfileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline"
                 >
-                  View Elevation Profile
+                  {labels?.viewElevationProfile || 'View elevation profile'}
                 </a>
               </div>
             )}
@@ -132,14 +145,14 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Course Map */}
             {course.mapUrl && (
               <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-3">Course Map</h3>
+                <h3 className="font-semibold mb-3">{labels?.courseMap || 'Course map'}</h3>
                 <a
                   href={course.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-primary hover:underline"
                 >
-                  View Course Map
+                  {labels?.viewCourseMap || 'View course map'}
                 </a>
               </div>
             )}
@@ -147,16 +160,16 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Aid Stations */}
             {course.aidStations && course.aidStations.length > 0 && (
               <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-4">Aid Stations</h3>
+                <h3 className="font-semibold mb-4">{labels?.aidStations || 'Aid stations'}</h3>
                 <div className="space-y-3">
                   {course.aidStations.map((station, index) => (
                     <div key={index} className="border-l-2 border-primary pl-4">
                       <p className="font-medium">{station.name}</p>
                       <div className="text-sm text-muted-foreground space-y-1">
                         {station.distanceKm !== undefined && (
-                          <p>Distance: {station.distanceKm} km</p>
+                          <p>{labels?.distance || 'Distance'}: {station.distanceKm} km</p>
                         )}
-                        {station.cutoffTime && <p>Cutoff: {station.cutoffTime}</p>}
+                        {station.cutoffTime && <p>{labels?.cutoff || 'Cutoff'}: {station.cutoffTime}</p>}
                         {station.services && <p>{station.services}</p>}
                       </div>
                     </div>
@@ -182,7 +195,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Packet Pickup */}
 	            {schedule.packetPickup && (
 	              <div className="rounded-lg border bg-card p-4">
-	                <h3 className="font-semibold mb-2">Packet Pickup</h3>
+	                <h3 className="font-semibold mb-2">{labels?.packetPickup || 'Packet pickup'}</h3>
 	                <MarkdownContent
 	                  content={schedule.packetPickup}
 	                  className="text-sm text-muted-foreground"
@@ -193,7 +206,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Parking */}
 	            {schedule.parking && (
 	              <div className="rounded-lg border bg-card p-4">
-	                <h3 className="font-semibold mb-2">Parking</h3>
+	                <h3 className="font-semibold mb-2">{labels?.parking || 'Parking'}</h3>
 	                <MarkdownContent
 	                  content={schedule.parking}
 	                  className="text-sm text-muted-foreground"
@@ -204,7 +217,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Race Day */}
 	            {schedule.raceDay && (
 	              <div className="rounded-lg border bg-card p-4">
-	                <h3 className="font-semibold mb-2">Race Day</h3>
+	                <h3 className="font-semibold mb-2">{labels?.raceDay || 'Race day'}</h3>
 	                <MarkdownContent
 	                  content={schedule.raceDay}
 	                  className="text-sm text-muted-foreground"
@@ -215,7 +228,7 @@ export function WebsiteContentRenderer({ blocks, mediaUrls, showSponsors = false
             {/* Start Times */}
             {schedule.startTimes && schedule.startTimes.length > 0 && (
               <div className="rounded-lg border bg-card p-4">
-                <h3 className="font-semibold mb-3">Start Times</h3>
+                <h3 className="font-semibold mb-3">{labels?.startTimes || 'Start times'}</h3>
                 <div className="space-y-2">
                   {schedule.startTimes.map((startTime, index) => (
                     <div

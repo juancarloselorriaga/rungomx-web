@@ -43,6 +43,15 @@ export function PayoutProfileForm({
   initialError,
 }: PayoutProfileFormProps) {
   const t = useTranslations('pages.dashboard.organizations.payout');
+  const translateValidationMessage = (value: string): string => {
+    if (value === 'PAYOUT_PROFILE_INVALID_RFC') {
+      return t('errors.invalidRfc');
+    }
+    if (value === 'PAYOUT_PROFILE_INVALID_CLABE') {
+      return t('errors.invalidClabe');
+    }
+    return t('errors.generic');
+  };
 
   const form = useForm<FormValues, PayoutProfileData>({
     defaultValues: toFormValues(initialProfile),
@@ -62,31 +71,30 @@ export function PayoutProfileForm({
       });
 
       if (!result.ok) {
-        if (result.code === 'VALIDATION_ERROR') {
-          const normalized = result.error.toLowerCase();
+        if (result.error === 'INVALID_INPUT') {
+          const translatedFieldErrors =
+            !('fieldErrors' in result) || result.fieldErrors == null
+              ? undefined
+              : Object.fromEntries(
+                  Object.entries(result.fieldErrors as Record<string, string[]>).map(
+                    ([field, messages]) => [
+                    field,
+                    messages.map((message) => translateValidationMessage(message)),
+                    ],
+                  ),
+                );
 
-          if (normalized.includes('rfc')) {
-            return {
-              ok: false,
-              error: 'INVALID_INPUT',
-              message: t('errors.invalidRfc'),
-              fieldErrors: { rfc: [t('errors.invalidRfc')] },
-            };
-          }
-
-          if (normalized.includes('clabe')) {
-            return {
-              ok: false,
-              error: 'INVALID_INPUT',
-              message: t('errors.invalidClabe'),
-              fieldErrors: { clabe: [t('errors.invalidClabe')] },
-            };
-          }
-
-          return { ok: false, error: 'INVALID_INPUT', message: result.error };
+          return {
+            ...result,
+            message:
+              result.message != null
+                ? translateValidationMessage(result.message)
+                : t('errors.generic'),
+            fieldErrors: translatedFieldErrors,
+          };
         }
 
-        if (result.code === 'FORBIDDEN') {
+        if (result.error === 'FORBIDDEN') {
           return { ok: false, error: 'FORBIDDEN', message: t('errors.forbidden') };
         }
 
@@ -240,4 +248,3 @@ export function PayoutProfileForm({
     </div>
   );
 }
-

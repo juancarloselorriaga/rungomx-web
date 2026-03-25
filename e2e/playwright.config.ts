@@ -25,6 +25,7 @@ const runtimeTarget = resolvePlaywrightRuntimeTarget({
 });
 const origin = runtimeTarget.origin;
 const port = runtimeTarget.port;
+const includeExtendedE2E = process.env.PW_INCLUDE_EXTENDED_E2E?.trim() === 'true';
 
 function getRunId() {
   const raw = process.env.E2E_RUN_ID?.trim();
@@ -55,6 +56,9 @@ webServerEnv.NODE_ENV = nextServerMode === 'dev' ? 'development' : 'production';
 // auth limiter explicitly for the spawned app server instead of relying on
 // NODE_ENV, which Next.js normalizes to "production" under `next start`.
 webServerEnv.E2E_DISABLE_AUTH_RATE_LIMIT = 'true';
+// Demo-pay E2E coverage runs the app through a production build, so the
+// explicit production override must be enabled for the spawned test server.
+webServerEnv.EVENTS_DEMO_PAYMENTS_ALLOW_PRODUCTION = 'true';
 
 if (process.env.DATABASE_URL) {
   webServerEnv.DATABASE_URL = process.env.DATABASE_URL;
@@ -82,6 +86,9 @@ if (process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN) {
 
 export default defineConfig({
   testDir: './tests',
+  // Keep the main E2E gate focused on smoke-level coverage. Broader regression
+  // suites opt in via PW_INCLUDE_EXTENDED_E2E=true.
+  grepInvert: includeExtendedE2E ? undefined : /@extended/,
   // Folder for test artifacts such as screenshots, videos, traces, etc.
   outputDir,
 

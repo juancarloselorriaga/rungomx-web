@@ -1,22 +1,22 @@
 'use client';
 
 import type { OrganizerWalletBuckets } from '@/lib/payments/organizer/ui';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
+import {
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+  PaymentsTimestamp,
+} from './payments-typography';
+import { PaymentsInsetPanel, PaymentsPanel } from './payments-surfaces';
 
 type OrganizerWalletSummaryProps = {
   asOf: string;
   buckets: OrganizerWalletBuckets;
   locale: 'es' | 'en';
 };
-
-function formatMoney(minor: number, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-MX' : 'en-US', {
-    style: 'currency',
-    currency: 'MXN',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(minor / 100);
-}
 
 function formatAsOf(value: string, locale: 'es' | 'en'): string {
   const asOfDate = new Date(value);
@@ -41,19 +41,27 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
   ] as const;
 
   return (
-    <section className="space-y-4" aria-label={t('home.title')}>
-      <p className="text-sm text-muted-foreground">
-        {t('wallet.asOf', { timestamp: formatAsOf(asOf, locale) })}
-      </p>
+    <PaymentsPanel aria-label={t('wallet.title')}>
+      <div className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">{t('wallet.title')}</PaymentsSectionTitle>
+          <PaymentsSectionDescription>{t('wallet.description')}</PaymentsSectionDescription>
+        </div>
+        <PaymentsTimestamp className="text-xs sm:text-sm">
+          {t('wallet.asOf', { timestamp: formatAsOf(asOf, locale) })}
+        </PaymentsTimestamp>
+      </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {cards.map((card) => (
-          <article key={card.key} className="rounded-lg border bg-card p-4 shadow-sm">
-            <p className="text-sm text-muted-foreground">{t(`wallet.buckets.${card.key}`)}</p>
-            <p className="mt-2 text-2xl font-semibold">{formatMoney(card.value, locale)}</p>
-          </article>
+          <PaymentsInsetPanel key={card.key} className="space-y-2">
+            <PaymentsMetricLabel>{t(`wallet.buckets.${card.key}`)}</PaymentsMetricLabel>
+            <PaymentsMetricValue className="text-xl sm:text-[1.75rem]">
+              {formatMoneyFromMinor(card.value, 'MXN', locale)}
+            </PaymentsMetricValue>
+          </PaymentsInsetPanel>
         ))}
       </div>
-    </section>
+    </PaymentsPanel>
   );
 }

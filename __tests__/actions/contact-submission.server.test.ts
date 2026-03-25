@@ -138,7 +138,11 @@ describe('submitContactSubmission', () => {
       expect.objectContaining({
         ok: false,
         error: 'INVALID_INPUT',
-        details: expect.anything(),
+        fieldErrors: expect.objectContaining({
+          message: expect.any(Array),
+          origin: expect.any(Array),
+        }),
+        message: 'INVALID_INPUT',
       }),
     );
     expect(mockRateLimit).not.toHaveBeenCalled();

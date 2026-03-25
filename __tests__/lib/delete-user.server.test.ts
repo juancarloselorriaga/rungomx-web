@@ -11,11 +11,16 @@ type MockDbModule = {
   __reset: () => void;
 };
 
-jest.mock('drizzle-orm', () => ({
-  eq: (...args: unknown[]) => ({ type: 'eq', args }),
-  and: (...args: unknown[]) => ({ type: 'and', args }),
-  isNull: (...args: unknown[]) => ({ type: 'isNull', args }),
-}));
+jest.mock('drizzle-orm', () => {
+  const actual = jest.requireActual('drizzle-orm');
+
+  return {
+    ...actual,
+    eq: (...args: unknown[]) => ({ type: 'eq', args }),
+    and: (...args: unknown[]) => ({ type: 'and', args }),
+    isNull: (...args: unknown[]) => ({ type: 'isNull', args }),
+  };
+});
 
 jest.mock('@/db', () => {
   const state = {

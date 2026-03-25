@@ -27,6 +27,8 @@ type FinancialCaseLookupResult = NonNullable<
 
 const runArtifactGovernanceAdminActionMock = jest.fn();
 const listArtifactGovernanceSummaryAdminActionMock = jest.fn();
+const routerReplaceMock = jest.fn();
+const routerRefreshMock = jest.fn();
 
 jest.mock('@/app/actions/admin-payments-artifacts', () => ({
   runArtifactGovernanceAdminAction: (...args: unknown[]) =>
@@ -37,6 +39,15 @@ jest.mock('@/app/actions/admin-payments-artifacts', () => ({
 
 jest.mock('@/components/admin/dashboard/admin-dashboard-range-selector', () => ({
   AdminDashboardRangeSelector: () => <div data-testid="admin-range-selector" />,
+}));
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    replace: routerReplaceMock,
+    refresh: routerRefreshMock,
+  }),
+  usePathname: () => '/admin/payments',
+  useSearchParams: () => new URLSearchParams('range=30d'),
 }));
 
 jest.mock('@/components/ui/date-picker', () => ({
@@ -56,9 +67,12 @@ jest.mock('@/components/ui/date-picker', () => ({
   ),
 }));
 
-function createLabels<T extends Record<string, string>>(): T {
+function createLabels<T extends Record<string, unknown>>(): T {
   return new Proxy({} as T, {
-    get(_target, property: string | symbol) {
+    get(target, property: string | symbol) {
+      if (typeof property === 'string' && property in target) {
+        return target[property as keyof T];
+      }
       return typeof property === 'string' ? property : '';
     },
   });
@@ -66,8 +80,22 @@ function createLabels<T extends Record<string, string>>(): T {
 
 const caseLookupLabels = createLabels<FinancialCaseLookupLabels>();
 const evidenceLabels = createLabels<EvidencePackReviewLabels>();
-const governanceLabels = createLabels<ArtifactGovernanceLabels>();
-const netRecognizedFeeLabels = createLabels<NetRecognizedFeeLabels>();
+const governanceLabels = Object.assign(createLabels<ArtifactGovernanceLabels>(), {
+  errorMessages: {
+    VALIDATION_FAILED: 'validationFallbackMessage',
+    REQUIRED_FIELD: 'requiredFieldMessage',
+    INVALID_NUMBER: 'invalidNumberMessage',
+    INVALID_STRING: 'invalidStringMessage',
+    INVALID_ENUM: 'invalidEnumMessage',
+    ARTIFACT_TRACE_NOT_FOUND: 'errorMessageForCode:ARTIFACT_TRACE_NOT_FOUND',
+    UNKNOWN_ERROR: 'errorMessageForCode:UNKNOWN_ERROR',
+  },
+});
+const netRecognizedFeeLabels = Object.assign(createLabels<NetRecognizedFeeLabels>(), {
+  sampleTracesScopeLabel: (shown: number, total: number) =>
+    `sampleTracesScopeLabel:${shown}:${total}`,
+  sampleTracesMoreLabel: (count: number) => `sampleTracesMoreLabel:${count}`,
+});
 const mxnReportingLabels = createLabels<MxnReportingLabels>();
 const fxRateManagementLabels = createLabels<FxRateManagementLabels>();
 const debtDisputeExposureLabels: DebtDisputeExposureLabels = {
@@ -91,6 +119,9 @@ const debtDisputeExposureLabels: DebtDisputeExposureLabels = {
   disputeCasesHeader: 'disputeCasesHeader',
   sampleTracesLabel: 'sampleTracesLabel',
   sampleCasesLabel: 'sampleCasesLabel',
+  sampledTraceCountLabel: (count) => `sampledTraceCountLabel:${count}`,
+  sampledCaseCountLabel: (count) => `sampledCaseCountLabel:${count}`,
+  sampledMoreLabel: (count) => `sampledMoreLabel:${count}`,
   currenciesLabel: (count) => `currenciesLabel:${count}`,
   emptyState: 'emptyState',
 };
@@ -299,7 +330,10 @@ const fxFlagsFixture: FxRateActionFlags = {
 const financialCaseLookupResultFixture: FinancialCaseLookupResult = {
   query: 'trace-01',
   normalizedQuery: 'trace-01',
-  totalCaseCount: 1,
+  totalCaseCount: 3,
+  returnedCaseCount: 1,
+  resultLimit: 1,
+  isResultLimitApplied: true,
   cases: [
     {
       traceId: 'trace-01',
@@ -318,7 +352,8 @@ const financialCaseLookupResultFixture: FinancialCaseLookupResult = {
       normalizedIdentifier: 'trace-01',
       displayIdentifier: 'trace-01',
       traceIds: ['trace-01', 'trace-02'],
-      reason: '2 traces matched this identifier',
+      reasonCode: 'multiple_traces_matched',
+      uiReason: 'disambiguationReasonMultipleTraces:2',
     },
   ],
 };
@@ -428,6 +463,8 @@ const governanceSummaryFixture = {
 describe('Payments hardening component coverage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    routerReplaceMock.mockReset();
+    routerRefreshMock.mockReset();
   });
 
   it('shows empty query state in financial case lookup dashboard', () => {
@@ -438,6 +475,8 @@ describe('Payments hardening component coverage', () => {
         searchQuery=""
         result={null}
         labels={caseLookupLabels}
+        summaryLabel={null}
+        summaryLimitedHint={null}
       />,
     );
 
@@ -454,10 +493,15 @@ describe('Payments hardening component coverage', () => {
           query: 'trace-missing',
           normalizedQuery: 'trace-missing',
           totalCaseCount: 0,
+          returnedCaseCount: 0,
+          resultLimit: 20,
+          isResultLimitApplied: false,
           cases: [],
           disambiguationGroups: [],
         }}
         labels={caseLookupLabels}
+        summaryLabel="summaryLabel:0:0"
+        summaryLimitedHint={null}
       />,
     );
 
@@ -472,12 +516,15 @@ describe('Payments hardening component coverage', () => {
         searchQuery="trace-01"
         result={financialCaseLookupResultFixture}
         labels={caseLookupLabels}
+        summaryLabel="summaryLabel:1:3"
+        summaryLimitedHint="summaryLimitedHint:1:3"
       />,
     );
 
     expect(screen.getAllByText('trace-01').length).toBeGreaterThan(0);
-    expect(screen.getByText('2 traces matched this identifier')).toBeInTheDocument();
-    expect(screen.getByText(/summaryLabel:\s*1/)).toBeInTheDocument();
+    expect(screen.getByText('disambiguationReasonMultipleTraces:2')).toBeInTheDocument();
+    expect(screen.getByText('summaryLabel:1:3')).toBeInTheDocument();
+    expect(screen.getByText('summaryLimitedHint:1:3')).toBeInTheDocument();
   });
 
   it('renders no-trace and not-found states in evidence pack review dashboard', () => {
@@ -523,9 +570,9 @@ describe('Payments hardening component coverage', () => {
     );
 
     expect(screen.getByText('sectionTitle')).toBeInTheDocument();
-    expect(screen.getByTestId('admin-range-selector')).toBeInTheDocument();
+    expect(screen.getByText('sampleTracesScopeLabel:1:2')).toBeInTheDocument();
     expect(screen.getByText('trace-net-1')).toBeInTheDocument();
-    expect(screen.getByText('manual_review')).toBeInTheDocument();
+    expect(screen.getAllByText('manual_review')).not.toHaveLength(0);
   });
 
   it('renders debt/dispute exposure dashboard organizer and event rows', () => {
@@ -537,10 +584,12 @@ describe('Payments hardening component coverage', () => {
       />,
     );
 
-    expect(screen.getByText('Organizer One')).toBeInTheDocument();
-    expect(screen.getByText('Main Event')).toBeInTheDocument();
-    expect(screen.getByText('trace-dispute-1')).toBeInTheDocument();
-    expect(screen.getByText('case-1')).toBeInTheDocument();
+    expect(screen.getAllByText('Organizer One')).not.toHaveLength(0);
+    expect(screen.getAllByText('Main Event')).not.toHaveLength(0);
+    expect(screen.getAllByText('sampledTraceCountLabel:1')).not.toHaveLength(0);
+    expect(screen.getAllByText('sampledCaseCountLabel:1')).not.toHaveLength(0);
+    expect(screen.getAllByText('trace-dispute-1')).not.toHaveLength(0);
+    expect(screen.getAllByText('case-1')).not.toHaveLength(0);
   });
 
   it('renders mxn reporting table rows and not-converted fallback label', () => {
@@ -553,13 +602,18 @@ describe('Payments hardening component coverage', () => {
     );
 
     expect(screen.getByText('sectionTitle')).toBeInTheDocument();
-    expect(screen.getByText(/fx-usd-mxn-2026-02-01/)).toBeInTheDocument();
-    expect(screen.getByText('trace-mxn-missing-1')).toBeInTheDocument();
-    expect(screen.getByText('notConvertedLabel')).toBeInTheDocument();
+    expect(
+      screen.getAllByTitle('fx-usd-mxn-2026-02-01 (Feb 1, 2026 · 17.3500)'),
+    ).not.toHaveLength(0);
+    expect(screen.getAllByText('trace-mxn-missing-1')).not.toHaveLength(0);
+    expect(screen.getAllByText('notConvertedLabel')).not.toHaveLength(0);
   });
 
   it('renders fx rate management action flags, form inputs, and rates table', () => {
-    const upsertActionMock = jest.fn();
+    const upsertActionMock = jest.fn().mockResolvedValue({
+      ok: true,
+      data: { rateId: 'fx-rate-created' },
+    });
 
     render(
       <FxRateManagementDashboard
@@ -575,7 +629,7 @@ describe('Payments hardening component coverage', () => {
     expect(screen.getByText(/staleTitle:\s*USD/)).toBeInTheDocument();
     expect(screen.getByLabelText('currencyFieldLabel')).toBeInTheDocument();
     expect(screen.getByLabelText('fxDatePicker')).toBeInTheDocument();
-    expect(screen.getByText('manual_review')).toBeInTheDocument();
+    expect(screen.getAllByText('manual_review')).not.toHaveLength(0);
   });
 
   it('renders fx rate dashboard no-action and empty-rates states', () => {
@@ -590,12 +644,57 @@ describe('Payments hardening component coverage', () => {
           hasActions: false,
         }}
         labels={fxRateManagementLabels}
-        upsertAction={() => undefined}
+        upsertAction={async () => ({ ok: true, data: { rateId: 'fx-rate-created' } })}
       />,
     );
 
     expect(screen.getByText('noActions')).toBeInTheDocument();
     expect(screen.getByText('emptyRates')).toBeInTheDocument();
+  });
+
+  it('submits fx upsert through form action payload', async () => {
+    const upsertActionMock = jest.fn().mockResolvedValue({
+      ok: true,
+      data: { rateId: 'fx-rate-created' },
+    });
+
+    render(
+      <FxRateManagementDashboard
+        locale="en"
+        rates={fxRatesFixture}
+        flags={fxFlagsFixture}
+        labels={fxRateManagementLabels}
+        upsertAction={upsertActionMock}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('currencyFieldLabel'), {
+      target: { value: 'usd' },
+    });
+    fireEvent.change(screen.getByLabelText('fxDatePicker'), {
+      target: { value: '2026-02-06' },
+    });
+    fireEvent.change(screen.getByLabelText('rateFieldLabel'), {
+      target: { value: '17.250000' },
+    });
+    fireEvent.change(screen.getByLabelText('reasonFieldLabel'), {
+      target: { value: 'manual_review' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
+
+    await waitFor(() => {
+      expect(upsertActionMock).toHaveBeenCalledWith({
+        sourceCurrency: 'usd',
+        effectiveDate: '2026-02-06',
+        rateToMxn: '17.250000',
+        reason: 'manual_review',
+      });
+    });
+
+    await waitFor(() => {
+      expect(routerRefreshMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   it('renders evidence summary, ownership state, and artifact rows when pack exists', () => {
@@ -610,11 +709,11 @@ describe('Payments hardening component coverage', () => {
       />,
     );
 
-    expect(screen.getAllByText('Action Needed').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('ownershipStateActionNeededLabel').length).toBeGreaterThan(0);
     expect(screen.getAllByText('support.review_complete').length).toBeGreaterThan(0);
     expect(screen.getAllByText('payout_request:payout-001').length).toBeGreaterThan(0);
-    expect(screen.getByText('fp-v2')).toBeInTheDocument();
-    expect(screen.getByText('organizer@example.com')).toBeInTheDocument();
+    expect(screen.getAllByText('fp-v2')).not.toHaveLength(0);
+    expect(screen.getAllByText('organizer@example.com')).not.toHaveLength(0);
   });
 
   it('renders governance empty states and toggles resend version input enablement', () => {
@@ -716,7 +815,76 @@ describe('Payments hardening component coverage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
 
     await waitFor(() => {
-      expect(screen.getByText('policyDeniedPrefix: ARTIFACT_TRACE_NOT_FOUND (Trace not found)')).toBeInTheDocument();
+      expect(
+        screen.getByText('policyDeniedPrefix: errorMessageForCode:ARTIFACT_TRACE_NOT_FOUND'),
+      ).toBeInTheDocument();
     });
+  });
+
+  it('maps validation codes to localized field copy and validation fallback', async () => {
+    runArtifactGovernanceAdminActionMock.mockResolvedValue({
+      ok: false,
+      error: 'INVALID_INPUT',
+      message: 'VALIDATION_FAILED',
+      fieldErrors: {
+        traceId: ['REQUIRED_FIELD'],
+        artifactVersion: ['INVALID_NUMBER'],
+      },
+    });
+
+    render(
+      <ArtifactGovernanceDashboard
+        locale="en"
+        initialSummary={{ versions: [], deliveries: [] }}
+        labels={governanceLabels}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('operationFieldLabel'), {
+      target: { value: 'resend' },
+    });
+    fireEvent.change(screen.getByLabelText('reasonFieldLabel'), {
+      target: { value: 'manual_review' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('requiredFieldMessage')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('invalidNumberMessage')).toBeInTheDocument();
+    expect(screen.getByText('validationFallbackMessage')).toBeInTheDocument();
+    expect(screen.queryByText('Validation failed')).not.toBeInTheDocument();
+  });
+
+  it('falls back to safe translated copy for unknown validation codes', async () => {
+    runArtifactGovernanceAdminActionMock.mockResolvedValue({
+      ok: false,
+      error: 'INVALID_INPUT',
+      message: 'RAW_BACKEND_MESSAGE',
+      fieldErrors: {
+        traceId: ['RAW_ZOD_MESSAGE'],
+      },
+    });
+
+    render(
+      <ArtifactGovernanceDashboard
+        locale="en"
+        initialSummary={{ versions: [], deliveries: [] }}
+        labels={governanceLabels}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('reasonFieldLabel'), {
+      target: { value: 'manual_review' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'submitLabel' }));
+
+    await waitFor(() => {
+      expect(screen.getAllByText('validationFallbackMessage').length).toBeGreaterThanOrEqual(1);
+    });
+
+    expect(screen.queryByText('RAW_BACKEND_MESSAGE')).not.toBeInTheDocument();
+    expect(screen.queryByText('RAW_ZOD_MESSAGE')).not.toBeInTheDocument();
   });
 });

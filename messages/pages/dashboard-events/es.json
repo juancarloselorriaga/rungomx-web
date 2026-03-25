@@ -169,6 +169,7 @@
       "pricing": "Precios",
       "addOns": "Extras",
       "coupons": "Cupones",
+      "payments": "Pagos",
       "results": "Centro de resultados",
       "groupRegistrations": "Inscripciones grupales",
       "registrations": "Inscripciones",
@@ -305,7 +306,7 @@
       "details": "Detalles"
     },
     "fallbackRows": {
-      "defaultDetails": "Fila de resultados en borrador disponible en el flujo del organizador.",
+      "defaultDetails": "Fila de resultados en borrador disponible en el flujo del Director de Carrera.",
       "capture": {
         "savedLocally": "Guardado localmente desde una sesión de captura móvil.",
         "offlineCheckpoint": "Estado confirmado durante el punto de control sin conexión."
@@ -315,7 +316,7 @@
         "duplicateBib": "Conflicto de dorsal duplicado marcado para revisión."
       },
       "review": {
-        "ready": "Fila de borrador lista para revisión final del organizador.",
+        "ready": "Fila de borrador lista para revisión final del Director de Carrera.",
         "pendingConflict": "Pendiente de resolución de conflicto antes de la revisión final."
       }
     },
@@ -343,7 +344,7 @@
           "safe": "Aún no hay filas de borrador listas para revisión.",
           "next": "Inicia captura o importación para crear un borrador antes de publicar resultados oficiales.",
           "details": {
-            "draftProtection": "Las filas en borrador permanecen protegidas hasta que un organizador publique una versión Oficial.",
+            "draftProtection": "Las filas en borrador permanecen protegidas hasta que un Director de Carrera publique una versión Oficial.",
             "blockersWarningsSummary": "Una vez existan filas en borrador, aquí se resumirán bloqueadores y advertencias."
           }
         },
@@ -432,7 +433,7 @@
       },
       "corrections": {
         "title": "Flujo de correcciones",
-        "description": "Revisa solicitudes pendientes y registra decisiones del organizador con metadatos auditables.",
+        "description": "Revisa solicitudes pendientes y registra decisiones del Director de Carrera con metadatos auditables.",
         "action": "Abrir flujo de correcciones"
       },
       "investigation": {
@@ -464,7 +465,7 @@
         "finishTime": "Tiempo final (ms)"
       },
       "review": {
-        "notePlaceholder": "Nota opcional de decisión del organizador",
+        "notePlaceholder": "Nota opcional de decisión del Director de Carrera",
         "approveAction": "Aprobar solicitud",
         "rejectAction": "Rechazar solicitud",
         "pendingAction": "Guardando decisión...",
@@ -745,7 +746,7 @@
         "details": "Detalles",
         "safeMessage": "Los datos en borrador permanecen protegidos mientras existan conflictos sin resolver.",
         "nextMessage": "Elige una resolución para cada conflicto y vuelve a ejecutar la sincronización.",
-        "detailConflictSummary": "{count} conflictos requieren acción del organizador.",
+        "detailConflictSummary": "{count} conflictos requieren acción del Director de Carrera.",
         "detailDraftProtection": "Los resultados oficiales no cambian hasta finalizar la sincronización."
       }
     },
@@ -764,7 +765,7 @@
       "saveTemplateNamePlaceholder": "Mi mapeo de importación",
       "saveTemplateAction": "Guardar plantilla",
       "templateAppliedMessage": "Plantilla aplicada",
-      "templateSavedMessage": "Plantilla guardada para este alcance de organizador.",
+      "templateSavedMessage": "Plantilla guardada para este alcance de Director de Carrera.",
       "requiredMappingMessage": "Mapea los campos canónicos requeridos antes de guardar una plantilla.",
       "parsingMessage": "Parseando archivo y extrayendo filas de muestra...",
       "mapFieldLabel": "Mapear campo",

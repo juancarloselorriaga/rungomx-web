@@ -3,6 +3,7 @@
 import { useRouter } from '@/i18n/navigation';
 import type { RegistrationListItem } from '@/lib/events/registrations';
 import type { RegistrationStatus } from '@/lib/events/constants';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -148,10 +149,7 @@ export function RegistrationsTable({
 
   const formatCurrency = (cents: number | null) => {
     if (cents === null) return '-';
-    return (cents / 100).toLocaleString(locale, {
-      style: 'currency',
-      currency: 'MXN',
-    });
+    return formatMoneyFromMinor(cents, 'MXN', locale);
   };
 
   return (

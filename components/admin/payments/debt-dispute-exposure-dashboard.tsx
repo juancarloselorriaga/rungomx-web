@@ -1,8 +1,30 @@
+import { SampledReferenceList } from '@/components/admin/payments/sampled-reference-list';
+import {
+  PaymentsDataTable,
+  PaymentsDataTableCell,
+  PaymentsDataTableHead,
+  PaymentsDataTableHeader,
+  PaymentsDataTableRow,
+  PaymentsResponsiveList,
+  PaymentsResponsiveListGrid,
+  PaymentsResponsiveListItem,
+  PaymentsResponsiveListLabel,
+  PaymentsResponsiveListValue,
+} from '@/components/payments/payments-data-table';
+import {
+  PaymentsCountPill,
+  PaymentsMetricLabel,
+  PaymentsMetricValue,
+  PaymentsSectionDescription,
+  PaymentsSectionTitle,
+} from '@/components/payments/payments-typography';
+import { PaymentsInsetPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import type {
   DebtDisputeEventExposureRow,
   DebtDisputeExposureMetrics,
   DebtDisputeOrganizerExposureRow,
 } from '@/lib/payments/economics/debt-dispute-exposure';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 
 type DebtDisputeExposureDashboardLabels = {
   sectionTitle: string;
@@ -25,6 +47,9 @@ type DebtDisputeExposureDashboardLabels = {
   disputeCasesHeader: string;
   sampleTracesLabel: string;
   sampleCasesLabel: string;
+  sampledTraceCountLabel: (count: number) => string;
+  sampledCaseCountLabel: (count: number) => string;
+  sampledMoreLabel: (count: number) => string;
   currenciesLabel: (count: number) => string;
   emptyState: string;
 };
@@ -33,16 +58,8 @@ type DebtDisputeExposureDashboardProps = {
   locale: 'es' | 'en';
   metrics: DebtDisputeExposureMetrics;
   labels: DebtDisputeExposureDashboardLabels;
+  hideSummaryCards?: boolean;
 };
-
-function formatMoney(valueMinor: number, currency: string, locale: 'es' | 'en'): string {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(valueMinor / 100);
-}
 
 function renderRowDetailChips(params: {
   sampleTraceIds: string[];
@@ -59,32 +76,22 @@ function renderRowDetailChips(params: {
   return (
     <div className="mt-2 space-y-2">
       {hasTraces ? (
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            {params.labels.sampleTracesLabel}
-          </p>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {params.sampleTraceIds.map((traceId) => (
-              <code key={traceId} className="rounded bg-muted px-2 py-1 text-[11px]">
-                {traceId}
-              </code>
-            ))}
-          </div>
-        </div>
+        <SampledReferenceList
+          compact
+          title={params.labels.sampleTracesLabel}
+          items={params.sampleTraceIds}
+          countLabel={params.labels.sampledTraceCountLabel}
+          moreLabel={params.labels.sampledMoreLabel}
+        />
       ) : null}
       {hasCases ? (
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            {params.labels.sampleCasesLabel}
-          </p>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {params.sampleCaseIds.map((caseId) => (
-              <code key={caseId} className="rounded bg-muted px-2 py-1 text-[11px]">
-                {caseId}
-              </code>
-            ))}
-          </div>
-        </div>
+        <SampledReferenceList
+          compact
+          title={params.labels.sampleCasesLabel}
+          items={params.sampleCaseIds}
+          countLabel={params.labels.sampledCaseCountLabel}
+          moreLabel={params.labels.sampledMoreLabel}
+        />
       ) : null}
     </div>
   );
@@ -100,11 +107,11 @@ function renderTableRow(params: {
   const secondaryCurrencyCount = Math.max(row.currencies.length - 1, 0);
 
   return (
-    <tr key={label} className="border-t align-top">
-      <td className="py-3 pr-4">
+    <PaymentsDataTableRow key={label}>
+      <PaymentsDataTableCell>
         <p className="font-medium">{label}</p>
         {secondaryCurrencyCount > 0 ? (
-        <p className="mt-1 text-xs text-muted-foreground">
+          <p className="mt-1 text-xs text-muted-foreground">
             {labels.currenciesLabel(secondaryCurrencyCount)}
           </p>
         ) : null}
@@ -113,22 +120,36 @@ function renderTableRow(params: {
           sampleCaseIds: row.traceability.sampleDisputeCaseIds,
           labels,
         })}
-      </td>
-      <td className="py-3 pr-4 text-right tabular-nums">
-        {formatMoney(row.headlineExposureScoreMinor, row.headlineCurrency, locale)}
-      </td>
-      <td className="py-3 pr-4 text-right tabular-nums">
-        {formatMoney(row.headlineOpenDisputeAtRiskMinor, row.headlineCurrency, locale)}
-      </td>
-      <td className="py-3 pr-4 text-right tabular-nums">
-        {formatMoney(row.headlineDebtPostedMinor, row.headlineCurrency, locale)}
-      </td>
-      <td className="py-3 pr-4 text-right tabular-nums">{row.openDisputeCaseCount}</td>
-      <td className="py-3 pr-4 text-right tabular-nums">{row.pauseRequiredCount}</td>
-      <td className="py-3 pr-4 text-right tabular-nums">{row.resumeAllowedCount}</td>
-      <td className="py-3 pr-4 text-right tabular-nums">{row.traceability.distinctTraceCount}</td>
-      <td className="py-3 text-right tabular-nums">{row.traceability.distinctDisputeCaseCount}</td>
-    </tr>
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {formatMoneyFromMinor(row.headlineExposureScoreMinor, row.headlineCurrency, locale)}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {formatMoneyFromMinor(
+          row.headlineOpenDisputeAtRiskMinor,
+          row.headlineCurrency,
+          locale,
+        )}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {formatMoneyFromMinor(row.headlineDebtPostedMinor, row.headlineCurrency, locale)}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {row.openDisputeCaseCount}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {row.pauseRequiredCount}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {row.resumeAllowedCount}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {row.traceability.distinctTraceCount}
+      </PaymentsDataTableCell>
+      <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
+        {row.traceability.distinctDisputeCaseCount}
+      </PaymentsDataTableCell>
+    </PaymentsDataTableRow>
   );
 }
 
@@ -142,21 +163,101 @@ function renderTable(params: {
   }
 
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-[70rem] text-sm">
-        <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
+    <>
+      <PaymentsResponsiveList className="mt-4">
+        {params.rows.map((row) => {
+          const label = 'organizerLabel' in row ? row.organizerLabel : row.eventLabel;
+          const secondaryCurrencyCount = Math.max(row.currencies.length - 1, 0);
+
+          return (
+            <PaymentsResponsiveListItem key={label}>
+              <div className="space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">{label}</p>
+                    {secondaryCurrencyCount > 0 ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {params.labels.currenciesLabel(secondaryCurrencyCount)}
+                      </p>
+                    ) : null}
+                  </div>
+                  <PaymentsCountPill>{row.traceability.distinctTraceCount.toLocaleString(params.locale)}</PaymentsCountPill>
+                </div>
+                {renderRowDetailChips({
+                  sampleTraceIds: row.traceability.sampleTraceIds,
+                  sampleCaseIds: row.traceability.sampleDisputeCaseIds,
+                  labels: params.labels,
+                })}
+                <PaymentsResponsiveListGrid className="mt-4">
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.exposureHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                      {formatMoneyFromMinor(row.headlineExposureScoreMinor, row.headlineCurrency, params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.openAtRiskHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                      {formatMoneyFromMinor(row.headlineOpenDisputeAtRiskMinor, row.headlineCurrency, params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.debtPostedHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="font-medium tabular-nums">
+                      {formatMoneyFromMinor(row.headlineDebtPostedMinor, row.headlineCurrency, params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.openCasesHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="tabular-nums">
+                      {row.openDisputeCaseCount.toLocaleString(params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.pauseHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="tabular-nums">
+                      {row.pauseRequiredCount.toLocaleString(params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.resumeHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="tabular-nums">
+                      {row.resumeAllowedCount.toLocaleString(params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.tracesHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="tabular-nums">
+                      {row.traceability.distinctTraceCount.toLocaleString(params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                  <div>
+                    <PaymentsResponsiveListLabel>{params.labels.disputeCasesHeader}</PaymentsResponsiveListLabel>
+                    <PaymentsResponsiveListValue className="tabular-nums">
+                      {row.traceability.distinctDisputeCaseCount.toLocaleString(params.locale)}
+                    </PaymentsResponsiveListValue>
+                  </div>
+                </PaymentsResponsiveListGrid>
+              </div>
+            </PaymentsResponsiveListItem>
+          );
+        })}
+      </PaymentsResponsiveList>
+      <div className="hidden md:block">
+        <PaymentsDataTable minWidthClassName="min-w-[70rem]">
+        <PaymentsDataTableHead>
           <tr>
-            <th className="pb-2 pr-4">{params.labels.groupHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.exposureHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.openAtRiskHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.debtPostedHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.openCasesHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.pauseHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.resumeHeader}</th>
-            <th className="pb-2 pr-4 text-right">{params.labels.tracesHeader}</th>
-            <th className="pb-2 text-right">{params.labels.disputeCasesHeader}</th>
+            <PaymentsDataTableHeader>{params.labels.groupHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.exposureHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.openAtRiskHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.debtPostedHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.openCasesHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.pauseHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.resumeHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.tracesHeader}</PaymentsDataTableHeader>
+            <PaymentsDataTableHeader align="right">{params.labels.disputeCasesHeader}</PaymentsDataTableHeader>
           </tr>
-        </thead>
+        </PaymentsDataTableHead>
         <tbody>
           {params.rows.map((row) =>
             renderTableRow({
@@ -167,8 +268,9 @@ function renderTable(params: {
             }),
           )}
         </tbody>
-      </table>
-    </div>
+        </PaymentsDataTable>
+      </div>
+    </>
   );
 }
 
@@ -176,66 +278,69 @@ export function DebtDisputeExposureDashboard({
   locale,
   metrics,
   labels,
+  hideSummaryCards = false,
 }: DebtDisputeExposureDashboardProps) {
-  const summaryExposure = formatMoney(
+  const summaryExposure = formatMoneyFromMinor(
     metrics.totals.headlineExposureScoreMinor,
     metrics.totals.headlineCurrency,
     locale,
   );
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4" data-testid="admin-payments-risk-dashboard">
       <div>
-        <h2 className="text-lg font-semibold leading-tight">{labels.sectionTitle}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{labels.sectionDescription}</p>
+        <PaymentsSectionTitle compact>{labels.sectionTitle}</PaymentsSectionTitle>
+        <PaymentsSectionDescription className="mt-1">{labels.sectionDescription}</PaymentsSectionDescription>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.summaryExposureTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{summaryExposure}</p>
-        </div>
+      {hideSummaryCards ? null : (
+        <div className="grid gap-4 md:grid-cols-3">
+          <PaymentsInsetPanel className="space-y-2">
+            <PaymentsMetricLabel>{labels.summaryExposureTitle}</PaymentsMetricLabel>
+            <PaymentsMetricValue compact>{summaryExposure}</PaymentsMetricValue>
+          </PaymentsInsetPanel>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.summaryOpenCasesTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {metrics.totals.openDisputeCaseCount}
-          </p>
-        </div>
+          <PaymentsInsetPanel className="space-y-2">
+            <PaymentsMetricLabel>{labels.summaryOpenCasesTitle}</PaymentsMetricLabel>
+            <PaymentsMetricValue compact>
+              {metrics.totals.openDisputeCaseCount}
+            </PaymentsMetricValue>
+          </PaymentsInsetPanel>
 
-        <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {labels.summaryPolicyPausesTitle}
-          </p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">
-            {metrics.totals.pauseRequiredCount}
-          </p>
+          <PaymentsInsetPanel className="space-y-2">
+            <PaymentsMetricLabel>{labels.summaryPolicyPausesTitle}</PaymentsMetricLabel>
+            <PaymentsMetricValue compact>
+              {metrics.totals.pauseRequiredCount}
+            </PaymentsMetricValue>
+          </PaymentsInsetPanel>
         </div>
-      </div>
+      )}
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.organizerTableTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <PaymentsSectionTitle compact className="text-base">{labels.organizerTableTitle}</PaymentsSectionTitle>
+          <PaymentsCountPill>{metrics.organizers.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.organizerTableDescription}</p>
         {renderTable({
           rows: metrics.organizers,
           labels,
           locale,
         })}
-      </div>
+      </PaymentsPanel>
 
-      <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-        <h3 className="text-sm font-semibold">{labels.eventTableTitle}</h3>
+      <PaymentsPanel>
+        <div className="flex flex-wrap items-center gap-2">
+          <PaymentsSectionTitle compact className="text-base">{labels.eventTableTitle}</PaymentsSectionTitle>
+          <PaymentsCountPill>{metrics.events.length}</PaymentsCountPill>
+        </div>
         <p className="mt-1 text-xs text-muted-foreground">{labels.eventTableDescription}</p>
         {renderTable({
           rows: metrics.events,
           labels,
           locale,
         })}
-      </div>
+      </PaymentsPanel>
     </section>
   );
 }

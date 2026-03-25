@@ -1,11 +1,14 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { db } from '@/db';
-import { organizations } from '@/db/schema';
-import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
-import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
+import {
+  findActivePaymentsOrganization,
+  parsePaymentsQuery,
+  parsePaymentsRouteParams,
+  requireAuthenticatedPaymentsContext,
+  requireOrganizerWriteAccess,
+  withNoStore,
+} from '@/app/api/payments/_shared';
 import {
   generatePayoutStatementArtifact,
   PayoutStatementError,
@@ -31,12 +34,12 @@ export async function GET(
 
   const authContext = authResult.context;
 
-  const parsedParams = paramsSchema.safeParse(await params);
+  const parsedParams = await parsePaymentsRouteParams(params, paramsSchema);
   if (!parsedParams.success) {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid payout request ID',
+          error: 'INVALID_PAYOUT_REQUEST_ID',
           details: parsedParams.error.issues,
         },
         { status: 400 },
@@ -44,16 +47,15 @@ export async function GET(
     );
   }
 
-  const url = new URL(request.url);
-  const parseResult = querySchema.safeParse({
-    organizationId: url.searchParams.get('organizationId'),
-  });
+  const parseResult = parsePaymentsQuery(request, querySchema, (searchParams) => ({
+    organizationId: searchParams.get('organizationId'),
+  }));
 
   if (!parseResult.success) {
     return withNoStore(
       NextResponse.json(
         {
-          error: 'Invalid organizationId',
+          error: 'INVALID_ORGANIZATION_ID',
           details: parseResult.error.issues,
         },
         { status: 400 },
@@ -64,22 +66,14 @@ export async function GET(
   const { organizationId } = parseResult.data;
   const { payoutRequestId } = parsedParams.data;
 
-  if (!authContext.permissions.canManageEvents) {
-    const membership = await getOrgMembership(authContext.user.id, organizationId);
-    try {
-      requireOrgPermission(membership, 'canEditRegistrationSettings');
-    } catch {
-      return withNoStore(NextResponse.json({ error: 'Permission denied' }, { status: 403 }));
-    }
+  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  if (!accessResult.ok) {
+    return accessResult.response;
   }
 
-  const organization = await db.query.organizations.findFirst({
-    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
-    columns: { id: true },
-  });
-
-  if (!organization) {
-    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
+  const organizationResult = await findActivePaymentsOrganization(organizationId);
+  if (!organizationResult.ok) {
+    return organizationResult.response;
   }
 
   try {
@@ -124,7 +118,7 @@ export async function GET(
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout request not found',
+              error: 'PAYOUT_STATEMENT_NOT_FOUND',
               code: error.code,
             },
             { status: 404 },
@@ -136,9 +130,9 @@ export async function GET(
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout statement is not available for non-terminal payout status',
+              error: 'PAYOUT_STATEMENT_UNAVAILABLE',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 409 },
           ),
@@ -149,9 +143,9 @@ export async function GET(
         return withNoStore(
           NextResponse.json(
             {
-              error: 'Payout statement baseline could not be resolved',
+              error: 'PAYOUT_STATEMENT_BASELINE_UNAVAILABLE',
               code: error.code,
-              reason: error.message,
+              reasonCode: error.code,
             },
             { status: 500 },
           ),
@@ -161,9 +155,9 @@ export async function GET(
       return withNoStore(
         NextResponse.json(
           {
-            error: 'Invalid payout statement request',
+            error: 'INVALID_PAYOUT_STATEMENT_REQUEST',
             code: error.code,
-            reason: error.message,
+            reasonCode: error.code,
           },
           { status: 400 },
         ),
@@ -176,6 +170,6 @@ export async function GET(
       actorUserId: authContext.user.id,
       error,
     });
-    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+    return withNoStore(NextResponse.json({ error: 'SERVER_ERROR' }, { status: 500 }));
   }
 }

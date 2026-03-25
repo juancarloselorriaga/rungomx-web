@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { payoutQueuedIntents, payoutRequests } from '@/db/schema';
@@ -448,6 +448,7 @@ export async function createQueuedPayoutIntent(params: {
       })
       .onConflictDoNothing({
         target: [payoutQueuedIntents.organizerId, payoutQueuedIntents.idempotencyKey],
+        where: sql`${payoutQueuedIntents.deletedAt} is null`,
       })
       .returning({
         id: payoutQueuedIntents.id,

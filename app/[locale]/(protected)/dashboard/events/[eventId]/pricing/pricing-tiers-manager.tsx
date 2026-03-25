@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
 import {
@@ -66,10 +67,7 @@ const EMPTY_TIER: TierFormData = {
 const INTERNAL_DEFAULT_TIER_LABEL = 'Standard';
 
 function formatPrice(cents: number, currency: string, locale: string): string {
-  return (cents / 100).toLocaleString(locale, {
-    style: 'currency',
-    currency,
-  });
+  return formatMoneyFromMinor(cents, currency, locale);
 }
 
 function isInternalDefaultTierLabel(label: string | null | undefined): boolean {

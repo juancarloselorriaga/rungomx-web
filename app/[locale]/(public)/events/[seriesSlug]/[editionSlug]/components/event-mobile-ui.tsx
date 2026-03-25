@@ -37,9 +37,12 @@ type EventMobileUIProps = {
   labels: {
     registerNow: string;
     free: string;
+    infoButtonLabel: string;
+    eventDetails: string;
     eventDate: string;
     location: string;
     organizer: string;
+    officialWebsite: string;
     viewMap: string;
     registrationDetails: string;
     registrationOpens: string;
@@ -48,6 +51,7 @@ type EventMobileUIProps = {
     registrationOpen: string;
     registrationClosed: string;
     otherEditionsTitle: string;
+    tba: string;
   };
 };
 
@@ -85,6 +89,7 @@ export function EventMobileUI({
         labels={{
           registerNow: labels.registerNow,
           free: labels.free,
+          infoButtonLabel: labels.infoButtonLabel,
         }}
       />
       <EventMobileInfoSheet
@@ -106,9 +111,11 @@ export function EventMobileUI({
         otherEditions={otherEditions}
         locale={locale}
         labels={{
+          eventDetails: labels.eventDetails,
           eventDate: labels.eventDate,
           location: labels.location,
           organizer: labels.organizer,
+          officialWebsite: labels.officialWebsite,
           viewMap: labels.viewMap,
           registrationDetails: labels.registrationDetails,
           registrationOpens: labels.registrationOpens,
@@ -118,6 +125,7 @@ export function EventMobileUI({
           registrationClosed: labels.registrationClosed,
           registerNow: labels.registerNow,
           otherEditionsTitle: labels.otherEditionsTitle,
+          tba: labels.tba,
         }}
       />
     </>
