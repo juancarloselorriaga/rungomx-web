@@ -1,4 +1,13 @@
-SM Prompt — Phase 1
+# AI Wizard Layer Production Redesign — BMAD Prompt Pack
+
+> Ready-to-use prompts for each step of the execution plan.
+> Companion to `event-ai-wizard-bmad-execution-plan.md`.
+
+---
+
+## SM Prompt — Phase 1
+
+> **Invoke with:** `/bmad-bmm-create-story`
 
 You are the SM agent responsible for creating the implementation story for Phase
 1 of the AI Wizard Layer Production Redesign.
@@ -53,10 +62,19 @@ Your story must include:
 
 Output format:
 
-Story title Scope summary Acceptance criteria Tasks / subtasks File plan Risks /
-rollback Done criteria
+1. Story title
+2. Scope summary
+3. Acceptance criteria
+4. Tasks / subtasks
+5. File plan
+6. Risks / rollback
+7. Done criteria
 
-SM Prompt — Phase 2 to Phase 6
+---
+
+## SM Prompt — Phase 2 to Phase 6
+
+> **Invoke with:** `/bmad-bmm-create-story`
 
 You are the SM agent responsible for creating the implementation story for Phase
 {{PHASE_NUMBER}} of the AI Wizard Layer Production Redesign.
@@ -110,10 +128,21 @@ Also include:
 
 Output format:
 
-Story title Scope summary Dependency check Acceptance criteria Tasks / subtasks
-File plan Risks / rollback Adjustments from original outline Done criteria
+1. Story title
+2. Scope summary
+3. Dependency check
+4. Acceptance criteria
+5. Tasks / subtasks
+6. File plan
+7. Risks / rollback
+8. Adjustments from original outline
+9. Done criteria
 
-TEA Prompt — ATDD Phase 1
+---
+
+## TEA Prompt — ATDD Phase 1
+
+> **Invoke with:** `/bmad-tea-testarch-atdd`
 
 You are the TEA agent running ATDD for Phase 1 of the AI Wizard Layer Production
 Redesign.
@@ -149,10 +178,17 @@ Focus on:
 
 Output:
 
-Test strategy summary Failing tests by category Static enforcement
-recommendations Edge cases Developer checklist
+1. Test strategy summary
+2. Failing tests by category
+3. Static enforcement recommendations
+4. Edge cases
+5. Developer checklist
 
-TEA Prompt — ATDD Phase 2 to Phase 6
+---
+
+## TEA Prompt — ATDD Phase 2 to Phase 6
+
+> **Invoke with:** `/bmad-tea-testarch-atdd`
 
 You are the TEA agent running ATDD for Phase {{PHASE_NUMBER}} of the AI Wizard
 Layer Production Redesign.
@@ -184,10 +220,17 @@ Focus on boundaries and risks specific to this phase.
 
 Output:
 
-Test strategy summary Failing tests by category Static enforcement
-recommendations Edge cases Developer checklist
+1. Test strategy summary
+2. Failing tests by category
+3. Static enforcement recommendations
+4. Edge cases
+5. Developer checklist
 
-Dev Prompt — Phase 1
+---
+
+## Dev Prompt — Phase 1
+
+> **Invoke with:** `/bmad-bmm-dev-story`
 
 You are the Dev agent implementing Phase 1 of the AI Wizard Layer Production
 Redesign.
@@ -223,54 +266,18 @@ You must protect:
 
 Required output:
 
-Implementation plan in execution order File changes Blockers or ambiguities
-Boundary wins introduced New invariants created Test status summary
+1. Implementation plan in execution order
+2. File changes
+3. Blockers or ambiguities
+4. Boundary wins introduced
+5. New invariants created
+6. Test status summary
 
-Dev Prompt — Phase 2 to Phase 6
+---
 
-You are the Dev agent implementing Phase {{PHASE_NUMBER}} of the AI Wizard Layer
-Production Redesign.
+## Dev Prompt — Phase 2 to Phase 6
 
-Authoritative sources:
-
-1. current phase story
-2. current phase ATDD output
-3. plans/event-ai-wizard-layer-production-redesign.md
-4. plans/event-ai-wizard-bmad-execution-plan.md
-5. completed artifacts and invariants from previous phases
-
-Architecture is settled.
-
-Implement only the current phase.
-
-Important rule:
-
-Treat previous phase invariants as active constraints.
-
-Do not:
-
-- violate import direction rules
-- undo previous boundary wins
-- expand route responsibilities
-- introduce parallel contracts
-- introduce cross-layer coupling
-
-Execution discipline:
-
-- task by task
-- maintain scope boundaries
-- keep route files thinner over time
-- maintain server truth ownership
-- avoid silent UX changes
-- avoid refactoring future-phase concerns
-
-Required output:
-
-Implementation plan in execution order File changes Blockers or ambiguities
-Boundary wins introduced New invariants created Test status summary Deviations
-from original story (if any) and justification
-
-Dev Prompt — Phase 2 to Phase 6
+> **Invoke with:** `/bmad-bmm-dev-story`
 
 You are the Dev agent implementing Phase {{PHASE_NUMBER}} of the AI Wizard Layer
 Production Redesign.
@@ -310,11 +317,19 @@ Execution discipline:
 
 Required output:
 
-Implementation plan in execution order File changes Blockers or ambiguities
-Boundary wins introduced New invariants created Test status summary Deviations
-from original story (if any) and justification
+1. Implementation plan in execution order
+2. File changes
+3. Blockers or ambiguities
+4. Boundary wins introduced
+5. New invariants created
+6. Test status summary
+7. Deviations from original story (if any) and justification
 
-TEA Agent — Review Tests
+---
+
+## TEA Prompt — Review Tests
+
+> **Invoke with:** `/bmad-tea-testarch-test-review`
 
 You are the TEA agent reviewing the tests for Phase {{PHASE_NUMBER}} of the AI
 Wizard Layer Production Redesign.
@@ -340,10 +355,18 @@ Evaluate:
 
 Output:
 
-Review summary Strengths Gaps Weak or brittle tests Missing edge cases Required
-fixes before phase signoff
+1. Review summary
+2. Strengths
+3. Gaps
+4. Weak or brittle tests
+5. Missing edge cases
+6. Required fixes before phase signoff
 
-Architecture Conformance Reviewer
+---
+
+## Architecture Conformance Review
+
+> **Invoke with:** `/bmad-bmm-code-review` (scoped to conformance checklist below — not a general code review)
 
 You are the architecture conformance reviewer for Phase {{PHASE_NUMBER}} of the
 AI Wizard Layer Production Redesign.
@@ -374,11 +397,18 @@ Checklist:
 
 Output:
 
-Conformance verdict: pass / pass with fixes / fail Confirmed boundary wins
-Violations found Risks introduced Required fixes before commit New invariants to
-record
+1. Conformance verdict: pass / pass with fixes / fail
+2. Confirmed boundary wins
+3. Violations found
+4. Risks introduced
+5. Required fixes before commit
+6. New invariants to record
 
-Dev Agent — Code Review (Phase 4 only)
+---
+
+## Dev Prompt — Code Review (Phase 4 only)
+
+> **Invoke with:** `/bmad-bmm-code-review`
 
 You are the Dev reviewer for Phase 4 of the AI Wizard Layer Production Redesign.
 
@@ -404,10 +434,18 @@ Focus on:
 
 Output:
 
-Review summary High risk findings Medium risk findings Boundary concerns
-Reliability concerns Required fixes before signoff
+1. Review summary
+2. High risk findings
+3. Medium risk findings
+4. Boundary concerns
+5. Reliability concerns
+6. Required fixes before signoff
 
-TEA Agent — Trace Requirements (after Phase 6)
+---
+
+## TEA Prompt — Trace Requirements (after Phase 6)
+
+> **Invoke with:** `/bmad-tea-testarch-trace`
 
 You are the TEA agent performing final traceability verification for the AI
 Wizard Layer Production Redesign.
@@ -432,5 +470,8 @@ Check:
 
 Output:
 
-Traceability summary Fully covered criteria Partially covered criteria Uncovered
-criteria Required follow-up work
+1. Traceability summary
+2. Fully covered criteria
+3. Partially covered criteria
+4. Uncovered criteria
+5. Required follow-up work
