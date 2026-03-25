@@ -49,16 +49,18 @@ export function OrganizerEventsFilters({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const shouldRestoreFocusRef = useRef(false);
   const isNavigatingRef = useRef(false);
-  // Capture the route this component was mounted for. Updated synchronously on
-  // every render so timeout callbacks can always read the live pathname without
-  // needing an effect (which would race the setTimeout).
+  // Capture the route this component was mounted for so stale debounce callbacks
+  // cannot navigate after leaving this screen.
   const mountPathnameRef = useRef(pathname);
   const currentPathnameRef = useRef(pathname);
-  currentPathnameRef.current = pathname;
 
   useEffect(() => {
     setFormState(query);
   }, [query]);
+
+  useEffect(() => {
+    currentPathnameRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     latestStateRef.current = formState;

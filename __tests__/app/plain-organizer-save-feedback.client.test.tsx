@@ -13,6 +13,7 @@ import { updateAddOnOption } from '@/lib/events/add-ons/actions';
 import { toast } from 'sonner';
 
 const routerRefreshMock = jest.fn();
+type SaveResult = { ok: true; data: object };
 
 const translations: Record<string, Record<string, string>> = {
   'pages.dashboardEvents.faq': {
@@ -466,8 +467,8 @@ describe('plain organizer save feedback', () => {
   });
 
   it('shows Guardando... for distance saves and only closes after both mutations succeed', async () => {
-    const distanceDeferred = createDeferred<{ ok: true; data: {} }>();
-    const priceDeferred = createDeferred<{ ok: true; data: {} }>();
+    const distanceDeferred = createDeferred<SaveResult>();
+    const priceDeferred = createDeferred<SaveResult>();
     (updateDistance as jest.Mock).mockReturnValue(distanceDeferred.promise);
     (updateDistancePrice as jest.Mock).mockReturnValue(priceDeferred.promise);
 

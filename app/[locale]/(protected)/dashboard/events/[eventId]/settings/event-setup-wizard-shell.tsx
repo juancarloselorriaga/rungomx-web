@@ -15,7 +15,15 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ComponentProps, startTransition, type ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  ComponentProps,
+  startTransition,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 export type EventSetupWizardStepId =
   | 'basics'
@@ -237,12 +245,12 @@ export function EventSetupWizardShell({
     }
   };
 
-  const startReviewRefreshBoundary = () => {
+  const startReviewRefreshBoundary = useCallback(() => {
     setPendingReviewPayloadToken(reviewPayloadToken);
     startTransition(() => {
       router.refresh();
     });
-  };
+  }, [reviewPayloadToken, router]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !activeStep) return;
@@ -262,13 +270,17 @@ export function EventSetupWizardShell({
   useEffect(() => {
     if (!activeStep || activeStep.id !== 'review') {
       if (pendingReviewPayloadToken !== null) {
-        setPendingReviewPayloadToken(null);
+        startTransition(() => {
+          setPendingReviewPayloadToken(null);
+        });
       }
       return;
     }
 
     if (pendingReviewPayloadToken !== null && reviewPayloadToken !== pendingReviewPayloadToken) {
-      setPendingReviewPayloadToken(null);
+      startTransition(() => {
+        setPendingReviewPayloadToken(null);
+      });
     }
   }, [activeStep, pendingReviewPayloadToken, reviewPayloadToken]);
 
@@ -294,7 +306,7 @@ export function EventSetupWizardShell({
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [activeStep, reviewPayloadToken, router, steps]);
+  }, [activeStep, startReviewRefreshBoundary, steps]);
 
   const navigateToStep = (targetIndex: number, mode: 'push' | 'replace' = 'push') => {
     if (targetIndex < 0 || targetIndex >= steps.length) return;

@@ -7,7 +7,10 @@ import { getOrganizationEventSeries } from '@/lib/events/queries';
 import { getUserOrganizations } from '@/lib/organizations/queries';
 import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 
-const mockCreateEventForm = jest.fn((_props?: unknown) => null);
+const mockCreateEventForm = jest.fn((props?: unknown) => {
+  void props;
+  return null;
+});
 
 jest.mock('@/app/[locale]/(protected-fullscreen)/dashboard/events/new/create-event-form', () => ({
   CreateEventForm: (props: unknown) => mockCreateEventForm(props),

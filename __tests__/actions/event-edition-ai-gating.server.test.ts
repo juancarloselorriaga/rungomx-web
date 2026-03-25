@@ -1,8 +1,15 @@
 import type { AuthContext } from '@/lib/auth/server';
 
 const mockHeaders = jest.fn();
-const mockCreateAuditLog = jest.fn(async (_payload: unknown, _tx: unknown) => ({ ok: true }));
-const mockGetRequestContext = jest.fn(async (_headersValue: unknown) => ({ ipAddress: '127.0.0.1' }));
+const mockCreateAuditLog = jest.fn(async (payload: unknown, tx: unknown) => {
+  void payload;
+  void tx;
+  return { ok: true };
+});
+const mockGetRequestContext = jest.fn(async (headersValue: unknown) => {
+  void headersValue;
+  return { ipAddress: '127.0.0.1' };
+});
 const mockRequireProFeature = jest.fn();
 const mockIsEventAiWizardEnabled = jest.fn();
 const mockSafeUpdateTag = jest.fn();
@@ -11,7 +18,7 @@ const mockSafeRefresh = jest.fn();
 let mockAuthContext: AuthContext | null = null;
 let capturedInsertValues: Record<string, unknown> | null = null;
 
-var mockDb = {
+const mockDb = {
   query: {
     eventSeries: {
       findFirst: jest.fn(),
@@ -27,7 +34,7 @@ var mockDb = {
 };
 
 jest.mock('next/headers', () => ({
-  headers: (...args: any[]) => mockHeaders(...args),
+  headers: (...args: unknown[]) => mockHeaders(...args),
 }));
 
 jest.mock('@/db', () => ({

@@ -1194,10 +1194,10 @@ describe('POST /api/events/ai-wizard', () => {
 
     expect(response.status).toBe(200);
     expect(capturedSystemPrompt).toContain(
-      'For distances, pricing, and registration, clarify first only when the organizer is asking for specific operational structure that cannot be proposed safely from the current snapshot, for example an unknown distance lineup, currency, timezone, or tier window.',
+      'For distances, pricing, and registration, clarify first only when the race director is asking for specific operational structure that cannot be proposed safely from the current snapshot, for example an unknown distance lineup, currency, timezone, or tier window.',
     );
     expect(capturedSystemPrompt).toContain(
-      'Use a clarifying question first only when the organizer is asking for a concrete date, timezone, currency, tier window, or distance lineup that is not already grounded in the snapshot or shared brief.',
+      'Use a clarifying question first only when the race director is asking for a concrete date, timezone, currency, tier window, or distance lineup that is not already grounded in the snapshot or shared brief.',
     );
   });
 
@@ -1299,7 +1299,7 @@ describe('POST /api/events/ai-wizard', () => {
       'The first proposal should update only the clearest participant-facing policy block for this step.',
     );
     expect(capturedSystemPrompt).toContain(
-      'In Policies, explicit organizer constraints about eligibility, proof, deadlines, or no-deferral rules are the highest-priority source of truth for the draft.',
+      'In Policies, explicit race director constraints about eligibility, proof, deadlines, or no-deferral rules are the highest-priority source of truth for the draft.',
     );
     expect(capturedSystemPrompt).toContain('Goal: move quickly to one grounded, reviewable patch for the active wizard step.');
   });

@@ -1,8 +1,15 @@
 import type { AuthContext } from '@/lib/auth/server';
 
 const mockHeaders = jest.fn();
-const mockCreateAuditLog = jest.fn(async (_payload: unknown, _tx: unknown) => ({ ok: true }));
-const mockGetRequestContext = jest.fn(async (_requestHeaders: unknown) => ({ ipAddress: '127.0.0.1' }));
+const mockCreateAuditLog = jest.fn(async (payload: unknown, tx: unknown) => {
+  void payload;
+  void tx;
+  return { ok: true };
+});
+const mockGetRequestContext = jest.fn(async (requestHeaders: unknown) => {
+  void requestHeaders;
+  return { ipAddress: '127.0.0.1' };
+});
 const mockCanUserAccessEvent = jest.fn();
 const mockRequireOrgPermission = jest.fn();
 const mockRevalidateTag = jest.fn();
