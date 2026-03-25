@@ -54,16 +54,10 @@ type HomeMessages = {
   eventPages: {
     title: string;
   };
-  participation: {
-    title: string;
-  };
   resultsRankings: {
     title: string;
   };
-  aboutBridge: {
-    title: string;
-    cta: string;
-  };
+  aboutBridge: { cta: string };
   finalCta: {
     title: string;
   };
@@ -131,9 +125,7 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
       home.hero.eyebrow,
       home.proofPaths.title,
       home.eventPages.title,
-      home.participation.title,
       home.resultsRankings.title,
-      home.aboutBridge.title,
       home.finalCta.title,
     ],
     navLabels: [

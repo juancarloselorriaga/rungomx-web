@@ -1,99 +1,49 @@
 {
   "hero": {
     "badge": "About RunGoMX",
-    "title": "Who we are",
-    "description": "RunGoMX brings together event pages, registrations, official results, rankings, and support so runners always know where to go next.",
+    "title": "Why runners use RunGoMX",
+    "description": "RunGoMX helps runners compare races, register with confidence, and come back for official results.",
     "primaryCta": "Browse events",
-    "secondaryCta": "View official results"
+    "secondaryCta": "View results"
   },
   "story": {
-    "eyebrow": "What you can do here today",
-    "title": "A running platform should make the important things easy to verify",
-    "description": "RunGoMX is built around the public pages people actually use before and after race day.",
-    "paragraph1": "That includes finding events, checking registration details, reviewing official results, following rankings, and getting practical help before signing in.",
-    "paragraph2": "Our job is to make it easy for runners and Race Directors to move between the pages that matter most: event pages, results, rankings, and support.",
+    "eyebrow": "What we do",
+    "title": "One place for race details before and after race day",
+    "description": "We focus on the public pages runners need most.",
+    "paragraph1": "Use event pages to compare dates, prices, distances, and registration status before you commit.",
+    "paragraph2": "After race day, come back for official results, rankings, and support when something needs review.",
     "cardTitle": "What visitors can do on RunGoMX",
     "highlights": {
-      "eventDiscovery": "Explore public event listings and live event pages.",
-      "registrationContext": "Check registration status, payment context, and event details published by the Race Director.",
-      "officialResults": "Review official results tied to published race outcomes.",
-      "rankings": "Follow rankings built from published results.",
-      "helpAndTrust": "Reach support, privacy, and terms when you need more context."
+      "eventDiscovery": "Browse races by date, location, and discipline.",
+      "registrationContext": "Check pricing, registration status, and event details in one place.",
+      "officialResults": "Look up official times, placings, and corrections after the race.",
+      "rankings": "See rankings built from current official results.",
+      "helpAndTrust": "Find help, contact options, privacy, and terms when you need them."
     }
   },
   "focus": {
-    "eyebrow": "Who these pages are for",
-    "title": "RunGoMX helps runners and Race Directors move from interest to proof",
-    "description": "Each public page should make the next step obvious, whether someone is choosing a race or managing one.",
+    "eyebrow": "Why it helps",
+    "title": "Built to answer the questions runners ask most",
+    "description": "The public site should make the next step obvious.",
     "items": {
       "discover": {
-        "title": "Discover events",
-        "description": "Visitors can start with the event directory and event pages to see what is happening, when it happens, and whether registration is open."
+        "title": "Compare events quickly",
+        "description": "Check dates, prices, locations, and registration status without jumping between pages."
       },
       "follow": {
-        "title": "Follow official outcomes",
-        "description": "Published results and rankings give runners a public place to confirm official outcomes and compare where they stand."
+        "title": "Check official outcomes",
+        "description": "Use results and rankings to confirm your time, placing, and latest standings."
       },
       "support": {
-        "title": "Get practical support",
-        "description": "Help, contact, privacy, and terms give people a clear path when they need policy details or support with a real event or registration."
-      }
-    }
-  },
-  "proof": {
-    "eyebrow": "Where trust comes from",
-    "title": "The strongest proof lives on real public pages",
-    "description": "RunGoMX feels most credible when it points people to real event pages, official results, and rankings instead of broad promises.",
-    "items": {
-      "events": {
-        "title": "Event pages and discovery",
-        "description": "The events area is the public starting point for browsing races, reviewing editions, and opening a specific event page."
-      },
-      "registration": {
-        "title": "Registration and payment context",
-        "description": "Public event pages show registration status and key participation details before a runner moves into account-based steps."
-      },
-      "results": {
-        "title": "Official results",
-        "description": "Results pages publish official outcomes and make it easy to verify them."
-      },
-      "rankings": {
-        "title": "Rankings connected to results",
-        "description": "Rankings stay tied to published results, so they feel like part of the product, not a disconnected claim."
-      }
-    }
-  },
-  "relatedLinks": {
-    "eyebrow": "Start with a real page",
-    "title": "Go where the proof already lives",
-    "description": "These routes show what RunGoMX supports today better than any broad platform claim.",
-    "items": {
-      "events": {
-        "href": "/events",
-        "title": "Browse events",
-        "description": "Open the public event directory and continue into live event pages."
-      },
-      "results": {
-        "href": "/results",
-        "title": "Review official results",
-        "description": "Check published results and confirm the official outcome for a race."
-      },
-      "rankings": {
-        "href": "/rankings",
-        "title": "See rankings",
-        "description": "Follow rankings that update from published results."
-      },
-      "contact": {
-        "href": "/contact",
-        "title": "Contact the team",
-        "description": "Reach the team when you need help with an event, account, or public-site issue."
+        "title": "Get help when something looks wrong",
+        "description": "Find support, policies, and contact options without guessing where to start."
       }
     }
   },
   "cta": {
-    "title": "Need a place to start?",
-    "description": "Browse events if you are exploring the platform, or contact the team if your question is tied to a real event or registration.",
+    "title": "Ready to start with a real race?",
+    "description": "Browse events to compare your options, or check results if you already raced.",
     "primaryActionLabel": "Browse events",
-    "secondaryActionLabel": "Contact RunGoMX"
+    "secondaryActionLabel": "View results"
   }
 }

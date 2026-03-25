@@ -11,42 +11,43 @@
     "seeHowItWorks": "Ver cómo funciona"
   },
   "hero": {
-    "eyebrow": "Hecho para dar confianza el día de la carrera",
-    "title": "Eventos, inscripciones, resultados y rankings en un solo lugar",
-    "description": "RunGoMX ayuda a los corredores a encontrar carreras, inscribirse y revisar resultados oficiales, mientras les da a los Directores de Carrera páginas públicas en las que la gente sí confía.",
+    "eyebrow": "Para corredores planeando su próxima carrera",
+    "title": "Encuentra una carrera, revisa los detalles e inscríbete con confianza",
+    "description": "Usa RunGoMX para comparar eventos, confirmar fechas y precios, y volver después a ver resultados oficiales y rankings.",
     "primaryCta": "Explorar eventos",
     "secondaryCta": "Ver resultados"
   },
   "proofPaths": {
     "eyebrow": "Empieza aquí",
-    "title": "Tres caminos claros para entrar a RunGoMX",
-    "description": "Ya sea para encontrar una carrera, confirmar un resultado o comparar desempeño, aquí está el camino más rápido para seguir.",
+    "title": "Empieza por lo que necesitas",
+    "description": "La mayoría llega aquí para hacer una de tres cosas: encontrar una carrera, revisar resultados o comparar rankings.",
     "items": {
       "events": {
-        "title": "Próximos eventos",
-        "description": "Explora páginas de eventos con la información que un corredor necesita antes de inscribirse.",
+        "title": "Encuentra tu próximo evento",
+        "description": "Explora carreras por fecha, ubicación y disciplina, y abre la página del evento para ver precios y detalles de inscripción.",
         "cta": "Explorar eventos"
       },
       "results": {
-        "title": "Resultados oficiales",
-        "description": "Encuentra resultados oficiales fáciles de buscar, revisar y compartir.",
+        "title": "Revisa resultados oficiales",
+        "description": "Busca por corredor, número o evento y abre la página oficial de resultados más reciente.",
         "cta": "Ver resultados"
       },
       "rankings": {
-        "title": "Rankings",
-        "description": "Sigue rankings que mantienen a la comunidad conectada entre una carrera y otra.",
+        "title": "Compara rankings",
+        "description": "Consulta las clasificaciones más recientes construidas con resultados oficiales.",
         "cta": "Ver rankings"
       }
     }
   },
   "eventPages": {
     "eyebrow": "Páginas de evento",
-    "title": "Páginas de evento pensadas para Directores de Carrera",
-    "description": "Publica fechas, distancias, políticas y registro en un solo lugar, con una experiencia clara tanto en móvil como en escritorio.",
+    "title": "Ten claros los datos importantes antes de inscribirte",
+    "description": "Cada página de evento está pensada para responder lo que un corredor necesita saber antes de registrarse.",
+    "cardTitle": "Lo que puedes revisar en cada página de evento",
     "highlights": {
-      "clarity": "Pon a la vista lo que los corredores necesitan saber.",
-      "trust": "Dale a cada evento una página pública que se sienta oficial desde la primera visita.",
-      "conversion": "Haz que el paso de llegar al sitio a inscribirse sea fácil de seguir."
+      "clarity": "Estado de inscripción y precios a la vista.",
+      "trust": "Fechas, distancias y detalles del evento en un solo lugar.",
+      "conversion": "Políticas e información del organizador fáciles de encontrar."
     }
   },
   "participation": {
@@ -61,25 +62,25 @@
   },
   "resultsRankings": {
     "eyebrow": "Resultados y rankings",
-    "title": "Sigue siendo útil después de la carrera",
-    "description": "Los resultados y rankings hacen que la gente vuelva y ayudan a los Directores de Carrera a seguir presentes después de la meta.",
+    "title": "¿Buscas resultados, rankings o más sobre RunGoMX?",
+    "description": "No todas las visitas empiezan con una inscripción. Estos enlaces te llevan directo al resto del sitio público.",
     "highlights": {
-      "results": "Publica resultados claros, oficiales y fáciles de volver a consultar.",
-      "rankings": "Mantén el interés más allá de una sola carrera con rankings ligados a resultados reales.",
-      "retention": "Convierte una visita en una relación continua con la plataforma."
+      "results": "Busca resultados oficiales por corredor, número o evento.",
+      "rankings": "Consulta clasificaciones actuales construidas con resultados oficiales.",
+      "retention": "Conoce cómo RunGoMX ayuda a los corredores antes y después de la carrera."
     }
   },
   "aboutBridge": {
     "eyebrow": "Por qué RunGoMX",
-    "title": "Conoce qué hace RunGoMX y por qué importa",
-    "description": "Mira cómo RunGoMX conecta páginas de eventos, inscripciones, resultados oficiales, rankings y soporte para corredores y Directores de Carrera.",
-    "cta": "Conocer RunGoMX"
+    "title": "Sobre RunGoMX",
+    "description": "Conoce cómo RunGoMX ayuda a los corredores a encontrar eventos, inscribirse y revisar resultados oficiales.",
+    "cta": "Sobre RunGoMX"
   },
   "finalCta": {
     "eyebrow": "Para Directores de Carrera",
-    "title": "Dale a tu carrera una mejor presencia pública",
-    "description": "Reúne página del evento, inscripciones, resultados oficiales y rankings en una experiencia que los corredores entienden rápido.",
-    "primaryCta": "Para Directores de Carrera",
+    "title": "¿Listo para comparar eventos?",
+    "description": "Explora el directorio de eventos para revisar fechas, precios y estado de inscripción.",
+    "primaryCta": "Explorar eventos",
     "secondaryCta": "Ver cómo funciona"
   }
 }

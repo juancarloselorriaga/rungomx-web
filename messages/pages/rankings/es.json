@@ -1,45 +1,45 @@
 {
   "title": "Rankings nacionales",
-  "description": "Consulta los rankings nacionales más recientes con base en resultados oficiales publicados.",
+  "description": "Consulta los rankings más recientes construidos con resultados oficiales.",
   "scope": {
-    "national": "Vista nacional",
-    "organizer": "Alcance de Director de Carrera",
-    "default": "Vista nacional",
-    "contextOrg": "Contexto de Director de Carrera: {organization}"
+    "national": "Todas las carreras",
+    "organizer": "Un organizador",
+    "default": "Todas las carreras",
+    "contextOrg": "Organizador: {organization}"
   },
   "snapshot": {
-    "summary": "Ruleset {ruleset} · {rows} posiciones",
+    "summary": "Versión de reglas {ruleset} · {rows} corredores clasificados",
     "current": "Actualización actual",
     "historical": "Actualización anterior"
   },
   "reproducibility": {
-    "summary": "Referencia del ranking",
+    "summary": "Fuente de datos",
     "notAvailable": "No disponible",
-    "referenceLink": "Abrir referencia de reglas",
-    "referenceMissing": "Este snapshot no tiene referencia pública del ruleset.",
+    "referenceLink": "Abrir reglas del ranking",
+    "referenceMissing": "Esta actualización no tiene una referencia pública de reglas.",
     "fields": {
-      "ruleset": "Versión de reglas",
-      "generatedAt": "Generado",
-      "promotedAt": "Publicado",
+      "ruleset": "Versión de reglas del ranking",
+      "generatedAt": "Calculado el",
+      "promotedAt": "Hecho público el",
       "snapshotId": "ID de actualización"
     }
   },
   "filters": {
-    "scope": "Alcance",
-    "organization": "Director de Carrera",
-    "snapshot": "Historial de snapshots",
+    "scope": "Vista del ranking",
+    "organization": "Organizador",
+    "snapshot": "Actualizaciones anteriores",
     "discipline": "Disciplina",
     "gender": "Género",
     "ageGroup": "Grupo de edad",
     "all": "Todas",
-    "currentSnapshot": "Snapshot actual",
+    "currentSnapshot": "Actualización actual",
     "snapshotOption": "{ruleset} · {generatedAt}",
     "apply": "Aplicar",
     "reset": "Limpiar"
   },
   "table": {
     "title": "Ranking nacional",
-    "description": "Actualización nacional publicada más reciente.",
+    "description": "Actualización actual del ranking.",
     "headers": {
       "rank": "Posición",
       "runner": "Corredor",
@@ -51,7 +51,7 @@
     }
   },
   "empty": {
-    "noSnapshot": "Aún no se ha publicado una actualización nacional del ranking.",
+    "noSnapshot": "Aún no hay una actualización de ranking disponible.",
     "noRows": "Aún no hay rankings disponibles.",
     "noMatch": "No hay rankings que coincidan con los filtros seleccionados."
   },

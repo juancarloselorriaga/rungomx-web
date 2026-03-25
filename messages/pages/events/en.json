@@ -1,6 +1,6 @@
 {
   "title": "Events",
-  "description": "Browse upcoming and past running events.",
+  "description": "Compare race dates, prices, and registration.",
   "metadata": {
     "title": "Events | RunGoMX",
     "description": "Find and register for endurance events in Mexico."
@@ -35,8 +35,8 @@
     "registerWithFriends": "Register with friends",
     "selectDistance": "Select distance",
     "eventDate": "Event date",
-    "eventDetails": "Event info",
-    "infoButtonLabel": "Event info",
+    "eventDetails": "Event details",
+    "infoButtonLabel": "Event details",
     "location": "Location",
     "organizer": "Race Director",
     "officialWebsite": "Official website",
@@ -105,7 +105,7 @@
       "always": "Always"
     },
     "website": {
-      "noAdditionalContent": "More event details coming soon.",
+      "noAdditionalContent": "More details soon.",
       "documents": "Documents",
       "photos": "Photos",
       "terrain": "Terrain",
@@ -148,7 +148,7 @@
     },
     "info": {
       "title": "Participant information",
-      "description": "Enter your details.",
+      "description": "Enter participant details.",
       "firstName": "First name",
       "lastName": "Last name",
       "email": "Email",
@@ -168,7 +168,7 @@
     },
     "questions": {
       "title": "Additional questions",
-      "description": "Answer the Race Director's questions.",
+      "description": "Answer Race Director questions.",
       "required": "Required",
       "optional": "Optional",
       "continue": "Continue",
@@ -216,7 +216,7 @@
     },
     "payment": {
       "title": "Payment",
-      "description": "Complete payment to finish registration.",
+      "description": "Pay to confirm.",
       "summary": "Order summary",
       "distance": "Distance",
       "price": "Price",
@@ -240,7 +240,7 @@
       "tax": "Tax",
       "total": "Total",
       "paymentMethods": "Payment methods",
-      "comingSoon": "Online payment is coming soon. For now, contact the Race Director to finish registration.",
+      "comingSoon": "Online payment isn't available yet. Contact the Race Director to finish.",
       "contactOrganizer": "Contact Race Director",
       "complete": "Complete registration"
     },
@@ -262,7 +262,7 @@
     "alreadyRegistered": {
       "title": "You're already registered",
       "description": "You have an active registration for {distanceName}.",
-      "inProgress": "Status: {status} - Complete your registration from My Registrations.",
+      "inProgress": "Current status: {status}. Finish in My Registrations.",
       "viewRegistrations": "View my registrations",
       "yourRegistration": "Your registration"
     },
@@ -283,8 +283,8 @@
       }
     },
     "loginRequired": {
-      "title": "Sign in required",
-      "description": "You need to be signed in to register for this event.",
+      "title": "Save your spot with an account",
+      "description": "Sign in or create an account to save your registration and confirmation details.",
       "signIn": "Sign in",
       "signUp": "Create account"
     }
@@ -295,8 +295,8 @@
     "claimAction": "Claim and continue",
     "dobLabel": "Confirm your date of birth",
     "loginRequired": {
-      "title": "Sign in required",
-      "description": "You need to be signed in to claim this invite.",
+      "title": "Sign in to claim your invite",
+      "description": "Sign in or create an account to save this invite to the right registration.",
       "signIn": "Sign in",
       "signUp": "Create account"
     },

@@ -1,6 +1,6 @@
 {
   "title": "Eventos",
-  "description": "Explora eventos próximos y pasados de carreras.",
+  "description": "Compara fechas, precios y estado de inscripción de distintas carreras.",
   "metadata": {
     "title": "Eventos | RunGoMX",
     "description": "Encuentra e inscríbete en eventos de resistencia en México."
@@ -27,7 +27,7 @@
     },
     "registrationOpen": "Inscripciones abiertas",
     "registrationClosed": "Inscripciones cerradas",
-    "registrationDetails": "Detalles de inscripción",
+    "registrationDetails": "Información de inscripción",
     "registrationOpens": "Abre {date}",
     "registrationCloses": "Cierra {date}",
     "registrationPaused": "Las inscripciones están pausadas",
@@ -105,7 +105,7 @@
       "always": "Siempre"
     },
     "website": {
-      "noAdditionalContent": "Pronto habrá más información del evento.",
+      "noAdditionalContent": "Aquí aparecerán más detalles del evento pronto.",
       "documents": "Documentos",
       "photos": "Fotos",
       "terrain": "Terreno",
@@ -148,7 +148,7 @@
     },
     "info": {
       "title": "Información del participante",
-      "description": "Ingresa tus datos.",
+      "description": "Ingresa los datos de la persona participante.",
       "firstName": "Nombre",
       "lastName": "Apellidos",
       "email": "Correo electrónico",
@@ -168,7 +168,7 @@
     },
     "questions": {
       "title": "Preguntas adicionales",
-      "description": "Responde las preguntas del Director de Carrera.",
+      "description": "Responde las preguntas del director de carrera.",
       "required": "Requerido",
       "optional": "Opcional",
       "continue": "Continuar",
@@ -216,7 +216,7 @@
     },
     "payment": {
       "title": "Pago",
-      "description": "Completa el pago para finalizar la inscripción.",
+      "description": "Realiza el pago para confirmar tu inscripción.",
       "summary": "Resumen del pedido",
       "distance": "Distancia",
       "price": "Precio",
@@ -240,8 +240,8 @@
       "tax": "Impuestos",
       "total": "Total",
       "paymentMethods": "Métodos de pago",
-      "comingSoon": "El pago en línea estará disponible pronto. Por ahora, contacta al Director de Carrera para completar tu inscripción.",
-      "contactOrganizer": "Contactar Director de Carrera",
+      "comingSoon": "El pago en línea todavía no está disponible. Contacta al director de carrera para terminar tu inscripción.",
+      "contactOrganizer": "Contactar al director de carrera",
       "complete": "Completar inscripción"
     },
     "confirmation": {
@@ -262,7 +262,7 @@
     "alreadyRegistered": {
       "title": "Ya estás inscrito",
       "description": "Tienes un registro activo para {distanceName}.",
-      "inProgress": "Estado: {status} - Completa tu inscripción desde Mis Inscripciones.",
+      "inProgress": "Estado actual: {status}. Termina tu inscripción en Mis inscripciones.",
       "viewRegistrations": "Ver mis inscripciones",
       "yourRegistration": "Tu inscripción"
     },
@@ -283,8 +283,8 @@
       }
     },
     "loginRequired": {
-      "title": "Inicio de sesión requerido",
-      "description": "Necesitas iniciar sesión para inscribirte en este evento.",
+      "title": "Guarda tu lugar con una cuenta",
+      "description": "Crea una cuenta o inicia sesión para inscribirte. La usamos para guardar tu inscripción y enviarte la confirmación.",
       "signIn": "Iniciar sesión",
       "signUp": "Crear cuenta"
     }
@@ -295,8 +295,8 @@
     "claimAction": "Reclamar y continuar",
     "dobLabel": "Confirma tu fecha de nacimiento",
     "loginRequired": {
-      "title": "Inicio de sesión requerido",
-      "description": "Necesitas iniciar sesión para reclamar esta invitación.",
+      "title": "Inicia sesión para reclamar tu invitación",
+      "description": "Crea una cuenta o inicia sesión para guardar esta invitación en la inscripción correcta.",
       "signIn": "Iniciar sesión",
       "signUp": "Crear cuenta"
     },

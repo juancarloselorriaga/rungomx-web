@@ -22,9 +22,7 @@ import {
   FileText,
   Flag,
   Medal,
-  ShieldCheck,
   Trophy,
-  Users,
 } from 'lucide-react';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
@@ -79,19 +77,33 @@ export default async function Home({ params }: LocalePageProps) {
     t('eventPages.highlights.conversion'),
   ];
 
-  const participationHighlights = [
-    { icon: CalendarDays, title: t('participation.highlights.discover'), variant: 'blue' as const },
-    { icon: Users, title: t('participation.highlights.decide'), variant: 'green' as const },
-    { icon: ShieldCheck, title: t('participation.highlights.commit'), variant: 'indigo' as const },
-  ];
-
-  const resultsRankingsHighlights = [
-    { icon: Medal, title: t('resultsRankings.highlights.results'), variant: 'blue' as const },
-    { icon: Trophy, title: t('resultsRankings.highlights.rankings'), variant: 'green' as const },
+  const supportingLinks = [
     {
-      icon: ShieldCheck,
-      title: t('resultsRankings.highlights.retention'),
-      variant: 'indigo' as const,
+      icon: Medal,
+      title: t('proofPaths.items.results.title'),
+      description: t('resultsRankings.highlights.results'),
+      cta: t('ctas.viewResults'),
+      href: publicRoutes.results,
+      iconClassName: 'text-[var(--brand-green)]',
+      iconBackgroundClassName: 'bg-[var(--brand-green)]/12',
+    },
+    {
+      icon: Trophy,
+      title: t('proofPaths.items.rankings.title'),
+      description: t('resultsRankings.highlights.rankings'),
+      cta: t('ctas.viewRankings'),
+      href: publicRoutes.rankings,
+      iconClassName: 'text-[var(--brand-indigo)]',
+      iconBackgroundClassName: 'bg-[var(--brand-indigo)]/12',
+    },
+    {
+      icon: Flag,
+      title: t('aboutBridge.title'),
+      description: t('aboutBridge.description'),
+      cta: t('aboutBridge.cta'),
+      href: publicRoutes.about,
+      iconClassName: 'text-[var(--brand-blue)]',
+      iconBackgroundClassName: 'bg-[var(--brand-blue)]/12',
     },
   ];
 
@@ -103,33 +115,31 @@ export default async function Home({ params }: LocalePageProps) {
         title={t('hero.title')}
         description={t('hero.description')}
         variant="gradient-blue"
-        padding="xl"
+        padding="lg"
         actions={[
           { label: t('hero.primaryCta'), href: publicRoutes.events },
           { label: t('hero.secondaryCta'), href: publicRoutes.results, variant: 'outline' },
         ]}
       />
 
-      <Section padding="lg" size="lg">
+      <Section padding="md" size="lg">
         <TextBlock
-          eyebrow={t('proofPaths.eyebrow')}
-          eyebrowVariant="green"
           title={t('proofPaths.title')}
           description={t('proofPaths.description')}
-          align="center"
-          size="lg"
-          className="mb-12"
+          size="md"
+          className="mb-8"
         />
 
         <BentoGrid columns={3}>
-          {proofPaths.map((path) => (
-            <BentoGridItem key={path.href}>
+          {proofPaths.map((path, index) => (
+            <BentoGridItem key={path.href} span={index === 0 ? 2 : 1}>
               <FeatureCard
                 icon={path.icon}
                 iconVariant={path.variant}
                 title={path.title}
                 description={path.description}
                 variant={path.variant}
+                size={index === 0 ? 'lg' : 'md'}
                 className="h-full"
               >
                 <Button asChild variant="link" className="mt-4 h-auto px-0 text-base">
@@ -144,117 +154,72 @@ export default async function Home({ params }: LocalePageProps) {
         </BentoGrid>
       </Section>
 
-      <Section variant="muted" padding="lg" size="lg">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-center">
+      <Section variant="muted" padding="md" size="lg">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
           <TextBlock
-            eyebrow={t('eventPages.eyebrow')}
-            eyebrowVariant="blue"
             title={t('eventPages.title')}
             description={t('eventPages.description')}
             size="md"
-          />
+          >
+            <Button asChild className="w-fit">
+              <Link href={publicRoutes.events}>{t('ctas.browseEvents')}</Link>
+            </Button>
+          </TextBlock>
 
-          <ContentCard variant="branded-blue" className="h-full">
+          <ContentCard title={t('eventPages.cardTitle')} variant="default" className="h-full">
             <div className="inline-flex rounded-xl bg-[var(--brand-blue)]/15 p-3">
               <FileText className="h-6 w-6 text-[var(--brand-blue)]" />
             </div>
             <IconList items={eventPageHighlights} iconVariant="blue" spacing="relaxed" />
-            <Button asChild className="mt-2 w-fit">
-              <Link href={publicRoutes.events}>{t('ctas.browseEvents')}</Link>
-            </Button>
           </ContentCard>
         </div>
       </Section>
 
-      <Section padding="lg" size="lg">
-        <TextBlock
-          eyebrow={t('participation.eyebrow')}
-          eyebrowVariant="green"
-          title={t('participation.title')}
-          description={t('participation.description')}
-          align="center"
-          size="lg"
-          className="mb-12"
-        />
-
-        <BentoGrid columns={3}>
-          {participationHighlights.map((item) => (
-            <BentoGridItem key={item.title}>
-              <FeatureCard
-                icon={item.icon}
-                iconVariant={item.variant}
-                title={item.title}
-                variant={item.variant}
-                className="h-full"
-              />
-            </BentoGridItem>
-          ))}
-        </BentoGrid>
-      </Section>
-
-      <Section variant="dark" padding="lg" size="lg">
-        <TextBlock
-          eyebrow={t('resultsRankings.eyebrow')}
-          eyebrowVariant="indigo"
-          title={t('resultsRankings.title')}
-          description={t('resultsRankings.description')}
-          align="center"
-          size="lg"
-          className="mb-12"
-        />
-
-        <BentoGrid columns={3} className="mb-10">
-          {resultsRankingsHighlights.map((item) => (
-            <BentoGridItem key={item.title}>
-              <FeatureCard
-                icon={item.icon}
-                iconVariant={item.variant}
-                title={item.title}
-                variant="muted"
-                className="h-full"
-              />
-            </BentoGridItem>
-          ))}
-        </BentoGrid>
-
-        <div className="flex flex-wrap justify-center gap-4">
-          <Button asChild size="lg">
-            <Link href={publicRoutes.results}>{t('ctas.viewResults')}</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline">
-            <Link href={publicRoutes.rankings}>{t('ctas.viewRankings')}</Link>
-          </Button>
-        </div>
-      </Section>
-
-      <Section padding="lg" size="md">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center">
+      <Section padding="md" size="lg">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
           <TextBlock
-            eyebrow={t('aboutBridge.eyebrow')}
-            eyebrowVariant="green"
-            title={t('aboutBridge.title')}
-            description={t('aboutBridge.description')}
+            title={t('resultsRankings.title')}
+            description={t('resultsRankings.description')}
             size="md"
           />
 
-          <ContentCard variant="branded-green" className="h-full">
-            <div className="inline-flex rounded-xl bg-[var(--brand-green)]/15 p-3">
-              <Flag className="h-6 w-6 text-[var(--brand-green)]" />
-            </div>
-            <p>{t('aboutBridge.description')}</p>
-            <Button asChild className="mt-2 w-fit">
-              <Link href={publicRoutes.about}>{t('aboutBridge.cta')}</Link>
-            </Button>
-          </ContentCard>
+          <div className="overflow-hidden rounded-3xl border border-border bg-card">
+            {supportingLinks.map((item, index) => {
+              const Icon = item.icon;
+
+              return (
+                <div
+                  key={item.href}
+                  className={index === 0 ? 'p-6 md:p-8' : 'border-t border-border p-6 md:p-8'}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`inline-flex rounded-xl p-3 ${item.iconBackgroundClassName}`}>
+                      <Icon className={`h-5 w-5 ${item.iconClassName}`} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                      <Button asChild variant="link" className="mt-3 h-auto px-0 text-sm">
+                        <Link href={item.href}>
+                          {item.cta}
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </Section>
 
-      <Section padding="lg" size="md">
+      <Section padding="md" size="md">
         <CtaBanner
           title={t('finalCta.title')}
           subtitle={t('finalCta.description')}
-          variant="gradient-green"
-          actions={[{ label: t('ctas.browseEvents'), href: publicRoutes.events }]}
+          variant="muted"
+          actions={[{ label: t('finalCta.primaryCta'), href: publicRoutes.events }]}
         />
       </Section>
     </div>

@@ -1,45 +1,45 @@
 {
   "title": "National Rankings",
-  "description": "See the latest national rankings built from published official results.",
+  "description": "See the latest rankings built from official race results.",
   "scope": {
-    "national": "National scope",
-    "organizer": "Race Director scope",
-    "default": "National view",
-    "contextOrg": "Race Director context: {organization}"
+    "national": "All races",
+    "organizer": "One organizer",
+    "default": "All races",
+    "contextOrg": "Organizer: {organization}"
   },
   "snapshot": {
-    "summary": "Ruleset {ruleset} · {rows} ranked runners",
+    "summary": "Rules version {ruleset} · {rows} ranked runners",
     "current": "Current update",
-    "historical": "Past update"
+    "historical": "Previous update"
   },
   "reproducibility": {
-    "summary": "Ranking reference",
+    "summary": "Data source",
     "notAvailable": "Not available",
-    "referenceLink": "Open rules reference",
-    "referenceMissing": "No ruleset reference is linked for this snapshot.",
+    "referenceLink": "Open ranking rules",
+    "referenceMissing": "No public rules reference is linked for this update.",
     "fields": {
-      "ruleset": "Rules version",
-      "generatedAt": "Generated",
-      "promotedAt": "Published",
+      "ruleset": "Ranking rules version",
+      "generatedAt": "Calculated on",
+      "promotedAt": "Made public on",
       "snapshotId": "Update ID"
     }
   },
   "filters": {
-    "scope": "Scope",
-    "organization": "Race Director",
-    "snapshot": "Snapshot history",
+    "scope": "Ranking view",
+    "organization": "Organizer",
+    "snapshot": "Past updates",
     "discipline": "Discipline",
     "gender": "Gender",
     "ageGroup": "Age group",
     "all": "All",
-    "currentSnapshot": "Current snapshot",
+    "currentSnapshot": "Current update",
     "snapshotOption": "{ruleset} · {generatedAt}",
     "apply": "Apply",
     "reset": "Reset"
   },
   "table": {
     "title": "National rankings",
-    "description": "Current published national update.",
+    "description": "Current ranking update.",
     "headers": {
       "rank": "Rank",
       "runner": "Runner",
@@ -51,7 +51,7 @@
     }
   },
   "empty": {
-    "noSnapshot": "No national ranking update has been published yet.",
+    "noSnapshot": "No ranking update is available yet.",
     "noRows": "No rankings are available yet.",
     "noMatch": "No rankings match the selected filters."
   },

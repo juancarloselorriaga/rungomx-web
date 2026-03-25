@@ -1,9 +1,9 @@
 {
   "title": "Resultados",
-  "description": "Encuentra resultados oficiales y revisa la información publicada más reciente.",
+  "description": "Busca resultados oficiales y revisa las clasificaciones más recientes de una carrera.",
   "discovery": {
     "title": "Encontrar resultados oficiales",
-    "description": "Busca por nombre, dorsal o evento para llegar rápido a la página oficial.",
+    "description": "Busca por nombre, dorsal o evento para abrir rápido la página correcta de resultados.",
     "searchNameLabel": "Nombre del corredor",
     "searchNamePlaceholder": "ej. Ana Martínez",
     "searchBibLabel": "Dorsal",
@@ -15,14 +15,14 @@
   },
   "directory": {
     "title": "Directorio de resultados oficiales",
-    "description": "Resultados oficiales publicados por edición.",
-    "empty": "No hay ediciones oficiales para el contexto seleccionado.",
+    "description": "Explora carreras que ya tienen resultados oficiales disponibles.",
+    "empty": "No hay carreras con resultados oficiales que coincidan con tus filtros actuales.",
     "eventDate": "Fecha del evento: {date}",
     "openOfficial": "Abrir página oficial"
   },
   "searchResults": {
     "title": "Coincidencias de búsqueda",
-    "description": "Coincidencias oficiales según tu búsqueda actual.",
+    "description": "Resultados oficiales que coinciden con tu búsqueda.",
     "empty": "No se encontraron coincidencias oficiales para esta búsqueda.",
     "context": "Dorsal {bib} · Lugar {place} · {status} · {finishTime}",
     "openOfficial": "Abrir página oficial"
@@ -30,36 +30,36 @@
   "howItWorks": {
     "panel": {
       "title": "Cómo funciona",
-      "description": "Una explicación rápida de cómo funcionan los resultados y rankings oficiales.",
-      "point1": "Oficial significa que el Director de Carrera ya publicó los resultados de esa edición.",
-      "point2": "Si hay una corrección, se publica una nueva versión con historial visible.",
-      "point3": "Los rankings solo usan versiones oficiales publicadas.",
+      "description": "Qué significa “oficial”, cuándo puede cambiar un resultado y cómo lo usan los rankings.",
+      "point1": "Oficial significa que el organizador de la carrera ya hizo públicos los resultados de esa edición.",
+      "point2": "Si hay una corrección, mostramos la nueva versión sin ocultar que hubo un cambio.",
+      "point3": "Los rankings solo usan resultados oficiales o corregidos.",
       "cta": "Leer el explicador completo"
     },
     "explainer": {
       "eyebrow": "Cómo funciona",
       "title": "Cómo funcionan los resultados y rankings oficiales",
-      "description": "Aquí te explicamos qué significa “Oficial”, cómo se publican correcciones y cómo los rankings usan esos resultados.",
+      "description": "Aquí te explicamos qué significa “Oficial”, cómo aparecen las correcciones y cómo los rankings usan esos resultados.",
       "officialMeaning": {
         "title": "Qué significa “Oficial”",
-        "point1": "Los resultados oficiales los publica el Director de Carrera de esa edición.",
-        "point2": "Los datos de borrador no se presentan como registro público oficial."
+        "point1": "Los resultados oficiales son los que el organizador de la carrera hizo públicos para esa edición.",
+        "point2": "Los tiempos en borrador y los datos no publicados no aparecen como resultados oficiales."
       },
       "correctionProcess": {
         "title": "Cómo funcionan las correcciones",
-        "point1": "Las correcciones aprobadas publican una nueva versión corregida en lugar de sobrescribir el historial.",
-        "point2": "Las páginas públicas muestran el contexto de la corrección para mantener la transparencia."
+        "point1": "Cuando se corrige un tiempo o una posición, se publica una nueva versión en lugar de reemplazar la anterior sin aviso.",
+        "point2": "Puedes ver que hubo una corrección y cuándo se hizo."
       },
       "rankingsRules": {
         "title": "Cómo los rankings usan resultados",
-        "point1": "Los rankings se calculan solo con versiones oficiales o corregidas ya publicadas.",
-        "point2": "La referencia de reglas se versiona para poder rastrear cada ranking publicado."
+        "point1": "Los rankings se calculan solo con resultados oficiales o corregidos.",
+        "point2": "Cada actualización del ranking conserva una referencia de reglas para que sepas qué versión se usó."
       }
     }
   },
   "corrections": {
     "title": "Correcciones recientes",
-    "description": "Cuando cambia la información oficial, publicamos un resumen corto con fecha y atribución.",
+    "description": "Cuando cambia un resultado oficial, mostramos un resumen corto de qué se actualizó y cuándo.",
     "empty": "Aún no hay correcciones publicadas.",
     "fields": {
       "reason": "Motivo",
@@ -76,7 +76,7 @@
   },
   "official": {
     "title": "Resultados oficiales de {seriesName} {editionLabel}",
-    "subtitle": "Este enlace siempre apunta a los resultados oficiales o corregidos más recientes de esta edición.",
+    "subtitle": "Esta página siempre muestra los resultados oficiales o corregidos más recientes de esta edición.",
     "status": {
       "official": "Oficial",
       "corrected": "Corregido",
@@ -95,14 +95,14 @@
     },
     "trustScan": {
       "title": "Revisión rápida",
-      "description": "Datos clave de esta publicación oficial.",
-      "scopeValue": "Resultados oficiales de esta edición",
+      "description": "Datos clave de esta página oficial de resultados.",
+      "scopeValue": "Resultados oficiales de esta carrera",
       "fields": {
-        "organizer": "Director de Carrera",
-        "scope": "Alcance",
+        "organizer": "Organizador",
+        "scope": "Página",
         "version": "Versión",
         "updatedAt": "Última actualización",
-        "correction": "Estado de corrección"
+        "correction": "Corrección"
       },
       "status": {
         "unknown": "Estado no disponible"
@@ -113,9 +113,9 @@
       }
     },
     "table": {
-      "title": "Resultados publicados",
-      "description": "Muestra de registros de la publicación oficial activa.",
-      "empty": "Aún no hay filas publicadas para esta versión oficial.",
+      "title": "Resultados oficiales más recientes",
+      "description": "Muestra de registros de los resultados oficiales actuales.",
+      "empty": "Aún no hay resultados disponibles para esta versión oficial.",
       "headers": {
         "place": "Lugar",
         "runner": "Corredor",
@@ -127,8 +127,8 @@
     },
     "nonOfficial": {
       "badge": "Resultados oficiales aún no publicados",
-      "description": "Los resultados oficiales aún no están finalizados para esta edición.",
-      "noDraftDisclosure": "Los datos en borrador o no oficiales no se muestran en esta URL pública."
+      "description": "Los resultados oficiales todavía no están listos para esta edición.",
+      "noDraftDisclosure": "Los datos en borrador o no oficiales no aparecen en esta página pública."
     },
     "fallback": {
       "notAvailable": "No disponible",

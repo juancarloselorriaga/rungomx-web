@@ -1,21 +1,17 @@
 import {
   ContentCard,
   CtaBanner,
-  FeatureCard,
   Hero,
   IconList,
-  RelatedLinksStrip,
   Section,
   TextBlock,
 } from '@/components/common';
-import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { CalendarDays, CircleHelp, Medal, Trophy } from 'lucide-react';
+import { CalendarDays, CircleHelp, Medal } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getMessages } from 'next-intl/server';
-import type { ComponentProps } from 'react';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -27,15 +23,7 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
   );
 }
 
-type LocalizedLinkHref = ComponentProps<typeof Link>['href'];
-
 type AboutSectionCard = {
-  title: string;
-  description: string;
-};
-
-type RelatedLinkContent = {
-  href: LocalizedLinkHref;
   title: string;
   description: string;
 };
@@ -73,28 +61,6 @@ type AboutPageMessages = {
       support: AboutSectionCard;
     };
   };
-  proof: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: {
-      events: AboutSectionCard;
-      registration: AboutSectionCard;
-      results: AboutSectionCard;
-      rankings: AboutSectionCard;
-    };
-  };
-  relatedLinks: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: {
-      events: RelatedLinkContent;
-      results: RelatedLinkContent;
-      rankings: RelatedLinkContent;
-      contact: RelatedLinkContent;
-    };
-  };
   cta: {
     title: string;
     description: string;
@@ -109,24 +75,10 @@ const focusIcons = {
   follow: Medal,
   support: CircleHelp,
 } as const;
-const focusVariants = {
-  discover: 'blue',
-  follow: 'green',
-  support: 'indigo',
-} as const;
-
-const proofOrder = ['events', 'registration', 'results', 'rankings'] as const;
-const proofIcons = {
-  events: CalendarDays,
-  registration: Trophy,
-  results: Medal,
-  rankings: Trophy,
-} as const;
-const proofVariants = {
-  events: 'blue',
-  registration: 'indigo',
-  results: 'green',
-  rankings: 'blue',
+const focusIconClasses = {
+  discover: 'bg-[var(--brand-blue)]/12 text-[var(--brand-blue)]',
+  follow: 'bg-[var(--brand-green)]/12 text-[var(--brand-green)]',
+  support: 'bg-[var(--brand-indigo)]/12 text-[var(--brand-indigo)]',
 } as const;
 
 export default async function AboutPage({ params }: LocalePageProps) {
@@ -144,13 +96,14 @@ export default async function AboutPage({ params }: LocalePageProps) {
         title={page.hero.title}
         description={page.hero.description}
         variant="gradient-blue"
+        padding="lg"
         actions={[
           { label: page.hero.primaryCta, href: '/events' },
           { label: page.hero.secondaryCta, href: '/results', variant: 'outline' },
         ]}
       />
 
-      <Section padding="lg" size="lg">
+      <Section padding="md" size="lg">
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start">
           <TextBlock
             eyebrow={page.story.eyebrow}
@@ -182,77 +135,39 @@ export default async function AboutPage({ params }: LocalePageProps) {
       </Section>
 
       <Section variant="muted" padding="md" size="lg">
-        <TextBlock
-          eyebrow={page.focus.eyebrow}
-          eyebrowVariant="blue"
-          title={page.focus.title}
-          description={page.focus.description}
-          align="center"
-          size="lg"
-          className="mb-10"
-        />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
+          <TextBlock
+            eyebrow={page.focus.eyebrow}
+            eyebrowVariant="blue"
+            title={page.focus.title}
+            description={page.focus.description}
+            size="md"
+          />
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {focusOrder.map((key) => {
-            const item = page.focus.items[key];
-            const Icon = focusIcons[key];
+          <div className="overflow-hidden rounded-3xl border border-border bg-card">
+            {focusOrder.map((key, index) => {
+              const item = page.focus.items[key];
+              const Icon = focusIcons[key];
 
-            return (
-              <FeatureCard
-                key={key}
-                icon={Icon}
-                variant={focusVariants[key]}
-                title={item.title}
-                description={item.description}
-                className="h-full"
-              />
-            );
-          })}
+              return (
+                <div
+                  key={key}
+                  className={index === 0 ? 'p-6 md:p-8' : 'border-t border-border p-6 md:p-8'}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`inline-flex rounded-xl p-3 ${focusIconClasses[key]}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </Section>
-
-      <Section padding="lg" size="lg">
-        <TextBlock
-          eyebrow={page.proof.eyebrow}
-          eyebrowVariant="green"
-          title={page.proof.title}
-          description={page.proof.description}
-          align="center"
-          size="lg"
-          className="mb-10"
-        />
-
-        <div className="grid gap-6 md:grid-cols-2">
-          {proofOrder.map((key) => {
-            const item = page.proof.items[key];
-            const Icon = proofIcons[key];
-
-            return (
-              <FeatureCard
-                key={key}
-                icon={Icon}
-                variant={proofVariants[key]}
-                title={item.title}
-                description={item.description}
-                className="h-full"
-              />
-            );
-          })}
-        </div>
-      </Section>
-
-      <Section padding="md" size="lg">
-        <RelatedLinksStrip
-          eyebrow={page.relatedLinks.eyebrow}
-          title={page.relatedLinks.title}
-          description={page.relatedLinks.description}
-          links={[
-            page.relatedLinks.items.events,
-            page.relatedLinks.items.results,
-            page.relatedLinks.items.rankings,
-            page.relatedLinks.items.contact,
-          ]}
-        />
       </Section>
 
       <Section padding="md" size="md">
@@ -261,9 +176,9 @@ export default async function AboutPage({ params }: LocalePageProps) {
           subtitle={page.cta.description}
           actions={[
             { label: page.cta.primaryActionLabel, href: '/events' },
-            { label: page.cta.secondaryActionLabel, href: '/contact', variant: 'outline' },
+            { label: page.cta.secondaryActionLabel, href: '/results', variant: 'outline' },
           ]}
-          variant="gradient"
+          variant="muted"
         />
       </Section>
     </div>
