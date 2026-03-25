@@ -1,5 +1,5 @@
+import { Badge, Hero, Section, TextBlock } from '@/components/common';
 import { CorrectionSummaryBlock } from '@/components/results/public/correction-summary-block';
-import { Badge } from '@/components/common/badge';
 import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,8 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+
+import { ArrowRight } from 'lucide-react';
 
 type ResultsPageProps = LocalePageProps & {
   searchParams: Promise<{ q?: string; bib?: string; series?: string }>;
@@ -90,9 +92,7 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
     }
   }
 
-  const availableSeries = [...new Map(
-    directory.map((item) => [item.seriesSlug, item.seriesName]),
-  ).entries()]
+  const availableSeries = [...new Map(directory.map((item) => [item.seriesSlug, item.seriesName])).entries()]
     .map(([slug, name]) => ({ slug, name }))
     .sort((left, right) => left.name.localeCompare(right.name));
 
@@ -123,137 +123,105 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
   });
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="mb-4 text-3xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </header>
-
-      <HowItWorksBox
-        title={t('howItWorks.panel.title')}
-        description={t('howItWorks.panel.description')}
-        bulletOne={t('howItWorks.panel.point1')}
-        bulletTwo={t('howItWorks.panel.point2')}
-        bulletThree={t('howItWorks.panel.point3')}
-        ctaLabel={t('howItWorks.panel.cta')}
+    <div className="w-full">
+      <Hero
+        title={t('title')}
+        description={t('description')}
+        variant="gradient-blue"
+        titleSize="xl"
+        align="left"
       />
 
-      <section className="rounded-xl border bg-card p-4 shadow-sm">
-        <h2 className="text-sm font-semibold">{t('discovery.title')}</h2>
-        <p className="text-xs text-muted-foreground">{t('discovery.description')}</p>
+      <Section variant="muted" padding="md" size="lg">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
+          <div>
+            <TextBlock
+              title={t('discovery.title')}
+              description={t('discovery.description')}
+              size="md"
+              className="max-w-[46rem]"
+            />
 
-        <form className="mt-4 grid gap-3 md:grid-cols-4" method="get">
-          <label className="grid gap-1 text-xs text-muted-foreground md:col-span-2">
-            <span>{t('discovery.searchNameLabel')}</span>
-            <Input
-              type="search"
-              name="q"
-              defaultValue={normalizedQuery}
-              placeholder={t('discovery.searchNamePlaceholder')}
-              className="shadow-none"
-            />
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('discovery.searchBibLabel')}</span>
-            <Input
-              type="search"
-              name="bib"
-              defaultValue={normalizedBib}
-              placeholder={t('discovery.searchBibPlaceholder')}
-              className="shadow-none"
-            />
-          </label>
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('discovery.seriesFilterLabel')}</span>
-            <select
-              name="series"
-              defaultValue={normalizedSeries}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+            <form
+              className="mt-8 rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)] p-5 md:p-6"
+              method="get"
             >
-              <option value="">{t('discovery.seriesFilterAll')}</option>
-              {availableSeries.map((seriesOption) => (
-                <option key={seriesOption.slug} value={seriesOption.slug}>
-                  {seriesOption.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-1.5 text-xs text-muted-foreground md:col-span-2">
+                  <span>{t('discovery.searchNameLabel')}</span>
+                  <Input
+                    type="search"
+                    name="q"
+                    defaultValue={normalizedQuery}
+                    placeholder={t('discovery.searchNamePlaceholder')}
+                    className="h-11 rounded-xl border-border/60 bg-background/96 shadow-none"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs text-muted-foreground">
+                  <span>{t('discovery.searchBibLabel')}</span>
+                  <Input
+                    type="search"
+                    name="bib"
+                    defaultValue={normalizedBib}
+                    placeholder={t('discovery.searchBibPlaceholder')}
+                    className="h-11 rounded-xl border-border/60 bg-background/96 shadow-none"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs text-muted-foreground">
+                  <span>{t('discovery.seriesFilterLabel')}</span>
+                  <select
+                    name="series"
+                    defaultValue={normalizedSeries}
+                    className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  >
+                    <option value="">{t('discovery.seriesFilterAll')}</option>
+                    {availableSeries.map((seriesOption) => (
+                      <option key={seriesOption.slug} value={seriesOption.slug}>
+                        {seriesOption.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
-          <div className="md:col-span-4 flex flex-wrap gap-2">
-            <Button type="submit" className="min-w-0">
-              {t('discovery.searchAction')}
-            </Button>
-            {normalizedQuery || normalizedBib || normalizedSeries ? (
-              <Button asChild variant="outline" className="min-w-0">
-                <Link href="/results">{t('discovery.resetAction')}</Link>
-              </Button>
-            ) : null}
+              <div className="mt-6 flex flex-wrap gap-2 border-t border-border/70 pt-5">
+                <Button type="submit" className="min-w-0">
+                  {t('discovery.searchAction')}
+                </Button>
+                {normalizedQuery || normalizedBib || normalizedSeries ? (
+                  <Button asChild variant="outline" className="min-w-0">
+                    <Link href="/results">{t('discovery.resetAction')}</Link>
+                  </Button>
+                ) : null}
+              </div>
+            </form>
           </div>
-        </form>
-      </section>
 
-      <section className="rounded-xl border bg-card shadow-sm">
-        <div className="border-b px-4 py-3">
-          <h2 className="text-sm font-semibold">{t('directory.title')}</h2>
-          <p className="text-xs text-muted-foreground">{t('directory.description')}</p>
+          <HowItWorksBox
+            title={t('howItWorks.panel.title')}
+            description={t('howItWorks.panel.description')}
+            bulletOne={t('howItWorks.panel.point1')}
+            bulletTwo={t('howItWorks.panel.point2')}
+            bulletThree={t('howItWorks.panel.point3')}
+            ctaLabel={t('howItWorks.panel.cta')}
+          />
         </div>
-
-        {filteredDirectory.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-muted-foreground">{t('directory.empty')}</div>
-        ) : (
-          <ul className="divide-y">
-            {filteredDirectory.map((item) => (
-              <li key={item.editionId} className="px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-foreground">
-                      {item.seriesName} {item.editionLabel}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {[item.city, item.state].filter(Boolean).join(', ') ||
-                        t('official.fallback.notAvailable')}
-                    </p>
-                    {item.startsAt ? (
-                      <p className="text-xs text-muted-foreground">
-                        {t('directory.eventDate', { date: dateFormatter.format(item.startsAt) })}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <Badge variant={item.activeVersionStatus === 'corrected' ? 'indigo' : 'green'}>
-                      {item.activeVersionStatus === 'corrected'
-                        ? t('official.status.corrected')
-                        : t('official.status.official')}
-                    </Badge>
-                    <Link
-                      href={{
-                        pathname: '/results/[seriesSlug]/[editionSlug]',
-                        params: { seriesSlug: item.seriesSlug, editionSlug: item.editionSlug },
-                      }}
-                      className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-                    >
-                      {t('directory.openOfficial')}
-                    </Link>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      </Section>
 
       {hasSearchInput ? (
-        <section className="rounded-xl border bg-card shadow-sm">
-          <div className="border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">{t('searchResults.title')}</h2>
-            <p className="text-xs text-muted-foreground">{t('searchResults.description')}</p>
-          </div>
+        <Section padding="lg" size="lg">
+          <TextBlock
+            title={t('searchResults.title')}
+            description={t('searchResults.description')}
+            size="md"
+            className="max-w-[46rem]"
+          />
 
-          {searchResults.length === 0 ? (
-            <div className="px-4 py-6 text-sm text-muted-foreground">{t('searchResults.empty')}</div>
-          ) : (
-            <ul className="divide-y">
-              {searchResults.map((row, index) => {
+          <div className="mt-12 border-t border-border/70">
+            {searchResults.length === 0 ? (
+              <p className="py-7 text-sm text-muted-foreground">{t('searchResults.empty')}</p>
+            ) : (
+              searchResults.map((row, index) => {
                 const identity = resolvePublicResultIdentityDisplay(
                   {
                     runnerFullName: row.runnerFullName,
@@ -263,66 +231,122 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
                 );
 
                 return (
-                  <li
+                  <div
                     key={`${row.editionId}-${row.bibNumber ?? 'no-bib'}-${row.runnerFullName}-${index}`}
-                    className="px-4 py-3"
+                    className="grid gap-5 border-b border-border/70 py-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-6 md:py-8"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-foreground">{identity.runnerLabel}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {row.seriesName} {row.editionLabel}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t('searchResults.context', {
-                            bib: identity.bibLabel ?? t('official.fallback.notAvailableShort'),
-                            place: row.overallPlace ?? t('official.fallback.notAvailableShort'),
-                            status: resolveEntryStatusLabel(row.resultStatus),
-                            finishTime: formatFinishTime(row.finishTimeMillis),
-                          })}
-                        </p>
-                      </div>
-                      <Link
-                        href={{
-                          pathname: '/results/[seriesSlug]/[editionSlug]',
-                          params: { seriesSlug: row.seriesSlug, editionSlug: row.editionSlug },
-                        }}
-                        className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-                      >
-                        {t('searchResults.openOfficial')}
-                      </Link>
+                    <div className="min-w-0">
+                      <h2 className="font-display text-[clamp(1.45rem,2.5vw,1.9rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                        {identity.runnerLabel}
+                      </h2>
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                        {row.seriesName} {row.editionLabel}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                        {t('searchResults.context', {
+                          bib: identity.bibLabel ?? t('official.fallback.notAvailableShort'),
+                          place: row.overallPlace ?? t('official.fallback.notAvailableShort'),
+                          status: resolveEntryStatusLabel(row.resultStatus),
+                          finishTime: formatFinishTime(row.finishTimeMillis),
+                        })}
+                      </p>
                     </div>
-                  </li>
+                    <Link
+                      href={{
+                        pathname: '/results/[seriesSlug]/[editionSlug]',
+                        params: { seriesSlug: row.seriesSlug, editionSlug: row.editionSlug },
+                      }}
+                      className="group inline-flex items-center gap-2 self-start text-sm font-semibold text-foreground transition-colors hover:text-[var(--brand-blue)]"
+                    >
+                      <span>{t('searchResults.openOfficial')}</span>
+                      <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                    </Link>
+                  </div>
                 );
-              })}
-            </ul>
-          )}
-        </section>
+              })
+            )}
+          </div>
+        </Section>
       ) : null}
 
-      <CorrectionSummaryBlock
-        summaries={summaries.map((summary) => ({
-          ...summary,
-          approvedAtLabel: summary.approvedAt ? formatter.format(summary.approvedAt) : null,
-        }))}
-        labels={{
-          title: t('corrections.title'),
-          description: t('corrections.description'),
-          empty: t('corrections.empty'),
-          fields: {
-            reason: t('corrections.fields.reason'),
-            changes: t('corrections.fields.changes'),
-            approvedBy: t('corrections.fields.approvedBy'),
-            approvedAt: t('corrections.fields.approvedAt'),
-            versionTransition: t('corrections.fields.versionTransition'),
-          },
-          fallback: {
-            unknownApprover: t('corrections.fallback.unknownApprover'),
-            unknownTime: t('corrections.fallback.unknownTime'),
-            noChanges: t('corrections.fallback.noChanges'),
-          },
-        }}
-      />
+      <Section padding="md" size="lg">
+        <TextBlock
+          title={t('directory.title')}
+          description={t('directory.description')}
+          size="md"
+          className="max-w-[46rem]"
+        />
+
+        <div className="mt-12 border-t border-border/70">
+          {filteredDirectory.length === 0 ? (
+            <p className="py-7 text-sm text-muted-foreground">{t('directory.empty')}</p>
+          ) : (
+            filteredDirectory.map((item) => (
+              <div
+                key={item.editionId}
+                className="grid gap-5 border-b border-border/70 py-7 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-6 md:py-8"
+              >
+                <div className="min-w-0">
+                  <h2 className="font-display text-[clamp(1.45rem,2.5vw,1.9rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                    {item.seriesName} {item.editionLabel}
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {[item.city, item.state].filter(Boolean).join(', ') || t('official.fallback.notAvailable')}
+                  </p>
+                  {item.startsAt ? (
+                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                      {t('directory.eventDate', { date: dateFormatter.format(item.startsAt) })}
+                    </p>
+                  ) : null}
+                </div>
+                <div className="flex flex-col items-start gap-3 md:items-end">
+                  <Badge variant={item.activeVersionStatus === 'corrected' ? 'indigo' : 'green'}>
+                    {item.activeVersionStatus === 'corrected'
+                      ? t('official.status.corrected')
+                      : t('official.status.official')}
+                  </Badge>
+                  <Link
+                    href={{
+                      pathname: '/results/[seriesSlug]/[editionSlug]',
+                      params: { seriesSlug: item.seriesSlug, editionSlug: item.editionSlug },
+                    }}
+                    className="group inline-flex items-center gap-2 text-sm font-semibold text-foreground transition-colors hover:text-[var(--brand-blue)]"
+                  >
+                    <span>{t('directory.openOfficial')}</span>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </Section>
+
+      <Section variant="muted" padding="md" size="lg">
+        <CorrectionSummaryBlock
+          summaries={summaries.map((summary) => ({
+            ...summary,
+            approvedAtLabel: summary.approvedAt ? formatter.format(summary.approvedAt) : null,
+          }))}
+          labels={{
+            title: t('corrections.title'),
+            description: t('corrections.description'),
+            empty: t('corrections.empty'),
+            fields: {
+              reason: t('corrections.fields.reason'),
+              changes: t('corrections.fields.changes'),
+              approvedBy: t('corrections.fields.approvedBy'),
+              approvedAt: t('corrections.fields.approvedAt'),
+              versionTransition: t('corrections.fields.versionTransition'),
+            },
+            fallback: {
+              unknownApprover: t('corrections.fallback.unknownApprover'),
+              unknownTime: t('corrections.fallback.unknownTime'),
+              noChanges: t('corrections.fallback.noChanges'),
+            },
+          }}
+        />
+      </Section>
     </div>
   );
 }

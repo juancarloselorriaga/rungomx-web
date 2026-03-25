@@ -25,13 +25,13 @@ export function LegalDocumentSection({
   return (
     <article
       className={cn(
-        'scroll-mt-24 rounded-3xl border border-border bg-card/80 p-6 shadow-sm md:p-8',
+        'scroll-mt-24 border-t border-border/70 pt-8 md:pt-10',
         className,
       )}
       {...props}
     >
-      <div className="space-y-3">
-        <Title className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+      <div className="max-w-3xl space-y-3">
+        <Title className="font-display text-[clamp(1.75rem,2.8vw,2.4rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
           {title}
         </Title>
         {intro ? <p className="text-base leading-7 text-muted-foreground">{intro}</p> : null}
@@ -40,7 +40,7 @@ export function LegalDocumentSection({
       {body ? (
         <div
           className={cn(
-            'mt-6 space-y-4 text-sm leading-7 text-muted-foreground md:text-base',
+            'mt-6 max-w-3xl space-y-4 text-sm leading-7 text-muted-foreground md:text-base',
             bodyClassName,
           )}
         >

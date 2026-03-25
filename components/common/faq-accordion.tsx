@@ -33,18 +33,18 @@ export interface FaqAccordionProps extends React.HTMLAttributes<HTMLDivElement> 
 
 export function FaqAccordion({ groups, className, ...props }: FaqAccordionProps) {
   return (
-    <div className={cn('space-y-8', className)} {...props}>
+    <div className={cn('space-y-12 md:space-y-14', className)} {...props}>
       {groups.map((group) => (
         <section
           key={group.id}
           id={group.id}
-          className="scroll-mt-28 rounded-3xl border border-border bg-card/80 p-6 md:p-8"
+          className="scroll-mt-28 border-t border-border/70 pt-8 md:pt-10"
           aria-labelledby={`${group.id}-title`}
         >
           <div className="max-w-2xl">
             <h3
               id={`${group.id}-title`}
-              className="text-2xl font-semibold tracking-tight text-foreground"
+              className="font-display text-[clamp(1.8rem,3vw,2.5rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground"
             >
               {group.title}
             </h3>
@@ -53,11 +53,11 @@ export function FaqAccordion({ groups, className, ...props }: FaqAccordionProps)
             ) : null}
           </div>
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-8 border-t border-border/70">
             {group.items.map((item) => (
               <details
                 key={item.id}
-                className="group rounded-2xl border border-border bg-background/90 p-5 open:bg-muted/20"
+                className="group border-b border-border/70 py-5"
                 open={item.defaultOpen}
               >
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
@@ -70,7 +70,7 @@ export function FaqAccordion({ groups, className, ...props }: FaqAccordionProps)
                   />
                 </summary>
 
-                <div className="mt-4 space-y-4 border-t border-border pt-4 text-sm leading-7 text-muted-foreground md:text-base">
+                <div className="mt-4 space-y-4 pt-1 text-sm leading-7 text-muted-foreground md:text-base">
                   {item.answerTitle ? (
                     <p className="font-medium text-foreground">{item.answerTitle}</p>
                   ) : null}

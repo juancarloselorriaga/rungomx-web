@@ -1,13 +1,12 @@
 import {
-  ContentCard,
-  CtaBanner,
   Hero,
-  IconList,
   LegalDocumentSection,
   RelatedLinksStrip,
   Section,
   TextBlock,
 } from '@/components/common';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -109,33 +108,43 @@ export default async function TermsPage({ params }: LocalePageProps) {
       />
 
       <Section variant="muted" padding="md" size="lg">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start">
-          <TextBlock
-            eyebrow={page.summary.eyebrow}
-            eyebrowVariant="blue"
-            title={page.summary.title}
-            description={page.summary.description}
-            size="md"
-          />
+        <TextBlock
+          eyebrow={page.summary.eyebrow}
+          eyebrowVariant="blue"
+          title={page.summary.title}
+          description={page.summary.description}
+          size="md"
+          className="max-w-[46rem]"
+        />
 
-          <ContentCard variant="default" className="h-full">
-            <IconList items={page.summary.highlights} iconVariant="green" spacing="relaxed" />
-          </ContentCard>
+        <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-2 md:gap-8 md:pt-10">
+          {page.summary.highlights.map((highlight, index) => (
+            <article
+              key={highlight}
+              className="flex h-full flex-col border-t border-border/70 pt-6 md:border-t-0 md:pt-0"
+            >
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                0{index + 1}
+              </span>
+              <p className="mt-5 max-w-[34ch] text-sm leading-7 text-muted-foreground md:text-base">
+                {highlight}
+              </p>
+            </article>
+          ))}
         </div>
       </Section>
 
-      <Section padding="lg" size="md">
+      <Section padding="lg" size="lg">
         <TextBlock
           eyebrow={page.sections.eyebrow}
           eyebrowVariant="green"
           title={page.sections.title}
           description={page.sections.description}
-          align="center"
-          size="lg"
-          className="mb-10"
+          size="md"
+          className="max-w-[46rem]"
         />
 
-        <div className="space-y-6">
+        <div className="mt-12 space-y-10 md:space-y-12">
           {termsSectionOrder.map((key) => {
             const section = page.sections.items[key];
 
@@ -157,13 +166,19 @@ export default async function TermsPage({ params }: LocalePageProps) {
         </div>
       </Section>
 
-      <Section padding="md" size="md">
-        <CtaBanner
-          title={page.cta.title}
-          subtitle={page.cta.description}
-          actions={[{ label: page.cta.primaryActionLabel, href: '/contact' }]}
-          variant="gradient-green"
-        />
+      <Section padding="sm" size="lg">
+        <div className="border-t border-border/70 pt-8 md:pt-10">
+          <TextBlock
+            title={page.cta.title}
+            description={page.cta.description}
+            size="md"
+            className="max-w-[46rem]"
+          >
+            <Button asChild className="w-fit">
+              <Link href="/contact">{page.cta.primaryActionLabel}</Link>
+            </Button>
+          </TextBlock>
+        </div>
       </Section>
 
       <Section padding="md" size="lg">

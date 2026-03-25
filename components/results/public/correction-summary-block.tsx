@@ -27,61 +27,67 @@ type CorrectionSummaryBlockProps = {
 
 export function CorrectionSummaryBlock({ summaries, labels }: CorrectionSummaryBlockProps) {
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
-      <header className="space-y-1">
-        <h2 className="text-lg font-semibold text-foreground">{labels.title}</h2>
-        <p className="text-sm text-muted-foreground">{labels.description}</p>
+    <section className="border-t border-border/70 pt-8 md:pt-10">
+      <header className="max-w-[46rem] space-y-3">
+        <h2 className="font-display text-[clamp(1.8rem,3vw,2.5rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+          {labels.title}
+        </h2>
+        <p className="text-base leading-7 text-muted-foreground">{labels.description}</p>
       </header>
 
       {summaries.length === 0 ? (
-        <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60">
+        <p className="mt-8 rounded-[1.2rem] border border-border/60 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 text-sm text-muted-foreground">
           {labels.empty}
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="mt-8 space-y-4">
           {summaries.map((summary) => (
             <article
               key={summary.requestId}
-              className="space-y-3 rounded-md border bg-muted/30 p-3 dark:bg-muted/60"
+              className="space-y-4 rounded-[1.3rem] border border-border/60 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5"
             >
-              <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
+              <dl className="grid gap-3 text-xs text-muted-foreground sm:grid-cols-2">
                 <div>
-                  <dt className="font-semibold uppercase tracking-wide">
+                  <dt className="font-semibold uppercase tracking-[0.16em]">
                     {labels.fields.approvedBy}
                   </dt>
-                  <dd>{summary.approvedByDisplayName ?? labels.fallback.unknownApprover}</dd>
+                  <dd className="mt-1 text-sm leading-7">
+                    {summary.approvedByDisplayName ?? labels.fallback.unknownApprover}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="font-semibold uppercase tracking-wide">
+                  <dt className="font-semibold uppercase tracking-[0.16em]">
                     {labels.fields.approvedAt}
                   </dt>
-                  <dd>{summary.approvedAtLabel ?? labels.fallback.unknownTime}</dd>
+                  <dd className="mt-1 text-sm leading-7">
+                    {summary.approvedAtLabel ?? labels.fallback.unknownTime}
+                  </dd>
                 </div>
                 <div className="sm:col-span-2">
-                  <dt className="font-semibold uppercase tracking-wide">
+                  <dt className="font-semibold uppercase tracking-[0.16em]">
                     {labels.fields.versionTransition}
                   </dt>
-                  <dd className="font-mono text-[11px] text-foreground">
+                  <dd className="mt-1 font-mono text-[11px] leading-7 text-foreground">
                     {summary.sourceResultVersionId} {'->'} {summary.correctedResultVersionId}
                   </dd>
                 </div>
               </dl>
 
               <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {labels.fields.reason}
                 </p>
-                <p className="text-sm text-foreground">{summary.reason}</p>
+                <p className="text-sm leading-7 text-foreground">{summary.reason}</p>
               </div>
 
               <div className="space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                   {labels.fields.changes}
                 </p>
                 {summary.changeSummary.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">{labels.fallback.noChanges}</p>
+                  <p className="text-sm leading-7 text-muted-foreground">{labels.fallback.noChanges}</p>
                 ) : (
-                  <ul className="space-y-1 text-sm text-foreground">
+                  <ul className="space-y-1 text-sm leading-7 text-foreground">
                     {summary.changeSummary.map((change) => (
                       <li key={`${summary.requestId}:${change.field}`} className="font-mono text-[12px]">
                         {change.field}: {change.value}

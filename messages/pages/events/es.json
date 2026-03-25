@@ -550,8 +550,8 @@
     "searchingNear": "Buscando dentro de {radius} km de {location}"
   },
   "card": {
-    "registrationOpen": "Inscripciones abiertas",
-    "registrationClosed": "Inscripciones cerradas",
+    "registrationOpen": "Abierto",
+    "registrationClosed": "Cerrado",
     "comingSoon": "Próximamente",
     "fromPrice": "Desde {price}",
     "freeEvent": "Gratis",

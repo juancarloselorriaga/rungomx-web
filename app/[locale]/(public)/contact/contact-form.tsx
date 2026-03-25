@@ -113,10 +113,12 @@ export function ContactForm({
   return (
     <div
       id="contact-form"
-      className="rounded-3xl border border-border bg-card/80 p-6 shadow-sm md:p-8"
+      className="rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)] p-6 md:p-8"
     >
       <div className="mb-6 space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground">{t('cardTitle')}</h2>
+        <h2 className="font-display text-[clamp(1.6rem,2.6vw,2.1rem)] font-medium tracking-[-0.03em] text-foreground">
+          {t('cardTitle')}
+        </h2>
         <p className="text-sm leading-6 text-muted-foreground">
           {isSignedIn ? t('signedInHelper') : t('signedOutHelper')}
         </p>

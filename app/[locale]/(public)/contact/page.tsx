@@ -1,18 +1,11 @@
-import {
-  BentoGrid,
-  CtaBanner,
-  FeatureCard,
-  Hero,
-  RelatedLinksStrip,
-  Section,
-  TextBlock,
-} from '@/components/common';
+import { Hero, Section, TextBlock } from '@/components/common';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { CircleAlert, Handshake, LifeBuoy } from 'lucide-react';
+import { ArrowRight, CircleAlert, Handshake, LifeBuoy } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getMessages } from 'next-intl/server';
 import type { ComponentProps } from 'react';
@@ -91,10 +84,10 @@ const triageIcons = {
   accountOrEventIssue: CircleAlert,
 } satisfies Record<TriageKey, typeof LifeBuoy>;
 
-const triageVariants = {
-  support: 'blue',
-  partnerships: 'green',
-  accountOrEventIssue: 'indigo',
+const triageIconClasses = {
+  support: 'text-[var(--brand-blue-dark)]',
+  partnerships: 'text-[var(--brand-green-dark)]',
+  accountOrEventIssue: 'text-[var(--brand-indigo)]',
 } as const;
 
 export default async function ContactPage({ params }: LocalePageProps) {
@@ -107,6 +100,12 @@ export default async function ContactPage({ params }: LocalePageProps) {
   };
   const page = messages.pages.contact;
   const isSignedIn = Boolean(authContext.user);
+  const directLinks = [
+    page.directLinks.items.events,
+    page.directLinks.items.results,
+    page.directLinks.items.rankings,
+    page.directLinks.items.help,
+  ];
 
   return (
     <div className="w-full">
@@ -116,6 +115,8 @@ export default async function ContactPage({ params }: LocalePageProps) {
         title={page.hero.title}
         description={page.hero.description}
         variant="gradient-green"
+        titleSize="xl"
+        align="left"
         actions={[
           { label: page.hero.primaryCta, href: '/help' },
           { label: page.hero.secondaryCta, href: '/events', variant: 'outline' },
@@ -128,45 +129,52 @@ export default async function ContactPage({ params }: LocalePageProps) {
           eyebrowVariant="blue"
           title={page.triage.title}
           description={page.triage.description}
-          align="center"
-          size="lg"
-          className="mb-10"
+          size="md"
+          className="max-w-[46rem]"
         />
 
-        <BentoGrid columns={3}>
-          {triageOrder.map((key) => {
+        <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-3 md:gap-8 md:pt-10">
+          {triageOrder.map((key, index) => {
             const item = page.triage.items[key];
             const Icon = triageIcons[key];
+            const iconClassName = triageIconClasses[key];
 
             return (
-              <FeatureCard
-                key={key}
-                icon={Icon}
-                variant={triageVariants[key]}
-                title={item.title}
-                description={item.description}
-                className="h-full"
-              />
+              <article key={key} className="flex h-full flex-col border-t border-border/70 pt-6 md:border-t-0 md:pt-0">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    0{index + 1}
+                  </span>
+                  <Icon className={`h-5 w-5 ${iconClassName}`} />
+                </div>
+                <h2 className="font-display mt-6 text-[clamp(1.55rem,2.8vw,2rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+                  {item.title}
+                </h2>
+                <p className="mt-3 max-w-[28ch] text-sm leading-7 text-muted-foreground">
+                  {item.description}
+                </p>
+              </article>
             );
           })}
-        </BentoGrid>
+        </div>
       </Section>
 
       <Section padding="lg" size="lg">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-          <TextBlock
-            eyebrow={page.form.eyebrow}
-            eyebrowVariant="green"
-            title={page.form.title}
-            description={page.form.description}
-            size="md"
-          >
-            <div className="space-y-4 text-base leading-7 text-muted-foreground">
-              <p>{page.form.expectation}</p>
-              <p>{isSignedIn ? page.form.signedInNote : page.form.signedOutNote}</p>
-            </div>
-          </TextBlock>
+        <TextBlock
+          eyebrow={page.form.eyebrow}
+          eyebrowVariant="green"
+          title={page.form.title}
+          description={page.form.description}
+          size="md"
+          className="max-w-[46rem]"
+        >
+          <div className="space-y-4 text-base leading-7 text-muted-foreground">
+            <p>{page.form.expectation}</p>
+            <p>{isSignedIn ? page.form.signedInNote : page.form.signedOutNote}</p>
+          </div>
+        </TextBlock>
 
+        <div className="mt-12 max-w-3xl border-t border-border/70 pt-8 md:pt-10">
           <ContactForm
             defaultName={authContext.user?.name ?? ''}
             defaultEmail={authContext.user?.email ?? ''}
@@ -176,29 +184,56 @@ export default async function ContactPage({ params }: LocalePageProps) {
       </Section>
 
       <Section padding="md" size="lg">
-        <RelatedLinksStrip
+        <TextBlock
           eyebrow={page.directLinks.eyebrow}
+          eyebrowVariant="blue"
           title={page.directLinks.title}
           description={page.directLinks.description}
-          links={[
-            page.directLinks.items.events,
-            page.directLinks.items.results,
-            page.directLinks.items.rankings,
-            page.directLinks.items.help,
-          ]}
+          size="md"
+          className="max-w-[46rem]"
         />
+
+        <div className="mt-12 border-t border-border/70">
+          {directLinks.map((link) => (
+            <Link
+              key={link.href.toString()}
+              href={link.href}
+              className="group grid gap-5 border-b border-border/70 py-7 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-6 md:py-8"
+            >
+              <div className="min-w-0">
+                <h3 className="font-display text-[clamp(1.55rem,2.9vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                  {link.title}
+                </h3>
+                <p className="mt-3 max-w-[44ch] text-sm leading-7 text-muted-foreground">
+                  {link.description}
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-2 self-start text-sm font-semibold text-foreground md:mt-2">
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
+        </div>
       </Section>
 
-      <Section padding="md" size="md">
-        <CtaBanner
-          title={page.trustBlock.title}
-          subtitle={page.trustBlock.description}
-          actions={[
-            { label: page.trustBlock.primaryActionLabel, href: '/privacy' },
-            { label: page.trustBlock.secondaryActionLabel, href: '/terms', variant: 'outline' },
-          ]}
-          variant="muted"
-        />
+      <Section padding="sm" size="lg">
+        <div className="border-t border-border/70 pt-8 md:pt-10">
+          <TextBlock
+            title={page.trustBlock.title}
+            description={page.trustBlock.description}
+            size="md"
+            className="max-w-[46rem]"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button asChild className="w-fit">
+                <Link href="/privacy">{page.trustBlock.primaryActionLabel}</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-fit">
+                <Link href="/terms">{page.trustBlock.secondaryActionLabel}</Link>
+              </Button>
+            </div>
+          </TextBlock>
+        </div>
       </Section>
     </div>
   );

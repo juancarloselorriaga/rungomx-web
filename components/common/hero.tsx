@@ -6,7 +6,7 @@ import * as React from 'react';
 import { Badge, type BadgeProps } from './badge';
 import { Button } from '@/components/ui/button';
 
-const heroVariants = cva('relative overflow-hidden border-y border-border/60', {
+const heroVariants = cva('relative overflow-hidden', {
   variants: {
     variant: {
       default: 'bg-background',
@@ -16,10 +16,10 @@ const heroVariants = cva('relative overflow-hidden border-y border-border/60', {
       dark: 'bg-foreground text-background',
     },
     padding: {
-      sm: 'py-12 md:py-16',
-      md: 'py-16 md:py-24',
-      lg: 'py-24 md:py-32',
-      xl: 'py-32 md:py-40',
+      sm: 'py-14 md:py-18',
+      md: 'py-18 md:py-24',
+      lg: 'py-22 md:py-28 lg:py-32',
+      xl: 'py-28 md:py-36 lg:py-40',
     },
     align: {
       left: 'text-left',
@@ -86,54 +86,50 @@ export function Hero({
   return (
     <section className={cn(heroVariants({ variant, padding, align: resolvedAlign }), className)} {...props}>
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={cn('max-w-5xl', isCenter && 'mx-auto')}>
-          <div className={cn(!isCenter && 'border-l border-border/70 pl-5 md:pl-8')}>
-            {badge && (
-              <Badge variant={badgeVariant} className="mb-6">
-                {badge}
-              </Badge>
-            )}
+        <div className={cn('max-w-[72rem]', isCenter && 'mx-auto')}>
+          {badge && (
+            <Badge variant={badgeVariant} className="mb-6">
+              {badge}
+            </Badge>
+          )}
 
-            <h1
-              className={cn(titleVariants({ titleSize }), isDark ? 'text-inherit' : 'text-foreground')}
+          <h1 className={cn(titleVariants({ titleSize }), isDark ? 'text-inherit' : 'text-foreground')}>
+            {title}
+          </h1>
+
+          {description && (
+            <p
+              className={cn(
+                'mt-6 max-w-[38rem] text-lg leading-8 md:text-xl',
+                isDark ? 'opacity-80' : 'text-muted-foreground',
+                isCenter && 'mx-auto',
+              )}
             >
-              {title}
-            </h1>
+              {description}
+            </p>
+          )}
 
-            {description && (
-              <p
-                className={cn(
-                  'mt-6 max-w-[42rem] text-lg leading-8 md:text-xl',
-                  isDark ? 'opacity-80' : 'text-muted-foreground',
-                  isCenter && 'mx-auto',
-                )}
-              >
-                {description}
-              </p>
-            )}
+          {actions && actions.length > 0 && (
+            <div
+              className={cn(
+                'mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap',
+                isCenter && 'justify-center',
+              )}
+            >
+              {actions.map((action, index) => (
+                <Button
+                  key={index}
+                  variant={action.variant || (index === 0 ? 'default' : 'outline')}
+                  size="lg"
+                  asChild
+                >
+                  <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
+                </Button>
+              ))}
+            </div>
+          )}
 
-            {actions && actions.length > 0 && (
-              <div
-                className={cn(
-                  'mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap',
-                  isCenter && 'justify-center',
-                )}
-              >
-                {actions.map((action, index) => (
-                  <Button
-                    key={index}
-                    variant={action.variant || (index === 0 ? 'default' : 'outline')}
-                    size="lg"
-                    asChild
-                  >
-                    <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
-                  </Button>
-                ))}
-              </div>
-            )}
-
-            {children && <div className="mt-12">{children}</div>}
-          </div>
+          {children && <div className="mt-14">{children}</div>}
         </div>
       </div>
     </section>

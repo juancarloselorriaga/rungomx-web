@@ -4,6 +4,7 @@ import { getAuthContext } from '@/lib/auth/server';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { Hero, Section } from '@/components/common';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
@@ -95,18 +96,23 @@ export default async function EventsPage({ params, searchParams }: EventsPagePro
   }));
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
-      <EventsDirectory
-        initialEvents={events}
-        initialPagination={pagination}
-        initialNearbyEligible={initialNearbyEligible}
-        locale={locale}
+    <div className="w-full">
+      <Hero
+        title={t('title')}
+        description={t('description')}
+        variant="gradient-green"
+        titleSize="xl"
+        align="left"
       />
+
+      <Section padding="md" size="xl">
+        <EventsDirectory
+          initialEvents={events}
+          initialPagination={pagination}
+          initialNearbyEligible={initialNearbyEligible}
+          locale={locale}
+        />
+      </Section>
     </div>
   );
 }

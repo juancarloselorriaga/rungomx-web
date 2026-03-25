@@ -1,19 +1,17 @@
 import {
-  BentoGrid,
-  CtaBanner,
   FaqAccordion,
   type FaqAccordionGroup,
-  FeatureCard,
   Hero,
-  RelatedLinksStrip,
   Section,
   TextBlock,
 } from '@/components/common';
+import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import {
+  ArrowRight,
   CalendarDays,
   CreditCard,
   Medal,
@@ -126,13 +124,13 @@ const categoryIcons = {
   accountBasics: User,
 } satisfies Record<HelpCategoryKey, typeof Ticket>;
 
-const categoryVariants = {
-  registrations: 'blue',
-  eventInformation: 'green',
-  results: 'indigo',
-  rankings: 'blue',
-  payments: 'green',
-  accountBasics: 'muted',
+const categoryIconClasses = {
+  registrations: 'text-[var(--brand-blue-dark)]',
+  eventInformation: 'text-[var(--brand-green-dark)]',
+  results: 'text-[var(--brand-indigo)]',
+  rankings: 'text-[var(--brand-blue-dark)]',
+  payments: 'text-[var(--brand-green-dark)]',
+  accountBasics: 'text-muted-foreground',
 } as const;
 
 export default async function HelpPage({ params }: LocalePageProps) {
@@ -160,6 +158,13 @@ export default async function HelpPage({ params }: LocalePageProps) {
     };
   });
 
+  const relatedLinks = [
+    page.relatedLinks.items.events,
+    page.relatedLinks.items.results,
+    page.relatedLinks.items.rankings,
+    page.relatedLinks.items.home,
+  ];
+
   return (
     <div className="w-full">
       <Hero
@@ -168,6 +173,8 @@ export default async function HelpPage({ params }: LocalePageProps) {
         title={page.hero.title}
         description={page.hero.description}
         variant="gradient-blue"
+        titleSize="xl"
+        align="left"
         actions={[
           { label: page.hero.primaryCta, href: '/events' },
           { label: page.hero.secondaryCta, href: '/contact', variant: 'outline' },
@@ -180,33 +187,42 @@ export default async function HelpPage({ params }: LocalePageProps) {
           eyebrowVariant="green"
           title={page.categories.title}
           description={page.categories.description}
-          align="center"
-          size="lg"
-          className="mb-10"
+          size="md"
+          className="max-w-[46rem]"
         />
 
-        <BentoGrid columns={3}>
-          {categoryOrder.map((key) => {
+        <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-2 md:gap-8 md:pt-10 xl:grid-cols-3">
+          {categoryOrder.map((key, index) => {
             const category = page.categories.items[key];
             const Icon = categoryIcons[key];
+            const iconClassName = categoryIconClasses[key];
 
             return (
-              <a key={key} href={`#${key}`} className="block h-full">
-                <FeatureCard
-                  icon={Icon}
-                  variant={categoryVariants[key]}
-                  title={category.title}
-                  description={category.description}
-                  className="h-full"
-                >
-                  <p className="mt-4 text-sm font-medium text-[var(--brand-blue)]">
-                    {category.linkLabel}
-                  </p>
-                </FeatureCard>
+              <a
+                key={key}
+                href={`#${key}`}
+                className="group flex h-full flex-col border-t border-border/70 pt-6 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:border-t-0 md:pt-0"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    0{index + 1}
+                  </span>
+                  <Icon className={`h-5 w-5 ${iconClassName}`} />
+                </div>
+                <h2 className="font-display mt-6 text-[clamp(1.55rem,2.8vw,2rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+                  {category.title}
+                </h2>
+                <p className="mt-3 max-w-[28ch] text-sm leading-7 text-muted-foreground">
+                  {category.description}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
+                  {category.linkLabel}
+                  <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+                </span>
               </a>
             );
           })}
-        </BentoGrid>
+        </div>
       </Section>
 
       <Section padding="lg" size="lg">
@@ -215,35 +231,59 @@ export default async function HelpPage({ params }: LocalePageProps) {
           eyebrowVariant="blue"
           title={page.faqGroups.title}
           description={page.faqGroups.description}
-          align="center"
-          size="lg"
-          className="mb-10"
+          size="md"
+          className="max-w-[46rem]"
         />
 
-        <FaqAccordion groups={faqGroups} />
-      </Section>
-
-      <Section padding="md" size="md">
-        <CtaBanner
-          title={page.cta.title}
-          subtitle={page.cta.description}
-          actions={[{ label: page.cta.primaryActionLabel, href: '/contact' }]}
-          variant="gradient"
-        />
+        <FaqAccordion groups={faqGroups} className="mt-12" />
       </Section>
 
       <Section padding="md" size="lg">
-        <RelatedLinksStrip
+        <TextBlock
           eyebrow={page.relatedLinks.eyebrow}
+          eyebrowVariant="green"
           title={page.relatedLinks.title}
           description={page.relatedLinks.description}
-          links={[
-            page.relatedLinks.items.events,
-            page.relatedLinks.items.results,
-            page.relatedLinks.items.rankings,
-            page.relatedLinks.items.home,
-          ]}
+          size="md"
+          className="max-w-[46rem]"
         />
+
+        <div className="mt-12 border-t border-border/70">
+          {relatedLinks.map((link) => (
+            <Link
+              key={link.href.toString()}
+              href={link.href}
+              className="group grid gap-5 border-b border-border/70 py-7 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:grid-cols-[minmax(0,1fr)_auto] md:items-start md:gap-6 md:py-8"
+            >
+              <div className="min-w-0">
+                <h3 className="font-display text-[clamp(1.55rem,2.9vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                  {link.title}
+                </h3>
+                <p className="mt-3 max-w-[44ch] text-sm leading-7 text-muted-foreground">
+                  {link.description}
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-2 self-start text-sm font-semibold text-foreground md:mt-2">
+                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </Section>
+
+      <Section padding="sm" size="lg">
+        <div className="border-t border-border/70 pt-8 md:pt-10">
+          <TextBlock
+            title={page.cta.title}
+            description={page.cta.description}
+            size="md"
+            className="max-w-[46rem]"
+          >
+            <Button asChild className="w-fit">
+              <Link href="/contact">{page.cta.primaryActionLabel}</Link>
+            </Button>
+          </TextBlock>
+        </div>
       </Section>
     </div>
   );

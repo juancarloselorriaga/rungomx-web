@@ -6,11 +6,9 @@ const sectionVariants = cva('relative w-full', {
   variants: {
     variant: {
       default: 'bg-background',
-      muted:
-        'border-y border-border/50 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)]',
+      muted: 'bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)]',
       dark: 'bg-card border-y border-border',
-      gradient:
-        'border-y border-border/50 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)]',
+      gradient: 'bg-[color-mix(in_oklch,var(--background)_86%,var(--background-surface)_14%)]',
       'gradient-brand':
         'bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-indigo)] text-primary-foreground',
       'gradient-green':

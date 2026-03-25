@@ -4,24 +4,24 @@ import type { LucideIcon } from 'lucide-react';
 import * as React from 'react';
 
 const cardVariants = cva(
-  'group relative rounded-[1.5rem] border p-6 md:p-8 transition-colors duration-200',
+  'group relative rounded-[1.25rem] border p-6 md:p-8 transition-colors duration-200',
   {
     variants: {
       variant: {
         default:
-          'bg-[color-mix(in_oklch,var(--background)_62%,var(--background-surface)_38%)] border-border/75 hover:border-border',
+          'bg-[color-mix(in_oklch,var(--background)_70%,var(--background-surface)_30%)] border-border/45 hover:border-border/70',
         elevated:
-          'bg-[color-mix(in_oklch,var(--background)_54%,var(--background-surface)_46%)] border-border/70 hover:border-border',
+          'bg-[color-mix(in_oklch,var(--background)_65%,var(--background-surface)_35%)] border-border/40 hover:border-border/65',
         ghost:
-          'border-transparent bg-transparent hover:border-border/60 hover:bg-[color-mix(in_oklch,var(--background)_76%,var(--background-surface)_24%)]',
+          'border-transparent bg-transparent hover:border-border/35 hover:bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)]',
         blue:
-          'bg-[color-mix(in_oklch,var(--background)_86%,var(--brand-blue)_14%)] border-[color-mix(in_oklch,var(--brand-blue)_22%,var(--border))] hover:border-[color-mix(in_oklch,var(--brand-blue)_34%,var(--border))]',
+          'bg-[color-mix(in_oklch,var(--background)_90%,var(--brand-blue)_10%)] border-[color-mix(in_oklch,var(--brand-blue)_14%,var(--border))] hover:border-[color-mix(in_oklch,var(--brand-blue)_24%,var(--border))]',
         green:
-          'bg-[color-mix(in_oklch,var(--background)_86%,var(--brand-green)_14%)] border-[color-mix(in_oklch,var(--brand-green)_22%,var(--border))] hover:border-[color-mix(in_oklch,var(--brand-green)_34%,var(--border))]',
+          'bg-[color-mix(in_oklch,var(--background)_90%,var(--brand-green)_10%)] border-[color-mix(in_oklch,var(--brand-green)_14%,var(--border))] hover:border-[color-mix(in_oklch,var(--brand-green)_24%,var(--border))]',
         indigo:
-          'bg-[color-mix(in_oklch,var(--background)_88%,var(--brand-indigo)_12%)] border-[color-mix(in_oklch,var(--brand-indigo)_22%,var(--border))] hover:border-[color-mix(in_oklch,var(--brand-indigo)_34%,var(--border))]',
+          'bg-[color-mix(in_oklch,var(--background)_92%,var(--brand-indigo)_8%)] border-[color-mix(in_oklch,var(--brand-indigo)_14%,var(--border))] hover:border-[color-mix(in_oklch,var(--brand-indigo)_24%,var(--border))]',
         muted:
-          'bg-[color-mix(in_oklch,var(--background)_56%,var(--muted)_44%)] border-border/75 hover:border-border',
+          'bg-[color-mix(in_oklch,var(--background)_72%,var(--muted)_28%)] border-border/45 hover:border-border/70',
       },
       size: {
         sm: 'p-4 md:p-6',

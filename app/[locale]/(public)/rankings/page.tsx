@@ -1,13 +1,12 @@
-import { Badge } from '@/components/common/badge';
+import { Badge, Hero, Section, TextBlock } from '@/components/common';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+import { getPublicRankingLeaderboard } from '@/lib/events/results/rankings';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-
-import { getPublicRankingLeaderboard } from '@/lib/events/results/rankings';
 
 type RankingsPageProps = LocalePageProps & {
   searchParams: Promise<{
@@ -105,239 +104,254 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
       : t('reproducibility.notAvailable');
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </header>
+    <div className="w-full">
+      <Hero
+        title={t('title')}
+        description={t('description')}
+        variant="gradient-green"
+        titleSize="xl"
+        align="left"
+      />
 
-      <section className="rounded-xl border bg-card p-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="indigo">
-            {leaderboard.filters.scope === 'organizer'
-              ? t('scope.organizer')
-              : t('scope.national')}
-          </Badge>
-          {!hasActiveFilters ? <Badge variant="outline">{t('scope.default')}</Badge> : null}
-        </div>
-
-        {leaderboard.snapshot ? (
-          <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-            <p className="flex flex-wrap items-center gap-2">
-              {t('snapshot.summary', {
-                ruleset: leaderboard.snapshot.rulesetVersionTag,
-                rows: leaderboard.snapshot.rowCount,
-              })}
-              <Badge variant="outline" size="sm">
-                {leaderboard.snapshot.isCurrent
-                  ? t('snapshot.current')
-                  : t('snapshot.historical')}
+      <Section variant="muted" padding="md" size="lg">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-8">
+          <div className="rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)] p-5 md:p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="indigo">
+                {leaderboard.filters.scope === 'organizer'
+                  ? t('scope.organizer')
+                  : t('scope.national')}
               </Badge>
-            </p>
-            {leaderboard.snapshot.scope === 'organizer' && leaderboard.snapshot.organizationName ? (
-              <p>
-                {t('scope.contextOrg', {
-                  organization: leaderboard.snapshot.organizationName,
-                })}
-              </p>
-            ) : null}
+              {!hasActiveFilters ? <Badge variant="outline">{t('scope.default')}</Badge> : null}
+            </div>
 
-            <details className="mt-2 rounded-md border bg-muted/30 px-3 py-2">
-              <summary className="cursor-pointer text-xs font-semibold text-foreground">
-                {t('reproducibility.summary')}
-              </summary>
-              <dl className="mt-2 grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
-                <div>
-                  <dt className="font-medium text-foreground">
-                    {t('reproducibility.fields.ruleset')}
-                  </dt>
-                  <dd>{leaderboard.snapshot.rulesetVersionTag}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-foreground">
-                    {t('reproducibility.fields.generatedAt')}
-                  </dt>
-                  <dd>{selectedSnapshotGeneratedAtLabel}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-foreground">
-                    {t('reproducibility.fields.promotedAt')}
-                  </dt>
-                  <dd>{selectedSnapshotPromotedAtLabel}</dd>
-                </div>
-                <div>
-                  <dt className="font-medium text-foreground">
-                    {t('reproducibility.fields.snapshotId')}
-                  </dt>
-                  <dd className="font-mono">{leaderboard.snapshot.id}</dd>
-                </div>
-              </dl>
-              {leaderboard.snapshot.rulesetReference ? (
-                <p className="mt-2">
-                  <a
-                    href={leaderboard.snapshot.rulesetReference}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium text-primary underline-offset-2 hover:underline"
-                  >
-                    {t('reproducibility.referenceLink')}
-                  </a>
+            {leaderboard.snapshot ? (
+              <>
+                <h2 className="font-display mt-6 text-[clamp(1.6rem,2.7vw,2.2rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
+                  {leaderboard.snapshot.isCurrent ? t('snapshot.current') : t('snapshot.historical')}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                  {t('snapshot.summary', {
+                    ruleset: leaderboard.snapshot.rulesetVersionTag,
+                    rows: leaderboard.snapshot.rowCount,
+                  })}
                 </p>
-              ) : (
-                <p className="mt-2">{t('reproducibility.referenceMissing')}</p>
-              )}
-            </details>
+                {leaderboard.snapshot.scope === 'organizer' &&
+                leaderboard.snapshot.organizationName ? (
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {t('scope.contextOrg', {
+                      organization: leaderboard.snapshot.organizationName,
+                    })}
+                  </p>
+                ) : null}
+
+                <dl className="mt-6 grid gap-4 border-t border-border/70 pt-5 text-sm text-muted-foreground sm:grid-cols-2">
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                      {t('reproducibility.fields.ruleset')}
+                    </dt>
+                    <dd className="mt-1 leading-7">{leaderboard.snapshot.rulesetVersionTag}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                      {t('reproducibility.fields.generatedAt')}
+                    </dt>
+                    <dd className="mt-1 leading-7">{selectedSnapshotGeneratedAtLabel}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                      {t('reproducibility.fields.promotedAt')}
+                    </dt>
+                    <dd className="mt-1 leading-7">{selectedSnapshotPromotedAtLabel}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                      {t('reproducibility.fields.snapshotId')}
+                    </dt>
+                    <dd className="mt-1 font-mono text-[12px] leading-7 text-foreground/80">
+                      {leaderboard.snapshot.id}
+                    </dd>
+                  </div>
+                </dl>
+                {leaderboard.snapshot.rulesetReference ? (
+                  <p className="mt-5">
+                    <a
+                      href={leaderboard.snapshot.rulesetReference}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-semibold text-foreground underline-offset-4 hover:underline"
+                    >
+                      {t('reproducibility.referenceLink')}
+                    </a>
+                  </p>
+                ) : (
+                  <p className="mt-5 text-sm leading-7 text-muted-foreground">
+                    {t('reproducibility.referenceMissing')}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="mt-6 text-sm leading-7 text-muted-foreground">{t('empty.noSnapshot')}</p>
+            )}
+          </div>
+
+          <form
+            className="rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-5 md:p-6"
+            method="get"
+          >
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                <span>{t('filters.scope')}</span>
+                <select
+                  name="scope"
+                  defaultValue={leaderboard.filters.scope}
+                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                >
+                  <option value="national">{t('scope.national')}</option>
+                  <option value="organizer">{t('scope.organizer')}</option>
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                <span>{t('filters.organization')}</span>
+                <select
+                  name="organizationId"
+                  defaultValue={leaderboard.filters.organizationId ?? ''}
+                  disabled={leaderboard.filters.scope !== 'organizer'}
+                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">{t('filters.all')}</option>
+                  {leaderboard.filters.availableOrganizers.map((organizer) => (
+                    <option key={organizer.organizationId} value={organizer.organizationId}>
+                      {organizer.organizationName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                <span>{t('filters.discipline')}</span>
+                <select
+                  name="discipline"
+                  defaultValue={leaderboard.filters.discipline ?? ''}
+                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                >
+                  <option value="">{t('filters.all')}</option>
+                  {leaderboard.filters.availableDisciplines.map((discipline) => {
+                    const disciplineLabelKey = resolveDisciplineLabelKey(discipline);
+                    return (
+                      <option key={discipline} value={discipline}>
+                        {disciplineLabelKey ? t(disciplineLabelKey) : discipline}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                <span>{t('filters.gender')}</span>
+                <select
+                  name="gender"
+                  defaultValue={leaderboard.filters.gender ?? ''}
+                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                >
+                  <option value="">{t('filters.all')}</option>
+                  {leaderboard.filters.availableGenders.map((gender) => {
+                    const genderLabelKey = resolveGenderLabelKey(gender);
+                    return (
+                      <option key={gender} value={gender}>
+                        {genderLabelKey ? t(genderLabelKey) : gender}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                <span>{t('filters.ageGroup')}</span>
+                <select
+                  name="ageGroup"
+                  defaultValue={leaderboard.filters.ageGroup ?? ''}
+                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                >
+                  <option value="">{t('filters.all')}</option>
+                  {leaderboard.filters.availableAgeGroups.map((ageGroup) => (
+                    <option key={ageGroup} value={ageGroup}>
+                      {t('ageGroup.option', { ageGroup })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-1.5 text-xs text-muted-foreground">
+                <span>{t('filters.snapshot')}</span>
+                <select
+                  name="snapshotId"
+                  defaultValue={leaderboard.filters.snapshotId ?? ''}
+                  disabled={leaderboard.filters.availableSnapshots.length === 0}
+                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">{t('filters.currentSnapshot')}</option>
+                  {leaderboard.filters.availableSnapshots.map((snapshotOption) => (
+                    <option key={snapshotOption.snapshotId} value={snapshotOption.snapshotId}>
+                      {t('filters.snapshotOption', {
+                        ruleset: snapshotOption.rulesetVersionTag,
+                        generatedAt: dateTimeFormatter.format(snapshotOption.generatedAt),
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2 border-t border-border/70 pt-5">
+              <Button type="submit" className="min-w-0">
+                {t('filters.apply')}
+              </Button>
+              <Button asChild variant="outline" className="min-w-0">
+                <Link href="/rankings">{t('filters.reset')}</Link>
+              </Button>
+            </div>
+          </form>
+        </div>
+      </Section>
+
+      <Section padding="lg" size="lg">
+        <TextBlock
+          title={t('table.title')}
+          description={t('table.description')}
+          size="md"
+          className="max-w-[46rem]"
+        />
+
+        {leaderboard.state === 'empty' ? (
+          <div className="mt-12 rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-8 text-sm text-muted-foreground">
+            {t('empty.noRows')}
+          </div>
+        ) : leaderboard.rows.length === 0 ? (
+          <div className="mt-12 rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-8 text-sm text-muted-foreground">
+            {t('empty.noMatch')}
           </div>
         ) : (
-          <p className="mt-3 text-xs text-muted-foreground">{t('empty.noSnapshot')}</p>
-        )}
-
-        <form className="mt-4 grid gap-3 md:grid-cols-6" method="get">
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('filters.scope')}</span>
-            <select
-              name="scope"
-              defaultValue={leaderboard.filters.scope}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            >
-              <option value="national">{t('scope.national')}</option>
-              <option value="organizer">{t('scope.organizer')}</option>
-            </select>
-          </label>
-
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('filters.organization')}</span>
-            <select
-              name="organizationId"
-              defaultValue={leaderboard.filters.organizationId ?? ''}
-              disabled={leaderboard.filters.scope !== 'organizer'}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">{t('filters.all')}</option>
-              {leaderboard.filters.availableOrganizers.map((organizer) => (
-                <option key={organizer.organizationId} value={organizer.organizationId}>
-                  {organizer.organizationName}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('filters.discipline')}</span>
-            <select
-              name="discipline"
-              defaultValue={leaderboard.filters.discipline ?? ''}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            >
-              <option value="">{t('filters.all')}</option>
-              {leaderboard.filters.availableDisciplines.map((discipline) => {
-                const disciplineLabelKey = resolveDisciplineLabelKey(discipline);
-                return (
-                  <option key={discipline} value={discipline}>
-                    {disciplineLabelKey ? t(disciplineLabelKey) : discipline}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('filters.gender')}</span>
-            <select
-              name="gender"
-              defaultValue={leaderboard.filters.gender ?? ''}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            >
-              <option value="">{t('filters.all')}</option>
-              {leaderboard.filters.availableGenders.map((gender) => {
-                const genderLabelKey = resolveGenderLabelKey(gender);
-                return (
-                  <option key={gender} value={gender}>
-                    {genderLabelKey ? t(genderLabelKey) : gender}
-                  </option>
-                );
-              })}
-            </select>
-          </label>
-
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('filters.ageGroup')}</span>
-            <select
-              name="ageGroup"
-              defaultValue={leaderboard.filters.ageGroup ?? ''}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-            >
-              <option value="">{t('filters.all')}</option>
-              {leaderboard.filters.availableAgeGroups.map((ageGroup) => (
-                <option key={ageGroup} value={ageGroup}>
-                  {t('ageGroup.option', { ageGroup })}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="grid gap-1 text-xs text-muted-foreground">
-            <span>{t('filters.snapshot')}</span>
-            <select
-              name="snapshotId"
-              defaultValue={leaderboard.filters.snapshotId ?? ''}
-              disabled={leaderboard.filters.availableSnapshots.length === 0}
-              className="h-11 sm:h-10 rounded-md border bg-background px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="">{t('filters.currentSnapshot')}</option>
-              {leaderboard.filters.availableSnapshots.map((snapshotOption) => (
-                <option key={snapshotOption.snapshotId} value={snapshotOption.snapshotId}>
-                  {t('filters.snapshotOption', {
-                    ruleset: snapshotOption.rulesetVersionTag,
-                    generatedAt: dateTimeFormatter.format(snapshotOption.generatedAt),
-                  })}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <div className="flex flex-wrap items-end gap-2 md:col-span-6">
-            <Button type="submit" className="min-w-0">
-              {t('filters.apply')}
-            </Button>
-            <Button asChild variant="outline" className="min-w-0">
-              <Link href="/rankings">{t('filters.reset')}</Link>
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      {leaderboard.state === 'empty' ? (
-        <section className="rounded-xl border bg-card p-6 text-sm text-muted-foreground shadow-sm">
-          {t('empty.noRows')}
-        </section>
-      ) : leaderboard.rows.length === 0 ? (
-        <section className="rounded-xl border bg-card p-6 text-sm text-muted-foreground shadow-sm">
-          {t('empty.noMatch')}
-        </section>
-      ) : (
-        <section className="rounded-xl border bg-card shadow-sm">
-          <div className="border-b px-4 py-3">
-            <h2 className="text-sm font-semibold">{t('table.title')}</h2>
-            <p className="text-xs text-muted-foreground">{t('table.description')}</p>
-          </div>
-
-          <div className="overflow-x-auto">
+          <div className="mt-12 overflow-x-auto rounded-[1.5rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)]">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.rank')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.runner')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.bib')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.discipline')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.gender')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.ageGroup')}</th>
-                  <th className="px-4 py-2.5 font-semibold">{t('table.headers.finishTime')}</th>
+                <tr className="border-b border-border/70 text-left text-[0.72rem] uppercase tracking-[0.16em] text-muted-foreground">
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.rank')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.runner')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.bib')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.discipline')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.gender')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.ageGroup')}</th>
+                  <th className="px-4 py-3 font-semibold">{t('table.headers.finishTime')}</th>
                 </tr>
               </thead>
               <tbody>
                 {leaderboard.rows.map((row) => (
-                  <tr key={`${row.rank}-${row.runnerFullName}-${row.bibNumber ?? 'nobib'}`} className="border-b last:border-b-0">
+                  <tr
+                    key={`${row.rank}-${row.runnerFullName}-${row.bibNumber ?? 'nobib'}`}
+                    className="border-b border-border/60 last:border-b-0"
+                  >
                     <td className="px-4 py-3 text-foreground">{row.rank}</td>
                     <td className="px-4 py-3 text-foreground">{row.runnerFullName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{row.bibNumber ?? '-'}</td>
@@ -365,8 +379,8 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
               </tbody>
             </table>
           </div>
-        </section>
-      )}
+        )}
+      </Section>
     </div>
   );
 }

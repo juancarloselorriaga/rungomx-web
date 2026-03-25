@@ -4,18 +4,18 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 
-const bannerVariants = cva('rounded-[1.75rem] border p-8 md:p-10', {
+const bannerVariants = cva('rounded-[1.5rem] p-8 md:p-10', {
   variants: {
     variant: {
       default:
-        'bg-[color-mix(in_oklch,var(--background)_58%,var(--background-surface)_42%)] border-border/75',
+        'border border-border/45 bg-[color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)]',
       gradient:
-        'bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-blue)_16%)] border-[color-mix(in_oklch,var(--brand-blue)_22%,var(--border))] text-foreground',
+        'bg-[color-mix(in_oklch,var(--background)_92%,var(--brand-blue)_8%)] text-foreground',
       'gradient-green':
-        'bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] border-[color-mix(in_oklch,var(--brand-green)_22%,var(--border))] text-foreground',
-      dark: 'bg-muted border-border/80',
+        'bg-[color-mix(in_oklch,var(--background)_92%,var(--brand-green)_8%)] text-foreground',
+      dark: 'border border-border/55 bg-muted',
       muted:
-        'bg-[color-mix(in_oklch,var(--background)_64%,var(--background-surface)_36%)] border-border/75',
+        'rounded-none border-t border-border/70 bg-transparent px-0 py-8 text-foreground md:py-10',
     },
   },
   defaultVariants: {
@@ -84,7 +84,7 @@ export function CtaBanner({
                   className={cn(
                     isGradient &&
                       buttonVariant === 'outline' &&
-                      'border-foreground/15 bg-transparent text-foreground hover:bg-foreground/5',
+                      'border-foreground/12 bg-transparent text-foreground hover:bg-foreground/4',
                   )}
                   asChild
                 >

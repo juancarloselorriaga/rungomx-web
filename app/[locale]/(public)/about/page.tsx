@@ -1,11 +1,6 @@
-import {
-  ContentCard,
-  CtaBanner,
-  Hero,
-  IconList,
-  Section,
-  TextBlock,
-} from '@/components/common';
+import { Hero, IconList, Section, TextBlock } from '@/components/common';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -76,11 +71,9 @@ const focusIcons = {
   support: CircleHelp,
 } as const;
 const focusIconClasses = {
-  discover:
-    'border-[var(--brand-blue)]/15 bg-[var(--brand-blue)]/8 text-[var(--brand-blue-dark)]',
-  follow:
-    'border-[var(--brand-green)]/15 bg-[var(--brand-green)]/8 text-[var(--brand-green-dark)]',
-  support: 'border-[var(--brand-indigo)]/15 bg-[var(--brand-indigo)]/8 text-[var(--brand-indigo)]',
+  discover: 'bg-[var(--brand-blue)]/8 text-[var(--brand-blue-dark)]',
+  follow: 'bg-[var(--brand-green)]/8 text-[var(--brand-green-dark)]',
+  support: 'bg-[var(--brand-indigo)]/8 text-[var(--brand-indigo)]',
 } as const;
 
 export default async function AboutPage({ params }: LocalePageProps) {
@@ -101,7 +94,6 @@ export default async function AboutPage({ params }: LocalePageProps) {
         titleSize="xl"
         align="left"
         padding="lg"
-        className="border-t border-border/60"
         actions={[
           { label: page.hero.primaryCta, href: '/events' },
           { label: page.hero.secondaryCta, href: '/results', variant: 'outline' },
@@ -109,87 +101,94 @@ export default async function AboutPage({ params }: LocalePageProps) {
       />
 
       <Section padding="md" size="lg">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start">
-          <TextBlock
-            eyebrow={page.story.eyebrow}
-            eyebrowVariant="green"
-            title={page.story.title}
-            description={page.story.description}
-            size="sm"
-          >
-            <div className="space-y-4 text-base leading-7 text-muted-foreground">
-              <p>{page.story.paragraph1}</p>
-              <p>{page.story.paragraph2}</p>
-            </div>
-          </TextBlock>
+        <TextBlock
+          eyebrow={page.story.eyebrow}
+          eyebrowVariant="green"
+          title={page.story.title}
+          description={page.story.description}
+          size="md"
+          className="max-w-[46rem]"
+        >
+          <div className="space-y-4 text-base leading-7 text-muted-foreground">
+            <p>{page.story.paragraph1}</p>
+            <p>{page.story.paragraph2}</p>
+          </div>
+        </TextBlock>
 
-          <ContentCard title={page.story.cardTitle} variant="default" className="h-full">
-            <IconList
-              items={[
-                page.story.highlights.eventDiscovery,
-                page.story.highlights.registrationContext,
-                page.story.highlights.officialResults,
-                page.story.highlights.rankings,
-                page.story.highlights.helpAndTrust,
-              ]}
-              iconVariant="blue"
-              spacing="relaxed"
-            />
-          </ContentCard>
+        <div className="mt-12 border-t border-border/70 pt-8 md:pt-10">
+          <h3 className="font-display text-[clamp(1.7rem,3vw,2.35rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+            {page.story.cardTitle}
+          </h3>
+          <IconList
+            items={[
+              page.story.highlights.eventDiscovery,
+              page.story.highlights.registrationContext,
+              page.story.highlights.officialResults,
+              page.story.highlights.rankings,
+              page.story.highlights.helpAndTrust,
+            ]}
+            iconVariant="blue"
+            spacing="relaxed"
+            className="mt-6 max-w-[42rem]"
+          />
         </div>
       </Section>
 
       <Section variant="muted" padding="lg" size="lg">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-start">
-          <TextBlock
-            eyebrow={page.focus.eyebrow}
-            eyebrowVariant="blue"
-            title={page.focus.title}
-            description={page.focus.description}
-            size="sm"
-          />
+        <TextBlock
+          eyebrow={page.focus.eyebrow}
+          eyebrowVariant="blue"
+          title={page.focus.title}
+          description={page.focus.description}
+          size="md"
+          className="max-w-[46rem]"
+        />
 
-          <div className="grid gap-5 md:grid-cols-3">
-            {focusOrder.map((key, index) => {
-              const item = page.focus.items[key];
-              const Icon = focusIcons[key];
+        <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-3 md:gap-8 md:pt-10">
+          {focusOrder.map((key, index) => {
+            const item = page.focus.items[key];
+            const Icon = focusIcons[key];
 
-              return (
-                <article
-                  key={key}
-                  className="flex h-full flex-col rounded-[1.5rem] border border-border/75 bg-[color-mix(in_oklch,var(--background)_60%,var(--background-surface)_40%)] p-6 md:p-7"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                      0{index + 1}
-                    </span>
-                    <div className={`inline-flex rounded-md border p-3 ${focusIconClasses[key]}`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
+            return (
+              <article key={key} className="flex h-full flex-col border-t border-border/70 pt-6 md:border-t-0 md:pt-0">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                    0{index + 1}
+                  </span>
+                  <div className={`inline-flex rounded-md p-3 ${focusIconClasses[key]}`}>
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <div className="mt-6 min-w-0">
-                    <h3 className="font-display text-[clamp(1.5rem,2.8vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
-                      {item.title}
-                    </h3>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+                </div>
+                <div className="mt-6 min-w-0">
+                  <h3 className="font-display text-[clamp(1.5rem,2.8vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+                    {item.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </Section>
 
-      <Section padding="sm" size="md">
-        <CtaBanner
-          title={page.cta.title}
-          subtitle={page.cta.description}
-          actions={[
-            { label: page.cta.primaryActionLabel, href: '/events' },
-            { label: page.cta.secondaryActionLabel, href: '/results', variant: 'outline' },
-          ]}
-          variant="muted"
-        />
+      <Section padding="sm" size="lg">
+        <div className="border-t border-border/70 pt-8 md:pt-10">
+          <TextBlock
+            title={page.cta.title}
+            description={page.cta.description}
+            size="md"
+            className="max-w-[46rem]"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button asChild className="w-fit">
+                <Link href="/events">{page.cta.primaryActionLabel}</Link>
+              </Button>
+              <Button asChild variant="outline" className="w-fit">
+                <Link href="/results">{page.cta.secondaryActionLabel}</Link>
+              </Button>
+            </div>
+          </TextBlock>
+        </div>
       </Section>
     </div>
   );

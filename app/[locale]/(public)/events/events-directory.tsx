@@ -695,82 +695,88 @@ export function EventsDirectory({
   const skeletonCount = pagination.limit || EVENTS_PAGE_LIMIT;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Search and filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        {/* Search input */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder={t('search.placeholder')}
-            className="w-full rounded-md border bg-background pl-10 pr-10 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => handleSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
+      <div className="rounded-[1.6rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)] p-5 md:p-6">
+        <div className="max-w-[44rem]">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--brand-green-dark)]">
+            {t('title')}
+          </p>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">{t('search.placeholder')}</p>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 flex-wrap">
-          {/* Sport type filter */}
-          <select
-            value={sportType}
-            onChange={(e) => handleSportTypeChange(e.target.value)}
-            className="rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-          >
-            <option value="">{t('filters.allSports')}</option>
-            {SPORT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {t(`sportTypes.${type}`)}
-              </option>
-            ))}
-          </select>
+        <div className="mt-8 grid gap-3 border-t border-border/70 pt-6 lg:grid-cols-[minmax(0,1.4fr)_auto] lg:items-start">
+          <div className="relative min-w-0">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder={t('search.placeholder')}
+              className="w-full rounded-xl border border-border/60 bg-background/96 px-10 py-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => handleSearchChange('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
 
-          {/* State filter */}
-          <select
-            value={stateFilter}
-            onChange={(e) => handleStateChange(e.target.value)}
-            className="rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-          >
-            <option value="">{t('filters.allStates')}</option>
-            {MEXICAN_STATES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={sportType}
+              onChange={(e) => handleSportTypeChange(e.target.value)}
+              className="rounded-xl border border-border/60 bg-background/96 px-3 py-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+            >
+              <option value="">{t('filters.allSports')}</option>
+              {SPORT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {t(`sportTypes.${type}`)}
+                </option>
+              ))}
+            </select>
 
-          {/* More filters toggle */}
-          <IconTooltipButton
-            variant="outline"
-            size="icon"
-            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            label={t('filters.advanced')}
-          >
-            <Filter className={cn('w-4 h-4', showAdvancedFilters ? 'text-primary' : '')} />
-          </IconTooltipButton>
-          <IconTooltipButton
-            variant="outline"
-            size="icon"
-            onClick={handleCopyLink}
-            label={t('share.copyLink')}
-          >
-            <Share2 className="h-4 w-4" />
-          </IconTooltipButton>
+            <select
+              value={stateFilter}
+              onChange={(e) => handleStateChange(e.target.value)}
+              className="rounded-xl border border-border/60 bg-background/96 px-3 py-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+            >
+              <option value="">{t('filters.allStates')}</option>
+              {MEXICAN_STATES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+
+            <IconTooltipButton
+              variant="outline"
+              size="icon"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              label={t('filters.advanced')}
+              className="rounded-xl"
+            >
+              <Filter className={cn('w-4 h-4', showAdvancedFilters ? 'text-primary' : '')} />
+            </IconTooltipButton>
+            <IconTooltipButton
+              variant="outline"
+              size="icon"
+              onClick={handleCopyLink}
+              label={t('share.copyLink')}
+              className="rounded-xl"
+            >
+              <Share2 className="h-4 w-4" />
+            </IconTooltipButton>
+          </div>
         </div>
       </div>
 
       {isNearbyEligible && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.2rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_76%,var(--background-surface)_24%)] px-4 py-3 text-sm">
           <div className="flex items-center gap-2">
             <span className="font-medium">
               {nearbyEnabled ? t('nearby.nearYou') : t('nearby.viewAllActive')}
@@ -796,7 +802,7 @@ export function EventsDirectory({
 
       {/* Advanced filters panel */}
       {showAdvancedFilters && (
-        <div className="border rounded-lg p-4 space-y-4 bg-muted/30">
+        <div className="space-y-4 rounded-[1.35rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-5">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Date range filter */}
             <div className="space-y-2">
@@ -992,7 +998,7 @@ export function EventsDirectory({
 
       {/* Active filters */}
       {hasFilters && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-2">
           {sportType && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {t(`sportTypes.${sportType as SportType}`)}
@@ -1073,13 +1079,28 @@ export function EventsDirectory({
 
       <div ref={resultsRef} className="scroll-mt-24" />
 
+      <div className="flex flex-col gap-3 border-t border-border/70 pt-6 sm:flex-row sm:items-end sm:justify-between">
+        <p className="text-sm leading-7 text-muted-foreground">
+          {t('pagination.showing', {
+            start: pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1,
+            end: Math.min(pagination.page * pagination.limit, pagination.total),
+            total: pagination.total,
+          })}
+        </p>
+        {hasFilters ? (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="w-fit px-0">
+            {t('search.clearFilters')}
+          </Button>
+        ) : null}
+      </div>
+
       {/* Loading state */}
       {isPending && (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: skeletonCount }).map((_, index) => (
             <div
               key={`event-skeleton-${index}`}
-              className="rounded-lg border bg-card shadow-sm overflow-hidden"
+              className="overflow-hidden rounded-[1.5rem] border border-border/50 bg-card/80"
             >
               <Skeleton className="aspect-[16/9] w-full" />
               <div className="p-4 space-y-3">
@@ -1118,7 +1139,7 @@ export function EventsDirectory({
 
       {/* Empty state */}
       {!isPending && events.length === 0 && (
-        <div className="rounded-lg border bg-card p-12 text-center">
+        <div className="rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-12 text-center">
           {hasFilters ? (
             <>
               <h3 className="text-lg font-semibold mb-2">{t('search.noResults')}</h3>
@@ -1138,7 +1159,7 @@ export function EventsDirectory({
 
       {/* Pagination */}
       {!isPending && pagination.totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t pt-4">
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row">
           <p className="text-sm text-muted-foreground text-center sm:text-left">
             {t('pagination.showing', {
               start: (pagination.page - 1) * pagination.limit + 1,
@@ -1209,41 +1230,41 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
         pathname: '/events/[seriesSlug]/[editionSlug]',
         params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
       }}
-      className="group block rounded-lg border bg-card shadow-sm overflow-hidden transition-all hover:shadow-md hover:border-primary/50"
+      className="group block overflow-hidden rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_76%,var(--background-surface)_24%)] transition-colors hover:border-[var(--brand-blue)]/35 hover:bg-card"
     >
       {/* Hero image placeholder */}
-      <div className="aspect-[16/9] bg-muted relative overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden bg-muted">
         {event.heroImageUrl ? (
           <Image
             src={event.heroImageUrl}
             alt={event.seriesName}
             fill
-            className="object-cover transition-transform group-hover:scale-105"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-            <span className="text-2xl font-bold text-primary/30">
+          <div className="flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,color-mix(in_oklch,var(--brand-blue)_18%,var(--background)_82%),color-mix(in_oklch,var(--brand-green)_14%,var(--background)_86%))]">
+            <span className="font-display text-2xl font-medium tracking-[-0.03em] text-foreground/35">
               {event.seriesName.substring(0, 2).toUpperCase()}
             </span>
           </div>
         )}
         {/* Sport type badge */}
-        <span className="absolute top-3 left-3 rounded-full bg-background/90 px-2 py-1 text-xs font-medium backdrop-blur">
+        <span className="absolute left-4 top-4 rounded-full bg-background/92 px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.16em] backdrop-blur">
           {t(`sportTypes.${event.sportType as SportType}`)}
         </span>
       </div>
 
-      <div className="p-4 space-y-3">
+      <div className="space-y-4 p-5 md:p-6">
         {/* Title */}
         <div>
-          <h3 className="font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
+          <h3 className="font-display line-clamp-2 text-[clamp(1.35rem,2.3vw,1.7rem)] font-medium leading-[1] tracking-[-0.03em] text-foreground transition-colors group-hover:text-[var(--brand-blue)]">
             {event.seriesName}
           </h3>
-          <p className="text-sm text-muted-foreground">{event.editionLabel}</p>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{event.editionLabel}</p>
         </div>
 
         {/* Date and location */}
-        <div className="space-y-1 text-sm">
+        <div className="space-y-2 text-sm">
           {eventDate && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarIcon className="h-4 w-4 flex-shrink-0" />
@@ -1259,19 +1280,19 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
         </div>
 
         {/* Registration status and price */}
-        <div className="flex items-center justify-between pt-2 border-t">
+        <div className="flex items-center justify-between gap-4 border-t border-border/70 pt-4">
           <span
             className={cn(
-              'text-xs font-medium px-2 py-1 rounded-full',
+              'rounded-full px-2.5 py-1 text-[0.72rem] font-semibold uppercase tracking-[0.16em]',
               event.isRegistrationOpen
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                ? 'bg-[color-mix(in_oklch,var(--brand-green)_16%,var(--background)_84%)] text-[var(--brand-green-dark)]'
                 : 'bg-muted text-muted-foreground',
             )}
           >
             {event.isRegistrationOpen ? t('card.registrationOpen') : t('card.registrationClosed')}
           </span>
           {event.minPriceCents !== null ? (
-            <span className="text-sm font-medium">
+            <span className="text-sm font-semibold text-foreground">
               {t('card.fromPrice', { price: formatPrice(event.minPriceCents, event.currency) })}
             </span>
           ) : (
