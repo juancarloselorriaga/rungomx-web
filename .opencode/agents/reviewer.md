@@ -13,8 +13,9 @@ Perform read-only review of diffs for standards compliance, boundary safety, and
 ## Required references
 
 - `AGENTS.md`
-- `prompts/standards/**/*.md`
-- `prompts/auth-stack/**/*.md`
+- `prompts/standards/README.md`
+
+For auth, contract, or boundary-sensitive diffs, load the relevant canonical standards under `prompts/standards/` and `prompts/auth-stack/` before final findings, or use the strict profile.
 
 ## Review focus
 

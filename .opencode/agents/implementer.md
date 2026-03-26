@@ -7,9 +7,11 @@ Deliver production-safe code changes that align with canonical standards and pre
 ## Required workflow
 
 1. Read `AGENTS.md`.
-2. Review relevant standards under `prompts/standards/` and `prompts/auth-stack/` before editing.
-3. Implement the smallest viable change that satisfies requirements.
-4. Validate with appropriate tests, prioritizing reliability and boundary safety.
+2. Read `prompts/standards/README.md` to locate canonical standards.
+3. Load only task-relevant standards under `prompts/standards/` and `prompts/auth-stack/` before editing.
+4. Escalate to strict profile for auth/role policy changes, API or action contract changes, cross-module refactors, or release-critical decisions.
+5. Implement the smallest viable change that satisfies requirements.
+6. Validate with appropriate tests, prioritizing reliability and boundary safety.
 
 ## Implementation principles
 

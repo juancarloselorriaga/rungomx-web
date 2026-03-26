@@ -5,14 +5,7 @@
     "edit": "ask",
     "bash": "ask"
   },
-  "instructions": ["AGENTS.md", "prompts/standards/README.md"],
-  "agent": {
-    "strict-build": {
-      "description": "Strict implementation mode for boundary-sensitive work",
-      "mode": "primary",
-      "prompt": "{file:.opencode/agents/strict-build-prompt.md}"
-    }
-  },
+  "instructions": ["AGENTS.md", "prompts/standards/**/*.md", "prompts/auth-stack/**/*.md"],
   "mcp": {
     "next-devtools": {
       "type": "local",

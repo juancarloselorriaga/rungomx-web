@@ -15,10 +15,11 @@ Assess whether test coverage and reliability are sufficient for proposed or comp
 Review before making recommendations:
 
 1. `AGENTS.md`
-2. `prompts/standards/e2e-testing.md`
-3. `prompts/standards/test-reliability.md`
-4. Related feature standards under `prompts/standards/`
-5. `prompts/auth-stack/roles-agent-guide.md` when auth/roles are affected
+2. `prompts/standards/README.md`
+3. Always load `prompts/standards/e2e-testing.md`.
+4. Always load `prompts/standards/test-reliability.md`.
+5. Load related feature standards under `prompts/standards/` as needed.
+6. Load `prompts/auth-stack/roles-agent-guide.md` when auth/roles are affected.
 
 ## Evaluation checklist
 
