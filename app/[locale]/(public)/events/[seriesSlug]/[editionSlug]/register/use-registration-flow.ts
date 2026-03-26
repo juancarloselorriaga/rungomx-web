@@ -99,7 +99,9 @@ export function useRegistrationFlow({
 }: UseRegistrationFlowArgs) {
   const t = useTranslations('pages.events.register');
   const unexpectedError = t('errors.unexpected');
-  const registrationExpiredError = t('errors.registrationExpired');
+  const registrationExpiredError = t.has('errors.registrationExpired')
+    ? t('errors.registrationExpired')
+    : unexpectedError;
   const [isPending, startTransition] = useTransition();
 
   const [step, setStep] = useState<Step>(
