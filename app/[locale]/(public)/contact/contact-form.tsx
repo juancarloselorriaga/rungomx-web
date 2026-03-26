@@ -27,11 +27,7 @@ type ContactFormValues = {
   honeypot: string;
 };
 
-export function ContactForm({
-  defaultName = '',
-  defaultEmail = '',
-  isSignedIn,
-}: ContactFormProps) {
+export function ContactForm({ defaultName = '', defaultEmail = '', isSignedIn }: ContactFormProps) {
   const t = useTranslations('pages.contact.form');
 
   const form = useForm<ContactFormValues>({
@@ -210,7 +206,11 @@ export function ContactForm({
           )}
         >
           <p className="text-xs leading-5 text-muted-foreground">{t('submitNote')}</p>
-          <Button type="submit" disabled={form.isSubmitting}>
+          <Button
+            type="submit"
+            disabled={form.isSubmitting}
+            className="w-full justify-center whitespace-nowrap sm:w-auto sm:shrink-0"
+          >
             {form.isSubmitting ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
