@@ -143,7 +143,7 @@ test.describe('Athlete Registration', () => {
 
     // Should show login required page (not redirect)
     await expect(page).toHaveURL(/\/register/);
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /save your spot with an account/i })).toBeVisible();
 
     // Sign-in button in the login required card should have callback URL
     // Use the one with callbackURL in the href (not the navbar sign-in)
@@ -183,8 +183,9 @@ test.describe('Athlete Registration', () => {
     await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
     // Distance selection should be shown
-    await expect(page.getByText('10K Trail Run')).toBeVisible();
-    await expect(page.getByText(/\$500/)).toBeVisible();
+    const selectedDistanceOption = page.getByRole('button', { name: /10K Trail Run/i });
+    await expect(selectedDistanceOption).toBeVisible();
+    await expect(selectedDistanceOption).toContainText(/MX\$500/);
 
     // Select distance
     await page.getByRole('button', { name: /10K Trail Run/i }).click();
@@ -239,7 +240,7 @@ test.describe('Athlete Registration', () => {
 
     // Step 4: View order summary on payment page
     await expect(page.getByRole('heading', { name: /payment/i })).toBeVisible();
-    await expect(page.getByText('10K Trail Run')).toBeVisible();
+    await expect(page.locator('form').getByText('10K Trail Run').first()).toBeVisible();
     await expect(page.getByText(/MX\$500/).first()).toBeVisible();
     await expect(page.getByText(/total/i).first()).toBeVisible();
 
@@ -271,9 +272,9 @@ test.describe('Athlete Registration', () => {
   test('Test 1.8i: Verify registration cannot be duplicated', async ({ page }) => {
     await openRegistrationPageAsAthlete(page, athleteCreds, seriesSlug, editionSlug);
 
-    // UX: The page proactively shows "already registered" message when user is already registered.
-    // Distance buttons are disabled to prevent duplicate registration attempts.
-    await expect(page.getByText(/already registered/i)).toBeVisible();
+    // UX: Existing registration is surfaced and duplicate registration is blocked.
+    await expect(page.getByRole('heading', { name: /in progress/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /view registration/i }).first()).toBeVisible();
 
     // Verify that the distance button is disabled
     const distanceButton = page.getByRole('button', { name: /5K Road Race/i });

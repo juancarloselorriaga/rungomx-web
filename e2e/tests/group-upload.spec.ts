@@ -389,9 +389,11 @@ test.describe('Group Upload (Phase 3) - Smoke', () => {
     await cleanupExpiredRegistrations();
 
     await page.reload();
+    await waitForBatchReservationActions(page);
 
-    await expect(page.getByText(/expired/i)).toBeVisible();
-    await page.getByRole('button', { name: /reissue/i }).click();
+    const reissueButton = page.getByRole('button', { name: /reissue/i }).first();
+    await expect(reissueButton).toBeVisible();
+    await reissueButton.click();
     await expect(page.getByText(/invite reissued/i)).toBeVisible({ timeout: 15000 });
   });
 

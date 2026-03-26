@@ -451,7 +451,7 @@ async function assertContactPage(page: Page, locale: LocaleSpec) {
   await expect(page.getByRole('heading', { name: locale.contact.trustTitle, exact: true })).toBeVisible();
 
   for (const cardTitle of locale.contact.triageCards) {
-    await expect(triageSection.getByRole('heading', { level: 3, name: cardTitle, exact: true })).toBeVisible();
+    await expect(triageSection.getByRole('heading', { name: cardTitle, exact: true })).toBeVisible();
   }
 
   await expect(page.getByLabel(locale.contact.fieldLabels.name, { exact: true })).toBeVisible();

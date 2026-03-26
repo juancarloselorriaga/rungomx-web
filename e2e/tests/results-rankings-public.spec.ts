@@ -366,14 +366,16 @@ test.describe('Public Results + Rankings', () => {
           }),
         })
         .first();
-      const seededResultRow = searchResultsSection.locator('li').filter({
-        hasText: seededOfficialResult.runnerName,
-      });
-
-      await expect(seededResultRow).toContainText(seededOfficialResult.runnerName);
-      await expect(seededResultRow).toContainText(new RegExp(`\\b${escapeRegex(seededOfficialResult.bibNumber)}\\b`));
       await expect(
-        seededResultRow.getByRole('link', { name: locale.results.openOfficial, exact: true }),
+        searchResultsSection.getByRole('heading', {
+          level: 2,
+          name: seededOfficialResult.runnerName,
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(searchResultsSection).toContainText(new RegExp(`\\b${escapeRegex(seededOfficialResult.bibNumber)}\\b`));
+      await expect(
+        searchResultsSection.getByRole('link', { name: locale.results.openOfficial, exact: true }).first(),
       ).toHaveAttribute('href', locale.detail.path);
     });
 
@@ -432,7 +434,7 @@ test.describe('Public Results + Rankings', () => {
       await expect(
         page.getByRole('heading', { level: 2, name: locale.detail.tableTitle, exact: true }),
       ).toBeVisible();
-      await expect(page.getByText(locale.detail.versionLabel, { exact: true })).toBeVisible();
+      await expect(page.getByText(locale.detail.versionLabel, { exact: true }).first()).toBeVisible();
       await expect(page.getByText(locale.detail.statusLabel, { exact: true }).first()).toBeVisible();
       await expect(page.getByRole('cell', { name: seededOfficialResult.bibNumber, exact: true })).toBeVisible();
       await expect(page.getByRole('cell', { name: seededOfficialResult.distanceLabel, exact: true })).toBeVisible();

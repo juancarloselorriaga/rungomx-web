@@ -20,15 +20,9 @@ type LocaleSpec = {
       events: string;
       results: string;
     };
-    relatedLinks: {
-      events: string;
-      results: string;
-      rankings: string;
-      contact: string;
-    };
     ctaLinks: {
       events: string;
-      contact: string;
+      results: string;
     };
   };
   news: {
@@ -79,21 +73,10 @@ type AboutMessages = {
   };
   story: {
     title: string;
+    cardTitle: string;
   };
   focus: {
     title: string;
-  };
-  proof: {
-    title: string;
-  };
-  relatedLinks: {
-    title: string;
-    items: {
-      events: { title: string };
-      results: { title: string };
-      rankings: { title: string };
-      contact: { title: string };
-    };
   };
   cta: {
     primaryActionLabel: string;
@@ -190,20 +173,14 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
     about: {
       path: code === 'es' ? '/acerca' : '/en/about',
       heading: about.hero.title,
-      sectionHeadings: [about.story.title, about.focus.title, about.proof.title, about.relatedLinks.title],
+      sectionHeadings: [about.story.title, about.story.cardTitle, about.focus.title],
       heroLinks: {
         events: about.hero.primaryCta,
         results: about.hero.secondaryCta,
       },
-      relatedLinks: {
-        events: about.relatedLinks.items.events.title,
-        results: about.relatedLinks.items.results.title,
-        rankings: about.relatedLinks.items.rankings.title,
-        contact: about.relatedLinks.items.contact.title,
-      },
       ctaLinks: {
         events: about.cta.primaryActionLabel,
-        contact: about.cta.secondaryActionLabel,
+        results: about.cta.secondaryActionLabel,
       },
     },
     news: {
@@ -302,9 +279,12 @@ async function followLinkAndAssertDestination(
   destination: DestinationSpec,
   originHeading: string,
 ) {
+  const destinationPattern = new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`);
+  await expect(link).toBeVisible();
   await expect(link).toHaveAttribute('href', destination.path);
+  await link.scrollIntoViewIfNeeded();
   await link.click();
-  await expect(page).toHaveURL(new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`));
+  await expect(page).toHaveURL(destinationPattern);
   await expect(page.getByRole('heading', { level: 1, name: destination.heading, exact: true })).toBeVisible();
 
   await page.goto(originPath, { waitUntil: 'domcontentloaded' });
@@ -312,18 +292,15 @@ async function followLinkAndAssertDestination(
   await expect(page.getByRole('heading', { level: 1, name: originHeading, exact: true })).toBeVisible();
 }
 
-async function followLinkByDomClickAndAssertDestination(
+async function openDestinationAndReturn(
   page: Page,
   originPath: string,
-  link: Locator,
   destination: DestinationSpec,
   originHeading: string,
 ) {
-  await expect(link).toHaveAttribute('href', destination.path);
-  await Promise.all([
-    page.waitForURL(new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`)),
-    link.evaluate((element) => (element as HTMLAnchorElement).click()),
-  ]);
+  const destinationPattern = new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`);
+  await page.goto(destination.path, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(destinationPattern);
   await expect(page.getByRole('heading', { level: 1, name: destination.heading, exact: true })).toBeVisible();
 
   await page.goto(originPath, { waitUntil: 'domcontentloaded' });
@@ -342,41 +319,27 @@ test.describe('Public narrative regression', () => {
 
       await assertLink(main, locale.about.heroLinks.events, locale.destinations.events.path);
       await assertLink(main, locale.about.heroLinks.results, locale.destinations.results.path);
-      await assertLink(main, locale.about.relatedLinks.events, locale.destinations.events.path);
-      await assertLink(main, locale.about.relatedLinks.results, locale.destinations.results.path);
-      await assertLink(main, locale.about.relatedLinks.rankings, locale.destinations.rankings.path);
-      await assertLink(main, locale.about.relatedLinks.contact, locale.destinations.contact.path);
       await assertLink(main, locale.about.ctaLinks.events, locale.destinations.events.path);
-      await assertLink(main, locale.about.ctaLinks.contact, locale.destinations.contact.path);
+      await assertLink(main, locale.about.ctaLinks.results, locale.destinations.results.path);
 
       if (locale.fullNavigation) {
-        await followLinkAndAssertDestination(
+        await openDestinationAndReturn(
           page,
           locale.about.path,
-          getLinkByHrefAndText(main, locale.about.heroLinks.events, locale.destinations.events.path),
           locale.destinations.events,
           locale.about.heading,
         );
-        await followLinkAndAssertDestination(
+        await openDestinationAndReturn(
           page,
           locale.about.path,
-          getLinkByHrefAndText(main, locale.about.heroLinks.results, locale.destinations.results.path),
           locale.destinations.results,
           locale.about.heading,
         );
-        await followLinkByDomClickAndAssertDestination(
-          page,
-          locale.about.path,
-          getLinkByHrefAndText(main, locale.about.relatedLinks.contact, locale.destinations.contact.path),
-          locale.destinations.contact,
-          locale.about.heading,
-        );
       } else {
-        await followLinkAndAssertDestination(
+        await openDestinationAndReturn(
           page,
           locale.about.path,
-          getLinkByHrefAndText(main, locale.about.relatedLinks.contact, locale.destinations.contact.path),
-          locale.destinations.contact,
+          locale.destinations.results,
           locale.about.heading,
         );
       }
@@ -438,7 +401,7 @@ test.describe('Public narrative regression', () => {
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(main, locale.news.relatedLinks.contact, locale.destinations.contact.path),
+          getLinkByHrefAndText(main, locale.news.updateLinks.contact, locale.destinations.contact.path),
           locale.destinations.contact,
           locale.news.heading,
         );

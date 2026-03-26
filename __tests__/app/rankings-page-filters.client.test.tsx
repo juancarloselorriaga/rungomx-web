@@ -125,7 +125,7 @@ describe('rankings page filter URL behavior', () => {
     });
     expect(screen.getByText('Ana Runner')).toBeInTheDocument();
     expect(screen.getByText('table.title')).toBeInTheDocument();
-    expect(screen.getByText('reproducibility.summary')).toBeInTheDocument();
+    expect(screen.getByText(/snapshot\.summary/)).toBeInTheDocument();
     expect(screen.getByText('reproducibility.referenceLink')).toBeInTheDocument();
   });
 

@@ -379,7 +379,7 @@ function generateSelectionHelpers(
     .join(', ');
   const defaultComponentsStr = componentNamespaces.map((n) => `'${n}'`).join(', ');
   const publicComponentsStr = componentNamespaces
-    .filter((n) => n !== 'profile' && n !== 'settings')
+    .filter((n) => n !== 'profile' && n !== 'settings' && n !== 'phoneInput')
     .map((n) => `'${n}'`)
     .join(', ');
   const defaultPagesStr = pageNamespaces.map((n) => `'${n}'`).join(', ');

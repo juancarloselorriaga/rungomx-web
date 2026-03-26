@@ -1,4 +1,6 @@
-import { Hero, Section, TextBlock } from '@/components/common';
+import { Section } from '@/components/common/section';
+import { TextBlock } from '@/components/common/text-block';
+import { Hero } from '@/components/common/hero';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';

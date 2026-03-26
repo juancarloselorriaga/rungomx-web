@@ -36,6 +36,10 @@ jest.mock('next-intl/server', () => ({
   setRequestLocale: jest.fn(),
 }));
 
+jest.mock('@/i18n/navigation', () => ({
+  Link: ({ children }: { children: unknown }) => children,
+}));
+
 import ResultsHowItWorksPage, {
   generateMetadata,
 } from '@/app/[locale]/(public)/results/how-it-works/page';

@@ -16,6 +16,7 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  transformIgnorePatterns: ['/node_modules/(?!.*next-intl)'],
 };
 
 export default createJestConfig(config);

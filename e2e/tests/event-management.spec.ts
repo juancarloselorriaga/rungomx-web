@@ -356,7 +356,12 @@ test.describe('Event Management', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
     // Should show registration closed message
-    await expect(page.getByText(/registration closed/i)).toBeVisible();
+    await expect(
+      page
+        .locator('p')
+        .filter({ hasText: /registration closed/i })
+        .first(),
+    ).toBeVisible();
 
     // Register button should not be visible when registration is closed
     const registerButton = page.getByRole('link', { name: /register now/i });
@@ -391,7 +396,12 @@ test.describe('Event Management', () => {
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
 
     // Should show registration open message
-    await expect(page.getByText(/registration open/i)).toBeVisible();
+    await expect(
+      page
+        .locator('span')
+        .filter({ hasText: /registration open/i })
+        .first(),
+    ).toBeVisible();
 
     // Register buttons should be enabled
     await expect(page.getByRole('link', { name: /register/i }).first()).toBeVisible();
