@@ -32,13 +32,7 @@ import { QuestionsStep } from './questions-step';
 import { getStepNumber } from './registration-flow-machine';
 import { useRegistrationFlow } from './use-registration-flow';
 import { WaiverStep } from './waiver-step';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Info,
-  Users,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Info, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 type EventDocument = {
@@ -193,7 +187,8 @@ export function RegistrationFlow({
         timeZone: event.timezone,
       }).format(new Date(event.startsAt))
     : null;
-  const locationLabel = event.locationDisplay ?? [event.city, event.state].filter(Boolean).join(', ');
+  const locationLabel =
+    event.locationDisplay ?? [event.city, event.state].filter(Boolean).join(', ');
   const selectedCurrency = selectedDistance?.currency ?? event.distances[0]?.currency ?? 'MXN';
   const currentStepLabel = step === 'confirmation' ? t('confirmation.title') : t(`steps.${step}`);
 
@@ -229,9 +224,7 @@ export function RegistrationFlow({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('payment.confirmReplaceGroupDiscount.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDiscountCodeReplacement}
-            >
+            <AlertDialogAction onClick={handleConfirmDiscountCodeReplacement}>
               {t('payment.confirmReplaceGroupDiscount.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -240,8 +233,8 @@ export function RegistrationFlow({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.18fr)] lg:items-start">
         <aside className="space-y-4 lg:sticky lg:top-24">
-          <div className="overflow-hidden rounded-[1.9rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] shadow-[0_32px_90px_-70px_rgba(15,23,42,0.78)]">
-            <div className="border-b border-border/60 bg-[radial-gradient(circle_at_top_left,rgba(51,102,204,0.11),transparent_44%),radial-gradient(circle_at_bottom_right,rgba(30,138,110,0.12),transparent_36%),color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)] px-5 py-6 sm:px-6 sm:py-7">
+          <div className="overflow-hidden rounded-[1.9rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] shadow-[0_20px_60px_-52px_rgba(15,23,42,0.5)]">
+            <div className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_76%,var(--background-surface)_24%)] px-5 py-6 sm:px-6 sm:py-7">
               <Link
                 href={{
                   pathname: '/events/[seriesSlug]/[editionSlug]',
@@ -362,13 +355,13 @@ export function RegistrationFlow({
                   </h2>
                   <p className="mt-1 text-sm leading-7 text-info-foreground/90">
                     {t(
-                       isConfirmedExistingRegistration
-                         ? 'alreadyRegistered.description'
-                         : 'alreadyRegistered.inProgress',
-                       {
-                      distanceName: effectiveExistingRegistration.distanceLabel,
-                       },
-                     )}
+                      isConfirmedExistingRegistration
+                        ? 'alreadyRegistered.description'
+                        : 'alreadyRegistered.inProgress',
+                      {
+                        distanceName: effectiveExistingRegistration.distanceLabel,
+                      },
+                    )}
                   </p>
                   <div className="mt-3">
                     {isInProgressExistingRegistration && registrationId ? (
@@ -406,15 +399,17 @@ export function RegistrationFlow({
               {showAlreadyRegisteredCta ? (
                 <div className="mt-3">
                   <Button asChild variant="secondary" size="sm">
-                    <Link href="/dashboard/my-registrations">{t('errors.viewMyRegistrations')}</Link>
+                    <Link href="/dashboard/my-registrations">
+                      {t('errors.viewMyRegistrations')}
+                    </Link>
                   </Button>
                 </div>
               ) : null}
             </div>
           )}
 
-          <div className="overflow-hidden rounded-[1.9rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_79%,var(--background-surface)_21%)] shadow-[0_34px_95px_-76px_rgba(15,23,42,0.82)]">
-            <div className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_74%,var(--background-surface)_26%)] px-5 py-5 sm:px-7 sm:py-6">
+          <div className="overflow-hidden rounded-[1.9rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] shadow-[0_20px_60px_-52px_rgba(15,23,42,0.5)]">
+            <div className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_76%,var(--background-surface)_24%)] px-5 py-5 sm:px-7 sm:py-6">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 {t('title')}
               </p>

@@ -1,10 +1,12 @@
 import { getPathname } from '@/i18n/navigation';
+import { PublicStatusShell } from '@/components/common';
 import { getAuthContext } from '@/lib/auth/server';
 import { getClaimPageContextByToken } from '@/lib/events/invite-claim/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
+import { CircleAlert } from 'lucide-react';
 
 import { ClaimInviteCard } from './claim-card';
 import { ClaimLoginRequired } from './login-required';
@@ -25,7 +27,9 @@ export async function generateMetadata({ params }: ClaimPageProps) {
 
 export default async function ClaimPage({ params }: ClaimPageProps) {
   const { locale, seriesSlug, editionSlug, inviteToken } = await params;
-  await configPageLocale(params, { pathname: '/events/[seriesSlug]/[editionSlug]/claim/[inviteToken]' });
+  await configPageLocale(params, {
+    pathname: '/events/[seriesSlug]/[editionSlug]/claim/[inviteToken]',
+  });
 
   const [authContext, claimContext] = await Promise.all([
     getAuthContext(),
@@ -34,8 +38,7 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
 
   if (
     claimContext.event &&
-    (claimContext.event.seriesSlug !== seriesSlug ||
-      claimContext.event.editionSlug !== editionSlug)
+    (claimContext.event.seriesSlug !== seriesSlug || claimContext.event.editionSlug !== editionSlug)
   ) {
     const redirectPath = getPathname({
       href: {
@@ -59,17 +62,14 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
     const t = await getTranslations({ locale, namespace: 'pages.events.claim' });
 
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-        <div className="rounded-[1.9rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_79%,var(--background-surface)_21%)] px-6 py-8 text-center shadow-[0_32px_90px_-72px_rgba(15,23,42,0.78)] sm:px-8 sm:py-10">
-          <h1 className="font-display text-[clamp(2rem,4.6vw,3rem)] font-medium tracking-[-0.04em] text-foreground">
-            {t(`status.${claimContext.status}.title`)}
-          </h1>
-          <p className="mx-auto mt-4 max-w-[40rem] text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
-            {t(`status.${claimContext.status}.description`)}
-          </p>
-          {eventName ? <p className="mt-5 text-sm font-medium text-foreground/80">{eventName}</p> : null}
-        </div>
-      </div>
+      <PublicStatusShell
+        align="center"
+        badge={t('title')}
+        icon={<CircleAlert className="size-5" />}
+        title={t(`status.${claimContext.status}.title`)}
+        description={t(`status.${claimContext.status}.description`)}
+        context={eventName ? <span>{eventName}</span> : undefined}
+      />
     );
   }
 

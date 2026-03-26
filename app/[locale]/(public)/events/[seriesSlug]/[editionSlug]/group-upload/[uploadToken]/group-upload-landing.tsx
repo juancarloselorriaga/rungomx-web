@@ -1,11 +1,12 @@
 'use client';
 
 import { PublicLoginRequiredShell } from '@/components/auth/public-login-required-shell';
+import { PublicStatusShell } from '@/components/common';
 import {
+  publicBodyTextClassName,
   publicMutedPanelClassName,
-  publicSurfaceBodyClassName,
-  publicSurfaceClassName,
-  publicSurfaceHeaderClassName,
+  publicPanelClassName,
+  publicStatusPillClassName,
   publicSummaryItemClassName,
 } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
@@ -139,7 +140,8 @@ export function GroupUploadLanding({
     }).format(new Date(event.startsAt));
   }, [event.startsAt, event.timezone, locale]);
 
-  const locationLabel = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
+  const locationLabel =
+    event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
 
   const handleDownloadTemplate = () => {
     const csv = `${TEMPLATE_HEADERS.join(',')}\n${TEMPLATE_EXAMPLE.join(',')}\n`;
@@ -184,171 +186,149 @@ export function GroupUploadLanding({
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-      <div className="space-y-6">
-        {!isAuthenticated && signInUrl && signUpUrl ? (
-          <PublicLoginRequiredShell
-            title={t('loginRequired.title')}
-            description={t('loginRequired.description')}
-            eventName={`${event.seriesName} ${event.editionLabel}`}
-            signInLabel={t('loginRequired.signIn')}
-            signUpLabel={t('loginRequired.signUp')}
-            signInUrl={signInUrl}
-            signUpUrl={signUpUrl}
-          />
-        ) : null}
+    <div className="space-y-6">
+      {!isAuthenticated && signInUrl && signUpUrl ? (
+        <PublicLoginRequiredShell
+          title={t('loginRequired.title')}
+          description={t('loginRequired.description')}
+          eventName={`${event.seriesName} ${event.editionLabel}`}
+          signInLabel={t('loginRequired.signIn')}
+          signUpLabel={t('loginRequired.signUp')}
+          signInUrl={signInUrl}
+          signUpUrl={signUpUrl}
+        />
+      ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:items-start">
-          <section className="space-y-4 lg:sticky lg:top-24">
-            <div
-              className={cn(
-                publicSurfaceClassName,
-                'bg-[radial-gradient(circle_at_top_left,rgba(51,102,204,0.11),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(30,138,110,0.12),transparent_38%),color-mix(in_oklch,var(--background)_74%,var(--background-surface)_26%)]',
-              )}
-            >
-              <div className={publicSurfaceBodyClassName}>
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                    RunGoMX
-                  </p>
-                  <span
-                    className={cn(
-                      'rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide',
-                      STATUS_STYLES[status],
-                    )}
-                  >
-                    {statusLabel}
-                  </span>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <h1 className="font-display text-[clamp(2rem,4.6vw,3.1rem)] font-medium leading-[0.92] tracking-[-0.04em] text-foreground">
-                    {t('title')}
-                  </h1>
-                  <p className="text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
-                    {t('description')}
-                  </p>
-                </div>
-
-                <div className={cn(publicMutedPanelClassName, 'mt-8 space-y-3 p-4 sm:p-5')}>
-                  <div className="font-display text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
-                    {event.seriesName} {event.editionLabel}
-                  </div>
-                  {eventDate ? <div className="text-sm leading-7 text-muted-foreground">{eventDate}</div> : null}
-                  {locationLabel ? (
-                    <div className="flex items-center gap-2 text-sm leading-7 text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      {locationLabel}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className={publicSummaryItemClassName}>
-                    <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                      {t('template.title')}
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                      {t('usage', { batches: usage.batchCount, invites: usage.inviteCount })}
-                    </p>
-                  </div>
-                  <div className={publicSummaryItemClassName}>
-                    <Button
-                      variant="outline"
-                      onClick={handleDownloadTemplate}
-                      className="w-full"
-                    >
-                      <FileDown className="mr-2 h-4 w-4" />
-                      {t('template.download')}
-                    </Button>
-                  </div>
-                </div>
-              </div>
+      <PublicStatusShell
+        badge="RunGoMX"
+        icon={<Upload className="h-5 w-5" />}
+        title={t('title')}
+        description={t('description')}
+        context={
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className={cn(publicStatusPillClassName, STATUS_STYLES[status])}>
+                {statusLabel}
+              </span>
             </div>
-          </section>
-
-          <section className={publicSurfaceClassName}>
-            <div className={publicSurfaceHeaderClassName}>
-              <h2 className="font-display text-[clamp(1.55rem,2.7vw,2.05rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
-                {t('create.title')}
-              </h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('create.description')}</p>
-            </div>
-
-            <div className={cn(publicSurfaceBodyClassName, 'space-y-5')}>
-              <div className={cn(publicMutedPanelClassName, 'space-y-3 p-4 sm:p-5')}>
-                <h3 className="font-medium text-foreground">{t('template.title')}</h3>
-                <p className="text-sm leading-7 text-muted-foreground">{t('template.description')}</p>
+            <div className={cn(publicMutedPanelClassName, 'space-y-3 p-4 sm:p-5')}>
+              <div className="font-display text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
+                {event.seriesName} {event.editionLabel}
               </div>
-
-              <div className="space-y-3">
-                <p className="text-sm font-medium">{t('create.distanceLabel')}</p>
-                <div className="grid gap-3">
-                  {distances.map((distance) => (
-                    <button
-                      key={distance.id}
-                      type="button"
-                      className={cn(
-                        'flex items-center justify-between gap-4 rounded-[1.35rem] border px-4 py-4 text-left transition sm:px-5',
-                        selectedDistanceId === distance.id
-                          ? 'border-primary bg-primary/5 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.85)]'
-                          : 'border-border/55 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] hover:border-primary/35',
-                      )}
-                      onClick={() => setSelectedDistanceId(distance.id)}
-                      disabled={!canCreateBatch}
-                    >
-                      <div>
-                        <div className="font-display text-[1.25rem] font-medium tracking-[-0.025em] text-foreground">
-                          {distance.label}
-                        </div>
-                        {distance.spotsRemaining !== null ? (
-                          <div className="mt-1 text-xs leading-6 text-muted-foreground">
-                            {t('create.spotsRemaining', { count: distance.spotsRemaining })}
-                          </div>
-                        ) : null}
-                      </div>
-                      {selectedDistanceId === distance.id ? (
-                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-                          {t('create.selected')}
-                        </span>
-                      ) : null}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <Button
-                onClick={handleCreateBatch}
-                disabled={!canCreateBatch || !selectedDistanceId || isPending}
-                className="w-full sm:w-auto"
-              >
-                {isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-2 h-4 w-4" />
-                )}
-                {t('create.action')}
-              </Button>
-
-              {showStatusHelp ? (
-                <div className={cn(publicMutedPanelClassName, 'p-4 text-sm text-muted-foreground sm:p-5')}>
-                  {status === 'NOT_STARTED'
-                    ? t('statusHelp.NOT_STARTED')
-                    : status === 'EXPIRED'
-                      ? t('statusHelp.EXPIRED')
-                      : status === 'REVOKED'
-                        ? t('statusHelp.REVOKED')
-                        : status === 'DISABLED'
-                          ? t('statusHelp.DISABLED')
-                          : status === 'MAXED_OUT'
-                            ? t('statusHelp.MAXED_OUT')
-                            : t('statusHelp.generic')}
+              {eventDate ? <div className={publicBodyTextClassName}>{eventDate}</div> : null}
+              {locationLabel ? (
+                <div className="flex items-center gap-2 text-sm leading-7 text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  {locationLabel}
                 </div>
               ) : null}
             </div>
-          </section>
-        </div>
-      </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className={publicSummaryItemClassName}>
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  {t('template.title')}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                  {t('usage', { batches: usage.batchCount, invites: usage.inviteCount })}
+                </p>
+              </div>
+              <div className={publicSummaryItemClassName}>
+                <Button variant="outline" onClick={handleDownloadTemplate} className="w-full">
+                  <FileDown className="mr-2 h-4 w-4" />
+                  {t('template.download')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        }
+        surfaceClassName="max-w-4xl"
+      >
+        <section className="space-y-5">
+          <div className="space-y-2 text-left">
+            <h2 className="font-display text-[clamp(1.55rem,2.7vw,2.05rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+              {t('create.title')}
+            </h2>
+            <p className={publicBodyTextClassName}>{t('create.description')}</p>
+          </div>
+
+          <div className={cn(publicMutedPanelClassName, 'space-y-3 p-4 sm:p-5')}>
+            <h3 className="font-medium text-foreground">{t('template.title')}</h3>
+            <p className={publicBodyTextClassName}>{t('template.description')}</p>
+          </div>
+
+          <div className={cn(publicPanelClassName, 'space-y-4')}>
+            <p className="text-sm font-medium">{t('create.distanceLabel')}</p>
+            <div className="grid gap-3">
+              {distances.map((distance) => (
+                <button
+                  key={distance.id}
+                  type="button"
+                  className={cn(
+                    'flex items-center justify-between gap-4 rounded-[1.35rem] border px-4 py-4 text-left transition sm:px-5',
+                    selectedDistanceId === distance.id
+                      ? 'border-primary bg-primary/5 shadow-[0_18px_50px_-42px_rgba(15,23,42,0.85)]'
+                      : 'border-border/55 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] hover:border-primary/35',
+                  )}
+                  onClick={() => setSelectedDistanceId(distance.id)}
+                  disabled={!canCreateBatch}
+                >
+                  <div>
+                    <div className="font-display text-[1.25rem] font-medium tracking-[-0.025em] text-foreground">
+                      {distance.label}
+                    </div>
+                    {distance.spotsRemaining !== null ? (
+                      <div className="mt-1 text-xs leading-6 text-muted-foreground">
+                        {t('create.spotsRemaining', { count: distance.spotsRemaining })}
+                      </div>
+                    ) : null}
+                  </div>
+                  {selectedDistanceId === distance.id ? (
+                    <span className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+                      {t('create.selected')}
+                    </span>
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={cn(publicPanelClassName, 'space-y-4')}>
+            <Button
+              onClick={handleCreateBatch}
+              disabled={!canCreateBatch || !selectedDistanceId || isPending}
+              className="w-full sm:w-auto"
+            >
+              {isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+              {t('create.action')}
+            </Button>
+
+            {showStatusHelp ? (
+              <div
+                className={cn(
+                  publicMutedPanelClassName,
+                  'p-4 text-sm text-muted-foreground sm:p-5',
+                )}
+              >
+                {status === 'NOT_STARTED'
+                  ? t('statusHelp.NOT_STARTED')
+                  : status === 'EXPIRED'
+                    ? t('statusHelp.EXPIRED')
+                    : status === 'REVOKED'
+                      ? t('statusHelp.REVOKED')
+                      : status === 'DISABLED'
+                        ? t('statusHelp.DISABLED')
+                        : status === 'MAXED_OUT'
+                          ? t('statusHelp.MAXED_OUT')
+                          : t('statusHelp.generic')}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      </PublicStatusShell>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   publicSurfaceBodyClassName,
   publicSurfaceClassName,
   publicSurfaceHeaderClassName,
+  publicStatusPillClassName,
   publicSummaryItemClassName,
 } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
@@ -109,7 +110,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
   const [editedEmail, setEditedEmail] = useState('');
 
   const hasRows = rows.length > 0;
-  const pendingRows = rows.filter((row) => row.validationErrors.length === 0 && !row.createdRegistrationId);
+  const pendingRows = rows.filter(
+    (row) => row.validationErrors.length === 0 && !row.createdRegistrationId,
+  );
   const draftInvites = rows.filter((row) => row.invite?.status === 'draft');
   const sentInvites = rows.filter((row) => row.invite?.status === 'sent');
   const claimedInvites = rows.filter((row) => row.invite?.status === 'claimed');
@@ -154,7 +157,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
     if (!value) return '-';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
+      date,
+    );
   };
 
   const canUpload = !hasRows;
@@ -228,7 +233,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
       });
 
       if (result.data.groupDiscountPercentOff) {
-        toast.success(t('reserve.discountApplied', { percentOff: result.data.groupDiscountPercentOff }));
+        toast.success(
+          t('reserve.discountApplied', { percentOff: result.data.groupDiscountPercentOff }),
+        );
       }
 
       router.refresh();
@@ -253,7 +260,10 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
       }
 
       toast.success(t('sendInvites.success'), {
-        description: t('sendInvites.summary', { sent: result.data.sent, skipped: result.data.skipped }),
+        description: t('sendInvites.summary', {
+          sent: result.data.sent,
+          skipped: result.data.skipped,
+        }),
       });
       router.refresh();
     });
@@ -353,7 +363,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
         return;
       }
 
-      toast.success(t('extendHold.success'), { description: formatDateTime(result.data.expiresAt) });
+      toast.success(t('extendHold.success'), {
+        description: formatDateTime(result.data.expiresAt),
+      });
       router.refresh();
     });
   };
@@ -373,12 +385,7 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
       <div className="grid gap-6 xl:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.18fr)] xl:items-start">
         <aside className="space-y-4 xl:sticky xl:top-24">
-          <section
-            className={cn(
-              publicSurfaceClassName,
-              'bg-[radial-gradient(circle_at_top_left,rgba(51,102,204,0.11),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(30,138,110,0.12),transparent_38%),color-mix(in_oklch,var(--background)_74%,var(--background-surface)_26%)]',
-            )}
-          >
+          <section className={publicSurfaceClassName}>
             <div className={publicSurfaceBodyClassName}>
               <div className="flex flex-wrap items-center gap-3">
                 <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
@@ -386,7 +393,7 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                 </p>
                 <span
                   className={cn(
-                    'rounded-full px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.16em]',
+                    publicStatusPillClassName,
                     STATUS_STYLES[batch.status] ?? STATUS_STYLES.uploaded,
                   )}
                 >
@@ -484,7 +491,11 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   disabled={isPending || !canUpload}
                 />
-                <Button onClick={handleUpload} disabled={isPending || !canUpload} className="lg:min-w-[12rem]">
+                <Button
+                  onClick={handleUpload}
+                  disabled={isPending || !canUpload}
+                  className="lg:min-w-[12rem]"
+                >
                   {isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
@@ -496,7 +507,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
 
               {!canUpload ? (
                 <div className={cn(publicMutedPanelClassName, 'p-4 sm:p-5')}>
-                  <p className="text-sm leading-7 text-muted-foreground">{t('upload.alreadyUploaded')}</p>
+                  <p className="text-sm leading-7 text-muted-foreground">
+                    {t('upload.alreadyUploaded')}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -507,7 +520,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
               <h2 className="font-display text-[clamp(1.65rem,2.8vw,2.15rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
                 {t('reserve.title')}
               </h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('reserve.description')}</p>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                {t('reserve.description')}
+              </p>
             </div>
 
             <div className={cn(publicSurfaceBodyClassName, 'space-y-4')}>
@@ -546,7 +561,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
               <h2 className="font-display text-[clamp(1.65rem,2.8vw,2.15rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
                 {t('rows.title')}
               </h2>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('rows.description')}</p>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                {t('rows.description')}
+              </p>
             </div>
 
             <div className={cn(publicSurfaceBodyClassName, 'space-y-4')}>
@@ -568,7 +585,7 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                         const statusLabel = row.validationErrors.length
                           ? t('rows.status.invalid')
                           : row.invite
-                            ? inviteStatusLabelMap[row.invite.status] ?? row.invite.status
+                            ? (inviteStatusLabelMap[row.invite.status] ?? row.invite.status)
                             : row.createdRegistrationId
                               ? t('rows.status.reserved')
                               : t('rows.status.pending');
@@ -622,7 +639,9 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
                               </div>
                               {row.validationErrors.length ? (
                                 <div className="mt-2 text-xs leading-6 text-destructive">
-                                  {row.validationErrors.map((error) => errorLabel(error)).join(', ')}
+                                  {row.validationErrors
+                                    .map((error) => errorLabel(error))
+                                    .join(', ')}
                                 </div>
                               ) : null}
                             </td>

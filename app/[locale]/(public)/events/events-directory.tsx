@@ -1,6 +1,10 @@
 'use client';
 
-import { publicFieldClassName, publicSelectClassName } from '@/components/common/public-form-styles';
+import {
+  publicFieldClassName,
+  publicPanelClassName,
+  publicSelectClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
@@ -10,7 +14,11 @@ import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useSession } from '@/lib/auth/client';
-import { DEFAULT_PROFILE_NEARBY_RADIUS_KM, SPORT_TYPES, type SportType } from '@/lib/events/constants';
+import {
+  DEFAULT_PROFILE_NEARBY_RADIUS_KM,
+  SPORT_TYPES,
+  type SportType,
+} from '@/lib/events/constants';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 import type { ProfileRecord } from '@/lib/profiles/types';
@@ -166,10 +174,7 @@ export function EventsDirectory({
   const isAuthenticated = Boolean(sessionUser) || initialNearbyEligible;
   const hasProfileLocation = hasSessionProfileLocation || initialNearbyEligible;
   const hasSearchIntent = Boolean(parsedParams.q);
-  const hasLocationIntent = useMemo(
-    () => hasExplicitLocationIntent(searchParams),
-    [searchParams],
-  );
+  const hasLocationIntent = useMemo(() => hasExplicitLocationIntent(searchParams), [searchParams]);
   const isNearbyEligible =
     isAuthenticated && hasProfileLocation && hasSearchIntent && !hasLocationIntent;
 
@@ -215,7 +220,8 @@ export function EventsDirectory({
   };
 
   // Fetch events with given parameters
-  const fetchEvents = useCallback(async (params: EventsSearchParams) => {
+  const fetchEvents = useCallback(
+    async (params: EventsSearchParams) => {
       const searchParams = new URLSearchParams();
       if (params.q && params.q.trim().length >= 3) {
         searchParams.set('q', params.q.trim());
@@ -265,7 +271,9 @@ export function EventsDirectory({
         setEvents(data.events);
         setPagination(data.pagination);
       }
-    }, [nearbyEnabled]);
+    },
+    [nearbyEnabled],
+  );
 
   // Helper to calculate date range from preset
   function getDateRangeFromPreset(
@@ -354,8 +362,7 @@ export function EventsDirectory({
         (() => {
           const expected = getDateRangeFromPreset(datePreset);
           return (
-            expected.dateFrom === parsedParams.dateFrom &&
-            expected.dateTo === parsedParams.dateTo
+            expected.dateFrom === parsedParams.dateFrom && expected.dateTo === parsedParams.dateTo
           );
         })();
 
@@ -369,10 +376,7 @@ export function EventsDirectory({
     const hasDistanceRange =
       parsedParams.distanceMin !== undefined || parsedParams.distanceMax !== undefined;
     setDistanceRangeEnabled(hasDistanceRange);
-    setDistanceRange([
-      parsedParams.distanceMin ?? 0,
-      parsedParams.distanceMax ?? 200,
-    ]);
+    setDistanceRange([parsedParams.distanceMin ?? 0, parsedParams.distanceMax ?? 200]);
     setSearchRadius(parsedParams.radiusKm ?? DEFAULT_PROFILE_NEARBY_RADIUS_KM);
   }, [datePreset, parsedParams]);
 
@@ -703,7 +707,7 @@ export function EventsDirectory({
   return (
     <div className="space-y-8">
       {/* Search and filters */}
-      <div className="rounded-[1.6rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_72%,var(--background-surface)_28%)] p-5 md:p-6">
+      <div className={cn(publicPanelClassName, 'p-5 md:p-6')}>
         <div className="max-w-[44rem]">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-[var(--brand-green-dark)]">
             {t('title')}
@@ -792,11 +796,7 @@ export function EventsDirectory({
             ) : null}
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setNearbyDisabled((prev) => !prev)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setNearbyDisabled((prev) => !prev)}>
               {nearbyEnabled ? t('nearby.viewAll') : t('nearby.nearYou')}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setShowAdvancedFilters(true)}>
@@ -808,7 +808,7 @@ export function EventsDirectory({
 
       {/* Advanced filters panel */}
       {showAdvancedFilters && (
-        <div className="space-y-4 rounded-[1.35rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-5">
+        <div className={cn(publicPanelClassName, 'space-y-4 p-5 shadow-none')}>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Date range filter */}
             <div className="space-y-2">
@@ -1145,7 +1145,7 @@ export function EventsDirectory({
 
       {/* Empty state */}
       {!isPending && events.length === 0 && (
-        <div className="rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-12 text-center">
+        <div className={cn(publicPanelClassName, 'p-12 text-center')}>
           {hasFilters ? (
             <>
               <h3 className="text-lg font-semibold mb-2">{t('search.noResults')}</h3>
@@ -1165,7 +1165,7 @@ export function EventsDirectory({
 
       {/* Pagination */}
       {!isPending && pagination.totalPages > 1 && (
-          <div className="flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row">
           <p className="text-sm text-muted-foreground text-center sm:text-left">
             {t('pagination.showing', {
               start: (pagination.page - 1) * pagination.limit + 1,
@@ -1236,7 +1236,7 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
         pathname: '/events/[seriesSlug]/[editionSlug]',
         params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
       }}
-      className="group block overflow-hidden rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_76%,var(--background-surface)_24%)] transition-colors hover:border-[var(--brand-blue)]/35 hover:bg-card"
+      className="group block overflow-hidden rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] transition-colors hover:border-[var(--brand-blue)]/35 hover:bg-card"
     >
       {/* Hero image placeholder */}
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">

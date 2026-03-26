@@ -1,10 +1,8 @@
+import { PublicStatusShell } from '@/components/common';
 import { CheckCircle, Download, FileText } from 'lucide-react';
 
 import { MarkdownContent } from '@/components/markdown/markdown-content';
-import {
-  publicMutedPanelClassName,
-  publicPanelClassName,
-} from '@/components/common/public-form-styles';
+import { publicPanelClassName } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
@@ -65,22 +63,31 @@ export function ConfirmationStep({
   labels,
 }: ConfirmationStepProps) {
   return (
-    <div className="space-y-8 py-3">
-      <div className="space-y-4 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/10">
-          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-        </div>
-
-        <div>
-          <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.7rem)] font-medium leading-[0.95] tracking-[-0.035em] text-foreground">
-            {labels.title}
-          </h2>
-          <p className="mx-auto mt-3 max-w-[38rem] text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
-            {labels.description}
-          </p>
-        </div>
-      </div>
-
+    <PublicStatusShell
+      align="center"
+      badge={labels.whatNext}
+      icon={<CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />}
+      title={labels.title}
+      description={labels.description}
+      support={<p className="text-sm leading-7 text-muted-foreground">{labels.nextSteps}</p>}
+      actions={
+        <>
+          <Button asChild className="min-w-0">
+            <Link
+              href={{
+                pathname: '/events/[seriesSlug]/[editionSlug]',
+                params: { seriesSlug, editionSlug },
+              }}
+            >
+              {labels.viewEvent}
+            </Link>
+          </Button>
+          <Button variant="outline" asChild className="min-w-0">
+            <Link href="/events">{labels.backToEvents}</Link>
+          </Button>
+        </>
+      }
+    >
       <div className="grid gap-4 sm:grid-cols-2">
         {registrationId ? (
           <div className={publicPanelClassName}>
@@ -98,16 +105,11 @@ export function ConfirmationStep({
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               {labels.distance}
             </p>
-            <p className="font-display mt-3 text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
+            <p className="mt-3 font-display text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
               {selectedDistanceLabel}
             </p>
           </div>
         ) : null}
-      </div>
-
-      <div className={publicMutedPanelClassName}>
-        <h3 className="font-medium text-foreground">{labels.whatNext}</h3>
-        <p className="mt-2 text-sm leading-7 text-muted-foreground">{labels.nextSteps}</p>
       </div>
 
       {documents.length > 0 && (
@@ -125,8 +127,8 @@ export function ConfirmationStep({
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3 rounded-[1rem] border border-border/40 bg-background/88 p-3 transition-colors hover:border-primary/30 hover:bg-background"
               >
-                <FileText className="h-5 w-5 text-primary flex-shrink-0" />
-                <span className="text-sm font-medium flex-1">{doc.label}</span>
+                <FileText className="h-5 w-5 flex-shrink-0 text-primary" />
+                <span className="flex-1 text-sm font-medium">{doc.label}</span>
                 <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
               </a>
             ))}
@@ -134,7 +136,7 @@ export function ConfirmationStep({
         </div>
       )}
 
-      {policyConfig && (
+      {policyConfig ? (
         <div className={cn(publicPanelClassName, 'space-y-3 text-left')}>
           <h3 className="font-medium">{labels.policiesTitle}</h3>
           <PolicySummary
@@ -162,24 +164,8 @@ export function ConfirmationStep({
             deadline={policyConfig.deferralDeadline}
           />
         </div>
-      )}
-
-      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-center">
-        <Button asChild className="min-w-0">
-          <Link
-            href={{
-              pathname: '/events/[seriesSlug]/[editionSlug]',
-              params: { seriesSlug, editionSlug },
-            }}
-          >
-            {labels.viewEvent}
-          </Link>
-        </Button>
-        <Button variant="outline" asChild className="min-w-0">
-          <Link href="/events">{labels.backToEvents}</Link>
-        </Button>
-      </div>
-    </div>
+      ) : null}
+    </PublicStatusShell>
   );
 }
 

@@ -1,9 +1,12 @@
 'use client';
 
+import { PublicStatusShell } from '@/components/common';
 import { PublicLoginRequiredShell } from '@/components/auth/public-login-required-shell';
 import {
+  publicBodyTextClassName,
   publicMutedPanelClassName,
   publicPanelClassName,
+  publicStatusPillClassName,
   publicSummaryItemClassName,
 } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
@@ -64,7 +67,12 @@ type GroupLinkPageProps = {
     userId: string;
     name: string;
     joinedAt: string;
-    registration: { id: string; status: string; expiresAt: string | null; distanceId: string } | null;
+    registration: {
+      id: string;
+      status: string;
+      expiresAt: string | null;
+      distanceId: string;
+    } | null;
   }>;
   memberSummary: Array<{
     userId: string;
@@ -85,7 +93,11 @@ const STATUS_STYLES: Record<string, string> = {
   NOT_FOUND: 'bg-muted text-muted-foreground',
 };
 
-function formatDateTime(value: string | null, locale: string, timezone?: string | null): string | null {
+function formatDateTime(
+  value: string | null,
+  locale: string,
+  timezone?: string | null,
+): string | null {
   if (!value) return null;
   const date = new Date(value);
   return new Intl.DateTimeFormat(locale, {
@@ -140,7 +152,8 @@ export function GroupLinkPage({
     [event.registrationClosesAt, event.timezone, activeLocale],
   );
 
-  const locationLabel = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
+  const locationLabel =
+    event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
   const shareTitle = t('share.shareLink');
   const shareText = t('share.shareText', {
     eventName: `${event.seriesName} ${event.editionLabel}`,
@@ -233,147 +246,156 @@ export function GroupLinkPage({
     });
   };
 
-  const canJoin = status === 'ACTIVE' && !viewer.hasJoinedOtherGroupInEdition && (!groupFull || viewer.isMember);
+  const canJoin =
+    status === 'ACTIVE' && !viewer.hasJoinedOtherGroupInEdition && (!groupFull || viewer.isMember);
 
   const showRegistrationCta = status === 'ACTIVE' && event.isRegistrationOpen && viewer.isMember;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 space-y-6">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-[clamp(2rem,4.6vw,3.1rem)] font-medium leading-[0.92] tracking-[-0.04em] text-foreground">
-            {t('title')}
-          </h1>
-          <span className={cn('rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide', STATUS_STYLES[status])}>
-            {statusLabel}
-          </span>
-        </div>
-        <p className="max-w-[42rem] text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
-          {t('description')}
-        </p>
-      </div>
-
-      <div className={cn(publicPanelClassName, 'space-y-4')}>
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="font-display text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
-              {event.seriesName} {event.editionLabel}
-            </div>
-            <div className="text-sm leading-7 text-muted-foreground">
-              {[eventDate, locationLabel].filter(Boolean).join(' · ')}
-            </div>
-            <div className="mt-2 text-sm">
-              <span className="font-medium">{t('group.nameLabel')}:</span>{' '}
-              {group.name ? group.name : <span className="text-muted-foreground italic">{t('group.unnamed')}</span>}
-            </div>
-            <div className="text-sm">
-              <span className="font-medium">{t('group.distanceLabel')}:</span> {distance.label}
-            </div>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm font-medium">
-              {t('group.memberCount', { count: group.memberCount, max: group.maxMembers })}
-            </div>
-            {distance.spotsRemaining !== null ? (
-              <div className="text-xs text-muted-foreground">
-                {t('group.spotsRemaining', { count: distance.spotsRemaining })}
+    <PublicStatusShell
+      badge="RunGoMX"
+      icon={<Users className="h-5 w-5" />}
+      title={t('title')}
+      description={t('description')}
+      context={
+        <span className={cn(publicStatusPillClassName, STATUS_STYLES[status])}>{statusLabel}</span>
+      }
+      surfaceClassName="max-w-5xl"
+    >
+      <div
+        className={cn(
+          'grid gap-5',
+          showDiscountCard && 'xl:grid-cols-[minmax(0,1.08fr)_minmax(18rem,0.92fr)]',
+        )}
+      >
+        <div className={cn(publicPanelClassName, 'space-y-4')}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="font-display text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
+                {event.seriesName} {event.editionLabel}
               </div>
-            ) : null}
-            <div className="mt-2 text-xs text-muted-foreground">
-              {t('group.code', { prefix: group.tokenPrefix })}
+              <div className="text-sm leading-7 text-muted-foreground">
+                {[eventDate, locationLabel].filter(Boolean).join(' · ')}
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                <div>
+                  <span className="font-medium">{t('group.nameLabel')}:</span>{' '}
+                  {group.name ? (
+                    group.name
+                  ) : (
+                    <span className="text-muted-foreground italic">{t('group.unnamed')}</span>
+                  )}
+                </div>
+                <div>
+                  <span className="font-medium">{t('group.distanceLabel')}:</span> {distance.label}
+                </div>
+              </div>
             </div>
+
+            <div className="grid gap-3 sm:min-w-[14rem]">
+              <div className={publicSummaryItemClassName}>
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  {t('group.memberCount', { count: group.memberCount, max: group.maxMembers })}
+                </p>
+                {distance.spotsRemaining !== null ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {t('group.spotsRemaining', { count: distance.spotsRemaining })}
+                  </p>
+                ) : null}
+              </div>
+              <div className={publicSummaryItemClassName}>
+                <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                  {t('group.code', { prefix: group.tokenPrefix })}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {!event.isRegistrationOpen ? (
+            <div className={cn(publicMutedPanelClassName, 'text-sm text-muted-foreground')}>
+              {event.isRegistrationPaused
+                ? t('registration.paused')
+                : registrationOpensAt
+                  ? t('registration.opensAt', { date: registrationOpensAt })
+                  : registrationClosesAt
+                    ? t('registration.closedAt', { date: registrationClosesAt })
+                    : t('registration.closed')}
+            </div>
+          ) : null}
+
+          <div className={cn(publicMutedPanelClassName, 'space-y-1 text-sm text-muted-foreground')}>
+            <div>{t('howItWorks.noReservation')}</div>
+            <div>{t('howItWorks.selfPay')}</div>
           </div>
         </div>
 
-        {!event.isRegistrationOpen ? (
-          <div className={cn(publicMutedPanelClassName, 'text-sm text-muted-foreground')}>
-            {event.isRegistrationPaused
-              ? t('registration.paused')
-              : registrationOpensAt
-                ? t('registration.opensAt', { date: registrationOpensAt })
-                : registrationClosesAt
-                  ? t('registration.closedAt', { date: registrationClosesAt })
-                  : t('registration.closed')}
+        {showDiscountCard ? (
+          <div className={cn(publicPanelClassName, 'space-y-4')}>
+            <div>
+              <h2 className="font-medium text-foreground">{t('discount.title')}</h2>
+              <p className="mt-1 text-sm leading-7 text-muted-foreground">
+                {discount.currentPercentOff !== null
+                  ? t('discount.currentDiscount', { percent: discount.currentPercentOff })
+                  : t('discount.noDiscountYet')}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {discount.tiers.map((tier) => {
+                const isMet = discount.joinedMemberCount >= tier.minParticipants;
+                return (
+                  <div
+                    key={tier.minParticipants}
+                    className={cn(
+                      publicSummaryItemClassName,
+                      'flex items-center justify-between gap-3 text-sm',
+                      isMet
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                        : 'text-muted-foreground',
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isMet ? <CheckCircle className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
+                      <span>
+                        {isMet
+                          ? t('discount.tierMet', {
+                              min: tier.minParticipants,
+                              percent: tier.percentOff,
+                            })
+                          : t('discount.tierPending', {
+                              min: tier.minParticipants,
+                              percent: tier.percentOff,
+                            })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {discount.nextTier ? (
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <div className="font-medium text-foreground">
+                  {t('discount.nextTier', {
+                    count: discount.nextTier.membersNeeded,
+                    percent: discount.nextTier.percentOff,
+                  })}
+                </div>
+                <div>
+                  {t('discount.progress', {
+                    count: discount.joinedMemberCount,
+                    total: discount.nextTier.minParticipants,
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                {t('discount.registeredCount', { count: discount.joinedMemberCount })}
+              </div>
+            )}
           </div>
         ) : null}
-
-        <div className={cn(publicMutedPanelClassName, 'space-y-1 text-sm text-muted-foreground')}>
-          <div>{t('howItWorks.noReservation')}</div>
-          <div>{t('howItWorks.selfPay')}</div>
-        </div>
       </div>
-
-      {showDiscountCard ? (
-        <div className={cn(publicPanelClassName, 'space-y-4')}>
-          <div>
-            <h2 className="font-medium text-foreground">{t('discount.title')}</h2>
-            <p className="mt-1 text-sm leading-7 text-muted-foreground">
-              {discount.currentPercentOff !== null
-                ? t('discount.currentDiscount', { percent: discount.currentPercentOff })
-                : t('discount.noDiscountYet')}
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            {discount.tiers.map((tier) => {
-              const isMet = discount.joinedMemberCount >= tier.minParticipants;
-              return (
-                <div
-                  key={tier.minParticipants}
-                  className={cn(
-                    publicSummaryItemClassName,
-                    'flex items-center justify-between text-sm',
-                    isMet
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                      : 'text-muted-foreground',
-                  )}
-                >
-                  <div className="flex items-center gap-2">
-                    {isMet ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : (
-                      <Circle className="h-4 w-4" />
-                    )}
-                    <span>
-                      {isMet
-                        ? t('discount.tierMet', {
-                            min: tier.minParticipants,
-                            percent: tier.percentOff,
-                          })
-                        : t('discount.tierPending', {
-                            min: tier.minParticipants,
-                            percent: tier.percentOff,
-                          })}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {discount.nextTier ? (
-            <div className="text-sm text-muted-foreground space-y-1">
-              <div className="font-medium text-foreground">
-                {t('discount.nextTier', {
-                  count: discount.nextTier.membersNeeded,
-                  percent: discount.nextTier.percentOff,
-                })}
-              </div>
-              <div>
-                {t('discount.progress', {
-                  count: discount.joinedMemberCount,
-                  total: discount.nextTier.minParticipants,
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              {t('discount.registeredCount', { count: discount.joinedMemberCount })}
-            </div>
-          )}
-        </div>
-      ) : null}
 
       {!isAuthenticated && signInUrl && signUpUrl ? (
         <PublicLoginRequiredShell
@@ -392,7 +414,11 @@ export function GroupLinkPage({
           <div className="space-y-1">
             <h2 className="font-medium text-foreground">{t('actions.title')}</h2>
             <p className="text-sm leading-7 text-muted-foreground">
-              {viewer.isMember ? t('actions.joined') : groupFull ? t('actions.groupFull') : t('actions.notJoined')}
+              {viewer.isMember
+                ? t('actions.joined')
+                : groupFull
+                  ? t('actions.groupFull')
+                  : t('actions.notJoined')}
             </p>
             {viewer.hasJoinedOtherGroupInEdition && !viewer.isMember ? (
               <p className="text-sm text-destructive">{t('errors.alreadyInAnotherGroup')}</p>
@@ -414,7 +440,11 @@ export function GroupLinkPage({
               </Button>
             ) : (
               <Button onClick={handleJoin} disabled={!canJoin || isPending}>
-                {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Users className="h-4 w-4 mr-2" />
+                )}
                 {t('join.action')}
               </Button>
             )}
@@ -436,7 +466,7 @@ export function GroupLinkPage({
         </div>
 
         {viewer.isMember && status === 'ACTIVE' && !event.isRegistrationOpen ? (
-          <p className="text-sm text-muted-foreground">{t('registration.ctaDisabled')}</p>
+          <p className={publicBodyTextClassName}>{t('registration.ctaDisabled')}</p>
         ) : null}
       </div>
 
@@ -455,7 +485,9 @@ export function GroupLinkPage({
                     <th className="px-4 py-3 font-medium">{t('members.headers.name')}</th>
                     <th className="px-4 py-3 font-medium">{t('members.headers.joinedAt')}</th>
                     <th className="px-4 py-3 font-medium">{t('members.headers.registration')}</th>
-                    <th className="px-4 py-3 text-right font-medium">{t('members.headers.actions')}</th>
+                    <th className="px-4 py-3 text-right font-medium">
+                      {t('members.headers.actions')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/55">
@@ -469,7 +501,11 @@ export function GroupLinkPage({
                           : t('members.registrationStatus.inProgress')
                       : t('members.registrationStatus.notStarted');
 
-                    const joinedAtLabel = formatDateTime(member.joinedAt, activeLocale, event.timezone);
+                    const joinedAtLabel = formatDateTime(
+                      member.joinedAt,
+                      activeLocale,
+                      event.timezone,
+                    );
                     const expiresAtLabel = reg?.expiresAt
                       ? formatDateTime(reg.expiresAt, activeLocale, event.timezone)
                       : null;
@@ -479,7 +515,9 @@ export function GroupLinkPage({
                         <td className="px-4 py-4">
                           <div className="font-medium">{member.name}</div>
                           {reg && reg.distanceId !== distance.id ? (
-                            <div className="text-xs text-amber-600">{t('members.registrationStatus.differentDistance')}</div>
+                            <div className="text-xs text-amber-600">
+                              {t('members.registrationStatus.differentDistance')}
+                            </div>
                           ) : null}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-muted-foreground">
@@ -498,7 +536,9 @@ export function GroupLinkPage({
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveMember(member.userId)}
-                            disabled={Boolean(reg) || (isPending && removingUserId === member.userId)}
+                            disabled={
+                              Boolean(reg) || (isPending && removingUserId === member.userId)
+                            }
                           >
                             {isPending && removingUserId === member.userId ? (
                               <Loader2 className="h-4 w-4 animate-spin" />
@@ -528,7 +568,10 @@ export function GroupLinkPage({
             {memberSummary.map((member) => (
               <div
                 key={member.userId}
-                className={cn(publicSummaryItemClassName, 'flex items-center justify-between text-sm')}
+                className={cn(
+                  publicSummaryItemClassName,
+                  'flex items-center justify-between text-sm',
+                )}
               >
                 <span>{member.displayName}</span>
                 <span
@@ -546,6 +589,6 @@ export function GroupLinkPage({
           </div>
         </div>
       ) : null}
-    </div>
+    </PublicStatusShell>
   );
 }

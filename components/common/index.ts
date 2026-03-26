@@ -33,6 +33,8 @@ export type { IconListProps, IconListItem } from './icon-list';
 export { LegalDocumentSection } from './legal-document-section';
 export type { LegalDocumentSectionProps } from './legal-document-section';
 
+export { PublicStatusShell } from './public-status-shell';
+
 export { RelatedLinksStrip } from './related-links-strip';
 export type { RelatedLinksStripItem, RelatedLinksStripProps } from './related-links-strip';
 
