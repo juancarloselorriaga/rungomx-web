@@ -65,15 +65,19 @@ export function NavigationDrawerContent({
   }, [pathname, setOpen]);
 
   return (
-    <SheetContent side="left" hideCloseButton hideOverlay className="p-0">
+    <SheetContent
+      side="left"
+      hideCloseButton
+      className="max-w-[23rem] border-r-0 bg-transparent p-3 shadow-none"
+    >
       <div
-        className="flex h-full flex-col px-0 py-0 opacity-0 transition-opacity duration-150 ease-out group-data-[state=open]/sheet:opacity-100 overflow-hidden"
+        className="flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] opacity-0 shadow-[0_28px_90px_-60px_rgba(15,23,42,0.5)] transition-opacity duration-150 ease-out group-data-[state=open]/sheet:opacity-100"
         data-open={open ? 'true' : 'false'}
       >
-        <SheetHeader className="p-1 py-2 border-b flex-shrink-0">
+        <SheetHeader className="flex-shrink-0 border-b border-border/55 px-5 py-4">
           <div className="flex items-center justify-between">
             <SheetTitle asChild>
-              <Link className="px-4" href="/">
+              <Link className="font-display text-[1.1rem] font-medium tracking-[-0.03em]" href="/">
                 {t('brandName')}
               </Link>
             </SheetTitle>
@@ -86,10 +90,18 @@ export function NavigationDrawerContent({
             {/* Root Panel */}
             <div className="sliding-nav-panel">
               <nav className="sliding-nav-panel-nav">
-                <NavItems linkClassName="w-full" items={items} />
+                <NavItems
+                  items={items}
+                  containerClassName="space-y-2 p-5"
+                  itemClassName="contents"
+                  linkClassName="w-full rounded-[1rem] border border-transparent px-4 py-3"
+                  activeClassName="rounded-[1rem] border border-border/40 bg-foreground text-background shadow-sm hover:text-background"
+                  inactiveClassName="rounded-[1rem] border border-transparent text-muted-foreground hover:border-border/40 hover:bg-background/70 hover:text-foreground"
+                  showIndicator={false}
+                />
               </nav>
 
-              <div className="sliding-nav-panel-footer p-4">
+              <div className="sliding-nav-panel-footer px-5 pb-5 pt-2">
                 <FeedbackDialog
                   collapsed={false}
                   label={navigationTranslations('feedback')}
@@ -126,7 +138,7 @@ export function NavigationDrawerContent({
         </div>
 
         {/* Footer - always visible */}
-        <div className="border-t p-4 space-y-4 flex-shrink-0">
+        <div className="flex-shrink-0 space-y-4 border-t border-border/55 px-5 py-4">
           {resolvedUser && resolvedIsPro ? (
             <div className="flex items-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-brand-gold/15 px-3 py-1 text-xs font-semibold text-brand-gold-dark dark:text-brand-gold">

@@ -13,6 +13,7 @@ interface NavLinkProps {
   icon: LucideIcon;
   label: string;
   iconSize?: number;
+  showIcon?: boolean;
   showLabel?: boolean;
   collapsed?: boolean;
   allowPrefixMatch?: boolean;
@@ -30,6 +31,7 @@ export function NavLink({
   icon: Icon,
   label,
   iconSize = 20,
+  showIcon = true,
   showLabel = true,
   collapsed = false,
   allowPrefixMatch = true,
@@ -76,14 +78,16 @@ export function NavLink({
           linkClassName,
         )}
       >
-        <Icon
-          size={iconSize}
-          className={cn(
-            'flex-shrink-0 transition-colors group-hover/nav:text-foreground',
-            isActive && 'text-primary',
-            iconClassName,
-          )}
-        />
+        {showIcon ? (
+          <Icon
+            size={iconSize}
+            className={cn(
+              'flex-shrink-0 transition-colors group-hover/nav:text-foreground',
+              isActive && 'text-primary',
+              iconClassName,
+            )}
+          />
+        ) : null}
 
         {showLabel && (
           <span

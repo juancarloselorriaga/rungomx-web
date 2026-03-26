@@ -31,7 +31,7 @@ export function NavDrawerTrigger({ user, isPro, items }: NavDrawerTriggerProps) 
             label={open ? tNav('collapseMenu') : tNav('expandMenu')}
             variant="ghost"
             size="icon"
-            className="rounded-sm p-1 -ml-2"
+            className="-ml-1 rounded-full border border-border/55 bg-background/80 p-1.5 shadow-sm"
           >
             <PanelRightClose size={22} />
           </IconButton>

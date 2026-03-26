@@ -43,7 +43,11 @@ interface NavItemsProps {
   iconClassName?: string;
   linkClassName?: string;
   iconSize?: number;
+  showIcons?: boolean;
   showLabels?: boolean;
+  activeClassName?: string;
+  inactiveClassName?: string;
+  showIndicator?: boolean;
   onItemClick?: () => void;
 }
 
@@ -54,7 +58,11 @@ export function NavItems({
   iconClassName,
   linkClassName,
   iconSize = 20,
+  showIcons = true,
   showLabels = true,
+  activeClassName,
+  inactiveClassName,
+  showIndicator,
   onItemClick,
 }: NavItemsProps) {
   const t = useTranslations('navigation');
@@ -74,22 +82,26 @@ export function NavItems({
         const isSecondary = item.emphasis === 'secondary';
 
         const content = (
-          <NavLink
-            href={item.href}
-            icon={Icon}
-            label={label}
-            iconSize={iconSize}
-            showLabel={showLabels}
-            allowPrefixMatch={!hasChild}
-            iconClassName={cn(iconClassName, isSecondary && 'opacity-80')}
-            linkClassName={cn(linkClassName, isSecondary && 'text-muted-foreground/85')}
-            inactiveClassName={
-              isSecondary
-                ? 'text-muted-foreground/75 hover:bg-accent/70 hover:text-foreground'
-                : undefined
-            }
-            onClick={onItemClick}
-          />
+            <NavLink
+              href={item.href}
+              icon={Icon}
+              label={label}
+              iconSize={iconSize}
+              showIcon={showIcons}
+              showLabel={showLabels}
+              allowPrefixMatch={!hasChild}
+              iconClassName={cn(iconClassName, isSecondary && 'opacity-80')}
+              linkClassName={cn(linkClassName, isSecondary && 'text-muted-foreground/85')}
+              activeClassName={activeClassName}
+              inactiveClassName={
+                inactiveClassName ??
+                (isSecondary
+                  ? 'text-muted-foreground/75 hover:bg-accent/70 hover:text-foreground'
+                  : undefined)
+              }
+              showIndicator={showIndicator}
+              onClick={onItemClick}
+            />
         );
 
         return (
