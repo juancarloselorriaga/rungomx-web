@@ -65,6 +65,8 @@ e2e/.auth/
 playwright-*/
 _bmad
 _bmad-output
+.opencode-eval/
+.opencode-eval-npm/
 .claude
 .codex
 
