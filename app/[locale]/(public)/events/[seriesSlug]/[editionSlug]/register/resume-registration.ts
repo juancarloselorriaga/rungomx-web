@@ -18,7 +18,10 @@ type ResumeRegistrationState = {
 export function getResumableRegistration(
   existingRegistration: ActiveRegistrationInfo | null | undefined,
 ): ResumeRegistrationState | null {
-  if (!existingRegistration || existingRegistration.status !== 'started') {
+  if (
+    !existingRegistration ||
+    (existingRegistration.status !== 'started' && existingRegistration.status !== 'submitted')
+  ) {
     return null;
   }
 

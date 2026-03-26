@@ -33,7 +33,24 @@ describe('getResumableRegistration', () => {
     });
   });
 
-  it.each(['submitted', 'payment_pending', 'confirmed'] as const)(
+  it('returns resume state for submitted registrations', () => {
+    expect(getResumableRegistration({ ...startedRegistration, status: 'submitted' })).toEqual({
+      registrationId: 'reg-started',
+      distanceId: 'distance-5k',
+      pricing: {
+        basePriceCents: 50000,
+        feesCents: 4000,
+        taxCents: 0,
+        totalCents: 54000,
+      },
+      groupDiscount: {
+        percentOff: 10,
+        amountCents: 5000,
+      },
+    });
+  });
+
+  it.each(['payment_pending', 'confirmed'] as const)(
     'does not auto-resume %s registrations',
     (status) => {
       expect(getResumableRegistration({ ...startedRegistration, status })).toBeNull();

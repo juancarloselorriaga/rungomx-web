@@ -14,7 +14,7 @@ import {
   validateDiscountCode,
 } from '@/lib/events/discounts/actions';
 import { submitAnswers, type RegistrationQuestionData } from '@/lib/events/questions/actions';
-import type { PublicEventDetail } from '@/lib/events/queries';
+import type { ActiveRegistrationInfo, PublicEventDetail } from '@/lib/events/queries';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import {
@@ -60,6 +60,7 @@ type UseRegistrationFlowArgs = {
   preSelectedDistanceId?: string;
   groupToken?: string;
   activeInviteExists?: boolean;
+  existingRegistration?: ActiveRegistrationInfo | null;
   resumeRegistrationId?: string;
   resumeDistanceId?: string;
   resumePricing?: RegistrationPricing | null;
@@ -90,6 +91,7 @@ export function useRegistrationFlow({
   preSelectedDistanceId,
   groupToken,
   activeInviteExists,
+  existingRegistration,
   resumeRegistrationId,
   resumeDistanceId,
   resumePricing,
@@ -97,16 +99,22 @@ export function useRegistrationFlow({
 }: UseRegistrationFlowArgs) {
   const t = useTranslations('pages.events.register');
   const unexpectedError = t('errors.unexpected');
+  const registrationExpiredError = t('errors.registrationExpired');
   const [isPending, startTransition] = useTransition();
 
-  const [step, setStep] = useState<Step>(resumeRegistrationId ? 'info' : 'distance');
+  const [step, setStep] = useState<Step>(
+    resumeRegistrationId && !existingRegistration ? 'info' : 'distance',
+  );
   const [registrationId, setRegistrationId] = useState<string | null>(resumeRegistrationId ?? null);
   const [distanceError, setDistanceError] = useState<string | null>(null);
   const [showAlreadyRegisteredCta, setShowAlreadyRegisteredCta] = useState(false);
+  const [ignoreExistingRegistration, setIgnoreExistingRegistration] = useState(false);
   const [registrationPricing, setRegistrationPricing] = useState<RegistrationPricing | null>(
     resumePricing ?? null,
   );
   const [policiesAcknowledged, setPoliciesAcknowledged] = useState(false);
+
+  const effectiveExistingRegistration = ignoreExistingRegistration ? null : existingRegistration;
 
   const validPreSelectedId =
     preSelectedDistanceId &&
@@ -118,8 +126,13 @@ export function useRegistrationFlow({
       ? preSelectedDistanceId
       : null;
 
+  const confirmedRegistrationDistanceId =
+    effectiveExistingRegistration?.status === 'confirmed'
+      ? effectiveExistingRegistration.distanceId
+      : null;
+
   const [selectedDistanceId, setSelectedDistanceId] = useState<string | null>(
-    resumeDistanceId ?? validPreSelectedId,
+    resumeDistanceId ?? confirmedRegistrationDistanceId ?? validPreSelectedId,
   );
   const selectedDistance = event.distances.find((d) => d.id === selectedDistanceId);
 
@@ -204,6 +217,10 @@ export function useRegistrationFlow({
       });
 
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return { ok: false, error: result.code, message: registrationExpiredError };
+        }
         return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
       }
 
@@ -243,6 +260,10 @@ export function useRegistrationFlow({
 
       const result = await submitAnswers({ registrationId, answers });
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return { ok: false, error: result.code, message: registrationExpiredError };
+        }
         return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
       }
 
@@ -280,6 +301,10 @@ export function useRegistrationFlow({
         });
 
         if (!result.ok) {
+          if (result.code === 'REGISTRATION_EXPIRED') {
+            handleRegistrationExpired();
+            return { ok: false, error: result.code, message: registrationExpiredError };
+          }
           return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
         }
       }
@@ -312,6 +337,10 @@ export function useRegistrationFlow({
 
       const result = await submitAddOnSelections({ registrationId, selections });
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return { ok: false, error: result.code, message: registrationExpiredError };
+        }
         return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
       }
 
@@ -352,6 +381,10 @@ export function useRegistrationFlow({
 
       const result = await finalizeRegistration({ registrationId });
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return { ok: false, error: result.code, message: registrationExpiredError };
+        }
         return { ok: false, error: result.code ?? 'SERVER_ERROR', message: result.error };
       }
 
@@ -419,6 +452,22 @@ export function useRegistrationFlow({
     subtotalCents + feesCents + taxCents - discountAmountCents - groupDiscountAmountCents,
   );
   const isGroupDiscountApplied = groupDiscountPercentOff !== null;
+
+  const handleRegistrationExpired = () => {
+    setIgnoreExistingRegistration(true);
+    setRegistrationId(null);
+    setRegistrationPricing(null);
+    setStep('distance');
+    setShowAlreadyRegisteredCta(false);
+    setDistanceError(registrationExpiredError);
+    setPoliciesAcknowledged(false);
+    setAppliedDiscountCode(null);
+    setDiscountAmountCents(0);
+    setPendingCodeConfirmation(null);
+    setDiscountError(null);
+    setGroupDiscountPercentOff(null);
+    setGroupDiscountAmountCents(0);
+  };
 
   async function handleDistanceSelect() {
     if (!selectedDistanceId) {
@@ -512,7 +561,7 @@ export function useRegistrationFlow({
     setAppliedDiscountCode(null);
     setDiscountAmountCents(0);
     setDiscountError(null);
-    if (!resumeRegistrationId) {
+    if (!registrationId) {
       setGroupDiscountPercentOff(null);
       setGroupDiscountAmountCents(0);
     }
@@ -574,6 +623,10 @@ export function useRegistrationFlow({
 
       const result = await applyDiscountCode({ registrationId, code });
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return;
+        }
         setDiscountError(result.error);
         return;
       }
@@ -594,6 +647,10 @@ export function useRegistrationFlow({
     startTransition(async () => {
       const result = await applyDiscountCode({ registrationId, code });
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return;
+        }
         setDiscountError(result.error);
         return;
       }
@@ -613,6 +670,10 @@ export function useRegistrationFlow({
     startTransition(async () => {
       const result = await removeDiscountCode({ registrationId });
       if (!result.ok) {
+        if (result.code === 'REGISTRATION_EXPIRED') {
+          handleRegistrationExpired();
+          return;
+        }
         setDiscountError(result.error);
         return;
       }
@@ -673,6 +734,7 @@ export function useRegistrationFlow({
     policiesAcknowledged,
     progressSteps,
     questionsForm,
+    effectiveExistingRegistration,
     registrationId,
     registrationPricing,
     selectedAddOnItems,

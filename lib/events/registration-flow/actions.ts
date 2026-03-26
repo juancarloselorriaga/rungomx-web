@@ -221,8 +221,8 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
     };
   }
 
-  if (registration.status !== 'started') {
-    return { ok: false, error: 'Registration has already been submitted', code: 'ALREADY_SUBMITTED' };
+  if (registration.status !== 'started' && registration.status !== 'submitted') {
+    return { ok: false, error: 'Registration cannot be updated from current state', code: 'INVALID_STATE' };
   }
 
   try {
@@ -261,7 +261,7 @@ export const submitRegistrantInfo = withAuthenticatedUser<ActionResult<Registrat
         .where(
           and(
             eq(registrations.id, registrationId),
-            eq(registrations.status, 'started'),
+            or(eq(registrations.status, 'started'), eq(registrations.status, 'submitted')),
           ),
         )
         .returning();

@@ -5,16 +5,19 @@ import {
   publicMutedPanelClassName,
   publicPanelClassName,
 } from '@/components/common/public-form-styles';
+import { Link } from '@/i18n/navigation';
 import type { ActiveRegistrationInfo, PublicEventDetail } from '@/lib/events/queries';
 import { cn } from '@/lib/utils';
 import { ArrowRight, Loader2, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { ComponentProps } from 'react';
 import type { RegistrationFlowState } from './use-registration-flow';
 
 type DistanceStepProps = {
   event: PublicEventDetail;
   registrationId: string | null;
   existingRegistration?: ActiveRegistrationInfo | null;
+  existingRegistrationHref?: ComponentProps<typeof Link>['href'] | null;
   activeInviteExists?: boolean;
   selectedDistanceId: RegistrationFlowState['selectedDistanceId'];
   setSelectedDistanceId: RegistrationFlowState['setSelectedDistanceId'];
@@ -28,6 +31,7 @@ export function DistanceStep({
   event,
   registrationId,
   existingRegistration,
+  existingRegistrationHref,
   activeInviteExists,
   selectedDistanceId,
   setSelectedDistanceId,
@@ -39,6 +43,8 @@ export function DistanceStep({
   const t = useTranslations('pages.events.register');
   const tDetail = useTranslations('pages.events.detail');
   const isResumingRegistration = Boolean(registrationId);
+  const hasLockedExistingRegistration = Boolean(existingRegistration) && !isResumingRegistration;
+  const registrationLinkHref = existingRegistrationHref ?? '/dashboard/my-registrations';
 
   return (
     <div className="space-y-7">
@@ -74,7 +80,11 @@ export function DistanceStep({
           const isSoldOut = distance.spotsRemaining !== null && distance.spotsRemaining <= 0;
           const isRegisteredDistance = existingRegistration?.distanceId === distance.id;
           const isDisabled =
-            isSoldOut || isPending || !!registrationId || (!!existingRegistration && !isRegisteredDistance);
+            isSoldOut ||
+            isPending ||
+            !!registrationId ||
+            hasLockedExistingRegistration ||
+            (!!existingRegistration && !isRegisteredDistance);
 
           return (
             <button
@@ -143,22 +153,30 @@ export function DistanceStep({
       </div>
 
       <div className={cn(publicPanelClassName, 'flex justify-end')}>
-        <Button
-          onClick={onContinue}
-          disabled={
-            (!selectedDistanceId && !isResumingRegistration) ||
-            isPending ||
-            (activeInviteExists && !isResumingRegistration)
-          }
-          className="min-w-[10rem]"
-        >
-          {isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <ArrowRight className="h-4 w-4 mr-2" />
-          )}
-          {t('distance.continue')}
-        </Button>
+        {hasLockedExistingRegistration ? (
+          <Button asChild className="min-w-[10rem]">
+            <Link href={registrationLinkHref}>
+              {t('alreadyRegistered.viewRegistration')}
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            onClick={onContinue}
+            disabled={
+              (!selectedDistanceId && !isResumingRegistration) ||
+              isPending ||
+              (activeInviteExists && !isResumingRegistration)
+            }
+            className="min-w-[10rem]"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <ArrowRight className="h-4 w-4 mr-2" />
+            )}
+            {t('distance.continue')}
+          </Button>
+        )}
       </div>
     </div>
   );

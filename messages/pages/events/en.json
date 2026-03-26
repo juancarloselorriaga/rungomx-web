@@ -261,14 +261,18 @@
       "backToEvents": "Browse more events"
     },
     "alreadyRegistered": {
-      "title": "You're already registered",
-      "description": "You have an active registration for {distanceName}.",
-      "inProgress": "Current status: {status}. Finish in My Registrations.",
-      "viewRegistrations": "View my registrations",
-      "yourRegistration": "Your registration"
+      "title": "Registered",
+      "description": "Registered for {distanceName}.",
+      "inProgress": "Open it to continue.",
+      "inProgressTitle": "In progress",
+      "continueRegistration": "Continue registration",
+      "viewRegistration": "View registration",
+      "viewRegistrations": "List",
+      "yourRegistration": "Your spot"
     },
     "errors": {
       "distanceRequired": "Please select a distance",
+      "registrationExpired": "Your previous registration expired. Please choose a distance to start again.",
       "soldOut": "This distance is sold out",
       "registrationClosed": "Registration is closed for this event",
       "alreadyRegistered": "You are already registered for this event",

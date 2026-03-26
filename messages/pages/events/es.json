@@ -262,13 +262,17 @@
     },
     "alreadyRegistered": {
       "title": "Ya estás inscrito",
-      "description": "Tienes un registro activo para {distanceName}.",
-      "inProgress": "Estado actual: {status}. Termina tu inscripción en Mis inscripciones.",
-      "viewRegistrations": "Ver mis inscripciones",
+      "description": "Ya estás inscrito en {distanceName}.",
+      "inProgress": "Tu lugar en {distanceName} está guardado. Abre tu inscripción para continuar.",
+      "inProgressTitle": "Tienes una inscripción en curso",
+      "continueRegistration": "Continuar inscripción",
+      "viewRegistration": "Ver mi inscripción",
+      "viewRegistrations": "Mis inscripciones",
       "yourRegistration": "Tu inscripción"
     },
     "errors": {
       "distanceRequired": "Por favor selecciona una distancia",
+      "registrationExpired": "Tu inscripción anterior expiró. Elige una distancia para comenzar de nuevo.",
       "soldOut": "Esta distancia está agotada",
       "registrationClosed": "Las inscripciones están cerradas para este evento",
       "alreadyRegistered": "Ya estás inscrito en este evento",

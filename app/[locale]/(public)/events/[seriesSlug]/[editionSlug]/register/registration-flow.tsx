@@ -137,6 +137,7 @@ export function RegistrationFlow({
     policiesAcknowledged,
     progressSteps,
     questionsForm,
+    effectiveExistingRegistration,
     registrationId,
     selectedAddOnItems,
     selectedDistance,
@@ -161,11 +162,21 @@ export function RegistrationFlow({
     preSelectedDistanceId,
     groupToken,
     activeInviteExists,
+    existingRegistration,
     resumeRegistrationId,
     resumeDistanceId,
     resumePricing,
     resumeGroupDiscount,
   });
+  const existingRegistrationHref = effectiveExistingRegistration
+    ? {
+        pathname: '/dashboard/my-registrations/[registrationId]' as const,
+        params: { registrationId: effectiveExistingRegistration.registrationId },
+      }
+    : null;
+  const isConfirmedExistingRegistration = effectiveExistingRegistration?.status === 'confirmed';
+  const isInProgressExistingRegistration =
+    Boolean(effectiveExistingRegistration) && !isConfirmedExistingRegistration;
 
   // Format price
   const formatPrice = (cents: number, currency: string) => {
@@ -337,35 +348,47 @@ export function RegistrationFlow({
         </aside>
 
         <div className="space-y-4">
-          {existingRegistration && step === 'distance' && (
+          {effectiveExistingRegistration && step === 'distance' && (
             <div className="rounded-[1.5rem] border border-info-foreground/30 bg-info p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <Info className="mt-0.5 h-5 w-5 shrink-0 text-info-foreground" />
                 <div className="flex-1">
-                  <h2 className="font-medium text-info-foreground">{t('alreadyRegistered.title')}</h2>
+                  <h2 className="font-medium text-info-foreground">
+                    {t(
+                      isConfirmedExistingRegistration
+                        ? 'alreadyRegistered.title'
+                        : 'alreadyRegistered.inProgressTitle',
+                    )}
+                  </h2>
                   <p className="mt-1 text-sm leading-7 text-info-foreground/90">
-                    {t('alreadyRegistered.description', {
-                      distanceName: existingRegistration.distanceLabel,
-                    })}
+                    {t(
+                       isConfirmedExistingRegistration
+                         ? 'alreadyRegistered.description'
+                         : 'alreadyRegistered.inProgress',
+                       {
+                      distanceName: effectiveExistingRegistration.distanceLabel,
+                       },
+                     )}
                   </p>
-                  {existingRegistration.status !== 'confirmed' && (
-                    <p className="mt-1 text-sm leading-7 text-info-foreground/80">
-                      {t('alreadyRegistered.inProgress', { status: existingRegistration.status })}
-                    </p>
-                  )}
                   <div className="mt-3">
-                    <Button asChild variant="secondary" size="sm">
-                      <Link href="/dashboard/my-registrations">
-                        {t('alreadyRegistered.viewRegistrations')}
-                      </Link>
-                    </Button>
+                    {isInProgressExistingRegistration && registrationId ? (
+                      <Button variant="secondary" size="sm" onClick={handleDistanceSelect}>
+                        {t('alreadyRegistered.continueRegistration')}
+                      </Button>
+                    ) : (
+                      <Button asChild variant="secondary" size="sm">
+                        <Link href={existingRegistrationHref ?? '/dashboard/my-registrations'}>
+                          {t('alreadyRegistered.viewRegistration')}
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {activeInviteExists && step === 'distance' && !existingRegistration && (
+          {activeInviteExists && step === 'distance' && !effectiveExistingRegistration && (
             <div className="rounded-[1.5rem] border border-amber-500/35 bg-amber-500/10 p-4 sm:p-5 text-sm">
               <div className="flex items-start gap-3">
                 <Users className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
@@ -412,7 +435,8 @@ export function RegistrationFlow({
                 <DistanceStep
                   event={event}
                   registrationId={registrationId}
-                  existingRegistration={existingRegistration}
+                  existingRegistration={effectiveExistingRegistration}
+                  existingRegistrationHref={existingRegistrationHref}
                   activeInviteExists={activeInviteExists}
                   selectedDistanceId={selectedDistanceId}
                   setSelectedDistanceId={setSelectedDistanceId}
