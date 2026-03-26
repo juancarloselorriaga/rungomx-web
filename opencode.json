@@ -5,11 +5,7 @@
   "permission": {
     "edit": "ask"
   },
-  "instructions": [
-    "ai-context/architecture.md",
-    "ai-context/coding-standards.md",
-    "ai-context/testing.md"
-  ],
+  "instructions": ["AGENTS.md", "prompts/standards/**/*.md", "prompts/auth-stack/**/*.md"],
   "mcp": {
     "next-devtools": {
       "type": "local",
@@ -41,5 +37,8 @@
       "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp",
       "enabled": false
     }
+  },
+  "watcher": {
+    "ignore": ["node_modules", ".next", ".next-e2e", "dist", "coverage"]
   }
 }
