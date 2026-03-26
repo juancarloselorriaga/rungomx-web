@@ -1,0 +1,35 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "next-devtools": {
+      "type": "local",
+      "command": ["npx", "next-devtools-mcp@latest"],
+      "enabled": false
+    },
+    "codex": {
+      "type": "local",
+      "command": ["npx", "-y", "codex", "mcp-server"],
+      "enabled": false
+    },
+    "serena": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "/Users/juancarloselorriaga/Developer/proyectos-clientes/rungomx/rungomx-web"
+      ],
+      "enabled": false
+    },
+    "better-auth": {
+      "type": "remote",
+      "url": "https://mcp.chonkie.ai/better-auth/better-auth-builder/mcp",
+      "enabled": false
+    }
+  }
+}
