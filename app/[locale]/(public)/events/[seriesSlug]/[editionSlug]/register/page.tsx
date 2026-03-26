@@ -15,6 +15,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 
 import { RegistrationFlow } from './registration-flow';
 import { LoginRequired } from './login-required';
+import { getResumableRegistration } from './resume-registration';
 
 type RegisterPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
@@ -116,8 +117,7 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
   const isOrganizerForEvent = Boolean(
     authContext.organizationMemberships?.some((membership) => membership.organizationId === event.organizationId),
   );
-  const resumableRegistration =
-    existingRegistration && existingRegistration.status !== 'confirmed' ? existingRegistration : null;
+  const resumableRegistration = getResumableRegistration(existingRegistration);
 
   return (
     <RegistrationFlow
@@ -138,6 +138,8 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
       activeInviteExists={Boolean(activeInvite)}
       resumeRegistrationId={resumableRegistration?.registrationId}
       resumeDistanceId={resumableRegistration?.distanceId}
+      resumePricing={resumableRegistration?.pricing}
+      resumeGroupDiscount={resumableRegistration?.groupDiscount}
     />
   );
 }

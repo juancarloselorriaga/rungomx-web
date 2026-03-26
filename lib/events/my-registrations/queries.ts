@@ -94,6 +94,12 @@ export type ActiveRegistrationInfo = {
   distanceLabel: string;
   status: 'started' | 'submitted' | 'payment_pending' | 'confirmed';
   expiresAt: Date | null;
+  basePriceCents: number | null;
+  feesCents: number | null;
+  taxCents: number | null;
+  totalCents: number | null;
+  groupDiscountPercentOff: number | null;
+  groupDiscountAmountCents: number | null;
 };
 
 // =============================================================================
@@ -332,6 +338,12 @@ export async function getActiveRegistrationForEdition(
       distanceLabel: eventDistances.label,
       status: registrations.status,
       expiresAt: registrations.expiresAt,
+      basePriceCents: registrations.basePriceCents,
+      feesCents: registrations.feesCents,
+      taxCents: registrations.taxCents,
+      totalCents: registrations.totalCents,
+      groupDiscountPercentOff: registrations.groupDiscountPercentOff,
+      groupDiscountAmountCents: registrations.groupDiscountAmountCents,
     })
     .from(registrations)
     .innerJoin(eventDistances, eq(registrations.distanceId, eventDistances.id))
@@ -366,5 +378,11 @@ export async function getActiveRegistrationForEdition(
     distanceLabel: registration.distanceLabel,
     status: registration.status as ActiveRegistrationInfo['status'],
     expiresAt: registration.expiresAt,
+    basePriceCents: registration.basePriceCents,
+    feesCents: registration.feesCents,
+    taxCents: registration.taxCents,
+    totalCents: registration.totalCents,
+    groupDiscountPercentOff: registration.groupDiscountPercentOff,
+    groupDiscountAmountCents: registration.groupDiscountAmountCents,
   };
 }

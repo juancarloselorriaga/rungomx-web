@@ -90,6 +90,12 @@ describe('DistanceStep', () => {
             distanceLabel: '5K',
             status: 'confirmed',
             expiresAt: null,
+            basePriceCents: 50000,
+            feesCents: 4000,
+            taxCents: 0,
+            totalCents: 54000,
+            groupDiscountPercentOff: null,
+            groupDiscountAmountCents: null,
           }}
           activeInviteExists={false}
           selectedDistanceId={selectedDistanceId}
