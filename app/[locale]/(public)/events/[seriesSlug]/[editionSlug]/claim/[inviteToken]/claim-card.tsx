@@ -1,5 +1,12 @@
 'use client';
 
+import {
+  publicFieldClassName,
+  publicMutedPanelClassName,
+  publicSurfaceBodyClassName,
+  publicSurfaceClassName,
+  publicSurfaceHeaderClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
@@ -91,43 +98,81 @@ export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps
   const dateOfBirthField = form.register('dateOfBirth');
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-lg">
-      <Form form={form} className="rounded-lg border bg-card p-8 shadow-sm text-center space-y-4">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <CheckCircle2 className="h-8 w-8 text-primary" />
-        </div>
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">
+        <section
+          className={cn(
+            publicSurfaceClassName,
+            'bg-[radial-gradient(circle_at_top_left,rgba(51,102,204,0.11),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(30,138,110,0.12),transparent_38%),color-mix(in_oklch,var(--background)_74%,var(--background-surface)_26%)]',
+          )}
+        >
+          <div className={publicSurfaceBodyClassName}>
+            <div className="flex size-12 items-center justify-center rounded-full border border-border/45 bg-background/90 text-foreground shadow-sm">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
 
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold">{t('title')}</h1>
-          <p className="text-muted-foreground">{t('description')}</p>
-          <p className="text-sm text-muted-foreground">
-            {event.seriesName} {event.editionLabel} · {event.distanceLabel}
-          </p>
-        </div>
+            <div className="mt-6 space-y-3">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                RunGoMX
+              </p>
+              <h1 className="font-display text-[clamp(2rem,4.8vw,3.15rem)] font-medium leading-[0.9] tracking-[-0.04em] text-foreground">
+                {t('title')}
+              </h1>
+              <p className="text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
+                {t('description')}
+              </p>
+            </div>
 
-        <FormError />
-
-        {needsDob ? (
-          <div className="text-left">
-            <FormField label={t('dobLabel')} required error={form.errors.dateOfBirth}>
-              <DatePicker
-                locale={locale}
-                value={dateOfBirthField.value}
-                onChangeAction={(value) => dateOfBirthField.onChange(value)}
-                clearLabel={tCommon('clear')}
-                name={dateOfBirthField.name as string}
-                className={cn('w-full')}
-                disabled={form.isSubmitting}
-              />
-            </FormField>
+            <div className={cn(publicMutedPanelClassName, 'mt-8 space-y-2 p-4 sm:p-5')}>
+              <p className="font-display text-[1.35rem] font-medium tracking-[-0.03em] text-foreground">
+                {event.seriesName} {event.editionLabel}
+              </p>
+              <p className="text-sm leading-7 text-muted-foreground">{event.distanceLabel}</p>
+            </div>
           </div>
-        ) : null}
+        </section>
 
-        <Button type="submit" disabled={form.isSubmitting} className="w-full">
-          {form.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-          {t('claimAction')}
-        </Button>
-      </Form>
+        <Form form={form} className={publicSurfaceClassName}>
+          <div className={publicSurfaceHeaderClassName}>
+            <h2 className="font-display text-[clamp(1.7rem,3.1vw,2.2rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+              {t('claimAction')}
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-muted-foreground">
+              {needsDob ? t('dobLabel') : t('description')}
+            </p>
+          </div>
+
+          <div className={cn(publicSurfaceBodyClassName, 'space-y-5')}>
+            <FormError />
+
+            {needsDob ? (
+              <FormField label={t('dobLabel')} required error={form.errors.dateOfBirth}>
+                <DatePicker
+                  locale={locale}
+                  value={dateOfBirthField.value}
+                  onChangeAction={(value) => dateOfBirthField.onChange(value)}
+                  clearLabel={tCommon('clear')}
+                  name={dateOfBirthField.name as string}
+                  className={publicFieldClassName}
+                  disabled={form.isSubmitting}
+                />
+              </FormField>
+            ) : (
+              <div className={cn(publicMutedPanelClassName, 'space-y-1 p-4 sm:p-5')}>
+                <p className="text-sm font-medium text-foreground">
+                  {event.seriesName} {event.editionLabel}
+                </p>
+                <p className="text-sm leading-7 text-muted-foreground">{event.distanceLabel}</p>
+              </div>
+            )}
+
+            <Button type="submit" disabled={form.isSubmitting} className="w-full">
+              {form.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {t('claimAction')}
+            </Button>
+          </div>
+        </Form>
+      </div>
     </div>
   );
 }

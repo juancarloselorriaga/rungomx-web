@@ -2,6 +2,14 @@
 
 import { upload } from '@vercel/blob/client';
 
+import {
+  publicFieldClassName,
+  publicMutedPanelClassName,
+  publicSurfaceBodyClassName,
+  publicSurfaceClassName,
+  publicSurfaceHeaderClassName,
+  publicSummaryItemClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
@@ -362,269 +370,382 @@ export function GroupUploadBatchManager({ uploadToken, event, batch, rows }: Bat
   }, [rows, draftInvites.length, sentInvites.length, claimedInvites.length]);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold">{t('batch.title')}</h1>
-          <span className={cn('rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide', STATUS_STYLES[batch.status] ?? STATUS_STYLES.uploaded)}>
-            {batchStatusLabelMap[batch.status] ?? batch.status}
-          </span>
-        </div>
-        <p className="text-muted-foreground">
-          {event.seriesName} {event.editionLabel} · {batch.distanceLabel}
-        </p>
-      </div>
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
+      <div className="grid gap-6 xl:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.18fr)] xl:items-start">
+        <aside className="space-y-4 xl:sticky xl:top-24">
+          <section
+            className={cn(
+              publicSurfaceClassName,
+              'bg-[radial-gradient(circle_at_top_left,rgba(51,102,204,0.11),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(30,138,110,0.12),transparent_38%),color-mix(in_oklch,var(--background)_74%,var(--background-surface)_26%)]',
+            )}
+          >
+            <div className={publicSurfaceBodyClassName}>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  RunGoMX
+                </p>
+                <span
+                  className={cn(
+                    'rounded-full px-3 py-1 text-[0.7rem] font-semibold uppercase tracking-[0.16em]',
+                    STATUS_STYLES[batch.status] ?? STATUS_STYLES.uploaded,
+                  )}
+                >
+                  {batchStatusLabelMap[batch.status] ?? batch.status}
+                </span>
+              </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <p className="text-xs text-muted-foreground">{t('batch.summary.total')}</p>
-          <p className="text-2xl font-semibold">{summary.total}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <p className="text-xs text-muted-foreground">{t('batch.summary.reserved')}</p>
-          <p className="text-2xl font-semibold">{summary.reserved}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
-          <p className="text-xs text-muted-foreground">{t('batch.summary.sent')}</p>
-          <p className="text-2xl font-semibold">{summary.sent}</p>
-        </div>
-      </div>
+              <div className="mt-6 space-y-3">
+                <h1 className="font-display text-[clamp(2rem,4.8vw,3.15rem)] font-medium leading-[0.9] tracking-[-0.04em] text-foreground">
+                  {t('batch.title')}
+                </h1>
+                <p className="text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
+                  {event.seriesName} {event.editionLabel} · {batch.distanceLabel}
+                </p>
+              </div>
 
-      <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-base font-semibold">{t('upload.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('upload.description')}</p>
+              <div className="mt-8 grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                <div className={publicSummaryItemClassName}>
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    {t('batch.summary.total')}
+                  </p>
+                  <p className="mt-2 font-display text-[1.9rem] font-medium tracking-[-0.03em] text-foreground">
+                    {summary.total}
+                  </p>
+                </div>
+                <div className={publicSummaryItemClassName}>
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    {t('batch.summary.reserved')}
+                  </p>
+                  <p className="mt-2 font-display text-[1.9rem] font-medium tracking-[-0.03em] text-foreground">
+                    {summary.reserved}
+                  </p>
+                </div>
+                <div className={publicSummaryItemClassName}>
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    {t('batch.summary.sent')}
+                  </p>
+                  <p className="mt-2 font-display text-[1.9rem] font-medium tracking-[-0.03em] text-foreground">
+                    {summary.sent}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className={cn(publicMutedPanelClassName, 'space-y-2 p-4 sm:p-5')}>
+            <p className="text-sm font-medium text-foreground">
+              {t('reserve.pending', { count: pendingRows.length })}
+            </p>
+            <p className="text-sm leading-7 text-muted-foreground">
+              {t('sendInvites.pending', { count: draftInvites.length })}
+            </p>
+            {!canSendInvites && draftInvites.length > 0 && batch.status !== 'processed' ? (
+              <p className="text-xs leading-6 text-muted-foreground">
+                {t('sendInvites.requiresProcessed')}
+              </p>
+            ) : null}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => router.refresh()} disabled={isPending}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              {t('actions.refresh')}
-            </Button>
-            <Button variant="outline" onClick={handleCancelBatch} disabled={isPending}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              {t('cancelBatch.action')}
-            </Button>
-          </div>
-        </div>
+        </aside>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input
-            type="file"
-            accept=".csv,.xlsx"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-            disabled={isPending || !canUpload}
-          />
-          <Button onClick={handleUpload} disabled={isPending || !canUpload}>
-            {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileUp className="h-4 w-4 mr-2" />}
-            {t('upload.action')}
-          </Button>
-        </div>
-        {!canUpload ? (
-          <p className="text-sm text-muted-foreground">{t('upload.alreadyUploaded')}</p>
-        ) : null}
-      </div>
+        <div className="space-y-5">
+          <section className={publicSurfaceClassName}>
+            <div className={publicSurfaceHeaderClassName}>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="font-display text-[clamp(1.65rem,2.8vw,2.15rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+                    {t('upload.title')}
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {t('upload.description')}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => router.refresh()} disabled={isPending}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    {t('actions.refresh')}
+                  </Button>
+                  <Button variant="outline" onClick={handleCancelBatch} disabled={isPending}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('cancelBatch.action')}
+                  </Button>
+                </div>
+              </div>
+            </div>
 
-      <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
-        <div>
-          <h2 className="text-base font-semibold">{t('reserve.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('reserve.description')}</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={handleReserveInvites} disabled={isPending || !canReserve}>
-            {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
-            {t('reserve.action')}
-          </Button>
-          <Button onClick={handleSendInvites} disabled={isPending || !canSendInvites}>
-            {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-            {t('sendInvites.action')}
-          </Button>
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {t('reserve.pending', { count: pendingRows.length })} · {t('sendInvites.pending', { count: draftInvites.length })}
-        </div>
-        {!canSendInvites && draftInvites.length > 0 && batch.status !== 'processed' ? (
-          <div className="text-xs text-muted-foreground">{t('sendInvites.requiresProcessed')}</div>
-        ) : null}
-      </div>
+            <div className={cn(publicSurfaceBodyClassName, 'space-y-4')}>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <input
+                  type="file"
+                  accept=".csv,.xlsx"
+                  className={cn(
+                    publicFieldClassName,
+                    'h-auto py-3 file:mr-4 file:rounded-full file:border-0 file:bg-foreground file:px-3.5 file:py-1.5 file:text-xs file:font-semibold file:text-background hover:file:bg-foreground/90',
+                  )}
+                  onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                  disabled={isPending || !canUpload}
+                />
+                <Button onClick={handleUpload} disabled={isPending || !canUpload} className="lg:min-w-[12rem]">
+                  {isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <FileUp className="mr-2 h-4 w-4" />
+                  )}
+                  {t('upload.action')}
+                </Button>
+              </div>
 
-      <div className="rounded-lg border bg-card p-5 shadow-sm overflow-hidden">
-        <div className="flex flex-col gap-1 mb-4">
-          <h2 className="text-base font-semibold">{t('rows.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('rows.description')}</p>
-        </div>
+              {!canUpload ? (
+                <div className={cn(publicMutedPanelClassName, 'p-4 sm:p-5')}>
+                  <p className="text-sm leading-7 text-muted-foreground">{t('upload.alreadyUploaded')}</p>
+                </div>
+              ) : null}
+            </div>
+          </section>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="border-b text-xs uppercase text-muted-foreground">
-              <tr>
-                <th className="px-3 py-2 text-left">#</th>
-                <th className="px-3 py-2 text-left">{t('rows.headers.name')}</th>
-                <th className="px-3 py-2 text-left">{t('rows.headers.email')}</th>
-                <th className="px-3 py-2 text-left">{t('rows.headers.status')}</th>
-                <th className="px-3 py-2 text-left">{t('rows.headers.actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {rows.map((row) => {
-                const isEditing = editingInviteId === row.invite?.id;
-                const statusLabel = row.validationErrors.length
-                  ? t('rows.status.invalid')
-                  : row.invite
-                    ? inviteStatusLabelMap[row.invite.status] ?? row.invite.status
-                    : row.createdRegistrationId
-                      ? inviteStatusLabelMap.expired
-                      : t('rows.status.pending');
+          <section className={publicSurfaceClassName}>
+            <div className={publicSurfaceHeaderClassName}>
+              <h2 className="font-display text-[clamp(1.65rem,2.8vw,2.15rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+                {t('reserve.title')}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('reserve.description')}</p>
+            </div>
 
-                return (
-                  <tr key={row.id} className={row.validationErrors.length ? 'bg-destructive/5' : ''}>
-                    <td className="px-3 py-2 text-muted-foreground">{row.rowIndex}</td>
-                    <td className="px-3 py-2">
-                      <div className="font-medium">
-                        {row.firstName} {row.lastName}
-                      </div>
-                      {row.dateOfBirth ? (
-                        <div className="text-xs text-muted-foreground">{row.dateOfBirth}</div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div>{row.email}</div>
-                      {row.invite ? (
-                        <div className="text-xs text-muted-foreground">
-                          {t('rows.inviteDetails', {
-                            count: row.invite.sendCount,
-                            lastSent: formatDateTime(row.invite.lastSentAt),
-                          })}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className={cn('inline-flex items-center rounded-full px-2 py-1 text-xs font-medium', row.validationErrors.length ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground')}>
-                        {statusLabel}
-                      </div>
-                      {row.validationErrors.length ? (
-                        <div className="mt-1 text-xs text-destructive">
-                          {row.validationErrors.map((error) => errorLabel(error)).join(', ')}
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-3 py-2">
-                      {row.invite ? (
-                        <div className="flex flex-col gap-2">
-                          {isEditing ? (
-                            <div className="flex flex-col gap-2">
-                              <FormField label={t('rows.headers.email')} error={null}>
-                                <input
-                                  type="email"
-                                  className="w-full rounded-md border bg-background px-3 py-2 text-xs"
-                                  value={editedEmail}
-                                  onChange={(event) => setEditedEmail(event.target.value)}
-                                />
-                              </FormField>
-                              <div className="flex items-center gap-1">
+            <div className={cn(publicSurfaceBodyClassName, 'space-y-4')}>
+              <div className="flex flex-wrap gap-3">
+                <Button onClick={handleReserveInvites} disabled={isPending || !canReserve}>
+                  {isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <AlertTriangle className="mr-2 h-4 w-4" />
+                  )}
+                  {t('reserve.action')}
+                </Button>
+                <Button onClick={handleSendInvites} disabled={isPending || !canSendInvites}>
+                  {isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="mr-2 h-4 w-4" />
+                  )}
+                  {t('sendInvites.action')}
+                </Button>
+              </div>
+
+              <div className={cn(publicMutedPanelClassName, 'space-y-1 p-4 sm:p-5')}>
+                <p className="text-sm font-medium text-foreground">
+                  {t('reserve.pending', { count: pendingRows.length })}
+                </p>
+                <p className="text-sm leading-7 text-muted-foreground">
+                  {t('sendInvites.pending', { count: draftInvites.length })}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className={publicSurfaceClassName}>
+            <div className={publicSurfaceHeaderClassName}>
+              <h2 className="font-display text-[clamp(1.65rem,2.8vw,2.15rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
+                {t('rows.title')}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('rows.description')}</p>
+            </div>
+
+            <div className={cn(publicSurfaceBodyClassName, 'space-y-4')}>
+              <div className="overflow-hidden rounded-[1.5rem] border border-border/45">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-[color-mix(in_oklch,var(--background)_86%,var(--background-surface)_14%)] text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 text-left">#</th>
+                        <th className="px-4 py-3 text-left">{t('rows.headers.name')}</th>
+                        <th className="px-4 py-3 text-left">{t('rows.headers.email')}</th>
+                        <th className="px-4 py-3 text-left">{t('rows.headers.status')}</th>
+                        <th className="px-4 py-3 text-left">{t('rows.headers.actions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/55">
+                      {rows.map((row) => {
+                        const isEditing = editingInviteId === row.invite?.id;
+                        const statusLabel = row.validationErrors.length
+                          ? t('rows.status.invalid')
+                          : row.invite
+                            ? inviteStatusLabelMap[row.invite.status] ?? row.invite.status
+                            : row.createdRegistrationId
+                              ? t('rows.status.reserved')
+                              : t('rows.status.pending');
+
+                        return (
+                          <tr
+                            key={row.id}
+                            className={cn(
+                              'align-top',
+                              row.validationErrors.length && 'bg-destructive/5',
+                            )}
+                          >
+                            <td className="px-4 py-4 text-muted-foreground">{row.rowIndex}</td>
+                            <td className="px-4 py-4">
+                              <div className="font-medium text-foreground">
+                                {row.firstName} {row.lastName}
+                              </div>
+                              {row.dateOfBirth ? (
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  {row.dateOfBirth}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="px-4 py-4">
+                              <div className="text-foreground">{row.email}</div>
+                              {row.invite ? (
+                                <div className="mt-1 text-xs leading-6 text-muted-foreground">
+                                  {t('rows.inviteDetails', {
+                                    count: row.invite.sendCount,
+                                    lastSent: formatDateTime(row.invite.lastSentAt),
+                                  })}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="px-4 py-4">
+                              <div
+                                className={cn(
+                                  'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium',
+                                  row.validationErrors.length
+                                    ? 'bg-destructive/10 text-destructive'
+                                    : row.invite?.status === 'claimed'
+                                      ? 'bg-emerald-500/10 text-emerald-700'
+                                      : row.invite?.status === 'sent'
+                                        ? 'bg-blue-500/10 text-blue-700'
+                                        : row.createdRegistrationId
+                                          ? 'bg-primary/10 text-primary'
+                                          : 'bg-muted text-muted-foreground',
+                                )}
+                              >
+                                {statusLabel}
+                              </div>
+                              {row.validationErrors.length ? (
+                                <div className="mt-2 text-xs leading-6 text-destructive">
+                                  {row.validationErrors.map((error) => errorLabel(error)).join(', ')}
+                                </div>
+                              ) : null}
+                            </td>
+                            <td className="px-4 py-4">
+                              {row.invite ? (
+                                <div className="flex flex-col gap-2">
+                                  {isEditing ? (
+                                    <div className="flex flex-col gap-2">
+                                      <FormField label={t('rows.headers.email')} error={null}>
+                                        <input
+                                          type="email"
+                                          className={cn(publicFieldClassName, 'h-10 text-xs')}
+                                          value={editedEmail}
+                                          onChange={(event) => setEditedEmail(event.target.value)}
+                                        />
+                                      </FormField>
+                                      <div className="flex items-center gap-1">
+                                        <IconTooltipButton
+                                          size="icon"
+                                          variant="ghost"
+                                          label={t('updateEmail.action')}
+                                          onClick={() => handleUpdateEmail(row.invite!.id)}
+                                          disabled={isPending}
+                                        >
+                                          <Check className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                        <IconTooltipButton
+                                          size="icon"
+                                          variant="ghost"
+                                          label={t('actions.cancel')}
+                                          onClick={() => setEditingInviteId(null)}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                      {row.invite.status === 'sent' ? (
+                                        <IconTooltipButton
+                                          variant="ghost"
+                                          size="icon"
+                                          label={t('resend.action')}
+                                          onClick={() => handleResendInvite(row.invite!.id)}
+                                          disabled={isPending}
+                                        >
+                                          <Mail className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                      ) : null}
+                                      {row.invite.status === 'claimed' ? (
+                                        <IconTooltipButton
+                                          variant="ghost"
+                                          size="icon"
+                                          label={t('extendHold.action')}
+                                          onClick={() => handleExtendHold(row.invite!.id)}
+                                          disabled={isPending}
+                                        >
+                                          <Timer className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                      ) : null}
+                                      {['draft', 'sent'].includes(row.invite.status) ? (
+                                        <IconTooltipButton
+                                          variant="ghost"
+                                          size="icon"
+                                          label={t('rotate.action')}
+                                          onClick={() => handleRotateInvite(row.invite!.id)}
+                                          disabled={isPending}
+                                        >
+                                          <RotateCw className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                      ) : null}
+                                      {['draft', 'sent'].includes(row.invite.status) ? (
+                                        <IconTooltipButton
+                                          variant="ghost"
+                                          size="icon"
+                                          label={t('updateEmail.action')}
+                                          onClick={() => {
+                                            setEditingInviteId(row.invite!.id);
+                                            setEditedEmail(row.invite!.email);
+                                          }}
+                                          disabled={isPending}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                      ) : null}
+                                      {['draft', 'sent'].includes(row.invite.status) ? (
+                                        <IconTooltipButton
+                                          variant="ghost"
+                                          size="icon"
+                                          label={t('cancelInvite.action')}
+                                          onClick={() => handleCancelInvite(row.invite!.id)}
+                                          disabled={isPending}
+                                          className="text-destructive hover:text-destructive"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </IconTooltipButton>
+                                      ) : null}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : row.createdRegistrationId ? (
                                 <IconTooltipButton
-                                  size="icon"
                                   variant="ghost"
-                                  label={t('updateEmail.action')}
-                                  onClick={() => handleUpdateEmail(row.invite!.id)}
+                                  size="icon"
+                                  label={t('reissue.action')}
+                                  onClick={() => handleReissueInvite(row.id)}
                                   disabled={isPending}
                                 >
-                                  <Check className="h-4 w-4" />
+                                  <RefreshCw className="h-4 w-4" />
                                 </IconTooltipButton>
-                                <IconTooltipButton
-                                  size="icon"
-                                  variant="ghost"
-                                  label={t('actions.cancel')}
-                                  onClick={() => setEditingInviteId(null)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </IconTooltipButton>
-                              </div>
-                            </div>
-                            ) : (
-                              <div className="flex flex-wrap gap-2">
-                                {row.invite.status === 'sent' ? (
-                                  <IconTooltipButton
-                                    variant="ghost"
-                                    size="icon"
-                                    label={t('resend.action')}
-                                    onClick={() => handleResendInvite(row.invite!.id)}
-                                    disabled={isPending}
-                                  >
-                                    <Mail className="h-4 w-4" />
-                                  </IconTooltipButton>
-                                ) : null}
-                                {row.invite.status === 'claimed' ? (
-                                  <IconTooltipButton
-                                    variant="ghost"
-                                    size="icon"
-                                    label={t('extendHold.action')}
-                                    onClick={() => handleExtendHold(row.invite!.id)}
-                                    disabled={isPending}
-                                  >
-                                    <Timer className="h-4 w-4" />
-                                  </IconTooltipButton>
-                                ) : null}
-                                {['draft', 'sent'].includes(row.invite.status) ? (
-                                  <IconTooltipButton
-                                    variant="ghost"
-                                    size="icon"
-                                    label={t('rotate.action')}
-                                    onClick={() => handleRotateInvite(row.invite!.id)}
-                                    disabled={isPending}
-                                  >
-                                    <RotateCw className="h-4 w-4" />
-                                  </IconTooltipButton>
-                                ) : null}
-                                {['draft', 'sent'].includes(row.invite.status) ? (
-                                  <IconTooltipButton
-                                    variant="ghost"
-                                    size="icon"
-                                    label={t('updateEmail.action')}
-                                    onClick={() => {
-                                      setEditingInviteId(row.invite!.id);
-                                      setEditedEmail(row.invite!.email);
-                                    }}
-                                    disabled={isPending}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </IconTooltipButton>
-                                ) : null}
-                                {['draft', 'sent'].includes(row.invite.status) ? (
-                                  <IconTooltipButton
-                                    variant="ghost"
-                                    size="icon"
-                                    label={t('cancelInvite.action')}
-                                    onClick={() => handleCancelInvite(row.invite!.id)}
-                                    disabled={isPending}
-                                    className="text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </IconTooltipButton>
-                                ) : null}
-                              </div>
-                            )}
-                          </div>
-                      ) : row.createdRegistrationId ? (
-                        <IconTooltipButton
-                          variant="ghost"
-                          size="icon"
-                          label={t('reissue.action')}
-                          onClick={() => handleReissueInvite(row.id)}
-                          disabled={isPending}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </IconTooltipButton>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">-</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>

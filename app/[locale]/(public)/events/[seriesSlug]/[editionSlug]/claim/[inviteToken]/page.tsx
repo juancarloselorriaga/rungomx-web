@@ -59,10 +59,16 @@ export default async function ClaimPage({ params }: ClaimPageProps) {
     const t = await getTranslations({ locale, namespace: 'pages.events.claim' });
 
     return (
-      <div className="container mx-auto px-4 py-16 max-w-lg text-center space-y-4">
-        <h1 className="text-2xl font-bold">{t(`status.${claimContext.status}.title`)}</h1>
-        <p className="text-muted-foreground">{t(`status.${claimContext.status}.description`)}</p>
-        {eventName ? <p className="text-sm text-muted-foreground">{eventName}</p> : null}
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="rounded-[1.9rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_79%,var(--background-surface)_21%)] px-6 py-8 text-center shadow-[0_32px_90px_-72px_rgba(15,23,42,0.78)] sm:px-8 sm:py-10">
+          <h1 className="font-display text-[clamp(2rem,4.6vw,3rem)] font-medium tracking-[-0.04em] text-foreground">
+            {t(`status.${claimContext.status}.title`)}
+          </h1>
+          <p className="mx-auto mt-4 max-w-[40rem] text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
+            {t(`status.${claimContext.status}.description`)}
+          </p>
+          {eventName ? <p className="mt-5 text-sm font-medium text-foreground/80">{eventName}</p> : null}
+        </div>
       </div>
     );
   }

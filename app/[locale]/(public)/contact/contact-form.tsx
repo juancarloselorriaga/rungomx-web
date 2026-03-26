@@ -1,6 +1,10 @@
 'use client';
 
 import { submitContactSubmission } from '@/app/actions/contact-submission';
+import {
+  publicFieldClassName,
+  publicMutedPanelClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
@@ -162,8 +166,8 @@ export function ContactForm({
           <textarea
             id="contact-message"
             className={cn(
-              'min-h-[180px] w-full rounded-md border bg-background p-3 text-sm text-foreground shadow-sm outline-none ring-offset-background transition',
-              'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+              publicFieldClassName,
+              'min-h-[180px] h-auto resize-y py-3 leading-7 ring-offset-background',
               form.errors.message &&
                 'border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20',
             )}
@@ -199,7 +203,12 @@ export function ContactForm({
           />
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className={cn(
+            publicMutedPanelClassName,
+            'flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5',
+          )}
+        >
           <p className="text-xs leading-5 text-muted-foreground">{t('submitNote')}</p>
           <Button type="submit" disabled={form.isSubmitting}>
             {form.isSubmitting ? (

@@ -1,5 +1,11 @@
 'use client';
 
+import { PublicLoginRequiredShell } from '@/components/auth/public-login-required-shell';
+import {
+  publicMutedPanelClassName,
+  publicPanelClassName,
+  publicSummaryItemClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import {
@@ -8,7 +14,7 @@ import {
   removeRegistrationGroupMember,
 } from '@/lib/events/registration-groups/actions';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Circle, Loader2, LogIn, Share2, Users, X } from 'lucide-react';
+import { CheckCircle, Circle, Loader2, Share2, Users, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
@@ -232,24 +238,28 @@ export function GroupLinkPage({
   const showRegistrationCta = status === 'ACTIVE' && event.isRegistrationOpen && viewer.isMember;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl space-y-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 space-y-6">
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-2xl font-bold">{t('title')}</h1>
+          <h1 className="font-display text-[clamp(2rem,4.6vw,3.1rem)] font-medium leading-[0.92] tracking-[-0.04em] text-foreground">
+            {t('title')}
+          </h1>
           <span className={cn('rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide', STATUS_STYLES[status])}>
             {statusLabel}
           </span>
         </div>
-        <p className="text-muted-foreground">{t('description')}</p>
+        <p className="max-w-[42rem] text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
+          {t('description')}
+        </p>
       </div>
 
-      <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+      <div className={cn(publicPanelClassName, 'space-y-4')}>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-lg font-semibold">
+            <div className="font-display text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
               {event.seriesName} {event.editionLabel}
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm leading-7 text-muted-foreground">
               {[eventDate, locationLabel].filter(Boolean).join(' · ')}
             </div>
             <div className="mt-2 text-sm">
@@ -277,7 +287,7 @@ export function GroupLinkPage({
         </div>
 
         {!event.isRegistrationOpen ? (
-          <div className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
+          <div className={cn(publicMutedPanelClassName, 'text-sm text-muted-foreground')}>
             {event.isRegistrationPaused
               ? t('registration.paused')
               : registrationOpensAt
@@ -288,17 +298,17 @@ export function GroupLinkPage({
           </div>
         ) : null}
 
-        <div className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground space-y-1">
+        <div className={cn(publicMutedPanelClassName, 'space-y-1 text-sm text-muted-foreground')}>
           <div>{t('howItWorks.noReservation')}</div>
           <div>{t('howItWorks.selfPay')}</div>
         </div>
       </div>
 
       {showDiscountCard ? (
-        <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+        <div className={cn(publicPanelClassName, 'space-y-4')}>
           <div>
-            <h2 className="text-base font-semibold">{t('discount.title')}</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="font-medium text-foreground">{t('discount.title')}</h2>
+            <p className="mt-1 text-sm leading-7 text-muted-foreground">
               {discount.currentPercentOff !== null
                 ? t('discount.currentDiscount', { percent: discount.currentPercentOff })
                 : t('discount.noDiscountYet')}
@@ -312,10 +322,11 @@ export function GroupLinkPage({
                 <div
                   key={tier.minParticipants}
                   className={cn(
-                    'flex items-center justify-between rounded-md border px-3 py-2 text-sm',
+                    publicSummaryItemClassName,
+                    'flex items-center justify-between text-sm',
                     isMet
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                      : 'border-muted bg-muted/30 text-muted-foreground',
+                      : 'text-muted-foreground',
                   )}
                 >
                   <div className="flex items-center gap-2">
@@ -365,30 +376,22 @@ export function GroupLinkPage({
       ) : null}
 
       {!isAuthenticated && signInUrl && signUpUrl ? (
-        <div className="rounded-lg border bg-card p-5 shadow-sm space-y-3">
-          <div>
-            <h2 className="text-base font-semibold">{t('loginRequired.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('loginRequired.description')}</p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <a href={signInUrl}>
-                <LogIn className="h-4 w-4 mr-2" />
-                {t('loginRequired.signIn')}
-              </a>
-            </Button>
-            <Button variant="outline" asChild>
-              <a href={signUpUrl}>{t('loginRequired.signUp')}</a>
-            </Button>
-          </div>
-        </div>
+        <PublicLoginRequiredShell
+          title={t('loginRequired.title')}
+          description={t('loginRequired.description')}
+          eventName={`${event.seriesName} ${event.editionLabel}`}
+          signInLabel={t('loginRequired.signIn')}
+          signUpLabel={t('loginRequired.signUp')}
+          signInUrl={signInUrl}
+          signUpUrl={signUpUrl}
+        />
       ) : null}
 
-      <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+      <div className={cn(publicPanelClassName, 'space-y-4')}>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <h2 className="text-base font-semibold">{t('actions.title')}</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="font-medium text-foreground">{t('actions.title')}</h2>
+            <p className="text-sm leading-7 text-muted-foreground">
               {viewer.isMember ? t('actions.joined') : groupFull ? t('actions.groupFull') : t('actions.notJoined')}
             </p>
             {viewer.hasJoinedOtherGroupInEdition && !viewer.isMember ? (
@@ -438,90 +441,94 @@ export function GroupLinkPage({
       </div>
 
       {viewer.isCreator ? (
-        <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+        <div className={cn(publicPanelClassName, 'space-y-4')}>
           <div>
-            <h2 className="text-base font-semibold">{t('members.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('members.description')}</p>
+            <h2 className="font-medium text-foreground">{t('members.title')}</h2>
+            <p className="text-sm leading-7 text-muted-foreground">{t('members.description')}</p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-muted-foreground">
-                  <th className="py-2 pr-4 font-medium">{t('members.headers.name')}</th>
-                  <th className="py-2 pr-4 font-medium">{t('members.headers.joinedAt')}</th>
-                  <th className="py-2 pr-4 font-medium">{t('members.headers.registration')}</th>
-                  <th className="py-2 text-right font-medium">{t('members.headers.actions')}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {members.map((member) => {
-                  const reg = member.registration;
-                  const regStatusLabel = reg
-                    ? reg.status === 'confirmed'
-                      ? t('members.registrationStatus.confirmed')
-                      : reg.status === 'payment_pending'
-                        ? t('members.registrationStatus.paymentPending')
-                        : t('members.registrationStatus.inProgress')
-                    : t('members.registrationStatus.notStarted');
+          <div className="overflow-hidden rounded-[1.5rem] border border-border/45">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-[color-mix(in_oklch,var(--background)_86%,var(--background-surface)_14%)]">
+                  <tr className="text-left text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">{t('members.headers.name')}</th>
+                    <th className="px-4 py-3 font-medium">{t('members.headers.joinedAt')}</th>
+                    <th className="px-4 py-3 font-medium">{t('members.headers.registration')}</th>
+                    <th className="px-4 py-3 text-right font-medium">{t('members.headers.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/55">
+                  {members.map((member) => {
+                    const reg = member.registration;
+                    const regStatusLabel = reg
+                      ? reg.status === 'confirmed'
+                        ? t('members.registrationStatus.confirmed')
+                        : reg.status === 'payment_pending'
+                          ? t('members.registrationStatus.paymentPending')
+                          : t('members.registrationStatus.inProgress')
+                      : t('members.registrationStatus.notStarted');
 
-                  const joinedAtLabel = formatDateTime(member.joinedAt, activeLocale, event.timezone);
-                  const expiresAtLabel = reg?.expiresAt ? formatDateTime(reg.expiresAt, activeLocale, event.timezone) : null;
+                    const joinedAtLabel = formatDateTime(member.joinedAt, activeLocale, event.timezone);
+                    const expiresAtLabel = reg?.expiresAt
+                      ? formatDateTime(reg.expiresAt, activeLocale, event.timezone)
+                      : null;
 
-                  return (
-                    <tr key={member.userId}>
-                      <td className="py-3 pr-4">
-                        <div className="font-medium">{member.name}</div>
-                        {reg && reg.distanceId !== distance.id ? (
-                          <div className="text-xs text-amber-600">{t('members.registrationStatus.differentDistance')}</div>
-                        ) : null}
-                      </td>
-                      <td className="py-3 pr-4 text-muted-foreground whitespace-nowrap">
-                        {joinedAtLabel ?? '—'}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <div className="font-medium">{regStatusLabel}</div>
-                        {expiresAtLabel ? (
-                          <div className="text-xs text-muted-foreground">
-                            {t('members.registrationStatus.expiresAt', { date: expiresAtLabel })}
-                          </div>
-                        ) : null}
-                      </td>
-                      <td className="py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveMember(member.userId)}
-                          disabled={Boolean(reg) || (isPending && removingUserId === member.userId)}
-                        >
-                          {isPending && removingUserId === member.userId ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            t('members.actions.remove')
-                          )}
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={member.userId}>
+                        <td className="px-4 py-4">
+                          <div className="font-medium">{member.name}</div>
+                          {reg && reg.distanceId !== distance.id ? (
+                            <div className="text-xs text-amber-600">{t('members.registrationStatus.differentDistance')}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-muted-foreground">
+                          {joinedAtLabel ?? '—'}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="font-medium">{regStatusLabel}</div>
+                          {expiresAtLabel ? (
+                            <div className="text-xs text-muted-foreground">
+                              {t('members.registrationStatus.expiresAt', { date: expiresAtLabel })}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMember(member.userId)}
+                            disabled={Boolean(reg) || (isPending && removingUserId === member.userId)}
+                          >
+                            {isPending && removingUserId === member.userId ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              t('members.actions.remove')
+                            )}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       ) : null}
 
       {viewer.isMember && !viewer.isCreator ? (
-        <div className="rounded-lg border bg-card p-5 shadow-sm space-y-4">
+        <div className={cn(publicPanelClassName, 'space-y-4')}>
           <div>
-            <h2 className="text-base font-semibold">{t('members.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('members.description')}</p>
+            <h2 className="font-medium text-foreground">{t('members.title')}</h2>
+            <p className="text-sm leading-7 text-muted-foreground">{t('members.description')}</p>
           </div>
 
           <div className="space-y-2">
             {memberSummary.map((member) => (
               <div
                 key={member.userId}
-                className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                className={cn(publicSummaryItemClassName, 'flex items-center justify-between text-sm')}
               >
                 <span>{member.displayName}</span>
                 <span
