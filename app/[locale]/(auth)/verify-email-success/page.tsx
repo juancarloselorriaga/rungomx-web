@@ -1,3 +1,4 @@
+import { AuthPageShell } from '@/components/auth/auth-page-shell';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
@@ -35,19 +36,14 @@ export default async function VerifyEmailSuccessPage({
     : '/sign-in';
 
   return (
-    <div className="space-y-6 rounded-lg border bg-card p-8 shadow-lg w-md">
-      <div className="flex justify-center">
-        <CheckCircle2 className="h-16 w-16 text-green-500" />
-      </div>
-
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
+    <AuthPageShell
+      icon={<CheckCircle2 className="size-5 text-emerald-600 dark:text-emerald-400" />}
+      title={t('title')}
+      description={t('description')}
+    >
       <Button asChild className="w-full">
         <Link href={signInHref}>{t('signInButton')}</Link>
       </Button>
-    </div>
+    </AuthPageShell>
   );
 }

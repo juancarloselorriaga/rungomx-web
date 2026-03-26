@@ -72,6 +72,7 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
   if (!isLoggedIn) {
     return (
       <LoginRequired
+        key={`register-login-required-${locale}`}
         locale={locale}
         seriesSlug={seriesSlug}
         editionSlug={editionSlug}
@@ -115,9 +116,12 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
   const isOrganizerForEvent = Boolean(
     authContext.organizationMemberships?.some((membership) => membership.organizationId === event.organizationId),
   );
+  const resumableRegistration =
+    existingRegistration && existingRegistration.status !== 'confirmed' ? existingRegistration : null;
 
   return (
     <RegistrationFlow
+      key={`registration-flow-${locale}`}
       locale={locale}
       event={event}
       questions={questions}
@@ -132,6 +136,8 @@ export default async function RegisterPage({ params, searchParams }: RegisterPag
       groupToken={groupToken}
       existingRegistration={existingRegistration}
       activeInviteExists={Boolean(activeInvite)}
+      resumeRegistrationId={resumableRegistration?.registrationId}
+      resumeDistanceId={resumableRegistration?.distanceId}
     />
   );
 }

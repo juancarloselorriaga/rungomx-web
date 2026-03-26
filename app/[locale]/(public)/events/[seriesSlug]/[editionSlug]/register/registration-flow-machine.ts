@@ -14,7 +14,6 @@ type BuildRegistrationStepsInput = {
   activeAddOnCount: number;
   activeQuestionCount: number;
   hasPoliciesStep: boolean;
-  resumeRegistrationId: string | undefined;
   waiverCount: number;
 };
 
@@ -37,10 +36,9 @@ export function buildRegistrationSteps({
   activeAddOnCount,
   activeQuestionCount,
   hasPoliciesStep,
-  resumeRegistrationId,
   waiverCount,
 }: BuildRegistrationStepsInput): RegistrationFlowStep[] {
-  const steps: RegistrationFlowStep[] = resumeRegistrationId ? ['info'] : ['distance', 'info'];
+  const steps: RegistrationFlowStep[] = ['distance', 'info'];
 
   if (activeQuestionCount > 0) {
     steps.push('questions');

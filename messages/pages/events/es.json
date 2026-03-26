@@ -171,6 +171,7 @@
       "description": "Responde las preguntas del director de carrera.",
       "required": "Requerido",
       "optional": "Opcional",
+      "checkboxAffirmative": "Sí",
       "continue": "Continuar",
       "skipIfNone": "No hay preguntas adicionales para este evento."
     },
@@ -274,7 +275,8 @@
       "registrationNotOpen": "Las inscripciones aún no han abierto para este evento",
       "activeInviteTitle": "Ya tienes una invitación reservada",
       "activeInvite": "Revisa tu correo para reclamar tu lugar antes de iniciar otra inscripción.",
-      "viewMyRegistrations": "Ver mis inscripciones"
+      "viewMyRegistrations": "Ver mis inscripciones",
+      "unexpected": "Algo salió mal. Por favor intenta de nuevo."
     },
     "warnings": {
       "organizerSelfRegistration": {

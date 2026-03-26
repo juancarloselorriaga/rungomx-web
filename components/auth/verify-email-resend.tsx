@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { Input } from '@/components/ui/input';
 import { requestEmailVerification } from '@/lib/auth/actions';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { Loader2, RefreshCw } from 'lucide-react';
@@ -47,12 +48,11 @@ export function VerifyEmailResend({ email, callbackPath }: VerifyEmailResendProp
 
       {!email && (
         <FormField label={authT('email')} required error={form.errors.email}>
-          <input
+          <Input
             id="email"
             required
             type="email"
             autoComplete="email"
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
             placeholder="you@example.com"
             {...form.register('email')}
             disabled={form.isSubmitting}

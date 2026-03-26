@@ -1,8 +1,14 @@
 'use client';
 
 import { MarkdownContent } from '@/components/markdown/markdown-content';
+import {
+  publicMutedPanelClassName,
+  publicPanelClassName,
+  publicSelectClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Form, FormError } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { RegistrationFlowState } from './use-registration-flow';
@@ -21,6 +27,10 @@ type AddOnsStepProps = {
   onBack: () => void;
 };
 
+function normalizeAddOnDescription(content: string): string {
+  return content.replace(/\\n/g, '\n');
+}
+
 export function AddOnsStep({
   activeAddOns,
   addOnsForm,
@@ -35,18 +45,21 @@ export function AddOnsStep({
   onBack,
 }: AddOnsStepProps) {
   const t = useTranslations('pages.events.register');
+  const tCommon = useTranslations('common');
 
   return (
-    <Form form={addOnsForm} className="space-y-6">
+    <Form form={addOnsForm} className="space-y-7">
       <div>
-        <h2 className="text-lg font-semibold">{t('addons.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('addons.description')}</p>
+        <h2 className="font-display text-[clamp(1.5rem,2.9vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+          {t('addons.title')}
+        </h2>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('addons.description')}</p>
       </div>
 
       <FormError />
 
       {activeAddOns.length === 0 ? (
-        <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+        <div className={cn(publicMutedPanelClassName, 'text-sm text-muted-foreground')}>
           {t('addons.noAddons')}
         </div>
       ) : (
@@ -62,25 +75,29 @@ export function AddOnsStep({
               currentSelection?.quantity === draftQuantity;
 
             return (
-              <div key={addOn.id} className="rounded-lg border p-4 space-y-3">
+              <div key={addOn.id} className={cn(publicPanelClassName, 'space-y-4')}>
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="space-y-2">
                     <h3 className="font-medium">{addOn.title}</h3>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                      {addOn.type === 'donation' ? t('addons.donation') : t('addons.merchandise')}
-                    </span>
-                    {addOn.deliveryMethod !== 'none' && (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                        {addOn.deliveryMethod === 'shipping'
-                          ? t('addons.deliveryMethods.shipping')
-                          : t('addons.deliveryMethods.pickup')}
-                      </span>
-                    )}
+                    <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      {[
+                        addOn.type === 'donation'
+                          ? t('addons.donation')
+                          : t('addons.merchandise'),
+                        addOn.deliveryMethod === 'none'
+                          ? null
+                          : addOn.deliveryMethod === 'shipping'
+                            ? t('addons.deliveryMethods.shipping')
+                            : t('addons.deliveryMethods.pickup'),
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
                   </div>
                   {addOn.description && (
                     <div className="mt-1">
                       <MarkdownContent
-                        content={addOn.description}
+                        content={normalizeAddOnDescription(addOn.description)}
                         className="text-sm text-muted-foreground [&_p]:m-0"
                       />
                     </div>
@@ -96,7 +113,7 @@ export function AddOnsStep({
                         [addOn.id]: e.target.value,
                       }))
                     }
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    className={publicSelectClassName}
                     disabled={isPending || addOnsForm.isSubmitting}
                   >
                     <option value="">{t('addons.selectOption')}</option>
@@ -116,7 +133,7 @@ export function AddOnsStep({
                           [addOn.id]: Number(e.target.value),
                         }))
                       }
-                      className="rounded-md border bg-background px-2 py-2 text-sm"
+                        className={publicSelectClassName}
                       disabled={isPending || addOnsForm.isSubmitting}
                     >
                       {Array.from(
@@ -164,23 +181,32 @@ export function AddOnsStep({
       )}
 
       {addOnsSubtotalCents > 0 && (
-        <div className="rounded-lg border bg-muted/40 p-4 text-sm flex justify-between">
+        <div className={cn(publicMutedPanelClassName, 'flex justify-between text-sm')}>
           <span className="text-muted-foreground">{t('addons.subtotal')}</span>
           <span className="font-medium">{formatPrice(addOnsSubtotalCents, currency)}</span>
         </div>
       )}
 
-      <div className="flex justify-between">
+      <div
+        className={cn(
+          publicPanelClassName,
+          'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        )}
+      >
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={onBack}
           disabled={isPending || addOnsForm.isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          {tCommon('previous')}
         </Button>
-        <Button type="submit" disabled={isPending || addOnsForm.isSubmitting}>
+        <Button
+          type="submit"
+          disabled={isPending || addOnsForm.isSubmitting}
+          className="sm:min-w-[10rem]"
+        >
           {isPending || addOnsForm.isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (

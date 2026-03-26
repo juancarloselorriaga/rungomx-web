@@ -1,7 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import {
+  publicFieldClassName,
+  publicMutedPanelClassName,
+  publicPanelClassName,
+} from '@/components/common/public-form-styles';
 import { Form, FormError } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 import { Link } from '@/i18n/navigation';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -57,17 +63,20 @@ export function PaymentStep({
   onBack,
 }: PaymentStepProps) {
   const t = useTranslations('pages.events.register');
+  const tCommon = useTranslations('common');
 
   return (
-    <Form form={paymentForm} className="space-y-6">
+    <Form form={paymentForm} className="space-y-7">
       <div>
-        <h2 className="text-lg font-semibold">{t('payment.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('payment.description')}</p>
+        <h2 className="font-display text-[clamp(1.5rem,2.9vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+          {t('payment.title')}
+        </h2>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('payment.description')}</p>
       </div>
 
       <FormError />
 
-      <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+      <div className={cn(publicPanelClassName, 'space-y-3')}>
         <h3 className="font-medium">{t('payment.summary')}</h3>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">{t('payment.distance')}</span>
@@ -125,7 +134,7 @@ export function PaymentStep({
         </div>
       </div>
 
-      <div className="rounded-lg border p-4 space-y-3">
+      <div className={cn(publicMutedPanelClassName, 'space-y-3')}>
         <div className="flex items-center justify-between">
           <h3 className="font-medium">{t('payment.discountCode')}</h3>
           {appliedDiscountCode && (
@@ -139,7 +148,7 @@ export function PaymentStep({
             type="text"
             value={paymentForm.values.discountCode}
             onChange={(e) => paymentForm.setFieldValue('discountCode', e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={publicFieldClassName}
             placeholder={t('payment.discountCode')}
             disabled={isPending || paymentForm.isSubmitting || !!appliedDiscountCode}
           />
@@ -170,8 +179,8 @@ export function PaymentStep({
         {discountError && <p className="text-sm text-destructive">{discountError}</p>}
       </div>
 
-      <div className="rounded-lg border border-dashed p-6 text-center">
-        <p className="text-muted-foreground mb-4">{t('payment.comingSoon')}</p>
+      <div className="rounded-[1.35rem] border border-dashed border-border/65 bg-[color-mix(in_oklch,var(--background)_84%,var(--background-surface)_16%)] p-6 text-center">
+        <p className="mb-4 text-sm leading-7 text-muted-foreground">{t('payment.comingSoon')}</p>
         <Button variant="outline" asChild>
           <Link
             href={{
@@ -184,17 +193,26 @@ export function PaymentStep({
         </Button>
       </div>
 
-      <div className="flex justify-between">
+      <div
+        className={cn(
+          publicPanelClassName,
+          'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        )}
+      >
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={onBack}
           disabled={isPending || paymentForm.isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          {tCommon('previous')}
         </Button>
-        <Button type="submit" disabled={isPending || paymentForm.isSubmitting}>
+        <Button
+          type="submit"
+          disabled={isPending || paymentForm.isSubmitting}
+          className="sm:min-w-[10rem]"
+        >
           {isPending || paymentForm.isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (

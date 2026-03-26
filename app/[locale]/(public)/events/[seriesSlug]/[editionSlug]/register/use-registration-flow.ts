@@ -96,6 +96,7 @@ export function useRegistrationFlow({
   resumeGroupDiscount,
 }: UseRegistrationFlowArgs) {
   const t = useTranslations('pages.events.register');
+  const unexpectedError = t('errors.unexpected');
   const [isPending, startTransition] = useTransition();
 
   const [step, setStep] = useState<Step>(resumeRegistrationId ? 'info' : 'distance');
@@ -156,7 +157,6 @@ export function useRegistrationFlow({
       activeAddOnCount: activeAddOns.length,
       activeQuestionCount: activeQuestions.length,
       hasPoliciesStep,
-      resumeRegistrationId,
       waiverCount: event.waivers.length,
     });
   }, [
@@ -164,7 +164,6 @@ export function useRegistrationFlow({
     activeQuestions.length,
     event.waivers.length,
     hasPoliciesStep,
-    resumeRegistrationId,
   ]);
 
   const progressSteps = useMemo(() => getProgressSteps(steps), [steps]);
@@ -184,7 +183,7 @@ export function useRegistrationFlow({
     },
     onSubmit: async (values) => {
       if (!registrationId) {
-        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+        return { ok: false, error: 'SERVER_ERROR', message: unexpectedError };
       }
 
       const result = await submitRegistrantInfo({
@@ -227,7 +226,7 @@ export function useRegistrationFlow({
     defaultValues: questionsDefaultValues,
     onSubmit: async (values) => {
       if (!registrationId) {
-        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+        return { ok: false, error: 'SERVER_ERROR', message: unexpectedError };
       }
 
       const answers = activeQuestions.map((question) => {
@@ -266,7 +265,7 @@ export function useRegistrationFlow({
     defaultValues: waiverDefaultValues,
     onSubmit: async (values) => {
       if (!registrationId) {
-        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+        return { ok: false, error: 'SERVER_ERROR', message: unexpectedError };
       }
 
       for (const waiver of event.waivers) {
@@ -304,7 +303,7 @@ export function useRegistrationFlow({
     defaultValues: addOnsDefaultValues,
     onSubmit: async (values) => {
       if (!registrationId) {
-        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+        return { ok: false, error: 'SERVER_ERROR', message: unexpectedError };
       }
 
       const selections = Object.values(values)
@@ -348,7 +347,7 @@ export function useRegistrationFlow({
     defaultValues: { discountCode: '' },
     onSubmit: async () => {
       if (!registrationId) {
-        return { ok: false, error: 'SERVER_ERROR', message: 'Registration not initialized' };
+        return { ok: false, error: 'SERVER_ERROR', message: unexpectedError };
       }
 
       const result = await finalizeRegistration({ registrationId });
@@ -429,6 +428,11 @@ export function useRegistrationFlow({
     }
     setDistanceError(null);
     setShowAlreadyRegisteredCta(false);
+
+    if (registrationId) {
+      setStep('info');
+      return;
+    }
 
     if (activeInviteExists) {
       setDistanceError(t('errors.activeInvite'));

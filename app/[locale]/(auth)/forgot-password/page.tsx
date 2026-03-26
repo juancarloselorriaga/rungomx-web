@@ -1,24 +1,26 @@
+import { AuthPageShell } from '@/components/auth/auth-page-shell';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { Link } from '@/i18n/navigation';
+import { Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 export default function ForgotPasswordPage() {
   const t = useTranslations('pages.forgotPassword');
 
   return (
-    <div className="space-y-6 rounded-lg border bg-card p-8 shadow-lg">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
+    <AuthPageShell
+      icon={<Mail className="size-5" />}
+      title={t('title')}
+      description={t('description')}
+      footer={
+        <p className="border-t border-border/60 pt-5 text-center text-sm">
+          <Link href="/sign-in" className="font-semibold text-primary hover:underline">
+            {t('backToSignIn')}
+          </Link>
+        </p>
+      }
+    >
       <ForgotPasswordForm />
-
-      <p className="text-center text-sm">
-        <Link href="/sign-in" className="text-primary hover:underline">
-          {t('backToSignIn')}
-        </Link>
-      </p>
-    </div>
+    </AuthPageShell>
   );
 }

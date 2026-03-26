@@ -1,9 +1,14 @@
 import { CheckCircle, Download, FileText } from 'lucide-react';
 
 import { MarkdownContent } from '@/components/markdown/markdown-content';
+import {
+  publicMutedPanelClassName,
+  publicPanelClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
+import { cn } from '@/lib/utils';
 
 type EventDocument = {
   label: string;
@@ -60,40 +65,54 @@ export function ConfirmationStep({
   labels,
 }: ConfirmationStepProps) {
   return (
-    <div className="text-center space-y-6 py-6">
-      <div className="mx-auto h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-        <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-      </div>
+    <div className="space-y-8 py-3">
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/10">
+          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+        </div>
 
-      <div>
-        <h2 className="text-2xl font-bold">{labels.title}</h2>
-        <p className="text-muted-foreground mt-2">{labels.description}</p>
-      </div>
-
-      {registrationId && (
-        <div className="rounded-lg bg-muted/50 p-4 text-sm">
-          <p className="text-muted-foreground">{labels.registrationId}</p>
-          <p className="font-mono font-semibold">
-            {formatRegistrationTicketCode(registrationId)}
+        <div>
+          <h2 className="font-display text-[clamp(1.9rem,3.5vw,2.7rem)] font-medium leading-[0.95] tracking-[-0.035em] text-foreground">
+            {labels.title}
+          </h2>
+          <p className="mx-auto mt-3 max-w-[38rem] text-sm leading-7 text-muted-foreground sm:text-[0.98rem]">
+            {labels.description}
           </p>
         </div>
-      )}
+      </div>
 
-      {selectedDistanceLabel && (
-        <div className="text-sm">
-          <span className="text-muted-foreground">{labels.distance}: </span>
-          <span className="font-medium">{selectedDistanceLabel}</span>
-        </div>
-      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {registrationId ? (
+          <div className={publicPanelClassName}>
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {labels.registrationId}
+            </p>
+            <p className="mt-3 font-mono text-base font-semibold text-foreground">
+              {formatRegistrationTicketCode(registrationId)}
+            </p>
+          </div>
+        ) : null}
 
-      <div className="space-y-2">
-        <h3 className="font-medium">{labels.whatNext}</h3>
-        <p className="text-sm text-muted-foreground">{labels.nextSteps}</p>
+        {selectedDistanceLabel ? (
+          <div className={publicPanelClassName}>
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {labels.distance}
+            </p>
+            <p className="font-display mt-3 text-[1.45rem] font-medium tracking-[-0.03em] text-foreground">
+              {selectedDistanceLabel}
+            </p>
+          </div>
+        ) : null}
+      </div>
+
+      <div className={publicMutedPanelClassName}>
+        <h3 className="font-medium text-foreground">{labels.whatNext}</h3>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">{labels.nextSteps}</p>
       </div>
 
       {documents.length > 0 && (
-        <div className="rounded-lg border bg-muted/40 p-4 text-left space-y-3">
-          <h3 className="font-medium flex items-center gap-2">
+        <div className={cn(publicPanelClassName, 'space-y-3 text-left')}>
+          <h3 className="flex items-center gap-2 font-medium">
             <FileText className="h-4 w-4" />
             {labels.documents}
           </h3>
@@ -104,7 +123,7 @@ export function ConfirmationStep({
                 href={doc.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors group"
+                className="group flex items-center gap-3 rounded-[1rem] border border-border/40 bg-background/88 p-3 transition-colors hover:border-primary/30 hover:bg-background"
               >
                 <FileText className="h-5 w-5 text-primary flex-shrink-0" />
                 <span className="text-sm font-medium flex-1">{doc.label}</span>
@@ -116,7 +135,7 @@ export function ConfirmationStep({
       )}
 
       {policyConfig && (
-        <div className="rounded-lg border bg-muted/40 p-4 text-left space-y-3">
+        <div className={cn(publicPanelClassName, 'space-y-3 text-left')}>
           <h3 className="font-medium">{labels.policiesTitle}</h3>
           <PolicySummary
             locale={locale}
@@ -145,8 +164,8 @@ export function ConfirmationStep({
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
-        <Button asChild>
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-center">
+        <Button asChild className="min-w-0">
           <Link
             href={{
               pathname: '/events/[seriesSlug]/[editionSlug]',
@@ -156,7 +175,7 @@ export function ConfirmationStep({
             {labels.viewEvent}
           </Link>
         </Button>
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="min-w-0">
           <Link href="/events">{labels.backToEvents}</Link>
         </Button>
       </div>

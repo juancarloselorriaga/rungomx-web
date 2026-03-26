@@ -1,9 +1,11 @@
+import { AuthPageShell } from '@/components/auth/auth-page-shell';
 import { SignUpForm } from '@/components/auth/sign-up-form';
 import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { isSafeRedirectPath, normalizeCallbackPath } from '@/lib/utils/redirect';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { UserRoundPlus } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
@@ -35,20 +37,20 @@ export default async function SignUpPage({
     : '/sign-in';
 
   return (
-    <div className="space-y-6 rounded-lg border bg-card p-8 shadow-lg">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
-
+    <AuthPageShell
+      icon={<UserRoundPlus className="size-5" />}
+      title={t('title')}
+      description={t('description')}
+      footer={
+        <p className="border-t border-border/60 pt-5 text-center text-sm text-muted-foreground">
+          {authT('hasAccount')}{' '}
+          <Link className="font-semibold text-primary hover:underline" href={signInHref}>
+            {authT('signIn')}
+          </Link>
+        </p>
+      }
+    >
       <SignUpForm callbackPath={callbackPath} />
-
-      <p className="text-center text-sm text-muted-foreground">
-        {authT('hasAccount')}{' '}
-        <Link className="font-semibold text-primary hover:underline" href={signInHref}>
-          {authT('signIn')}
-        </Link>
-      </p>
-    </div>
+    </AuthPageShell>
   );
 }

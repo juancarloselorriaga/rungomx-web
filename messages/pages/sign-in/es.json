@@ -1,6 +1,6 @@
 {
   "title": "Iniciar sesión",
-  "description": "Página de inicio de sesión",
+  "description": "Inicia sesión para continuar con tus inscripciones, resultados y actividad en eventos.",
   "passwordResetSuccess": "Contraseña restablecida exitosamente",
   "passwordResetSuccessDescription": "Ahora puedes iniciar sesión con tu nueva contraseña."
 }

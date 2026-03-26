@@ -171,6 +171,7 @@
       "description": "Answer Race Director questions.",
       "required": "Required",
       "optional": "Optional",
+      "checkboxAffirmative": "Yes",
       "continue": "Continue",
       "skipIfNone": "No additional questions for this event."
     },
@@ -274,7 +275,8 @@
       "registrationNotOpen": "Registration has not opened yet for this event",
       "activeInviteTitle": "You already have an invite reservation",
       "activeInvite": "Check your email for the invite link before starting a new registration.",
-      "viewMyRegistrations": "View my registrations"
+      "viewMyRegistrations": "View my registrations",
+      "unexpected": "Something went wrong. Please try again."
     },
     "warnings": {
       "organizerSelfRegistration": {

@@ -1,6 +1,6 @@
 {
   "title": "Sign In",
-  "description": "Sign in page",
+  "description": "Sign in to continue with your registrations, results, and event activity.",
   "passwordResetSuccess": "Password reset successful",
   "passwordResetSuccessDescription": "You can now sign in with your new password."
 }

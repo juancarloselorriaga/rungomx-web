@@ -1,7 +1,15 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import {
+  publicCheckboxClassName,
+  publicFieldClassName,
+  publicMutedPanelClassName,
+  publicPanelClassName,
+  publicSelectClassName,
+} from '@/components/common/public-form-styles';
 import { Form, FormError } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { RegistrationFlowState } from './use-registration-flow';
@@ -20,24 +28,27 @@ export function QuestionsStep({
   onBack,
 }: QuestionsStepProps) {
   const t = useTranslations('pages.events.register');
+  const tCommon = useTranslations('common');
 
   return (
-    <Form form={questionsForm} className="space-y-6">
+    <Form form={questionsForm} className="space-y-7">
       <div>
-        <h2 className="text-lg font-semibold">{t('questions.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('questions.description')}</p>
+        <h2 className="font-display text-[clamp(1.5rem,2.9vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+          {t('questions.title')}
+        </h2>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('questions.description')}</p>
       </div>
 
       <FormError />
 
       {activeQuestions.length === 0 ? (
-        <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground">
+        <div className={cn(publicMutedPanelClassName, 'text-sm text-muted-foreground')}>
           {t('questions.skipIfNone')}
         </div>
       ) : (
         <div className="space-y-5">
           {activeQuestions.map((question) => (
-            <div key={question.id} className="space-y-2">
+            <div key={question.id} className={cn(publicPanelClassName, 'space-y-3')}>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-medium">{question.prompt}</p>
                 <span className="text-xs text-muted-foreground">
@@ -52,7 +63,7 @@ export function QuestionsStep({
                   type="text"
                   value={questionsForm.values[question.id] ?? ''}
                   onChange={(e) => questionsForm.setFieldValue(question.id, e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className={publicFieldClassName}
                   disabled={isPending || questionsForm.isSubmitting}
                 />
               )}
@@ -60,7 +71,7 @@ export function QuestionsStep({
                 <select
                   value={questionsForm.values[question.id] ?? ''}
                   onChange={(e) => questionsForm.setFieldValue(question.id, e.target.value)}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  className={publicSelectClassName}
                   disabled={isPending || questionsForm.isSubmitting}
                 >
                   <option value="">{t('addons.selectOption')}</option>
@@ -79,10 +90,10 @@ export function QuestionsStep({
                     onChange={(e) =>
                       questionsForm.setFieldValue(question.id, e.target.checked ? 'true' : '')
                     }
-                    className="h-4 w-4 rounded border-gray-300"
+                    className={publicCheckboxClassName}
                     disabled={isPending || questionsForm.isSubmitting}
                   />
-                  {question.isRequired ? t('questions.required') : t('questions.optional')}
+                  <span className="text-sm text-muted-foreground">{t('questions.checkboxAffirmative')}</span>
                 </label>
               )}
             </div>
@@ -90,17 +101,26 @@ export function QuestionsStep({
         </div>
       )}
 
-      <div className="flex justify-between">
+      <div
+        className={cn(
+          publicPanelClassName,
+          'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        )}
+      >
         <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={onBack}
           disabled={isPending || questionsForm.isSubmitting}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          {tCommon('previous')}
         </Button>
-        <Button type="submit" disabled={isPending || questionsForm.isSubmitting}>
+        <Button
+          type="submit"
+          disabled={isPending || questionsForm.isSubmitting}
+          className="sm:min-w-[10rem]"
+        >
           {isPending || questionsForm.isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
           ) : (

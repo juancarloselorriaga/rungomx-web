@@ -2,10 +2,15 @@
 
 import { GenderField } from '@/components/settings/fields/gender-field';
 import { PhoneField } from '@/components/settings/fields/phone-field';
+import {
+  publicFieldClassName,
+  publicPanelClassName,
+} from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { Form, FormError } from '@/lib/forms';
+import { cn } from '@/lib/utils';
 import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { RegistrationFlowState } from './use-registration-flow';
@@ -14,7 +19,7 @@ type InfoStepProps = {
   locale: string;
   infoForm: RegistrationFlowState['infoForm'];
   isPending: RegistrationFlowState['isPending'];
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps) {
@@ -22,10 +27,12 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
   const tCommon = useTranslations('common');
 
   return (
-    <Form form={infoForm} className="space-y-6">
+    <Form form={infoForm} className="space-y-7">
       <div>
-        <h2 className="text-lg font-semibold">{t('info.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('info.description')}</p>
+        <h2 className="font-display text-[clamp(1.5rem,2.9vw,2rem)] font-medium leading-tight tracking-[-0.03em] text-foreground">
+          {t('info.title')}
+        </h2>
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">{t('info.description')}</p>
       </div>
 
       <FormError />
@@ -36,7 +43,7 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
             type="text"
             value={infoForm.values.firstName}
             onChange={(e) => infoForm.setFieldValue('firstName', e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={publicFieldClassName}
             disabled={isPending || infoForm.isSubmitting}
           />
         </FormField>
@@ -46,7 +53,7 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
             type="text"
             value={infoForm.values.lastName}
             onChange={(e) => infoForm.setFieldValue('lastName', e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={publicFieldClassName}
             disabled={isPending || infoForm.isSubmitting}
           />
         </FormField>
@@ -56,7 +63,7 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
             type="email"
             value={infoForm.values.email}
             onChange={(e) => infoForm.setFieldValue('email', e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={publicFieldClassName}
             disabled={isPending || infoForm.isSubmitting}
           />
         </FormField>
@@ -94,7 +101,7 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
             type="text"
             value={infoForm.values.emergencyContact}
             onChange={(e) => infoForm.setFieldValue('emergencyContact', e.target.value)}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className={publicFieldClassName}
             disabled={isPending || infoForm.isSubmitting}
           />
         </FormField>
@@ -113,16 +120,23 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
           type="text"
           value={infoForm.values.teamName}
           onChange={(e) => infoForm.setFieldValue('teamName', e.target.value)}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          className={publicFieldClassName}
           disabled={isPending || infoForm.isSubmitting}
         />
       </FormField>
 
-      <div className="flex justify-between">
-        <Button variant="ghost" onClick={onBack} disabled={isPending}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+      <div
+        className={cn(
+          publicPanelClassName,
+          'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
+        )}
+      >
+        {onBack ? (
+          <Button variant="outline" type="button" onClick={onBack} disabled={isPending}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            {tCommon('previous')}
+          </Button>
+        ) : null}
         <Button
           type="submit"
           disabled={
@@ -132,6 +146,7 @@ export function InfoStep({ locale, infoForm, isPending, onBack }: InfoStepProps)
             isPending ||
             infoForm.isSubmitting
           }
+          className={cn('sm:min-w-[10rem]', !onBack && 'sm:ml-auto')}
         >
           {isPending || infoForm.isSubmitting ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />
