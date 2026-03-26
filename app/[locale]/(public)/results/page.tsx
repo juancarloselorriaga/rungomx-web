@@ -1,4 +1,5 @@
 import { Badge, Hero, Section, TextBlock } from '@/components/common';
+import { publicFieldClassName, publicSelectClassName } from '@/components/common/public-form-styles';
 import { CorrectionSummaryBlock } from '@/components/results/public/correction-summary-block';
 import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box';
 import { Button } from '@/components/ui/button';
@@ -154,7 +155,7 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
                     name="q"
                     defaultValue={normalizedQuery}
                     placeholder={t('discovery.searchNamePlaceholder')}
-                    className="h-11 rounded-xl border-border/60 bg-background/96 shadow-none"
+                    className={publicFieldClassName}
                   />
                 </label>
                 <label className="grid gap-1.5 text-xs text-muted-foreground">
@@ -164,16 +165,16 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
                     name="bib"
                     defaultValue={normalizedBib}
                     placeholder={t('discovery.searchBibPlaceholder')}
-                    className="h-11 rounded-xl border-border/60 bg-background/96 shadow-none"
+                    className={publicFieldClassName}
                   />
                 </label>
                 <label className="grid gap-1.5 text-xs text-muted-foreground">
                   <span>{t('discovery.seriesFilterLabel')}</span>
-                  <select
-                    name="series"
-                    defaultValue={normalizedSeries}
-                    className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  >
+                    <select
+                      name="series"
+                      defaultValue={normalizedSeries}
+                      className={publicSelectClassName}
+                    >
                     <option value="">{t('discovery.seriesFilterAll')}</option>
                     {availableSeries.map((seriesOption) => (
                       <option key={seriesOption.slug} value={seriesOption.slug}>

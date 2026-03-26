@@ -82,7 +82,7 @@ export function GroupLinkCreate({ editionId, seriesSlug, editionSlug, eventName,
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:items-start">
         <section className="space-y-4 lg:sticky lg:top-24">
           <div className="overflow-hidden rounded-[1.9rem] border border-border/45 bg-[radial-gradient(circle_at_top_left,rgba(51,102,204,0.11),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(30,138,110,0.12),transparent_38%),color-mix(in_oklch,var(--background)_74%,var(--background-surface)_26%)] px-5 py-6 shadow-[0_32px_90px_-72px_rgba(15,23,42,0.78)] sm:px-6 sm:py-7">
-            <div className="flex size-12 items-center justify-center rounded-full border border-border/45 bg-background/90 text-foreground shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-full border border-border/45 bg-background/90 text-foreground shadow-none">
               <Users className="h-5 w-5" />
             </div>
             <div className="mt-6 space-y-3">

@@ -221,7 +221,7 @@ export default async function Home({ params }: LocalePageProps) {
                 className="group grid gap-5 border-b border-border/70 py-7 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-6 md:py-8"
               >
                 <div className="flex items-start gap-4">
-                  <div className={`inline-flex rounded-md p-3 ${item.iconBackgroundClassName}`}>
+                  <div className={`inline-flex rounded-[1rem] p-3 ${item.iconBackgroundClassName}`}>
                     <Icon className={`h-5 w-5 ${item.iconClassName}`} />
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import { Badge, Hero, Section, TextBlock } from '@/components/common';
+import { publicSelectClassName } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { getPublicRankingLeaderboard } from '@/lib/events/results/rankings';
@@ -205,7 +206,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                 <select
                   name="scope"
                   defaultValue={leaderboard.filters.scope}
-                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className={publicSelectClassName}
                 >
                   <option value="national">{t('scope.national')}</option>
                   <option value="organizer">{t('scope.organizer')}</option>
@@ -218,7 +219,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                   name="organizationId"
                   defaultValue={leaderboard.filters.organizationId ?? ''}
                   disabled={leaderboard.filters.scope !== 'organizer'}
-                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={publicSelectClassName}
                 >
                   <option value="">{t('filters.all')}</option>
                   {leaderboard.filters.availableOrganizers.map((organizer) => (
@@ -234,7 +235,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                 <select
                   name="discipline"
                   defaultValue={leaderboard.filters.discipline ?? ''}
-                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className={publicSelectClassName}
                 >
                   <option value="">{t('filters.all')}</option>
                   {leaderboard.filters.availableDisciplines.map((discipline) => {
@@ -253,7 +254,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                 <select
                   name="gender"
                   defaultValue={leaderboard.filters.gender ?? ''}
-                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className={publicSelectClassName}
                 >
                   <option value="">{t('filters.all')}</option>
                   {leaderboard.filters.availableGenders.map((gender) => {
@@ -272,7 +273,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                 <select
                   name="ageGroup"
                   defaultValue={leaderboard.filters.ageGroup ?? ''}
-                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                  className={publicSelectClassName}
                 >
                   <option value="">{t('filters.all')}</option>
                   {leaderboard.filters.availableAgeGroups.map((ageGroup) => (
@@ -289,7 +290,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                   name="snapshotId"
                   defaultValue={leaderboard.filters.snapshotId ?? ''}
                   disabled={leaderboard.filters.availableSnapshots.length === 0}
-                  className="h-11 rounded-xl border border-border/60 bg-background/96 px-3 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className={publicSelectClassName}
                 >
                   <option value="">{t('filters.currentSnapshot')}</option>
                   {leaderboard.filters.availableSnapshots.map((snapshotOption) => (

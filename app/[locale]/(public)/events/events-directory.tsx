@@ -1,5 +1,6 @@
 'use client';
 
+import { publicFieldClassName, publicSelectClassName } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
@@ -50,7 +51,12 @@ type DatePreset = 'any' | 'upcoming' | 'thisMonth' | 'nextMonth' | 'next3Months'
 // Dynamic import for LocationField (uses Mapbox GL which requires browser APIs)
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
-  { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-11 rounded-[1rem] border border-border/55 bg-[color-mix(in_oklch,var(--background)_90%,var(--background-surface)_10%)] animate-pulse" />
+    ),
+  },
 );
 
 type PublicEventSummary = {
@@ -713,7 +719,7 @@ export function EventsDirectory({
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={t('search.placeholder')}
-              className="w-full rounded-xl border border-border/60 bg-background/96 px-10 py-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              className={cn(publicFieldClassName, 'px-10 pr-10')}
             />
             {search && (
               <button
@@ -730,7 +736,7 @@ export function EventsDirectory({
             <select
               value={sportType}
               onChange={(e) => handleSportTypeChange(e.target.value)}
-              className="rounded-xl border border-border/60 bg-background/96 px-3 py-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              className={publicSelectClassName}
             >
               <option value="">{t('filters.allSports')}</option>
               {SPORT_TYPES.map((type) => (
@@ -743,7 +749,7 @@ export function EventsDirectory({
             <select
               value={stateFilter}
               onChange={(e) => handleStateChange(e.target.value)}
-              className="rounded-xl border border-border/60 bg-background/96 px-3 py-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+              className={publicSelectClassName}
             >
               <option value="">{t('filters.allStates')}</option>
               {MEXICAN_STATES.map((s) => (
@@ -758,7 +764,7 @@ export function EventsDirectory({
               size="icon"
               onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
               label={t('filters.advanced')}
-              className="rounded-xl"
+              className="rounded-[1rem]"
             >
               <Filter className={cn('w-4 h-4', showAdvancedFilters ? 'text-primary' : '')} />
             </IconTooltipButton>
@@ -767,7 +773,7 @@ export function EventsDirectory({
               size="icon"
               onClick={handleCopyLink}
               label={t('share.copyLink')}
-              className="rounded-xl"
+              className="rounded-[1rem]"
             >
               <Share2 className="h-4 w-4" />
             </IconTooltipButton>
@@ -810,7 +816,7 @@ export function EventsDirectory({
               <select
                 value={datePreset}
                 onChange={(e) => handleDatePresetChange(e.target.value as DatePreset)}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                className={publicSelectClassName}
               >
                 <option value="any">{t('filters.anyDate')}</option>
                 <option value="upcoming">{t('filters.upcoming')}</option>
@@ -916,7 +922,7 @@ export function EventsDirectory({
                 onChange={(e) =>
                   handleVirtualChange(e.target.value === '' ? undefined : e.target.value === 'true')
                 }
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                className={publicSelectClassName}
               >
                 <option value="">{t('filters.allFormats')}</option>
                 <option value="false">{t('filters.inPerson')}</option>
@@ -973,7 +979,7 @@ export function EventsDirectory({
                   <select
                     value={searchRadius}
                     onChange={(e) => handleRadiusChange(Number(e.target.value))}
-                    className="mt-2 h-10 min-w-[100px] rounded-md border bg-background px-3 text-sm shadow-sm outline-none transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                    className={cn(publicSelectClassName, 'mt-2 h-10 min-w-[100px] sm:w-auto')}
                   >
                     <option value="10">10 km</option>
                     <option value="25">25 km</option>

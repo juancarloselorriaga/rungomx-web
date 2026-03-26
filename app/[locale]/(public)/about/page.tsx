@@ -155,7 +155,7 @@ export default async function AboutPage({ params }: LocalePageProps) {
                   <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     0{index + 1}
                   </span>
-                  <div className={`inline-flex rounded-md p-3 ${focusIconClasses[key]}`}>
+                  <div className={`inline-flex rounded-[1rem] p-3 ${focusIconClasses[key]}`}>
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>

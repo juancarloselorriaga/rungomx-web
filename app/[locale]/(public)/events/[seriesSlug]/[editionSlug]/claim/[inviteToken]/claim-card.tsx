@@ -107,7 +107,7 @@ export function ClaimInviteCard({ inviteToken, event, needsDob }: ClaimCardProps
           )}
         >
           <div className={publicSurfaceBodyClassName}>
-            <div className="flex size-12 items-center justify-center rounded-full border border-border/45 bg-background/90 text-foreground shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-full border border-border/45 bg-background/90 text-foreground shadow-none">
               <CheckCircle2 className="h-5 w-5" />
             </div>
 

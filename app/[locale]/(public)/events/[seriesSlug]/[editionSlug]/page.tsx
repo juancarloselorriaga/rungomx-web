@@ -332,7 +332,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             {hasDistances && (
               <SectionWrapper id="distances" title={t('detail.sections.distances')}>
                 {hasSharedPool && event.sharedCapacity && (
-                  <div className="mb-4 rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-4 md:p-5">
+                  <div className="mb-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-4 md:p-5">
                     <div className="flex items-start gap-3">
                       <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                       <p className="text-sm font-medium leading-7">
@@ -342,7 +342,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   </div>
                 )}
                 {hasGroupDiscounts && bestGroupDiscount ? (
-                  <div className="mb-4 rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] p-4 md:p-5">
+                    <div className="mb-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] p-4 md:p-5">
                     <div className="flex items-start gap-3">
                       <Users className="h-5 w-5 text-emerald-700 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="space-y-2">
@@ -437,7 +437,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                 <div className="space-y-4">
                   {event.faqItems.map((item) => (
                     <details key={item.id} className="group">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-4 font-medium">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-4 font-medium">
                         {item.question}
                         <span className="ml-2 text-muted-foreground transition-transform group-open:rotate-180">▼</span>
                       </summary>
@@ -467,7 +467,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group flex items-center gap-3 rounded-[1.1rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 transition-colors hover:bg-background"
+                           className="group flex items-center gap-3 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 transition-colors hover:bg-background"
                         >
                           <FileText className="h-5 w-5 text-primary shrink-0" />
                           <span className="text-sm font-medium flex-1">{doc.label}</span>
@@ -476,7 +476,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                         </span>
                       </a>
                     ) : (
-                       <div key={doc.mediaId || index} className="flex items-center gap-3 rounded-[1.1rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3">
+                        <div key={doc.mediaId || index} className="flex items-center gap-3 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3">
                          <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
                          <span className="text-sm font-medium">{doc.label}</span>
                        </div>
@@ -496,7 +496,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: event.timezone }).format(new Date(policy.deadline))
                       : null;
                     return (
-                       <div key={policy.key} className="rounded-[1.2rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5">
+                        <div key={policy.key} className="rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5">
                          <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
                          {policy.text && (
                             <div className="mt-2">
