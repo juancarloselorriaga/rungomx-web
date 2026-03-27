@@ -201,6 +201,7 @@
     "manageRegistrationsDescription": "View and export participant registrations",
     "publicCodeLabel": "Public code",
     "viewPublicPage": "View Public Page",
+    "openSetupWizard": "Open event setup",
     "viewPublicPageDescription": "See how your event appears to participants",
     "capacity": {
       "title": "Capacity status",

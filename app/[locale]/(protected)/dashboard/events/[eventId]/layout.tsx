@@ -47,18 +47,27 @@ export default async function EventDetailLayout({
     redirect(getPathname({ href: '/dashboard/events', locale }));
   }
 
-  const footerLink =
-    event.visibility === 'published'
-      ? {
-          label: t('viewPublicPage'),
-          href: {
-            pathname: '/events/[seriesSlug]/[editionSlug]',
-            params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
+  const footerLink = [
+    ...(event.visibility === 'published'
+      ? [
+          {
+            label: t('viewPublicPage'),
+            href: {
+              pathname: '/events/[seriesSlug]/[editionSlug]',
+              params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
+            },
+            icon: 'externalLink' as const,
+            external: true,
           },
-          icon: 'externalLink' as const,
-          external: true,
-        }
-      : null;
+        ]
+      : []),
+    {
+      label: t('openSetupWizard'),
+      href: `/dashboard/events/${eventId}/settings?wizard=1`,
+      icon: 'settings' as const,
+      external: false,
+    },
+  ];
 
   return (
     <EventDetailLayoutShell

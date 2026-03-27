@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { MutedSurface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import {
@@ -24,6 +25,8 @@ import {
   useRef,
   useState,
 } from 'react';
+
+import { useAssistantWorkspaceQueryState } from './event-assistant-workspace-state';
 
 export type EventSetupWizardStepId =
   | 'basics'
@@ -169,6 +172,7 @@ export function EventSetupWizardShell({
 }: EventSetupWizardShellProps) {
   const t = useTranslations('pages.dashboardEventSettings');
   const router = useRouter();
+  const { isOpen: isAssistantOpen, setOpen: setAssistantOpen } = useAssistantWorkspaceQueryState();
   const reviewControlsRef = useRef<HTMLDivElement>(null);
   const activeStepStorageKey = `event-setup-wizard:active-step:${eventId}`;
   const skippedStepsStorageKey = `event-setup-wizard:skipped:${eventId}`;
@@ -215,6 +219,7 @@ export function EventSetupWizardShell({
         ? 'reviewRecommended'
         : 'ready';
   const totalCompletedSteps = steps.filter((step) => step.completed).length;
+  const isLastStep = activeStepIndex === steps.length - 1;
   const canGoBack = activeStepIndex > 0;
   const isCurrentSatisfied =
     activeStep.completed || sanitizedSkippedStepIds.includes(activeStep.id);
@@ -222,8 +227,7 @@ export function EventSetupWizardShell({
     .slice(0, Math.min(activeStepIndex + 1, steps.length - 1))
     .find((step) => step.required && !step.completed);
   const canAdvanceFromCurrent = !firstIncompleteRequiredBeforeNext;
-  const canGoForward =
-    activeStepIndex < steps.length - 1 && isCurrentSatisfied && canAdvanceFromCurrent;
+  const canGoForward = !isLastStep && isCurrentSatisfied && canAdvanceFromCurrent;
   const showSkipAction =
     activeStepIndex < steps.length - 1 &&
     !activeStep.required &&
@@ -682,10 +686,24 @@ export function EventSetupWizardShell({
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         ) : (
-                          <Button type="button" onClick={scrollToReviewControls}>
-                            {t('wizardShell.review.openPublishControls')}
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
+                          <>
+                            <Button type="button" onClick={scrollToReviewControls}>
+                              {t('wizardShell.review.reviewPublishSettings')}
+                              <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                            {isAssistantOpen ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setAssistantOpen(false)}
+                              >
+                                {t('wizardShell.review.closeAssistant')}
+                              </Button>
+                            ) : null}
+                            <Button asChild type="button" variant="ghost">
+                              <Link href={exitHref}>{t('wizardShell.navigation.exit')}</Link>
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -716,6 +734,19 @@ export function EventSetupWizardShell({
                         </dd>
                       </div>
                     </dl>
+
+                    {reviewBlockers.length === 0 ? (
+                      <MutedSurface className="mt-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {t('wizardShell.review.nextActionsLabel')}
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {isAssistantOpen
+                            ? t('wizardShell.review.savedStateHintWithAssistant')
+                            : t('wizardShell.review.savedStateHint')}
+                        </p>
+                      </MutedSurface>
+                    ) : null}
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-2">
@@ -865,7 +896,9 @@ export function EventSetupWizardShell({
                     </div>
                   </div>
 
-                  <div ref={reviewControlsRef}>{reviewControls}</div>
+                  <div id="wizard-review-controls" ref={reviewControlsRef}>
+                    {reviewControls}
+                  </div>
                 </div>
               )
             ) : (
@@ -893,10 +926,12 @@ export function EventSetupWizardShell({
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 {t('wizardShell.navigation.previous')}
               </Button>
-              <Button type="button" onClick={handleNext} disabled={!canGoForward}>
-                {t('wizardShell.navigation.next')}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {!isLastStep ? (
+                <Button type="button" onClick={handleNext} disabled={!canGoForward}>
+                  {t('wizardShell.navigation.next')}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>

@@ -23,8 +23,8 @@ type SubmenuNavigationProps = {
   submenuId: string | null;
   /** Base path for resolving item hrefs */
   basePath: string;
-  /** Optional footer link */
-  footerLink?: SubmenuFooterLink | null;
+  /** Optional footer link(s) */
+  footerLink?: SubmenuFooterLink | SubmenuFooterLink[] | null;
   /** Display variant */
   variant?: 'sidebar' | 'drawer';
 };
@@ -209,7 +209,7 @@ type SubmenuSectionRendererProps = {
   itemLabels: Record<string, string>;
   iconMap: SubmenuIconMap;
   basePath: string;
-  footerLink?: SubmenuFooterLink | null;
+  footerLink?: SubmenuFooterLink | SubmenuFooterLink[] | null;
   variant: 'sidebar' | 'drawer';
   pathname: string;
 };
@@ -228,6 +228,7 @@ function SubmenuSectionRenderer({
   const normalizePath = (value: string) => value.replace(/\/+$/, '') || '/';
   const normalizedPathname = normalizePath(pathname);
   const normalizedBasePath = normalizePath(basePath);
+  const footerLinks = Array.isArray(footerLink) ? footerLink : footerLink ? [footerLink] : [];
 
   return (
     <nav
@@ -290,27 +291,28 @@ function SubmenuSectionRenderer({
         </div>
       ))}
 
-      {footerLink && (
+      {footerLinks.length > 0 && (
         <>
           <div className="mx-3 h-px bg-border" />
           <div className="flex flex-col">
-            {(() => {
-              const FooterIcon = iconMap[footerLink.icon] ?? ExternalLink;
+            {footerLinks.map((link) => {
+              const FooterIcon = iconMap[link.icon] ?? ExternalLink;
               return (
                 <Link
-                  href={footerLink.href as Parameters<typeof Link>[0]['href']}
+                  key={link.label}
+                  href={link.href as Parameters<typeof Link>[0]['href']}
                   className={cn(
                     'group relative flex items-center gap-3 text-sm transition-colors',
                     isSheet ? 'mx-1 rounded-xl px-3 py-3' : 'px-3 py-1.5',
                     'text-muted-foreground hover:text-foreground',
                   )}
-                  target={footerLink.external ? '_blank' : undefined}
+                  target={link.external ? '_blank' : undefined}
                 >
                   <FooterIcon className="h-4 w-4 flex-shrink-0 text-muted-foreground/60 group-hover:text-muted-foreground" />
-                  <span>{footerLink.label}</span>
+                  <span>{link.label}</span>
                 </Link>
               );
-            })()}
+            })}
           </div>
         </>
       )}

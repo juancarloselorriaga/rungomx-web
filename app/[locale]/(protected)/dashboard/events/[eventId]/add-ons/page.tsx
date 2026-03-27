@@ -77,7 +77,7 @@ export default async function EventAddOnsPage({ params }: AddOnsPageProps) {
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <AddOnsManager editionId={eventId} distances={distances} initialAddOns={addOns} />
       </div>
     </div>

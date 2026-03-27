@@ -64,7 +64,7 @@ export default async function PoliciesPage({ params }: PoliciesPageProps) {
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <PoliciesForm eventId={eventId} initialPolicies={event.policyConfig} />
       </div>
     </div>

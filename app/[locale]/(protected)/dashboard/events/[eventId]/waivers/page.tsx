@@ -67,7 +67,7 @@ export default async function WaiverManagementPage({ params }: WaiverPageProps) 
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <WaiverManager eventId={eventId} initialWaivers={event.waivers} />
       </div>
     </div>

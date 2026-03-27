@@ -67,7 +67,7 @@ export default async function FaqManagementPage({ params }: FaqPageProps) {
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <FaqManager eventId={eventId} initialFaqItems={event.faqItems} />
       </div>
     </div>

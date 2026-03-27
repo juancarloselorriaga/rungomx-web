@@ -20,8 +20,8 @@ type SubmenuContextProviderProps = {
   params: Record<string, string>;
   /** Base path for resolving submenu item links */
   basePath: string;
-  /** Optional footer link (e.g., view public page) */
-  footerLink?: SubmenuFooterLink | null;
+  /** Optional footer link(s) (e.g., view public page, open setup wizard) */
+  footerLink?: SubmenuFooterLink | SubmenuFooterLink[] | null;
   children: ReactNode;
 };
 

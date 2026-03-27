@@ -70,7 +70,7 @@ export default async function EventQuestionsPage({ params }: QuestionsPageProps)
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <QuestionsManager
           editionId={eventId}
           distances={event.distances}

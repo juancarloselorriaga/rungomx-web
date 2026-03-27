@@ -1,5 +1,4 @@
 import { getPathname } from '@/i18n/navigation';
-import { Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getDiscountCodesForEdition } from '@/lib/events/discounts/queries';
@@ -89,7 +88,7 @@ export default async function EventCouponsPage({ params }: CouponsPageProps) {
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <CouponsManager editionId={eventId} initialCoupons={discountCodes} />
       </div>
     </div>

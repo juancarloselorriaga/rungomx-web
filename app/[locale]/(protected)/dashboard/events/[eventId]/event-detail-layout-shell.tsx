@@ -15,7 +15,7 @@ type EventDetailLayoutShellProps = {
   } | null;
   params: Record<string, string>;
   basePath: string;
-  footerLink?: SubmenuFooterLink | null;
+  footerLink?: SubmenuFooterLink | SubmenuFooterLink[] | null;
   children: ReactNode;
 };
 

@@ -1,5 +1,4 @@
 import { getPathname } from '@/i18n/navigation';
-import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { type EventVisibility } from '@/lib/events/constants';
 import { getEventEditionDetail } from '@/lib/events/queries';
@@ -668,7 +667,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <EventSettingsForm event={event} />
       </div>
     </div>

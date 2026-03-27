@@ -79,7 +79,7 @@ export default async function EventPricingPage({ params }: PricingPageProps) {
         eyebrow={t('title')}
       />
 
-      <div className="max-w-4xl">
+      <div className="w-full">
         <PricingTiersManager distances={distances} initialPricingData={pricingData} />
       </div>
     </div>
