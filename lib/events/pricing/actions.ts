@@ -15,6 +15,7 @@ import {
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
 import { eventEditionDetailTag, eventEditionPricingTag, publicEventBySlugTag } from '../cache-tags';
+import { findConflictingPricingTier } from './contracts';
 
 // =============================================================================
 // Types
@@ -58,25 +59,6 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
   }
 
   return null;
-}
-
-/**
- * Check if two date ranges overlap.
- */
-function dateRangesOverlap(
-  start1: Date | null,
-  end1: Date | null,
-  start2: Date | null,
-  end2: Date | null,
-): boolean {
-  // If either range has no bounds, they potentially overlap
-  // We use a simple interpretation: ranges overlap unless one clearly ends before the other starts
-  const effectiveStart1 = start1 || new Date(0);
-  const effectiveEnd1 = end1 || new Date('9999-12-31');
-  const effectiveStart2 = start2 || new Date(0);
-  const effectiveEnd2 = end2 || new Date('9999-12-31');
-
-  return effectiveStart1 < effectiveEnd2 && effectiveEnd1 > effectiveStart2;
 }
 
 // =============================================================================
@@ -181,14 +163,17 @@ export const createPricingTier = withAuthenticatedUser<ActionResult<PricingTierD
   const newStart = startsAt ? new Date(startsAt) : null;
   const newEnd = endsAt ? new Date(endsAt) : null;
 
-  for (const tier of existingTiers) {
-    if (dateRangesOverlap(newStart, newEnd, tier.startsAt, tier.endsAt)) {
-      return {
-        ok: false,
-        error: `Date range overlaps with existing tier "${tier.label || 'Unnamed'}"`,
-        code: 'DATE_OVERLAP',
-      };
-    }
+  const conflictingTier = findConflictingPricingTier(
+    { startsAt: newStart, endsAt: newEnd },
+    existingTiers,
+  );
+
+  if (conflictingTier) {
+    return {
+      ok: false,
+      error: `Date range overlaps with existing tier "${conflictingTier.label || 'Unnamed'}"`,
+      code: 'DATE_OVERLAP',
+    };
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -301,15 +286,17 @@ export const updatePricingTier = withAuthenticatedUser<ActionResult<PricingTierD
       ? (updates.endsAt ? new Date(updates.endsAt) : null)
       : existingTier.endsAt;
 
-    for (const tier of otherTiers) {
-      if (tier.id === tierId) continue;
-      if (dateRangesOverlap(newStart, newEnd, tier.startsAt, tier.endsAt)) {
-        return {
-          ok: false,
-          error: `Date range overlaps with existing tier "${tier.label || 'Unnamed'}"`,
-          code: 'DATE_OVERLAP',
-        };
-      }
+    const conflictingTier = findConflictingPricingTier(
+      { id: tierId, startsAt: newStart, endsAt: newEnd },
+      otherTiers,
+    );
+
+    if (conflictingTier) {
+      return {
+        ok: false,
+        error: `Date range overlaps with existing tier "${conflictingTier.label || 'Unnamed'}"`,
+        code: 'DATE_OVERLAP',
+      };
     }
   }
 

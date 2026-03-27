@@ -1,7 +1,6 @@
 'use server';
 
 import { and, eq, isNull } from 'drizzle-orm';
-import { refresh } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
 
@@ -24,7 +23,8 @@ import {
 } from '@/db/schema';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
-import { safeUpdateTag } from '@/lib/next-cache';
+import { isEventAiWizardEnabled } from '@/lib/features/flags';
+import { safeRefresh, safeUpdateTag } from '@/lib/next-cache';
 import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import {
@@ -106,6 +106,28 @@ function shiftDateByYears(value: Date | null, years: number): Date | null {
   return next;
 }
 
+function normalizeOrganizerBriefForAiAvailability(organizerBrief: string | null | undefined): string | null {
+  if (!isEventAiWizardEnabled()) {
+    return null;
+  }
+
+  return organizerBrief?.trim() || null;
+}
+
+function buildEditionActionSuccess(edition: Pick<EventEditionData, 'id' | 'publicCode' | 'editionLabel' | 'slug' | 'visibility' | 'seriesId'>) {
+  return {
+    ok: true as const,
+    data: {
+      id: edition.id,
+      publicCode: edition.publicCode,
+      editionLabel: edition.editionLabel,
+      slug: edition.slug,
+      visibility: edition.visibility,
+      seriesId: edition.seriesId,
+    },
+  };
+}
+
 // =============================================================================
 // Schemas
 // =============================================================================
@@ -139,6 +161,7 @@ const createEventEditionSchema = z.object({
   longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional(),
   description: z.string().max(5000).optional(),
+  organizerBrief: z.string().max(4000).optional().nullable(),
 });
 
 const updateEventEditionSchema = z.object({
@@ -164,6 +187,7 @@ const updateEventEditionSchema = z.object({
   longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
   externalUrl: z.string().url().max(500).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
+  organizerBrief: z.string().max(4000).optional().nullable(),
   heroImageMediaId: z.string().uuid().optional().nullable(),
 });
 
@@ -586,6 +610,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     longitude,
     externalUrl,
     description,
+    organizerBrief,
   } = validated.data;
 
   if (!authContext.permissions.canManageEvents) {
@@ -594,6 +619,18 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
       requireOrgPermission(membership, 'canEditEventConfig');
     } catch {
       return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+    }
+  }
+
+  const normalizedOrganizerBrief = normalizeOrganizerBriefForAiAvailability(organizerBrief);
+  if (normalizedOrganizerBrief) {
+    try {
+      await requireProFeature('event_ai_wizard', authContext);
+    } catch (error) {
+      if (error instanceof ProFeatureAccessError) {
+        return { ok: false, error: error.message, code: error.code };
+      }
+      throw error;
     }
   }
 
@@ -649,6 +686,7 @@ export const createEventEdition = withAuthenticatedUser<ActionResult<EventEditio
         longitude,
         externalUrl,
         description: description || undefined,
+        organizerBrief: normalizedOrganizerBrief,
       })
       .returning();
 
@@ -768,6 +806,24 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     }
   }
 
+  const nextOrganizerBrief =
+    updates.organizerBrief !== undefined
+      ? isEventAiWizardEnabled()
+        ? updates.organizerBrief?.trim() || null
+        : undefined
+      : undefined;
+
+  if (nextOrganizerBrief) {
+    try {
+      await requireProFeature('event_ai_wizard', authContext);
+    } catch (error) {
+      if (error instanceof ProFeatureAccessError) {
+        return { ok: false, error: error.message, code: error.code };
+      }
+      throw error;
+    }
+  }
+
   const updateData: Record<string, unknown> = {};
   if (updates.editionLabel !== undefined) updateData.editionLabel = updates.editionLabel;
   if (updates.slug !== undefined) updateData.slug = updates.slug;
@@ -785,10 +841,11 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
   if (updates.description !== undefined) updateData.description = updates.description;
+  if (nextOrganizerBrief !== undefined) updateData.organizerBrief = nextOrganizerBrief;
   if (updates.heroImageMediaId !== undefined) updateData.heroImageMediaId = updates.heroImageMediaId;
 
   if (Object.keys(updateData).length === 0) {
-    return { ok: false, error: 'No fields to update', code: 'VALIDATION_ERROR' };
+    return buildEditionActionSuccess(edition);
   }
 
   const requestContext = await getRequestContext(await headers());
@@ -842,17 +899,7 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
     safeUpdateTag(publicEventBySlugTag(edition.series.slug, updated.slug));
   }
 
-  return {
-    ok: true,
-    data: {
-      id: updated.id,
-      publicCode: updated.publicCode,
-      editionLabel: updated.editionLabel,
-      slug: updated.slug,
-      visibility: updated.visibility,
-      seriesId: updated.seriesId,
-    },
-  };
+  return buildEditionActionSuccess(updated);
 });
 
 // =============================================================================
@@ -943,7 +990,7 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
 
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: { capacityScope, sharedCapacity: nextSharedCapacity } };
 });
@@ -1267,7 +1314,7 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
 
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: { visibility } };
 });
@@ -1340,7 +1387,7 @@ export const setRegistrationPaused = withAuthenticatedUser<ActionResult<{ paused
 
   safeUpdateTag(eventEditionDetailTag(editionId));
   safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
-  refresh();
+  safeRefresh();
 
   return { ok: true, data: { paused } };
 });

@@ -138,6 +138,12 @@ export const auth = betterAuth({
   emailVerification: {
     sendVerificationEmail: async ({ user, url }, request) => {
       try {
+        // E2E and integration tests verify accounts out-of-band and don't need
+        // translated email rendering in this hook.
+        if (process.env.NODE_ENV === 'test') {
+          return;
+        }
+
         // Try to get user's preferred locale from their profile
         const profile = await getProfileByUserId(user.id);
 

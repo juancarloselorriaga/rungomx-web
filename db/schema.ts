@@ -884,6 +884,7 @@ export const eventEditions = pgTable(
     externalUrl: varchar('external_url', { length: 500 }),
     heroImageMediaId: uuid('hero_image_media_id'),
     description: text('description'), // Event description (rich text or plain)
+    organizerBrief: text('organizer_brief'),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()

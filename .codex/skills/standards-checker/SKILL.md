@@ -29,6 +29,7 @@ All standards content comes from `/prompts`. You **MUST** read these files befor
 - `/prompts/standards/nextjs-caching-index.md` - Index for selecting 1-2 relevant caching docs
 - `/prompts/standards/forms-implementation.md` - Interactive form patterns
 - `/prompts/auth-stack/roles-agent-guide.md` - Auth, roles, guards, permissions
+- `/prompts/standards/copy-guidelines.md` - Voice, terminology, tone, UX writing rules
 
 ### Next.js caching topic cards (load 1-2 as needed)
 - `/prompts/standards/nextjs-caching/overview.md` - Quick orientation
@@ -75,6 +76,7 @@ Identify repo conventions by inspecting:
      - For patterns/decisions: `patterns.md`
    - If auth is touched, consult `roles-agent-guide.md` and relevant auth-related caching standards
    - If forms are touched, consult `forms-implementation.md`
+   - If user-facing text is touched (labels, messages, toasts, placeholders, assistant output, i18n strings), consult `copy-guidelines.md`
 
 3. **Review the diff** and map findings to explicit rules from the /prompts docs.
 
@@ -85,6 +87,7 @@ Identify repo conventions by inspecting:
    - Next.js caching standards (from `nextjs-caching` rules and related docs)
    - Forms standards (when applicable)
    - Auth and protected routes standards (when applicable)
+   - Copy and UX writing standards (when applicable, from `copy-guidelines.md`)
    - Repo conventions (only if evidenced)
 
 6. **If a standard is ambiguous or the change introduces a new pattern not covered:**

@@ -1,9 +1,19 @@
 import { db } from '@/db';
 import { proFeatureConfigs } from '@/db/schema';
+import { isEventAiWizardEnabled } from '@/lib/features/flags';
 import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 import { getAllProFeatureKeys, getProFeatureMeta, PRO_FEATURE_CATALOG, type ProFeatureKey } from '../catalog';
 import type { ResolvedProFeatureConfig } from '../types';
 import { proFeaturesConfigTag } from '../cache-tags';
+
+function isFeatureEnabledByEnv(key: ProFeatureKey): boolean {
+  switch (key) {
+    case 'event_ai_wizard':
+      return isEventAiWizardEnabled();
+    default:
+      return true;
+  }
+}
 
 export async function getProFeatureConfigSnapshot(): Promise<
   Record<ProFeatureKey, ResolvedProFeatureConfig<ProFeatureKey>>
@@ -32,7 +42,7 @@ export async function getProFeatureConfigSnapshot(): Promise<
     snapshot[key] = {
       id: row?.id,
       featureKey: key,
-      enabled: row?.enabled ?? true,
+      enabled: (row?.enabled ?? true) && isFeatureEnabledByEnv(key),
       visibilityOverride: (row?.visibilityOverride ?? null) as ResolvedProFeatureConfig<
         ProFeatureKey
       >['visibilityOverride'],

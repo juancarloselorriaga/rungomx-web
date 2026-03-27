@@ -12,6 +12,14 @@ interface VerificationEmailTemplateProps {
   locale: AppLocale;
 }
 
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
+}
+
 export function generateVerificationEmailHTML({
   greeting,
   message,
@@ -23,6 +31,8 @@ export function generateVerificationEmailHTML({
   title,
   locale,
 }: VerificationEmailTemplateProps): string {
+  const safeUrl = escapeHtmlAttribute(url);
+
   return `
     <!DOCTYPE html>
     <html lang="${locale}">
@@ -44,7 +54,7 @@ export function generateVerificationEmailHTML({
           </p>
 
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${url}"
+            <a href="${safeUrl}"
                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                       color: white;
                       padding: 14px 40px;
@@ -66,7 +76,7 @@ export function generateVerificationEmailHTML({
           </p>
 
           <p style="font-size: 12px; color: #999; word-break: break-all; background: #fff; padding: 10px; border-radius: 5px;">
-            ${url}
+            ${safeUrl}
           </p>
         </div>
 

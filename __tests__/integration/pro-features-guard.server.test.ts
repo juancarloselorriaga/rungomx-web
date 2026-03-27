@@ -23,7 +23,7 @@ import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 import { trackProFeatureEvent } from '@/lib/pro-features/server/tracking';
 import { getProFeatureMeta } from '@/lib/pro-features/catalog';
-import { ProFeatureAccessError, requireProFeature } from '@/lib/pro-features/server/guard';
+import { ProFeatureAccessError, guardProFeaturePage, requireProFeature } from '@/lib/pro-features/server/guard';
 
 const mockEntitlement = getProEntitlementForUser as jest.MockedFunction<typeof getProEntitlementForUser>;
 const mockSnapshot = getProFeatureConfigSnapshot as jest.MockedFunction<typeof getProFeatureConfigSnapshot>;
@@ -68,6 +68,16 @@ describe('Pro feature guard', () => {
         enforcement: getProFeatureMeta('coupons').enforcement,
         upsellHref: getProFeatureMeta('coupons').upsellHref,
       },
+      event_ai_wizard: {
+        id: 'cfg-3',
+        featureKey: 'event_ai_wizard',
+        enabled: true,
+        visibilityOverride: null,
+        notes: null,
+        defaultVisibility: getProFeatureMeta('event_ai_wizard').defaultVisibility,
+        enforcement: getProFeatureMeta('event_ai_wizard').enforcement,
+        upsellHref: getProFeatureMeta('event_ai_wizard').upsellHref,
+      },
     });
   });
 
@@ -104,5 +114,64 @@ describe('Pro feature guard', () => {
     const decision = await requireProFeature('event_clone', authContext);
 
     expect(decision.status).toBe('enabled');
+  });
+
+  it('treats disabled feature config as a hard stop, including internal users', async () => {
+    const meta = getProFeatureMeta('event_ai_wizard');
+    mockSnapshot.mockResolvedValue({
+      event_clone: {
+        id: 'cfg-1',
+        featureKey: 'event_clone',
+        enabled: true,
+        visibilityOverride: null,
+        notes: null,
+        defaultVisibility: getProFeatureMeta('event_clone').defaultVisibility,
+        enforcement: getProFeatureMeta('event_clone').enforcement,
+        upsellHref: getProFeatureMeta('event_clone').upsellHref,
+      },
+      coupons: {
+        id: 'cfg-2',
+        featureKey: 'coupons',
+        enabled: true,
+        visibilityOverride: null,
+        notes: null,
+        defaultVisibility: getProFeatureMeta('coupons').defaultVisibility,
+        enforcement: getProFeatureMeta('coupons').enforcement,
+        upsellHref: getProFeatureMeta('coupons').upsellHref,
+      },
+      event_ai_wizard: {
+        id: 'cfg-3',
+        featureKey: 'event_ai_wizard',
+        enabled: false,
+        visibilityOverride: null,
+        notes: null,
+        defaultVisibility: meta.defaultVisibility,
+        enforcement: meta.enforcement,
+        upsellHref: meta.upsellHref,
+      },
+    });
+
+    const internalContext = {
+      ...authContext,
+      isInternal: true,
+    } as AuthenticatedContext;
+
+    await expect(requireProFeature('event_ai_wizard', internalContext)).rejects.toEqual(
+      expect.objectContaining({
+        code: 'PRO_REQUIRED',
+        decision: expect.objectContaining({
+          status: 'disabled',
+          reason: 'config_disabled',
+        }),
+      }),
+    );
+
+    const pageGate = await guardProFeaturePage('event_ai_wizard', internalContext);
+
+    expect(pageGate.allowed).toBe(false);
+    expect(pageGate.decision.status).toBe('disabled');
+    expect(pageGate.disabled).toBeTruthy();
+    expect(pageGate.upsell).toBeUndefined();
+    expect(mockTrack).not.toHaveBeenCalled();
   });
 });

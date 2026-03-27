@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag, revalidateTag, updateTag } from 'next/cache';
+import { cacheLife, cacheTag, refresh, revalidateTag, updateTag } from 'next/cache';
 
 type CacheLifeConfig = {
   stale?: number;
@@ -18,6 +18,14 @@ function isMissingStaticGenerationStoreError(error: unknown) {
 function isUpdateTagServerActionOnlyError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   return /updateTag can only be called from within a Server Action/i.test(message);
+}
+
+function isRefreshServerActionOnlyError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return (
+    /refresh\(\) can only be used in a Server Action/i.test(message) ||
+    /refresh can only be called from within a Server Action/i.test(message)
+  );
 }
 
 export function safeCacheTag(...tags: string[]) {
@@ -54,6 +62,19 @@ export function safeUpdateTag(tag: string) {
   } catch (error) {
     if (isUpdateTagServerActionOnlyError(error)) {
       revalidateTag(tag, { expire: 0 });
+      return;
+    }
+
+    if (shouldSuppressCacheError() || isMissingStaticGenerationStoreError(error)) return;
+    throw error;
+  }
+}
+
+export function safeRefresh() {
+  try {
+    refresh();
+  } catch (error) {
+    if (isRefreshServerActionOnlyError(error)) {
       return;
     }
 

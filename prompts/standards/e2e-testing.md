@@ -205,6 +205,32 @@ Database cleanup must delete in dependency order to avoid foreign key violations
 }
 ```
 
+## Validation Lanes (MANDATORY)
+
+Treat these as different tools, not interchangeable variants:
+
+- `Manual Playwright MCP smoke`
+  - Uses real organizer/athlete accounts on the dev Neon branch
+  - Best for acceptance checks, visual review, and flows tied to curated dev data
+- `Isolated Playwright automation`
+  - Uses the test DB from `.env.test`
+  - Best for deterministic regression coverage and CI
+
+Do not diagnose a failure in one lane by assuming the setup rules of the other.
+
+### Pro-Gated Tests
+
+For Pro-gated automation, the setup must match the test intent:
+
+- If the test means `user already has Pro`, seed active entitlement directly with `seedActiveProEntitlement(...)`.
+- If the test means `pending Pro access is auto-claimed after verification/session setup`, use pending-grant creation and keep the claim behavior in scope.
+- Keep billing-focused auto-claim coverage explicit instead of spreading pending-grant timing across unrelated UI specs.
+
+Canonical rule:
+
+- `e2e/tests/billing-pro.spec.ts` is the pending-grant auto-claim lane.
+- Feature-gated UI specs should prefer deterministic active entitlement seeding.
+
 ---
 
 ## Test Data Creation

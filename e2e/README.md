@@ -56,6 +56,31 @@ pnpm test:e2e --headed
 pnpm test:e2e --debug e2e/tests/auth.spec.ts
 ```
 
+## Validation Lanes
+
+This project uses two different browser-validation lanes on purpose:
+
+- `Playwright MCP manual smoke` against real organizer/athlete accounts on the dev Neon branch
+- `Playwright E2E automation` against the isolated test database from `.env.test`
+
+Use manual Playwright MCP smoke when:
+- you need product-level acceptance on real dev data
+- you need to verify visual quality, layout, or live organizer account behavior
+- the flow depends on curated dev accounts rather than freshly created test users
+
+Use isolated E2E automation when:
+- you need deterministic regression coverage in CI or local automation
+- the flow can create its own users and data inside the test DB
+- the assertion should point to product behavior, not dev-data drift
+
+For Pro-gated tests, choose the entitlement setup based on test intent:
+
+- Use `seedActiveProEntitlement(...)` for Pro-gated UI tests whose setup means "the user already has Pro".
+- Use pending-grant setup only for billing-focused tests whose purpose is to validate auto-claim behavior itself.
+- Keep `e2e/tests/billing-pro.spec.ts` as the canonical pending-grant auto-claim lane.
+
+Do not use real dev accounts inside automated isolated specs.
+
 ## Test Organization
 
 ```

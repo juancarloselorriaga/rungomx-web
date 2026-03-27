@@ -77,6 +77,10 @@ function checkEventsAccess(authContext: AuthContext): { error: string; code: str
   return null;
 }
 
+function countActiveOptions(options: Array<{ isActive: boolean; deletedAt?: Date | null }>): number {
+  return options.filter((option) => option.deletedAt == null && option.isActive).length;
+}
+
 // =============================================================================
 // Schemas
 // =============================================================================
@@ -167,8 +171,9 @@ export const createAddOn = withAuthenticatedUser<ActionResult<AddOnData>>({
     return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
   }
 
-  const { editionId, distanceId, title, description, type, deliveryMethod, isActive, sortOrder } =
+  const { editionId, distanceId, title, description, type, deliveryMethod, sortOrder } =
     validated.data;
+  const nextIsActive = false;
 
   // Check permission
   if (!authContext.permissions.canManageEvents) {
@@ -217,7 +222,7 @@ export const createAddOn = withAuthenticatedUser<ActionResult<AddOnData>>({
         description: description || null,
         type,
         deliveryMethod,
-        isActive,
+        isActive: nextIsActive,
         sortOrder,
       })
       .returning();
@@ -314,12 +319,20 @@ export const updateAddOn = withAuthenticatedUser<ActionResult<AddOnData>>({
   }
 
   const requestContext = await getRequestContext(await headers());
+  const activeOptionCount = countActiveOptions(existingAddOn.options);
+  const normalizedUpdates = {
+    ...updates,
+    isActive:
+      (updates.isActive ?? existingAddOn.isActive) && activeOptionCount === 0
+        ? false
+        : updates.isActive,
+  };
 
   const updatedAddOn = await db.transaction(async (tx) => {
     const [updated] = await tx
       .update(addOns)
       .set({
-        ...updates,
+        ...normalizedUpdates,
         updatedAt: new Date(),
       })
       .where(eq(addOns.id, addOnId))
@@ -338,7 +351,7 @@ export const updateAddOn = withAuthenticatedUser<ActionResult<AddOnData>>({
           deliveryMethod: existingAddOn.deliveryMethod,
           isActive: existingAddOn.isActive,
         },
-        after: updates,
+        after: normalizedUpdates,
         request: requestContext,
       },
       tx,
@@ -395,7 +408,10 @@ export const deleteAddOn = withAuthenticatedUser<ActionResult>({
 
   const existingAddOn = await db.query.addOns.findFirst({
     where: and(eq(addOns.id, addOnId), isNull(addOns.deletedAt)),
-    with: { edition: { with: { series: true } } },
+    with: {
+      edition: { with: { series: true } },
+      options: { where: isNull(addOnOptions.deletedAt) },
+    },
   });
 
   if (!existingAddOn) {
@@ -470,7 +486,10 @@ export const createAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
 
   const existingAddOn = await db.query.addOns.findFirst({
     where: and(eq(addOns.id, addOnId), isNull(addOns.deletedAt)),
-    with: { edition: { with: { series: true } } },
+    with: {
+      edition: { with: { series: true } },
+      options: { where: isNull(addOnOptions.deletedAt) },
+    },
   });
 
   if (!existingAddOn) {
@@ -487,6 +506,7 @@ export const createAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
   }
 
   const requestContext = await getRequestContext(await headers());
+  const nextActiveOptionCount = countActiveOptions(existingAddOn.options) + (isActive ? 1 : 0);
 
   const option = await db.transaction(async (tx) => {
     const [newOption] = await tx
@@ -501,6 +521,13 @@ export const createAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
         sortOrder,
       })
       .returning();
+
+    if (existingAddOn.isActive && nextActiveOptionCount === 0) {
+      await tx
+        .update(addOns)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(addOns.id, addOnId));
+    }
 
     await createAuditLog(
       {
@@ -557,7 +584,10 @@ export const updateAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
     where: and(eq(addOnOptions.id, optionId), isNull(addOnOptions.deletedAt)),
     with: {
       addOn: {
-        with: { edition: { with: { series: true } } },
+        with: {
+          edition: { with: { series: true } },
+          options: { where: isNull(addOnOptions.deletedAt) },
+        },
       },
     },
   });
@@ -579,6 +609,11 @@ export const updateAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
   }
 
   const requestContext = await getRequestContext(await headers());
+  const resultingActiveOptionCount = countActiveOptions(
+    existingOption.addOn.options.map((option) =>
+      option.id === optionId ? { ...option, ...updates } : option,
+    ),
+  );
 
   const updatedOption = await db.transaction(async (tx) => {
     const [updated] = await tx
@@ -589,6 +624,13 @@ export const updateAddOnOption = withAuthenticatedUser<ActionResult<AddOnOptionD
       })
       .where(eq(addOnOptions.id, optionId))
       .returning();
+
+    if (existingOption.addOn.isActive && resultingActiveOptionCount === 0) {
+      await tx
+        .update(addOns)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(addOns.id, existingOption.addOnId));
+    }
 
     await createAuditLog(
       {
@@ -650,7 +692,10 @@ export const deleteAddOnOption = withAuthenticatedUser<ActionResult>({
     where: and(eq(addOnOptions.id, optionId), isNull(addOnOptions.deletedAt)),
     with: {
       addOn: {
-        with: { edition: { with: { series: true } } },
+        with: {
+          edition: { with: { series: true } },
+          options: { where: isNull(addOnOptions.deletedAt) },
+        },
       },
     },
   });
@@ -672,12 +717,22 @@ export const deleteAddOnOption = withAuthenticatedUser<ActionResult>({
   }
 
   const requestContext = await getRequestContext(await headers());
+  const resultingActiveOptionCount = countActiveOptions(
+    existingOption.addOn.options.filter((option) => option.id !== optionId),
+  );
 
   await db.transaction(async (tx) => {
     await tx
       .update(addOnOptions)
       .set({ deletedAt: new Date() })
       .where(eq(addOnOptions.id, optionId));
+
+    if (existingOption.addOn.isActive && resultingActiveOptionCount === 0) {
+      await tx
+        .update(addOns)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(addOns.id, existingOption.addOnId));
+    }
 
     await createAuditLog(
       {

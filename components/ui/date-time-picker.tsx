@@ -70,6 +70,7 @@ export function DateTimePicker({
   className,
   name,
 }: DateTimePickerProps) {
+  const resolvedLocale = locale ?? (typeof navigator !== 'undefined' ? navigator.language : 'en');
   const datePart = value ? value.split('T')[0] : '';
   const timePart = value ? value.split('T')[1] || '' : '';
 
@@ -77,7 +78,7 @@ export function DateTimePicker({
     <div className={className}>
       <div className="flex gap-2">
         <DatePicker
-          locale={locale}
+          locale={resolvedLocale}
           value={datePart}
           disabled={disabled}
           onChangeAction={(date) => {

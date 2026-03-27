@@ -40,6 +40,9 @@ type SlidingNavContextValue = {
   /** Submenu context for header display and link resolution */
   submenuContext: SubmenuContext | null;
 
+  /** Whether the sidebar should be completely hidden (e.g. wizard mode) */
+  sidebarHidden: boolean;
+
   /** Set manual override to show root menu without navigation */
   goToRoot: () => void;
 
@@ -48,6 +51,9 @@ type SlidingNavContextValue = {
 
   /** Set the submenu context (called by SubmenuContextProvider in layouts) */
   setSubmenuContext: (ctx: SubmenuContext | null) => void;
+
+  /** Hide or show the sidebar (used by focused flows like the wizard) */
+  setSidebarHidden: (hidden: boolean) => void;
 
   /** Get submenu config for a given href (used by NavLink to show chevrons) */
   getSubmenuForHref: (href: string) => SubmenuConfig | null;
@@ -73,6 +79,7 @@ export function SlidingNavProvider({
   const pathname = usePathname(); // Already locale-stripped
   const [manualRootOverride, setManualRootOverride] = useState(false);
   const [submenuContext, setSubmenuContextInternal] = useState<SubmenuContext | null>(null);
+  const [sidebarHidden, setSidebarHidden] = useState(false);
 
   // Detect which submenu (if any) matches the current URL
   const detectedSubmenuId = useMemo(() => {
@@ -131,9 +138,11 @@ export function SlidingNavProvider({
       detectedSubmenuId,
       manualRootOverride,
       submenuContext,
+      sidebarHidden,
       goToRoot,
       enterSubmenu,
       setSubmenuContext,
+      setSidebarHidden,
       getSubmenuForHref,
       submenuConfigs: configs,
     }),
@@ -142,9 +151,11 @@ export function SlidingNavProvider({
       detectedSubmenuId,
       manualRootOverride,
       submenuContext,
+      sidebarHidden,
       goToRoot,
       enterSubmenu,
       setSubmenuContext,
+      setSidebarHidden,
       getSubmenuForHref,
       configs,
     ],

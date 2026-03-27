@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
   ChevronDown,
@@ -68,7 +69,7 @@ const EMPTY_ADD_ON: AddOnFormData = {
   type: 'merch',
   deliveryMethod: 'pickup',
   distanceId: null,
-  isActive: true,
+  isActive: false,
 };
 
 const EMPTY_OPTION: OptionFormData = {
@@ -88,6 +89,8 @@ export function AddOnsManager({
   initialAddOns,
 }: AddOnsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.addOns');
+  const locale = useLocale();
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [addOns, setAddOns] = useState(initialAddOns);
   const [expandedAddOns, setExpandedAddOns] = useState<Set<string>>(new Set());
@@ -185,6 +188,7 @@ export function AddOnsManager({
             toast.success(t('addOn.saved'));
             setIsAddingAddOn(false);
             setAddOnFormData(EMPTY_ADD_ON);
+            router.refresh();
           } else {
             toast.error(t('addOn.errorSaving'));
           }
@@ -206,6 +210,7 @@ export function AddOnsManager({
             toast.success(t('addOn.saved'));
             setEditingAddOn(null);
             setAddOnFormData(EMPTY_ADD_ON);
+            router.refresh();
           } else {
             toast.error(t('addOn.errorSaving'));
           }
@@ -225,6 +230,7 @@ export function AddOnsManager({
           setAddOns((prev) => prev.filter((a) => a.id !== addOnId));
           setDeletingAddOnId(null);
           toast.success(t('addOn.deleted'));
+          router.refresh();
         } else {
           setDeletingAddOnId(null);
           toast.error(t('addOn.errorDeleting'));
@@ -260,6 +266,7 @@ export function AddOnsManager({
             toast.success(t('option.saved'));
             setAddingOptionToAddOn(null);
             setOptionFormData(EMPTY_OPTION);
+            router.refresh();
           } else {
             toast.error(t('option.errorSaving'));
           }
@@ -288,6 +295,7 @@ export function AddOnsManager({
             toast.success(t('option.saved'));
             setEditingOption(null);
             setOptionFormData(EMPTY_OPTION);
+            router.refresh();
           } else {
             toast.error(t('option.errorSaving'));
           }
@@ -313,6 +321,7 @@ export function AddOnsManager({
           );
           setDeletingOptionInfo(null);
           toast.success(t('option.deleted'));
+          router.refresh();
         } else {
           setDeletingOptionInfo(null);
           toast.error(t('option.errorSaving'));
@@ -423,7 +432,7 @@ export function AddOnsManager({
                               : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
                           )}
                         >
-                          {addOn.isActive ? 'Active' : 'Inactive'}
+                          {addOn.isActive ? t('status.active') : t('status.inactive')}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -433,11 +442,11 @@ export function AddOnsManager({
                             {' '}
                             •{' '}
                             {distances.find((d) => d.id === addOn.distanceId)?.label ||
-                              'Specific distance'}
+                              t('addOn.specificDistance')}
                           </span>
                         )}
                         <span className="mx-2">•</span>
-                        {addOn.options.length} option{addOn.options.length !== 1 ? 's' : ''}
+                        {t('option.count', { count: addOn.options.length })}
                       </p>
                     </div>
                   </div>
@@ -510,7 +519,7 @@ export function AddOnsManager({
                           {/* Options list */}
                           {addOn.options.length === 0 && addingOptionToAddOn !== addOn.id && (
                             <p className="text-sm text-muted-foreground text-center py-4">
-                              No options yet. Add options with different sizes or variations.
+                              {t('option.emptyState')}
                             </p>
                           )}
 
@@ -536,14 +545,14 @@ export function AddOnsManager({
                                     <div>
                                       <span className="font-medium">{option.label}</span>
                                       <span className="text-muted-foreground ml-2">
-                                        {formatPrice(option.priceCents, 'es-MX')}
+                                        {formatPrice(option.priceCents, locale)}
                                       </span>
                                       <span className="text-xs text-muted-foreground ml-2">
-                                        (max {option.maxQtyPerOrder} per order)
+                                        {t('option.maxQtySummary', { count: option.maxQtyPerOrder })}
                                       </span>
                                       {!option.isActive && (
                                         <span className="ml-2 text-xs text-muted-foreground">
-                                          (inactive)
+                                          {t('option.inactiveBadge')}
                                         </span>
                                       )}
                                       </div>
@@ -618,7 +627,7 @@ export function AddOnsManager({
                 addOns
                   .find((a) => a.id === deletingOptionInfo.addOnId)
                   ?.options.find((o) => o.id === deletingOptionInfo.optionId)?.priceCents ?? 0,
-                'es-MX',
+                locale,
               )
             : undefined
         }
@@ -744,7 +753,7 @@ function AddOnForm({
 
       <div className="flex items-center justify-end gap-2 pt-2">
         <Button variant="outline" onClick={onCancel} disabled={isPending}>
-          Cancel
+          {t('addOn.cancel')}
         </Button>
         <Button onClick={onSave} disabled={isPending || !formData.title}>
           {isPending ? (
@@ -851,11 +860,14 @@ function OptionForm({
 
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={onCancel} disabled={isPending}>
-            Cancel
+            {t('option.cancel')}
           </Button>
           <Button size="sm" onClick={onSave} disabled={isPending || !formData.label}>
             {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t('option.saving')}
+              </>
             ) : (
               t('option.save')
             )}

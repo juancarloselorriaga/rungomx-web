@@ -49,10 +49,18 @@ export function OrganizerEventsFilters({
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const shouldRestoreFocusRef = useRef(false);
   const isNavigatingRef = useRef(false);
+  // Capture the route this component was mounted for so stale debounce callbacks
+  // cannot navigate after leaving this screen.
+  const mountPathnameRef = useRef(pathname);
+  const currentPathnameRef = useRef(pathname);
 
   useEffect(() => {
     setFormState(query);
   }, [query]);
+
+  useEffect(() => {
+    currentPathnameRef.current = pathname;
+  }, [pathname]);
 
   useEffect(() => {
     latestStateRef.current = formState;
@@ -83,6 +91,10 @@ export function OrganizerEventsFilters({
 
   const navigate = useCallback(
     (nextFilters: OrganizerEventsQuery) => {
+      // Guard: do not navigate if the user has already left the route this
+      // component was mounted for. This prevents a stale pending debounce from
+      // firing router.replace against a completely different page.
+      if (currentPathnameRef.current !== mountPathnameRef.current) return;
       const normalizedNext = normalizeOrganizerEventsQuery(nextFilters);
       if (isSameQuery(normalizedNext)) return;
       const queryObject = buildOrganizerEventsQueryObject(normalizedNext);

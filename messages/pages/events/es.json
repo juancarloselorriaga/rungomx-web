@@ -177,8 +177,8 @@
     },
     "addons": {
       "title": "Complementos",
-      "description": "Complementos opcionales para tu evento.",
-      "noAddons": "No hay complementos disponibles para este evento.",
+      "description": "Complementos opcionales para tu carrera.",
+      "noAddons": "No hay complementos disponibles para esta carrera.",
       "merchandise": "Mercancía",
       "donation": "Donación",
       "quantity": "Cantidad",
@@ -201,7 +201,7 @@
     },
     "waiver": {
       "title": "Aceptación de deslinde",
-      "description": "Por favor lee y acepta el/los deslinde(s) de responsabilidad para continuar.",
+      "description": "Lee y acepta el deslinde de responsabilidad para continuar.",
       "waiverNumber": "Deslinde {number} de {total}",
       "accept": "He leído y acepto los términos del deslinde",
       "acceptThis": "He leído y acepto los términos de \"{title}\"",
@@ -247,7 +247,7 @@
     },
     "confirmation": {
       "title": "¡Inscripción completa!",
-      "description": "Te has inscrito exitosamente a {eventName}.",
+      "description": "Estás inscrito en {eventName}.",
       "registrationId": "Código de boleto",
       "distance": "Distancia",
       "documents": "Documentos del Evento",
@@ -271,12 +271,12 @@
       "yourRegistration": "Tu inscripción"
     },
     "errors": {
-      "distanceRequired": "Por favor selecciona una distancia",
+      "distanceRequired": "Selecciona una distancia",
       "registrationExpired": "Tu inscripción anterior expiró. Elige una distancia para comenzar de nuevo.",
       "soldOut": "Esta distancia está agotada",
-      "registrationClosed": "Las inscripciones están cerradas para este evento",
-      "alreadyRegistered": "Ya estás inscrito en este evento",
-      "registrationNotOpen": "Las inscripciones aún no han abierto para este evento",
+      "registrationClosed": "Las inscripciones están cerradas para esta carrera",
+      "alreadyRegistered": "Ya estás inscrito en esta carrera",
+      "registrationNotOpen": "Las inscripciones aún no han abierto para esta carrera",
       "activeInviteTitle": "Ya tienes una invitación reservada",
       "activeInvite": "Revisa tu correo para reclamar tu lugar antes de iniciar otra inscripción.",
       "viewMyRegistrations": "Ver mis inscripciones",
@@ -289,8 +289,8 @@
       }
     },
     "loginRequired": {
-      "title": "Guarda tu lugar con una cuenta",
-      "description": "Crea una cuenta o inicia sesión para inscribirte. La usamos para guardar tu inscripción y enviarte la confirmación.",
+      "title": "Inicio de sesión requerido",
+      "description": "Necesitas iniciar sesión para inscribirte en esta carrera.",
       "signIn": "Iniciar sesión",
       "signUp": "Crear cuenta"
     }
@@ -333,7 +333,7 @@
       "INVITE_INVALID": "Esta invitación ya no está activa.",
       "INVITE_CANCELLED": "Esta invitación fue cancelada por el coordinador.",
       "ALREADY_CLAIMED": "Esta invitación ya fue reclamada.",
-      "ALREADY_REGISTERED": "Ya tienes una inscripción para este evento.",
+      "ALREADY_REGISTERED": "Ya tienes una inscripción para esta carrera.",
       "RATE_LIMITED": "Demasiados intentos. Inténtalo más tarde.",
       "EMAIL_NOT_VERIFIED": "Verifica tu correo antes de reclamar.",
       "UNAUTHENTICATED": "Inicia sesión para reclamar esta invitación."

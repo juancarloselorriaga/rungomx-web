@@ -9,6 +9,7 @@ delete process.env.NO_COLOR;
 // Ensure every Playwright worker imports app code under test mode transport.
 // This must happen at config bootstrap time, before spec/module evaluation.
 (process.env as { NODE_ENV: string }).NODE_ENV = 'test';
+process.env.NEXT_PUBLIC_FEATURE_EVENT_AI_WIZARD ??= 'true';
 
 import { defineConfig, devices } from '@playwright/test';
 import { DEFAULT_E2E_PORT, resolvePlaywrightRuntimeTarget } from './utils/port-env';
@@ -47,6 +48,8 @@ const nextServerMode = process.env.E2E_NEXT_SERVER_MODE?.trim() === 'dev' ? 'dev
 const webServerEnv = createWebServerEnv();
 webServerEnv.NEXT_PUBLIC_SITE_URL = origin;
 webServerEnv.PORT = String(port);
+webServerEnv.NEXT_PUBLIC_FEATURE_EVENT_AI_WIZARD =
+  process.env.NEXT_PUBLIC_FEATURE_EVENT_AI_WIZARD ?? 'true';
 webServerEnv.RUNGOMX_NEXT_DIST_DIR = process.env.RUNGOMX_NEXT_DIST_DIR || '.next-e2e';
 webServerEnv.NODE_ENV = nextServerMode === 'dev' ? 'development' : 'production';
 // Production-style E2E runs exercise repeated auth flows quickly. Disable the

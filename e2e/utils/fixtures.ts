@@ -5,9 +5,10 @@
 
 import type { getTestDb } from './db';
 import * as schema from '@/db/schema';
+import { getProEntitlementForUser } from '@/lib/billing/entitlements';
+import { grantAdminOverride } from '@/lib/billing/commands';
+import { auth } from '@/lib/auth';
 import { and, eq } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
-import { hashPassword } from 'better-auth/crypto';
 import type { Page } from '@playwright/test';
 
 const USER_PERSISTENCE_MAX_RETRIES = 20;
@@ -110,7 +111,6 @@ async function waitForCredentialAccountPersistence(
         and(
           eq(schema.accounts.userId, userId),
           eq(schema.accounts.providerId, 'credential'),
-          eq(schema.accounts.accountId, userId),
         ),
       )
       .limit(1);
@@ -154,39 +154,25 @@ export async function signUpTestUser(
   const name = overrides?.name ?? `${prefix}${timestamp}`;
   const password = overrides?.password ?? `TestE2E!${timestamp}Pass`;
 
-  const userId = randomUUID();
-
-  // Use Better Auth's own hash implementation to avoid format drift.
-  const hashedPassword = await hashPassword(password);
-
   const { getTestDb } = await import('./db');
   const db = getTestDb();
 
-  await db.transaction(async (tx) => {
-    await tx.insert(schema.users).values({
-      id: userId,
-      name,
+  const signUpResult = await auth.api.signUpEmail({
+    body: {
       email,
-      emailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Better Auth seeds credential accounts with accountId=userId.
-    await tx.insert(schema.accounts).values({
-      id: randomUUID(),
-      userId,
-      accountId: userId,
-      providerId: 'credential',
-      password: hashedPassword,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      name,
+      password,
+    },
   });
 
-  await waitForCredentialAccountPersistence(db, userId, 'signUpTestUser');
+  const signedUpUser = (signUpResult as { user?: { id: string } }).user;
+  if (!signedUpUser?.id) {
+    throw new Error('[E2E fixtures] signUpEmail did not return a user id');
+  }
 
-  return { id: userId, email, password, name };
+  await waitForCredentialAccountPersistence(db, signedUpUser.id, 'signUpTestUser');
+
+  return { id: signedUpUser.id, email, password, name };
 }
 
 /**
@@ -292,6 +278,57 @@ export async function createTestProfile(
     .returning();
 
   return profile;
+}
+
+/**
+ * Seed active Pro entitlement for a test user.
+ * Use this for Pro-gated UI tests that need deterministic "already Pro" state.
+ * Do not use this helper for pending-grant auto-claim tests.
+ * Real-account manual Playwright MCP smoke validation is a separate lane and
+ * should not share setup assumptions with isolated test-db automation.
+ */
+export async function seedActiveProEntitlement(
+  db: ReturnType<typeof getTestDb>,
+  userId: string,
+  options?: {
+    grantedByUserId?: string;
+    grantDurationDays?: number | null;
+    grantFixedEndsAt?: Date | null;
+    now?: Date;
+    reason?: string;
+  },
+) {
+  await waitForUserPersistence(db, userId, 'seedActiveProEntitlement');
+
+  const result = await grantAdminOverride({
+    userId,
+    grantedByUserId: options?.grantedByUserId ?? userId,
+    grantDurationDays: options?.grantDurationDays ?? 14,
+    grantFixedEndsAt: options?.grantFixedEndsAt ?? null,
+    reason: options?.reason ?? 'e2e_active_pro_entitlement',
+    now: options?.now,
+  });
+
+  if (!result.ok) {
+    throw new Error(`Failed to seed active Pro entitlement for ${userId}: ${result.error}`);
+  }
+
+  const entitlement = await getProEntitlementForUser({
+    userId,
+    isInternal: false,
+    now: options?.now ?? new Date(),
+  });
+
+  if (!entitlement.isPro) {
+    throw new Error(`Expected active Pro entitlement for ${userId}, but entitlement resolver returned false.`);
+  }
+
+  return {
+    overrideId: result.data.overrideId ?? null,
+    startsAt: result.data.startsAt ?? null,
+    endsAt: result.data.endsAt ?? null,
+    entitlement,
+  };
 }
 
 /**

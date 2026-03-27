@@ -75,19 +75,20 @@ function formatDisplayDate(value: string | null | undefined, locale: string) {
 export function DatePicker({
   value,
   onChangeAction,
-  locale = 'en',
+  locale,
   placeholder,
-  clearLabel = 'Clear',
+  clearLabel,
   name,
   className,
   disabled = false,
   min,
   max,
 }: DatePickerProps) {
+  const resolvedLocale = locale ?? (typeof navigator !== 'undefined' ? navigator.language : 'en');
   const selectedDate = parseLocalDate(value);
   const [open, setOpen] = React.useState(false);
   const [month, setMonth] = React.useState<Date | undefined>(selectedDate ?? new Date());
-  const weekStartsOn = locale.startsWith('es') ? 1 : 0;
+  const weekStartsOn = resolvedLocale.startsWith('es') ? 1 : 0;
 
   React.useEffect(() => {
     if (!disabled) return;
@@ -111,21 +112,22 @@ export function DatePicker({
     return matchers.length ? matchers : undefined;
   }, [min, max]);
 
-  const formatted = formatDisplayDate(value, locale);
-  const resolvedPlaceholder = placeholder ?? formatDatePlaceholder(locale);
+  const formatted = formatDisplayDate(value, resolvedLocale);
+  const resolvedPlaceholder = placeholder ?? formatDatePlaceholder(resolvedLocale);
+  const resolvedClearLabel = clearLabel ?? (resolvedLocale.startsWith('es') ? 'Borrar' : 'Clear');
 
   const formatters = React.useMemo(
     () => ({
       formatCaption: (date: Date) =>
-        new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(date),
+        new Intl.DateTimeFormat(resolvedLocale, { month: 'long', year: 'numeric' }).format(date),
       formatWeekdayName: (date: Date) =>
-        new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date),
+        new Intl.DateTimeFormat(resolvedLocale, { weekday: 'short' }).format(date),
       formatMonthDropdown: (date: Date) =>
-        new Intl.DateTimeFormat(locale, { month: 'long' }).format(date),
+        new Intl.DateTimeFormat(resolvedLocale, { month: 'long' }).format(date),
       formatYearDropdown: (date: Date) =>
-        new Intl.DateTimeFormat(locale, { year: 'numeric' }).format(date),
+        new Intl.DateTimeFormat(resolvedLocale, { year: 'numeric' }).format(date),
     }),
-    [locale],
+    [resolvedLocale],
   );
 
   return (
@@ -174,7 +176,7 @@ export function DatePicker({
                 onChangeAction?.('');
               }}
             >
-              {clearLabel}
+              {resolvedClearLabel}
             </button>
           </div>
         </PopoverContent>

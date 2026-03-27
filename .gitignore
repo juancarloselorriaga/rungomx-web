@@ -1,5 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# tooling temp dirs
+.tmp-skill-build/
+
 # dependencies
 /node_modules
 /.pnp
@@ -72,3 +75,6 @@ _bmad-output
 
 tmp/
 .tmp/
+
+.agents
+skills-lock.json

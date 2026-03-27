@@ -112,12 +112,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ locations: cached });
     }
 
-    const locations = await provider.forwardGeocode(trimmedQuery, {
+    const searchOptions = {
       limit: params.limit ?? 5,
       language: params.language,
       country: params.country,
       proximity: params.proximity,
-    });
+    };
+
+    const locations = provider.searchPlaces
+      ? await provider.searchPlaces(trimmedQuery, searchOptions)
+      : await provider.forwardGeocode(trimmedQuery, searchOptions);
 
     const publicLocations: PublicLocationValue[] = toPublicLocations(
       locations as (PublicLocationValue & { raw?: unknown })[],

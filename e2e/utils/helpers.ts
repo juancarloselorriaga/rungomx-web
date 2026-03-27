@@ -508,7 +508,7 @@ export async function createEvent(
 
   // Fill location using the new LocationField component
   // Click the location picker button
-  const locationBtn = page.getByText(/no location selected yet/i);
+  const locationBtn = page.getByText(/no location (selected yet|set)|sin ubicaci[oó]n/i);
   await locationBtn.click();
 
   // Wait for location dialog to appear
@@ -906,7 +906,7 @@ export async function pauseRegistration(page: Page) {
     await page.waitForTimeout(1000);
   }
 
-  const registrationHeading = page.getByRole('heading', { name: 'Registration Status' });
+  const registrationHeading = page.getByRole('heading', { name: /registration/i }).first();
   await expect(registrationHeading).toBeVisible({ timeout: 15000 });
   await registrationHeading.scrollIntoViewIfNeeded();
 
@@ -932,7 +932,9 @@ export async function pauseRegistration(page: Page) {
     }
   }
 
-  const resumeBtn = registrationSection.getByRole('button', { name: /resume registration/i });
+  const resumeBtn = registrationSection.getByRole('button', {
+    name: /resume registration|reopen registration/i,
+  });
   await expect(resumeBtn).toBeVisible({ timeout: 15000 });
 }
 
@@ -947,12 +949,14 @@ export async function resumeRegistration(page: Page) {
     await page.waitForTimeout(1000);
   }
 
-  const registrationHeading = page.getByRole('heading', { name: 'Registration Status' });
+  const registrationHeading = page.getByRole('heading', { name: /registration/i }).first();
   await expect(registrationHeading).toBeVisible({ timeout: 15000 });
   await registrationHeading.scrollIntoViewIfNeeded();
 
   const registrationSection = registrationHeading.locator('xpath=ancestor::section[1]');
-  const resumeBtn = registrationSection.getByRole('button', { name: /resume registration/i });
+  const resumeBtn = registrationSection.getByRole('button', {
+    name: /resume registration|reopen registration/i,
+  });
   await expect(resumeBtn).toBeVisible({ timeout: 15000 });
   await expect(resumeBtn).toBeEnabled();
 
@@ -963,7 +967,7 @@ export async function resumeRegistration(page: Page) {
     // Wait for any refresh/build to settle, then verify state changed.
     await expect(buildIndicator).toBeHidden({ timeout: 60000 });
 
-    const activeBadge = registrationSection.getByText(/^Active$/);
+    const activeBadge = registrationSection.getByText(/^(Active|Open)$/i);
     try {
       await expect(activeBadge).toBeVisible({ timeout: 30000 });
       break;

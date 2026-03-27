@@ -1,10 +1,10 @@
 {
-  "title": "Website Content",
-  "description": "Customize the content sections that appear on your public event page.",
+  "title": "Event Page Content",
+  "description": "Edit the content sections that runners see on your public event page.",
   "preview": {
     "title": "Preview",
-    "description": "This preview reflects the saved content. Save changes to refresh it.",
-    "empty": "No website content saved yet."
+    "description": "This preview reflects saved content. Save to refresh.",
+    "empty": "No content saved yet."
   },
   "markdown": {
     "preview": "Preview",
@@ -12,19 +12,19 @@
   },
   "save": "Save changes",
   "saving": "Saving...",
-  "saved": "Content saved successfully",
-  "errorSaving": "Failed to save content",
+  "saved": "Content saved",
+  "errorSaving": "Couldn't save content",
   "sections": {
     "overview": {
       "title": "Overview",
-      "description": "Main event description and terrain information.",
+      "description": "Main event description and terrain.",
       "contentLabel": "Event Description",
-      "contentPlaceholder": "Describe your event, what makes it special, and what participants should expect...",
-      "terrainLabel": "Terrain Description",
+      "contentPlaceholder": "Describe the race, what makes it special, and what runners should expect...",
+      "terrainLabel": "Terrain",
       "terrainPlaceholder": "Trail conditions, elevation, surface type..."
     },
     "course": {
-      "title": "Course Information",
+      "title": "Course",
       "description": "Course details, aid stations, and cutoff times.",
       "descriptionLabel": "Course Description",
       "descriptionPlaceholder": "Describe the course layout and key features...",
@@ -50,11 +50,11 @@
     "schedule": {
       "title": "Schedule & Logistics",
       "description": "Packet pickup, parking, and race day information.",
-      "packetPickupLabel": "Packet Pickup",
-      "packetPickupPlaceholder": "When and where participants can pick up their race packets...",
+      "packetPickupLabel": "Kit Pickup",
+      "packetPickupPlaceholder": "When and where runners can pick up their kits...",
       "parkingLabel": "Parking",
       "parkingPlaceholder": "Parking availability and directions...",
-      "raceDayLabel": "Race Day Information",
+      "raceDayLabel": "Race Day",
       "raceDayPlaceholder": "What to bring, check-in time, start area details...",
       "startTimes": {
         "title": "Start Times",
@@ -178,8 +178,8 @@
       }
     }
   },
-  "enableSection": "Enable section",
-  "disableSection": "Disable section",
-  "sectionEnabled": "Visible on public page",
-  "sectionDisabled": "Hidden from public page"
+  "enableSection": "Show on event page",
+  "disableSection": "Hide from event page",
+  "sectionEnabled": "Visible to runners",
+  "sectionDisabled": "Hidden from runners"
 }

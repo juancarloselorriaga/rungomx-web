@@ -139,6 +139,8 @@ test.describe('Billing Pro flows', () => {
 
     promoCode = promotion.data.code;
 
+    // This spec intentionally keeps a claimable pending grant because the billing flow
+    // under test is the auto-claim behavior itself, not generic already-Pro gating.
     const pendingGrant = await createPendingEntitlementGrant({
       email: pendingCreds.email,
       createdByUserId: trialCreds.id,

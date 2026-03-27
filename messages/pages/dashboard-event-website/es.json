@@ -1,10 +1,10 @@
 {
-  "title": "Contenido del Sitio Web",
-  "description": "Personaliza las secciones de contenido que aparecen en tu página pública del evento.",
+  "title": "Contenido de la página del evento",
+  "description": "Edita las secciones que verán los corredores en tu página pública.",
   "preview": {
     "title": "Vista previa",
-    "description": "Esta vista previa refleja el contenido guardado. Guarda los cambios para actualizarla.",
-    "empty": "Aún no hay contenido guardado del sitio."
+    "description": "Esta vista previa muestra el contenido guardado. Guarda para actualizar.",
+    "empty": "Sin contenido guardado aún."
   },
   "markdown": {
     "preview": "Vista previa",
@@ -12,21 +12,21 @@
   },
   "save": "Guardar cambios",
   "saving": "Guardando...",
-  "saved": "Contenido guardado exitosamente",
-  "errorSaving": "Error al guardar el contenido",
+  "saved": "Contenido guardado",
+  "errorSaving": "No se pudo guardar el contenido",
   "sections": {
     "overview": {
-      "title": "Descripción General",
-      "description": "Descripción principal del evento e información del terreno.",
-      "contentLabel": "Descripción del Evento",
-      "contentPlaceholder": "Describe tu evento, qué lo hace especial y qué pueden esperar los participantes...",
-      "terrainLabel": "Descripción del Terreno",
-      "terrainPlaceholder": "Condiciones del sendero, elevación, tipo de superficie..."
+      "title": "Descripción general",
+      "description": "Descripción principal del evento y terreno.",
+      "contentLabel": "Descripción del evento",
+      "contentPlaceholder": "Describe la carrera, qué la hace especial y qué pueden esperar los corredores...",
+      "terrainLabel": "Terreno",
+      "terrainPlaceholder": "Condiciones del terreno, desnivel, tipo de superficie..."
     },
     "course": {
-      "title": "Información del Recorrido",
-      "description": "Detalles del recorrido, estaciones de abastecimiento y tiempos límite.",
-      "descriptionLabel": "Descripción del Recorrido",
+      "title": "Recorrido",
+      "description": "Detalles del recorrido, abastecimientos y tiempos límite.",
+      "descriptionLabel": "Descripción del recorrido",
       "descriptionPlaceholder": "Describe el trazado del recorrido y sus características principales...",
       "elevationLabel": "Ganancia de Elevación",
       "elevationPlaceholder": "ej., 1500m o 5000ft",
@@ -48,13 +48,13 @@
       }
     },
     "schedule": {
-      "title": "Horarios y Logística",
+      "title": "Horarios y logística",
       "description": "Entrega de kits, estacionamiento e información del día de carrera.",
-      "packetPickupLabel": "Entrega de Kits",
-      "packetPickupPlaceholder": "Cuándo y dónde los participantes pueden recoger sus kits...",
+      "packetPickupLabel": "Entrega de kits",
+      "packetPickupPlaceholder": "Cuándo y dónde los corredores pueden recoger su kit...",
       "parkingLabel": "Estacionamiento",
       "parkingPlaceholder": "Disponibilidad de estacionamiento e indicaciones...",
-      "raceDayLabel": "Información del Día de Carrera",
+      "raceDayLabel": "Día de carrera",
       "raceDayPlaceholder": "Qué traer, hora de registro, detalles del área de salida...",
       "startTimes": {
         "title": "Horarios de Salida",
@@ -178,8 +178,8 @@
       }
     }
   },
-  "enableSection": "Habilitar sección",
-  "disableSection": "Deshabilitar sección",
-  "sectionEnabled": "Visible en página pública",
-  "sectionDisabled": "Oculto de página pública"
+  "enableSection": "Mostrar en la página del evento",
+  "disableSection": "Ocultar de la página del evento",
+  "sectionEnabled": "Visible para corredores",
+  "sectionDisabled": "Oculto para corredores"
 }

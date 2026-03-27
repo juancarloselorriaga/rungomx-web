@@ -9,7 +9,9 @@ import { createFaqItem, updateFaqItem, deleteFaqItem, reorderFaqItems } from '@/
 import { cn } from '@/lib/utils';
 import { GripVertical, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { type FormEvent, useEffect, useState, useTransition } from 'react';
+import { toast } from 'sonner';
 
 type FaqItem = {
   id: string;
@@ -25,6 +27,7 @@ type FaqManagerProps = {
 
 export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
   const t = useTranslations('pages.dashboardEvents.faq');
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [faqItems, setFaqItems] = useState(initialFaqItems);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -34,6 +37,10 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
   // Form state for adding/editing
   const [formQuestion, setFormQuestion] = useState('');
   const [formAnswer, setFormAnswer] = useState('');
+
+  useEffect(() => {
+    setFaqItems(initialFaqItems);
+  }, [initialFaqItems]);
 
   // Handle add new FAQ
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
@@ -69,10 +76,13 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
         },
       ]);
 
+      toast.success(t('saved'));
+
       // Reset form
       setFormQuestion('');
       setFormAnswer('');
       setIsAdding(false);
+      router.refresh();
     });
   }
 
@@ -124,10 +134,13 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
         ),
       );
 
+      toast.success(t('saved'));
+
       // Reset form
       setFormQuestion('');
       setFormAnswer('');
       setEditingId(null);
+      router.refresh();
     });
   }
 
@@ -151,6 +164,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
 
       // Remove from local state
       setFaqItems((prev) => prev.filter((item) => item.id !== id));
+      router.refresh();
     });
   }
 
@@ -172,6 +186,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       }
 
       setFaqItems(newItems.map((item, i) => ({ ...item, sortOrder: i })));
+      router.refresh();
     });
   }
 
@@ -192,6 +207,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       }
 
       setFaqItems(newItems.map((item, i) => ({ ...item, sortOrder: i })));
+      router.refresh();
     });
   }
 
@@ -252,11 +268,16 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                   </Button>
                   <Button type="submit" size="sm" disabled={isPending}>
                     {isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        {t('saving')}
+                      </>
                     ) : (
+                      <>
                       <Save className="h-4 w-4 mr-1" />
+                        {t('save')}
+                      </>
                     )}
-                    {t('save')}
                   </Button>
                 </div>
               </form>

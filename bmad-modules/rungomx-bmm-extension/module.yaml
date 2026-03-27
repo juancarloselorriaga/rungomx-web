@@ -1,0 +1,5 @@
+code: bmm
+name: "RunGoMX BMM Extension"
+header: "RunGoMX release, event publish, and i18n readiness workflows"
+subheader: "Repository-specific BMM extension for quality gates and publish safety checks"
+default_selected: false

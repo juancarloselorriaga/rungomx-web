@@ -158,12 +158,11 @@
   body {
     @apply bg-background text-foreground;
     overflow-y: auto;
-    background-image:
-      linear-gradient(
-        180deg,
-        color-mix(in oklch, var(--brand-blue) 4%, transparent) 0%,
-        transparent 16rem
-      );
+    background-image: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--brand-blue) 4%, transparent) 0%,
+      transparent 16rem
+    );
   }
 
   /* Prevent iOS zoom on input focus by ensuring 16px minimum font size */
@@ -245,13 +244,7 @@
   }
 
   .marquee-fade-edges {
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      black 5%,
-      black 95%,
-      transparent
-    );
+    mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
   }
 
   /* Hide scrollbar but allow scrolling */
@@ -273,6 +266,58 @@
       Georgia,
       serif;
     font-variation-settings: 'opsz' 32;
+  }
+
+  @keyframes assistant-working-sheen {
+    0% {
+      background-position: 200% 50%;
+    }
+
+    100% {
+      background-position: -200% 50%;
+    }
+  }
+
+  @keyframes assistant-working-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: scale(0.9);
+    }
+
+    50% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+  }
+
+  .assistant-working-label {
+    color: transparent;
+    background-image: linear-gradient(
+      110deg,
+      color-mix(in oklch, var(--muted-foreground) 92%, white) 0%,
+      color-mix(in oklch, var(--foreground) 98%, white) 34%,
+      color-mix(in oklch, var(--primary) 38%, var(--foreground) 62%) 50%,
+      color-mix(in oklch, var(--foreground) 98%, white) 66%,
+      color-mix(in oklch, var(--muted-foreground) 92%, white) 100%
+    );
+    background-size: 220% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    animation: assistant-working-sheen 1.8s linear infinite;
+  }
+
+  .dark .assistant-working-label {
+    background-image: linear-gradient(
+      110deg,
+      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 0%,
+      color-mix(in oklch, var(--foreground) 94%, white) 46%,
+      color-mix(in oklch, var(--muted-foreground) 84%, transparent) 92%
+    );
+  }
+
+  .assistant-working-dot {
+    animation: assistant-working-pulse 1.2s ease-in-out infinite;
   }
 
   /* Sliding sidebar navigation (2-level system: root + submenu) */

@@ -52,6 +52,7 @@ export type EventEditionDetail = {
   editionLabel: string;
   visibility: string;
   description: string | null;
+  organizerBrief: string | null;
   startsAt: Date | null;
   endsAt: Date | null;
   timezone: string;
@@ -97,6 +98,9 @@ export type EventDistanceDetail = {
   sortOrder: number;
   priceCents: number;
   currency: string;
+  hasPricingTier?: boolean;
+  pricingTierCount: number;
+  hasBoundedPricingTier: boolean;
   registrationCount: number;
 };
 
@@ -353,7 +357,6 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
           pricingTiers: {
             where: isNull(pricingTiers.deletedAt),
             orderBy: (p, { asc }) => [asc(p.sortOrder)],
-            limit: 1,
           },
         },
       },
@@ -417,6 +420,7 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
     editionLabel: edition.editionLabel,
     visibility: edition.visibility,
     description: edition.description,
+    organizerBrief: edition.organizerBrief,
     startsAt: edition.startsAt,
     endsAt: edition.endsAt,
     timezone: edition.timezone,
@@ -456,6 +460,9 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
       sortOrder: d.sortOrder,
       priceCents: d.pricingTiers[0]?.priceCents ?? 0,
       currency: d.pricingTiers[0]?.currency ?? 'MXN',
+      hasPricingTier: d.pricingTiers.length > 0,
+      pricingTierCount: d.pricingTiers.length,
+      hasBoundedPricingTier: d.pricingTiers.some((tier) => Boolean(tier.startsAt || tier.endsAt)),
       registrationCount: registrationCountMap.get(d.id) ?? 0,
     })),
     faqItems: edition.faqItems.map((f) => ({

@@ -18,6 +18,11 @@ export const FEATURE_FLAGS = {
    */
   EVENTS_NO_PAYMENT_MODE: process.env.NEXT_PUBLIC_FEATURE_EVENTS_NO_PAYMENT_MODE === 'true',
 
+  /**
+   * Global kill switch for the Event AI assistant surfaces and endpoints.
+   */
+  EVENT_AI_WIZARD_ENABLED: process.env.NEXT_PUBLIC_FEATURE_EVENT_AI_WIZARD === 'true',
+
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
@@ -34,6 +39,13 @@ export function isEventsEnabled(): boolean {
  */
 export function isEventsNoPaymentMode(): boolean {
   return FEATURE_FLAGS.EVENTS_NO_PAYMENT_MODE;
+}
+
+/**
+ * Check if the Event AI wizard feature is globally enabled.
+ */
+export function isEventAiWizardEnabled(): boolean {
+  return FEATURE_FLAGS.EVENT_AI_WIZARD_ENABLED;
 }
 
 /**
