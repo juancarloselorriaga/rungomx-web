@@ -34,7 +34,7 @@ export function InsetSurface<T extends ElementType = 'div'>({
   return (
     <Component
       className={cn(
-        'rounded-xl border border-border/60 bg-background/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]',
+        'rounded-xl border border-border/60 bg-background/70 p-4 shadow-[inset_0_1px_3px_rgba(15,23,42,0.06),inset_0_1px_0_rgba(255,255,255,0.55)]',
         className,
       )}
       {...props}
