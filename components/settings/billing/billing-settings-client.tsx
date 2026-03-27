@@ -11,6 +11,7 @@ import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Spinner } from '@/components/ui/spinner';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { SerializableBillingStatus } from '@/lib/billing/serialization';
 import type { EntitlementSource } from '@/lib/billing/types';
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { useFormatter, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { CreditCard, Gem, ReceiptText, ShieldCheck, TicketPercent } from 'lucide-react';
 
 type BillingSettingsClientProps = {
   initialStatus: SerializableBillingStatus;
@@ -49,6 +51,42 @@ const SOURCE_KEYS: EntitlementSource[] = [
   'migration',
 ];
 
+function BillingSection({
+  sectionLabel,
+  title,
+  description,
+  icon,
+  children,
+}: {
+  sectionLabel: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Surface className="overflow-hidden p-0">
+      <div className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_84%,var(--background-surface)_16%)] px-5 py-5 sm:px-6">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-muted p-2 text-muted-foreground">{icon}</div>
+
+          <div className="space-y-2">
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {sectionLabel}
+            </p>
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+              <p className="text-sm leading-6 text-muted-foreground">{description}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-5 sm:p-6">{children}</div>
+    </Surface>
+  );
+}
+
 export function BillingSettingsClient({
   initialStatus,
   emailVerified,
@@ -75,31 +113,34 @@ export function BillingSettingsClient({
     });
   }, []);
 
-  const syncStatusFromServer = useCallback(async ({
-    attempts = 8,
-    delayMs = 400,
-  }: {
-    attempts?: number;
-    delayMs?: number;
-  } = {}) => {
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      try {
-        const result = await getBillingStatusAction();
-        if (result.ok) {
-          applyLatestStatus(result.data);
-          return result.data;
+  const syncStatusFromServer = useCallback(
+    async ({
+      attempts = 8,
+      delayMs = 400,
+    }: {
+      attempts?: number;
+      delayMs?: number;
+    } = {}) => {
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        try {
+          const result = await getBillingStatusAction();
+          if (result.ok) {
+            applyLatestStatus(result.data);
+            return result.data;
+          }
+        } catch {
+          // ignore and retry
         }
-      } catch {
-        // ignore and retry
+
+        if (attempt < attempts - 1) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
       }
 
-      if (attempt < attempts - 1) {
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-    }
-
-    return null;
-  }, [applyLatestStatus]);
+      return null;
+    },
+    [applyLatestStatus],
+  );
 
   useEffect(() => {
     if (hasSyncedRef.current) return;
@@ -371,16 +412,13 @@ export function BillingSettingsClient({
 
   return (
     <div className="space-y-6">
-      <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {t('status.sectionLabel')}
-          </p>
-          <h2 className="text-lg font-semibold">{t('status.title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('status.description')}</p>
-        </div>
-
-        <div className="border-t border-border/70 pt-4 space-y-4">
+      <BillingSection
+        sectionLabel={t('status.sectionLabel')}
+        title={t('status.title')}
+        description={t('status.description')}
+        icon={<ShieldCheck className="h-4 w-4" />}
+      >
+        <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <Badge
               variant={isInternalBypass ? 'indigo' : status.isPro ? 'green' : 'default'}
@@ -397,39 +435,58 @@ export function BillingSettingsClient({
             ) : null}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('status.labels.proUntil')}
-              </p>
-              <p className="text-sm font-medium" data-testid="billing-pro-until">
-                {status.isPro
-                  ? status.proUntil
-                    ? `${formatDateTime(status.proUntil)} ${t('status.utc')}`
-                    : t('status.values.unlimited')
-                  : t('status.values.none')}
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {t('status.labels.effectiveSource')}
-              </p>
-              <p className="text-sm font-medium" data-testid="billing-effective-source">
-                {sourceLabel(status.effectiveSource)}
-              </p>
-            </div>
-
-            {status.nextProStartsAt ? (
-              <div className="space-y-1 sm:col-span-2">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+            <InsetSurface className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t('status.labels.nextProStarts')}
+                  {t('status.labels.proUntil')}
                 </p>
-                <p className="text-sm font-medium">
-                  {formatDateTime(status.nextProStartsAt)} {t('status.utc')}
+                <p className="text-sm font-medium" data-testid="billing-pro-until">
+                  {status.isPro
+                    ? status.proUntil
+                      ? `${formatDateTime(status.proUntil)} ${t('status.utc')}`
+                      : t('status.values.unlimited')
+                    : t('status.values.none')}
                 </p>
               </div>
-            ) : null}
+
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t('status.labels.effectiveSource')}
+                </p>
+                <p className="text-sm font-medium" data-testid="billing-effective-source">
+                  {sourceLabel(status.effectiveSource)}
+                </p>
+              </div>
+
+              {status.nextProStartsAt ? (
+                <div className="space-y-1 sm:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {t('status.labels.nextProStarts')}
+                  </p>
+                  <p className="text-sm font-medium">
+                    {formatDateTime(status.nextProStartsAt)} {t('status.utc')}
+                  </p>
+                </div>
+              ) : null}
+            </InsetSurface>
+
+            <InsetSurface className="flex h-full items-start gap-3 bg-muted/25">
+              <div className="rounded-full bg-background p-2 text-muted-foreground shadow-sm">
+                <Gem className="h-4 w-4" />
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-foreground">
+                  {isInternalBypass
+                    ? t('status.internal')
+                    : status.isPro
+                      ? t('status.badges.pro')
+                      : t('status.badges.free')}
+                </p>
+                <p className="text-sm leading-6 text-muted-foreground">{t('status.description')}</p>
+              </div>
+            </InsetSurface>
           </div>
 
           {sources.length ? (
@@ -437,7 +494,7 @@ export function BillingSettingsClient({
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {t('status.labels.sources')}
               </p>
-              <div className="rounded-md border border-border/60 bg-muted/20 text-sm">
+              <InsetSurface className="space-y-0 p-0 text-sm">
                 {sources.map((source, index) => (
                   <div
                     key={`${source.source}-${index}`}
@@ -448,46 +505,45 @@ export function BillingSettingsClient({
                   >
                     <div className="space-y-1">
                       <p className="font-semibold">{sourceLabel(source.source)}</p>
-                      <p className="text-xs text-muted-foreground">{t('status.labels.sourceWindow')}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('status.labels.sourceWindow')}
+                      </p>
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {source.startsAt} {t('status.utc')} → {source.endsAt} {t('status.utc')}
                     </div>
                   </div>
                 ))}
-              </div>
+              </InsetSurface>
             </div>
           ) : null}
         </div>
-      </section>
+      </BillingSection>
 
       {showTrialSection ? (
-        <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t('trial.sectionLabel')}
-            </p>
-            <h2 className="text-lg font-semibold">{t('trial.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('trial.description')}</p>
-          </div>
-
-          <div className="border-t border-border/70 pt-4 space-y-4">
+        <BillingSection
+          sectionLabel={t('trial.sectionLabel')}
+          title={t('trial.title')}
+          description={t('trial.description')}
+          icon={<ReceiptText className="h-4 w-4" />}
+        >
+          <div className="space-y-4">
             {trialActive ? (
-              <div className="space-y-1 text-sm">
+              <InsetSurface className="space-y-1 text-sm">
                 <p className="font-semibold">{t('trial.activeLabel')}</p>
                 <p className="text-muted-foreground">
                   {t('trial.activeUntil', {
                     endsAt: `${formatDateTime(trialActive)} ${t('status.utc')}`,
                   })}
                 </p>
-              </div>
+              </InsetSurface>
             ) : (
-              <div className="space-y-2 text-sm text-muted-foreground">
+              <InsetSurface className="space-y-2 bg-muted/25 text-sm text-muted-foreground">
                 {!emailVerified ? <p>{t('trial.requiresVerification')}</p> : null}
                 {!status.trialEligible && !status.isPro && emailVerified ? (
                   <p>{t('trial.alreadyUsed')}</p>
                 ) : null}
-              </div>
+              </InsetSurface>
             )}
 
             {trialError ? (
@@ -511,22 +567,19 @@ export function BillingSettingsClient({
               </Button>
             </div>
           </div>
-        </section>
+        </BillingSection>
       ) : null}
 
       {showSubscriptionSection ? (
-        <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t('subscription.sectionLabel')}
-            </p>
-            <h2 className="text-lg font-semibold">{t('subscription.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('subscription.description')}</p>
-          </div>
-
-          <div className="border-t border-border/70 pt-4 space-y-4">
+        <BillingSection
+          sectionLabel={t('subscription.sectionLabel')}
+          title={t('subscription.title')}
+          description={t('subscription.description')}
+          icon={<CreditCard className="h-4 w-4" />}
+        >
+          <div className="space-y-4">
             {subscription ? (
-              <div className="grid gap-3 text-sm">
+              <InsetSurface className="grid gap-3 text-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={hasActiveSubscription ? 'green' : 'default'} size="sm">
                     {subscriptionStatusLabel(subscription.status)}
@@ -546,9 +599,11 @@ export function BillingSettingsClient({
                     })}
                   </p>
                 ) : null}
-              </div>
+              </InsetSurface>
             ) : (
-              <p className="text-sm text-muted-foreground">{t('subscription.none')}</p>
+              <InsetSurface className="bg-muted/25">
+                <p className="text-sm text-muted-foreground">{t('subscription.none')}</p>
+              </InsetSurface>
             )}
 
             {subscriptionError ? (
@@ -589,45 +644,48 @@ export function BillingSettingsClient({
               ) : null}
             </div>
           </div>
-        </section>
+        </BillingSection>
       ) : null}
 
       {showPromoSection ? (
-        <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {t('promo.sectionLabel')}
-            </p>
-            <h2 className="text-lg font-semibold">{t('promo.title')}</h2>
-            <p className="text-sm text-muted-foreground">{t('promo.description')}</p>
-          </div>
-
-          <Form form={promoForm} className="space-y-4 border-t border-border/70 pt-4">
+        <BillingSection
+          sectionLabel={t('promo.sectionLabel')}
+          title={t('promo.title')}
+          description={t('promo.description')}
+          icon={<TicketPercent className="h-4 w-4" />}
+        >
+          <Form form={promoForm} className="space-y-4">
             <FormError />
 
-            <FormField label={t('promo.fields.code')} required error={promoForm.errors.code}>
-              <input
-                type="text"
-                autoComplete="off"
-                className={cn(
-                  'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
-                  'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
-                  promoForm.errors.code && 'border-destructive focus-visible:border-destructive',
-                )}
-                {...promoForm.register('code')}
-                disabled={promoForm.isSubmitting}
-                data-testid="billing-promo-code"
-              />
-            </FormField>
+            <InsetSurface>
+              <FormField label={t('promo.fields.code')} required error={promoForm.errors.code}>
+                <input
+                  type="text"
+                  autoComplete="off"
+                  className={cn(
+                    'h-11 w-full rounded-lg border bg-background px-3 text-sm shadow-sm outline-none ring-0 transition',
+                    'focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30',
+                    promoForm.errors.code && 'border-destructive focus-visible:border-destructive',
+                  )}
+                  {...promoForm.register('code')}
+                  disabled={promoForm.isSubmitting}
+                  data-testid="billing-promo-code"
+                />
+              </FormField>
+            </InsetSurface>
 
-            <div className="flex items-center justify-end gap-3 border-t border-border/70 pt-4">
-              <Button type="submit" disabled={promoForm.isSubmitting} data-testid="billing-redeem-promo">
+            <div className="flex items-center justify-end gap-3 border-t border-border/60 pt-4">
+              <Button
+                type="submit"
+                disabled={promoForm.isSubmitting}
+                data-testid="billing-redeem-promo"
+              >
                 {promoForm.isSubmitting ? <Spinner className="mr-2 h-4 w-4" /> : null}
                 {t('promo.actions.redeem')}
               </Button>
             </div>
           </Form>
-        </section>
+        </BillingSection>
       ) : null}
     </div>
   );
