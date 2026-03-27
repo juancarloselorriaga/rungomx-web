@@ -29,7 +29,7 @@ export function SettingsNav({ title, description, sections }: SettingsNavProps) 
               key={section.key}
               href={section.href as Parameters<typeof Link>[0]['href']}
               className={cn(
-                'block rounded-md border px-3 py-2 transition',
+                'motion-status block rounded-md border px-3 py-2',
                 'hover:border-primary/60 hover:bg-muted/60',
                 isActive
                   ? 'border-primary/70 bg-primary/5 text-foreground'

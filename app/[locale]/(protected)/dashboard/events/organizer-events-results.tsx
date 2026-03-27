@@ -86,11 +86,18 @@ export function OrganizerEventsResults({
   if (totalEvents === 0) {
     return (
       <Surface className="p-8">
-        <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
-          <div className="rounded-full bg-muted p-4">
+        <div
+          className="flex flex-col items-center justify-center text-center space-y-4 py-8"
+          data-motion="settle"
+        >
+          <div className="rounded-full bg-muted p-4" data-motion-item>
             <Calendar className="h-8 w-8 text-muted-foreground" />
           </div>
-          <div className="space-y-2">
+          <div
+            className="space-y-2"
+            data-motion-item
+            style={{ '--motion-index': 1 } as React.CSSProperties}
+          >
             <h2 className="text-xl font-semibold">{t('emptyState.title')}</h2>
             <p className="text-muted-foreground max-w-md">{t('emptyState.description')}</p>
           </div>
@@ -120,11 +127,18 @@ export function OrganizerEventsResults({
           <OrganizerEventsListSkeleton />
         ) : filteredEvents.length === 0 ? (
           <Surface className="p-8">
-            <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
-              <div className="rounded-full bg-muted p-4">
+            <div
+              className="flex flex-col items-center justify-center text-center space-y-4 py-8"
+              data-motion="settle"
+            >
+              <div className="rounded-full bg-muted p-4" data-motion-item>
                 <Calendar className="h-8 w-8 text-muted-foreground" />
               </div>
-              <div className="space-y-2">
+              <div
+                className="space-y-2"
+                data-motion-item
+                style={{ '--motion-index': 1 } as React.CSSProperties}
+              >
                 <h2 className="text-xl font-semibold">{t('filters.noResults.title')}</h2>
                 <p className="text-muted-foreground max-w-md">
                   {t('filters.noResults.description')}
@@ -138,12 +152,14 @@ export function OrganizerEventsResults({
             </div>
           </Surface>
         ) : (
-          <div className="space-y-4">
-            {filteredEvents.map((event) => (
+          <div className="space-y-4" data-motion="settle">
+            {filteredEvents.map((event, index) => (
               <Link
                 key={event.id}
                 href={{ pathname: '/dashboard/events/[eventId]', params: { eventId: event.id } }}
-                className="group block overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-primary/50 hover:shadow-md"
+                className="motion-hover-lift group block overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:border-primary/50 hover:shadow-md"
+                data-motion-item
+                style={{ '--motion-index': index } as React.CSSProperties}
               >
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative aspect-[16/9] w-full self-stretch overflow-hidden bg-muted sm:w-44 sm:self-stretch sm:border-r sm:border-border/60">

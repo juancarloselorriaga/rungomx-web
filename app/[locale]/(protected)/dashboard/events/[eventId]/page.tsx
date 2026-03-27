@@ -80,8 +80,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   return (
     <div className="space-y-6">
       {/* Stats cards */}
-      <div className="grid gap-3 md:grid-cols-4">
-        <Surface className="space-y-1.5 p-4">
+      <div className="grid gap-3 md:grid-cols-4" data-motion="settle">
+        <Surface
+          className="space-y-1.5 p-4"
+          data-motion-item
+          style={{ '--motion-index': 0 } as React.CSSProperties}
+        >
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <Calendar className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('eventDate')}</span>
@@ -89,7 +93,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <p className="text-base font-semibold">{formatDate(event.startsAt, locale)}</p>
         </Surface>
 
-        <Surface className="space-y-1.5 p-4">
+        <Surface
+          className="space-y-1.5 p-4"
+          data-motion-item
+          style={{ '--motion-index': 1 } as React.CSSProperties}
+        >
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <MapPin className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('location')}</span>
@@ -99,7 +107,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           </p>
         </Surface>
 
-        <Surface className="space-y-1.5 p-4">
+        <Surface
+          className="space-y-1.5 p-4"
+          data-motion-item
+          style={{ '--motion-index': 2 } as React.CSSProperties}
+        >
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <Ticket className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('distances')}</span>
@@ -107,7 +119,11 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <p className="text-base font-semibold">{event.distances.length}</p>
         </Surface>
 
-        <Surface className="space-y-1.5 p-4">
+        <Surface
+          className="space-y-1.5 p-4"
+          data-motion-item
+          style={{ '--motion-index': 3 } as React.CSSProperties}
+        >
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <Users className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('registrations')}</span>
@@ -152,7 +168,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   return (
                     <div
                       key={distance.id}
-                      className="flex items-center justify-between gap-4 px-4 py-3"
+                      className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
                     >
                       <div className="min-w-0">
                         <p className="font-medium">{distance.label}</p>
@@ -180,7 +196,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </div>
 
               {event.distances.length > 5 && (
-                <details className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
+                <details className="motion-details rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
                   <summary className="cursor-pointer text-sm font-medium text-primary">
                     {tDetail('capacity.viewAll', {
                       count: event.distances.length - 5,
@@ -195,7 +211,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                       return (
                         <div
                           key={distance.id}
-                          className="flex items-center justify-between gap-4 px-4 py-3"
+                          className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/30"
                         >
                           <div className="min-w-0">
                             <p className="font-medium">{distance.label}</p>

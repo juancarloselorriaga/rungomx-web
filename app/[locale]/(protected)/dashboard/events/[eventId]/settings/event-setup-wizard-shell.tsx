@@ -327,8 +327,9 @@ export function EventSetupWizardShell({
     if (targetIndex < 0 || targetIndex >= steps.length) return;
     const targetStep = steps[targetIndex];
     if (!targetStep) return;
-    const canonicalIndex =
-      options?.preserveRequestedStep ? targetIndex : resolveCanonicalStepIndex(steps, targetStep.id);
+    const canonicalIndex = options?.preserveRequestedStep
+      ? targetIndex
+      : resolveCanonicalStepIndex(steps, targetStep.id);
     const canonicalStep = steps[canonicalIndex];
     if (!canonicalStep) return;
 
@@ -493,7 +494,7 @@ export function EventSetupWizardShell({
                       type="button"
                       onClick={() => navigateToStep(index)}
                       className={cn(
-                        'flex min-w-[170px] items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition sm:min-w-[190px]',
+                        'motion-pressable flex min-w-[170px] items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition sm:min-w-[190px]',
                         isCurrent
                           ? 'border-primary/30 bg-primary/5 shadow-sm'
                           : isComplete
@@ -561,7 +562,7 @@ export function EventSetupWizardShell({
                     type="button"
                     onClick={() => navigateToStep(index)}
                     className={cn(
-                      'inline-flex items-center gap-3 rounded-full border px-3 py-2 text-left text-sm transition',
+                      'motion-pressable inline-flex items-center gap-3 rounded-full border px-3 py-2 text-left text-sm transition',
                       isCurrent
                         ? 'border-primary/30 bg-primary/5 shadow-sm'
                         : isComplete
@@ -606,6 +607,8 @@ export function EventSetupWizardShell({
 
         <div className="px-5 py-6 sm:px-6 lg:px-8">
           <div
+            key={activeStep.id}
+            data-motion="settle"
             className={cn(
               'mx-auto',
               activeStep.id === 'review' ? 'max-w-[1280px]' : 'max-w-[1240px]',
@@ -613,7 +616,7 @@ export function EventSetupWizardShell({
           >
             {activeStep.id === 'review' ? (
               isReviewRefreshPending ? (
-                <div className="space-y-6">
+                <div className="space-y-6" data-motion-item>
                   <div className="rounded-[28px] border border-primary/20 bg-primary/5 p-6 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                       {t('wizardShell.review.finishLineLabel')}
@@ -636,10 +639,10 @@ export function EventSetupWizardShell({
                   </div>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div className="space-y-6" data-motion-item>
                   <div
                     className={cn(
-                      'rounded-[28px] border p-6',
+                      'motion-status rounded-[28px] border p-6',
                       reviewState === 'ready'
                         ? 'border-border/60 bg-muted/15'
                         : reviewState === 'reviewRecommended'
@@ -681,6 +684,7 @@ export function EventSetupWizardShell({
                           <Button
                             type="button"
                             onClick={() => jumpToStep(reviewBlockers[0]!.stepId)}
+                            className="motion-pressable"
                           >
                             {t('wizardShell.review.goToFirstBlocker')}
                             <ArrowRight className="ml-2 h-4 w-4" />
@@ -708,8 +712,15 @@ export function EventSetupWizardShell({
                       </div>
                     </div>
 
-                    <dl className="mt-5 grid gap-3 border-t border-border/50 pt-5 text-sm text-muted-foreground sm:grid-cols-3">
-                      <div className="space-y-1">
+                    <dl
+                      className="mt-5 grid gap-3 border-t border-border/50 pt-5 text-sm text-muted-foreground sm:grid-cols-3"
+                      data-motion="settle"
+                    >
+                      <div
+                        className="space-y-1"
+                        data-motion-item
+                        style={{ '--motion-index': 0 } as React.CSSProperties}
+                      >
                         <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           {t('wizardShell.review.blockersTitle')}
                         </dt>
@@ -717,7 +728,11 @@ export function EventSetupWizardShell({
                           {reviewBlockers.length}
                         </dd>
                       </div>
-                      <div className="space-y-1">
+                      <div
+                        className="space-y-1"
+                        data-motion-item
+                        style={{ '--motion-index': 1 } as React.CSSProperties}
+                      >
                         <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           {t('wizardShell.review.recommendationsTitle')}
                         </dt>
@@ -725,7 +740,11 @@ export function EventSetupWizardShell({
                           {reviewRecommendations.length}
                         </dd>
                       </div>
-                      <div className="space-y-1">
+                      <div
+                        className="space-y-1"
+                        data-motion-item
+                        style={{ '--motion-index': 2 } as React.CSSProperties}
+                      >
                         <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           {t('wizardShell.review.skippedTitle')}
                         </dt>
@@ -777,7 +796,7 @@ export function EventSetupWizardShell({
                               key={issue.id}
                               type="button"
                               onClick={() => jumpToStep(issue.stepId)}
-                              className="flex w-full items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition hover:bg-destructive/10"
+                              className="motion-pressable flex w-full items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition hover:bg-destructive/10"
                             >
                               <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
                               <span className="min-w-0 flex-1">
@@ -833,7 +852,7 @@ export function EventSetupWizardShell({
                                 key={issue.id}
                                 type="button"
                                 onClick={() => jumpToStep(issue.stepId)}
-                                className="flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3 text-left transition hover:bg-muted/30"
+                                className="motion-pressable flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3 text-left transition hover:bg-muted/30"
                               >
                                 <CircleDashed className="mt-0.5 h-4 w-4 text-muted-foreground" />
                                 <span className="min-w-0 flex-1">
@@ -902,7 +921,7 @@ export function EventSetupWizardShell({
                 </div>
               )
             ) : (
-              activeStep.content
+              <div data-motion-item>{activeStep.content}</div>
             )}
           </div>
         </div>
