@@ -560,7 +560,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                     type="button"
                     onClick={() => setSelectedOrgId(org.id)}
                     className={cn(
-                      'motion-pressable w-full rounded-xl border p-4 text-left transition-colors',
+                      'motion-pressable w-full rounded-xl border p-4 text-left',
                       selectedOrgId === org.id
                         ? 'border-primary bg-primary/5 shadow-sm'
                         : 'border-border hover:border-primary/50 hover:bg-muted/20',
@@ -589,7 +589,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                     setShowNewOrg(true);
                     setSelectedOrgId(null);
                   }}
-                  className="motion-pressable flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                  className="motion-pressable flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-muted-foreground hover:border-primary/50 hover:text-foreground"
                 >
                   <Building2 className="h-4 w-4" />
                   {t('organization.createNew')}

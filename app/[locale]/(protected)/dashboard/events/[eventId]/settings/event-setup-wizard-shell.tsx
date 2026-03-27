@@ -494,7 +494,7 @@ export function EventSetupWizardShell({
                       type="button"
                       onClick={() => navigateToStep(index)}
                       className={cn(
-                        'motion-pressable flex min-w-[170px] items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition sm:min-w-[190px]',
+                        'motion-pressable flex min-w-[170px] items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left sm:min-w-[190px]',
                         isCurrent
                           ? 'border-primary/30 bg-primary/5 shadow-sm'
                           : isComplete
@@ -562,7 +562,7 @@ export function EventSetupWizardShell({
                     type="button"
                     onClick={() => navigateToStep(index)}
                     className={cn(
-                      'motion-pressable inline-flex items-center gap-3 rounded-full border px-3 py-2 text-left text-sm transition',
+                      'motion-pressable inline-flex items-center gap-3 rounded-full border px-3 py-2 text-left text-sm',
                       isCurrent
                         ? 'border-primary/30 bg-primary/5 shadow-sm'
                         : isComplete
@@ -796,7 +796,7 @@ export function EventSetupWizardShell({
                               key={issue.id}
                               type="button"
                               onClick={() => jumpToStep(issue.stepId)}
-                              className="motion-pressable flex w-full items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left transition hover:bg-destructive/10"
+                              className="motion-pressable flex w-full items-start gap-3 rounded-2xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-left hover:bg-destructive/10"
                             >
                               <AlertCircle className="mt-0.5 h-4 w-4 text-destructive" />
                               <span className="min-w-0 flex-1">
@@ -852,7 +852,7 @@ export function EventSetupWizardShell({
                                 key={issue.id}
                                 type="button"
                                 onClick={() => jumpToStep(issue.stepId)}
-                                className="motion-pressable flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3 text-left transition hover:bg-muted/30"
+                                className="motion-pressable flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3 text-left hover:bg-muted/30"
                               >
                                 <CircleDashed className="mt-0.5 h-4 w-4 text-muted-foreground" />
                                 <span className="min-w-0 flex-1">
