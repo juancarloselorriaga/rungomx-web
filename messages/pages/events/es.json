@@ -289,8 +289,8 @@
       }
     },
     "loginRequired": {
-      "title": "Inicio de sesión requerido",
-      "description": "Necesitas iniciar sesión para inscribirte en esta carrera.",
+      "title": "Guarda tu lugar con una cuenta",
+      "description": "Crea una cuenta o inicia sesión para inscribirte. La usamos para guardar tu inscripción y enviarte la confirmación.",
       "signIn": "Iniciar sesión",
       "signUp": "Crear cuenta"
     }

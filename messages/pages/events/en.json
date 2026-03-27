@@ -289,8 +289,8 @@
       }
     },
     "loginRequired": {
-      "title": "Sign in required",
-      "description": "You need to be signed in to register for this race.",
+      "title": "Save your spot with an account",
+      "description": "Sign in or create an account to save your registration and confirmation details.",
       "signIn": "Sign in",
       "signUp": "Create account"
     }
