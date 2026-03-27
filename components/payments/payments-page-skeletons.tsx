@@ -1,4 +1,12 @@
+import {
+  DashboardPageIntroSkeleton,
+  LoadingShell,
+  LoadingStatGrid,
+  LoadingSurface,
+  LoadingTextBlock,
+} from '@/components/dashboard/page-skeleton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 
 type PaymentsWorkspaceSkeletonProps = {
   showContextCard?: boolean;
@@ -10,95 +18,72 @@ export function PaymentsWorkspaceSkeleton({
   loadingAriaLabel,
 }: PaymentsWorkspaceSkeletonProps) {
   return (
-    <div className="space-y-6" role="status" aria-live="polite" aria-label={loadingAriaLabel}>
-      {showContextCard ? (
-        <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-28" />
-              <Skeleton className="h-8 w-72 max-w-full" />
-              <Skeleton className="h-4 w-80 max-w-full" />
-              <Skeleton className="h-4 w-40" />
-            </div>
-            <Skeleton className="h-10 w-48" />
-          </div>
-        </section>
-      ) : null}
+    <LoadingShell loadingAriaLabel={loadingAriaLabel}>
+      {showContextCard ? <DashboardPageIntroSkeleton showActions={false} /> : null}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.9fr)]">
-        <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
+        <LoadingSurface>
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <Skeleton className="h-7 w-48" />
-              <Skeleton className="h-4 w-60" />
-            </div>
+            <LoadingTextBlock lines={['w-48', 'w-60']} lineClassName="h-4" className="space-y-3" />
             <Skeleton className="h-4 w-36" />
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={`wallet-skeleton-${index}`} className="rounded-lg border bg-background/70 p-4">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="mt-3 h-8 w-24" />
-              </div>
-            ))}
-          </div>
-        </section>
+          <LoadingStatGrid
+            count={4}
+            columnsClassName="sm:grid-cols-2 xl:grid-cols-4"
+            itemClassName="p-4"
+            compact
+          />
+        </LoadingSurface>
 
-        <section className="rounded-xl border bg-card/80 p-5 shadow-sm">
-          <div className="space-y-2">
-            <Skeleton className="h-3 w-28" />
-            <Skeleton className="h-9 w-56" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-4/5" />
-          </div>
+        <LoadingSurface variant="inset" className="border-border/60 bg-background/80 p-5">
+          <LoadingTextBlock lines={['w-28', 'w-56', 'w-full', 'w-4/5']} lineClassName="h-4" />
           <div className="mt-5 space-y-3">
             <Skeleton className="h-11 w-full" />
             <Skeleton className="h-11 w-full" />
             <Skeleton className="mx-auto h-4 w-28" />
           </div>
-        </section>
+        </LoadingSurface>
       </div>
 
       <section className="space-y-4">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-72" />
-          <Skeleton className="h-4 w-96 max-w-full" />
-        </div>
+        <LoadingTextBlock
+          lines={['w-72', 'w-96 max-w-full']}
+          lineClassName="h-4"
+          className="space-y-3"
+        />
         <div className="grid gap-4 lg:grid-cols-2">
           {Array.from({ length: 2 }).map((_, sectionIndex) => (
-            <div
-              key={`queue-section-skeleton-${sectionIndex}`}
-              className="rounded-xl border bg-card/80 p-4 shadow-sm"
-            >
+            <Surface key={`queue-section-skeleton-${sectionIndex}`} className="p-4">
               <Skeleton className="h-6 w-40" />
               <Skeleton className="mt-2 h-4 w-80 max-w-full" />
               <div className="mt-4 space-y-3">
                 {Array.from({ length: 2 }).map((__, itemIndex) => (
-                  <div
+                  <InsetSurface
                     key={`queue-item-skeleton-${sectionIndex}-${itemIndex}`}
-                    className="rounded-lg border bg-background/80 p-4"
+                    className="border-border/55 bg-background/80 p-4"
                   >
                     <Skeleton className="h-5 w-48" />
                     <Skeleton className="mt-2 h-4 w-full" />
                     <Skeleton className="mt-4 h-4 w-28" />
-                  </div>
+                  </InsetSurface>
                 ))}
               </div>
-            </div>
+            </Surface>
           ))}
         </div>
       </section>
-    </div>
+    </LoadingShell>
   );
 }
 
 export function PayoutHistorySkeleton() {
   return (
-    <section className="rounded-xl border bg-card/80 p-6 shadow-sm">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-56" />
-        <Skeleton className="h-4 w-[32rem] max-w-full" />
-      </div>
+    <LoadingSurface className="p-6">
+      <LoadingTextBlock
+        lines={['w-56', 'w-[32rem] max-w-full']}
+        lineClassName="h-4"
+        className="space-y-3"
+      />
       <div className="mt-6 overflow-hidden rounded-lg border">
         <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1.2fr_44px] gap-4 border-b bg-muted/20 px-4 py-3">
           {Array.from({ length: 6 }).map((_, index) => (
@@ -116,7 +101,7 @@ export function PayoutHistorySkeleton() {
           </div>
         ))}
       </div>
-    </section>
+    </LoadingSurface>
   );
 }
 
@@ -126,42 +111,28 @@ type PayoutDetailSkeletonProps = {
 
 export function PayoutDetailSkeleton({ loadingAriaLabel }: PayoutDetailSkeletonProps) {
   return (
-    <div className="space-y-6" role="status" aria-live="polite" aria-label={loadingAriaLabel}>
-      <div className="space-y-3">
-        <div className="flex gap-2">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-28" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-10 w-64" />
-          <Skeleton className="h-4 w-[28rem] max-w-full" />
-        </div>
-      </div>
+    <LoadingShell loadingAriaLabel={loadingAriaLabel}>
+      <DashboardPageIntroSkeleton
+        showEyebrow={false}
+        showActions={false}
+        showAside={false}
+        descriptionWidths={['w-[28rem] max-w-full']}
+      />
 
-      <section className="rounded-xl border bg-card/80 p-6 shadow-sm">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-72" />
-        </div>
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={`detail-metric-${index}`} className="space-y-2">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-6 w-24" />
-            </div>
-          ))}
-        </div>
+      <LoadingSurface className="p-6">
+        <LoadingTextBlock lines={['w-48', 'w-72']} lineClassName="h-4" className="space-y-3" />
+        <LoadingStatGrid count={4} columnsClassName="md:grid-cols-2 xl:grid-cols-4" compact />
         <Skeleton className="mt-5 h-12 w-44" />
-      </section>
+      </LoadingSurface>
 
-      <section className="rounded-xl border bg-card/80 p-6 shadow-sm">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-52" />
-          <Skeleton className="h-4 w-72" />
-        </div>
+      <LoadingSurface className="p-6">
+        <LoadingTextBlock lines={['w-52', 'w-72']} lineClassName="h-4" className="space-y-3" />
         <div className="mt-5 space-y-4">
           {Array.from({ length: 3 }).map((_, index) => (
-            <div key={`timeline-skeleton-${index}`} className="rounded-xl border bg-background/80 p-5">
+            <InsetSurface
+              key={`timeline-skeleton-${index}`}
+              className="border-border/55 bg-background/80 p-5"
+            >
               <div className="flex items-center gap-2">
                 <Skeleton className="h-6 w-24 rounded-full" />
                 <Skeleton className="h-4 w-28" />
@@ -169,16 +140,16 @@ export function PayoutDetailSkeleton({ loadingAriaLabel }: PayoutDetailSkeletonP
               <Skeleton className="mt-4 h-6 w-56" />
               <Skeleton className="mt-2 h-4 w-full" />
               <Skeleton className="mt-2 h-4 w-3/4" />
-            </div>
+            </InsetSurface>
           ))}
         </div>
-      </section>
+      </LoadingSurface>
 
-      <section className="rounded-xl border bg-card/80 p-6 shadow-sm">
+      <LoadingSurface className="p-6">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="mt-2 h-4 w-80 max-w-full" />
         <Skeleton className="mt-5 h-11 w-44" />
-      </section>
-    </div>
+      </LoadingSurface>
+    </LoadingShell>
   );
 }

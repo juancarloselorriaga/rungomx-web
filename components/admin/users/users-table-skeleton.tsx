@@ -1,5 +1,7 @@
 'use client';
 
+import { Skeleton } from '@/components/ui/skeleton';
+
 type UsersTableSkeletonProps = {
   rows?: number;
   columns: {
@@ -34,27 +36,27 @@ export function UsersTableSkeleton({
       {columns.user !== false ? (
         <td className={`px-4 align-top ${rowPadding}`}>
           <div className="space-y-2">
-            <div className="h-4 w-32 rounded bg-muted animate-pulse" />
-            <div className="h-3 w-40 rounded bg-muted animate-pulse" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-40" />
           </div>
         </td>
       ) : null}
       {columns.role ? (
         <td className={`px-4 align-top ${rowPadding}`}>
           <div className="flex gap-2">
-            <div className="h-5 w-16 rounded-full bg-muted animate-pulse" />
-            <div className="h-5 w-12 rounded-full bg-muted animate-pulse" />
+            <Skeleton className="h-5 w-16 rounded-full" />
+            <Skeleton className="h-5 w-12 rounded-full" />
           </div>
         </td>
       ) : null}
       {columns.created ? (
         <td className={`px-4 align-top ${rowPadding}`}>
-          <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+          <Skeleton className="h-4 w-24" />
         </td>
       ) : null}
       {columns.actions ? (
         <td className={`px-4 align-top ${rowPadding}`}>
-          <div className="ml-auto h-8 w-20 rounded bg-muted animate-pulse" />
+          <Skeleton className="ml-auto h-8 w-20" />
         </td>
       ) : null}
     </tr>
@@ -65,16 +67,16 @@ export function UsersTableSkeleton({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <table className={`w-full ${minWidthClassName} text-sm`}>
         {showHeader ? (
-          <thead className="bg-muted/60">
+          <thead className="bg-muted/30">
             <tr>
               {columnOrder
                 .filter((col) => col.visible)
                 .map((col) => (
                   <th key={col.key} className="px-4 py-3">
-                    <div className="h-3 w-20 rounded bg-muted animate-pulse" />
+                    <Skeleton className="h-3 w-20" />
                   </th>
                 ))}
             </tr>

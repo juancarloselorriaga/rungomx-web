@@ -1,27 +1,28 @@
+import {
+  DashboardPageIntroSkeleton,
+  LoadingShell,
+  LoadingSurface,
+} from '@/components/dashboard/page-skeleton';
 import { UsersTableSkeleton } from '@/components/admin/users/users-table-skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function UsersLoading() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="h-3 w-12 rounded bg-primary/20" />
-        <div className="h-8 w-64 rounded bg-muted animate-pulse" />
-        <div className="h-4 w-[520px] max-w-full rounded bg-muted animate-pulse" />
-        <div className="h-3 w-60 rounded bg-muted animate-pulse" />
-      </div>
+    <LoadingShell>
+      <DashboardPageIntroSkeleton showActions={false} showAside={false} />
 
-      <div className="space-y-3">
-        <div className="h-4 w-16 rounded bg-muted/80" />
+      <LoadingSurface className="p-4">
+        <Skeleton className="h-4 w-16" />
         <div className="flex flex-wrap gap-2">
-          <div className="h-10 w-64 rounded-md bg-muted animate-pulse" />
-          <div className="h-10 w-20 rounded-md bg-muted animate-pulse" />
-          <div className="h-10 w-16 rounded-md bg-muted animate-pulse" />
-          <div className="h-10 w-16 rounded-md bg-muted animate-pulse" />
-          <div className="h-10 w-24 rounded-md bg-muted animate-pulse" />
-          <div className="h-10 w-28 rounded-md bg-muted animate-pulse" />
-          <div className="h-10 w-28 rounded-md bg-muted animate-pulse" />
+          <Skeleton className="h-10 w-64 rounded-md" />
+          <Skeleton className="h-10 w-20 rounded-md" />
+          <Skeleton className="h-10 w-16 rounded-md" />
+          <Skeleton className="h-10 w-16 rounded-md" />
+          <Skeleton className="h-10 w-24 rounded-md" />
+          <Skeleton className="h-10 w-28 rounded-md" />
+          <Skeleton className="h-10 w-28 rounded-md" />
         </div>
-      </div>
+      </LoadingSurface>
 
       <UsersTableSkeleton
         rows={5}
@@ -29,6 +30,6 @@ export default function UsersLoading() {
         showHeader
         minWidthClassName="min-w-[720px]"
       />
-    </div>
+    </LoadingShell>
   );
 }
