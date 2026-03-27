@@ -33,7 +33,7 @@ type LocaleSpec = {
     updatePoints: string[];
     heroLinks: {
       events: string;
-      help: string;
+      results: string;
     };
     updateLinks: {
       events: string;
@@ -187,7 +187,11 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
       path: code === 'es' ? '/noticias' : '/en/news',
       heading: news.hero.title,
       updatesHeading: news.updates.title,
-      updateTitles: [news.updates.items.registrations.title, news.updates.items.help.title, news.updates.items.trust.title],
+      updateTitles: [
+        news.updates.items.registrations.title,
+        news.updates.items.help.title,
+        news.updates.items.trust.title,
+      ],
       updatePoints: [
         news.updates.items.registrations.points.point1,
         news.updates.items.registrations.points.point2,
@@ -201,7 +205,7 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
       ],
       heroLinks: {
         events: news.hero.primaryCta,
-        help: news.hero.secondaryCta,
+        results: news.hero.secondaryCta,
       },
       updateLinks: {
         events: news.updates.items.registrations.links.primary.label,
@@ -221,7 +225,10 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
     destinations: {
       events: { path: code === 'es' ? '/eventos' : '/en/events', heading: events.title },
       results: { path: code === 'es' ? '/resultados' : '/en/results', heading: results.title },
-      rankings: { path: code === 'es' ? '/clasificaciones' : '/en/rankings', heading: rankings.title },
+      rankings: {
+        path: code === 'es' ? '/clasificaciones' : '/en/rankings',
+        heading: rankings.title,
+      },
       help: { path: code === 'es' ? '/ayuda' : '/en/help', heading: help.hero.title },
       contact: { path: code === 'es' ? '/contacto' : '/en/contact', heading: contact.hero.title },
     },
@@ -285,11 +292,15 @@ async function followLinkAndAssertDestination(
   await link.scrollIntoViewIfNeeded();
   await link.click();
   await expect(page).toHaveURL(destinationPattern);
-  await expect(page.getByRole('heading', { level: 1, name: destination.heading, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: destination.heading, exact: true }),
+  ).toBeVisible();
 
   await page.goto(originPath, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(new RegExp(`${escapeForRegex(originPath)}(?:\\?|$)`));
-  await expect(page.getByRole('heading', { level: 1, name: originHeading, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: originHeading, exact: true }),
+  ).toBeVisible();
 }
 
 async function openDestinationAndReturn(
@@ -301,16 +312,22 @@ async function openDestinationAndReturn(
   const destinationPattern = new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`);
   await page.goto(destination.path, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(destinationPattern);
-  await expect(page.getByRole('heading', { level: 1, name: destination.heading, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: destination.heading, exact: true }),
+  ).toBeVisible();
 
   await page.goto(originPath, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(new RegExp(`${escapeForRegex(originPath)}(?:\\?|$)`));
-  await expect(page.getByRole('heading', { level: 1, name: originHeading, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: originHeading, exact: true }),
+  ).toBeVisible();
 }
 
 test.describe('Public narrative regression', () => {
   for (const locale of locales) {
-    test(`${locale.code} about route keeps narrative proof discoverable`, async ({ page }, testInfo) => {
+    test(`${locale.code} about route keeps narrative proof discoverable`, async ({
+      page,
+    }, testInfo) => {
       await openNarrativePage(page, testInfo, locale, locale.about.path, locale.about.heading);
 
       const main = page.locator('main');
@@ -345,15 +362,21 @@ test.describe('Public narrative regression', () => {
       }
     });
 
-    test(`${locale.code} news route keeps updates substantive and outward-facing`, async ({ page }, testInfo) => {
+    test(`${locale.code} news route keeps updates substantive and outward-facing`, async ({
+      page,
+    }, testInfo) => {
       await openNarrativePage(page, testInfo, locale, locale.news.path, locale.news.heading);
 
       const main = page.locator('main');
 
-      await expect(main.getByRole('heading', { name: locale.news.updatesHeading, exact: true })).toBeVisible();
+      await expect(
+        main.getByRole('heading', { name: locale.news.updatesHeading, exact: true }),
+      ).toBeVisible();
 
       for (const title of locale.news.updateTitles) {
-        await expect(main.getByRole('heading', { level: 2, name: title, exact: true })).toBeVisible();
+        await expect(
+          main.getByRole('heading', { level: 2, name: title, exact: true }),
+        ).toBeVisible();
       }
 
       for (const point of locale.news.updatePoints) {
@@ -361,7 +384,7 @@ test.describe('Public narrative regression', () => {
       }
 
       await assertLink(main, locale.news.heroLinks.events, locale.destinations.events.path);
-      await assertLink(main, locale.news.heroLinks.help, locale.destinations.help.path);
+      await assertLink(main, locale.news.heroLinks.results, locale.destinations.results.path);
       await assertLink(main, locale.news.updateLinks.events, locale.destinations.events.path);
       await assertLink(main, locale.news.updateLinks.results, locale.destinations.results.path);
       await assertLink(main, locale.news.updateLinks.help, locale.destinations.help.path);
@@ -394,14 +417,22 @@ test.describe('Public narrative regression', () => {
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(main, locale.news.updateLinks.rankings, locale.destinations.rankings.path),
+          getLinkByHrefAndText(
+            main,
+            locale.news.updateLinks.rankings,
+            locale.destinations.rankings.path,
+          ),
           locale.destinations.rankings,
           locale.news.heading,
         );
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(main, locale.news.updateLinks.contact, locale.destinations.contact.path),
+          getLinkByHrefAndText(
+            main,
+            locale.news.updateLinks.contact,
+            locale.destinations.contact.path,
+          ),
           locale.destinations.contact,
           locale.news.heading,
         );
@@ -435,6 +466,8 @@ test.describe('Public narrative regression', () => {
 
     await newsLink.click();
     await expect(page).toHaveURL(new RegExp(`${escapeForRegex(locale.news.path)}(?:\\?|$)`));
-    await expect(page.getByRole('heading', { level: 1, name: locale.news.heading, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: locale.news.heading, exact: true }),
+    ).toBeVisible();
   });
 });

@@ -32,6 +32,7 @@ jest.mock('@/lib/contact-submissions', () => {
     origin: z.string().trim().min(1).max(100).default('unknown'),
     userId: z.uuid().optional(),
     metadata: z.record(z.string(), z.any()).optional(),
+    inquiryType: z.enum(['support', 'partnerships', 'account_or_event']).optional(),
     // Allow any honeypot string so the action's
     // explicit honeypot check can handle bot detection.
     honeypot: z.string().optional(),
@@ -97,6 +98,7 @@ describe('submitContactSubmission', () => {
     message: 'Need help',
     origin: 'contact',
     userId: 'user-123',
+    inquiryType: null,
     metadata: {},
     createdAt: new Date('2024-02-02T00:00:00.000Z'),
   };
@@ -146,6 +148,28 @@ describe('submitContactSubmission', () => {
       }),
     );
     expect(mockRateLimit).not.toHaveBeenCalled();
+    expect(mockNotify).not.toHaveBeenCalled();
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('returns validation error for unsupported inquiry type', async () => {
+    const result = await submitContactSubmission(
+      // inquiryType is valid in the mocked schema but not in the real type
+      { message: 'Need help', origin: 'contact', inquiryType: 'billing' } as unknown as Parameters<
+        typeof submitContactSubmission
+      >[0],
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        ok: false,
+        error: 'INVALID_INPUT',
+        fieldErrors: expect.objectContaining({
+          inquiryType: expect.any(Array),
+        }),
+        message: 'INVALID_INPUT',
+      }),
+    );
     expect(mockNotify).not.toHaveBeenCalled();
     expect(mockCreate).not.toHaveBeenCalled();
   });
@@ -355,26 +379,38 @@ describe('submitContactSubmission', () => {
       message: 'Need help',
       origin: 'contact',
       userId: 'user-123',
+      inquiryType: 'support',
       metadata: {},
       createdAt: new Date('2024-02-02T00:00:00.000Z'),
     } satisfies ContactSubmissionRecord;
     mockCreate.mockResolvedValueOnce(storedSubmission);
 
-    const result = await submitContactSubmission({
-      message: 'Need help',
-      origin: 'contact',
-      metadata: { context: 'footer' },
-    });
+    const result = await submitContactSubmission(
+      // inquiryType is valid in the mocked schema but not in the real type
+      {
+        message: 'Need help',
+        origin: 'contact',
+        inquiryType: 'support',
+        metadata: { context: 'footer' },
+      } as unknown as Parameters<typeof submitContactSubmission>[0],
+    );
 
     expect(result).toEqual({ ok: true, id: 'submission-123' });
     expect(mockRateLimit).toHaveBeenCalledWith('user-123', 'user');
     expect(mockNotify).toHaveBeenCalledTimes(1);
+    expect(mockNotify).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inquiryType: 'support',
+      }),
+      'en',
+    );
     expect(mockCreate).toHaveBeenCalledWith({
       name: 'Auth User',
       email: 'auth@example.com',
       message: 'Need help',
       origin: 'contact',
       userId: 'user-123',
+      inquiryType: 'support',
       metadata: {
         context: 'footer',
         preferredLocale: 'en',

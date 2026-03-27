@@ -2,7 +2,15 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-type RouteKey = 'home' | 'contact' | 'help' | 'privacy' | 'terms' | 'events' | 'results' | 'rankings';
+type RouteKey =
+  | 'home'
+  | 'contact'
+  | 'help'
+  | 'privacy'
+  | 'terms'
+  | 'events'
+  | 'results'
+  | 'rankings';
 
 type LocaleSpec = {
   code: 'es' | 'en';
@@ -11,7 +19,7 @@ type LocaleSpec = {
   headings: Record<RouteKey, string>;
   contact: {
     heroHelpCta: string;
-    heroEventsCta: string;
+    heroResultsCta: string;
     triageTitle: string;
     triageCards: string[];
     formTitle: string;
@@ -276,7 +284,7 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
     },
     contact: {
       heroHelpCta: contact.hero.primaryCta,
-      heroEventsCta: contact.hero.secondaryCta,
+      heroResultsCta: contact.hero.secondaryCta,
       triageTitle: contact.triage.title,
       triageCards: [
         contact.triage.items.support.title,
@@ -305,8 +313,8 @@ function createLocaleSpec(code: 'es' | 'en'): LocaleSpec {
       invalidInput: contact.form.errors.invalidInput,
     },
     help: {
-      heroEventsCta: help.hero.primaryCta,
-      heroContactCta: help.hero.secondaryCta,
+      heroContactCta: help.hero.primaryCta,
+      heroEventsCta: help.hero.secondaryCta,
       categoriesTitle: help.categories.title,
       categories: [
         { id: 'registrations', title: help.categories.items.registrations.title },
@@ -389,7 +397,9 @@ async function openRoute(page: Page, locale: LocaleSpec, route: RouteKey) {
   await page.goto(locale.routes[route], { waitUntil: 'domcontentloaded' });
 
   expect(new URL(page.url()).pathname).toBe(locale.routes[route]);
-  await expect(page.getByRole('heading', { level: 1, name: locale.headings[route], exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: locale.headings[route], exact: true }),
+  ).toBeVisible();
 }
 
 async function expectLink(locator: Locator, href: string) {
@@ -402,7 +412,9 @@ async function followLink(locator: Locator, page: Page, href: string, targetHead
   await expectLink(locator, href);
   await locator.click();
   await expect(page).toHaveURL(new RegExp(`${escapeRegex(href)}(?:$|[?#])`));
-  await expect(page.getByRole('heading', { level: 1, name: targetHeading, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { level: 1, name: targetHeading, exact: true }),
+  ).toBeVisible();
 }
 
 function hrefLink(page: Page, href: string, label: string) {
@@ -414,9 +426,12 @@ function visibleHrefLink(page: Page, href: string, label: string) {
 }
 
 function sectionByHeading(page: Page, heading: string) {
-  return page.locator('section').filter({
-    has: page.getByRole('heading', { name: heading, exact: true }),
-  }).first();
+  return page
+    .locator('section')
+    .filter({
+      has: page.getByRole('heading', { name: heading, exact: true }),
+    })
+    .first();
 }
 
 function relatedCardLink(page: Page, href: string, title: string) {
@@ -445,35 +460,73 @@ async function assertContactPage(page: Page, locale: LocaleSpec) {
   await openRoute(page, locale, 'contact');
   const triageSection = sectionByHeading(page, locale.contact.triageTitle);
 
-  await expect(triageSection.getByRole('heading', { name: locale.contact.triageTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.contact.formTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.contact.directLinksTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.contact.trustTitle, exact: true })).toBeVisible();
+  await expect(
+    triageSection.getByRole('heading', { name: locale.contact.triageTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.contact.formTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.contact.directLinksTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.contact.trustTitle, exact: true }),
+  ).toBeVisible();
 
   for (const cardTitle of locale.contact.triageCards) {
-    await expect(triageSection.getByRole('heading', { name: cardTitle, exact: true })).toBeVisible();
+    await expect(
+      triageSection.getByRole('heading', { name: cardTitle, exact: true }),
+    ).toBeVisible();
   }
 
   await expect(page.getByLabel(locale.contact.fieldLabels.name, { exact: true })).toBeVisible();
   await expect(page.getByLabel(locale.contact.fieldLabels.email, { exact: true })).toBeVisible();
   await expect(contactMessageField(page, locale.contact.fieldLabels.message)).toBeVisible();
-  await expect(page.getByRole('button', { name: locale.contact.submitLabel, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: locale.contact.submitLabel, exact: true }),
+  ).toBeVisible();
 }
 
 async function assertContactHrefs(page: Page, locale: LocaleSpec) {
-  await expectLink(hrefLink(page, locale.routes.help, locale.contact.heroHelpCta), locale.routes.help);
-  await expectLink(hrefLink(page, locale.routes.events, locale.contact.heroEventsCta), locale.routes.events);
-  await expectLink(hrefLink(page, locale.routes.events, locale.contact.directLinks.events), locale.routes.events);
-  await expectLink(hrefLink(page, locale.routes.results, locale.contact.directLinks.results), locale.routes.results);
-  await expectLink(hrefLink(page, locale.routes.rankings, locale.contact.directLinks.rankings), locale.routes.rankings);
-  await expectLink(hrefLink(page, locale.routes.help, locale.contact.directLinks.help), locale.routes.help);
-  await expectLink(hrefLink(page, locale.routes.privacy, locale.contact.trustActions.privacy), locale.routes.privacy);
-  await expectLink(hrefLink(page, locale.routes.terms, locale.contact.trustActions.terms), locale.routes.terms);
+  await expectLink(
+    hrefLink(page, locale.routes.help, locale.contact.heroHelpCta),
+    locale.routes.help,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.results, locale.contact.heroResultsCta),
+    locale.routes.results,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.events, locale.contact.directLinks.events),
+    locale.routes.events,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.results, locale.contact.directLinks.results),
+    locale.routes.results,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.rankings, locale.contact.directLinks.rankings),
+    locale.routes.rankings,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.help, locale.contact.directLinks.help),
+    locale.routes.help,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.privacy, locale.contact.trustActions.privacy),
+    locale.routes.privacy,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.terms, locale.contact.trustActions.terms),
+    locale.routes.terms,
+  );
 }
 
 async function assertContactValidation(page: Page, locale: LocaleSpec) {
   await page.getByRole('button', { name: locale.contact.submitLabel, exact: true }).click();
-  await expect(contactValidationAlert(page, locale.contact.invalidInput)).toContainText(locale.contact.invalidInput);
+  await expect(contactValidationAlert(page, locale.contact.invalidInput)).toContainText(
+    locale.contact.invalidInput,
+  );
   await expect(contactMessageField(page, locale.contact.fieldLabels.message)).toHaveAttribute(
     'aria-invalid',
     'true',
@@ -490,10 +543,10 @@ async function followContactLinks(page: Page, locale: LocaleSpec) {
   );
   await openRoute(page, locale, 'contact');
   await followLink(
-    hrefLink(page, locale.routes.events, locale.contact.heroEventsCta),
+    hrefLink(page, locale.routes.results, locale.contact.heroResultsCta),
     page,
-    locale.routes.events,
-    locale.headings.events,
+    locale.routes.results,
+    locale.headings.results,
   );
   await openRoute(page, locale, 'contact');
   await followLink(
@@ -541,17 +594,29 @@ async function followContactLinks(page: Page, locale: LocaleSpec) {
 
 async function assertHelpPage(page: Page, locale: LocaleSpec) {
   await openRoute(page, locale, 'help');
-  await expect(page.getByRole('heading', { name: locale.help.categoriesTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.help.faqTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.help.ctaTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.help.helpfulLinksTitle, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.help.categoriesTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.help.faqTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.help.ctaTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.help.helpfulLinksTitle, exact: true }),
+  ).toBeVisible();
 
   for (const category of locale.help.categories) {
-    await expect(page.locator(`a[href="#${category.id}"]`).getByText(category.title, { exact: true })).toBeVisible();
+    await expect(
+      page.locator(`a[href="#${category.id}"]`).getByText(category.title, { exact: true }),
+    ).toBeVisible();
   }
 
   for (const group of locale.help.faqGroups) {
-    await expect(page.locator(`section#${group.id}`).getByRole('heading', { name: group.title, exact: true })).toBeVisible();
+    await expect(
+      page.locator(`section#${group.id}`).getByRole('heading', { name: group.title, exact: true }),
+    ).toBeVisible();
   }
 }
 
@@ -561,13 +626,34 @@ async function assertHelpInteraction(page: Page, locale: LocaleSpec) {
 }
 
 async function assertHelpHrefs(page: Page, locale: LocaleSpec) {
-  await expectLink(visibleHrefLink(page, locale.routes.events, locale.help.heroEventsCta), locale.routes.events);
-  await expectLink(visibleHrefLink(page, locale.routes.contact, locale.help.heroContactCta), locale.routes.contact);
-  await expectLink(visibleHrefLink(page, locale.routes.contact, locale.help.ctaContact), locale.routes.contact);
-  await expectLink(relatedCardLink(page, locale.routes.events, locale.help.helpfulLinks.events), locale.routes.events);
-  await expectLink(relatedCardLink(page, locale.routes.results, locale.help.helpfulLinks.results), locale.routes.results);
-  await expectLink(relatedCardLink(page, locale.routes.rankings, locale.help.helpfulLinks.rankings), locale.routes.rankings);
-  await expectLink(relatedCardLink(page, locale.routes.home, locale.help.helpfulLinks.home), locale.routes.home);
+  await expectLink(
+    visibleHrefLink(page, locale.routes.events, locale.help.heroEventsCta),
+    locale.routes.events,
+  );
+  await expectLink(
+    visibleHrefLink(page, locale.routes.contact, locale.help.heroContactCta),
+    locale.routes.contact,
+  );
+  await expectLink(
+    visibleHrefLink(page, locale.routes.contact, locale.help.ctaContact),
+    locale.routes.contact,
+  );
+  await expectLink(
+    relatedCardLink(page, locale.routes.events, locale.help.helpfulLinks.events),
+    locale.routes.events,
+  );
+  await expectLink(
+    relatedCardLink(page, locale.routes.results, locale.help.helpfulLinks.results),
+    locale.routes.results,
+  );
+  await expectLink(
+    relatedCardLink(page, locale.routes.rankings, locale.help.helpfulLinks.rankings),
+    locale.routes.rankings,
+  );
+  await expectLink(
+    relatedCardLink(page, locale.routes.home, locale.help.helpfulLinks.home),
+    locale.routes.home,
+  );
 }
 
 async function followHelpLinks(page: Page, locale: LocaleSpec) {
@@ -603,9 +689,15 @@ async function followHelpLinks(page: Page, locale: LocaleSpec) {
 
 async function assertPrivacyPage(page: Page, locale: LocaleSpec) {
   await openRoute(page, locale, 'privacy');
-  await expect(page.getByRole('heading', { name: locale.privacy.summaryTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.privacy.ctaTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.privacy.relatedTitle, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.privacy.summaryTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.privacy.ctaTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.privacy.relatedTitle, exact: true }),
+  ).toBeVisible();
 
   for (const sectionTitle of locale.privacy.sections) {
     await expect(page.getByRole('heading', { name: sectionTitle, exact: true })).toBeVisible();
@@ -613,10 +705,22 @@ async function assertPrivacyPage(page: Page, locale: LocaleSpec) {
 }
 
 async function assertPrivacyHrefs(page: Page, locale: LocaleSpec) {
-  await expectLink(hrefLink(page, locale.routes.contact, locale.privacy.heroContactCta), locale.routes.contact);
-  await expectLink(hrefLink(page, locale.routes.terms, locale.privacy.heroTermsCta), locale.routes.terms);
-  await expectLink(hrefLink(page, locale.routes.contact, locale.privacy.ctaContact), locale.routes.contact);
-  await expectLink(hrefLink(page, locale.routes.terms, locale.privacy.relatedTerms), locale.routes.terms);
+  await expectLink(
+    hrefLink(page, locale.routes.contact, locale.privacy.heroContactCta),
+    locale.routes.contact,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.terms, locale.privacy.heroTermsCta),
+    locale.routes.terms,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.contact, locale.privacy.ctaContact),
+    locale.routes.contact,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.terms, locale.privacy.relatedTerms),
+    locale.routes.terms,
+  );
 }
 
 async function followPrivacyLinks(page: Page, locale: LocaleSpec) {
@@ -637,9 +741,15 @@ async function followPrivacyLinks(page: Page, locale: LocaleSpec) {
 
 async function assertTermsPage(page: Page, locale: LocaleSpec) {
   await openRoute(page, locale, 'terms');
-  await expect(page.getByRole('heading', { name: locale.terms.summaryTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.terms.ctaTitle, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: locale.terms.relatedTitle, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.terms.summaryTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.terms.ctaTitle, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: locale.terms.relatedTitle, exact: true }),
+  ).toBeVisible();
 
   for (const sectionTitle of locale.terms.sections) {
     await expect(page.getByRole('heading', { name: sectionTitle, exact: true })).toBeVisible();
@@ -647,10 +757,22 @@ async function assertTermsPage(page: Page, locale: LocaleSpec) {
 }
 
 async function assertTermsHrefs(page: Page, locale: LocaleSpec) {
-  await expectLink(hrefLink(page, locale.routes.contact, locale.terms.heroContactCta), locale.routes.contact);
-  await expectLink(hrefLink(page, locale.routes.privacy, locale.terms.heroPrivacyCta), locale.routes.privacy);
-  await expectLink(hrefLink(page, locale.routes.contact, locale.terms.ctaContact), locale.routes.contact);
-  await expectLink(hrefLink(page, locale.routes.privacy, locale.terms.relatedPrivacy), locale.routes.privacy);
+  await expectLink(
+    hrefLink(page, locale.routes.contact, locale.terms.heroContactCta),
+    locale.routes.contact,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.privacy, locale.terms.heroPrivacyCta),
+    locale.routes.privacy,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.contact, locale.terms.ctaContact),
+    locale.routes.contact,
+  );
+  await expectLink(
+    hrefLink(page, locale.routes.privacy, locale.terms.relatedPrivacy),
+    locale.routes.privacy,
+  );
 }
 
 async function followTermsLinks(page: Page, locale: LocaleSpec) {
@@ -670,7 +792,9 @@ async function followTermsLinks(page: Page, locale: LocaleSpec) {
 }
 
 test.describe('Public trust/support/legal shell smoke', () => {
-  test('English contact page renders, validates, and routes its primary CTA to help', async ({ page }) => {
+  test('English contact page renders, validates, and routes its primary CTA to help', async ({
+    page,
+  }) => {
     const locale = localeOrThrow('en');
 
     await assertContactPage(page, locale);
@@ -684,7 +808,9 @@ test.describe('Public trust/support/legal shell smoke', () => {
     );
   });
 
-  test('English help page renders, expands FAQ content, and exposes the support CTA href', async ({ page }) => {
+  test('English help page renders, expands FAQ content, and exposes the support CTA href', async ({
+    page,
+  }) => {
     const locale = localeOrThrow('en');
 
     await assertHelpPage(page, locale);
@@ -692,7 +818,9 @@ test.describe('Public trust/support/legal shell smoke', () => {
     await assertHelpInteraction(page, locale);
   });
 
-  test('English privacy and terms pages keep their primary legal cross-links intact', async ({ page }) => {
+  test('English privacy and terms pages keep their primary legal cross-links intact', async ({
+    page,
+  }) => {
     const locale = localeOrThrow('en');
 
     await assertPrivacyPage(page, locale);
@@ -714,7 +842,9 @@ test.describe('Public trust/support/legal shell smoke', () => {
     );
   });
 
-  test('Spanish localized routes render and expose the expected localized hrefs', async ({ page }) => {
+  test('Spanish localized routes render and expose the expected localized hrefs', async ({
+    page,
+  }) => {
     const locale = localeOrThrow('es');
 
     await assertContactPage(page, locale);

@@ -127,6 +127,10 @@ describe('QuestionsManager reordering', () => {
       expectPromptBefore('Question B', 'Question A');
     });
 
+    await waitFor(() => {
+      expect(screen.getAllByRole('button', { name: 'reorder.moveUp' })[1]).toBeEnabled();
+    });
+
     fireEvent.click(screen.getAllByRole('button', { name: 'reorder.moveUp' })[1]);
 
     await waitFor(() => {
