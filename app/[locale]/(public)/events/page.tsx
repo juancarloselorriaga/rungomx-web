@@ -82,9 +82,7 @@ export default async function EventsPage({ params, searchParams }: EventsPagePro
     limit,
     lat: shouldUseProfileNearby ? profileLat : parsedParams.lat,
     lng: shouldUseProfileNearby ? profileLng : parsedParams.lng,
-    radiusKm: shouldUseProfileNearby
-      ? DEFAULT_PROFILE_NEARBY_RADIUS_KM
-      : parsedParams.radiusKm,
+    radiusKm: shouldUseProfileNearby ? DEFAULT_PROFILE_NEARBY_RADIUS_KM : parsedParams.radiusKm,
   });
 
   // Serialize dates to strings for client component (matches API format)
@@ -98,6 +96,7 @@ export default async function EventsPage({ params, searchParams }: EventsPagePro
   return (
     <div className="w-full">
       <Hero
+        badgeVariant="green"
         title={t('title')}
         description={t('description')}
         variant="gradient-green"

@@ -4,6 +4,7 @@ import { submitContactSubmission } from '@/app/actions/contact-submission';
 import {
   publicFieldClassName,
   publicMutedPanelClassName,
+  publicSelectClassName,
 } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
@@ -12,11 +13,13 @@ import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { Loader2, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 type ContactFormProps = {
   defaultName?: string;
   defaultEmail?: string;
+  defaultInquiryType?: string;
   isSignedIn: boolean;
 };
 
@@ -25,9 +28,15 @@ type ContactFormValues = {
   email: string;
   message: string;
   honeypot: string;
+  inquiryType: string;
 };
 
-export function ContactForm({ defaultName = '', defaultEmail = '', isSignedIn }: ContactFormProps) {
+export function ContactForm({
+  defaultName = '',
+  defaultEmail = '',
+  defaultInquiryType = '',
+  isSignedIn,
+}: ContactFormProps) {
   const t = useTranslations('pages.contact.form');
 
   const form = useForm<ContactFormValues>({
@@ -36,6 +45,7 @@ export function ContactForm({ defaultName = '', defaultEmail = '', isSignedIn }:
       email: defaultEmail,
       message: '',
       honeypot: '',
+      inquiryType: defaultInquiryType,
     },
     onSubmit: async (values) => {
       const normalizedValues = {
@@ -43,6 +53,11 @@ export function ContactForm({ defaultName = '', defaultEmail = '', isSignedIn }:
         email: values.email.trim() || undefined,
         message: values.message.trim(),
         honeypot: values.honeypot,
+        inquiryType: (values.inquiryType || undefined) as
+          | 'support'
+          | 'partnerships'
+          | 'account_or_event'
+          | undefined,
       };
 
       const metadata =
@@ -110,6 +125,21 @@ export function ContactForm({ defaultName = '', defaultEmail = '', isSignedIn }:
     },
   });
 
+  // Sync external defaultInquiryType prop changes into the form
+  // (e.g. when the parent pre-selects an inquiry type via URL params)
+  // Uses destructured stable callbacks to satisfy react-hooks/exhaustive-deps
+  const previousDefaultInquiryTypeRef = useRef(defaultInquiryType);
+  const { setFieldValue, clearError } = form;
+
+  useEffect(() => {
+    if (defaultInquiryType === previousDefaultInquiryTypeRef.current) {
+      return;
+    }
+    previousDefaultInquiryTypeRef.current = defaultInquiryType;
+    setFieldValue('inquiryType', defaultInquiryType);
+    clearError('inquiryType');
+  }, [defaultInquiryType, clearError, setFieldValue]);
+
   return (
     <div
       id="contact-form"
@@ -152,6 +182,23 @@ export function ContactForm({ defaultName = '', defaultEmail = '', isSignedIn }:
             />
           </FormField>
         </div>
+
+        <FormField label={t('fields.inquiryType.label')} error={form.errors.inquiryType}>
+          <select
+            id="contact-inquiry-type"
+            className={publicSelectClassName}
+            aria-invalid={form.errors.inquiryType ? true : undefined}
+            {...form.register('inquiryType')}
+            disabled={form.isSubmitting}
+          >
+            <option value=""></option>
+            <option value="support">{t('fields.inquiryType.options.support')}</option>
+            <option value="partnerships">{t('fields.inquiryType.options.partnerships')}</option>
+            <option value="account_or_event">
+              {t('fields.inquiryType.options.accountOrEvent')}
+            </option>
+          </select>
+        </FormField>
 
         <FormField
           label={t('fields.message.label')}

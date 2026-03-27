@@ -20,9 +20,7 @@ import {
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
-  return createLocalizedPageMetadata(locale, '/', (messages) => messages.Pages?.Home?.metadata, {
-    imagePath: '/favicon.ico',
-  });
+  return createLocalizedPageMetadata(locale, '/', (messages) => messages.Pages?.Home?.metadata);
 }
 
 const publicRoutes = {
@@ -145,7 +143,7 @@ export default async function Home({ params }: LocalePageProps) {
                 className="group grid gap-5 border-b border-border/70 py-8 transition-colors duration-200 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-start md:gap-8 md:py-10"
               >
                 <div className="flex items-center justify-between gap-4 md:block">
-                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  <span aria-hidden="true" className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     0{index + 1}
                   </span>
                   <Icon className={`h-5 w-5 md:mt-5 ${iconClasses}`} />
@@ -190,7 +188,7 @@ export default async function Home({ params }: LocalePageProps) {
           <div className="mt-8 grid gap-8 border-t border-border/70 pt-8 md:grid-cols-3 md:gap-10 md:pt-10">
             {eventPageHighlights.map((highlight, index) => (
               <article key={highlight} className="border-t border-border/70 pt-6 md:border-t-0 md:pt-0">
-                <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                <span aria-hidden="true" className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   0{index + 1}
                 </span>
                 <p className="mt-4 max-w-[28ch] text-base leading-8 text-foreground/86">{highlight}</p>

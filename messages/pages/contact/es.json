@@ -4,7 +4,7 @@
     "title": "Escríbele al equipo de RunGoMX cuando necesites ayuda",
     "description": "Usa esta página para soporte, problemas con eventos o cuentas, alianzas y consultas generales. Los mensajes que envías aquí llegan directo al equipo de RunGoMX.",
     "primaryCta": "Ir al centro de ayuda",
-    "secondaryCta": "Ver eventos"
+    "secondaryCta": "Ver resultados"
   },
   "triage": {
     "eyebrow": "¿Cómo podemos ayudarte?",
@@ -51,6 +51,14 @@
       },
       "honeypot": {
         "label": "Sitio web"
+      },
+      "inquiryType": {
+        "label": "Tipo de consulta",
+        "options": {
+          "support": "Soporte",
+          "partnerships": "Colaboraciones o consulta general",
+          "accountOrEvent": "Problema de cuenta o evento"
+        }
       }
     },
     "submit": "Enviar mensaje",

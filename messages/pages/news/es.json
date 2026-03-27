@@ -4,7 +4,7 @@
     "title": "Novedades en RunGoMX",
     "description": "Aquí compartimos cambios prácticos en páginas de eventos, ayuda, resultados, rankings y otras partes del sitio que la gente sí usa.",
     "primaryCta": "Explorar eventos",
-    "secondaryCta": "Ir al centro de ayuda"
+    "secondaryCta": "Ver resultados"
   },
   "updates": {
     "eyebrow": "Actualizaciones recientes",
@@ -29,7 +29,8 @@
             "href": "/results",
             "label": "Revisar resultados"
           }
-        }
+        },
+        "date": "Marzo 2026"
       },
       "help": {
         "badge": "Soporte",
@@ -49,7 +50,8 @@
             "href": "/contact",
             "label": "Contactar al equipo"
           }
-        }
+        },
+        "date": "Febrero 2026"
       },
       "trust": {
         "badge": "Confianza",
@@ -69,14 +71,15 @@
             "href": "/contact",
             "label": "Hacer una pregunta"
           }
-        }
+        },
+        "date": "Enero 2026"
       }
     }
   },
   "relatedLinks": {
     "eyebrow": "Ve a las páginas activas",
     "title": "Mira las partes del sitio a las que afectan estas actualizaciones",
-    "description": "Cada actualización de esta página debe llevarte a una página pública real dentro del producto.",
+    "description": "Estas son las secciones del sitio donde los cambios tienen efecto.",
     "items": {
       "events": {
         "href": "/events",

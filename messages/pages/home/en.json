@@ -6,8 +6,8 @@
     "browseEvents": "Explore events",
     "viewResults": "View results",
     "viewRankings": "See rankings",
-    "organizeEvent": "For Race Directors",
-    "learnAboutRunGoMx": "Learn about RunGoMX",
+    "organizeEvent": "Organize an event",
+    "learnAboutRunGoMx": "About RunGoMX",
     "seeHowItWorks": "See how it works"
   },
   "hero": {
@@ -51,13 +51,13 @@
     }
   },
   "participation": {
-    "eyebrow": "Participation",
-    "title": "A smoother path from first click to confirmation",
-    "description": "Make registration feel simple for runners without taking control away from Race Directors.",
+    "eyebrow": "How it feels",
+    "title": "Move from discovery to race day with less guesswork",
+    "description": "RunGoMX helps runners discover events, compare details, and commit when the information is clear.",
     "highlights": {
-      "discover": "Help runners understand the event quickly and decide if it is for them.",
-      "decide": "Make pricing, dates, and key details easy to compare.",
-      "commit": "Move people toward registration with confidence, not guesswork."
+      "discover": "Find relevant races faster.",
+      "decide": "Compare pricing, dates, and policies with confidence.",
+      "commit": "Register when you are ready without hunting for key details."
     }
   },
   "resultsRankings": {
@@ -77,7 +77,7 @@
     "cta": "About RunGoMX"
   },
   "finalCta": {
-    "eyebrow": "For Race Directors",
+    "eyebrow": "Ready to start?",
     "title": "Ready to compare events?",
     "description": "Browse the event directory to check dates, pricing, and registration status.",
     "primaryCta": "Explore events",

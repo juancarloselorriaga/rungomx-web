@@ -4,7 +4,7 @@
     "title": "Talk to the RunGoMX team when you need help",
     "description": "Use this page for support questions, event or account issues, partnerships, and general inquiries. Messages sent here go straight to the RunGoMX team.",
     "primaryCta": "Visit help center",
-    "secondaryCta": "Browse events"
+    "secondaryCta": "Check results"
   },
   "triage": {
     "eyebrow": "How can we help?",
@@ -51,6 +51,14 @@
       },
       "honeypot": {
         "label": "Website"
+      },
+      "inquiryType": {
+        "label": "Inquiry type",
+        "options": {
+          "support": "Support",
+          "partnerships": "Partnerships or general inquiry",
+          "accountOrEvent": "Account or event issue"
+        }
       }
     },
     "submit": "Send message",

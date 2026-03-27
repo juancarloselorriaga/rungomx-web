@@ -4,7 +4,7 @@
     "title": "What’s new on RunGoMX",
     "description": "This page shares practical updates to public event pages, help content, results, rankings, and other changes visitors may notice.",
     "primaryCta": "Browse events",
-    "secondaryCta": "Visit help center"
+    "secondaryCta": "Check results"
   },
   "updates": {
     "eyebrow": "Recent updates",
@@ -29,7 +29,8 @@
             "href": "/results",
             "label": "Review results"
           }
-        }
+        },
+        "date": "March 2026"
       },
       "help": {
         "badge": "Support",
@@ -49,7 +50,8 @@
             "href": "/contact",
             "label": "Contact the team"
           }
-        }
+        },
+        "date": "February 2026"
       },
       "trust": {
         "badge": "Trust",
@@ -69,14 +71,15 @@
             "href": "/contact",
             "label": "Ask a question"
           }
-        }
+        },
+        "date": "January 2026"
       }
     }
   },
   "relatedLinks": {
     "eyebrow": "Go to the live pages",
     "title": "See the parts of the site these updates affect",
-    "description": "Every update here should point back to a real public page in the product.",
+    "description": "These are the sections of the site where the updates take effect.",
     "items": {
       "events": {
         "href": "/events",

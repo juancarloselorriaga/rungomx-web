@@ -20,7 +20,7 @@ import {
   User,
 } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getMessages } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import type { ComponentProps } from 'react';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
@@ -47,63 +47,6 @@ type HelpFaqItemContent = {
     href: LocalizedLinkHref;
     label: string;
   }>;
-};
-
-type HelpCategoryContent = {
-  title: string;
-  description: string;
-  linkLabel: string;
-};
-
-type RelatedLinkContent = {
-  href: LocalizedLinkHref;
-  title: string;
-  description: string;
-};
-
-type HelpPageMessages = {
-  hero: {
-    badge: string;
-    title: string;
-    description: string;
-    primaryCta: string;
-    secondaryCta: string;
-  };
-  categories: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: Record<HelpCategoryKey, HelpCategoryContent>;
-  };
-  faqGroups: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    groups: Record<
-      HelpCategoryKey,
-      {
-        title: string;
-        description: string;
-        items: Record<string, HelpFaqItemContent>;
-      }
-    >;
-  };
-  cta: {
-    title: string;
-    description: string;
-    primaryActionLabel: string;
-  };
-  relatedLinks: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: {
-      events: RelatedLinkContent;
-      results: RelatedLinkContent;
-      rankings: RelatedLinkContent;
-      home: RelatedLinkContent;
-    };
-  };
 };
 
 const categoryOrder: HelpCategoryKey[] = [
@@ -135,19 +78,16 @@ const categoryIconClasses = {
 
 export default async function HelpPage({ params }: LocalePageProps) {
   const { locale } = await configPageLocale(params, { pathname: '/help' });
-  const messages = (await getMessages({ locale })) as {
-    pages: { help: HelpPageMessages };
-  };
-  const page = messages.pages.help;
+  const t = await getTranslations({ locale, namespace: 'pages.help' });
 
   const faqGroups: FaqAccordionGroup[] = categoryOrder.map((key) => {
-    const group = page.faqGroups.groups[key];
+    const items = t.raw(`faqGroups.groups.${key}.items` as never) as Record<string, HelpFaqItemContent>;
 
     return {
       id: key,
-      title: group.title,
-      description: group.description,
-      items: Object.entries(group.items).map(([itemKey, item]) => ({
+      title: t(`faqGroups.groups.${key}.title`),
+      description: t(`faqGroups.groups.${key}.description`),
+      items: Object.entries(items).map(([itemKey, item]) => ({
         id: `${key}-${itemKey}`,
         question: item.question,
         answerTitle: item.answerTitle,
@@ -158,42 +98,40 @@ export default async function HelpPage({ params }: LocalePageProps) {
     };
   });
 
-  const relatedLinks = [
-    page.relatedLinks.items.events,
-    page.relatedLinks.items.results,
-    page.relatedLinks.items.rankings,
-    page.relatedLinks.items.home,
-  ];
+  const relatedLinks = (['events', 'results', 'rankings', 'home'] as const).map((key) => ({
+    href: t(`relatedLinks.items.${key}.href`) as LocalizedLinkHref,
+    title: t(`relatedLinks.items.${key}.title`),
+    description: t(`relatedLinks.items.${key}.description`),
+  }));
 
   return (
     <div className="w-full">
       <Hero
-        badge={page.hero.badge}
+        badge={t('hero.badge')}
         badgeVariant="blue"
-        title={page.hero.title}
-        description={page.hero.description}
+        title={t('hero.title')}
+        description={t('hero.description')}
         variant="gradient-blue"
         titleSize="xl"
         align="left"
         actions={[
-          { label: page.hero.primaryCta, href: '/events' },
-          { label: page.hero.secondaryCta, href: '/contact', variant: 'outline' },
+          { label: t('hero.primaryCta'), href: '/contact' },
+          { label: t('hero.secondaryCta'), href: '/events', variant: 'outline' },
         ]}
       />
 
       <Section variant="muted" padding="md" size="lg">
         <TextBlock
-          eyebrow={page.categories.eyebrow}
+          eyebrow={t('categories.eyebrow')}
           eyebrowVariant="green"
-          title={page.categories.title}
-          description={page.categories.description}
+          title={t('categories.title')}
+          description={t('categories.description')}
           size="md"
           className="max-w-[46rem]"
         />
 
         <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-2 md:gap-8 md:pt-10 xl:grid-cols-3">
           {categoryOrder.map((key, index) => {
-            const category = page.categories.items[key];
             const Icon = categoryIcons[key];
             const iconClassName = categoryIconClasses[key];
 
@@ -204,19 +142,19 @@ export default async function HelpPage({ params }: LocalePageProps) {
                 className="group flex h-full flex-col border-t border-border/70 pt-6 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:border-t-0 md:pt-0"
               >
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  <span aria-hidden="true" className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     0{index + 1}
                   </span>
                   <Icon className={`h-5 w-5 ${iconClassName}`} />
                 </div>
                 <h2 className="font-display mt-6 text-[clamp(1.55rem,2.8vw,2rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
-                  {category.title}
+                  {t(`categories.items.${key}.title`)}
                 </h2>
                 <p className="mt-3 max-w-[28ch] text-sm leading-7 text-muted-foreground">
-                  {category.description}
+                  {t(`categories.items.${key}.description`)}
                 </p>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-foreground">
-                  {category.linkLabel}
+                  {t(`categories.items.${key}.linkLabel`)}
                   <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
                 </span>
               </a>
@@ -227,10 +165,10 @@ export default async function HelpPage({ params }: LocalePageProps) {
 
       <Section padding="lg" size="lg">
         <TextBlock
-          eyebrow={page.faqGroups.eyebrow}
+          eyebrow={t('faqGroups.eyebrow')}
           eyebrowVariant="blue"
-          title={page.faqGroups.title}
-          description={page.faqGroups.description}
+          title={t('faqGroups.title')}
+          description={t('faqGroups.description')}
           size="md"
           className="max-w-[46rem]"
         />
@@ -240,10 +178,10 @@ export default async function HelpPage({ params }: LocalePageProps) {
 
       <Section padding="md" size="lg">
         <TextBlock
-          eyebrow={page.relatedLinks.eyebrow}
+          eyebrow={t('relatedLinks.eyebrow')}
           eyebrowVariant="green"
-          title={page.relatedLinks.title}
-          description={page.relatedLinks.description}
+          title={t('relatedLinks.title')}
+          description={t('relatedLinks.description')}
           size="md"
           className="max-w-[46rem]"
         />
@@ -274,13 +212,13 @@ export default async function HelpPage({ params }: LocalePageProps) {
       <Section padding="sm" size="lg">
         <div className="border-t border-border/70 pt-8 md:pt-10">
           <TextBlock
-            title={page.cta.title}
-            description={page.cta.description}
+            title={t('cta.title')}
+            description={t('cta.description')}
             size="md"
             className="max-w-[46rem]"
           >
             <Button asChild className="w-fit">
-              <Link href="/contact">{page.cta.primaryActionLabel}</Link>
+              <Link href="/contact">{t('cta.primaryActionLabel')}</Link>
             </Button>
           </TextBlock>
         </div>

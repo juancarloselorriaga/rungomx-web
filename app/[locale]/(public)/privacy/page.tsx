@@ -11,7 +11,7 @@ import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
-import { getMessages } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -27,53 +27,6 @@ type PrivacySectionKey =
   | 'dataRetentionAndAccounts'
   | 'userChoicesAndContact';
 
-type LegalSectionContent = {
-  title: string;
-  intro?: string;
-  paragraphs: string[];
-  bullets?: string[];
-};
-
-type RelatedLinkContent = {
-  title: string;
-  description: string;
-};
-
-type PrivacyPageMessages = {
-  hero: {
-    badge: string;
-    title: string;
-    description: string;
-    primaryCta: string;
-    secondaryCta: string;
-  };
-  summary: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    highlights: string[];
-  };
-  sections: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: Record<PrivacySectionKey, LegalSectionContent>;
-  };
-  cta: {
-    title: string;
-    description: string;
-    primaryActionLabel: string;
-  };
-  relatedLinks: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: {
-      terms: RelatedLinkContent;
-    };
-  };
-};
-
 const privacySectionOrder: PrivacySectionKey[] = [
   'informationWeCollect',
   'howInformationIsUsed',
@@ -86,42 +39,41 @@ const privacySectionOrder: PrivacySectionKey[] = [
 
 export default async function PrivacyPage({ params }: LocalePageProps) {
   const { locale } = await configPageLocale(params, { pathname: '/privacy' });
-  const messages = (await getMessages({ locale })) as {
-    pages: { privacy: PrivacyPageMessages };
-  };
-  const page = messages.pages.privacy;
+  const t = await getTranslations({ locale, namespace: 'pages.privacy' });
 
   return (
     <div className="w-full">
       <Hero
-        badge={page.hero.badge}
+        badge={t('hero.badge')}
         badgeVariant="blue"
-        title={page.hero.title}
-        description={page.hero.description}
+        title={t('hero.title')}
+        description={t('hero.description')}
         variant="gradient-blue"
+        titleSize="xl"
+        align="left"
         actions={[
-          { label: page.hero.primaryCta, href: '/contact' },
-          { label: page.hero.secondaryCta, href: '/terms', variant: 'outline' },
+          { label: t('hero.primaryCta'), href: '/contact' },
+          { label: t('hero.secondaryCta'), href: '/terms', variant: 'outline' },
         ]}
       />
 
       <Section variant="muted" padding="md" size="lg">
         <TextBlock
-          eyebrow={page.summary.eyebrow}
+          eyebrow={t('summary.eyebrow')}
           eyebrowVariant="green"
-          title={page.summary.title}
-          description={page.summary.description}
+          title={t('summary.title')}
+          description={t('summary.description')}
           size="md"
           className="max-w-[46rem]"
         />
 
         <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-2 md:gap-8 md:pt-10">
-          {page.summary.highlights.map((highlight, index) => (
+          {(t.raw('summary.highlights') as string[]).map((highlight, index) => (
             <article
-              key={highlight}
+              key={index}
               className="flex h-full flex-col border-t border-border/70 pt-6 md:border-t-0 md:pt-0"
             >
-              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              <span aria-hidden="true" className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 0{index + 1}
               </span>
               <p className="mt-5 max-w-[34ch] text-sm leading-7 text-muted-foreground md:text-base">
@@ -134,27 +86,28 @@ export default async function PrivacyPage({ params }: LocalePageProps) {
 
       <Section padding="lg" size="lg">
         <TextBlock
-          eyebrow={page.sections.eyebrow}
+          eyebrow={t('sections.eyebrow')}
           eyebrowVariant="blue"
-          title={page.sections.title}
-          description={page.sections.description}
+          title={t('sections.title')}
+          description={t('sections.description')}
           size="md"
           className="max-w-[46rem]"
         />
 
         <div className="mt-12 space-y-10 md:space-y-12">
           {privacySectionOrder.map((key) => {
-            const section = page.sections.items[key];
+            const paragraphs = t.raw(`sections.items.${key}.paragraphs`) as string[];
+            const bullets = t.raw(`sections.items.${key}.bullets`) as string[] | undefined;
 
             return (
-              <LegalDocumentSection key={key} id={key} title={section.title} intro={section.intro}>
-                {section.paragraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+              <LegalDocumentSection key={key} id={key} title={t(`sections.items.${key}.title`)} intro={t.has(`sections.items.${key}.intro`) ? t(`sections.items.${key}.intro`) : undefined}>
+                {paragraphs.map((paragraph, i) => (
+                  <p key={i}>{paragraph}</p>
                 ))}
-                {section.bullets && section.bullets.length > 0 ? (
+                {bullets && bullets.length > 0 ? (
                   <ul className="list-disc space-y-2 pl-5">
-                    {section.bullets.map((bullet) => (
-                      <li key={bullet}>{bullet}</li>
+                    {bullets.map((bullet, i) => (
+                      <li key={i}>{bullet}</li>
                     ))}
                   </ul>
                 ) : null}
@@ -167,13 +120,13 @@ export default async function PrivacyPage({ params }: LocalePageProps) {
       <Section padding="sm" size="lg">
         <div className="border-t border-border/70 pt-8 md:pt-10">
           <TextBlock
-            title={page.cta.title}
-            description={page.cta.description}
+            title={t('cta.title')}
+            description={t('cta.description')}
             size="md"
             className="max-w-[46rem]"
           >
             <Button asChild className="w-fit">
-              <Link href="/contact">{page.cta.primaryActionLabel}</Link>
+              <Link href="/contact">{t('cta.primaryActionLabel')}</Link>
             </Button>
           </TextBlock>
         </div>
@@ -181,10 +134,10 @@ export default async function PrivacyPage({ params }: LocalePageProps) {
 
       <Section padding="md" size="lg">
         <RelatedLinksStrip
-          eyebrow={page.relatedLinks.eyebrow}
-          title={page.relatedLinks.title}
-          description={page.relatedLinks.description}
-          links={[{ href: '/terms', ...page.relatedLinks.items.terms }]}
+          eyebrow={t('relatedLinks.eyebrow')}
+          title={t('relatedLinks.title')}
+          description={t('relatedLinks.description')}
+          links={[{ href: '/terms', title: t('relatedLinks.items.terms.title'), description: t('relatedLinks.items.terms.description') }]}
         />
       </Section>
     </div>

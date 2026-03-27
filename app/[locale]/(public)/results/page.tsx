@@ -1,5 +1,8 @@
 import { Badge, Hero, Section, TextBlock } from '@/components/common';
-import { publicFieldClassName, publicSelectClassName } from '@/components/common/public-form-styles';
+import {
+  publicFieldClassName,
+  publicSelectClassName,
+} from '@/components/common/public-form-styles';
 import { CorrectionSummaryBlock } from '@/components/results/public/correction-summary-block';
 import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box';
 import { Button } from '@/components/ui/button';
@@ -18,28 +21,15 @@ import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { formatFinishTime } from '@/utils/format-finish-time';
 
 import { ArrowRight } from 'lucide-react';
 
 type ResultsPageProps = LocalePageProps & {
   searchParams: Promise<{ q?: string; bib?: string; series?: string }>;
 };
-
-function formatFinishTime(milliseconds: number | null): string {
-  if (milliseconds === null || milliseconds < 0) return '-';
-
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
-}
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -51,6 +41,8 @@ export async function generateMetadata({ params }: LocalePageProps): Promise<Met
 }
 
 export default async function ResultsPage({ params, searchParams }: ResultsPageProps) {
+  await connection();
+
   const { locale } = await params;
   const { q, bib, series } = await searchParams;
   await configPageLocale(params, { pathname: '/results' });
@@ -93,7 +85,9 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
     }
   }
 
-  const availableSeries = [...new Map(directory.map((item) => [item.seriesSlug, item.seriesName])).entries()]
+  const availableSeries = [
+    ...new Map(directory.map((item) => [item.seriesSlug, item.seriesName])).entries(),
+  ]
     .map(([slug, name]) => ({ slug, name }))
     .sort((left, right) => left.name.localeCompare(right.name));
 
@@ -126,6 +120,7 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
   return (
     <div className="w-full">
       <Hero
+        badgeVariant="blue"
         title={t('title')}
         description={t('description')}
         variant="gradient-blue"
@@ -170,11 +165,11 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
                 </label>
                 <label className="grid gap-1.5 text-xs text-muted-foreground">
                   <span>{t('discovery.seriesFilterLabel')}</span>
-                    <select
-                      name="series"
-                      defaultValue={normalizedSeries}
-                      className={publicSelectClassName}
-                    >
+                  <select
+                    name="series"
+                    defaultValue={normalizedSeries}
+                    className={publicSelectClassName}
+                  >
                     <option value="">{t('discovery.seriesFilterAll')}</option>
                     {availableSeries.map((seriesOption) => (
                       <option key={seriesOption.slug} value={seriesOption.slug}>
@@ -292,7 +287,8 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
                     {item.seriesName} {item.editionLabel}
                   </h2>
                   <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                    {[item.city, item.state].filter(Boolean).join(', ') || t('official.fallback.notAvailable')}
+                    {[item.city, item.state].filter(Boolean).join(', ') ||
+                      t('official.fallback.notAvailable')}
                   </p>
                   {item.startsAt ? (
                     <p className="mt-2 text-sm leading-7 text-muted-foreground">

@@ -239,6 +239,7 @@ export const contactSubmissions = pgTable('contact_submissions', {
   email: varchar('email', { length: 255 }),
   message: text('message').notNull(),
   origin: varchar('origin', { length: 100 }).notNull(),
+  inquiryType: varchar('inquiry_type', { length: 100 }),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),

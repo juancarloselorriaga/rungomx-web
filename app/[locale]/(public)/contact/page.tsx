@@ -7,7 +7,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import { ArrowRight, CircleAlert, Handshake, LifeBuoy } from 'lucide-react';
 import type { Metadata } from 'next';
-import { getMessages } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import type { ComponentProps } from 'react';
 import { ContactForm } from './contact-form';
 
@@ -24,58 +24,6 @@ type LocalizedLinkHref = ComponentProps<typeof Link>['href'];
 
 type TriageKey = 'support' | 'partnerships' | 'accountOrEventIssue';
 
-type TriageItem = {
-  title: string;
-  description: string;
-};
-
-type RelatedLinkContent = {
-  href: LocalizedLinkHref;
-  title: string;
-  description: string;
-};
-
-type ContactPageMessages = {
-  hero: {
-    badge: string;
-    title: string;
-    description: string;
-    primaryCta: string;
-    secondaryCta: string;
-  };
-  triage: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: Record<TriageKey, TriageItem>;
-  };
-  form: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    expectation: string;
-    signedInNote: string;
-    signedOutNote: string;
-  };
-  directLinks: {
-    eyebrow: string;
-    title: string;
-    description: string;
-    items: {
-      events: RelatedLinkContent;
-      results: RelatedLinkContent;
-      rankings: RelatedLinkContent;
-      help: RelatedLinkContent;
-    };
-  };
-  trustBlock: {
-    title: string;
-    description: string;
-    primaryActionLabel: string;
-    secondaryActionLabel: string;
-  };
-};
-
 const triageOrder: TriageKey[] = ['support', 'partnerships', 'accountOrEventIssue'];
 
 const triageIcons = {
@@ -90,70 +38,88 @@ const triageIconClasses = {
   accountOrEventIssue: 'text-[var(--brand-indigo)]',
 } as const;
 
-export default async function ContactPage({ params }: LocalePageProps) {
-  const [{ locale }, authContext] = await Promise.all([
+const triageToInquiryType: Record<TriageKey, string> = {
+  support: 'support',
+  partnerships: 'partnerships',
+  accountOrEventIssue: 'account_or_event',
+};
+
+const validInquiryTypes = new Set(['support', 'partnerships', 'account_or_event']);
+
+export default async function ContactPage({ params, searchParams }: LocalePageProps) {
+  const [{ locale }, authContext, resolvedSearchParams] = await Promise.all([
     configPageLocale(params, { pathname: '/contact' }),
     getAuthContext(),
+    searchParams ?? Promise.resolve({} as Record<string, string | string[] | undefined>),
   ]);
-  const messages = (await getMessages({ locale })) as {
-    pages: { contact: ContactPageMessages };
-  };
-  const page = messages.pages.contact;
+  const t = await getTranslations({ locale, namespace: 'pages.contact' });
   const isSignedIn = Boolean(authContext.user);
-  const directLinks = [
-    page.directLinks.items.events,
-    page.directLinks.items.results,
-    page.directLinks.items.rankings,
-    page.directLinks.items.help,
-  ];
+
+  const rawType =
+    typeof resolvedSearchParams.type === 'string' ? resolvedSearchParams.type : undefined;
+  const defaultInquiryType = rawType && validInquiryTypes.has(rawType) ? rawType : '';
+
+  const directLinkKeys = ['events', 'results', 'rankings', 'help'] as const;
+  const directLinks = directLinkKeys.map((key) => ({
+    href: t(`directLinks.items.${key}.href`) as LocalizedLinkHref,
+    title: t(`directLinks.items.${key}.title`),
+    description: t(`directLinks.items.${key}.description`),
+  }));
 
   return (
     <div className="w-full">
       <Hero
-        badge={page.hero.badge}
+        badge={t('hero.badge')}
         badgeVariant="green"
-        title={page.hero.title}
-        description={page.hero.description}
+        title={t('hero.title')}
+        description={t('hero.description')}
         variant="gradient-green"
         titleSize="xl"
         align="left"
         actions={[
-          { label: page.hero.primaryCta, href: '/help' },
-          { label: page.hero.secondaryCta, href: '/events', variant: 'outline' },
+          { label: t('hero.primaryCta'), href: '/help' },
+          { label: t('hero.secondaryCta'), href: '/results', variant: 'outline' },
         ]}
       />
 
       <Section variant="muted" padding="md" size="lg">
         <TextBlock
-          eyebrow={page.triage.eyebrow}
+          eyebrow={t('triage.eyebrow')}
           eyebrowVariant="blue"
-          title={page.triage.title}
-          description={page.triage.description}
+          title={t('triage.title')}
+          description={t('triage.description')}
           size="md"
           className="max-w-[46rem]"
         />
 
         <div className="mt-12 grid gap-6 border-t border-border/70 pt-8 md:grid-cols-3 md:gap-8 md:pt-10">
           {triageOrder.map((key, index) => {
-            const item = page.triage.items[key];
             const Icon = triageIcons[key];
             const iconClassName = triageIconClasses[key];
+            const inquiryType = triageToInquiryType[key];
 
             return (
-              <article key={key} className="flex h-full flex-col border-t border-border/70 pt-6 md:border-t-0 md:pt-0">
+              <Link
+                key={key}
+                href={`/contact?type=${inquiryType}#contact-form` as LocalizedLinkHref}
+                className="group flex h-full flex-col border-t border-border/70 pt-6 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:border-t-0 md:pt-0"
+              >
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                  <span
+                    aria-hidden="true"
+                    className="text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-muted-foreground"
+                  >
                     0{index + 1}
                   </span>
                   <Icon className={`h-5 w-5 ${iconClassName}`} />
                 </div>
-                <h2 className="font-display mt-6 text-[clamp(1.55rem,2.8vw,2rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground">
-                  {item.title}
+                <h2 className="font-display mt-6 text-[clamp(1.55rem,2.8vw,2rem)] font-medium leading-[0.96] tracking-[-0.03em] text-foreground group-hover:text-foreground/80">
+                  {t(`triage.items.${key}.title`)}
                 </h2>
                 <p className="mt-3 max-w-[28ch] text-sm leading-7 text-muted-foreground">
-                  {item.description}
+                  {t(`triage.items.${key}.description`)}
                 </p>
-              </article>
+              </Link>
             );
           })}
         </div>
@@ -161,16 +127,16 @@ export default async function ContactPage({ params }: LocalePageProps) {
 
       <Section padding="lg" size="lg">
         <TextBlock
-          eyebrow={page.form.eyebrow}
+          eyebrow={t('form.eyebrow')}
           eyebrowVariant="green"
-          title={page.form.title}
-          description={page.form.description}
+          title={t('form.title')}
+          description={t('form.description')}
           size="md"
           className="max-w-[46rem]"
         >
           <div className="space-y-4 text-base leading-7 text-muted-foreground">
-            <p>{page.form.expectation}</p>
-            <p>{isSignedIn ? page.form.signedInNote : page.form.signedOutNote}</p>
+            <p>{t('form.expectation')}</p>
+            <p>{isSignedIn ? t('form.signedInNote') : t('form.signedOutNote')}</p>
           </div>
         </TextBlock>
 
@@ -178,6 +144,7 @@ export default async function ContactPage({ params }: LocalePageProps) {
           <ContactForm
             defaultName={authContext.user?.name ?? ''}
             defaultEmail={authContext.user?.email ?? ''}
+            defaultInquiryType={defaultInquiryType}
             isSignedIn={isSignedIn}
           />
         </div>
@@ -185,10 +152,10 @@ export default async function ContactPage({ params }: LocalePageProps) {
 
       <Section padding="md" size="lg">
         <TextBlock
-          eyebrow={page.directLinks.eyebrow}
+          eyebrow={t('directLinks.eyebrow')}
           eyebrowVariant="blue"
-          title={page.directLinks.title}
-          description={page.directLinks.description}
+          title={t('directLinks.title')}
+          description={t('directLinks.description')}
           size="md"
           className="max-w-[46rem]"
         />
@@ -219,17 +186,17 @@ export default async function ContactPage({ params }: LocalePageProps) {
       <Section padding="sm" size="lg">
         <div className="border-t border-border/70 pt-8 md:pt-10">
           <TextBlock
-            title={page.trustBlock.title}
-            description={page.trustBlock.description}
+            title={t('trustBlock.title')}
+            description={t('trustBlock.description')}
             size="md"
             className="max-w-[46rem]"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="w-fit">
-                <Link href="/privacy">{page.trustBlock.primaryActionLabel}</Link>
+                <Link href="/privacy">{t('trustBlock.primaryActionLabel')}</Link>
               </Button>
               <Button asChild variant="outline" className="w-fit">
-                <Link href="/terms">{page.trustBlock.secondaryActionLabel}</Link>
+                <Link href="/terms">{t('trustBlock.secondaryActionLabel')}</Link>
               </Button>
             </div>
           </TextBlock>

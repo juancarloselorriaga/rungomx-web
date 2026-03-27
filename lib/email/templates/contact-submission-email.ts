@@ -6,6 +6,7 @@ interface ContactEmailLabels {
   email: string;
   preferredLocale: string;
   userId: string;
+  inquiryType: string;
   createdAt: string;
   message: string;
   metadata: string;
@@ -21,6 +22,7 @@ interface ContactSubmissionEmailProps {
   email: string;
   preferredLocale: string;
   userId: string;
+  inquiryType: string;
   createdAt: string;
   message: string;
   metadataText: string;
@@ -38,6 +40,7 @@ export function renderContactSubmissionEmailHTML(props: ContactSubmissionEmailPr
     email,
     preferredLocale,
     userId,
+    inquiryType,
     createdAt,
     message,
     metadataText,
@@ -94,6 +97,10 @@ export function renderContactSubmissionEmailHTML(props: ContactSubmissionEmailPr
                 <div style="padding: 12px 14px; color: #111827;">${escape(userId)}</div>
               </div>
               <div style="display: grid; grid-template-columns: 160px 1fr; border-bottom: 1px solid #e5e7eb;">
+                <div style="padding: 12px 14px; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">${escape(labels.inquiryType)}</div>
+                <div style="padding: 12px 14px; color: #111827;">${escape(inquiryType)}</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 160px 1fr; border-bottom: 1px solid #e5e7eb;">
                 <div style="padding: 12px 14px; font-weight: 600; color: #374151; border-right: 1px solid #e5e7eb;">${escape(labels.createdAt)}</div>
                 <div style="padding: 12px 14px; color: #111827;">${escape(createdAt)}</div>
               </div>
@@ -125,6 +132,7 @@ export function renderContactSubmissionEmailText(props: {
   email: string;
   preferredLocale: string;
   userId: string;
+  inquiryType: string;
   createdAt: string;
   message: string;
   metadataText: string;
@@ -138,6 +146,7 @@ export function renderContactSubmissionEmailText(props: {
     email,
     preferredLocale,
     userId,
+    inquiryType,
     createdAt,
     message,
     metadataText,
@@ -152,6 +161,7 @@ export function renderContactSubmissionEmailText(props: {
     `${labels.email}: ${email}`,
     `${labels.preferredLocale}: ${preferredLocale}`,
     `${labels.userId}: ${userId}`,
+    `${labels.inquiryType}: ${inquiryType}`,
     `${labels.createdAt}: ${createdAt}`,
     '',
     `${labels.message}:`,

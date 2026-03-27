@@ -50,6 +50,10 @@ jest.mock('@/i18n/navigation', () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 
+jest.mock('next/server', () => ({
+  connection: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('next-intl/server', () => ({
   getTranslations: async () =>
     (key: string, values?: Record<string, string | number>) =>

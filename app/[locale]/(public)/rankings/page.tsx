@@ -5,6 +5,7 @@ import { Link } from '@/i18n/navigation';
 import { getPublicRankingLeaderboard } from '@/lib/events/results/rankings';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
+import { formatFinishTime } from '@/utils/format-finish-time';
 import { createLocalizedPageMetadata } from '@/utils/seo';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -43,21 +44,6 @@ function resolveDisciplineLabelKey(value: string) {
 
 function resolveGenderLabelKey(value: string) {
   return GENDER_LABEL_KEYS[value as keyof typeof GENDER_LABEL_KEYS];
-}
-
-function formatFinishTime(milliseconds: number | null): string {
-  if (milliseconds === null || milliseconds < 0) return '-';
-
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  }
-
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
@@ -107,6 +93,7 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
   return (
     <div className="w-full">
       <Hero
+        badgeVariant="green"
         title={t('title')}
         description={t('description')}
         variant="gradient-green"
@@ -129,7 +116,9 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
             {leaderboard.snapshot ? (
               <>
                 <h2 className="font-display mt-6 text-[clamp(1.6rem,2.7vw,2.2rem)] font-medium leading-[0.98] tracking-[-0.03em] text-foreground">
-                  {leaderboard.snapshot.isCurrent ? t('snapshot.current') : t('snapshot.historical')}
+                  {leaderboard.snapshot.isCurrent
+                    ? t('snapshot.current')
+                    : t('snapshot.historical')}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-muted-foreground">
                   {t('snapshot.summary', {
@@ -192,7 +181,9 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                 )}
               </>
             ) : (
-              <p className="mt-6 text-sm leading-7 text-muted-foreground">{t('empty.noSnapshot')}</p>
+              <p className="mt-6 text-sm leading-7 text-muted-foreground">
+                {t('empty.noSnapshot')}
+              </p>
             )}
           </div>
 

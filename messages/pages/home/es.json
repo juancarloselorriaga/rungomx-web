@@ -6,8 +6,8 @@
     "browseEvents": "Explorar eventos",
     "viewResults": "Ver resultados",
     "viewRankings": "Ver rankings",
-    "organizeEvent": "Para Directores de Carrera",
-    "learnAboutRunGoMx": "Conocer RunGoMX",
+    "organizeEvent": "Organiza un evento",
+    "learnAboutRunGoMx": "Sobre RunGoMX",
     "seeHowItWorks": "Ver cómo funciona"
   },
   "hero": {
@@ -51,13 +51,13 @@
     }
   },
   "participation": {
-    "eyebrow": "Participación",
-    "title": "Un camino más claro desde el primer clic hasta la confirmación",
-    "description": "Haz más fácil la inscripción para los corredores sin quitarles control a los Directores de Carrera.",
+    "eyebrow": "Cómo se vive",
+    "title": "Pasa del descubrimiento al día de carrera con menos incertidumbre",
+    "description": "RunGoMX ayuda a los corredores a descubrir eventos, comparar detalles y decidir con información clara.",
     "highlights": {
-      "discover": "Ayuda a entender rápido de qué va el evento y si es para esa persona.",
-      "decide": "Haz que precios, fechas y detalles clave sean fáciles de comparar.",
-      "commit": "Lleva a la gente a inscribirse con confianza, no con dudas."
+      "discover": "Encuentra carreras relevantes más rápido.",
+      "decide": "Compara precios, fechas y políticas con confianza.",
+      "commit": "Inscríbete cuando estés listo sin buscar la información clave por todos lados."
     }
   },
   "resultsRankings": {
@@ -77,7 +77,7 @@
     "cta": "Sobre RunGoMX"
   },
   "finalCta": {
-    "eyebrow": "Para Directores de Carrera",
+    "eyebrow": "¿Listo para empezar?",
     "title": "¿Listo para comparar eventos?",
     "description": "Explora el directorio de eventos para revisar fechas, precios y estado de inscripción.",
     "primaryCta": "Explorar eventos",

@@ -10,6 +10,7 @@ import { z } from 'zod';
  * - origin: Source of submission (1-100 chars, defaults to 'unknown')
  * - userId: Optional UUID for authenticated users
  * - metadata: Optional additional data
+ * - inquiryType: Optional inquiry category ('support' | 'partnerships' | 'account_or_event')
  * - honeypot: Anti-spam field (must be empty)
  */
 export const contactSubmissionSchema = z.object({
@@ -23,4 +24,5 @@ export const contactSubmissionSchema = z.object({
   userId: z.uuid().optional(),
   metadata: z.record(z.string(), z.any()).optional(),
   honeypot: z.string().max(0).optional(),
+  inquiryType: z.enum(['support', 'partnerships', 'account_or_event']).optional(),
 });

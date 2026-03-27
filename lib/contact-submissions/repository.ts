@@ -29,6 +29,7 @@ export async function createContactSubmission(
       message: parsed.message,
       origin: parsed.origin,
       userId: parsed.userId ?? null,
+      inquiryType: parsed.inquiryType ?? null,
       metadata: normalizeMetadata(parsed.metadata),
     })
     .returning();
