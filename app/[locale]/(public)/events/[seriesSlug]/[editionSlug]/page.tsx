@@ -1,8 +1,5 @@
 import { Suspense } from 'react';
-import {
-  getPublicEventBySlug,
-  getPublicOtherEditionsForSeries,
-} from '@/lib/events/queries';
+import { getPublicEventBySlug, getPublicOtherEditionsForSeries } from '@/lib/events/queries';
 import { resolveEventSlugRedirect } from '@/lib/events/slug-redirects';
 import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
 import {
@@ -17,7 +14,7 @@ import { LocalePageProps } from '@/types/next';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { generateAlternateMetadata } from '@/utils/seo';
-import { FileText, Image as ImageIcon, Info, Users } from 'lucide-react';
+import { ChevronDown, FileText, Image as ImageIcon, Info, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, permanentRedirect } from 'next/navigation';
@@ -82,9 +79,7 @@ export async function generateMetadata({ params }: EventDetailPageProps): Promis
       url: canonical,
       locale: openGraphLocale,
     },
-    ...(event.visibility === 'unlisted'
-      ? { robots: { index: false, follow: false } }
-      : {}),
+    ...(event.visibility === 'unlisted' ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -172,21 +167,40 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const policyConfig = event.policyConfig;
   const policySections = policyConfig
     ? [
-        { key: 'refund' as const, enabled: policyConfig.refundsAllowed, text: policyConfig.refundPolicyText, deadline: policyConfig.refundDeadline },
-        { key: 'transfer' as const, enabled: policyConfig.transfersAllowed, text: policyConfig.transferPolicyText, deadline: policyConfig.transferDeadline },
-        { key: 'deferral' as const, enabled: policyConfig.deferralsAllowed, text: policyConfig.deferralPolicyText, deadline: policyConfig.deferralDeadline },
+        {
+          key: 'refund' as const,
+          enabled: policyConfig.refundsAllowed,
+          text: policyConfig.refundPolicyText,
+          deadline: policyConfig.refundDeadline,
+        },
+        {
+          key: 'transfer' as const,
+          enabled: policyConfig.transfersAllowed,
+          text: policyConfig.transferPolicyText,
+          deadline: policyConfig.transferDeadline,
+        },
+        {
+          key: 'deferral' as const,
+          enabled: policyConfig.deferralsAllowed,
+          text: policyConfig.deferralPolicyText,
+          deadline: policyConfig.deferralDeadline,
+        },
       ]
     : [];
 
   // Computed values
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
-  const minPrice = event.distances.reduce((min, d) => (d.priceCents < min ? d.priceCents : min), event.distances[0]?.priceCents ?? 0);
+  const minPrice = event.distances.reduce(
+    (min, d) => (d.priceCents < min ? d.priceCents : min),
+    event.distances[0]?.priceCents ?? 0,
+  );
   const formatPrice = (cents: number, currency: string) =>
     formatMoneyFromMinor(cents, currency, locale, {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
-  const formattedMinPrice = minPrice > 0 ? formatPrice(minPrice, event.distances[0]?.currency ?? 'MXN') : null;
+  const formattedMinPrice =
+    minPrice > 0 ? formatPrice(minPrice, event.distances[0]?.currency ?? 'MXN') : null;
 
   const bestGroupDiscount = event.groupDiscountRules.reduce<
     (typeof event.groupDiscountRules)[number] | null
@@ -200,7 +214,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   }, null);
 
   // Content availability checks
-  const hasSharedPool = event.sharedCapacity !== null && event.distances.some((d) => d.capacityScope === 'shared_pool');
+  const hasSharedPool =
+    event.sharedCapacity !== null && event.distances.some((d) => d.capacityScope === 'shared_pool');
   const hasDescription = Boolean(event.description);
   const hasDistances = event.distances.length > 0;
   const hasGroupDiscounts = event.groupDiscountRules.length > 0;
@@ -212,8 +227,25 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   const media = websiteContent?.media;
   const hasPhotos = Boolean(media?.enabled) && Boolean((media?.photos?.length ?? 0) > 0);
   const hasDocuments = Boolean(media?.enabled) && Boolean((media?.documents?.length ?? 0) > 0);
-  const hasCourseContent = Boolean(course?.enabled) && Boolean(course?.title || course?.description || course?.elevationGain || course?.elevationProfileUrl || course?.mapUrl || (course?.aidStations?.length ?? 0) > 0);
-  const hasScheduleContent = Boolean(schedule?.enabled) && Boolean(schedule?.title || schedule?.packetPickup || schedule?.parking || schedule?.raceDay || (schedule?.startTimes?.length ?? 0) > 0);
+  const hasCourseContent =
+    Boolean(course?.enabled) &&
+    Boolean(
+      course?.title ||
+      course?.description ||
+      course?.elevationGain ||
+      course?.elevationProfileUrl ||
+      course?.mapUrl ||
+      (course?.aidStations?.length ?? 0) > 0,
+    );
+  const hasScheduleContent =
+    Boolean(schedule?.enabled) &&
+    Boolean(
+      schedule?.title ||
+      schedule?.packetPickup ||
+      schedule?.parking ||
+      schedule?.raceDay ||
+      (schedule?.startTimes?.length ?? 0) > 0,
+    );
 
   return (
     <div className="min-h-screen scroll-smooth">
@@ -252,8 +284,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           officialWebsite: t('detail.officialWebsite'),
           viewMap: t('detail.viewMap'),
           registrationDetails: t('detail.registrationDetails'),
-          registrationOpens: registrationOpensAt ? t('detail.registrationOpens', { date: registrationOpensAt }) : '',
-          registrationCloses: registrationClosesAt ? t('detail.registrationCloses', { date: registrationClosesAt }) : '',
+          registrationOpens: registrationOpensAt
+            ? t('detail.registrationOpens', { date: registrationOpensAt })
+            : '',
+          registrationCloses: registrationClosesAt
+            ? t('detail.registrationCloses', { date: registrationClosesAt })
+            : '',
           registrationPaused: t('detail.registrationPaused'),
           registrationOpen: t('detail.registrationOpen'),
           registrationClosed: t('detail.registrationClosed'),
@@ -313,17 +349,27 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
             {/* Photos */}
             {hasPhotos && media && (
-              <SectionWrapper id="photos" title={t('detail.sections.photos')} icon={<ImageIcon className="h-6 w-6" />}>
+              <SectionWrapper
+                id="photos"
+                title={t('detail.sections.photos')}
+                icon={<ImageIcon className="h-6 w-6" />}
+              >
                 <PhotoGallery
-                  photos={media.photos!.slice().sort((a, b) => a.sortOrder - b.sortOrder).map((photo) => ({
-                    url: mediaUrls?.get(photo.mediaId) || '',
-                    caption: photo.caption,
-                    mediaId: photo.mediaId,
-                  }))}
+                  photos={media
+                    .photos!.slice()
+                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                    .map((photo) => ({
+                      url: mediaUrls?.get(photo.mediaId) || '',
+                      caption: photo.caption,
+                      mediaId: photo.mediaId,
+                    }))}
                   columns={3}
                   initialCount={6}
                   loadMoreCount={12}
-                  labels={{ loadMore: t('detail.website.gallery.loadMore'), showingOf: t('detail.website.gallery.showingOf') }}
+                  labels={{
+                    loadMore: t('detail.website.gallery.loadMore'),
+                    showingOf: t('detail.website.gallery.showingOf'),
+                  }}
                 />
               </SectionWrapper>
             )}
@@ -342,14 +388,16 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                   </div>
                 )}
                 {hasGroupDiscounts && bestGroupDiscount ? (
-                    <div className="mb-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] p-4 md:p-5">
+                  <div className="mb-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_84%,var(--brand-green)_16%)] p-4 md:p-5">
                     <div className="flex items-start gap-3">
                       <Users className="h-5 w-5 text-emerald-700 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                       <div className="space-y-2">
                         <div>
                           <p className="text-sm font-semibold">{t('detail.groupDiscount.title')}</p>
                           <p className="text-sm leading-7 text-muted-foreground">
-                            {t('detail.groupDiscount.description', { percent: bestGroupDiscount.percentOff })}
+                            {t('detail.groupDiscount.description', {
+                              percent: bestGroupDiscount.percentOff,
+                            })}
                           </p>
                         </div>
                         <ul className="space-y-1 text-sm leading-7 text-muted-foreground">
@@ -363,8 +411,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
                           ))}
                         </ul>
                         <div className="space-y-1">
-                          <p className="text-xs leading-6 text-muted-foreground">{t('detail.groupDiscount.howTo')}</p>
-                          <p className="text-xs leading-6 text-muted-foreground">{t('detail.groupDiscount.lockNote')}</p>
+                          <p className="text-xs leading-6 text-muted-foreground">
+                            {t('detail.groupDiscount.howTo')}
+                          </p>
+                          <p className="text-xs leading-6 text-muted-foreground">
+                            {t('detail.groupDiscount.lockNote')}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -396,7 +448,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             {hasCourseContent && course && (
               <SectionWrapper id="course">
                 <WebsiteContentRenderer
-                  blocks={{ course, overview: undefined, schedule: undefined, media: undefined, sponsors: undefined }}
+                  blocks={{
+                    course,
+                    overview: undefined,
+                    schedule: undefined,
+                    media: undefined,
+                    sponsors: undefined,
+                  }}
                   mediaUrls={mediaUrls}
                   labels={{
                     noAdditionalContent: t('detail.website.noAdditionalContent'),
@@ -418,7 +476,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             {hasScheduleContent && schedule && (
               <SectionWrapper id="schedule">
                 <WebsiteContentRenderer
-                  blocks={{ schedule, overview: undefined, course: undefined, media: undefined, sponsors: undefined }}
+                  blocks={{
+                    schedule,
+                    overview: undefined,
+                    course: undefined,
+                    media: undefined,
+                    sponsors: undefined,
+                  }}
                   mediaUrls={mediaUrls}
                   labels={{
                     noAdditionalContent: t('detail.website.noAdditionalContent'),
@@ -433,20 +497,30 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
             {/* FAQ */}
             {hasFaq && (
-              <SectionWrapper id="faq" title={t('detail.sections.faq')} collapsible defaultCollapsed={false}>
+              <SectionWrapper
+                id="faq"
+                title={t('detail.sections.faq')}
+                collapsible
+                defaultCollapsed={false}
+              >
                 <div className="space-y-4">
                   {event.faqItems.map((item) => (
-                    <details key={item.id} className="group">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-4 font-medium">
-                        {item.question}
-                        <span className="ml-2 text-muted-foreground transition-transform group-open:rotate-180">▼</span>
+                    <details key={item.id} className="motion-details group">
+                      <summary className="motion-pressable flex cursor-pointer list-none items-center justify-between gap-4 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-4 font-medium">
+                        <span>{item.question}</span>
+                        <ChevronDown
+                          className="ml-2 h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
+                          aria-hidden="true"
+                        />
                       </summary>
                       {item.answer ? (
-                        <div className="mt-3 px-1">
-                          <MarkdownContent
-                            content={item.answer}
-                            className="text-sm leading-7 text-muted-foreground [&_p]:m-0"
-                          />
+                        <div className="motion-details-inner">
+                          <div className="mt-3 px-1">
+                            <MarkdownContent
+                              content={item.answer}
+                              className="text-sm leading-7 text-muted-foreground [&_p]:m-0"
+                            />
+                          </div>
                         </div>
                       ) : null}
                     </details>
@@ -457,29 +531,36 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
             {/* Documents */}
             {hasDocuments && media && (
-              <SectionWrapper id="documents" title={t('detail.sections.documents')} icon={<FileText className="h-6 w-6" />}>
+              <SectionWrapper
+                id="documents"
+                title={t('detail.sections.documents')}
+                icon={<FileText className="h-6 w-6" />}
+              >
                 <div className="grid gap-2">
                   {media.documents!.map((doc, index) => {
                     const url = mediaUrls?.get(doc.mediaId);
                     return url ? (
-                        <a
-                          key={doc.mediaId}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                           className="group flex items-center gap-3 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 transition-colors hover:bg-background"
-                        >
-                          <FileText className="h-5 w-5 text-primary shrink-0" />
-                          <span className="text-sm font-medium flex-1">{doc.label}</span>
+                      <a
+                        key={doc.mediaId}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex items-center gap-3 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3 transition-colors hover:bg-background"
+                      >
+                        <FileText className="h-5 w-5 text-primary shrink-0" />
+                        <span className="text-sm font-medium flex-1">{doc.label}</span>
                         <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
                           {t('detail.website.download')}
                         </span>
                       </a>
                     ) : (
-                        <div key={doc.mediaId || index} className="flex items-center gap-3 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3">
-                         <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                         <span className="text-sm font-medium">{doc.label}</span>
-                       </div>
+                      <div
+                        key={doc.mediaId || index}
+                        className="flex items-center gap-3 rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] px-4 py-3"
+                      >
+                        <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
+                        <span className="text-sm font-medium">{doc.label}</span>
+                      </div>
                     );
                   })}
                 </div>
@@ -488,28 +569,44 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
             {/* Policies */}
             {hasPolicies && (
-              <SectionWrapper id="policies" title={t('detail.sections.policies')} collapsible defaultCollapsed={true}>
+              <SectionWrapper
+                id="policies"
+                title={t('detail.sections.policies')}
+                collapsible
+                defaultCollapsed={true}
+              >
                 <div className="grid gap-4">
                   {policySections.map((policy) => {
                     if (!policy.enabled && !policy.text && !policy.deadline) return null;
                     const deadlineText = policy.deadline
-                      ? new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone: event.timezone }).format(new Date(policy.deadline))
+                      ? new Intl.DateTimeFormat(locale, {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                          timeZone: event.timezone,
+                        }).format(new Date(policy.deadline))
                       : null;
                     return (
-                        <div key={policy.key} className="rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5">
-                         <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
-                         {policy.text && (
-                            <div className="mt-2">
-                              <MarkdownContent
-                                content={policy.text}
-                                className="text-sm leading-7 text-muted-foreground [&_p]:m-0"
-                              />
-                            </div>
-                          )}
-                        {deadlineText && <p className="mt-3 text-xs leading-6 text-muted-foreground">{policyCopy[policy.key].deadline(deadlineText)}</p>}
-                       </div>
-                     );
-                   })}
+                      <div
+                        key={policy.key}
+                        className="rounded-[1.35rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] p-4 md:p-5"
+                      >
+                        <h3 className="font-semibold">{policyCopy[policy.key].title}</h3>
+                        {policy.text && (
+                          <div className="mt-2">
+                            <MarkdownContent
+                              content={policy.text}
+                              className="text-sm leading-7 text-muted-foreground [&_p]:m-0"
+                            />
+                          </div>
+                        )}
+                        {deadlineText && (
+                          <p className="mt-3 text-xs leading-6 text-muted-foreground">
+                            {policyCopy[policy.key].deadline(deadlineText)}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </SectionWrapper>
             )}
@@ -538,8 +635,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               officialWebsite: t('detail.officialWebsite'),
               viewMap: t('detail.viewMap'),
               registrationDetails: t('detail.registrationDetails'),
-              registrationOpens: registrationOpensAt ? t('detail.registrationOpens', { date: registrationOpensAt }) : '',
-              registrationCloses: registrationClosesAt ? t('detail.registrationCloses', { date: registrationClosesAt }) : '',
+              registrationOpens: registrationOpensAt
+                ? t('detail.registrationOpens', { date: registrationOpensAt })
+                : '',
+              registrationCloses: registrationClosesAt
+                ? t('detail.registrationCloses', { date: registrationClosesAt })
+                : '',
               registrationPaused: t('detail.registrationPaused'),
               registrationOpen: t('detail.registrationOpen'),
               registrationClosed: t('detail.registrationClosed'),

@@ -57,10 +57,10 @@ export function FaqAccordion({ groups, className, ...props }: FaqAccordionProps)
             {group.items.map((item) => (
               <details
                 key={item.id}
-                className="group border-b border-border/70 py-5"
+                className="motion-details group border-b border-border/70 py-5"
                 open={item.defaultOpen}
               >
-                <summary className="flex cursor-pointer list-none items-start justify-between gap-4">
+                <summary className="motion-pressable flex cursor-pointer list-none items-start justify-between gap-4">
                   <span className="text-left text-base font-semibold leading-7 text-foreground md:text-lg">
                     {item.question}
                   </span>
@@ -70,34 +70,38 @@ export function FaqAccordion({ groups, className, ...props }: FaqAccordionProps)
                   />
                 </summary>
 
-                <div className="mt-4 space-y-4 pt-1 text-sm leading-7 text-muted-foreground md:text-base">
-                  {item.answerTitle ? (
-                    <p className="font-medium text-foreground">{item.answerTitle}</p>
-                  ) : null}
+                <div className="motion-details-inner">
+                  <div className="mt-4 space-y-4 pt-1 text-sm leading-7 text-muted-foreground md:text-base">
+                    {item.answerTitle ? (
+                      <p className="font-medium text-foreground">{item.answerTitle}</p>
+                    ) : null}
 
-                  {item.paragraphs?.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                    {item.paragraphs?.map((paragraph) => (
+                      <p key={paragraph}>{paragraph}</p>
+                    ))}
 
-                  {item.bullets && item.bullets.length > 0 ? (
-                    <ul className="list-disc space-y-2 pl-5">
-                      {item.bullets.map((bullet) => (
-                        <li key={bullet}>{bullet}</li>
-                      ))}
-                    </ul>
-                  ) : null}
+                    {item.bullets && item.bullets.length > 0 ? (
+                      <ul className="list-disc space-y-2 pl-5">
+                        {item.bullets.map((bullet) => (
+                          <li key={bullet}>{bullet}</li>
+                        ))}
+                      </ul>
+                    ) : null}
 
-                  {item.links && item.links.length > 0 ? (
-                    <div className="flex flex-wrap gap-3 pt-1">
-                      {item.links.map((link) => (
-                        <Link
-                          key={`${item.id}-${link.href.toString()}`}
-                          href={link.href}
-                          className="text-sm font-medium text-[var(--brand-blue)] underline-offset-4 hover:underline"
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
-                    </div>
-                  ) : null}
+                    {item.links && item.links.length > 0 ? (
+                      <div className="flex flex-wrap gap-3 pt-1">
+                        {item.links.map((link) => (
+                          <Link
+                            key={`${item.id}-${link.href.toString()}`}
+                            href={link.href}
+                            className="text-sm font-medium text-[var(--brand-blue)] underline-offset-4 hover:underline"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </details>
             ))}

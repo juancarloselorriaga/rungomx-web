@@ -13,7 +13,7 @@ import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import { Loader2, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 type ContactFormProps = {
@@ -38,6 +38,18 @@ export function ContactForm({
   isSignedIn,
 }: ContactFormProps) {
   const t = useTranslations('pages.contact.form');
+  const [showSuccessNotice, setShowSuccessNotice] = useState(false);
+  const successTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inquiryTypeCopy = (t as unknown as { raw: (key: string) => unknown }).raw('fields') as {
+    inquiryType?: {
+      label?: string;
+      options?: {
+        support?: string;
+        partnerships?: string;
+        accountOrEvent?: string;
+      };
+    };
+  };
 
   const form = useForm<ContactFormValues>({
     defaultValues: {
@@ -48,6 +60,8 @@ export function ContactForm({
       inquiryType: defaultInquiryType,
     },
     onSubmit: async (values) => {
+      setShowSuccessNotice(false);
+
       const normalizedValues = {
         name: values.name.trim() || undefined,
         email: values.email.trim() || undefined,
@@ -121,6 +135,7 @@ export function ContactForm({
       return { ok: true as const, data: null };
     },
     onSuccess: () => {
+      setShowSuccessNotice(true);
       form.reset();
     },
   });
@@ -140,6 +155,26 @@ export function ContactForm({
     clearError('inquiryType');
   }, [defaultInquiryType, clearError, setFieldValue]);
 
+  useEffect(() => {
+    if (!showSuccessNotice) {
+      return;
+    }
+
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
+
+    successTimeoutRef.current = setTimeout(() => {
+      setShowSuccessNotice(false);
+    }, 4000);
+
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, [showSuccessNotice]);
+
   return (
     <div
       id="contact-form"
@@ -156,6 +191,16 @@ export function ContactForm({
 
       <Form form={form} className="space-y-5">
         <FormError />
+
+        {showSuccessNotice ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="motion-status rounded-[1.1rem] border border-[color-mix(in_oklch,var(--brand-green)_24%,var(--border)_76%)] bg-[color-mix(in_oklch,var(--brand-green)_10%,var(--background)_90%)] px-4 py-3 text-sm text-[var(--brand-green-dark)]"
+          >
+            {t('success')}
+          </div>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           <FormField label={t('fields.name.label')} error={form.errors.name}>
@@ -183,7 +228,10 @@ export function ContactForm({
           </FormField>
         </div>
 
-        <FormField label={t('fields.inquiryType.label')} error={form.errors.inquiryType}>
+        <FormField
+          label={inquiryTypeCopy.inquiryType?.label ?? 'Inquiry type'}
+          error={form.errors.inquiryType}
+        >
           <select
             id="contact-inquiry-type"
             className={publicSelectClassName}
@@ -192,10 +240,15 @@ export function ContactForm({
             disabled={form.isSubmitting}
           >
             <option value=""></option>
-            <option value="support">{t('fields.inquiryType.options.support')}</option>
-            <option value="partnerships">{t('fields.inquiryType.options.partnerships')}</option>
+            <option value="support">
+              {inquiryTypeCopy.inquiryType?.options?.support ?? 'Support'}
+            </option>
+            <option value="partnerships">
+              {inquiryTypeCopy.inquiryType?.options?.partnerships ??
+                'Partnerships or general inquiry'}
+            </option>
             <option value="account_or_event">
-              {t('fields.inquiryType.options.accountOrEvent')}
+              {inquiryTypeCopy.inquiryType?.options?.accountOrEvent ?? 'Account or event issue'}
             </option>
           </select>
         </FormField>
@@ -256,7 +309,7 @@ export function ContactForm({
           <Button
             type="submit"
             disabled={form.isSubmitting}
-            className="w-full justify-center whitespace-nowrap sm:w-auto sm:shrink-0"
+            className="motion-pressable w-full justify-center whitespace-nowrap sm:w-auto sm:shrink-0"
           >
             {form.isSubmitting ? (
               <Loader2 className="size-4 animate-spin" />

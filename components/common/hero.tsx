@@ -55,7 +55,8 @@ export interface HeroAction {
 type LocalizedLinkHref = React.ComponentProps<typeof Link>['href'];
 
 export interface HeroProps
-  extends React.HTMLAttributes<HTMLElement>,
+  extends
+    React.HTMLAttributes<HTMLElement>,
     VariantProps<typeof heroVariants>,
     VariantProps<typeof titleVariants> {
   badge?: string;
@@ -63,6 +64,7 @@ export interface HeroProps
   title: string;
   description?: string;
   actions?: HeroAction[];
+  motion?: 'none' | 'settle';
 }
 
 export function Hero({
@@ -72,6 +74,7 @@ export function Hero({
   titleSize,
   description,
   actions,
+  motion = 'settle',
   variant,
   padding,
   align,
@@ -84,21 +87,39 @@ export function Hero({
   const isDark = variant === 'dark';
 
   return (
-    <section className={cn(heroVariants({ variant, padding, align: resolvedAlign }), className)} {...props}>
+    <section
+      data-motion={motion === 'none' ? undefined : motion}
+      className={cn(heroVariants({ variant, padding, align: resolvedAlign }), className)}
+      {...props}
+    >
       <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         <div className={cn('max-w-[72rem]', isCenter && 'mx-auto')}>
           {badge && (
-            <Badge variant={badgeVariant} className="mb-6">
+            <Badge
+              variant={badgeVariant}
+              className="mb-6"
+              data-motion-item
+              style={{ '--motion-index': 0 } as React.CSSProperties}
+            >
               {badge}
             </Badge>
           )}
 
-          <h1 className={cn(titleVariants({ titleSize }), isDark ? 'text-inherit' : 'text-foreground')}>
+          <h1
+            data-motion-item
+            style={{ '--motion-index': badge ? 1 : 0 } as React.CSSProperties}
+            className={cn(
+              titleVariants({ titleSize }),
+              isDark ? 'text-inherit' : 'text-foreground',
+            )}
+          >
             {title}
           </h1>
 
           {description && (
             <p
+              data-motion-item
+              style={{ '--motion-index': badge ? 2 : 1 } as React.CSSProperties}
               className={cn(
                 'mt-6 max-w-[38rem] text-lg leading-8 md:text-xl',
                 isDark ? 'opacity-80' : 'text-muted-foreground',
@@ -122,14 +143,37 @@ export function Hero({
                   variant={action.variant || (index === 0 ? 'default' : 'outline')}
                   size="lg"
                   asChild
+                  className="motion-pressable"
                 >
-                  <Link href={action.href as LocalizedLinkHref}>{action.label}</Link>
+                  <Link
+                    href={action.href as LocalizedLinkHref}
+                    data-motion-item
+                    style={{ '--motion-index': index + (badge ? 3 : 2) } as React.CSSProperties}
+                  >
+                    {action.label}
+                  </Link>
                 </Button>
               ))}
             </div>
           )}
 
-          {children && <div className="mt-14">{children}</div>}
+          {children && (
+            <div
+              data-motion-item
+              style={
+                {
+                  '--motion-index': actions?.length
+                    ? actions.length + (badge ? 3 : 2)
+                    : badge
+                      ? 3
+                      : 2,
+                } as React.CSSProperties
+              }
+              className="mt-14"
+            >
+              {children}
+            </div>
+          )}
         </div>
       </div>
     </section>

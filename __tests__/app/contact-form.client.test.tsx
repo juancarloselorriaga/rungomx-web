@@ -2,7 +2,30 @@ import { ContactForm } from '@/app/[locale]/(public)/contact/contact-form';
 import { render, screen } from '@testing-library/react';
 
 jest.mock('next-intl', () => ({
-  useTranslations: () => (key: string) => key,
+  useTranslations: () => {
+    const translate = ((key: string) => key) as ((key: string) => string) & {
+      raw: (key: string) => unknown;
+    };
+
+    translate.raw = (key: string) => {
+      if (key === 'fields') {
+        return {
+          inquiryType: {
+            label: 'fields.inquiryType.label',
+            options: {
+              support: 'fields.inquiryType.options.support',
+              partnerships: 'fields.inquiryType.options.partnerships',
+              accountOrEvent: 'fields.inquiryType.options.accountOrEvent',
+            },
+          },
+        };
+      }
+
+      return key;
+    };
+
+    return translate;
+  },
 }));
 
 jest.mock('@/app/actions/contact-submission', () => ({

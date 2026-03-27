@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Calendar, MapPin, Users } from 'lucide-react';
 import Image from 'next/image';
+import * as React from 'react';
 
 type GroupDiscountRule = {
   minParticipants: number;
@@ -56,11 +57,16 @@ export function EventHeroSection({
     : labels.registrationClosed;
 
   return (
-    <section className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_88%,var(--background-surface)_12%)]">
+    <section
+      data-motion="settle"
+      className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_88%,var(--background-surface)_12%)]"
+    >
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-10">
         <Link
           href="/events"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          data-motion-item
+          style={{ '--motion-index': 0 } as React.CSSProperties}
+          className="motion-pressable inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
           {labels.backToEvents}
@@ -68,26 +74,40 @@ export function EventHeroSection({
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:items-end">
           <div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div
+              data-motion-item
+              style={{ '--motion-index': 1 } as React.CSSProperties}
+              className="flex flex-wrap items-center gap-3"
+            >
               <Badge variant="blue">{sportTypeLabel}</Badge>
               {hasGroupDiscount && labels.groupDiscountBadge ? (
                 <Badge variant="green" icon={<Users className="h-3.5 w-3.5" />}>
                   {labels.groupDiscountBadge}
                 </Badge>
               ) : null}
-              <Badge variant={isRegistrationOpen ? 'green' : 'outline'}>
-                {registrationLabel}
-              </Badge>
+              <Badge variant={isRegistrationOpen ? 'green' : 'outline'}>{registrationLabel}</Badge>
             </div>
 
-            <h1 className="font-display mt-6 text-[clamp(3rem,7vw,6rem)] font-medium leading-[0.9] tracking-[-0.045em] text-foreground">
+            <h1
+              data-motion-item
+              style={{ '--motion-index': 2 } as React.CSSProperties}
+              className="font-display mt-6 text-[clamp(3rem,7vw,6rem)] font-medium leading-[0.9] tracking-[-0.045em] text-foreground"
+            >
               {seriesName}
             </h1>
-            <p className="mt-3 max-w-[40rem] text-[clamp(1.1rem,2.1vw,1.45rem)] leading-8 text-muted-foreground">
+            <p
+              data-motion-item
+              style={{ '--motion-index': 3 } as React.CSSProperties}
+              className="mt-3 max-w-[40rem] text-[clamp(1.1rem,2.1vw,1.45rem)] leading-8 text-muted-foreground"
+            >
               {editionLabel}
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <div
+              data-motion-item
+              style={{ '--motion-index': 4 } as React.CSSProperties}
+              className="mt-8 grid gap-4 sm:grid-cols-2"
+            >
               {eventDate ? (
                 <div className="rounded-[1.25rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] px-4 py-3.5">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
@@ -112,7 +132,11 @@ export function EventHeroSection({
               ) : null}
             </div>
 
-            <div className="mt-8 border-t border-border/70 pt-6">
+            <div
+              data-motion-item
+              style={{ '--motion-index': 5 } as React.CSSProperties}
+              className="mt-8 border-t border-border/70 pt-6"
+            >
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 {isRegistrationOpen ? labels.registrationOpen : labels.registrationClosed}
               </p>
@@ -122,7 +146,7 @@ export function EventHeroSection({
 
               {isRegistrationOpen ? (
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <Button size="lg" asChild>
+                  <Button size="lg" asChild className="motion-pressable">
                     <Link
                       href={{
                         pathname: '/events/[seriesSlug]/[editionSlug]/register',
@@ -132,7 +156,7 @@ export function EventHeroSection({
                       {labels.registerNow}
                     </Link>
                   </Button>
-                  <Button size="lg" variant="outline" asChild>
+                  <Button size="lg" variant="outline" asChild className="motion-pressable">
                     <Link
                       href={{
                         pathname: '/events/[seriesSlug]/[editionSlug]/groups/new',
@@ -147,7 +171,11 @@ export function EventHeroSection({
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)]">
+          <div
+            data-motion-item
+            style={{ '--motion-index': 3, '--motion-delay': '120ms' } as React.CSSProperties}
+            className="relative overflow-hidden rounded-[1.75rem] border border-border/45 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)]"
+          >
             {heroImageUrl ? (
               <div className="relative aspect-[4/3] w-full">
                 <Image

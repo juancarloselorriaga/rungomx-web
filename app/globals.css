@@ -49,6 +49,14 @@
   --brand-green-dark: oklch(0.544 0.154 158.1);
   --brand-gold: oklch(0.795 0.16 86); /* warm gold */
   --brand-gold-dark: oklch(0.695 0.16 86); /* deeper gold for dark mode text */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-duration-fast: 180ms;
+  --motion-duration-base: 280ms;
+  --motion-duration-slow: 560ms;
+  --motion-duration-settle: 720ms;
+  --motion-settle-distance: 1rem;
+  --motion-stagger-step: 90ms;
 }
 
 .dark {
@@ -291,6 +299,126 @@
     }
   }
 
+  @keyframes motion-settle-in {
+    from {
+      opacity: 0;
+      transform: translate3d(0, var(--motion-settle-distance), 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  [data-motion='settle'] [data-motion-item] {
+    opacity: 0;
+    transform: translate3d(0, var(--motion-settle-distance), 0);
+    animation: motion-settle-in var(--motion-duration-settle) var(--ease-out-expo) forwards;
+    animation-delay: calc(
+      var(--motion-delay, 0ms) + (var(--motion-index, 0) * var(--motion-stagger-step))
+    );
+    will-change: transform, opacity;
+  }
+
+  .motion-pressable {
+    transition:
+      transform var(--motion-duration-fast) var(--ease-out-quart),
+      box-shadow var(--motion-duration-base) var(--ease-out-quart),
+      border-color var(--motion-duration-fast) ease,
+      background-color var(--motion-duration-fast) ease,
+      color var(--motion-duration-fast) ease,
+      opacity var(--motion-duration-fast) ease;
+  }
+
+  .motion-pressable:hover {
+    transform: translateY(-1px);
+  }
+
+  .motion-pressable:active {
+    transform: translateY(0) scale(0.985);
+  }
+
+  .motion-hover-lift {
+    transition:
+      transform var(--motion-duration-base) var(--ease-out-quart),
+      box-shadow var(--motion-duration-base) var(--ease-out-quart),
+      border-color var(--motion-duration-fast) ease,
+      background-color var(--motion-duration-fast) ease,
+      color var(--motion-duration-fast) ease;
+  }
+
+  .motion-hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .motion-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--motion-duration-slow) var(--ease-out-quart),
+      opacity var(--motion-duration-base) ease,
+      visibility 0s linear var(--motion-duration-slow);
+  }
+
+  .motion-collapse[data-state='open'] {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+    transition:
+      grid-template-rows var(--motion-duration-slow) var(--ease-out-quart),
+      opacity var(--motion-duration-base) ease;
+  }
+
+  .motion-collapse-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .motion-details-inner {
+    overflow: hidden;
+  }
+
+  @supports selector(details::details-content) {
+    .motion-details {
+      interpolate-size: allow-keywords;
+    }
+
+    .motion-details::details-content {
+      block-size: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition:
+        block-size var(--motion-duration-slow) var(--ease-out-quart),
+        opacity var(--motion-duration-base) ease,
+        content-visibility var(--motion-duration-slow) allow-discrete;
+    }
+
+    .motion-details[open]::details-content {
+      block-size: auto;
+      opacity: 1;
+    }
+  }
+
+  .motion-status {
+    transition:
+      transform var(--motion-duration-base) var(--ease-out-quart),
+      opacity var(--motion-duration-base) ease,
+      border-color var(--motion-duration-fast) ease,
+      background-color var(--motion-duration-fast) ease;
+  }
+
+  .motion-sticky-bar {
+    transition:
+      transform var(--motion-duration-base) var(--ease-out-quart),
+      opacity var(--motion-duration-base) ease,
+      border-color var(--motion-duration-fast) ease,
+      background-color var(--motion-duration-fast) ease,
+      box-shadow var(--motion-duration-base) var(--ease-out-quart);
+  }
+
   .assistant-working-label {
     color: transparent;
     background-image: linear-gradient(
@@ -370,12 +498,55 @@
 
   /* Reduced motion support */
   @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    .animate-marquee {
+      animation: none;
+      transform: none;
+    }
+
+    [data-motion='settle'] [data-motion-item] {
+      opacity: 1;
+      transform: none;
+      animation: none;
+      transition: none;
+      will-change: auto;
+    }
+
+    .motion-pressable,
+    .motion-hover-lift,
+    .motion-collapse,
+    .motion-status,
+    .motion-sticky-bar,
+    .mobile-nav-push-layout,
+    .animate-marquee,
+    .assistant-working-label,
+    .assistant-working-dot {
+      animation: none;
+      transition: none;
+    }
+
+    .motion-pressable:hover,
+    .motion-pressable:active,
+    .motion-hover-lift:hover {
+      transform: none;
+    }
+
     .sliding-nav-track {
       transition: none;
     }
 
     .nav-chevron {
       transition: none;
+    }
+
+    @supports selector(details::details-content) {
+      .motion-details::details-content {
+        animation: none;
+        transition: none;
+      }
     }
   }
 }

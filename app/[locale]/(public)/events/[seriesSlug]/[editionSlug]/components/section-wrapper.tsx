@@ -56,7 +56,7 @@ export function SectionWrapper({
         <button
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="group flex w-full items-center justify-between gap-4 text-left"
+          className="motion-pressable group flex w-full items-center justify-between gap-4 text-left"
           aria-expanded={!isCollapsed}
           aria-controls={`${id}-content`}
         >
@@ -68,7 +68,7 @@ export function SectionWrapper({
           </div>
           <ChevronDown
             className={cn(
-              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
+              'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200 ease-out',
               isCollapsed ? '' : 'rotate-180',
             )}
           />
@@ -76,12 +76,10 @@ export function SectionWrapper({
       </div>
       <div
         id={`${id}-content`}
-        className={cn(
-          'overflow-hidden transition-all duration-300 ease-in-out',
-          isCollapsed ? 'max-h-0 opacity-0' : 'mt-6 max-h-[5000px] opacity-100',
-        )}
+        data-state={isCollapsed ? 'closed' : 'open'}
+        className="motion-collapse"
       >
-        {children}
+        <div className="motion-collapse-inner pt-6">{children}</div>
       </div>
     </section>
   );

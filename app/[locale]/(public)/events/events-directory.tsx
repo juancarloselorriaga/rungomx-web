@@ -96,6 +96,12 @@ type Pagination = {
   hasMore: boolean;
 };
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
 type EventsDirectoryProps = {
   initialEvents: PublicEventSummary[];
   initialPagination: Pagination;
@@ -155,6 +161,7 @@ export function EventsDirectory({
   locale,
 }: EventsDirectoryProps) {
   const t = useTranslations('pages.events');
+  const advancedFiltersPanelId = 'events-advanced-filters-panel';
   const [isPending, startTransition] = useTransition();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -187,6 +194,7 @@ export function EventsDirectory({
 
   // New filter state
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [hasOpenedAdvancedFilters, setHasOpenedAdvancedFilters] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>('any');
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>(undefined);
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>(undefined);
@@ -327,8 +335,18 @@ export function EventsDirectory({
 
   const scrollToResults = useCallback(() => {
     if (resultsRef.current) {
-      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      resultsRef.current.scrollIntoView({
+        behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+        block: 'start',
+      });
     }
+  }, []);
+
+  const setAdvancedFiltersOpen = useCallback((nextOpen: boolean) => {
+    if (nextOpen) {
+      setHasOpenedAdvancedFilters(true);
+    }
+    setShowAdvancedFilters(nextOpen);
   }, []);
 
   useEffect(() => {
@@ -348,7 +366,7 @@ export function EventsDirectory({
       parsedParams.lng !== undefined ||
       parsedParams.radiusKm !== undefined;
     if (hasAdvancedFilters) {
-      setShowAdvancedFilters(true);
+      setAdvancedFiltersOpen(true);
     }
 
     const nextCustomFrom = parseDateParam(parsedParams.dateFrom);
@@ -378,7 +396,7 @@ export function EventsDirectory({
     setDistanceRangeEnabled(hasDistanceRange);
     setDistanceRange([parsedParams.distanceMin ?? 0, parsedParams.distanceMax ?? 200]);
     setSearchRadius(parsedParams.radiusKm ?? DEFAULT_PROFILE_NEARBY_RADIUS_KM);
-  }, [datePreset, parsedParams]);
+  }, [datePreset, parsedParams, setAdvancedFiltersOpen]);
 
   useEffect(() => {
     if (parsedParams.lat === undefined || parsedParams.lng === undefined) {
@@ -729,7 +747,7 @@ export function EventsDirectory({
               <button
                 type="button"
                 onClick={() => handleSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="motion-pressable absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -766,18 +784,25 @@ export function EventsDirectory({
             <IconTooltipButton
               variant="outline"
               size="icon"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              onClick={() => setAdvancedFiltersOpen(!showAdvancedFilters)}
               label={t('filters.advanced')}
-              className="rounded-[1rem]"
+              className="motion-pressable rounded-[1rem]"
+              aria-expanded={showAdvancedFilters}
+              aria-controls={advancedFiltersPanelId}
             >
-              <Filter className={cn('w-4 h-4', showAdvancedFilters ? 'text-primary' : '')} />
+              <Filter
+                className={cn(
+                  'h-4 w-4 transition-transform duration-200 ease-out',
+                  showAdvancedFilters ? 'rotate-[-8deg] text-primary' : '',
+                )}
+              />
             </IconTooltipButton>
             <IconTooltipButton
               variant="outline"
               size="icon"
               onClick={handleCopyLink}
               label={t('share.copyLink')}
-              className="rounded-[1rem]"
+              className="motion-pressable rounded-[1rem]"
             >
               <Share2 className="h-4 w-4" />
             </IconTooltipButton>
@@ -799,7 +824,7 @@ export function EventsDirectory({
             <Button variant="ghost" size="sm" onClick={() => setNearbyDisabled((prev) => !prev)}>
               {nearbyEnabled ? t('nearby.viewAll') : t('nearby.nearYou')}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => setShowAdvancedFilters(true)}>
+            <Button variant="ghost" size="sm" onClick={() => setAdvancedFiltersOpen(true)}>
               {t('nearby.change')}
             </Button>
           </div>
@@ -807,206 +832,227 @@ export function EventsDirectory({
       )}
 
       {/* Advanced filters panel */}
-      {showAdvancedFilters && (
-        <div className={cn(publicPanelClassName, 'space-y-4 p-5 shadow-none')}>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Date range filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('filters.dateRange')}</label>
-              <select
-                value={datePreset}
-                onChange={(e) => handleDatePresetChange(e.target.value as DatePreset)}
-                className={publicSelectClassName}
-              >
-                <option value="any">{t('filters.anyDate')}</option>
-                <option value="upcoming">{t('filters.upcoming')}</option>
-                <option value="thisMonth">{t('filters.thisMonth')}</option>
-                <option value="nextMonth">{t('filters.nextMonth')}</option>
-                <option value="next3Months">{t('filters.next3Months')}</option>
-                <option value="custom">{t('filters.customRange')}</option>
-              </select>
-            </div>
-
-            {/* Custom date range pickers - shown only when 'custom' preset is selected */}
-            {datePreset === 'custom' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('filters.from')}</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !customDateFrom && 'text-muted-foreground',
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateFrom ? (
-                          format(customDateFrom, 'PPP', { locale: locale === 'es' ? es : enUS })
-                        ) : (
-                          <span>{t('filters.selectDate')}</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
-                      <Calendar
-                        mode="single"
-                        captionLayout="dropdown"
-                        hideNavigation
-                        selected={customDateFrom}
-                        onSelect={handleCustomDateFromChange}
-                        weekStartsOn={locale === 'es' ? 1 : 0}
-                        formatters={calendarFormatters}
-                        className="min-w-[280px]"
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('filters.to')}</label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !customDateTo && 'text-muted-foreground',
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {customDateTo ? (
-                          format(customDateTo, 'PPP', { locale: locale === 'es' ? es : enUS })
-                        ) : (
-                          <span>{t('filters.selectDate')}</span>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
-                      <Calendar
-                        mode="single"
-                        captionLayout="dropdown"
-                        hideNavigation
-                        selected={customDateTo}
-                        onSelect={handleCustomDateToChange}
-                        disabled={(date) => (customDateFrom ? date < customDateFrom : false)}
-                        weekStartsOn={locale === 'es' ? 1 : 0}
-                        formatters={calendarFormatters}
-                        className="min-w-[280px]"
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </>
-            )}
-
-            {/* Open registration toggle */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('filters.openOnly')}</label>
-              <div className="flex items-center gap-2 pt-1">
-                <Switch id="open-only" checked={openOnly} onCheckedChange={handleOpenOnlyChange} />
-                <label htmlFor="open-only" className="text-sm text-muted-foreground cursor-pointer">
-                  {openOnly ? t('filters.openOnlyEnabled') : t('filters.openOnlyDisabled')}
-                </label>
+      <div
+        id={advancedFiltersPanelId}
+        role="region"
+        aria-label={t('filters.advanced')}
+        aria-hidden={!showAdvancedFilters}
+        inert={!showAdvancedFilters}
+        data-state={showAdvancedFilters ? 'open' : 'closed'}
+        className="motion-collapse"
+      >
+        <div
+          className={cn(publicPanelClassName, 'motion-collapse-inner space-y-4 p-5 shadow-none')}
+        >
+          {hasOpenedAdvancedFilters ? (
+            <div className="grid gap-4 pt-1 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Date range filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('filters.dateRange')}</label>
+                <select
+                  value={datePreset}
+                  onChange={(e) => handleDatePresetChange(e.target.value as DatePreset)}
+                  className={publicSelectClassName}
+                >
+                  <option value="any">{t('filters.anyDate')}</option>
+                  <option value="upcoming">{t('filters.upcoming')}</option>
+                  <option value="thisMonth">{t('filters.thisMonth')}</option>
+                  <option value="nextMonth">{t('filters.nextMonth')}</option>
+                  <option value="next3Months">{t('filters.next3Months')}</option>
+                  <option value="custom">{t('filters.customRange')}</option>
+                </select>
               </div>
-            </div>
 
-            {/* Virtual/In-person filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">{t('filters.eventFormat')}</label>
-              <select
-                value={isVirtual === undefined ? '' : String(isVirtual)}
-                onChange={(e) =>
-                  handleVirtualChange(e.target.value === '' ? undefined : e.target.value === 'true')
-                }
-                className={publicSelectClassName}
-              >
-                <option value="">{t('filters.allFormats')}</option>
-                <option value="false">{t('filters.inPerson')}</option>
-                <option value="true">{t('filters.virtual')}</option>
-              </select>
-            </div>
-
-            {/* Distance range filter */}
-            <div className="space-y-2 sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium flex items-center gap-2">
-                  <Ruler className="h-4 w-4" />
-                  {t('filters.distanceRange')}
-                </label>
-                <Switch
-                  id="distance-range-enabled"
-                  checked={distanceRangeEnabled}
-                  onCheckedChange={handleDistanceRangeEnabledChange}
-                />
-              </div>
-              {distanceRangeEnabled && (
-                <div className="space-y-3 pt-2">
-                  <Slider
-                    value={distanceRange}
-                    onValueChange={handleDistanceRangeChange}
-                    onValueCommit={handleDistanceRangeCommit}
-                    min={0}
-                    max={200}
-                    step={5}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{distanceRange[0]} km</span>
-                    <span>{distanceRange[1]} km</span>
+              {/* Custom date range pickers - shown only when 'custom' preset is selected */}
+              {datePreset === 'custom' && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t('filters.from')}</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !customDateFrom && 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {customDateFrom ? (
+                            format(customDateFrom, 'PPP', { locale: locale === 'es' ? es : enUS })
+                          ) : (
+                            <span>{t('filters.selectDate')}</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                        <Calendar
+                          mode="single"
+                          captionLayout="dropdown"
+                          hideNavigation
+                          selected={customDateFrom}
+                          onSelect={handleCustomDateFromChange}
+                          weekStartsOn={locale === 'es' ? 1 : 0}
+                          formatters={calendarFormatters}
+                          className="min-w-[280px]"
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
-                </div>
-              )}
-            </div>
 
-            {/* Location + radius filter */}
-            <div className="space-y-2 sm:col-span-2 lg:col-span-3">
-              <label className="text-sm font-medium">{t('filters.nearLocation')}</label>
-              <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap">
-                <div className="flex-1 min-w-[200px]">
-                  <LocationField
-                    label=""
-                    location={searchLocation}
-                    country="MX"
-                    language={locale}
-                    onLocationChangeAction={handleLocationChange}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">{t('filters.to')}</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            'w-full justify-start text-left font-normal',
+                            !customDateTo && 'text-muted-foreground',
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {customDateTo ? (
+                            format(customDateTo, 'PPP', { locale: locale === 'es' ? es : enUS })
+                          ) : (
+                            <span>{t('filters.selectDate')}</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start" sideOffset={8}>
+                        <Calendar
+                          mode="single"
+                          captionLayout="dropdown"
+                          hideNavigation
+                          selected={customDateTo}
+                          onSelect={handleCustomDateToChange}
+                          disabled={(date) => (customDateFrom ? date < customDateFrom : false)}
+                          weekStartsOn={locale === 'es' ? 1 : 0}
+                          formatters={calendarFormatters}
+                          className="min-w-[280px]"
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </>
+              )}
+
+              {/* Open registration toggle */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('filters.openOnly')}</label>
+                <div className="flex items-center gap-2 pt-1">
+                  <Switch
+                    id="open-only"
+                    checked={openOnly}
+                    onCheckedChange={handleOpenOnlyChange}
+                  />
+                  <label
+                    htmlFor="open-only"
+                    className="text-sm text-muted-foreground cursor-pointer"
+                  >
+                    {openOnly ? t('filters.openOnlyEnabled') : t('filters.openOnlyDisabled')}
+                  </label>
+                </div>
+              </div>
+
+              {/* Virtual/In-person filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{t('filters.eventFormat')}</label>
+                <select
+                  value={isVirtual === undefined ? '' : String(isVirtual)}
+                  onChange={(e) =>
+                    handleVirtualChange(
+                      e.target.value === '' ? undefined : e.target.value === 'true',
+                    )
+                  }
+                  className={publicSelectClassName}
+                >
+                  <option value="">{t('filters.allFormats')}</option>
+                  <option value="false">{t('filters.inPerson')}</option>
+                  <option value="true">{t('filters.virtual')}</option>
+                </select>
+              </div>
+
+              {/* Distance range filter */}
+              <div className="space-y-2 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    <Ruler className="h-4 w-4" />
+                    {t('filters.distanceRange')}
+                  </label>
+                  <Switch
+                    id="distance-range-enabled"
+                    checked={distanceRangeEnabled}
+                    onCheckedChange={handleDistanceRangeEnabledChange}
                   />
                 </div>
-                {searchLocation && (
-                  <select
-                    value={searchRadius}
-                    onChange={(e) => handleRadiusChange(Number(e.target.value))}
-                    className={cn(publicSelectClassName, 'mt-2 h-10 min-w-[100px] sm:w-auto')}
-                  >
-                    <option value="10">10 km</option>
-                    <option value="25">25 km</option>
-                    <option value="50">50 km</option>
-                    <option value="100">100 km</option>
-                    <option value="200">200 km</option>
-                  </select>
+                {distanceRangeEnabled && (
+                  <div className="space-y-3 pt-2">
+                    <Slider
+                      value={distanceRange}
+                      onValueChange={handleDistanceRangeChange}
+                      onValueCommit={handleDistanceRangeCommit}
+                      min={0}
+                      max={200}
+                      step={5}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>{distanceRange[0]} km</span>
+                      <span>{distanceRange[1]} km</span>
+                    </div>
+                  </div>
                 )}
               </div>
-              {searchLocation && (
-                <p className="text-xs text-muted-foreground">
-                  {t('filters.searchingNear', {
-                    location: searchLocation.formattedAddress,
-                    radius: searchRadius,
-                  })}
-                </p>
-              )}
+
+              {/* Location + radius filter */}
+              <div className="space-y-2 sm:col-span-2 lg:col-span-3">
+                <label className="text-sm font-medium">{t('filters.nearLocation')}</label>
+                <div className="flex gap-2 items-center flex-wrap sm:flex-nowrap">
+                  <div className="flex-1 min-w-[200px]">
+                    <LocationField
+                      label=""
+                      location={searchLocation}
+                      country="MX"
+                      language={locale}
+                      onLocationChangeAction={handleLocationChange}
+                    />
+                  </div>
+                  {searchLocation && (
+                    <select
+                      value={searchRadius}
+                      onChange={(e) => handleRadiusChange(Number(e.target.value))}
+                      className={cn(publicSelectClassName, 'mt-2 h-10 min-w-[100px] sm:w-auto')}
+                    >
+                      <option value="10">10 km</option>
+                      <option value="25">25 km</option>
+                      <option value="50">50 km</option>
+                      <option value="100">100 km</option>
+                      <option value="200">200 km</option>
+                    </select>
+                  )}
+                </div>
+                {searchLocation && (
+                  <p className="text-xs text-muted-foreground">
+                    {t('filters.searchingNear', {
+                      location: searchLocation.formattedAddress,
+                      radius: searchRadius,
+                    })}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          ) : null}
         </div>
-      )}
+      </div>
 
       {/* Active filters */}
       {hasFilters && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border/70 pt-2">
           {sportType && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {t(`sportTypes.${sportType as SportType}`)}
               <button type="button" onClick={() => handleSportTypeChange('')}>
                 <X className="h-3 w-3" />
@@ -1014,7 +1060,7 @@ export function EventsDirectory({
             </span>
           )}
           {stateFilter && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {stateFilter}
               <button type="button" onClick={() => handleStateChange('')}>
                 <X className="h-3 w-3" />
@@ -1022,7 +1068,7 @@ export function EventsDirectory({
             </span>
           )}
           {datePreset !== 'any' && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {datePreset === 'custom' ? (
                 <>
                   {customDateFrom &&
@@ -1041,7 +1087,7 @@ export function EventsDirectory({
             </span>
           )}
           {openOnly && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {t('filters.openOnly')}
               <button type="button" onClick={() => handleOpenOnlyChange(false)}>
                 <X className="h-3 w-3" />
@@ -1049,7 +1095,7 @@ export function EventsDirectory({
             </span>
           )}
           {isVirtual !== undefined && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {isVirtual ? t('filters.virtual') : t('filters.inPerson')}
               <button type="button" onClick={() => handleVirtualChange(undefined)}>
                 <X className="h-3 w-3" />
@@ -1057,7 +1103,7 @@ export function EventsDirectory({
             </span>
           )}
           {distanceRangeEnabled && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {distanceRange[0]}-{distanceRange[1]} km
               <button type="button" onClick={() => handleDistanceRangeEnabledChange(false)}>
                 <X className="h-3 w-3" />
@@ -1065,7 +1111,7 @@ export function EventsDirectory({
             </span>
           )}
           {searchLocation && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
+            <span className="motion-status inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary">
               {searchRadius} km ·{' '}
               {searchLocation.city || searchLocation.formattedAddress.split(',')[0]}
               <button type="button" onClick={() => handleLocationChange(null)}>
@@ -1076,7 +1122,7 @@ export function EventsDirectory({
           <button
             type="button"
             onClick={clearFilters}
-            className="text-sm text-muted-foreground hover:text-foreground underline"
+            className="motion-pressable text-sm text-muted-foreground underline hover:text-foreground"
           >
             {t('search.clearFilters')}
           </button>
@@ -1236,7 +1282,7 @@ function EventCard({ event, locale }: { event: PublicEventSummary; locale: strin
         pathname: '/events/[seriesSlug]/[editionSlug]',
         params: { seriesSlug: event.seriesSlug, editionSlug: event.slug },
       }}
-      className="group block overflow-hidden rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] transition-colors hover:border-[var(--brand-blue)]/35 hover:bg-card"
+      className="motion-hover-lift group block overflow-hidden rounded-[1.5rem] border border-border/50 bg-[color-mix(in_oklch,var(--background)_80%,var(--background-surface)_20%)] transition-colors hover:border-[var(--brand-blue)]/35 hover:bg-card"
     >
       {/* Hero image placeholder */}
       <div className="relative aspect-[16/10] overflow-hidden bg-muted">

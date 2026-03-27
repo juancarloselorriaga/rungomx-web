@@ -39,7 +39,8 @@ const titleVariants = cva('font-display font-medium tracking-[-0.035em] text-bal
 });
 
 export interface TextBlockProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof textBlockVariants>,
     VariantProps<typeof titleVariants> {
   eyebrow?: string;
@@ -48,6 +49,7 @@ export interface TextBlockProps
   titleAs?: 'h1' | 'h2' | 'h3' | 'h4';
   subtitle?: string;
   description?: string;
+  motion?: 'none' | 'settle';
 }
 
 export function TextBlock({
@@ -58,6 +60,7 @@ export function TextBlock({
   titleSize,
   subtitle,
   description,
+  motion = 'settle',
   align,
   size,
   className,
@@ -68,17 +71,34 @@ export function TextBlock({
   const rightAligned = align === 'right';
 
   return (
-    <div className={cn(textBlockVariants({ align, size }), className)} {...props}>
+    <div
+      data-motion={motion === 'none' ? undefined : motion}
+      className={cn(textBlockVariants({ align, size }), className)}
+      {...props}
+    >
       {eyebrow && (
-        <Badge variant={eyebrowVariant} className="mb-5">
+        <Badge
+          variant={eyebrowVariant}
+          className="mb-5"
+          data-motion-item
+          style={{ '--motion-index': 0 } as React.CSSProperties}
+        >
           {eyebrow}
         </Badge>
       )}
 
-      <TitleTag className={cn(titleVariants({ titleSize }), 'text-foreground')}>{title}</TitleTag>
+      <TitleTag
+        data-motion-item
+        style={{ '--motion-index': eyebrow ? 1 : 0 } as React.CSSProperties}
+        className={cn(titleVariants({ titleSize }), 'text-foreground')}
+      >
+        {title}
+      </TitleTag>
 
       {subtitle && (
         <p
+          data-motion-item
+          style={{ '--motion-index': eyebrow ? 2 : 1 } as React.CSSProperties}
           className={cn(
             'mt-4 max-w-[48rem] text-lg font-medium leading-8 text-foreground/80 md:text-xl',
             centered && 'mx-auto',
@@ -91,6 +111,8 @@ export function TextBlock({
 
       {description && (
         <p
+          data-motion-item
+          style={{ '--motion-index': eyebrow ? 3 : 2 } as React.CSSProperties}
           className={cn(
             'mt-5 max-w-[65ch] text-base leading-8 text-muted-foreground md:text-lg',
             centered && 'mx-auto',
@@ -101,7 +123,15 @@ export function TextBlock({
         </p>
       )}
 
-      {children && <div className="mt-8">{children}</div>}
+      {children && (
+        <div
+          data-motion-item
+          style={{ '--motion-index': eyebrow ? 4 : 3 } as React.CSSProperties}
+          className="mt-8"
+        >
+          {children}
+        </div>
+      )}
     </div>
   );
 }
