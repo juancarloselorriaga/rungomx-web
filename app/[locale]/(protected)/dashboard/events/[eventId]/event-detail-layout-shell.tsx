@@ -4,7 +4,7 @@ import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-c
 import { useSlidingNavOptional } from '@/components/layout/navigation/sliding-nav-context';
 import type { SubmenuFooterLink } from '@/components/layout/navigation/submenu-types';
 import { useSearchParams } from 'next/navigation';
-import { type ReactNode, useEffect } from 'react';
+import { type ReactNode, useLayoutEffect } from 'react';
 
 type EventDetailLayoutShellProps = {
   title: string;
@@ -39,8 +39,9 @@ export function EventDetailLayoutShell({
   const wizardMode = searchParams.get('wizard') === '1';
   const slidingNav = useSlidingNavOptional();
 
-  // Hide the sidebar when in wizard mode, restore on exit
-  useEffect(() => {
+  // Hide the sidebar when in wizard mode, restore on exit.
+  // useLayoutEffect fires before paint to prevent the sidebar from flashing visible.
+  useLayoutEffect(() => {
     if (!slidingNav) return;
     if (wizardMode) {
       slidingNav.setSidebarHidden(true);

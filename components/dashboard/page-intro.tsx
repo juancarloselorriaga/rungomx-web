@@ -116,7 +116,7 @@ export function DashboardPageIntroMeta({
                 <dt className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                   {item.label}
                 </dt>
-                <dd className="text-sm font-medium text-foreground">{item.value}</dd>
+                <dd className="break-words text-sm font-medium text-foreground">{item.value}</dd>
               </div>
             ))}
           </dl>
