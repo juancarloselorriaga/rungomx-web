@@ -53,7 +53,11 @@ const OPTIONAL_RECOMMENDATION_DEFINITIONS: Array<{
 }> = [
   { stepId: 'faq', code: 'RECOMMEND_FAQ', labelKey: 'wizard.issues.recommendFaq' },
   { stepId: 'waivers', code: 'RECOMMEND_WAIVERS', labelKey: 'wizard.issues.recommendWaivers' },
-  { stepId: 'questions', code: 'RECOMMEND_QUESTIONS', labelKey: 'wizard.issues.recommendQuestions' },
+  {
+    stepId: 'questions',
+    code: 'RECOMMEND_QUESTIONS',
+    labelKey: 'wizard.issues.recommendQuestions',
+  },
   { stepId: 'website', code: 'RECOMMEND_WEBSITE', labelKey: 'wizard.issues.recommendWebsite' },
   { stepId: 'add_ons', code: 'RECOMMEND_ADD_ONS', labelKey: 'wizard.issues.recommendAddOns' },
   { stepId: 'policies', code: 'RECOMMEND_POLICIES', labelKey: 'wizard.issues.recommendPolicies' },
@@ -71,6 +75,7 @@ type EventWizardAggregateOptions = {
   selectedPath: EventCreationPath | null;
   hasWebsiteContent?: boolean;
   websiteContent?: WebsiteContentBlocks | null;
+  websiteContents?: WebsiteContentBlocks[];
   questionCount?: number;
   addOnCount?: number;
   addOns?: Array<{
@@ -179,20 +184,18 @@ function hasVenueLevelLocationTrust(event: EventEditionDetail): boolean {
 function hasConfirmedLocationTruth(event: EventEditionDetail): boolean {
   return Boolean(
     String(event.locationDisplay ?? '').trim() ||
-      String(event.address ?? '').trim() ||
-      String(event.city ?? '').trim() ||
-      String(event.state ?? '').trim() ||
-      (String(event.latitude ?? '').trim() && String(event.longitude ?? '').trim()),
+    String(event.address ?? '').trim() ||
+    String(event.city ?? '').trim() ||
+    String(event.state ?? '').trim() ||
+    (String(event.latitude ?? '').trim() && String(event.longitude ?? '').trim()),
   );
 }
 
 function collectParticipantFacingContent(
   event: EventEditionDetail,
-  websiteContent: WebsiteContentBlocks | null | undefined,
+  websiteContents: Array<WebsiteContentBlocks | null | undefined>,
 ): string {
-  const content = [
-    event.description,
-    ...event.faqItems.flatMap((item) => [item.question, item.answer]),
+  const websiteContentFragments = websiteContents.flatMap((websiteContent) => [
     websiteContent?.overview?.title,
     websiteContent?.overview?.content,
     websiteContent?.overview?.terrain,
@@ -207,6 +210,12 @@ function collectParticipantFacingContent(
       item.time,
       item.notes,
     ]),
+  ]);
+
+  const content = [
+    event.description,
+    ...event.faqItems.flatMap((item) => [item.question, item.answer]),
+    ...websiteContentFragments,
   ];
 
   return content
@@ -216,16 +225,19 @@ function collectParticipantFacingContent(
 
 function buildParticipantContentTruthBlockers(
   event: EventEditionDetail,
-  websiteContent: WebsiteContentBlocks | null | undefined,
+  websiteContents: Array<WebsiteContentBlocks | null | undefined>,
 ): EventWizardIssue[] {
-  const participantFacingContent = collectParticipantFacingContent(event, websiteContent);
+  const participantFacingContent = collectParticipantFacingContent(event, websiteContents);
   if (!participantFacingContent) {
     return [];
   }
 
   const blockers: EventWizardIssue[] = [];
 
-  if ((event.startsAt || event.endsAt) && SCHEDULE_UNCONFIRMED_PATTERNS.some((pattern) => pattern.test(participantFacingContent))) {
+  if (
+    (event.startsAt || event.endsAt) &&
+    SCHEDULE_UNCONFIRMED_PATTERNS.some((pattern) => pattern.test(participantFacingContent))
+  ) {
     blockers.push({
       id: 'publish-content-schedule-truth-conflict',
       stepId: 'website',
@@ -236,7 +248,10 @@ function buildParticipantContentTruthBlockers(
     });
   }
 
-  if (hasConfirmedLocationTruth(event) && LOCATION_UNCONFIRMED_PATTERNS.some((pattern) => pattern.test(participantFacingContent))) {
+  if (
+    hasConfirmedLocationTruth(event) &&
+    LOCATION_UNCONFIRMED_PATTERNS.some((pattern) => pattern.test(participantFacingContent))
+  ) {
     blockers.push({
       id: 'publish-content-location-truth-conflict',
       stepId: 'website',
@@ -276,7 +291,9 @@ export function resolveManualWizardStepTarget(
     return requestedStepId;
   }
 
-  const firstIncompleteRequiredStepId = requiredStepIds.find((stepId) => !completionByStepId[stepId]);
+  const firstIncompleteRequiredStepId = requiredStepIds.find(
+    (stepId) => !completionByStepId[stepId],
+  );
   if (!firstIncompleteRequiredStepId) {
     return requestedStepId;
   }
@@ -410,6 +427,7 @@ export function buildEventWizardAggregate(
     selectedPath,
     hasWebsiteContent = false,
     websiteContent = null,
+    websiteContents,
     questionCount = 0,
     addOnCount = 0,
     addOns,
@@ -429,7 +447,8 @@ export function buildEventWizardAggregate(
   const hasRegistrationConfig = Boolean(
     event.registrationOpensAt || event.registrationClosesAt || event.isRegistrationPaused,
   );
-  const hasContent = hasWebsiteContent || event.faqItems.length > 0 || Boolean(event.description?.trim());
+  const hasContent =
+    hasWebsiteContent || event.faqItems.length > 0 || Boolean(event.description?.trim());
   const hasPolicies = event.policyConfig !== null || event.waivers.length > 0;
   const resolvedAddOnCount = addOns?.length ?? addOnCount;
   const invalidActiveAddOnCount =
@@ -440,6 +459,8 @@ export function buildEventWizardAggregate(
   const hasEndDate = Boolean(event.endsAt);
   const hasDescription = Boolean(event.description?.trim());
   const hasTrustedStartTime = hasTrustedEventStartTime(event.startsAt, event.timezone);
+  const resolvedWebsiteContents =
+    websiteContents && websiteContents.length > 0 ? websiteContents : [websiteContent];
 
   const missingRequired: EventWizardIssue[] = [];
   const basicsDiagnosis: EventWizardIssue[] = [];
@@ -573,7 +594,11 @@ export function buildEventWizardAggregate(
       severity: 'blocker',
     });
   }
-  if (String(event.locationDisplay ?? '').trim() && hasLocation && !hasVenueLevelLocationTrust(event)) {
+  if (
+    String(event.locationDisplay ?? '').trim() &&
+    hasLocation &&
+    !hasVenueLevelLocationTrust(event)
+  ) {
     publishBlockers.push({
       id: 'publish-location-needs-venue-confirmation',
       stepId: 'event_details',
@@ -583,7 +608,7 @@ export function buildEventWizardAggregate(
       severity: 'blocker',
     });
   }
-  publishBlockers.push(...buildParticipantContentTruthBlockers(event, websiteContent));
+  publishBlockers.push(...buildParticipantContentTruthBlockers(event, resolvedWebsiteContents));
 
   const completionByStepId: Record<EventWizardStepId, boolean> = {
     choose_path: selectedPath !== null,
@@ -599,16 +624,16 @@ export function buildEventWizardAggregate(
     publish: publishBlockers.length === 0 && missingRequired.length === 0,
   };
 
-  const optionalRecommendations: EventWizardIssue[] = OPTIONAL_RECOMMENDATION_DEFINITIONS
-    .filter((item) => !completionByStepId[item.stepId])
-    .map((item) => ({
-      id: `recommend-${item.stepId}`,
-      stepId: item.stepId,
-      labelKey: item.labelKey,
-      href: stepById.get(item.stepId)?.href ?? eventPath(event.id, '/settings'),
-      code: item.code,
-      severity: 'optional',
-    }));
+  const optionalRecommendations: EventWizardIssue[] = OPTIONAL_RECOMMENDATION_DEFINITIONS.filter(
+    (item) => !completionByStepId[item.stepId],
+  ).map((item) => ({
+    id: `recommend-${item.stepId}`,
+    stepId: item.stepId,
+    labelKey: item.labelKey,
+    href: stepById.get(item.stepId)?.href ?? eventPath(event.id, '/settings'),
+    code: item.code,
+    severity: 'optional',
+  }));
 
   if (!hasHeroImage) {
     optionalRecommendations.unshift({
@@ -621,7 +646,11 @@ export function buildEventWizardAggregate(
     });
   }
 
-  const prioritizedChecklist = [...publishBlockers, ...missingRequired, ...optionalRecommendations].filter(
+  const prioritizedChecklist = [
+    ...publishBlockers,
+    ...missingRequired,
+    ...optionalRecommendations,
+  ].filter(
     (issue, index, list) => list.findIndex((candidate) => candidate.code === issue.code) === index,
   );
 
@@ -630,16 +659,56 @@ export function buildEventWizardAggregate(
   const totalRequired = requiredSteps.length;
   const percent = totalRequired === 0 ? 100 : Math.round((completedRequired / totalRequired) * 100);
 
-  const blockerStepIds = new Set([...publishBlockers, ...missingRequired].map((issue) => mapIssueToSetupStepId(issue.stepId)));
-  const recommendationStepIds = optionalRecommendations.map((issue) => mapIssueToSetupStepId(issue.stepId));
+  const blockerStepIds = new Set(
+    [...publishBlockers, ...missingRequired].map((issue) => mapIssueToSetupStepId(issue.stepId)),
+  );
+  const recommendationStepIds = optionalRecommendations.map((issue) =>
+    mapIssueToSetupStepId(issue.stepId),
+  );
 
   const setupStepStateById: EventWizardAggregate['setupStepStateById'] = {
-    basics: buildSetupStepState('basics', true, completionByStepId.event_details, blockerStepIds, recommendationStepIds),
-    distances: buildSetupStepState('distances', true, completionByStepId.distances, blockerStepIds, recommendationStepIds),
-    pricing: buildSetupStepState('pricing', true, completionByStepId.pricing, blockerStepIds, recommendationStepIds),
-    registration: buildSetupStepState('registration', false, hasRegistrationConfig, blockerStepIds, recommendationStepIds),
-    policies: buildSetupStepState('policies', false, hasPolicies, blockerStepIds, recommendationStepIds),
-    content: buildSetupStepState('content', false, hasContent, blockerStepIds, recommendationStepIds),
+    basics: buildSetupStepState(
+      'basics',
+      true,
+      completionByStepId.event_details,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
+    distances: buildSetupStepState(
+      'distances',
+      true,
+      completionByStepId.distances,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
+    pricing: buildSetupStepState(
+      'pricing',
+      true,
+      completionByStepId.pricing,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
+    registration: buildSetupStepState(
+      'registration',
+      false,
+      hasRegistrationConfig,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
+    policies: buildSetupStepState(
+      'policies',
+      false,
+      hasPolicies,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
+    content: buildSetupStepState(
+      'content',
+      false,
+      hasContent,
+      blockerStepIds,
+      recommendationStepIds,
+    ),
     extras: buildSetupStepState(
       'extras',
       false,
@@ -684,4 +753,10 @@ export function evaluateEventWizardCompleteness(
   selectedPath: EventCreationPath | null,
 ): EventWizardCompleteness {
   return buildEventWizardAggregate(event, { selectedPath });
+}
+
+export function hasEventPublishReadinessBlockers(
+  aggregate: Pick<EventWizardCompleteness, 'publishBlockers' | 'missingRequired'>,
+): boolean {
+  return aggregate.publishBlockers.length > 0 || aggregate.missingRequired.length > 0;
 }

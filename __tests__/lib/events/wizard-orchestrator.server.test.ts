@@ -109,7 +109,9 @@ describe('event wizard orchestrator', () => {
       'RECOMMEND_ADD_ONS',
       'RECOMMEND_POLICIES',
     ]);
-    expect(result.optionalRecommendations.every((issue) => issue.severity === 'optional')).toBe(true);
+    expect(result.optionalRecommendations.every((issue) => issue.severity === 'optional')).toBe(
+      true,
+    );
   });
 
   it('detects missing pricing tiers as publish blocker', () => {
@@ -334,6 +336,55 @@ describe('event wizard orchestrator', () => {
     );
     expect(aggregate.completionByStepId.publish).toBe(false);
     expect(aggregate.setupStepStateById.review.completed).toBe(false);
+  });
+
+  it('blocks publish readiness when any saved website locale still carries a truth conflict', () => {
+    const aggregate = buildEventWizardAggregate(
+      buildEvent({
+        startsAt: new Date('2026-03-15T06:00:00.000Z'),
+        endsAt: new Date('2026-03-15T14:00:00.000Z'),
+        distances: [
+          {
+            id: 'distance-1',
+            label: '10K',
+            distanceValue: '10',
+            distanceUnit: 'km',
+            kind: 'distance',
+            startTimeLocal: null,
+            timeLimitMinutes: null,
+            terrain: null,
+            isVirtual: false,
+            capacity: null,
+            capacityScope: 'per_distance',
+            sortOrder: 0,
+            priceCents: 35000,
+            currency: 'MXN',
+            hasPricingTier: true,
+            pricingTierCount: 1,
+            hasBoundedPricingTier: false,
+            registrationCount: 0,
+          },
+        ],
+      }),
+      {
+        selectedPath: null,
+        hasWebsiteContent: true,
+        websiteContents: [
+          {
+            overview: {
+              type: 'overview',
+              enabled: true,
+              content: 'Modalidad y horarios por confirmar',
+            },
+          },
+        ],
+      },
+    );
+
+    expect(aggregate.publishBlockers.map((issue) => issue.code)).toContain(
+      'CONTENT_SCHEDULE_TRUTH_CONFLICT',
+    );
+    expect(aggregate.completionByStepId.publish).toBe(false);
   });
 
   it('keeps sufficiently structured saved locations publish-ready', () => {
@@ -732,21 +783,11 @@ describe('event wizard orchestrator', () => {
     const completeness = evaluateEventWizardCompleteness(buildEvent(), 'manual');
 
     expect(
-      resolveManualWizardStepTarget(
-        steps,
-        completeness.completionByStepId,
-        'manual',
-        'pricing',
-      ),
+      resolveManualWizardStepTarget(steps, completeness.completionByStepId, 'manual', 'pricing'),
     ).toBe('event_details');
 
     expect(
-      resolveManualWizardStepTarget(
-        steps,
-        completeness.completionByStepId,
-        'manual',
-        'faq',
-      ),
+      resolveManualWizardStepTarget(steps, completeness.completionByStepId, 'manual', 'faq'),
     ).toBe('faq');
   });
 
@@ -755,12 +796,7 @@ describe('event wizard orchestrator', () => {
     const completeness = evaluateEventWizardCompleteness(buildEvent(), 'ai');
 
     expect(
-      resolveManualWizardStepTarget(
-        steps,
-        completeness.completionByStepId,
-        'ai',
-        'pricing',
-      ),
+      resolveManualWizardStepTarget(steps, completeness.completionByStepId, 'ai', 'pricing'),
     ).toBe('pricing');
   });
 

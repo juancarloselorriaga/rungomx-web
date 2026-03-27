@@ -32,14 +32,15 @@ import {
   getOrgMembership,
   requireOrgPermission,
 } from '@/lib/organizations/permissions';
+import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
+import { getEventEditionDetailForMutation } from '@/lib/events/editions/queries';
+import { getWebsiteContentsForEdition } from '@/lib/events/website/queries';
 import {
-  eventEditionDetailTag,
-  publicEventBySlugTag,
-} from '../cache-tags';
-import {
-  CAPACITY_SCOPES,
-  EVENT_VISIBILITY,
-} from '../constants';
+  buildEventWizardAggregate,
+  hasEventPublishReadinessBlockers,
+} from '@/lib/events/wizard/orchestrator';
+import { eventEditionDetailTag, publicEventBySlugTag } from '../cache-tags';
+import { CAPACITY_SCOPES, EVENT_VISIBILITY } from '../constants';
 import {
   type ActionResult,
   checkEventsAccess,
@@ -106,7 +107,9 @@ function shiftDateByYears(value: Date | null, years: number): Date | null {
   return next;
 }
 
-function normalizeOrganizerBriefForAiAvailability(organizerBrief: string | null | undefined): string | null {
+function normalizeOrganizerBriefForAiAvailability(
+  organizerBrief: string | null | undefined,
+): string | null {
   if (!isEventAiWizardEnabled()) {
     return null;
   }
@@ -114,7 +117,12 @@ function normalizeOrganizerBriefForAiAvailability(organizerBrief: string | null 
   return organizerBrief?.trim() || null;
 }
 
-function buildEditionActionSuccess(edition: Pick<EventEditionData, 'id' | 'publicCode' | 'editionLabel' | 'slug' | 'visibility' | 'seriesId'>) {
+function buildEditionActionSuccess(
+  edition: Pick<
+    EventEditionData,
+    'id' | 'publicCode' | 'editionLabel' | 'slug' | 'visibility' | 'seriesId'
+  >,
+) {
   return {
     ok: true as const,
     data: {
@@ -157,8 +165,16 @@ const createEventEditionSchema = z.object({
   city: z.string().max(100).optional(),
   state: z.string().max(100).optional(),
   country: z.string().max(100).default('MX'),
-  latitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
-  longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
+  latitude: z
+    .string()
+    .regex(/^-?\d+(\.\d+)?$/)
+    .optional()
+    .nullable(),
+  longitude: z
+    .string()
+    .regex(/^-?\d+(\.\d+)?$/)
+    .optional()
+    .nullable(),
   externalUrl: z.string().url().max(500).optional(),
   description: z.string().max(5000).optional(),
   organizerBrief: z.string().max(4000).optional().nullable(),
@@ -183,8 +199,16 @@ const updateEventEditionSchema = z.object({
   city: z.string().max(100).optional().nullable(),
   state: z.string().max(100).optional().nullable(),
   country: z.string().max(100).optional().nullable(),
-  latitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
-  longitude: z.string().regex(/^-?\d+(\.\d+)?$/).optional().nullable(),
+  latitude: z
+    .string()
+    .regex(/^-?\d+(\.\d+)?$/)
+    .optional()
+    .nullable(),
+  longitude: z
+    .string()
+    .regex(/^-?\d+(\.\d+)?$/)
+    .optional()
+    .nullable(),
   externalUrl: z.string().url().max(500).optional().nullable(),
   description: z.string().max(5000).optional().nullable(),
   organizerBrief: z.string().max(4000).optional().nullable(),
@@ -354,7 +378,11 @@ export const cloneEdition = withAuthenticatedUser<ActionResult<CloneEditionResul
   }
 
   if (existingLabel) {
-    return { ok: false, error: 'Edition label is already used in this series', code: 'LABEL_TAKEN' };
+    return {
+      ok: false,
+      error: 'Edition label is already used in this series',
+      code: 'LABEL_TAKEN',
+    };
   }
 
   const fromYear = parseYearLabel(source.editionLabel);
@@ -473,13 +501,16 @@ export const cloneEdition = withAuthenticatedUser<ActionResult<CloneEditionResul
         editionId: newEdition.id,
         refundsAllowed: source.policyConfig.refundsAllowed,
         refundPolicyText: source.policyConfig.refundPolicyText,
-        refundDeadline: shiftDateByYears(source.policyConfig.refundDeadline, yearShift) ?? undefined,
+        refundDeadline:
+          shiftDateByYears(source.policyConfig.refundDeadline, yearShift) ?? undefined,
         transfersAllowed: source.policyConfig.transfersAllowed,
         transferPolicyText: source.policyConfig.transferPolicyText,
-        transferDeadline: shiftDateByYears(source.policyConfig.transferDeadline, yearShift) ?? undefined,
+        transferDeadline:
+          shiftDateByYears(source.policyConfig.transferDeadline, yearShift) ?? undefined,
         deferralsAllowed: source.policyConfig.deferralsAllowed,
         deferralPolicyText: source.policyConfig.deferralPolicyText,
-        deferralDeadline: shiftDateByYears(source.policyConfig.deferralDeadline, yearShift) ?? undefined,
+        deferralDeadline:
+          shiftDateByYears(source.policyConfig.deferralDeadline, yearShift) ?? undefined,
       });
     }
 
@@ -773,7 +804,11 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
       ),
     });
     if (existing) {
-      return { ok: false, error: 'Edition slug is already taken in this series', code: 'SLUG_TAKEN' };
+      return {
+        ok: false,
+        error: 'Edition slug is already taken in this series',
+        code: 'SLUG_TAKEN',
+      };
     }
   }
 
@@ -828,10 +863,18 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.editionLabel !== undefined) updateData.editionLabel = updates.editionLabel;
   if (updates.slug !== undefined) updateData.slug = updates.slug;
   if (updates.timezone !== undefined) updateData.timezone = updates.timezone;
-  if (updates.startsAt !== undefined) updateData.startsAt = updates.startsAt ? new Date(updates.startsAt) : null;
-  if (updates.endsAt !== undefined) updateData.endsAt = updates.endsAt ? new Date(updates.endsAt) : null;
-  if (updates.registrationOpensAt !== undefined) updateData.registrationOpensAt = updates.registrationOpensAt ? new Date(updates.registrationOpensAt) : null;
-  if (updates.registrationClosesAt !== undefined) updateData.registrationClosesAt = updates.registrationClosesAt ? new Date(updates.registrationClosesAt) : null;
+  if (updates.startsAt !== undefined)
+    updateData.startsAt = updates.startsAt ? new Date(updates.startsAt) : null;
+  if (updates.endsAt !== undefined)
+    updateData.endsAt = updates.endsAt ? new Date(updates.endsAt) : null;
+  if (updates.registrationOpensAt !== undefined)
+    updateData.registrationOpensAt = updates.registrationOpensAt
+      ? new Date(updates.registrationOpensAt)
+      : null;
+  if (updates.registrationClosesAt !== undefined)
+    updateData.registrationClosesAt = updates.registrationClosesAt
+      ? new Date(updates.registrationClosesAt)
+      : null;
   if (updates.locationDisplay !== undefined) updateData.locationDisplay = updates.locationDisplay;
   if (updates.address !== undefined) updateData.address = updates.address;
   if (updates.city !== undefined) updateData.city = updates.city;
@@ -842,7 +885,8 @@ export const updateEventEdition = withAuthenticatedUser<ActionResult<EventEditio
   if (updates.externalUrl !== undefined) updateData.externalUrl = updates.externalUrl;
   if (updates.description !== undefined) updateData.description = updates.description;
   if (nextOrganizerBrief !== undefined) updateData.organizerBrief = nextOrganizerBrief;
-  if (updates.heroImageMediaId !== undefined) updateData.heroImageMediaId = updates.heroImageMediaId;
+  if (updates.heroImageMediaId !== undefined)
+    updateData.heroImageMediaId = updates.heroImageMediaId;
 
   if (Object.keys(updateData).length === 0) {
     return buildEditionActionSuccess(edition);
@@ -942,7 +986,7 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
     }
   }
 
-  const nextSharedCapacity = capacityScope === 'shared_pool' ? sharedCapacity ?? null : null;
+  const nextSharedCapacity = capacityScope === 'shared_pool' ? (sharedCapacity ?? null) : null;
   const previousScope = edition.sharedCapacity ? 'shared_pool' : 'per_distance';
   const requestContext = await getRequestContext(await headers());
 
@@ -956,12 +1000,7 @@ export const updateEventCapacitySettings = withAuthenticatedUser<ActionResult<Ev
     await tx
       .update(eventDistances)
       .set({ capacityScope })
-      .where(
-        and(
-          eq(eventDistances.editionId, editionId),
-          isNull(eventDistances.deletedAt),
-        ),
-      );
+      .where(and(eq(eventDistances.editionId, editionId), isNull(eventDistances.deletedAt)));
 
     const auditResult = await createAuditLog(
       {
@@ -1112,7 +1151,9 @@ export const updateEventPolicyConfig = withAuthenticatedUser<ActionResult<EventP
 /**
  * Confirm an event media upload.
  */
-export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<ConfirmEventMediaUploadData>>({
+export const confirmEventMediaUpload = withAuthenticatedUser<
+  ActionResult<ConfirmEventMediaUploadData>
+>({
   unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
 })(async (authContext, input: z.infer<typeof confirmEventMediaUploadSchema>) => {
   const accessError = checkEventsAccess(authContext);
@@ -1145,13 +1186,14 @@ export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<Confir
   let uploadedMedia: typeof media.$inferSelect | null = null;
 
   for (let attempt = 0; attempt < MAX_MEDIA_LOOKUP_ATTEMPTS; attempt += 1) {
-    uploadedMedia = (await db.query.media.findFirst({
-      where: and(
-        eq(media.organizationId, organizationId),
-        eq(media.blobUrl, blobUrl),
-        isNull(media.deletedAt),
-      ),
-    })) ?? null;
+    uploadedMedia =
+      (await db.query.media.findFirst({
+        where: and(
+          eq(media.organizationId, organizationId),
+          eq(media.blobUrl, blobUrl),
+          isNull(media.deletedAt),
+        ),
+      })) ?? null;
 
     if (uploadedMedia) break;
 
@@ -1177,23 +1219,21 @@ export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<Confir
       return { ok: false, error: 'Failed to create media record', code: 'SERVER_ERROR' };
     }
 
-    const auditResult = await createAuditLog(
-      {
-        organizationId,
-        actorUserId: authContext.user.id,
-        action: 'media.upload',
-        entityType: 'media',
-        entityId: created.id,
-        after: {
-          blobUrl: created.blobUrl,
-          kind: created.kind,
-          mimeType: created.mimeType,
-          sizeBytes: created.sizeBytes,
-          source: 'confirm',
-        },
-        request: requestContext,
+    const auditResult = await createAuditLog({
+      organizationId,
+      actorUserId: authContext.user.id,
+      action: 'media.upload',
+      entityType: 'media',
+      entityId: created.id,
+      after: {
+        blobUrl: created.blobUrl,
+        kind: created.kind,
+        mimeType: created.mimeType,
+        sizeBytes: created.sizeBytes,
+        source: 'confirm',
       },
-    );
+      request: requestContext,
+    });
 
     if (!auditResult.ok) {
       return { ok: false, error: 'Failed to create audit log', code: 'SERVER_ERROR' };
@@ -1203,10 +1243,7 @@ export const confirmEventMediaUpload = withAuthenticatedUser<ActionResult<Confir
   }
 
   if (uploadedMedia.kind !== expectedKind) {
-    await db
-      .update(media)
-      .set({ kind: expectedKind })
-      .where(eq(media.id, uploadedMedia.id));
+    await db.update(media).set({ kind: expectedKind }).where(eq(media.id, uploadedMedia.id));
   }
 
   return { ok: true, data: { mediaId: uploadedMedia.id, blobUrl: uploadedMedia.blobUrl } };
@@ -1234,17 +1271,14 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
 
   const { editionId, visibility } = validated.data;
 
-  const edition = await db.query.eventEditions.findFirst({
-    where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
-    with: { series: true },
-  });
+  const edition = await getEventEditionDetailForMutation(editionId);
 
-  if (!edition?.series) {
+  if (!edition) {
     return { ok: false, error: 'Event edition not found', code: 'NOT_FOUND' };
   }
 
   if (!authContext.permissions.canManageEvents) {
-    const membership = await getOrgMembership(authContext.user.id, edition.series.organizationId);
+    const membership = await getOrgMembership(authContext.user.id, edition.organizationId);
     try {
       requireOrgPermission(membership, 'canPublishEvents');
     } catch {
@@ -1255,23 +1289,27 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
   const previousVisibility = edition.visibility;
 
   if (visibility === 'published' && previousVisibility !== 'published') {
-    const distances = await db.query.eventDistances.findMany({
-      where: and(eq(eventDistances.editionId, editionId), isNull(eventDistances.deletedAt)),
-      with: {
-        pricingTiers: {
-          where: isNull(pricingTiers.deletedAt),
-          limit: 1,
-        },
-      },
+    const [addOns, websiteContents] = await Promise.all([
+      getAddOnsForEdition(editionId),
+      getWebsiteContentsForEdition(editionId),
+    ]);
+    const publishReadiness = buildEventWizardAggregate(edition, {
+      selectedPath: null,
+      hasWebsiteContent: websiteContents.length > 0,
+      websiteContents,
+      addOns,
     });
 
-    if (distances.length === 0) {
-      return { ok: false, error: 'Event must have at least one distance', code: 'MISSING_DISTANCE' };
-    }
+    if (hasEventPublishReadinessBlockers(publishReadiness)) {
+      const blockingIssue = publishReadiness.prioritizedChecklist.find(
+        (issue) => issue.severity !== 'optional',
+      );
 
-    const hasMissingPrices = distances.some((distance) => distance.pricingTiers.length === 0);
-    if (hasMissingPrices) {
-      return { ok: false, error: 'Each distance must have at least one price', code: 'MISSING_PRICING' };
+      return {
+        ok: false,
+        error: 'Event is not ready to publish',
+        code: blockingIssue?.code ?? 'PUBLISH_READINESS_FAILED',
+      };
     }
   }
 
@@ -1288,14 +1326,11 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
 
   const requestContext = await getRequestContext(await headers());
   await db.transaction(async (tx) => {
-    await tx
-      .update(eventEditions)
-      .set({ visibility })
-      .where(eq(eventEditions.id, editionId));
+    await tx.update(eventEditions).set({ visibility }).where(eq(eventEditions.id, editionId));
 
     const auditResult = await createAuditLog(
       {
-        organizationId: edition.series.organizationId,
+        organizationId: edition.organizationId,
         actorUserId: authContext.user.id,
         action,
         entityType: 'event_edition',
@@ -1313,7 +1348,7 @@ export const updateEventVisibility = withAuthenticatedUser<ActionResult<{ visibi
   });
 
   safeUpdateTag(eventEditionDetailTag(editionId));
-  safeUpdateTag(publicEventBySlugTag(edition.series.slug, edition.slug));
+  safeUpdateTag(publicEventBySlugTag(edition.seriesSlug, edition.slug));
   safeRefresh();
 
   return { ok: true, data: { visibility } };
@@ -1450,5 +1485,9 @@ export const checkSlugAvailability = withAuthenticatedUser<ActionResult<{ availa
     return { ok: true, data: { available: !existing } };
   }
 
-  return { ok: false, error: 'Either organizationId or seriesId is required', code: 'VALIDATION_ERROR' };
+  return {
+    ok: false,
+    error: 'Either organizationId or seriesId is required',
+    code: 'VALIDATION_ERROR',
+  };
 });

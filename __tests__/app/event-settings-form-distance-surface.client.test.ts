@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 
-import { buildEventEditionPayload } from '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form';
+import {
+  buildEventEditionPayload,
+  getVisiblePublishDisabledReasons,
+} from '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form';
 import { shouldAutoOpenDistanceComposer } from '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-surface';
 
 jest.mock('next-intl', () => ({
@@ -178,5 +181,24 @@ describe('event settings payload shaping', () => {
 
     expect(payload.registrationOpensAt).toBe('2026-09-01T06:00:00.000Z');
     expect(payload.registrationClosesAt).toBe('2026-09-02T05:59:00.000Z');
+  });
+});
+
+describe('publish disabled hint helpers', () => {
+  it('deduplicates reasons, trims blanks, and caps the visible list', () => {
+    expect(
+      getVisiblePublishDisabledReasons([
+        { label: ' Add event date ', href: '/dashboard/events/evt-1/settings#details' },
+        { label: '', href: '/dashboard/events/evt-1/settings' },
+        { label: 'Add event date', href: '/dashboard/events/evt-1/settings#details' },
+        { label: 'Confirm venue', href: '/dashboard/events/evt-1/settings#location' },
+        { label: 'Add pricing', href: '/dashboard/events/evt-1/pricing' },
+        { label: 'Extra hidden reason', href: '/dashboard/events/evt-1/website' },
+      ]),
+    ).toEqual([
+      { label: 'Add event date', href: '/dashboard/events/evt-1/settings#details' },
+      { label: 'Confirm venue', href: '/dashboard/events/evt-1/settings#location' },
+      { label: 'Add pricing', href: '/dashboard/events/evt-1/pricing' },
+    ]);
   });
 });

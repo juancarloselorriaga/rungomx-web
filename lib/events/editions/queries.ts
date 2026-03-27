@@ -157,10 +157,7 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     .select({ organizationId: organizationMemberships.organizationId })
     .from(organizationMemberships)
     .where(
-      and(
-        eq(organizationMemberships.userId, userId),
-        isNull(organizationMemberships.deletedAt),
-      ),
+      and(eq(organizationMemberships.userId, userId), isNull(organizationMemberships.deletedAt)),
     );
 
   const orgIds = userOrgs.map((o) => o.organizationId);
@@ -196,10 +193,7 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     .from(eventEditions)
     .innerJoin(eventSeries, eq(eventEditions.seriesId, eventSeries.id))
     .innerJoin(organizations, eq(eventSeries.organizationId, organizations.id))
-    .leftJoin(
-      media,
-      and(eq(eventEditions.heroImageMediaId, media.id), isNull(media.deletedAt)),
-    )
+    .leftJoin(media, and(eq(eventEditions.heroImageMediaId, media.id), isNull(media.deletedAt)))
     .where(
       and(
         sql`${eventSeries.organizationId} IN ${orgIds}`,
@@ -222,12 +216,7 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
       count: sql<number>`count(*)`,
     })
     .from(eventDistances)
-    .where(
-      and(
-        sql`${eventDistances.editionId} IN ${eventIds}`,
-        isNull(eventDistances.deletedAt),
-      ),
-    )
+    .where(and(sql`${eventDistances.editionId} IN ${eventIds}`, isNull(eventDistances.deletedAt)))
     .groupBy(eventDistances.editionId);
 
   const now = new Date();
@@ -256,9 +245,7 @@ export async function getUserEvents(userId: string): Promise<OrganizerEventSumma
     )
     .groupBy(registrations.editionId);
 
-  const distanceCountMap = new Map(
-    distanceCounts.map((d) => [d.editionId, Number(d.count)]),
-  );
+  const distanceCountMap = new Map(distanceCounts.map((d) => [d.editionId, Number(d.count)]));
   const registrationCountMap = new Map(
     registrationCounts.map((r) => [r.editionId, Number(r.count)]),
   );
@@ -300,7 +287,15 @@ export async function getEventEditionDetail(eventId: string): Promise<EventEditi
   return getEventEditionDetailUncached(eventId);
 }
 
-export async function getSeriesEditionsForDashboard(seriesId: string): Promise<SeriesEditionListItem[]> {
+export async function getEventEditionDetailForMutation(
+  eventId: string,
+): Promise<EventEditionDetail | null> {
+  return getEventEditionDetailUncached(eventId);
+}
+
+export async function getSeriesEditionsForDashboard(
+  seriesId: string,
+): Promise<SeriesEditionListItem[]> {
   if (process.env.NODE_ENV !== 'test') {
     await connection();
   }
@@ -407,11 +402,8 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
       )
       .groupBy(registrations.distanceId);
 
-    registrationCountMap = new Map(
-      regCounts.map((r) => [r.distanceId, Number(r.count)]),
-    );
+    registrationCountMap = new Map(regCounts.map((r) => [r.distanceId, Number(r.count)]));
   }
-
 
   return {
     id: edition.id,
@@ -437,7 +429,7 @@ async function getEventEditionDetailUncached(eventId: string): Promise<EventEdit
     longitude: edition.longitude,
     externalUrl: edition.externalUrl,
     heroImageMediaId: edition.heroImageMediaId,
-    heroImageUrl: edition.heroImage?.deletedAt ? null : edition.heroImage?.blobUrl ?? null,
+    heroImageUrl: edition.heroImage?.deletedAt ? null : (edition.heroImage?.blobUrl ?? null),
     seriesId: edition.seriesId,
     seriesName: edition.series.name,
     seriesSlug: edition.series.slug,

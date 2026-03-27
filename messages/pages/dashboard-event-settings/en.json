@@ -566,6 +566,11 @@
     "title": "Event Visibility",
     "description": "Control who can see your event. Published events appear in the public directory.",
     "success": "Visibility updated.",
+    "disabledHint": {
+      "title": "Publishing is disabled until these items are fixed",
+      "description": "Finish the remaining required setup first, then publish from here.",
+      "more": "+{count} more item{count, plural, one {} other {s}}"
+    },
     "errors": {
       "missingDistances": "Add at least one distance before publishing.",
       "missingPrices": "Add at least one price for every distance before publishing.",

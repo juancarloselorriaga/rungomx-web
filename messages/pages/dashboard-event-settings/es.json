@@ -566,6 +566,11 @@
     "title": "Visibilidad del evento",
     "description": "Controla quién puede ver tu evento. Los eventos publicados aparecen en el directorio público.",
     "success": "Visibilidad actualizada.",
+    "disabledHint": {
+      "title": "No puedes publicar hasta resolver estos puntos",
+      "description": "Termina la configuración requerida y después publica desde aquí.",
+      "more": "+{count} punto pendiente más"
+    },
     "errors": {
       "missingDistances": "Agrega al menos una distancia antes de publicar.",
       "missingPrices": "Agrega al menos un precio para cada distancia antes de publicar.",

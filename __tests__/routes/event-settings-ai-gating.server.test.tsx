@@ -6,8 +6,14 @@ import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
 import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
 import { getQuestionsForEdition } from '@/lib/events/questions/queries';
 import { getEventEditionDetail } from '@/lib/events/queries';
-import { buildEventWizardAggregate } from '@/lib/events/wizard/orchestrator';
-import { getPublicWebsiteContent, hasWebsiteContent } from '@/lib/events/website/queries';
+import {
+  buildEventWizardAggregate,
+  hasEventPublishReadinessBlockers,
+} from '@/lib/events/wizard/orchestrator';
+import {
+  getPublicWebsiteContent,
+  getWebsiteContentsForEdition,
+} from '@/lib/events/website/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { guardProFeaturePage } from '@/lib/pro-features/server/guard';
 
@@ -33,11 +39,12 @@ jest.mock('@/lib/events/questions/queries', () => ({
 
 jest.mock('@/lib/events/wizard/orchestrator', () => ({
   buildEventWizardAggregate: jest.fn(),
+  hasEventPublishReadinessBlockers: jest.fn(),
 }));
 
 jest.mock('@/lib/events/website/queries', () => ({
   getPublicWebsiteContent: jest.fn(),
-  hasWebsiteContent: jest.fn(),
+  getWebsiteContentsForEdition: jest.fn(),
 }));
 
 jest.mock('@/lib/organizations/permissions', () => ({
@@ -67,47 +74,63 @@ jest.mock('@/i18n/navigation', () => ({
   ),
 }));
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel', () => ({
-  EventAiWizardPanel: () => <div data-testid="assistant-panel">assistant-panel</div>,
-}));
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-ai-wizard-panel',
+  () => ({
+    EventAiWizardPanel: () => <div data-testid="assistant-panel">assistant-panel</div>,
+  }),
+);
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-assistant-responsive-slot', () => ({
-  EventAssistantResponsiveSlot: ({
-    assistant,
-    children,
-  }: {
-    assistant?: React.ReactNode;
-    children: React.ReactNode;
-  }) => (
-    <div>
-      {assistant ? <div data-testid="assistant-slot">{assistant}</div> : null}
-      <div>{children}</div>
-    </div>
-  ),
-}));
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-assistant-responsive-slot',
+  () => ({
+    EventAssistantResponsiveSlot: ({
+      assistant,
+      children,
+    }: {
+      assistant?: React.ReactNode;
+      children: React.ReactNode;
+    }) => (
+      <div>
+        {assistant ? <div data-testid="assistant-slot">{assistant}</div> : null}
+        <div>{children}</div>
+      </div>
+    ),
+  }),
+);
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form', () => ({
-  EventSettingsForm: () => <div data-testid="settings-form">settings-form</div>,
-}));
+const mockEventSettingsForm = jest.fn((_: unknown) => (
+  <div data-testid="settings-form">settings-form</div>
+));
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell', () => ({
-  EventSetupWizardShell: ({
-    steps,
-    reviewControls,
-  }: {
-    steps: Array<{ id: string; content: React.ReactNode }>;
-    reviewControls: React.ReactNode;
-  }) => (
-    <div data-testid="wizard-shell">
-      {steps.map((step) => (
-        <section key={step.id} data-step-id={step.id}>
-          {step.content}
-        </section>
-      ))}
-      <section data-step-id="review-controls">{reviewControls}</section>
-    </div>
-  ),
-}));
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form',
+  () => ({
+    EventSettingsForm: (props: unknown) => mockEventSettingsForm(props),
+  }),
+);
+
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell',
+  () => ({
+    EventSetupWizardShell: ({
+      steps,
+      reviewControls,
+    }: {
+      steps: Array<{ id: string; content: React.ReactNode }>;
+      reviewControls: React.ReactNode;
+    }) => (
+      <div data-testid="wizard-shell">
+        {steps.map((step) => (
+          <section key={step.id} data-step-id={step.id}>
+            {step.content}
+          </section>
+        ))}
+        <section data-step-id="review-controls">{reviewControls}</section>
+      </div>
+    ),
+  }),
+);
 
 jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/add-ons/add-ons-manager', () => ({
   AddOnsManager: () => <div>add-ons</div>,
@@ -121,36 +144,66 @@ jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/policies/polici
   PoliciesForm: () => <div>policies</div>,
 }));
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/pricing/pricing-tiers-manager', () => ({
-  PricingTiersManager: () => <div>pricing</div>,
-}));
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/pricing/pricing-tiers-manager',
+  () => ({
+    PricingTiersManager: () => <div>pricing</div>,
+  }),
+);
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/questions/questions-manager', () => ({
-  QuestionsManager: () => <div>questions</div>,
-}));
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/questions/questions-manager',
+  () => ({
+    QuestionsManager: () => <div>questions</div>,
+  }),
+);
 
 jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/waivers/waiver-manager', () => ({
   WaiverManager: () => <div>waivers</div>,
 }));
 
-jest.mock('@/app/[locale]/(protected)/dashboard/events/[eventId]/website/website-content-editor', () => ({
-  WebsiteContentEditor: () => <div>website</div>,
-}));
+jest.mock(
+  '@/app/[locale]/(protected)/dashboard/events/[eventId]/website/website-content-editor',
+  () => ({
+    WebsiteContentEditor: () => <div>website</div>,
+  }),
+);
 
 const mockGetAuthContext = getAuthContext as jest.MockedFunction<typeof getAuthContext>;
-const mockGetEventEditionDetail = getEventEditionDetail as jest.MockedFunction<typeof getEventEditionDetail>;
-const mockGetAddOnsForEdition = getAddOnsForEdition as jest.MockedFunction<typeof getAddOnsForEdition>;
-const mockGetPricingScheduleForEdition = getPricingScheduleForEdition as jest.MockedFunction<typeof getPricingScheduleForEdition>;
-const mockGetQuestionsForEdition = getQuestionsForEdition as jest.MockedFunction<typeof getQuestionsForEdition>;
-const mockBuildEventWizardAggregate = buildEventWizardAggregate as jest.MockedFunction<typeof buildEventWizardAggregate>;
-const mockGetPublicWebsiteContent = getPublicWebsiteContent as jest.MockedFunction<typeof getPublicWebsiteContent>;
-const mockHasWebsiteContent = hasWebsiteContent as jest.MockedFunction<typeof hasWebsiteContent>;
-const mockCanUserAccessSeries = canUserAccessSeries as jest.MockedFunction<typeof canUserAccessSeries>;
-const mockGuardProFeaturePage = guardProFeaturePage as jest.MockedFunction<typeof guardProFeaturePage>;
+const mockGetEventEditionDetail = getEventEditionDetail as jest.MockedFunction<
+  typeof getEventEditionDetail
+>;
+const mockGetAddOnsForEdition = getAddOnsForEdition as jest.MockedFunction<
+  typeof getAddOnsForEdition
+>;
+const mockGetPricingScheduleForEdition = getPricingScheduleForEdition as jest.MockedFunction<
+  typeof getPricingScheduleForEdition
+>;
+const mockGetQuestionsForEdition = getQuestionsForEdition as jest.MockedFunction<
+  typeof getQuestionsForEdition
+>;
+const mockBuildEventWizardAggregate = buildEventWizardAggregate as jest.MockedFunction<
+  typeof buildEventWizardAggregate
+>;
+const mockHasEventPublishReadinessBlockers =
+  hasEventPublishReadinessBlockers as jest.MockedFunction<typeof hasEventPublishReadinessBlockers>;
+const mockGetPublicWebsiteContent = getPublicWebsiteContent as jest.MockedFunction<
+  typeof getPublicWebsiteContent
+>;
+const mockGetWebsiteContentsForEdition = getWebsiteContentsForEdition as jest.MockedFunction<
+  typeof getWebsiteContentsForEdition
+>;
+const mockCanUserAccessSeries = canUserAccessSeries as jest.MockedFunction<
+  typeof canUserAccessSeries
+>;
+const mockGuardProFeaturePage = guardProFeaturePage as jest.MockedFunction<
+  typeof guardProFeaturePage
+>;
 
 describe('EventSettingsPage AI gating', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockEventSettingsForm.mockClear();
     mockGetAuthContext.mockResolvedValue({
       user: { id: 'user-1' },
       permissions: {
@@ -220,8 +273,9 @@ describe('EventSettingsPage AI gating', () => {
     mockGetPricingScheduleForEdition.mockResolvedValue([]);
     mockGetQuestionsForEdition.mockResolvedValue([]);
     mockGetAddOnsForEdition.mockResolvedValue([]);
-    mockHasWebsiteContent.mockResolvedValue(false);
+    mockGetWebsiteContentsForEdition.mockResolvedValue([]);
     mockGetPublicWebsiteContent.mockResolvedValue(null);
+    mockHasEventPublishReadinessBlockers.mockReturnValue(false);
     mockBuildEventWizardAggregate.mockReturnValue({
       setupStepStateById: {
         basics: { completed: false },
@@ -260,5 +314,149 @@ describe('EventSettingsPage AI gating', () => {
     expect(html).not.toContain('assistant-panel');
     expect(html).not.toContain('assistant-slot');
     expect(html).not.toContain('disabled-banner');
+  });
+
+  it('passes publish blocking state to the full settings form outside the wizard', async () => {
+    mockBuildEventWizardAggregate.mockReturnValue({
+      setupStepStateById: {
+        basics: { completed: false },
+        distances: { completed: false },
+        pricing: { completed: false },
+        registration: { completed: false },
+        policies: { completed: false },
+        content: { completed: false },
+        extras: { completed: false },
+        review: { completed: false },
+      },
+      prioritizedChecklist: [
+        {
+          id: '1',
+          code: 'MISSING_EVENT_DATE',
+          severity: 'required',
+          labelKey: 'wizard.issues.missingEventDate',
+          stepId: 'event_details',
+        },
+      ],
+      completionByStepId: {},
+      progress: {
+        completed: 0,
+        total: 8,
+        requiredCompleted: 0,
+        requiredTotal: 4,
+      },
+      publishBlockers: [],
+      missingRequired: [
+        {
+          id: '1',
+          code: 'MISSING_EVENT_DATE',
+          severity: 'required',
+          labelKey: 'wizard.issues.missingEventDate',
+          stepId: 'event_details',
+        },
+      ],
+      optionalRecommendations: [],
+    } as unknown as ReturnType<typeof buildEventWizardAggregate>);
+    mockHasEventPublishReadinessBlockers.mockReturnValue(true);
+
+    renderToStaticMarkup(
+      await EventSettingsPage({
+        params: Promise.resolve({ locale: 'en' as const, eventId: 'edition-1' }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
+
+    expect(mockEventSettingsForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        disablePublish: true,
+        publishDisabledReasons: [
+          {
+            label: 'wizard.issues.missingEventDate',
+            href: undefined,
+          },
+        ],
+      }),
+    );
+  });
+
+  it('passes the visible blocker labels to the wizard review publish controls', async () => {
+    mockBuildEventWizardAggregate.mockReturnValue({
+      setupStepStateById: {
+        basics: { completed: false },
+        distances: { completed: false },
+        pricing: { completed: false },
+        registration: { completed: false },
+        policies: { completed: false },
+        content: { completed: false },
+        extras: { completed: false },
+        review: { completed: false },
+      },
+      prioritizedChecklist: [
+        {
+          id: '1',
+          code: 'MISSING_EVENT_DATE',
+          severity: 'required',
+          labelKey: 'wizard.issues.missingEventDate',
+          stepId: 'event_details',
+        },
+        {
+          id: '2',
+          code: 'MISSING_DISTANCE',
+          severity: 'blocker',
+          labelKey: 'wizard.issues.publishMissingDistance',
+          stepId: 'distances',
+        },
+      ],
+      completionByStepId: {},
+      progress: {
+        completed: 0,
+        total: 8,
+        requiredCompleted: 0,
+        requiredTotal: 4,
+      },
+      publishBlockers: [
+        {
+          id: '2',
+          code: 'MISSING_DISTANCE',
+          severity: 'blocker',
+          labelKey: 'wizard.issues.publishMissingDistance',
+          stepId: 'distances',
+        },
+      ],
+      missingRequired: [
+        {
+          id: '1',
+          code: 'MISSING_EVENT_DATE',
+          severity: 'required',
+          labelKey: 'wizard.issues.missingEventDate',
+          stepId: 'event_details',
+        },
+      ],
+      optionalRecommendations: [],
+    } as unknown as ReturnType<typeof buildEventWizardAggregate>);
+    mockHasEventPublishReadinessBlockers.mockReturnValue(true);
+
+    renderToStaticMarkup(
+      await EventSettingsPage({
+        params: Promise.resolve({ locale: 'en' as const, eventId: 'edition-1' }),
+        searchParams: Promise.resolve({ wizard: '1', step: 'review' }),
+      }),
+    );
+
+    expect(mockEventSettingsForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        surface: 'wizard-review',
+        disablePublish: true,
+        publishDisabledReasons: [
+          {
+            label: 'wizard.issues.publishMissingDistance',
+            href: undefined,
+          },
+          {
+            label: 'wizard.issues.missingEventDate',
+            href: undefined,
+          },
+        ],
+      }),
+    );
   });
 });

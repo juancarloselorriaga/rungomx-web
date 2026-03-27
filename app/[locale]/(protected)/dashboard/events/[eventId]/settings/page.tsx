@@ -7,9 +7,13 @@ import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
 import { getQuestionsForEdition } from '@/lib/events/questions/queries';
 import {
   buildEventWizardAggregate,
+  hasEventPublishReadinessBlockers,
   type EventWizardStepId,
 } from '@/lib/events/wizard/orchestrator';
-import { getPublicWebsiteContent, hasWebsiteContent } from '@/lib/events/website/queries';
+import {
+  getPublicWebsiteContent,
+  getWebsiteContentsForEdition,
+} from '@/lib/events/website/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { hasOrgPermission } from '@/lib/organizations/permissions';
 import { guardProFeaturePage } from '@/lib/pro-features/server/guard';
@@ -49,9 +53,15 @@ type SettingsPageProps = LocalePageProps & {
 type WizardReviewIssue = {
   id: string;
   label: string;
+  href?: string;
   severity: 'required' | 'blocker' | 'optional';
   stepId: EventSetupWizardStepId;
   kind: 'publish' | 'required' | 'optional';
+};
+
+type PublishDisabledReason = {
+  label: string;
+  href?: string;
 };
 
 const STEP_ASSISTANT_CONFIG: Record<
@@ -255,18 +265,19 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   if (wizardMode) {
     const assistantGate = await guardProFeaturePage('event_ai_wizard', authContext);
     const assistantFeatureEnabled = assistantGate.decision.status !== 'disabled';
-    const [pricingData, questions, addOns, websiteEnabled, websiteContent] = await Promise.all([
+    const [pricingData, questions, addOns, websiteContents, websiteContent] = await Promise.all([
       getPricingScheduleForEdition(eventId),
       getQuestionsForEdition(eventId),
       getAddOnsForEdition(eventId),
-      hasWebsiteContent(eventId),
+      getWebsiteContentsForEdition(eventId),
       getPublicWebsiteContent(eventId, locale),
     ]);
 
     const aggregate = buildEventWizardAggregate(event, {
       selectedPath: 'manual',
-      hasWebsiteContent: websiteEnabled,
+      hasWebsiteContent: websiteContents.length > 0,
       websiteContent,
+      websiteContents,
       questionCount: questions.length,
       addOnCount: addOns.length,
       addOns,
@@ -282,7 +293,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       },
     });
 
-    const publishHasBlockers = aggregate.publishBlockers.length > 0;
+    const publishHasBlockers = hasEventPublishReadinessBlockers(aggregate);
 
     const reviewBlockers: WizardReviewIssue[] = [
       ...aggregate.publishBlockers,
@@ -295,15 +306,22 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       .map((issue) => ({
         id: issue.id,
         label: t(issue.labelKey),
+        href: issue.href,
         severity: issue.severity,
         stepId: mapIssueStepId(issue.stepId),
         kind: issue.severity === 'blocker' ? 'publish' : 'required',
       }));
 
+    const publishDisabledReasons: PublishDisabledReason[] = reviewBlockers.map((issue) => ({
+      label: issue.label,
+      href: issue.href,
+    }));
+
     const reviewRecommendations: WizardReviewIssue[] = aggregate.optionalRecommendations.map(
       (issue) => ({
         id: issue.id,
         label: t(issue.labelKey),
+        href: issue.href,
         severity: issue.severity,
         stepId: mapIssueStepId(issue.stepId),
         kind: 'optional',
@@ -649,6 +667,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
                 event={event}
                 surface="wizard-review"
                 disablePublish={publishHasBlockers}
+                publishDisabledReasons={publishDisabledReasons}
               />
             </StepWithAssistant>
           </StepSurface>
@@ -656,6 +675,30 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       />
     );
   }
+
+  const [settingsAddOns, settingsWebsiteContents] = await Promise.all([
+    getAddOnsForEdition(eventId),
+    getWebsiteContentsForEdition(eventId),
+  ]);
+  const settingsAggregate = buildEventWizardAggregate(event, {
+    selectedPath: null,
+    hasWebsiteContent: settingsWebsiteContents.length > 0,
+    websiteContents: settingsWebsiteContents,
+    addOns: settingsAddOns,
+  });
+  const publishHasBlockers = hasEventPublishReadinessBlockers(settingsAggregate);
+  const publishDisabledReasons: PublishDisabledReason[] = [
+    ...settingsAggregate.publishBlockers,
+    ...settingsAggregate.missingRequired,
+  ]
+    .filter(
+      (issue, index, list) =>
+        list.findIndex((candidate) => candidate.code === issue.code) === index,
+    )
+    .map((issue) => ({
+      label: t(issue.labelKey),
+      href: issue.href,
+    }));
 
   return (
     <div className="space-y-6">
@@ -668,7 +711,11 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
       />
 
       <div className="w-full">
-        <EventSettingsForm event={event} />
+        <EventSettingsForm
+          event={event}
+          disablePublish={publishHasBlockers}
+          publishDisabledReasons={publishDisabledReasons}
+        />
       </div>
     </div>
   );

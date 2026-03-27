@@ -74,6 +74,13 @@ import {
   type EventSettingsSurface,
 } from './event-settings-surface';
 
+type PublishDisabledReason = {
+  label: string;
+  href?: string;
+};
+
+type RouterHref = Parameters<ReturnType<typeof useRouter>['push']>[0];
+
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
   { ssr: false, loading: () => <Skeleton className="h-10 w-full rounded-md" /> },
@@ -132,10 +139,46 @@ type EventSettingsFormProps = {
   event: EventEditionDetail;
   surface?: EventSettingsSurface;
   disablePublish?: boolean;
+  publishDisabledReasons?: PublishDisabledReason[];
 };
 
 export function isPublishButtonBlocked(vis: string, disablePublish: boolean): boolean {
   return vis === 'published' && disablePublish;
+}
+
+export function getVisiblePublishDisabledReasons(
+  reasons: PublishDisabledReason[],
+): PublishDisabledReason[] {
+  const seen = new Set<string>();
+
+  return reasons
+    .map((reason) => ({
+      label: reason.label.trim(),
+      href: reason.href,
+    }))
+    .filter((reason) => {
+      if (!reason.label || seen.has(reason.label)) {
+        return false;
+      }
+
+      seen.add(reason.label);
+      return true;
+    })
+    .slice(0, 3);
+}
+
+function getPublishDisabledReasonCount(reasons: PublishDisabledReason[]): number {
+  const seen = new Set<string>();
+
+  return reasons.reduce((count, reason) => {
+    const label = reason.label.trim();
+    if (!label || seen.has(label)) {
+      return count;
+    }
+
+    seen.add(label);
+    return count + 1;
+  }, 0);
 }
 
 type EventSettingsDetailsFormValues = {
@@ -232,6 +275,7 @@ export function EventSettingsForm({
   event,
   surface = 'full',
   disablePublish = false,
+  publishDisabledReasons = [],
 }: EventSettingsFormProps) {
   const t = useTranslations('pages.dashboardEventSettings');
   const tSlug = useTranslations('pages.dashboardEvents');
@@ -267,6 +311,34 @@ export function EventSettingsForm({
   const showHeroImageSection = surface === 'full' || surface === 'wizard-basics';
   const showCoreDetailsSection = surface === 'full' || surface === 'wizard-basics';
   const showRegistrationWindowSection = surface === 'full' || surface === 'wizard-registration';
+  const visiblePublishDisabledReasons = getVisiblePublishDisabledReasons(publishDisabledReasons);
+  const totalPublishDisabledReasons = getPublishDisabledReasonCount(publishDisabledReasons);
+  const hiddenPublishReasonCount = Math.max(
+    0,
+    totalPublishDisabledReasons - visiblePublishDisabledReasons.length,
+  );
+
+  const handlePublishDisabledReasonClick = (href: string) => {
+    const [path, hash] = href.split('#');
+    const currentPath = window.location.pathname;
+    const currentHash = window.location.hash;
+
+    if (path && path !== currentPath) {
+      router.push(href as RouterHref, { scroll: true });
+      return;
+    }
+
+    if (hash) {
+      const nextHash = `#${hash}`;
+      if (currentHash !== nextHash) {
+        window.history.replaceState(window.history.state, '', `${currentPath}${nextHash}`);
+      }
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    router.push(href as RouterHref, { scroll: true });
+  };
   const showCapacitySection = surface === 'full' || surface === 'wizard-distances';
   const showDistancesSection = surface === 'full' || surface === 'wizard-distances';
   const editorFocusStorageKey = `event-ai-wizard:editor-focus:${event.id}`;
@@ -710,6 +782,38 @@ export function EventSettingsForm({
               </Button>
             ))}
           </div>
+          {disablePublish && visiblePublishDisabledReasons.length > 0 ? (
+            <div className="rounded-md border border-border/70 bg-muted/30 p-3">
+              <p className="text-sm font-medium text-foreground">
+                {t('visibility.disabledHint.title')}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t('visibility.disabledHint.description')}
+              </p>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground">
+                {visiblePublishDisabledReasons.map((reason) => (
+                  <li key={`${reason.label}-${reason.href ?? 'no-href'}`}>
+                    {reason.href ? (
+                      <button
+                        type="button"
+                        className="text-left underline underline-offset-2 hover:text-primary"
+                        onClick={() => handlePublishDisabledReasonClick(reason.href!)}
+                      >
+                        {reason.label}
+                      </button>
+                    ) : (
+                      reason.label
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {hiddenPublishReasonCount > 0 ? (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {t('visibility.disabledHint.more', { count: hiddenPublishReasonCount })}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
         </SettingsSection>
       )}
 

@@ -33,9 +33,7 @@ export async function resolveWebsiteMediaUrls(
     }
   }
 
-  const mediaIds = Array.from(
-    new Set([...documentIds, ...photoIds, ...sponsorLogoIds]),
-  );
+  const mediaIds = Array.from(new Set([...documentIds, ...photoIds, ...sponsorLogoIds]));
 
   if (mediaIds.length === 0) {
     return urlMap;
@@ -65,9 +63,7 @@ export async function resolveDocumentUrls(
 
   const allUrls = await resolveWebsiteMediaUrls(blocks);
   const documentIds = new Set(blocks.media.documents.map((doc) => doc.mediaId));
-  return new Map(
-    Array.from(allUrls.entries()).filter(([id]) => documentIds.has(id)),
-  );
+  return new Map(Array.from(allUrls.entries()).filter(([id]) => documentIds.has(id)));
 }
 
 /**
@@ -131,6 +127,30 @@ export async function getPublicWebsiteContent(
 }
 
 /**
+ * Get all valid website content blocks stored for an event edition across locales.
+ */
+export async function getWebsiteContentsForEdition(
+  editionId: string,
+): Promise<WebsiteContentBlocks[]> {
+  'use cache: remote';
+  safeCacheTag(eventEditionWebsiteTag(editionId));
+  safeCacheLife({ expire: 300 });
+
+  const contents = await db.query.eventWebsiteContent.findMany({
+    where: and(eq(eventWebsiteContent.editionId, editionId), isNull(eventWebsiteContent.deletedAt)),
+  });
+
+  return contents.flatMap((content) => {
+    try {
+      const parseResult = websiteContentBlocksSchema.safeParse(content.blocksJson);
+      return parseResult.success ? [parseResult.data] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+/**
  * Check if an event edition has website content for any locale.
  * Useful for determining whether to show the "Website" tab.
  */
@@ -140,10 +160,7 @@ export async function hasWebsiteContent(editionId: string): Promise<boolean> {
   safeCacheLife({ expire: 300 });
 
   const content = await db.query.eventWebsiteContent.findFirst({
-    where: and(
-      eq(eventWebsiteContent.editionId, editionId),
-      isNull(eventWebsiteContent.deletedAt),
-    ),
+    where: and(eq(eventWebsiteContent.editionId, editionId), isNull(eventWebsiteContent.deletedAt)),
   });
 
   return Boolean(content);
