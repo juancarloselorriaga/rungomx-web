@@ -8,6 +8,7 @@ import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -32,8 +33,7 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -50,7 +50,10 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
     getProFeatureConfigSnapshot(),
     authContext.isInternal
       ? Promise.resolve({ isPro: false })
-      : getProEntitlementForUser({ userId: authContext.user!.id, isInternal: authContext.isInternal }),
+      : getProEntitlementForUser({
+          userId: authContext.user!.id,
+          isInternal: authContext.isInternal,
+        }),
   ]);
   const canSeedAiContext =
     evaluateProFeatureDecision({
@@ -61,13 +64,41 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
     }).status === 'enabled';
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">{t('createEvent.title')}</h1>
-        <p className="text-muted-foreground">{t('createEvent.description')}</p>
-      </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-8">
+      <Surface className="overflow-hidden border-border/60 p-6 sm:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="space-y-3">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {t('createEvent.title')}
+            </h1>
+            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+              {t('createEvent.description')}
+            </p>
+          </div>
 
-      <CreateEventForm organizations={organizationsWithSeries} showAiContextDisclosure={canSeedAiContext} />
+          <InsetSurface className="border-border/60 p-5">
+            <ol className="space-y-3 text-sm">
+              <li className="flex items-center gap-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  1
+                </span>
+                <span className="font-medium">{t('createEvent.steps.organization')}</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                  2
+                </span>
+                <span className="text-muted-foreground">{t('createEvent.steps.event')}</span>
+              </li>
+            </ol>
+          </InsetSurface>
+        </div>
+      </Surface>
+
+      <CreateEventForm
+        organizations={organizationsWithSeries}
+        showAiContextDisclosure={canSeedAiContext}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { getProEntitlementForUser } from '@/lib/billing/entitlements';
 import { getOrganizationEventSeries } from '@/lib/events/queries';
 import { getUserOrganizations } from '@/lib/organizations/queries';
 import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
+import { redirect } from 'next/navigation';
 
 const mockCreateEventForm = jest.fn((props?: unknown) => {
   void props;
@@ -59,10 +60,19 @@ jest.mock('next/navigation', () => ({
 }));
 
 const mockGetAuthContext = getAuthContext as jest.MockedFunction<typeof getAuthContext>;
-const mockGetProEntitlementForUser = getProEntitlementForUser as jest.MockedFunction<typeof getProEntitlementForUser>;
-const mockGetUserOrganizations = getUserOrganizations as jest.MockedFunction<typeof getUserOrganizations>;
-const mockGetOrganizationEventSeries = getOrganizationEventSeries as jest.MockedFunction<typeof getOrganizationEventSeries>;
-const mockGetProFeatureConfigSnapshot = getProFeatureConfigSnapshot as jest.MockedFunction<typeof getProFeatureConfigSnapshot>;
+const mockGetProEntitlementForUser = getProEntitlementForUser as jest.MockedFunction<
+  typeof getProEntitlementForUser
+>;
+const mockGetUserOrganizations = getUserOrganizations as jest.MockedFunction<
+  typeof getUserOrganizations
+>;
+const mockGetOrganizationEventSeries = getOrganizationEventSeries as jest.MockedFunction<
+  typeof getOrganizationEventSeries
+>;
+const mockGetProFeatureConfigSnapshot = getProFeatureConfigSnapshot as jest.MockedFunction<
+  typeof getProFeatureConfigSnapshot
+>;
+const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
 
 describe('CreateEventPage', () => {
   beforeEach(() => {
@@ -186,5 +196,25 @@ describe('CreateEventPage', () => {
         showAiContextDisclosure: true,
       }),
     );
+  });
+
+  it('redirects users without organizer or staff event access back to the dashboard', async () => {
+    mockGetAuthContext.mockResolvedValue({
+      user: { id: 'user-1' },
+      isInternal: false,
+      permissions: {
+        canViewOrganizersDashboard: false,
+        canManageEvents: false,
+      },
+    } as Awaited<ReturnType<typeof getAuthContext>>);
+
+    await expect(
+      CreateEventPage({
+        params: Promise.resolve({ locale: 'en' }),
+      }),
+    ).rejects.toThrow('REDIRECT:/en/dashboard');
+
+    expect(mockRedirect).toHaveBeenCalledWith('/en/dashboard');
+    expect(mockGetUserOrganizations).not.toHaveBeenCalled();
   });
 });

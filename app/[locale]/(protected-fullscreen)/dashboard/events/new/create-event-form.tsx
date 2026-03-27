@@ -5,15 +5,25 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { IconButton } from '@/components/ui/icon-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Badge } from '@/components/common';
+import { createEventStepAction } from '@/app/actions/events-create';
 import { useRouter } from '@/i18n/navigation';
 import { createOrganization } from '@/lib/organizations/actions';
-import { checkSlugAvailability, createEventSeries, createEventEdition } from '@/lib/events/actions';
+import { checkSlugAvailability } from '@/lib/events/actions';
 import { SPORT_TYPES, type SportType } from '@/lib/events/constants';
-import { normalizeEditionDateTimeForPersistence } from '@/lib/events/ai-wizard/datetime';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
-import { ArrowLeft, ArrowRight, Building2, CalendarPlus, Check, ChevronDown, Loader2, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  CalendarPlus,
+  Check,
+  ChevronDown,
+  Loader2,
+  Sparkles,
+} from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
@@ -114,6 +124,34 @@ function mapEditionCreateError(
   }
 }
 
+function mapEventValidationFieldErrors(
+  t: ReturnType<typeof useTranslations<'pages.dashboardEvents.createEvent'>>,
+  fieldErrors?: Record<string, string[]>,
+) {
+  if (!fieldErrors) return undefined;
+
+  const requiredMessage = t('event.errors.validationFailed');
+
+  return Object.fromEntries(
+    Object.entries(fieldErrors).map(([field, messages]) => {
+      const localized = messages.map((message) => {
+        switch (message) {
+          case 'SERIES_REQUIRED':
+          case 'SERIES_NAME_REQUIRED':
+          case 'SERIES_SLUG_REQUIRED':
+          case 'EDITION_LABEL_REQUIRED':
+          case 'EDITION_SLUG_REQUIRED':
+            return requiredMessage;
+          default:
+            return requiredMessage;
+        }
+      });
+
+      return [field, localized];
+    }),
+  );
+}
+
 export function CreateEventForm({ organizations, showAiContextDisclosure }: CreateEventFormProps) {
   const t = useTranslations('pages.dashboardEvents.createEvent');
   const tSlug = useTranslations('pages.dashboardEvents');
@@ -153,8 +191,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
     () => organizations.find((org) => org.id === selectedOrgId) || null,
     [organizations, selectedOrgId],
   );
-
-  // Event step state  
+  // Event step state
   const [selectedSeriesId, setSelectedSeriesId] = useState<string | null>(null);
   const [showNewSeries, setShowNewSeries] = useState(true);
   const [seriesSlugStatus, setSeriesSlugStatus] = useState<SlugStatus>('idle');
@@ -163,6 +200,10 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
   const editionSlugTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const seriesSlugRequestIdRef = useRef(0);
   const editionSlugRequestIdRef = useRef(0);
+  const selectedSeries = useMemo(
+    () => selectedOrg?.series.find((series) => series.id === selectedSeriesId) ?? null,
+    [selectedOrg, selectedSeriesId],
+  );
 
   // Validate organization step
   const canProceedToEvent = showNewOrg
@@ -246,56 +287,76 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
         return { ok: false, error: 'VALIDATION_ERROR', message: tSlug('slugStatus.taken') };
       }
 
-      let seriesId = selectedSeriesId;
+      const result = await createEventStepAction({
+        organizationId: selectedOrgId,
+        selectedSeriesId,
+        showNewSeries,
+        seriesName: values.seriesName,
+        seriesSlug: values.seriesSlug,
+        sportType: values.sportType,
+        editionLabel: values.editionLabel,
+        editionSlug: values.editionSlug,
+        description: values.description,
+        organizerBrief: values.organizerBrief,
+        startsAt: values.startsAt,
+        city: values.city,
+        state: values.state,
+        latitude: values.latitude,
+        longitude: values.longitude,
+        locationDisplay: values.locationDisplay,
+        showAiContextDisclosure,
+      });
 
-      // Create new series if needed
-      if (showNewSeries || !seriesId) {
-        const seriesResult = await createEventSeries({
-          organizationId: selectedOrgId,
-          name: values.seriesName.trim(),
-          slug: values.seriesSlug.trim(),
-          sportType: values.sportType,
-        });
+      if (!result.ok) {
+        if (result.error === 'INVALID_INPUT') {
+          const fieldErrors = 'fieldErrors' in result ? result.fieldErrors : undefined;
 
-        if (!seriesResult.ok) {
           return {
             ok: false,
-            error: 'SERVER_ERROR',
-            message: mapSeriesCreateError(t, seriesResult.code),
+            error: 'INVALID_INPUT',
+            fieldErrors: mapEventValidationFieldErrors(t, fieldErrors),
+            message: t('event.errors.validationFailed'),
           };
         }
 
-        seriesId = seriesResult.data.id;
-      }
+        if (result.message === 'SLUG_TAKEN') {
+          return {
+            ok: false,
+            error: 'SERVER_ERROR',
+            message: showNewSeries
+              ? mapSeriesCreateError(t, result.message)
+              : t('event.errors.editionSlugTaken'),
+          };
+        }
 
-      // Create edition
-      const editionResult = await createEventEdition({
-        seriesId,
-        editionLabel: values.editionLabel.trim(),
-        slug: values.editionSlug.trim(),
-        description: values.description.trim() || undefined,
-        organizerBrief: showAiContextDisclosure ? values.organizerBrief.trim() || undefined : undefined,
-        timezone: 'America/Mexico_City',
-        country: 'MX',
-        startsAt: values.startsAt
-          ? normalizeEditionDateTimeForPersistence(`${values.startsAt}T07:00`, 'America/Mexico_City') ?? undefined
-          : undefined,
-        city: values.city.trim() || undefined,
-        state: values.state.trim() || undefined,
-        latitude: values.latitude || undefined,
-        longitude: values.longitude || undefined,
-        locationDisplay: values.locationDisplay || undefined,
-      });
+        if (result.message === 'LABEL_TAKEN') {
+          return {
+            ok: false,
+            error: 'SERVER_ERROR',
+            message: mapEditionCreateError(t, result.message),
+          };
+        }
 
-      if (!editionResult.ok) {
+        if (result.message === 'FORBIDDEN' || result.message === 'UNAUTHENTICATED') {
+          return {
+            ok: false,
+            error: result.message,
+            message: t(
+              `event.errors.${result.message === 'FORBIDDEN' ? 'forbidden' : 'unauthenticated'}`,
+            ),
+          };
+        }
+
         return {
           ok: false,
           error: 'SERVER_ERROR',
-          message: mapEditionCreateError(t, editionResult.code),
+          message: showNewSeries
+            ? mapSeriesCreateError(t, result.message)
+            : mapEditionCreateError(t, result.message),
         };
       }
 
-      return { ok: true, data: { eventId: editionResult.data.id } };
+      return result;
     },
     onSuccess: (result) => {
       router.push({
@@ -462,7 +523,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
   return (
     <div className="space-y-6">
       {/* Step indicator */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background/80 p-4 sm:flex-row sm:items-center sm:gap-4 sm:p-5">
         <StepIndicator
           number={1}
           label={t('steps.organization')}
@@ -478,9 +539,9 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
 
       {/* Organization step */}
       {step === 'organization' && (
-        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-6">
+        <Surface className="space-y-6">
           <div className="space-y-2">
-            <h2 className="text-lg font-semibold">{t('organization.title')}</h2>
+            <h2 className="text-xl font-semibold tracking-tight">{t('organization.title')}</h2>
             <p className="text-sm text-muted-foreground">{t('organization.description')}</p>
           </div>
 
@@ -493,22 +554,26 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                   type="button"
                   onClick={() => setSelectedOrgId(org.id)}
                   className={cn(
-                    'w-full flex items-center gap-4 p-4 rounded-lg border text-left transition-colors',
+                    'w-full rounded-xl border p-4 text-left transition-colors',
                     selectedOrgId === org.id
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50',
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-border hover:border-primary/50 hover:bg-muted/20',
                   )}
                 >
-                  <Building2 className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{org.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {t('organization.seriesCount', { count: org.series.length })}
-                    </p>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{org.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {t('organization.seriesCount', { count: org.series.length })}
+                      </p>
+                    </div>
+                    {selectedOrgId === org.id && (
+                      <Check className="h-5 w-5 flex-shrink-0 text-primary" />
+                    )}
                   </div>
-                  {selectedOrgId === org.id && (
-                    <Check className="h-5 w-5 text-primary flex-shrink-0" />
-                  )}
                 </button>
               ))}
 
@@ -518,7 +583,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                   setShowNewOrg(true);
                   setSelectedOrgId(null);
                 }}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-lg border border-dashed border-border hover:border-primary/50 text-muted-foreground hover:text-foreground transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
               >
                 <Building2 className="h-4 w-4" />
                 {t('organization.createNew')}
@@ -545,11 +610,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                 </Button>
               )}
 
-              <FormField
-                label={t('organization.nameLabel')}
-                required
-                error={orgError}
-              >
+              <FormField label={t('organization.nameLabel')} required error={orgError}>
                 <input
                   type="text"
                   value={newOrgName}
@@ -560,10 +621,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                 />
               </FormField>
 
-              <FormField
-                label={t('organization.slugLabel')}
-                required
-              >
+              <FormField label={t('organization.slugLabel')} required>
                 <input
                   type="text"
                   value={newOrgSlug}
@@ -590,115 +648,131 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
               {t('steps.continue')}
             </Button>
           </div>
-        </div>
+        </Surface>
       )}
 
       {/* Event step */}
       {step === 'event' && (
-        <Form form={form} className="rounded-lg border bg-card p-6 shadow-sm space-y-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <IconButton
-                label={tCommon('goBack')}
-                variant="ghost"
-                size="icon"
-                onClick={() => setStep('organization')}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </IconButton>
-              <div>
-                <h2 className="text-lg font-semibold">{t('event.title')}</h2>
+        <Form form={form} className="space-y-6">
+          <Surface className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <IconButton
+                    label={tCommon('goBack')}
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setStep('organization')}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </IconButton>
+                  <h2 className="text-xl font-semibold tracking-tight">{t('event.title')}</h2>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   {t('event.organizationLabel')}: {selectedOrg?.name}
                 </p>
               </div>
+
+              <InsetSurface className="grid gap-3 sm:min-w-72 sm:max-w-80">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {t('steps.organization')}
+                  </p>
+                  <p className="text-sm font-medium text-foreground">{selectedOrg?.name}</p>
+                </div>
+                <div className="space-y-1 border-t border-border/60 pt-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    {t('event.seriesLabel')}
+                  </p>
+                  <p className="text-sm text-foreground">
+                    {showNewSeries
+                      ? t('event.seriesNamePlaceholder')
+                      : (selectedSeries?.name ?? t('event.seriesLabel'))}
+                  </p>
+                </div>
+              </InsetSurface>
             </div>
-          </div>
 
-          <FormError />
+            <FormError />
+          </Surface>
 
-          {/* Series selection/creation */}
-          {selectedOrg && selectedOrg.series.length > 0 && (
-            <FormField label={t('event.seriesLabel')}>
-              <SeriesCombobox
-                key={`${showNewSeries}-${selectedSeriesId || 'new'}`}
-                series={selectedOrg.series}
-                selectedSeriesId={selectedSeriesId}
-                showNewSeries={showNewSeries}
-                onSelectNewSeries={handleSelectNewSeries}
-                onSelectSeries={handleSelectSeries}
-                disabled={form.isSubmitting}
-              />
-            </FormField>
-          )}
-
-          {/* New series fields */}
-          {showNewSeries && (
-            <>
-              <FormField
-                label={t('event.seriesNameLabel')}
-                required
-                error={form.errors.seriesName}
-              >
-                <input
-                  type="text"
-                  value={form.values.seriesName}
-                  onChange={handleSeriesNameChange}
-                  placeholder={t('event.seriesNamePlaceholder')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+          <SectionCard title={t('event.seriesLabel')}>
+            {/* Series selection/creation */}
+            {selectedOrg && selectedOrg.series.length > 0 && (
+              <FormField label={t('event.seriesLabel')}>
+                <SeriesCombobox
+                  key={`${showNewSeries}-${selectedSeriesId || 'new'}`}
+                  series={selectedOrg.series}
+                  selectedSeriesId={selectedSeriesId}
+                  showNewSeries={showNewSeries}
+                  onSelectNewSeries={handleSelectNewSeries}
+                  onSelectSeries={handleSelectSeries}
                   disabled={form.isSubmitting}
                 />
               </FormField>
+            )}
 
-              <FormField
-                label={t('event.seriesSlugLabel')}
-                required
-                error={form.errors.seriesSlug}
-              >
-                <div className="space-y-1">
+            {/* New series fields */}
+            {showNewSeries && (
+              <div className="grid gap-4">
+                <FormField
+                  label={t('event.seriesNameLabel')}
+                  required
+                  error={form.errors.seriesName}
+                >
                   <input
                     type="text"
-                    value={form.values.seriesSlug}
-                    onChange={handleSeriesSlugChange}
-                    placeholder={t('event.seriesSlugPlaceholder')}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                    value={form.values.seriesName}
+                    onChange={handleSeriesNameChange}
+                    placeholder={t('event.seriesNamePlaceholder')}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                     disabled={form.isSubmitting}
                   />
-                  {showNewSeries &&
-                    form.values.seriesSlug.trim().length >= 2 &&
-                    seriesSlugStatus !== 'idle' && (
-                    <p className={cn('text-xs', slugStatusClass(seriesSlugStatus))}>
-                      {slugStatusLabel(seriesSlugStatus)}
-                    </p>
-                  )}
-                </div>
-              </FormField>
+                </FormField>
 
-              <FormField
-                label={t('event.sportTypeLabel')}
-                required
-                error={form.errors.sportType}
-              >
-                <select
-                  {...form.register('sportType')}
-                  className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={form.isSubmitting}
+                <FormField
+                  label={t('event.seriesSlugLabel')}
+                  required
+                  error={form.errors.seriesSlug}
                 >
-                  {SPORT_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {tSport(type)}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            </>
-          )}
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      value={form.values.seriesSlug}
+                      onChange={handleSeriesSlugChange}
+                      placeholder={t('event.seriesSlugPlaceholder')}
+                      className="w-full rounded-md border bg-background px-3 py-2 font-mono text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                      disabled={form.isSubmitting}
+                    />
+                    {showNewSeries &&
+                      form.values.seriesSlug.trim().length >= 2 &&
+                      seriesSlugStatus !== 'idle' && (
+                        <p className={cn('text-xs', slugStatusClass(seriesSlugStatus))}>
+                          {slugStatusLabel(seriesSlugStatus)}
+                        </p>
+                      )}
+                  </div>
+                </FormField>
 
-          {/* Edition fields */}
-          <div className="border-t pt-6 space-y-4">
-            <p className="text-sm font-medium text-muted-foreground">{t('event.editionDetails')}</p>
+                <FormField label={t('event.sportTypeLabel')} required error={form.errors.sportType}>
+                  <select
+                    {...form.register('sportType')}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                    disabled={form.isSubmitting}
+                  >
+                    {SPORT_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {tSport(type)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+            )}
+          </SectionCard>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <SectionCard title={t('event.editionDetails')}>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <FormField
                 label={t('event.editionLabelLabel')}
                 required
@@ -772,7 +846,9 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                         {tCommon('billing.pro')}
                       </Badge>
                     </div>
-                    <p className="text-sm leading-6 text-muted-foreground">{t('event.aiContextDescription')}</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {t('event.aiContextDescription')}
+                    </p>
                   </div>
                   <ChevronDown
                     className={cn(
@@ -788,23 +864,26 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                       <div className="space-y-2">
                         <textarea
                           value={form.values.organizerBrief}
-                          onChange={(event) => form.setFieldValue('organizerBrief', event.target.value)}
+                          onChange={(event) =>
+                            form.setFieldValue('organizerBrief', event.target.value)
+                          }
                           placeholder={t('event.aiContextPlaceholder')}
                           className="min-h-[144px] w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                           disabled={form.isSubmitting}
                         />
-                        <p className="text-xs text-muted-foreground">{t('event.aiContextHelper')}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t('event.aiContextHelper')}
+                        </p>
                       </div>
                     </FormField>
                   </div>
                 ) : null}
               </div>
             ) : null}
+          </SectionCard>
 
-            <FormField
-              label={t('event.dateLabel')}
-              error={form.errors.startsAt}
-            >
+          <SectionCard title={t('event.dateLabel')} description={t('event.locationLabel')}>
+            <FormField label={t('event.dateLabel')} error={form.errors.startsAt}>
               <DatePicker
                 locale={locale}
                 value={form.values.startsAt}
@@ -813,39 +892,52 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
               />
             </FormField>
 
-            <LocationField
-              label={t('event.locationLabel')}
-              location={
-                form.values.latitude && form.values.longitude
-                  ? {
-                      lat: Number(form.values.latitude),
-                      lng: Number(form.values.longitude),
-                      formattedAddress: form.values.locationDisplay || '',
-                    }
-                  : null
-              }
-              country="MX"
-              language={locale}
-              onLocationChangeAction={(location) => {
-                if (location) {
-                  form.setFieldValue('latitude', String(location.lat));
-                  form.setFieldValue('longitude', String(location.lng));
-                  form.setFieldValue('locationDisplay', location.formattedAddress || '');
-                  if (location.city) form.setFieldValue('city', location.city);
-                  if (location.region) form.setFieldValue('state', location.region);
-                } else {
-                  form.setFieldValue('latitude', '');
-                  form.setFieldValue('longitude', '');
-                  form.setFieldValue('locationDisplay', '');
-                  form.setFieldValue('city', '');
-                  form.setFieldValue('state', '');
+            <InsetSurface className="bg-muted/25">
+              <LocationField
+                label={t('event.locationLabel')}
+                location={
+                  form.values.latitude && form.values.longitude
+                    ? {
+                        lat: Number(form.values.latitude),
+                        lng: Number(form.values.longitude),
+                        formattedAddress: form.values.locationDisplay || '',
+                      }
+                    : null
                 }
-              }}
-            />
-          </div>
+                country="MX"
+                language={locale}
+                onLocationChangeAction={(
+                  location: {
+                    lat: number;
+                    lng: number;
+                    formattedAddress?: string | null;
+                    city?: string | null;
+                    region?: string | null;
+                  } | null,
+                ) => {
+                  if (location) {
+                    form.setFieldValue('latitude', String(location.lat));
+                    form.setFieldValue('longitude', String(location.lng));
+                    form.setFieldValue('locationDisplay', location.formattedAddress || '');
+                    if (location.city) form.setFieldValue('city', location.city);
+                    if (location.region) form.setFieldValue('state', location.region);
+                  } else {
+                    form.setFieldValue('latitude', '');
+                    form.setFieldValue('longitude', '');
+                    form.setFieldValue('locationDisplay', '');
+                    form.setFieldValue('city', '');
+                    form.setFieldValue('state', '');
+                  }
+                }}
+              />
+            </InsetSurface>
+          </SectionCard>
 
           <div className="flex justify-end">
-            <Button type="submit" disabled={form.isSubmitting || isSeriesSlugTaken || isEditionSlugTaken}>
+            <Button
+              type="submit"
+              disabled={form.isSubmitting || isSeriesSlugTaken || isEditionSlugTaken}
+            >
               {form.isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
@@ -871,13 +963,13 @@ function StepIndicator({
   status: 'pending' | 'current' | 'complete';
 }) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <div
         className={cn(
-          'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors',
-          status === 'complete' && 'bg-primary text-primary-foreground',
-          status === 'current' && 'bg-primary text-primary-foreground',
-          status === 'pending' && 'bg-muted text-muted-foreground',
+          'flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold transition-colors',
+          status === 'complete' && 'border-primary bg-primary text-primary-foreground',
+          status === 'current' && 'border-primary bg-primary/10 text-primary',
+          status === 'pending' && 'border-border bg-muted text-muted-foreground',
         )}
       >
         {status === 'complete' ? <Check className="h-4 w-4" /> : number}
@@ -886,10 +978,31 @@ function StepIndicator({
         className={cn(
           'text-sm font-medium',
           status === 'pending' && 'text-muted-foreground',
+          status !== 'pending' && 'text-foreground',
         )}
       >
         {label}
       </span>
     </div>
+  );
+}
+
+function SectionCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Surface className="space-y-5">
+      <div className="space-y-1">
+        <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+      </div>
+      {children}
+    </Surface>
   );
 }
