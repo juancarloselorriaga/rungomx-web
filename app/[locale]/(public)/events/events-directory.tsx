@@ -61,9 +61,7 @@ const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-11 rounded-[1rem] border border-border/55 bg-[color-mix(in_oklch,var(--background)_90%,var(--background-surface)_10%)] animate-pulse" />
-    ),
+    loading: () => <Skeleton className="h-11 rounded-[1rem] border-border/55 bg-background/80" />,
   },
 );
 
@@ -730,7 +728,6 @@ export function EventsDirectory({
     distanceRangeEnabled ||
     searchLocation ||
     (parsedParams.lat !== undefined && parsedParams.lng !== undefined);
-  const skeletonCount = pagination.limit || EVENTS_PAGE_LIMIT;
 
   return (
     <div className="space-y-8">

@@ -5,6 +5,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
 import { IconButton } from '@/components/ui/icon-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { Skeleton } from '@/components/ui/skeleton';
 import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Badge } from '@/components/common';
 import { createEventStepAction } from '@/app/actions/events-create';
@@ -31,7 +32,7 @@ import { SeriesCombobox } from '@/components/events/series-combobox';
 
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
-  { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
+  { ssr: false, loading: () => <Skeleton className="h-10 w-full rounded-md" /> },
 );
 
 type EventSeriesSummary = {

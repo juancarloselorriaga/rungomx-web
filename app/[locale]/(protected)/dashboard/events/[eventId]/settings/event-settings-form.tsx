@@ -17,6 +17,7 @@ import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
 import { useRouter } from '@/i18n/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   updateEventEdition,
   updateEventVisibility,
@@ -75,7 +76,7 @@ import {
 
 const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
-  { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
+  { ssr: false, loading: () => <Skeleton className="h-10 w-full rounded-md" /> },
 );
 
 function SettingsSection({
