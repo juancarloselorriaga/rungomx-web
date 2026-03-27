@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { Surface } from '@/components/ui/surface';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
@@ -113,10 +114,7 @@ function formatDatetimeLocal(date: Date | null): string {
   return d.toISOString().slice(0, 16);
 }
 
-export function PricingTiersManager({
-  distances,
-  initialPricingData,
-}: PricingTiersManagerProps) {
+export function PricingTiersManager({ distances, initialPricingData }: PricingTiersManagerProps) {
   const t = useTranslations('pages.dashboardEvents.pricing');
   const locale = useLocale();
   const router = useRouter();
@@ -134,10 +132,10 @@ export function PricingTiersManager({
 
   if (distances.length === 0) {
     return (
-      <div className="rounded-lg border bg-card p-8 text-center">
+      <Surface className="p-8 text-center">
         <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
         <p className="text-muted-foreground">{t('noDistances')}</p>
-      </div>
+      </Surface>
     );
   }
 
@@ -186,10 +184,11 @@ export function PricingTiersManager({
   const handleSaveTier = () => {
     if (!selectedDistanceId) return;
 
-    const nextLabel = editingTierOriginalLabel === INTERNAL_DEFAULT_TIER_LABEL
-      && tierFormData.label === t('tier.defaultLabel')
-      ? INTERNAL_DEFAULT_TIER_LABEL
-      : tierFormData.label || null;
+    const nextLabel =
+      editingTierOriginalLabel === INTERNAL_DEFAULT_TIER_LABEL &&
+      tierFormData.label === t('tier.defaultLabel')
+        ? INTERNAL_DEFAULT_TIER_LABEL
+        : tierFormData.label || null;
 
     startTransition(async () => {
       try {
@@ -219,7 +218,9 @@ export function PricingTiersManager({
             setTierFormData(EMPTY_TIER);
             router.refresh();
           } else {
-            toast.error(result.code === 'DATE_OVERLAP' ? t('tier.dateOverlap') : t('tier.errorSaving'));
+            toast.error(
+              result.code === 'DATE_OVERLAP' ? t('tier.dateOverlap') : t('tier.errorSaving'),
+            );
           }
         } else if (editingTier) {
           // Update existing tier
@@ -238,9 +239,7 @@ export function PricingTiersManager({
                 p.distanceId === selectedDistanceId
                   ? {
                       ...p,
-                      tiers: p.tiers.map((tier) =>
-                        tier.id === editingTier ? result.data : tier,
-                      ),
+                      tiers: p.tiers.map((tier) => (tier.id === editingTier ? result.data : tier)),
                     }
                   : p,
               ),
@@ -251,7 +250,9 @@ export function PricingTiersManager({
             setTierFormData(EMPTY_TIER);
             router.refresh();
           } else {
-            toast.error(result.code === 'DATE_OVERLAP' ? t('tier.dateOverlap') : t('tier.errorSaving'));
+            toast.error(
+              result.code === 'DATE_OVERLAP' ? t('tier.dateOverlap') : t('tier.errorSaving'),
+            );
           }
         }
       } catch {
@@ -300,7 +301,7 @@ export function PricingTiersManager({
   return (
     <div className="space-y-6">
       {/* Help section */}
-      <div className="rounded-lg border bg-muted/30 p-4">
+      <Surface className="bg-muted/30 p-4">
         <div className="flex gap-3">
           <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
           <div>
@@ -308,10 +309,10 @@ export function PricingTiersManager({
             <p className="text-sm text-muted-foreground mt-1">{t('help.description')}</p>
           </div>
         </div>
-      </div>
+      </Surface>
 
       {/* Distance selector */}
-      <div className="rounded-lg border bg-card shadow-sm">
+      <Surface className="p-0">
         <div className="border-b px-6 py-4">
           <h2 className="text-lg font-semibold">{t('selectDistance')}</h2>
         </div>
@@ -342,11 +343,11 @@ export function PricingTiersManager({
             ))}
           </div>
         </div>
-      </div>
+      </Surface>
 
       {/* Pricing tiers list */}
       {selectedDistanceId && (
-        <div className="rounded-lg border bg-card shadow-sm">
+        <Surface className="p-0">
           <div className="border-b px-6 py-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold">
               {distances.find((d) => d.id === selectedDistanceId)?.label} - {t('title')}
@@ -383,12 +384,7 @@ export function PricingTiersManager({
               <div className="p-8 text-center text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>{t('tier.emptyState')}</p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-4"
-                  onClick={startAddTier}
-                >
+                <Button variant="outline" size="sm" className="mt-4" onClick={startAddTier}>
                   <Plus className="h-4 w-4 mr-2" />
                   {t('tier.add')}
                 </Button>
@@ -414,7 +410,9 @@ export function PricingTiersManager({
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-medium">{getTierDisplayLabel(tier.label, t)}</span>
+                            <span className="font-medium">
+                              {getTierDisplayLabel(tier.label, t)}
+                            </span>
                             <span
                               className={cn(
                                 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
@@ -426,9 +424,7 @@ export function PricingTiersManager({
                           </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {formatPrice(tier.priceCents, tier.currency, locale)}
-                            {tier.startsAt || tier.endsAt ? (
-                              <span className="mx-2">•</span>
-                            ) : null}
+                            {tier.startsAt || tier.endsAt ? <span className="mx-2">•</span> : null}
                             {tier.startsAt && (
                               <span>
                                 {t('tier.from')}{' '}
@@ -472,11 +468,7 @@ export function PricingTiersManager({
                           />
                         ) : (
                           <div className="flex items-center justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEditTier(tier)}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => startEditTier(tier)}>
                               {t('tier.edit')}
                             </Button>
                             <Button
@@ -498,7 +490,7 @@ export function PricingTiersManager({
               })
             )}
           </div>
-        </div>
+        </Surface>
       )}
 
       <DeleteConfirmationDialog
@@ -552,7 +544,9 @@ function TierForm({ formData, setFormData, onSave, onCancel, isPending, t }: Tie
 
         <FormField label={t('tier.priceField')}>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              $
+            </span>
             <input
               type="number"
               min="0"

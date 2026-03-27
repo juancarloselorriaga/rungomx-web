@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
+import { Surface } from '@/components/ui/surface';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { RegistrationQuestionType } from '@/lib/events/constants';
 import {
@@ -384,7 +385,7 @@ export function QuestionsManager({
       </div>
 
       {showAddForm && (
-        <div className="rounded-lg border bg-card p-6">
+        <Surface className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium">{t('createTitle')}</h3>
             <IconButton
@@ -408,15 +409,15 @@ export function QuestionsManager({
               setShowAddForm(false);
             }}
           />
-        </div>
+        </Surface>
       )}
 
       {/* List */}
       {questions.length === 0 && !showAddForm ? (
-        <div className="rounded-lg border bg-card p-10 text-center">
+        <Surface className="p-10 text-center">
           <p className="font-medium">{t('emptyState')}</p>
           <p className="text-sm text-muted-foreground mt-1">{t('emptyStateDescription')}</p>
-        </div>
+        </Surface>
       ) : (
         <div className="space-y-4">
           {questions.map((question, index) => {
@@ -428,7 +429,7 @@ export function QuestionsManager({
                   tForm('distanceAll'));
 
             return (
-              <div key={question.id} className="rounded-lg border bg-card p-4">
+              <Surface key={question.id} className="p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -530,7 +531,7 @@ export function QuestionsManager({
                     />
                   </div>
                 )}
-              </div>
+              </Surface>
             );
           })}
         </div>

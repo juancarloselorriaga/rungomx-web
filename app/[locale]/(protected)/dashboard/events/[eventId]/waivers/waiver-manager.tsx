@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { IconButton } from '@/components/ui/icon-button';
+import { Surface } from '@/components/ui/surface';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createWaiver, updateWaiver, reorderWaivers } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
@@ -187,22 +188,19 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
 
       <div className="space-y-3">
         {waivers.length === 0 && !isAdding && (
-          <div className="rounded-lg border bg-card p-8 text-center">
+          <Surface className="p-8 text-center">
             <p className="text-muted-foreground mb-4">{t('emptyState')}</p>
             <Button onClick={() => setIsAdding(true)}>
               <Plus className="h-4 w-4 mr-2" />
               {t('addFirst')}
             </Button>
-          </div>
+          </Surface>
         )}
 
         {waivers.map((item, index) => (
-          <div
+          <Surface
             key={item.id}
-            className={cn(
-              'rounded-lg border bg-card shadow-sm transition-all',
-              editingId === item.id && 'ring-2 ring-primary',
-            )}
+            className={cn('transition-all', editingId === item.id && 'ring-2 ring-primary')}
           >
             {editingId === item.id ? (
               <div className="p-4 space-y-4">
@@ -255,30 +253,30 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
               </div>
             ) : (
               <div className="p-4">
-	                <div className="flex items-start gap-3">
-	                  <div className="flex flex-col gap-1 pt-1">
-	                    <IconButton
-	                      label={t('actions.moveUp')}
-	                      variant="ghost"
-	                      size="icon-sm"
-	                      onClick={() => handleMoveUp(index)}
-	                      disabled={index === 0 || isPending}
-	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-	                    >
-	                      <GripVertical className="h-4 w-4 rotate-90" />
-	                    </IconButton>
-	                    <IconButton
-	                      label={t('actions.moveDown')}
-	                      variant="ghost"
-	                      size="icon-sm"
-	                      onClick={() => handleMoveDown(index)}
-	                      disabled={index === waivers.length - 1 || isPending}
-	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-	                    >
-	                      <GripVertical className="h-4 w-4 -rotate-90" />
-	                    </IconButton>
-	                  </div>
-	                  <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-start gap-3">
+                  <div className="flex flex-col gap-1 pt-1">
+                    <IconButton
+                      label={t('actions.moveUp')}
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleMoveUp(index)}
+                      disabled={index === 0 || isPending}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <GripVertical className="h-4 w-4 rotate-90" />
+                    </IconButton>
+                    <IconButton
+                      label={t('actions.moveDown')}
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === waivers.length - 1 || isPending}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <GripVertical className="h-4 w-4 -rotate-90" />
+                    </IconButton>
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-2">
                     <div>
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-xs text-muted-foreground">
@@ -289,27 +287,27 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
                       content={item.body}
                       className="text-sm text-muted-foreground [&_p]:m-0"
                     />
-	                  </div>
-	                  <div className="flex items-start gap-1">
-	                    <IconButton
-	                      label={t('actions.edit')}
-	                      variant="ghost"
-	                      size="icon"
-	                      onClick={() => startEditing(item)}
-	                      disabled={isPending}
-	                    >
-	                      <Pencil className="h-4 w-4" />
-	                    </IconButton>
-	                  </div>
-	                </div>
-	              </div>
-	            )}
-          </div>
+                  </div>
+                  <div className="flex items-start gap-1">
+                    <IconButton
+                      label={t('actions.edit')}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startEditing(item)}
+                      disabled={isPending}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </IconButton>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Surface>
         ))}
       </div>
 
       {isAdding && (
-        <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
+        <Surface className="space-y-4 p-4">
           <FormField label={t('titleLabel')} required>
             <input
               type="text"
@@ -370,7 +368,7 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
               {t('add')}
             </Button>
           </div>
-        </div>
+        </Surface>
       )}
 
       {!isAdding && waivers.length > 0 && (

@@ -1,11 +1,15 @@
 import { getPathname } from '@/i18n/navigation';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { type EventVisibility } from '@/lib/events/constants';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getAddOnsForEdition } from '@/lib/events/add-ons/queries';
 import { getPricingScheduleForEdition } from '@/lib/events/pricing/queries';
 import { getQuestionsForEdition } from '@/lib/events/questions/queries';
-import { buildEventWizardAggregate, type EventWizardStepId } from '@/lib/events/wizard/orchestrator';
+import {
+  buildEventWizardAggregate,
+  type EventWizardStepId,
+} from '@/lib/events/wizard/orchestrator';
 import { getPublicWebsiteContent, hasWebsiteContent } from '@/lib/events/website/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { hasOrgPermission } from '@/lib/organizations/permissions';
@@ -26,10 +30,7 @@ import { QuestionsManager } from '../questions/questions-manager';
 import { WaiverManager } from '../waivers/waiver-manager';
 import { WebsiteContentEditor } from '../website/website-content-editor';
 
-import {
-  EventAiWizardPanel,
-  type EventAiAssistantStepId,
-} from './event-ai-wizard-panel';
+import { EventAiWizardPanel, type EventAiAssistantStepId } from './event-ai-wizard-panel';
 import { EventAssistantResponsiveSlot } from './event-assistant-responsive-slot';
 import { EventSettingsForm } from './event-settings-form';
 import {
@@ -58,42 +59,24 @@ const STEP_ASSISTANT_CONFIG: Record<
   { suggestions: string[]; markdownFocus?: boolean }
 > = {
   basics: {
-    suggestions: [
-      'draftFromBrief',
-      'reviewMostImportantMissingDetails',
-    ],
+    suggestions: ['draftFromBrief', 'reviewMostImportantMissingDetails'],
   },
   distances: {
-    suggestions: [
-      'createDistanceLineup',
-      'reviewMissingDistances',
-    ],
+    suggestions: ['createDistanceLineup', 'reviewMissingDistances'],
   },
   pricing: {
-    suggestions: [
-      'draftPricingStructure',
-      'fixNextPricingBlocker',
-    ],
+    suggestions: ['draftPricingStructure', 'fixNextPricingBlocker'],
   },
   policies: {
-    suggestions: [
-      'draftPolicyMarkdown',
-      'improvePolicyClarity',
-    ],
+    suggestions: ['draftPolicyMarkdown', 'improvePolicyClarity'],
     markdownFocus: true,
   },
   content: {
-    suggestions: [
-      'draftParticipantContent',
-      'improveContentClarity',
-    ],
+    suggestions: ['draftParticipantContent', 'improveContentClarity'],
     markdownFocus: true,
   },
   review: {
-    suggestions: [
-      'explainCurrentBlockers',
-      'improveParticipantCopyBeforePublish',
-    ],
+    suggestions: ['explainCurrentBlockers', 'improveParticipantCopyBeforePublish'],
     markdownFocus: true,
   },
 };
@@ -203,7 +186,9 @@ function StepWithAssistant({
   );
 }
 
-function resolveInitialWizardStepId(value: string | string[] | undefined): EventSetupWizardStepId | undefined {
+function resolveInitialWizardStepId(
+  value: string | string[] | undefined,
+): EventSetupWizardStepId | undefined {
   const stepId = Array.isArray(value) ? value[0] : value;
   if (!stepId) return undefined;
 
@@ -247,8 +232,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
   const initialWizardStepId = resolveInitialWizardStepId(resolvedSearchParams?.step);
 
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -300,8 +284,14 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
 
     const publishHasBlockers = aggregate.publishBlockers.length > 0;
 
-    const reviewBlockers: WizardReviewIssue[] = [...aggregate.publishBlockers, ...aggregate.missingRequired]
-      .filter((issue, index, list) => list.findIndex((candidate) => candidate.code === issue.code) === index)
+    const reviewBlockers: WizardReviewIssue[] = [
+      ...aggregate.publishBlockers,
+      ...aggregate.missingRequired,
+    ]
+      .filter(
+        (issue, index, list) =>
+          list.findIndex((candidate) => candidate.code === issue.code) === index,
+      )
       .map((issue) => ({
         id: issue.id,
         label: t(issue.labelKey),
@@ -310,13 +300,15 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         kind: issue.severity === 'blocker' ? 'publish' : 'required',
       }));
 
-    const reviewRecommendations: WizardReviewIssue[] = aggregate.optionalRecommendations.map((issue) => ({
-      id: issue.id,
-      label: t(issue.labelKey),
-      severity: issue.severity,
-      stepId: mapIssueStepId(issue.stepId),
-      kind: 'optional',
-    }));
+    const reviewRecommendations: WizardReviewIssue[] = aggregate.optionalRecommendations.map(
+      (issue) => ({
+        id: issue.id,
+        label: t(issue.labelKey),
+        severity: issue.severity,
+        stepId: mapIssueStepId(issue.stepId),
+        kind: 'optional',
+      }),
+    );
 
     const distances = event.distances.map((distance) => ({
       id: distance.id,
@@ -335,13 +327,21 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         return null;
       }
       if (!assistantGate.allowed) {
-        return <div className="rounded-[28px] border border-border/70 bg-background/80 p-2">{assistantGate.disabled ?? assistantGate.upsell}</div>;
+        return (
+          <div className="rounded-[28px] border border-border/70 bg-background/80 p-2">
+            {assistantGate.disabled ?? assistantGate.upsell}
+          </div>
+        );
       }
       if (!assistantCanEdit) {
         return (
           <div className="rounded-[28px] border border-border/70 bg-background/90 p-5">
-            <p className="text-sm font-semibold text-foreground">{t('assistant.errors.readOnlyTitle')}</p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('assistant.errors.readOnlyDescription')}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t('assistant.errors.readOnlyTitle')}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {t('assistant.errors.readOnlyDescription')}
+            </p>
           </div>
         );
       }
@@ -368,7 +368,10 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         required: true,
         completed: aggregate.setupStepStateById.basics.completed,
         content: (
-          <StepSurface title={t('wizardShell.steps.basics')} description={t('wizardShell.stepDescriptions.basics')}>
+          <StepSurface
+            title={t('wizardShell.steps.basics')}
+            description={t('wizardShell.stepDescriptions.basics')}
+          >
             <StepWithAssistant
               assistant={renderAssistant('basics')}
               assistantMode={assistantLayoutMode}
@@ -573,7 +576,11 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
             <div className="space-y-8">
               <StepGroup title={tQuestions('title')} description={tQuestions('description')}>
                 <div className="max-w-4xl">
-                  <QuestionsManager editionId={eventId} distances={event.distances} initialQuestions={questions} />
+                  <QuestionsManager
+                    editionId={eventId}
+                    distances={event.distances}
+                    initialQuestions={questions}
+                  />
                 </div>
               </StepGroup>
               <StepGroup title={tAddOns('title')} description={tAddOns('description')}>
@@ -595,7 +602,9 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
 
     const wizardShellStateKey = [
       initialWizardStepId ?? 'default',
-      ...stepBodies.map((step) => `${step.id}:${step.completed ? '1' : '0'}:${step.required ? '1' : '0'}`),
+      ...stepBodies.map(
+        (step) => `${step.id}:${step.completed ? '1' : '0'}:${step.required ? '1' : '0'}`,
+      ),
       reviewBlockers.map((issue) => `${issue.id}:${issue.stepId}:${issue.kind}`).join(','),
     ].join('|');
     const reviewPayloadToken = crypto.randomUUID();
@@ -636,7 +645,11 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
                 step: t('wizardShell.steps.review'),
               })}
             >
-              <EventSettingsForm event={event} surface="wizard-review" disablePublish={publishHasBlockers} />
+              <EventSettingsForm
+                event={event}
+                surface="wizard-review"
+                disablePublish={publishHasBlockers}
+              />
             </StepWithAssistant>
           </StepSurface>
         }
@@ -646,12 +659,28 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="mb-2 text-2xl font-semibold tracking-tight">{t('title')}</h2>
-          <p className="text-muted-foreground">{t('description')}</p>
+      <Surface className="overflow-hidden border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-6 sm:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="space-y-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('title')}</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+              {t('description')}
+            </p>
+          </div>
+
+          <InsetSurface className="border-border/60 bg-background/80 p-5">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {t('title')}
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                {event.seriesName} {event.editionLabel}
+              </p>
+              <p className="text-sm text-muted-foreground">{event.organizationName}</p>
+            </div>
+          </InsetSurface>
         </div>
-      </div>
+      </Surface>
 
       <div className="max-w-4xl">
         <EventSettingsForm event={event} />

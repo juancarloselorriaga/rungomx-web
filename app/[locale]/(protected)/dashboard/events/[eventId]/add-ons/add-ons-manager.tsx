@@ -22,6 +22,7 @@ import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-di
 import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { Surface } from '@/components/ui/surface';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
@@ -83,11 +84,7 @@ function formatPrice(cents: number, locale: string): string {
   return formatMoneyFromMinor(cents, 'MXN', locale);
 }
 
-export function AddOnsManager({
-  editionId,
-  distances,
-  initialAddOns,
-}: AddOnsManagerProps) {
+export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.addOns');
   const locale = useLocale();
   const router = useRouter();
@@ -204,9 +201,7 @@ export function AddOnsManager({
           });
 
           if (result.ok) {
-            setAddOns((prev) =>
-              prev.map((a) => (a.id === editingAddOn ? result.data : a)),
-            );
+            setAddOns((prev) => prev.map((a) => (a.id === editingAddOn ? result.data : a)));
             toast.success(t('addOn.saved'));
             setEditingAddOn(null);
             setAddOnFormData(EMPTY_ADD_ON);
@@ -285,9 +280,7 @@ export function AddOnsManager({
                 a.id === addOnId
                   ? {
                       ...a,
-                      options: a.options.map((o) =>
-                        o.id === editingOption ? result.data : o,
-                      ),
+                      options: a.options.map((o) => (o.id === editingOption ? result.data : o)),
                     }
                   : a,
               ),
@@ -314,9 +307,7 @@ export function AddOnsManager({
         if (result.ok) {
           setAddOns((prev) =>
             prev.map((a) =>
-              a.id === addOnId
-                ? { ...a, options: a.options.filter((o) => o.id !== optionId) }
-                : a,
+              a.id === addOnId ? { ...a, options: a.options.filter((o) => o.id !== optionId) } : a,
             ),
           );
           setDeletingOptionInfo(null);
@@ -343,7 +334,7 @@ export function AddOnsManager({
   return (
     <div className="space-y-6">
       {/* Help section */}
-      <div className="rounded-lg border bg-muted/30 p-4">
+      <Surface className="bg-muted/30 p-4">
         <div className="flex gap-3">
           <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
           <div>
@@ -351,10 +342,10 @@ export function AddOnsManager({
             <p className="text-sm text-muted-foreground mt-1">{t('help.description')}</p>
           </div>
         </div>
-      </div>
+      </Surface>
 
       {/* Add-ons list */}
-      <div className="rounded-lg border bg-card shadow-sm">
+      <Surface className="p-0">
         <div className="border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">{t('title')}</h2>
           <Button
@@ -390,12 +381,7 @@ export function AddOnsManager({
             <div className="p-8 text-center text-muted-foreground">
               <Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>{t('emptyState')}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-4"
-                onClick={startAddAddOn}
-              >
+              <Button variant="outline" size="sm" className="mt-4" onClick={startAddAddOn}>
                 <Plus className="h-4 w-4 mr-2" />
                 {t('addOn.add')}
               </Button>
@@ -465,27 +451,27 @@ export function AddOnsManager({
                         t={t}
                       />
                     ) : (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <IconTooltipButton
-                              variant="ghost"
-                              size="icon"
-                              label={t('addOn.edit')}
-                              onClick={() => startEditAddOn(addOn)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </IconTooltipButton>
-                            <IconTooltipButton
-                              variant="ghost"
-                              size="icon"
-                              label={t('addOn.delete')}
-                              onClick={() => setDeletingAddOnId(addOn.id)}
-                              disabled={isPending}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </IconTooltipButton>
-                          </div>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <IconTooltipButton
+                            variant="ghost"
+                            size="icon"
+                            label={t('addOn.edit')}
+                            onClick={() => startEditAddOn(addOn)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </IconTooltipButton>
+                          <IconTooltipButton
+                            variant="ghost"
+                            size="icon"
+                            label={t('addOn.delete')}
+                            onClick={() => setDeletingAddOnId(addOn.id)}
+                            disabled={isPending}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </IconTooltipButton>
+                        </div>
 
                         {/* Options section */}
                         <div className="mt-4 pt-4 border-t">
@@ -548,38 +534,40 @@ export function AddOnsManager({
                                         {formatPrice(option.priceCents, locale)}
                                       </span>
                                       <span className="text-xs text-muted-foreground ml-2">
-                                        {t('option.maxQtySummary', { count: option.maxQtyPerOrder })}
+                                        {t('option.maxQtySummary', {
+                                          count: option.maxQtyPerOrder,
+                                        })}
                                       </span>
                                       {!option.isActive && (
                                         <span className="ml-2 text-xs text-muted-foreground">
                                           {t('option.inactiveBadge')}
                                         </span>
                                       )}
-                                      </div>
-                                      <div className="flex items-center gap-1">
-                                        <IconTooltipButton
-                                          variant="ghost"
-                                          size="icon"
-                                          label={t('option.edit')}
-                                          onClick={() => startEditOption(option)}
-                                        >
-                                          <Pencil className="h-4 w-4" />
-                                        </IconTooltipButton>
-                                        <IconTooltipButton
-                                          variant="ghost"
-                                          size="icon"
-                                          label={t('option.delete')}
-                                          onClick={() =>
-                                            setDeletingOptionInfo({
-                                              addOnId: addOn.id,
-                                              optionId: option.id,
-                                            })
-                                          }
-                                          disabled={isPending}
-                                          className="text-destructive hover:text-destructive"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </IconTooltipButton>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <IconTooltipButton
+                                        variant="ghost"
+                                        size="icon"
+                                        label={t('option.edit')}
+                                        onClick={() => startEditOption(option)}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </IconTooltipButton>
+                                      <IconTooltipButton
+                                        variant="ghost"
+                                        size="icon"
+                                        label={t('option.delete')}
+                                        onClick={() =>
+                                          setDeletingOptionInfo({
+                                            addOnId: addOn.id,
+                                            optionId: option.id,
+                                          })
+                                        }
+                                        disabled={isPending}
+                                        className="text-destructive hover:text-destructive"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </IconTooltipButton>
                                     </div>
                                   </>
                                 )}
@@ -595,7 +583,7 @@ export function AddOnsManager({
             );
           })}
         </div>
-      </div>
+      </Surface>
 
       <DeleteConfirmationDialog
         open={!!deletingAddOnId}
@@ -782,14 +770,7 @@ type OptionFormProps = {
   t: ReturnType<typeof useTranslations<'pages.dashboardEvents.addOns'>>;
 };
 
-function OptionForm({
-  formData,
-  setFormData,
-  onSave,
-  onCancel,
-  isPending,
-  t,
-}: OptionFormProps) {
+function OptionForm({ formData, setFormData, onSave, onCancel, isPending, t }: OptionFormProps) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
@@ -848,9 +829,7 @@ function OptionForm({
             <input
               type="checkbox"
               checked={formData.isActive}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, isActive: e.target.checked }))
-              }
+              onChange={(e) => setFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
               className="sr-only peer"
             />
             <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />

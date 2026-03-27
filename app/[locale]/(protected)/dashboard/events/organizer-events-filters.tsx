@@ -10,9 +10,11 @@ import {
 } from '@/lib/events/organizer-events';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode, SelectHTMLAttributes } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 
 type OrganizerEventsFiltersProps = {
@@ -179,10 +181,10 @@ export function OrganizerEventsFilters({
   }, [isPending]);
 
   return (
-    <div className="space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+    <Surface className="space-y-4">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold">{t('filters.title')}</p>
+          <p className="text-sm font-semibold tracking-tight">{t('filters.title')}</p>
           <p className="text-xs text-muted-foreground">
             {t('filters.summary', { filtered: filteredEvents, total: totalEvents })}
           </p>
@@ -202,9 +204,9 @@ export function OrganizerEventsFilters({
 
       <form
         onSubmit={handleSearchSubmit}
-        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]"
       >
-        <div className="space-y-1 sm:col-span-2 lg:col-span-2">
+        <InsetSurface className="space-y-1 border-border/60 sm:col-span-2 lg:col-span-1">
           <label className={labelClassName} htmlFor="search">
             {t('filters.searchLabel')}
           </label>
@@ -234,9 +236,7 @@ export function OrganizerEventsFilters({
               ref={searchInputRef}
             />
             <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
-              {isPending ? (
-                <Spinner className="size-4 text-muted-foreground" aria-hidden />
-              ) : null}
+              {isPending ? <Spinner className="size-4 text-muted-foreground" aria-hidden /> : null}
               {formState.search ? (
                 <button
                   type="button"
@@ -249,19 +249,18 @@ export function OrganizerEventsFilters({
               ) : null}
             </div>
           </div>
-        </div>
+        </InsetSurface>
 
-        <div className="space-y-1">
-          <label className={labelClassName} htmlFor="visibility">
-            {t('filters.visibilityLabel')}
-          </label>
-          <select
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
+          <FilterSelect
             id="visibility"
+            label={t('filters.visibilityLabel')}
             value={formState.visibility}
             onChange={(event) =>
-              handleSelectChange({ visibility: event.target.value as OrganizerEventsQuery['visibility'] })
+              handleSelectChange({
+                visibility: event.target.value as OrganizerEventsQuery['visibility'],
+              })
             }
-            className={inputClassName}
             disabled={isPending}
           >
             <option value="all">{t('filters.visibilityAll')}</option>
@@ -269,42 +268,32 @@ export function OrganizerEventsFilters({
             <option value="draft">{t('visibility.draft')}</option>
             <option value="unlisted">{t('visibility.unlisted')}</option>
             <option value="archived">{t('visibility.archived')}</option>
-          </select>
-        </div>
+          </FilterSelect>
 
-        <div className="space-y-1">
-          <label className={labelClassName} htmlFor="time">
-            {t('filters.timeLabel')}
-          </label>
-          <select
+          <FilterSelect
             id="time"
+            label={t('filters.timeLabel')}
             value={formState.time}
             onChange={(event) =>
               handleSelectChange({ time: event.target.value as OrganizerEventsQuery['time'] })
             }
-            className={inputClassName}
             disabled={isPending}
           >
             <option value="all">{t('filters.timeAll')}</option>
             <option value="upcoming">{t('filters.timeUpcoming')}</option>
             <option value="current">{t('filters.timeCurrent')}</option>
             <option value="past">{t('filters.timePast')}</option>
-          </select>
-        </div>
+          </FilterSelect>
 
-        <div className="space-y-1">
-          <label className={labelClassName} htmlFor="registration">
-            {t('filters.registrationLabel')}
-          </label>
-          <select
+          <FilterSelect
             id="registration"
+            label={t('filters.registrationLabel')}
             value={formState.registration}
             onChange={(event) =>
               handleSelectChange({
                 registration: event.target.value as OrganizerEventsQuery['registration'],
               })
             }
-            className={inputClassName}
             disabled={isPending}
           >
             <option value="all">{t('filters.registrationAll')}</option>
@@ -312,20 +301,13 @@ export function OrganizerEventsFilters({
             <option value="upcoming">{t('filters.registrationUpcoming')}</option>
             <option value="closed">{t('filters.registrationClosed')}</option>
             <option value="paused">{t('filters.registrationPaused')}</option>
-          </select>
-        </div>
+          </FilterSelect>
 
-        <div className="space-y-1">
-          <label className={labelClassName} htmlFor="organization">
-            {t('filters.organizationLabel')}
-          </label>
-          <select
+          <FilterSelect
             id="organization"
+            label={t('filters.organizationLabel')}
             value={formState.organizationId}
-            onChange={(event) =>
-              handleSelectChange({ organizationId: event.target.value })
-            }
-            className={inputClassName}
+            onChange={(event) => handleSelectChange({ organizationId: event.target.value })}
             disabled={isPending}
           >
             <option value="">{t('filters.organizationAll')}</option>
@@ -334,20 +316,15 @@ export function OrganizerEventsFilters({
                 {org.name}
               </option>
             ))}
-          </select>
-        </div>
+          </FilterSelect>
 
-        <div className="space-y-1">
-          <label className={labelClassName} htmlFor="sort">
-            {t('filters.sortLabel')}
-          </label>
-          <select
+          <FilterSelect
             id="sort"
+            label={t('filters.sortLabel')}
             value={formState.sort}
             onChange={(event) =>
               handleSelectChange({ sort: event.target.value as OrganizerEventsQuery['sort'] })
             }
-            className={inputClassName}
             disabled={isPending}
           >
             <option value="priority">{t('filters.sortPriority')}</option>
@@ -355,10 +332,32 @@ export function OrganizerEventsFilters({
             <option value="startsAtDesc">{t('filters.sortStartsAtDesc')}</option>
             <option value="createdAt">{t('filters.sortCreatedDesc')}</option>
             <option value="registrations">{t('filters.sortRegistrationsDesc')}</option>
-          </select>
+          </FilterSelect>
         </div>
       </form>
+    </Surface>
+  );
+}
 
-    </div>
+function FilterSelect({
+  id,
+  label,
+  children,
+  className,
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement> & {
+  id: string;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <InsetSurface className="space-y-1 border-border/60 p-3">
+      <label className={labelClassName} htmlFor={id}>
+        {label}
+      </label>
+      <select id={id} className={cn(inputClassName, className)} {...props}>
+        {children}
+      </select>
+    </InsetSurface>
   );
 }

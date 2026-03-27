@@ -6,12 +6,8 @@ import { canUserAccessSeries } from '@/lib/organizations/permissions';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import {
-  Calendar,
-  MapPin,
-  Ticket,
-  Users,
-} from 'lucide-react';
+import { InsetSurface, Surface } from '@/components/ui/surface';
+import { Calendar, MapPin, Ticket, Users } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
@@ -23,7 +19,7 @@ type EventDetailPageProps = LocalePageProps & {
 export async function generateMetadata({ params }: EventDetailPageProps): Promise<Metadata> {
   const { locale, eventId } = await params;
   const event = await getEventEditionDetail(eventId);
-  
+
   if (!event) {
     return createLocalizedPageMetadata(
       locale,
@@ -55,8 +51,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -74,10 +69,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
   }
 
   // Calculate total registrations
-  const totalRegistrations = event.distances.reduce(
-    (sum, d) => sum + d.registrationCount,
-    0,
-  );
+  const totalRegistrations = event.distances.reduce((sum, d) => sum + d.registrationCount, 0);
   const hasSharedPool =
     Boolean(event.sharedCapacity) ||
     event.distances.some((distance) => distance.capacityScope === 'shared_pool');
@@ -89,17 +81,15 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
     <div className="space-y-6">
       {/* Stats cards */}
       <div className="grid gap-3 md:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card/50 p-4">
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <Calendar className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('eventDate')}</span>
           </div>
-          <p className="text-base font-semibold">
-            {formatDate(event.startsAt, locale)}
-          </p>
-        </div>
+          <p className="text-base font-semibold">{formatDate(event.startsAt, locale)}</p>
+        </Surface>
 
-        <div className="rounded-lg border border-border bg-card/50 p-4">
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <MapPin className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('location')}</span>
@@ -107,103 +97,107 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           <p className="text-base font-semibold">
             {[event.city, event.state].filter(Boolean).join(', ') || '-'}
           </p>
-        </div>
+        </Surface>
 
-        <div className="rounded-lg border border-border bg-card/50 p-4">
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <Ticket className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('distances')}</span>
           </div>
           <p className="text-base font-semibold">{event.distances.length}</p>
-        </div>
+        </Surface>
 
-        <div className="rounded-lg border border-border bg-card/50 p-4">
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground/70 mb-1.5">
             <Users className="h-3.5 w-3.5" />
             <span className="text-xs font-medium">{tDetail('registrations')}</span>
           </div>
           <p className="text-base font-semibold">{totalRegistrations}</p>
-        </div>
+        </Surface>
       </div>
 
       {/* Capacity status */}
-      <div className="rounded-lg border border-border bg-card/50">
-        <div className="border-b border-border px-6 py-3">
-          <h2 className="text-base font-semibold">{tDetail('capacity.title')}</h2>
+      <Surface className="overflow-hidden p-0">
+        <div className="border-b border-border/60 px-6 py-4">
+          <h2 className="text-lg font-semibold tracking-tight">{tDetail('capacity.title')}</h2>
         </div>
-        <div className="px-6 py-4 space-y-3">
+        <div className="space-y-4 px-6 py-5">
           <p className="text-sm text-muted-foreground">
             {hasSharedPool ? tDetail('capacity.sharedPool') : tDetail('capacity.perDistance')}
           </p>
 
           {hasSharedPool ? (
             <div className="grid gap-2 sm:grid-cols-2">
-              <div className="rounded-md border bg-muted/40 p-3">
+              <InsetSurface className="space-y-1 bg-muted/25 p-4">
                 <p className="text-xs text-muted-foreground">{tDetail('capacity.totalLabel')}</p>
                 <p className="text-lg font-semibold">{event.sharedCapacity}</p>
-              </div>
-              <div className="rounded-md border bg-muted/40 p-3">
+              </InsetSurface>
+              <InsetSurface className="space-y-1 bg-muted/25 p-4">
                 <p className="text-xs text-muted-foreground">
                   {tDetail('capacity.remainingLabel')}
                 </p>
                 <p className="text-lg font-semibold">
-                  {sharedSpotsRemaining === 0
-                    ? tDetail('capacity.soldOut')
-                    : sharedSpotsRemaining}
+                  {sharedSpotsRemaining === 0 ? tDetail('capacity.soldOut') : sharedSpotsRemaining}
                 </p>
-              </div>
+              </InsetSurface>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="divide-y">
+              <div className="divide-y rounded-xl border border-border/60 bg-background/70">
                 {event.distances.slice(0, 5).map((distance) => {
-                const remaining =
-                  distance.capacity !== null
-                    ? Math.max(distance.capacity - distance.registrationCount, 0)
-                    : null;
-                return (
-                  <div key={distance.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{distance.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {distance.capacity !== null
-                          ? tDetail('capacity.distanceLimit', { count: distance.capacity })
-                          : tDetail('capacity.unlimited')}
-                      </p>
+                  const remaining =
+                    distance.capacity !== null
+                      ? Math.max(distance.capacity - distance.registrationCount, 0)
+                      : null;
+                  return (
+                    <div
+                      key={distance.id}
+                      className="flex items-center justify-between gap-4 px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">{distance.label}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {distance.capacity !== null
+                            ? tDetail('capacity.distanceLimit', { count: distance.capacity })
+                            : tDetail('capacity.unlimited')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">
+                          {tDetail('capacity.remainingLabel')}
+                        </p>
+                        <p className="font-semibold">
+                          {remaining === null
+                            ? tDetail('capacity.unlimited')
+                            : remaining === 0
+                              ? tDetail('capacity.soldOut')
+                              : remaining}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">
-                        {tDetail('capacity.remainingLabel')}
-                      </p>
-                      <p className="font-semibold">
-                        {remaining === null
-                          ? tDetail('capacity.unlimited')
-                          : remaining === 0
-                            ? tDetail('capacity.soldOut')
-                            : remaining}
-                      </p>
-                    </div>
-                  </div>
-                );
+                  );
                 })}
               </div>
 
               {event.distances.length > 5 && (
-                <details className="rounded-md border bg-muted/30 px-4 py-2">
+                <details className="rounded-xl border border-border/60 bg-muted/20 px-4 py-3">
                   <summary className="cursor-pointer text-sm font-medium text-primary">
                     {tDetail('capacity.viewAll', {
                       count: event.distances.length - 5,
                     })}
                   </summary>
-                  <div className="mt-3 divide-y">
+                  <div className="mt-3 divide-y rounded-lg border border-border/60 bg-background/70">
                     {event.distances.slice(5).map((distance) => {
                       const remaining =
                         distance.capacity !== null
                           ? Math.max(distance.capacity - distance.registrationCount, 0)
                           : null;
                       return (
-                        <div key={distance.id} className="py-3 flex items-center justify-between">
-                          <div>
+                        <div
+                          key={distance.id}
+                          className="flex items-center justify-between gap-4 px-4 py-3"
+                        >
+                          <div className="min-w-0">
                             <p className="font-medium">{distance.label}</p>
                             <p className="text-xs text-muted-foreground">
                               {distance.capacity !== null
@@ -232,12 +226,12 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             </div>
           )}
         </div>
-      </div>
+      </Surface>
 
       {/* Distances section */}
-      <div className="rounded-lg border border-border bg-card/50">
-        <div className="border-b border-border px-6 py-3">
-          <h2 className="text-base font-semibold">{tDetail('distancesTitle')}</h2>
+      <Surface className="overflow-hidden p-0">
+        <div className="border-b border-border/60 px-6 py-4">
+          <h2 className="text-lg font-semibold tracking-tight">{tDetail('distancesTitle')}</h2>
         </div>
         {event.distances.length === 0 ? (
           <div className="px-6 py-8 text-center text-muted-foreground">
@@ -246,8 +240,8 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
         ) : (
           <div className="divide-y">
             {event.distances.map((distance) => (
-              <div key={distance.id} className="px-6 py-4 flex items-center justify-between">
-                <div>
+              <div key={distance.id} className="flex items-center justify-between gap-4 px-6 py-4">
+                <div className="min-w-0">
                   <h3 className="font-medium">{distance.label}</h3>
                   <p className="text-sm text-muted-foreground">
                     {distance.distanceValue} {distance.distanceUnit}
@@ -267,13 +261,13 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
             ))}
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* FAQ preview */}
       {event.faqItems.length > 0 && (
-        <div className="rounded-lg border border-border bg-card/50">
-          <div className="border-b border-border px-6 py-3 flex items-center justify-between">
-            <h2 className="text-base font-semibold">{tDetail('faqTitle')}</h2>
+        <Surface className="overflow-hidden p-0">
+          <div className="flex items-center justify-between border-b border-border/60 px-6 py-4">
+            <h2 className="text-lg font-semibold tracking-tight">{tDetail('faqTitle')}</h2>
             <Link
               href={{ pathname: '/dashboard/events/[eventId]/faq', params: { eventId } }}
               className="text-xs text-primary hover:underline"
@@ -283,7 +277,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
           </div>
           <div className="divide-y">
             {event.faqItems.slice(0, 3).map((faq) => (
-              <div key={faq.id} className="px-6 py-4">
+              <div key={faq.id} className="space-y-1 px-6 py-4">
                 <h3 className="font-medium">{faq.question}</h3>
                 <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{faq.answer}</p>
               </div>
@@ -299,7 +293,7 @@ export default async function EventDetailPage({ params }: EventDetailPageProps) 
               </div>
             )}
           </div>
-        </div>
+        </Surface>
       )}
     </div>
   );

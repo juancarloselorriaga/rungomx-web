@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { Surface } from '@/components/ui/surface';
 import { Switch } from '@/components/ui/switch';
 import { updateEventPolicyConfig } from '@/lib/events/actions';
 import type { EventPolicyConfig } from '@/lib/events/queries';
@@ -37,10 +38,14 @@ function toFormValues(policies: EventPolicyConfig | null): PolicyFormValues {
     refundDeadline: policies?.refundDeadline ? formatDateTimeForInput(policies.refundDeadline) : '',
     transfersAllowed: policies?.transfersAllowed ?? false,
     transferPolicyText: policies?.transferPolicyText ?? '',
-    transferDeadline: policies?.transferDeadline ? formatDateTimeForInput(policies.transferDeadline) : '',
+    transferDeadline: policies?.transferDeadline
+      ? formatDateTimeForInput(policies.transferDeadline)
+      : '',
     deferralsAllowed: policies?.deferralsAllowed ?? false,
     deferralPolicyText: policies?.deferralPolicyText ?? '',
-    deferralDeadline: policies?.deferralDeadline ? formatDateTimeForInput(policies.deferralDeadline) : '',
+    deferralDeadline: policies?.deferralDeadline
+      ? formatDateTimeForInput(policies.deferralDeadline)
+      : '',
   };
 }
 
@@ -56,13 +61,19 @@ export function PoliciesForm({ eventId, initialPolicies }: PoliciesFormProps) {
         editionId: eventId,
         refundsAllowed: values.refundsAllowed,
         refundPolicyText: values.refundPolicyText || null,
-        refundDeadline: values.refundDeadline ? new Date(values.refundDeadline).toISOString() : null,
+        refundDeadline: values.refundDeadline
+          ? new Date(values.refundDeadline).toISOString()
+          : null,
         transfersAllowed: values.transfersAllowed,
         transferPolicyText: values.transferPolicyText || null,
-        transferDeadline: values.transferDeadline ? new Date(values.transferDeadline).toISOString() : null,
+        transferDeadline: values.transferDeadline
+          ? new Date(values.transferDeadline).toISOString()
+          : null,
         deferralsAllowed: values.deferralsAllowed,
         deferralPolicyText: values.deferralPolicyText || null,
-        deferralDeadline: values.deferralDeadline ? new Date(values.deferralDeadline).toISOString() : null,
+        deferralDeadline: values.deferralDeadline
+          ? new Date(values.deferralDeadline).toISOString()
+          : null,
       });
 
       if (!result.ok) {
@@ -163,7 +174,7 @@ function PolicySection({
   const deadlineValue = form.values[deadlineKey] as string;
 
   return (
-    <section className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
+    <Surface className="space-y-4 p-4">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h2 className="font-semibold">{title}</h2>
@@ -195,7 +206,7 @@ function PolicySection({
           className="max-w-xs"
         />
       </FormField>
-    </section>
+    </Surface>
   );
 }
 

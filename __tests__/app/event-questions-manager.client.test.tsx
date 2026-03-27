@@ -7,6 +7,12 @@ jest.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: jest.fn(),
+  }),
+}));
+
 jest.mock('@/lib/events/questions/actions', () => ({
   createQuestion: jest.fn(),
   deleteQuestion: jest.fn(),

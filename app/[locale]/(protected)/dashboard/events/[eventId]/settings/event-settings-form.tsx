@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Switch } from '@/components/ui/switch';
 import { IconButton } from '@/components/ui/icon-button';
 import { useRouter } from '@/i18n/navigation';
@@ -76,6 +77,55 @@ const LocationField = dynamic(
   () => import('@/components/location/location-field').then((mod) => mod.LocationField),
   { ssr: false, loading: () => <div className="h-10 rounded-md border bg-muted animate-pulse" /> },
 );
+
+function SettingsSection({
+  icon,
+  title,
+  description,
+  badge,
+  children,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  description?: string;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Surface className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            {icon ? <span className="text-muted-foreground">{icon}</span> : null}
+            <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+          </div>
+          {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        </div>
+        {badge ? <div className="shrink-0">{badge}</div> : null}
+      </div>
+      {children}
+    </Surface>
+  );
+}
+
+function SettingsSubsection({
+  title,
+  children,
+  className,
+}: {
+  title?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <InsetSurface className={cn('space-y-4 bg-muted/20', className)}>
+      {title ? (
+        <h3 className="text-sm font-semibold tracking-tight text-foreground">{title}</h3>
+      ) : null}
+      {children}
+    </InsetSurface>
+  );
+}
 
 type EventSettingsFormProps = {
   event: EventEditionDetail;
@@ -227,8 +277,12 @@ export function EventSettingsForm({
       slug: event.slug,
       description: event.description || '',
       timezone: event.timezone,
-      startsAt: event.startsAt ? formatEditionDateForInputInTimeZone(event.startsAt, event.timezone) : '',
-      startsAtTime: event.startsAt ? formatEditionTimeForInputInTimeZone(event.startsAt, event.timezone) : '',
+      startsAt: event.startsAt
+        ? formatEditionDateForInputInTimeZone(event.startsAt, event.timezone)
+        : '',
+      startsAtTime: event.startsAt
+        ? formatEditionTimeForInputInTimeZone(event.startsAt, event.timezone)
+        : '',
       endsAt: event.endsAt ? formatEditionDateForInputInTimeZone(event.endsAt, event.timezone) : '',
       city: event.city || '',
       state: event.state || '',
@@ -261,7 +315,12 @@ export function EventSettingsForm({
         values,
       });
 
-      if (surface !== 'wizard-registration' && values.startsAt && values.startsAtTime && !payload.startsAt) {
+      if (
+        surface !== 'wizard-registration' &&
+        values.startsAt &&
+        values.startsAtTime &&
+        !payload.startsAt
+      ) {
         return { ok: false, error: 'VALIDATION_ERROR', message: t('details.startTimeInvalid') };
       }
 
@@ -619,12 +678,11 @@ export function EventSettingsForm({
   return (
     <div className="space-y-8">
       {showVisibilitySection && (
-        <section className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">{t('visibility.title')}</h2>
-            </div>
+        <SettingsSection
+          icon={<Eye className="h-5 w-5" />}
+          title={t('visibility.title')}
+          description={t('visibility.description')}
+          badge={
             <span
               className={cn(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -633,9 +691,8 @@ export function EventSettingsForm({
             >
               {tVis(visibility)}
             </span>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">{t('visibility.description')}</p>
-
+          }
+        >
           <div className="flex flex-wrap gap-2">
             {EVENT_VISIBILITY.map((vis) => (
               <Button
@@ -652,16 +709,15 @@ export function EventSettingsForm({
               </Button>
             ))}
           </div>
-        </section>
+        </SettingsSection>
       )}
 
       {showRegistrationControlSection && (
-        <section className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Settings2 className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">{t('registration.title')}</h2>
-            </div>
+        <SettingsSection
+          icon={<Settings2 className="h-5 w-5" />}
+          title={t('registration.title')}
+          description={t('registration.description')}
+          badge={
             <span
               className={cn(
                 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
@@ -672,9 +728,8 @@ export function EventSettingsForm({
             >
               {isRegistrationPaused ? t('registration.paused') : t('registration.active')}
             </span>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">{t('registration.description')}</p>
-
+          }
+        >
           <Button
             variant={isRegistrationPaused ? 'default' : 'outline'}
             disabled={isUpdatingPause}
@@ -689,17 +744,15 @@ export function EventSettingsForm({
             )}
             {isRegistrationPaused ? t('registration.resume') : t('registration.pause')}
           </Button>
-        </section>
+        </SettingsSection>
       )}
 
       {showHeroImageSection && (
-        <section className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <ImagePlus className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{tHero('title')}</h2>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">{tHero('description')}</p>
-
+        <SettingsSection
+          icon={<ImagePlus className="h-5 w-5" />}
+          title={tHero('title')}
+          description={tHero('description')}
+        >
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative aspect-[16/9] w-full max-w-xl overflow-hidden rounded-lg border bg-muted">
               {heroImagePreview ? (
@@ -712,7 +765,9 @@ export function EventSettingsForm({
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5">
-                  <span className="text-sm font-medium text-muted-foreground">{tHero('empty')}</span>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {tHero('empty')}
+                  </span>
                 </div>
               )}
               {isUploadingHeroImage && (
@@ -771,113 +826,118 @@ export function EventSettingsForm({
             onChange={handleHeroImageSelect}
             className="hidden"
           />
-        </section>
+        </SettingsSection>
       )}
 
       {(showCoreDetailsSection || showRegistrationWindowSection) && (
-        <section className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">
-              {showCoreDetailsSection ? t('details.title') : t('registration.title')}
-            </h2>
-          </div>
-
+        <SettingsSection
+          icon={<Calendar className="h-5 w-5" />}
+          title={showCoreDetailsSection ? t('details.title') : t('registration.title')}
+        >
           <Form form={detailsForm} className="space-y-6" onSubmitCapture={handleDetailsSubmit}>
             <FormError />
 
             {showCoreDetailsSection ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField label={t('details.editionLabel')} error={detailsForm.errors.editionLabel}>
-                    <input
-                      type="text"
-                      {...detailsForm.register('editionLabel')}
-                      className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                      disabled={detailsForm.isSubmitting}
-                    />
-                  </FormField>
-
-                  <FormField label={t('details.slug')} error={detailsForm.errors.slug}>
-                    <div className="space-y-1">
+                <SettingsSubsection>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField
+                      label={t('details.editionLabel')}
+                      error={detailsForm.errors.editionLabel}
+                    >
                       <input
                         type="text"
-                        name={slugField.name}
-                        value={slugField.value}
-                        onChange={(event) => {
-                          slugField.onChange(event);
-                          handleEditionSlugChange(event.target.value);
-                        }}
-                        className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
-                        disabled={detailsForm.isSubmitting}
-                      />
-                      {detailsForm.values.slug.trim().length >= 2 &&
-                        detailsForm.values.slug.trim() !== event.slug &&
-                        editionSlugStatus !== 'idle' && (
-                        <p className={cn('text-xs', slugStatusClass(editionSlugStatus))}>
-                          {slugStatusLabel(editionSlugStatus)}
-                        </p>
-                      )}
-                    </div>
-                  </FormField>
-                </div>
-
-                <MarkdownField
-                  label={tDescription('label')}
-                  value={detailsForm.values.description}
-                  onChange={(value) => detailsForm.setFieldValue('description', value)}
-                  error={detailsForm.errors.description}
-                  disabled={detailsForm.isSubmitting}
-                  helperText={tDescription('help')}
-                  textareaClassName="resize-none"
-                  textareaProps={{ rows: 4 }}
-                />
-
-                <FormField label={t('details.timezone')} error={detailsForm.errors.timezone}>
-                  <select
-                    {...detailsForm.register('timezone')}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                    disabled={detailsForm.isSubmitting}
-                  >
-                    {TIMEZONE_OPTIONS.map((tz) => (
-                      <option key={tz.value} value={tz.value}>
-                        {tz.label}
-                      </option>
-                    ))}
-                  </select>
-                </FormField>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
-                      <DatePicker
-                        locale={locale}
-                        value={detailsForm.values.startsAt || ''}
-                        onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
-                        clearLabel={t('details.clearDate')}
-                      />
-                      <input
-                        type="time"
-                        step={60}
-                        value={detailsForm.values.startsAtTime}
-                        onChange={(event) => detailsForm.setFieldValue('startsAtTime', event.target.value)}
+                        {...detailsForm.register('editionLabel')}
                         className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
                         disabled={detailsForm.isSubmitting}
-                        aria-label={t('details.startsAtTime')}
                       />
-                    </div>
-                    <p className="text-xs text-muted-foreground">{t('details.startsAtTimeHelp')}</p>
+                    </FormField>
+
+                    <FormField label={t('details.slug')} error={detailsForm.errors.slug}>
+                      <div className="space-y-1">
+                        <input
+                          type="text"
+                          name={slugField.name}
+                          value={slugField.value}
+                          onChange={(event) => {
+                            slugField.onChange(event);
+                            handleEditionSlugChange(event.target.value);
+                          }}
+                          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30 font-mono"
+                          disabled={detailsForm.isSubmitting}
+                        />
+                        {detailsForm.values.slug.trim().length >= 2 &&
+                          detailsForm.values.slug.trim() !== event.slug &&
+                          editionSlugStatus !== 'idle' && (
+                            <p className={cn('text-xs', slugStatusClass(editionSlugStatus))}>
+                              {slugStatusLabel(editionSlugStatus)}
+                            </p>
+                          )}
+                      </div>
+                    </FormField>
+                  </div>
+
+                  <MarkdownField
+                    label={tDescription('label')}
+                    value={detailsForm.values.description}
+                    onChange={(value) => detailsForm.setFieldValue('description', value)}
+                    error={detailsForm.errors.description}
+                    disabled={detailsForm.isSubmitting}
+                    helperText={tDescription('help')}
+                    textareaClassName="resize-none"
+                    textareaProps={{ rows: 4 }}
+                  />
+
+                  <FormField label={t('details.timezone')} error={detailsForm.errors.timezone}>
+                    <select
+                      {...detailsForm.register('timezone')}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                      disabled={detailsForm.isSubmitting}
+                    >
+                      {TIMEZONE_OPTIONS.map((tz) => (
+                        <option key={tz.value} value={tz.value}>
+                          {tz.label}
+                        </option>
+                      ))}
+                    </select>
                   </FormField>
 
-                  <FormField label={t('details.endsAt')} error={detailsForm.errors.endsAt}>
-                    <DatePicker
-                      locale={locale}
-                      value={detailsForm.values.endsAt || ''}
-                      onChangeAction={(value) => detailsForm.setFieldValue('endsAt', value)}
-                      clearLabel={t('details.clearDate')}
-                    />
-                  </FormField>
-                </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <FormField label={t('details.startsAt')} error={detailsForm.errors.startsAt}>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_180px]">
+                        <DatePicker
+                          locale={locale}
+                          value={detailsForm.values.startsAt || ''}
+                          onChangeAction={(value) => detailsForm.setFieldValue('startsAt', value)}
+                          clearLabel={t('details.clearDate')}
+                        />
+                        <input
+                          type="time"
+                          step={60}
+                          value={detailsForm.values.startsAtTime}
+                          onChange={(event) =>
+                            detailsForm.setFieldValue('startsAtTime', event.target.value)
+                          }
+                          className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                          disabled={detailsForm.isSubmitting}
+                          aria-label={t('details.startsAtTime')}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {t('details.startsAtTimeHelp')}
+                      </p>
+                    </FormField>
+
+                    <FormField label={t('details.endsAt')} error={detailsForm.errors.endsAt}>
+                      <DatePicker
+                        locale={locale}
+                        value={detailsForm.values.endsAt || ''}
+                        onChangeAction={(value) => detailsForm.setFieldValue('endsAt', value)}
+                        clearLabel={t('details.clearDate')}
+                      />
+                    </FormField>
+                  </div>
+                </SettingsSubsection>
 
                 <div
                   ref={locationSectionRef}
@@ -920,7 +980,10 @@ export function EventSettingsForm({
                       if (location) {
                         detailsForm.setFieldValue('latitude', String(location.lat));
                         detailsForm.setFieldValue('longitude', String(location.lng));
-                        detailsForm.setFieldValue('locationDisplay', location.formattedAddress || '');
+                        detailsForm.setFieldValue(
+                          'locationDisplay',
+                          location.formattedAddress || '',
+                        );
                         if (location.city) detailsForm.setFieldValue('city', location.city);
                         if (location.region) detailsForm.setFieldValue('state', location.region);
                       } else {
@@ -955,7 +1018,10 @@ export function EventSettingsForm({
                       onChangeAction={(value) => {
                         const currentValue = detailsForm.values.registrationOpensAt;
                         const timepart = currentValue ? currentValue.split('T')[1] : '00:00';
-                        detailsForm.setFieldValue('registrationOpensAt', value ? `${value}T${timepart}` : '');
+                        detailsForm.setFieldValue(
+                          'registrationOpensAt',
+                          value ? `${value}T${timepart}` : '',
+                        );
                       }}
                       clearLabel={t('details.clearDate')}
                     />
@@ -975,7 +1041,10 @@ export function EventSettingsForm({
                       onChangeAction={(value) => {
                         const currentValue = detailsForm.values.registrationClosesAt;
                         const timepart = currentValue ? currentValue.split('T')[1] : '23:59';
-                        detailsForm.setFieldValue('registrationClosesAt', value ? `${value}T${timepart}` : '');
+                        detailsForm.setFieldValue(
+                          'registrationClosesAt',
+                          value ? `${value}T${timepart}` : '',
+                        );
                       }}
                       clearLabel={t('details.clearDate')}
                     />
@@ -995,124 +1064,122 @@ export function EventSettingsForm({
               </Button>
             </div>
           </Form>
-        </section>
+        </SettingsSection>
       )}
 
       {showCapacitySection && (
-      <section className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">{tCapacity('title')}</h2>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">{tCapacity('description')}</p>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{tCapacity('toggleLabel')}</p>
-              <p className="text-xs text-muted-foreground">{tCapacity('toggleHelp')}</p>
-            </div>
-            <Switch
-              checked={sharedCapacityEnabled}
-              onCheckedChange={(checked) => {
-                setCapacityScope(checked ? 'shared_pool' : 'per_distance');
-                setCapacityError(null);
-              }}
-              disabled={isUpdatingCapacity}
-            />
+        <section className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">{tCapacity('title')}</h2>
           </div>
+          <p className="text-sm text-muted-foreground mb-4">{tCapacity('description')}</p>
 
-          {sharedCapacityEnabled && (
-            <FormField label={tCapacity('sharedCapacityLabel')} error={capacityError}>
-              <div className="space-y-2">
-                <input
-                  type="number"
-                  min="1"
-                  value={sharedCapacityValue}
-                  onChange={(event) => setSharedCapacityValue(event.target.value)}
-                  placeholder={tCapacity('sharedCapacityPlaceholder')}
-                  className="w-full max-w-xs rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
-                  disabled={isUpdatingCapacity}
-                />
-                <p className="text-xs text-muted-foreground">{tCapacity('sharedCapacityHelp')}</p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{tCapacity('toggleLabel')}</p>
+                <p className="text-xs text-muted-foreground">{tCapacity('toggleHelp')}</p>
               </div>
-            </FormField>
-          )}
+              <Switch
+                checked={sharedCapacityEnabled}
+                onCheckedChange={(checked) => {
+                  setCapacityScope(checked ? 'shared_pool' : 'per_distance');
+                  setCapacityError(null);
+                }}
+                disabled={isUpdatingCapacity}
+              />
+            </div>
 
-          {!sharedCapacityEnabled && capacityError && (
-            <p className="text-sm text-destructive">{capacityError}</p>
-          )}
+            {sharedCapacityEnabled && (
+              <FormField label={tCapacity('sharedCapacityLabel')} error={capacityError}>
+                <div className="space-y-2">
+                  <input
+                    type="number"
+                    min="1"
+                    value={sharedCapacityValue}
+                    onChange={(event) => setSharedCapacityValue(event.target.value)}
+                    placeholder={tCapacity('sharedCapacityPlaceholder')}
+                    className="w-full max-w-xs rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                    disabled={isUpdatingCapacity}
+                  />
+                  <p className="text-xs text-muted-foreground">{tCapacity('sharedCapacityHelp')}</p>
+                </div>
+              </FormField>
+            )}
 
-          <div className="flex justify-end">
-            <Button type="button" onClick={handleCapacitySave} disabled={isUpdatingCapacity}>
-              {isUpdatingCapacity ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              {tCapacity('save')}
-            </Button>
+            {!sharedCapacityEnabled && capacityError && (
+              <p className="text-sm text-destructive">{capacityError}</p>
+            )}
+
+            <div className="flex justify-end">
+              <Button type="button" onClick={handleCapacitySave} disabled={isUpdatingCapacity}>
+                {isUpdatingCapacity ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {tCapacity('save')}
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
       )}
 
       {showDistancesSection && (
-      <section className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">{t('distances.title')}</h2>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAddDistance(true)}
-            disabled={showAddDistance}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            {t('distances.add')}
-          </Button>
-        </div>
-
-        {showAddDistance && (
-          <AddDistanceForm
-            eventId={event.id}
-            sharedCapacityEnabled={sharedCapacityEnabled}
-            onSuccess={(newDistance) => {
-              pendingDistanceIdsRef.current.add(newDistance.id);
-              setDistances((prev) => [...prev, newDistance]);
-              setShowAddDistance(false);
-            }}
-            onCancel={() => setShowAddDistance(false)}
-          />
-        )}
-
-        {distances.length === 0 && !showAddDistance ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">
-            {t('distances.empty')}
-          </p>
-        ) : (
-          <div className="divide-y">
-            {distances.map((distance) => (
-              <DistanceItem
-                key={distance.id}
-                distance={distance}
-                isEditing={editingDistanceId === distance.id}
-                sharedCapacityEnabled={sharedCapacityEnabled}
-                onEdit={() => setEditingDistanceId(distance.id)}
-                onCancelEdit={() => setEditingDistanceId(null)}
-                onUpdate={(updated) => {
-                  setDistances((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
-                  setEditingDistanceId(null);
-                }}
-                onDelete={() => {
-                  pendingDistanceIdsRef.current.delete(distance.id);
-                  setDistances((prev) => prev.filter((d) => d.id !== distance.id));
-                }}
-              />
-            ))}
+        <section className="rounded-lg border bg-card p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">{t('distances.title')}</h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAddDistance(true)}
+              disabled={showAddDistance}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              {t('distances.add')}
+            </Button>
           </div>
-        )}
-      </section>
+
+          {showAddDistance && (
+            <AddDistanceForm
+              eventId={event.id}
+              sharedCapacityEnabled={sharedCapacityEnabled}
+              onSuccess={(newDistance) => {
+                pendingDistanceIdsRef.current.add(newDistance.id);
+                setDistances((prev) => [...prev, newDistance]);
+                setShowAddDistance(false);
+              }}
+              onCancel={() => setShowAddDistance(false)}
+            />
+          )}
+
+          {distances.length === 0 && !showAddDistance ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">{t('distances.empty')}</p>
+          ) : (
+            <div className="divide-y">
+              {distances.map((distance) => (
+                <DistanceItem
+                  key={distance.id}
+                  distance={distance}
+                  isEditing={editingDistanceId === distance.id}
+                  sharedCapacityEnabled={sharedCapacityEnabled}
+                  onEdit={() => setEditingDistanceId(distance.id)}
+                  onCancelEdit={() => setEditingDistanceId(null)}
+                  onUpdate={(updated) => {
+                    setDistances((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+                    setEditingDistanceId(null);
+                  }}
+                  onDelete={() => {
+                    pendingDistanceIdsRef.current.delete(distance.id);
+                    setDistances((prev) => prev.filter((d) => d.id !== distance.id));
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </section>
       )}
 
       <Dialog open={showSlugConfirm} onOpenChange={setShowSlugConfirm}>
@@ -1130,11 +1197,7 @@ export function EventSettingsForm({
             >
               {t('details.slugConfirm.cancel')}
             </Button>
-            <Button
-              type="button"
-              onClick={confirmSlugChange}
-              disabled={detailsForm.isSubmitting}
-            >
+            <Button type="button" onClick={confirmSlugChange} disabled={detailsForm.isSubmitting}>
               {t('details.slugConfirm.confirm')}
             </Button>
           </DialogFooter>

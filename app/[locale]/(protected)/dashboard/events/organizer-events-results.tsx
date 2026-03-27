@@ -2,11 +2,15 @@
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import type { OrganizerEventSummary } from '@/lib/events/queries';
-import { hasOrganizerEventsFilters, type NormalizedOrganizerEventsQuery } from '@/lib/events/organizer-events';
+import {
+  hasOrganizerEventsFilters,
+  type NormalizedOrganizerEventsQuery,
+} from '@/lib/events/organizer-events';
 import { cn } from '@/lib/utils';
-import { Calendar, ChevronRight, MapPin, Plus, Users } from 'lucide-react';
+import { Calendar, ChevronRight, Image as ImageIcon, MapPin, Plus, Users } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -43,10 +47,7 @@ function OrganizerEventsListSkeleton() {
   return (
     <div className="space-y-4" aria-hidden="true">
       {LIST_ITEMS.map((_, index) => (
-        <div
-          key={`event-skeleton-${index}`}
-          className="overflow-hidden rounded-xl border bg-card shadow-sm"
-        >
+        <Surface key={`event-skeleton-${index}`} className="overflow-hidden p-0">
           <div className="flex flex-col sm:flex-row">
             <Skeleton className="relative aspect-[16/9] w-full sm:aspect-auto sm:h-28 sm:w-44" />
             <div className="flex min-w-0 flex-1 items-start justify-between gap-4 p-4 sm:p-5">
@@ -65,7 +66,7 @@ function OrganizerEventsListSkeleton() {
               <Skeleton className="h-5 w-5" />
             </div>
           </div>
-        </div>
+        </Surface>
       ))}
     </div>
   );
@@ -84,7 +85,7 @@ export function OrganizerEventsResults({
 
   if (totalEvents === 0) {
     return (
-      <div className="rounded-lg border bg-card p-8 shadow-sm">
+      <Surface className="p-8">
         <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
           <div className="rounded-full bg-muted p-4">
             <Calendar className="h-8 w-8 text-muted-foreground" />
@@ -100,7 +101,7 @@ export function OrganizerEventsResults({
             </Link>
           </Button>
         </div>
-      </div>
+      </Surface>
     );
   }
 
@@ -114,15 +115,11 @@ export function OrganizerEventsResults({
         onPendingChange={setIsSearchPending}
       />
 
-      <div
-        className="space-y-4"
-        aria-live="polite"
-        aria-busy={isSearchPending ? 'true' : 'false'}
-      >
+      <div className="space-y-4" aria-live="polite" aria-busy={isSearchPending ? 'true' : 'false'}>
         {isSearchPending ? (
           <OrganizerEventsListSkeleton />
         ) : filteredEvents.length === 0 ? (
-          <div className="rounded-lg border bg-card p-8 shadow-sm">
+          <Surface className="p-8">
             <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
               <div className="rounded-full bg-muted p-4">
                 <Calendar className="h-8 w-8 text-muted-foreground" />
@@ -139,17 +136,17 @@ export function OrganizerEventsResults({
                 </Button>
               ) : null}
             </div>
-          </div>
+          </Surface>
         ) : (
           <div className="space-y-4">
             {filteredEvents.map((event) => (
               <Link
                 key={event.id}
                 href={{ pathname: '/dashboard/events/[eventId]', params: { eventId: event.id } }}
-                className="group block overflow-hidden rounded-xl border bg-card shadow-sm transition-all hover:border-primary/50 hover:shadow-md"
+                className="group block overflow-hidden rounded-2xl border border-border/70 bg-card/90 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all hover:border-primary/50 hover:shadow-md"
               >
                 <div className="flex flex-col sm:flex-row">
-                  <div className="relative aspect-[16/9] w-full bg-muted sm:aspect-auto sm:h-28 sm:w-44">
+                  <div className="relative aspect-[16/9] w-full self-stretch overflow-hidden bg-muted sm:w-44 sm:self-stretch sm:border-r sm:border-border/60">
                     {event.heroImageUrl ? (
                       <Image
                         src={event.heroImageUrl}
@@ -159,13 +156,23 @@ export function OrganizerEventsResults({
                         className="object-cover"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-muted to-background" />
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-muted/90 to-muted/60" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.12),transparent_55%)]" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="flex flex-col items-center gap-2 text-muted-foreground/70">
+                            <div className="rounded-full border border-border/70 bg-background/30 p-2.5 backdrop-blur-sm">
+                              <ImageIcon className="h-5 w-5" />
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
                     <div className="absolute inset-0 ring-1 ring-inset ring-black/5" />
                   </div>
 
                   <div className="flex min-w-0 flex-1 items-start justify-between gap-4 p-4 sm:p-5">
-                    <div className="min-w-0 space-y-2">
+                    <div className="min-w-0 flex-1 space-y-3">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <h3 className="min-w-0 flex-1 truncate text-base font-semibold sm:text-lg">
                           {event.seriesName} {event.editionLabel}
@@ -181,28 +188,28 @@ export function OrganizerEventsResults({
                         </span>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                      <InsetSurface className="grid gap-2 bg-muted/25 sm:grid-cols-3">
                         {event.startsAt ? (
-                          <div className="flex items-center gap-1 whitespace-nowrap">
-                            <Calendar className="h-4 w-4" />
+                          <div className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4 shrink-0" />
                             <span>{formatDate(event.startsAt, locale)}</span>
                           </div>
                         ) : null}
                         {event.city || event.state ? (
-                          <div className="flex items-center gap-1 min-w-0">
+                          <div className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-4 w-4 shrink-0" />
                             <span className="truncate">
                               {[event.city, event.state].filter(Boolean).join(', ')}
                             </span>
                           </div>
                         ) : null}
-                        <div className="flex items-center gap-1 whitespace-nowrap">
-                          <Users className="h-4 w-4" />
+                        <div className="flex items-center gap-2 whitespace-nowrap text-sm text-muted-foreground">
+                          <Users className="h-4 w-4 shrink-0" />
                           <span>
                             {event.registrationCount} {t('registrationCount')}
                           </span>
                         </div>
-                      </div>
+                      </InsetSurface>
 
                       <p className="text-xs text-muted-foreground">
                         {event.organizationName} &bull; {event.distanceCount}{' '}

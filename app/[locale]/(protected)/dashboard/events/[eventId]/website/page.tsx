@@ -1,4 +1,5 @@
 import { getPathname } from '@/i18n/navigation';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { canUserAccessSeries } from '@/lib/organizations/permissions';
@@ -43,8 +44,7 @@ export default async function EventWebsitePage({ params }: WebsitePageProps) {
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -66,39 +66,55 @@ export default async function EventWebsitePage({ params }: WebsitePageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
-            <p className="text-muted-foreground">{t('description')}</p>
+      <Surface className="overflow-hidden border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-6 sm:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+          <div className="space-y-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('title')}</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+              {t('description')}
+            </p>
           </div>
 
-          <WebsitePreviewSheet
-            triggerLabel={t('preview.title')}
-            title={t('preview.title')}
-            description={t('preview.description')}
-          >
-            <div className="rounded-lg border bg-card p-6">
-              {previewBlocks ? (
-                <WebsiteContentRenderer
-                  blocks={previewBlocks}
-                  mediaUrls={previewMediaUrls}
-                  showSponsors={true}
-                  labels={{
-                    documents: tPublic('detail.website.documents'),
-                    photos: tPublic('detail.website.photos'),
-                    terrain: tPublic('detail.website.terrain'),
-                    download: tPublic('detail.website.download'),
-                    sponsors: tPublic('detail.website.sponsors'),
-                  }}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">{t('preview.empty')}</p>
-              )}
-            </div>
-          </WebsitePreviewSheet>
+          <div className="space-y-4">
+            <InsetSurface className="border-border/60 bg-background/80 p-5">
+              <div className="space-y-1">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  {t('title')}
+                </p>
+                <p className="text-sm font-medium text-foreground">
+                  {event.seriesName} {event.editionLabel}
+                </p>
+                <p className="text-sm text-muted-foreground">{event.organizationName}</p>
+              </div>
+            </InsetSurface>
+
+            <WebsitePreviewSheet
+              triggerLabel={t('preview.title')}
+              title={t('preview.title')}
+              description={t('preview.description')}
+            >
+              <div className="rounded-lg border bg-card p-6">
+                {previewBlocks ? (
+                  <WebsiteContentRenderer
+                    blocks={previewBlocks}
+                    mediaUrls={previewMediaUrls}
+                    showSponsors={true}
+                    labels={{
+                      documents: tPublic('detail.website.documents'),
+                      photos: tPublic('detail.website.photos'),
+                      terrain: tPublic('detail.website.terrain'),
+                      download: tPublic('detail.website.download'),
+                      sponsors: tPublic('detail.website.sponsors'),
+                    }}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">{t('preview.empty')}</p>
+                )}
+              </div>
+            </WebsitePreviewSheet>
+          </div>
         </div>
-      </div>
+      </Surface>
 
       <WebsiteContentEditor
         editionId={eventId}

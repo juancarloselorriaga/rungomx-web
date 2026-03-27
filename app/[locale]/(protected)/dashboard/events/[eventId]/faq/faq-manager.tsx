@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
+import { Surface } from '@/components/ui/surface';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createFaqItem, updateFaqItem, deleteFaqItem, reorderFaqItems } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
@@ -222,22 +223,19 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
       {/* FAQ list */}
       <div className="space-y-3">
         {faqItems.length === 0 && !isAdding && (
-          <div className="rounded-lg border bg-card p-8 text-center">
+          <Surface className="p-8 text-center">
             <p className="text-muted-foreground mb-4">{t('emptyState')}</p>
             <Button onClick={() => setIsAdding(true)}>
               <Plus className="h-4 w-4 mr-2" />
               {t('addFirst')}
             </Button>
-          </div>
+          </Surface>
         )}
 
         {faqItems.map((item, index) => (
-          <div
+          <Surface
             key={item.id}
-            className={cn(
-              'rounded-lg border bg-card shadow-sm transition-all',
-              editingId === item.id && 'ring-2 ring-primary',
-            )}
+            className={cn('transition-all', editingId === item.id && 'ring-2 ring-primary')}
           >
             {editingId === item.id ? (
               // Editing mode
@@ -262,7 +260,13 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                   textareaProps={{ rows: 3, name: 'answer' }}
                 />
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="ghost" size="sm" onClick={cancelEdit} disabled={isPending}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={cancelEdit}
+                    disabled={isPending}
+                  >
                     <X className="h-4 w-4 mr-1" />
                     {t('cancel')}
                   </Button>
@@ -274,7 +278,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                       </>
                     ) : (
                       <>
-                      <Save className="h-4 w-4 mr-1" />
+                        <Save className="h-4 w-4 mr-1" />
                         {t('save')}
                       </>
                     )}
@@ -284,118 +288,120 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
             ) : (
               // View mode
               <div className="p-4">
-	                <div className="flex items-start gap-3">
-	                  <div className="flex flex-col gap-1 pt-1">
-	                    <IconButton
-	                      label={t('actions.moveUp')}
-	                      variant="ghost"
-	                      size="icon-sm"
-	                      onClick={() => handleMoveUp(index)}
-	                      disabled={index === 0 || isPending}
-	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-	                    >
-	                      <GripVertical className="h-4 w-4 rotate-90" />
-	                    </IconButton>
-	                    <IconButton
-	                      label={t('actions.moveDown')}
-	                      variant="ghost"
-	                      size="icon-sm"
-	                      onClick={() => handleMoveDown(index)}
-	                      disabled={index === faqItems.length - 1 || isPending}
-	                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
-	                    >
-	                      <GripVertical className="h-4 w-4 -rotate-90" />
-	                    </IconButton>
-	                  </div>
-	                  <div className="flex-1 min-w-0">
-	                    <h3 className="font-medium">{item.question}</h3>
-	                    <div className="mt-1">
+                <div className="flex items-start gap-3">
+                  <div className="flex flex-col gap-1 pt-1">
+                    <IconButton
+                      label={t('actions.moveUp')}
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleMoveUp(index)}
+                      disabled={index === 0 || isPending}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <GripVertical className="h-4 w-4 rotate-90" />
+                    </IconButton>
+                    <IconButton
+                      label={t('actions.moveDown')}
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === faqItems.length - 1 || isPending}
+                      className="text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <GripVertical className="h-4 w-4 -rotate-90" />
+                    </IconButton>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium">{item.question}</h3>
+                    <div className="mt-1">
                       <MarkdownContent
                         content={item.answer}
                         className="text-sm text-muted-foreground [&_p]:m-0"
                       />
                     </div>
-	                  </div>
-	                  <div className="flex items-start gap-1">
-	                    <IconButton
-	                      label={t('actions.edit')}
-	                      variant="ghost"
-	                      size="icon"
-	                      onClick={() => startEditing(item)}
-	                      disabled={isPending}
-	                    >
-	                      <Pencil className="h-4 w-4" />
-	                    </IconButton>
-	                    <IconButton
-	                      label={t('actions.delete')}
-	                      variant="ghost"
-	                      size="icon"
-	                      onClick={() => handleDelete(item.id)}
-	                      disabled={isPending}
-	                      className="text-destructive hover:text-destructive"
-	                    >
-	                      <Trash2 className="h-4 w-4" />
-	                    </IconButton>
-	                  </div>
-	                </div>
-	              </div>
-	            )}
-          </div>
+                  </div>
+                  <div className="flex items-start gap-1">
+                    <IconButton
+                      label={t('actions.edit')}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startEditing(item)}
+                      disabled={isPending}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </IconButton>
+                    <IconButton
+                      label={t('actions.delete')}
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(item.id)}
+                      disabled={isPending}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </IconButton>
+                  </div>
+                </div>
+              </div>
+            )}
+          </Surface>
         ))}
       </div>
 
       {/* Add new FAQ form */}
       {isAdding && (
-        <form className="rounded-lg border bg-card p-4 shadow-sm space-y-4" onSubmit={handleAdd}>
-          <FormField label={t('questionLabel')} required>
-            <input
-              name="question"
-              type="text"
-              value={formQuestion}
-              onChange={(e) => setFormQuestion(e.target.value)}
-              placeholder={t('questionPlaceholder')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+        <Surface className="p-4">
+          <form className="space-y-4" onSubmit={handleAdd}>
+            <FormField label={t('questionLabel')} required>
+              <input
+                name="question"
+                type="text"
+                value={formQuestion}
+                onChange={(e) => setFormQuestion(e.target.value)}
+                placeholder={t('questionPlaceholder')}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30"
+                disabled={isPending}
+              />
+            </FormField>
+            <MarkdownField
+              label={t('answerLabel')}
+              required
+              value={formAnswer}
+              onChange={setFormAnswer}
               disabled={isPending}
-            />
-          </FormField>
-          <MarkdownField
-            label={t('answerLabel')}
-            required
-            value={formAnswer}
-            onChange={setFormAnswer}
-            disabled={isPending}
-            textareaClassName="resize-none"
-            textareaProps={{
-              name: 'answer',
-              placeholder: t('answerPlaceholder'),
-              rows: 3,
-            }}
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsAdding(false);
-                setFormQuestion('');
-                setFormAnswer('');
+              textareaClassName="resize-none"
+              textareaProps={{
+                name: 'answer',
+                placeholder: t('answerPlaceholder'),
+                rows: 3,
               }}
-              disabled={isPending}
-            >
-              <X className="h-4 w-4 mr-1" />
-              {t('cancel')}
-            </Button>
-            <Button type="submit" size="sm" disabled={isPending}>
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <Plus className="h-4 w-4 mr-1" />
-              )}
-              {t('add')}
-            </Button>
-          </div>
-        </form>
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setIsAdding(false);
+                  setFormQuestion('');
+                  setFormAnswer('');
+                }}
+                disabled={isPending}
+              >
+                <X className="h-4 w-4 mr-1" />
+                {t('cancel')}
+              </Button>
+              <Button type="submit" size="sm" disabled={isPending}>
+                {isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1" />
+                )}
+                {t('add')}
+              </Button>
+            </div>
+          </form>
+        </Surface>
       )}
 
       {/* Add button */}
