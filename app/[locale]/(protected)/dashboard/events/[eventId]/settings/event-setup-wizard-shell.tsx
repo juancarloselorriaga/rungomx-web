@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { MutedSurface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
@@ -616,7 +617,7 @@ export function EventSetupWizardShell({
           >
             {activeStep.id === 'review' ? (
               isReviewRefreshPending ? (
-                <div className="space-y-6" data-motion-item>
+                <div className="space-y-6" data-motion-item aria-busy="true" aria-live="polite">
                   <div className="rounded-[28px] border border-primary/20 bg-primary/5 p-6 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                       {t('wizardShell.review.finishLineLabel')}
@@ -630,12 +631,43 @@ export function EventSetupWizardShell({
                     <p className="mt-3 text-xs leading-5 text-muted-foreground">
                       {t('wizardShell.review.serverAuthority')}
                     </p>
+                    <div className="mt-5 grid gap-3 border-t border-border/50 pt-5 sm:grid-cols-3">
+                      {[0, 1, 2].map((index) => (
+                        <div key={`review-rechecking-count-${index}`} className="space-y-2">
+                          <Skeleton className="h-3 w-24" />
+                          <Skeleton className="h-6 w-12" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="space-y-4 rounded-3xl border border-border/70 bg-background p-6">
+                      <Skeleton className="h-6 w-52" />
+                      <Skeleton className="h-4 w-full" />
+                      <div className="space-y-3 pt-2">
+                        <Skeleton className="h-[72px] w-full rounded-2xl" />
+                        <Skeleton className="h-[72px] w-full rounded-2xl" />
+                        <Skeleton className="h-[72px] w-full rounded-2xl" />
+                      </div>
+                    </div>
+                    <div className="space-y-4 rounded-3xl border border-border/70 bg-background p-6">
+                      <Skeleton className="h-6 w-56" />
+                      <Skeleton className="h-4 w-full" />
+                      <div className="space-y-3 pt-2">
+                        <Skeleton className="h-[72px] w-full rounded-2xl" />
+                        <Skeleton className="h-[72px] w-full rounded-2xl" />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
-                    <p className="text-sm text-muted-foreground">
-                      {t('wizardShell.review.recheckingBody')}
-                    </p>
+                    <p className="sr-only">{t('wizardShell.review.recheckingBody')}</p>
+                    <div className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-11/12" />
+                      <Skeleton className="h-4 w-8/12" />
+                    </div>
                   </div>
                 </div>
               ) : (

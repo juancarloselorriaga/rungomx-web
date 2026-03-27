@@ -16,7 +16,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
-import { OrganizerEventsResults } from './organizer-events-results';
+import { OrganizerEventsResults } from '../organizer-events-results';
 
 export async function generateMetadata({ params }: LocalePageProps): Promise<Metadata> {
   const { locale } = await params;
