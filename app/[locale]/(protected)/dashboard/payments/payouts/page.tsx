@@ -1,7 +1,7 @@
 import { Link } from '@/i18n/navigation';
 import { getPathname } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
-import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
+import { DashboardPageIntro } from '@/components/dashboard/page-intro';
 import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { PaymentsStatePanel } from '@/components/payments/payments-state-panel';
 import { PayoutHistoryTable } from '@/components/payments/payout-history-table';
@@ -159,17 +159,6 @@ export default async function DashboardPaymentsPayoutsPage({
             />
           </>
         }
-        aside={
-          <DashboardPageIntroMeta
-            eyebrow={t('home.organization.current')}
-            title={selectedOrganization.name}
-            items={[
-              { label: t('home.organization.title'), value: organizationCountLabel },
-              { label: t('home.organization.slugLabel'), value: selectedOrganization.slug },
-            ]}
-            className="bg-background/72"
-          />
-        }
       />
 
       {hasInvalidSelection ? (
@@ -191,6 +180,17 @@ export default async function DashboardPaymentsPayoutsPage({
           }
         />
       ) : null}
+
+      <OrganizerPaymentsContextCard
+        pathname="/dashboard/payments/payouts"
+        organizations={organizations}
+        selectedOrganization={selectedOrganization}
+        title={t('home.organization.title')}
+        description={t('home.organization.help')}
+        selectorLabel={t('home.organization.label')}
+        organizationCountLabel={organizationCountLabel}
+        slugLabel={t('home.organization.slugLabel')}
+      />
 
       <PayoutHistoryTable
         items={payouts}
@@ -221,19 +221,6 @@ export default async function DashboardPaymentsPayoutsPage({
         previousPageLabel={t('payouts.previousPageLabel')}
         nextPageLabel={t('payouts.nextPageLabel')}
         lastPageLabel={t('payouts.lastPageLabel')}
-      />
-
-      <OrganizerPaymentsContextCard
-        pathname="/dashboard/payments/payouts"
-        organizations={organizations}
-        selectedOrganization={selectedOrganization}
-        title={t('home.organization.title')}
-        description={t('home.organization.help')}
-        selectorLabel={t('home.organization.label')}
-        organizationCountLabel={organizationCountLabel}
-        slugLabel={t('home.organization.slugLabel')}
-        currentLabel={t('home.organization.current')}
-        selectedBadgeLabel={t('home.organization.selectedBadge')}
       />
     </div>
   );

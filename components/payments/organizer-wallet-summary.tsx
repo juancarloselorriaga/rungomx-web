@@ -54,11 +54,11 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
         </PaymentsTimestamp>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
-          <PaymentsInsetPanel key={card.key} className="space-y-2">
+          <PaymentsInsetPanel key={card.key} className="min-h-[5.75rem] space-y-2">
             <PaymentsMetricLabel>{t(`wallet.buckets.${card.key}`)}</PaymentsMetricLabel>
-            <PaymentsMetricValue className="text-xl sm:text-[1.75rem]">
+            <PaymentsMetricValue className="break-normal text-[1rem] sm:text-[1.15rem] lg:text-[1.25rem] leading-tight tracking-[-0.01em]">
               {formatMoneyFromMinor(card.value, 'MXN', locale)}
             </PaymentsMetricValue>
           </PaymentsInsetPanel>

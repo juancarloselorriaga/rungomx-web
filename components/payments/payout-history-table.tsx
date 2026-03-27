@@ -185,7 +185,7 @@ export function PayoutHistoryTable({
       </PaymentsResponsiveList>
 
       <div className="hidden md:block">
-        <PaymentsDataTable minWidthClassName="min-w-[48rem]">
+        <PaymentsDataTable minWidthClassName="min-w-[42rem]">
           <PaymentsDataTableHead>
             <tr>
               <PaymentsDataTableHeader>{t('payouts.table.requestId')}</PaymentsDataTableHeader>

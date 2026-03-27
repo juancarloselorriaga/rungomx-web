@@ -1,6 +1,6 @@
 import { Link } from '@/i18n/navigation';
 import { getPathname } from '@/i18n/navigation';
-import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
+import { DashboardPageIntro } from '@/components/dashboard/page-intro';
 import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { PaymentsStatePanel } from '@/components/payments/payments-state-panel';
 import { OrganizerPaymentsWorkspace } from '@/components/payments/organizer-payments-workspace';
@@ -99,7 +99,7 @@ export default async function DashboardPaymentsPage({
         title={t('home.title')}
         description={t('home.description')}
         actions={
-          <Button asChild variant="outline" className="w-full min-w-0 sm:w-auto">
+          <Button asChild className="w-full min-w-0 sm:w-auto">
             <Link
               href={{
                 pathname: '/dashboard/payments/payouts',
@@ -109,17 +109,6 @@ export default async function DashboardPaymentsPage({
               {t('actions.viewPayouts')}
             </Link>
           </Button>
-        }
-        aside={
-          <DashboardPageIntroMeta
-            eyebrow={t('home.organization.current')}
-            title={selectedOrganization.name}
-            items={[
-              { label: t('home.organization.title'), value: organizationCountLabel },
-              { label: t('home.organization.slugLabel'), value: selectedOrganization.slug },
-            ]}
-            className="bg-background/72"
-          />
         }
       />
 
@@ -143,14 +132,6 @@ export default async function DashboardPaymentsPage({
         />
       ) : null}
 
-      <OrganizerPaymentsWorkspace
-        key={selectedOrganization.id}
-        locale={locale as 'es' | 'en'}
-        organizationId={selectedOrganization.id}
-        organizationName={selectedOrganization.name}
-        initialData={initialWorkspaceData}
-      />
-
       <OrganizerPaymentsContextCard
         pathname="/dashboard/payments"
         organizations={organizations}
@@ -160,8 +141,14 @@ export default async function DashboardPaymentsPage({
         selectorLabel={t('home.organization.label')}
         organizationCountLabel={organizationCountLabel}
         slugLabel={t('home.organization.slugLabel')}
-        currentLabel={t('home.organization.current')}
-        selectedBadgeLabel={t('home.organization.selectedBadge')}
+      />
+
+      <OrganizerPaymentsWorkspace
+        key={selectedOrganization.id}
+        locale={locale as 'es' | 'en'}
+        organizationId={selectedOrganization.id}
+        organizationName={selectedOrganization.name}
+        initialData={initialWorkspaceData}
       />
     </div>
   );
