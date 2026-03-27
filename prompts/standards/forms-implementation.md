@@ -192,18 +192,18 @@ For profile-related forms (settings and completion), use the shared utilities in
 - Pages:
   - `app/[locale]/(protected)/settings/profile/page.tsx`
   - `app/[locale]/(protected)/settings/account/page.tsx`
+  - `app/[locale]/(protected)/settings/billing/page.tsx`
 - Navigation:
-  - Horizontal, route-based “tabs” via `SettingsSectionSubnav`
-    (`components/settings/settings-section-subnav.tsx`) between **Profile** and **Account**.
-  - These tabs mirror the admin users subnav pattern
-    (`components/admin/users/users-section-subnav.tsx`): active tab uses the `secondary` variant
-    and `shadow-sm`, inactive tabs use `ghost` + muted text.
-  - There is no side navigation shell for protected user settings; `SettingsShell` /
-    `SettingsNav` are legacy/utility components and should not be used for new protected
-    settings pages.
+  - Route navigation is owned by the protected settings sidebar submenu configured in
+    `app/[locale]/(protected)/settings/layout.tsx` via `SubmenuContextProvider` and the
+    `settings` entry in `components/layout/navigation/submenu-configs.ts`.
+  - Protected settings pages must **not** render duplicate in-content route navigation, tabs, or
+    section subnav.
+  - Shared protected settings shells may render heading, description, and content framing only.
 - Forms:
   - Profile: `ProfileSettingsForm` (`components/settings/profile/profile-settings-form.tsx`).
   - Account: `AccountNameForm`, `AccountPasswordForm` (`components/settings/account/*`).
+  - Billing: `BillingSettingsClient` (`components/settings/billing/billing-settings-client.tsx`).
 
 ### Admin settings
 
@@ -216,8 +216,8 @@ For profile-related forms (settings and completion), use the shared utilities in
     pattern:
     - Server page fetches & normalizes queries.
     - Client component handles interactive filtering, pagination, and table state.
-  - Horizontal subnav for internal vs self-signup users uses the same Button + Link “tabs”
-    pattern as protected settings.
+  - Horizontal subnav for internal vs self-signup users uses the Button + Link “tabs” pattern
+    within the admin users area.
 
 ---
 
@@ -290,5 +290,8 @@ When reviewing or generating a form, verify:
 - **UX**
   - [ ] Cancel/reset actions restore last saved values, not just initial defaults.
   - [ ] Success and error messaging is localized and uses consistent tone.
-  - [ ] In settings/admin views, related sections use route-based tabs/subnav (matching the admin
-        users pattern), not ad-hoc in-page toggles.
+  - [ ] In protected settings, route navigation comes from the sidebar submenu in
+        `app/[locale]/(protected)/settings/layout.tsx` /
+        `components/layout/navigation/submenu-configs.ts`, with no duplicate in-content tabs.
+  - [ ] In admin views, related sections use the established route-based subnav pattern instead of
+        ad-hoc in-page toggles.
