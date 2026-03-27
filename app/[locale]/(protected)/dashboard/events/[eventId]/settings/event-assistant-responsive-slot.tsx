@@ -9,10 +9,7 @@ import { useAssistantWorkspaceQueryState } from './event-assistant-workspace-sta
 const DESKTOP_MEDIA_QUERY = '(min-width: 1024px)';
 
 type EventAssistantMode = 'workspace' | 'inline';
-type EventAssistantPresentationTarget =
-  | 'mobile-workspace'
-  | 'desktop-workspace'
-  | 'inline-desktop';
+type EventAssistantPresentationTarget = 'mobile-workspace' | 'desktop-workspace' | 'inline-desktop';
 
 type EventAssistantResponsiveSlotProps = {
   assistant: ReactNode;
@@ -34,9 +31,7 @@ function resolvePresentationTarget(
     return 'mobile-workspace';
   }
 
-  return assistantMode === 'workspace'
-    ? 'desktop-workspace'
-    : 'inline-desktop';
+  return assistantMode === 'workspace' ? 'desktop-workspace' : 'inline-desktop';
 }
 
 function useDesktopBreakpoint() {
@@ -89,10 +84,7 @@ export function EventAssistantResponsiveSlot({
     lockedTarget: isOpen ? preferredTarget : null,
   });
 
-  if (
-    isOpen !== targetState.lastIsOpen ||
-    preferredTarget !== targetState.lastPreferredTarget
-  ) {
+  if (isOpen !== targetState.lastIsOpen || preferredTarget !== targetState.lastPreferredTarget) {
     setTargetState((currentState) => {
       if (
         isOpen === currentState.lastIsOpen &&
@@ -104,19 +96,17 @@ export function EventAssistantResponsiveSlot({
       return {
         lastIsOpen: isOpen,
         lastPreferredTarget: preferredTarget,
-        lockedTarget: !isOpen ? null : currentState.lockedTarget ?? preferredTarget,
+        lockedTarget: !isOpen ? null : (currentState.lockedTarget ?? preferredTarget),
       };
     });
   }
 
-  const activeTarget = isOpen
-    ? targetState.lockedTarget ?? preferredTarget
-    : preferredTarget;
+  const activeTarget = isOpen ? (targetState.lockedTarget ?? preferredTarget) : preferredTarget;
   const assistantPanel = <AssistantPanelInstance>{assistant}</AssistantPanelInstance>;
 
   if (assistantMode === 'inline') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         {activeTarget === 'mobile-workspace' ? (
           <div data-testid="event-assistant-target-mobile-workspace">
             <EventAssistantMobileWorkspace
@@ -129,7 +119,7 @@ export function EventAssistantResponsiveSlot({
         ) : null}
         <div className="min-w-0">{children}</div>
         {activeTarget === 'inline-desktop' ? (
-          <div className="max-w-3xl" data-testid="event-assistant-target-desktop-inline">
+          <div className="max-w-4xl" data-testid="event-assistant-target-desktop-inline">
             {assistantPanel}
           </div>
         ) : null}
@@ -138,7 +128,7 @@ export function EventAssistantResponsiveSlot({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {activeTarget === 'mobile-workspace' ? (
         <div data-testid="event-assistant-target-mobile-workspace">
           <EventAssistantMobileWorkspace

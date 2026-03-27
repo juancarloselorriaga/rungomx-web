@@ -1,11 +1,15 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Sparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 import { useAssistantWorkspaceQueryState } from './event-assistant-workspace-state';
 
@@ -30,17 +34,12 @@ export function EventAssistantMobileWorkspace({
             type="button"
             variant="outline"
             onClick={() => setOpen(true)}
-            className={cn(
-              'h-auto w-full justify-start gap-3 rounded-xl border border-border/70 bg-card/90 px-4 py-3 text-left text-foreground shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80',
-            )}
+            className="h-auto w-full justify-start rounded-2xl border border-border/60 bg-background px-4 py-3 text-left text-foreground shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
             aria-label={triggerLabel}
           >
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="size-4" />
-            </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">{triggerLabel}</span>
-              <span className="mt-0.5 block text-xs leading-5 text-muted-foreground">
+              <span className="mt-1 block text-xs leading-5 text-muted-foreground">
                 {triggerHint}
               </span>
             </span>
@@ -51,7 +50,7 @@ export function EventAssistantMobileWorkspace({
       <Sheet open={isOpen} onOpenChange={setOpen}>
         <SheetContent
           side="bottom"
-          className="flex h-[88dvh] max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-t-3xl p-0 lg:hidden"
+          className="flex h-[88dvh] max-h-[88dvh] flex-col gap-0 overflow-hidden rounded-t-3xl border-x border-t border-border/60 bg-background p-0 lg:hidden"
         >
           <div className="mx-auto mt-3 h-1.5 w-10 rounded-full bg-muted" />
           <SheetHeader className="sr-only">

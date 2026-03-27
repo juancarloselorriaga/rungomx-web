@@ -165,6 +165,22 @@
     "title": "Asistente de configuración",
     "description": "Cuéntame sobre tu evento y te sugeriré cambios que puedes revisar y aplicar.",
     "contract": "Yo solo sugiero cambios. Nada se actualiza hasta que tú los apliques.",
+    "trust": {
+      "title": "Revisa antes de aplicar",
+      "applyLabel": "Aplicar cambios",
+      "applyDescription": "Escribe la propuesta actual en este paso del evento.",
+      "applyOnly": "Aplica solo cuando la propuesta ya se vea correcta para el evento guardado.",
+      "saveLabel": "Guardar notas",
+      "saveDescription": "Actualiza solo tus notas del organizador. No cambia los campos del evento.",
+      "recoveryLabel": "Si algo falla",
+      "recoveryDescription": "La propuesta y tus notas se quedan aquí para que puedas reintentar o ajustarlas sin empezar de nuevo."
+    },
+    "recovery": {
+      "title": "Esta propuesta no se aplicó",
+      "description": "No se guardó nada nuevo en ese intento. Revisa la propuesta, ajusta tu solicitud o vuelve a aplicar cuando quieras.",
+      "partialTitle": "Algunos cambios se aplicaron antes de que fallara la solicitud",
+      "partialDescription": "Revisa la configuración actualizada del evento antes de aplicar algo más. La propuesta se queda aquí para que confirmes qué sigue pendiente."
+    },
     "historyLabel": "Conversación con el asistente",
     "composer": {
       "sectionTitle": "¿En qué necesitas ayuda en este paso?",

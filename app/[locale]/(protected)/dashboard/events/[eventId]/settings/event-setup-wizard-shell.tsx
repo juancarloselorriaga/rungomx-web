@@ -131,10 +131,7 @@ function resolvePreferredStepId(
   fallbackStepId: EventSetupWizardStepId | undefined,
 ): EventSetupWizardStepId | undefined {
   return (
-    readStepIdFromLocation() ??
-    initialStepId ??
-    readStoredStepId(storageKey) ??
-    fallbackStepId
+    readStepIdFromLocation() ?? initialStepId ?? readStoredStepId(storageKey) ?? fallbackStepId
   );
 }
 
@@ -176,7 +173,11 @@ export function EventSetupWizardShell({
   const activeStepStorageKey = `event-setup-wizard:active-step:${eventId}`;
   const skippedStepsStorageKey = `event-setup-wizard:skipped:${eventId}`;
   const [activeStepIndex, setActiveStepIndex] = useState(() => {
-    const preferredStepId = resolvePreferredStepId(activeStepStorageKey, initialStepId, steps[0]?.id);
+    const preferredStepId = resolvePreferredStepId(
+      activeStepStorageKey,
+      initialStepId,
+      steps[0]?.id,
+    );
     return resolveCanonicalStepIndex(steps, preferredStepId);
   });
   const [skippedStepIds, setSkippedStepIds] = useState<EventSetupWizardStepId[]>(() => {
@@ -208,15 +209,21 @@ export function EventSetupWizardShell({
   const setupBlockerCount = reviewBlockers.filter((issue) => issue.kind === 'required').length;
   const hasReviewRecommendations = reviewRecommendations.length > 0;
   const reviewState =
-    reviewBlockers.length > 0 ? 'blocked' : hasReviewRecommendations ? 'reviewRecommended' : 'ready';
+    reviewBlockers.length > 0
+      ? 'blocked'
+      : hasReviewRecommendations
+        ? 'reviewRecommended'
+        : 'ready';
   const totalCompletedSteps = steps.filter((step) => step.completed).length;
   const canGoBack = activeStepIndex > 0;
-  const isCurrentSatisfied = activeStep.completed || sanitizedSkippedStepIds.includes(activeStep.id);
+  const isCurrentSatisfied =
+    activeStep.completed || sanitizedSkippedStepIds.includes(activeStep.id);
   const firstIncompleteRequiredBeforeNext = steps
     .slice(0, Math.min(activeStepIndex + 1, steps.length - 1))
     .find((step) => step.required && !step.completed);
   const canAdvanceFromCurrent = !firstIncompleteRequiredBeforeNext;
-  const canGoForward = activeStepIndex < steps.length - 1 && isCurrentSatisfied && canAdvanceFromCurrent;
+  const canGoForward =
+    activeStepIndex < steps.length - 1 && isCurrentSatisfied && canAdvanceFromCurrent;
   const showSkipAction =
     activeStepIndex < steps.length - 1 &&
     !activeStep.required &&
@@ -308,11 +315,16 @@ export function EventSetupWizardShell({
     return () => window.removeEventListener('popstate', handlePopState);
   }, [activeStep, startReviewRefreshBoundary, steps]);
 
-  const navigateToStep = (targetIndex: number, mode: 'push' | 'replace' = 'push') => {
+  const navigateToStep = (
+    targetIndex: number,
+    mode: 'push' | 'replace' = 'push',
+    options?: { preserveRequestedStep?: boolean },
+  ) => {
     if (targetIndex < 0 || targetIndex >= steps.length) return;
     const targetStep = steps[targetIndex];
     if (!targetStep) return;
-    const canonicalIndex = resolveCanonicalStepIndex(steps, targetStep.id);
+    const canonicalIndex =
+      options?.preserveRequestedStep ? targetIndex : resolveCanonicalStepIndex(steps, targetStep.id);
     const canonicalStep = steps[canonicalIndex];
     if (!canonicalStep) return;
 
@@ -331,7 +343,9 @@ export function EventSetupWizardShell({
 
   const handleSkip = () => {
     if (!showSkipAction) return;
-    setSkippedStepIds((current) => (current.includes(activeStep.id) ? current : [...current, activeStep.id]));
+    setSkippedStepIds((current) =>
+      current.includes(activeStep.id) ? current : [...current, activeStep.id],
+    );
     navigateToStep(Math.min(steps.length - 1, activeStepIndex + 1));
   };
 
@@ -342,12 +356,16 @@ export function EventSetupWizardShell({
         ? t('wizardShell.footer.completeRequired', {
             step: getStepLabel(firstIncompleteRequiredBeforeNext.id),
           })
-      : showSkipAction
-        ? t('wizardShell.footer.optionalHint')
-        : t('wizardShell.footer.ready');
+        : showSkipAction
+          ? t('wizardShell.footer.optionalHint')
+          : t('wizardShell.footer.ready');
 
   const jumpToStep = (stepId: EventSetupWizardStepId) => {
-    navigateToStep(steps.findIndex((step) => step.id === stepId));
+    navigateToStep(
+      steps.findIndex((step) => step.id === stepId),
+      'push',
+      { preserveRequestedStep: true },
+    );
   };
 
   const scrollToReviewControls = () => {
@@ -356,11 +374,11 @@ export function EventSetupWizardShell({
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[32px] border border-border/70 bg-gradient-to-br from-background via-background to-primary/5 shadow-sm">
-        <div className="border-b border-border/60 px-5 py-4 sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[28px] border border-border/60 bg-background shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="border-b border-border/60 px-5 py-5 sm:px-6 lg:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                 {t('wizardShell.eyebrow')}
               </p>
               <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
@@ -369,17 +387,18 @@ export function EventSetupWizardShell({
               <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
                 {t('wizardShell.description')}
               </p>
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                <span className="rounded-full border border-border/70 bg-background/80 px-3 py-1 font-medium text-foreground">
+              <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                <span className="rounded-full border border-border/60 bg-muted/20 px-3 py-1 font-medium text-foreground">
                   {eventName}
                 </span>
                 <span>{organizationName}</span>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm font-medium text-foreground">
-                {statusLabel}
+            <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+              <div className="rounded-full border border-border/60 bg-muted/20 px-3 py-1.5 text-sm font-medium text-foreground">
+                <span className="text-muted-foreground">{t('wizardShell.progress.step')}</span>
+                <span className="ml-2">{statusLabel}</span>
               </div>
               <Button asChild variant="ghost" size="sm">
                 <Link href={exitHref}>
@@ -391,125 +410,131 @@ export function EventSetupWizardShell({
           </div>
         </div>
 
-        <div className="border-b border-border/60 px-5 py-4 sm:px-6 lg:px-8">
+        <div className="border-b border-border/60 px-5 py-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1240px] space-y-4">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-              <div className="min-w-0 max-w-3xl">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="min-w-0 max-w-3xl space-y-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   {t('wizardShell.progress.label')}
                 </p>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <p className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-lg">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl lg:text-2xl">
                     {t('wizardShell.progress.current', {
                       current: activeStepIndex + 1,
                       total: steps.length,
                     })}
                   </p>
-                  <span className="rounded-full border border-border/70 bg-background px-3 py-1 text-sm font-medium text-muted-foreground">
+                  <span className="rounded-full border border-border/60 bg-muted/20 px-3 py-1 text-sm font-medium text-foreground">
                     {getStepLabel(activeStep.id)}
                   </span>
-                  <p className="hidden text-sm text-muted-foreground lg:block">
-                    {getStepDescription(activeStep.id)}
-                  </p>
                 </div>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground lg:hidden">
+                <p className="text-sm leading-6 text-muted-foreground">
                   {getStepDescription(activeStep.id)}
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2 xl:justify-end">
-                <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm">
-                  <span className="font-semibold text-foreground">{totalCompletedSteps}</span>{' '}
-                  <span className="text-muted-foreground">
-                    {t('wizardShell.progress.completedValue', { total: steps.length })}
-                  </span>
+              <dl className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3 xl:max-w-xl xl:text-right">
+                <div className="space-y-1 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {t('wizardShell.progress.completedLabel')}
+                  </dt>
+                  <dd>
+                    <span className="font-semibold text-foreground">{totalCompletedSteps}</span>{' '}
+                    <span>{t('wizardShell.progress.completedValue', { total: steps.length })}</span>
+                  </dd>
                 </div>
-                <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm">
-                  <span className="text-muted-foreground">
+                <div className="space-y-1 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {t('wizardShell.review.blockersTitle')}
+                  </dt>
+                  <dd>
                     {isReviewRefreshPending
                       ? t('wizardShell.review.recheckingCounts')
                       : t('wizardShell.progress.blockersValue', {
                           publish: publishBlockerCount,
                           required: setupBlockerCount,
                         })}
-                  </span>
+                  </dd>
                 </div>
-                <div className="rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm">
-                  <span className="text-muted-foreground">
+                <div className="space-y-1 rounded-2xl border border-border/50 bg-muted/15 px-4 py-3">
+                  <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    {t('wizardShell.review.skippedTitle')}
+                  </dt>
+                  <dd>
                     {t('wizardShell.progress.skippedValue', {
                       count: sanitizedSkippedStepIds.length,
                     })}
-                  </span>
+                  </dd>
                 </div>
-              </div>
+              </dl>
             </div>
 
             <div className="lg:hidden -mx-1 overflow-x-auto pb-1">
               <div className="flex min-w-max gap-2 px-1">
-              {steps.map((step, index) => {
-                const isCurrent = index === activeStepIndex;
-                const isSkipped = sanitizedSkippedStepIds.includes(step.id);
-                const isComplete = step.completed;
-                const stateLabel = isComplete
-                  ? t('wizardShell.sidebar.complete')
-                  : isSkipped
-                    ? t('wizardShell.sidebar.skipped')
-                    : step.required
-                      ? t('wizardShell.sidebar.required')
-                      : t('wizardShell.sidebar.optional');
+                {steps.map((step, index) => {
+                  const isCurrent = index === activeStepIndex;
+                  const isSkipped = sanitizedSkippedStepIds.includes(step.id);
+                  const isComplete = step.completed;
+                  const stateLabel = isComplete
+                    ? t('wizardShell.sidebar.complete')
+                    : isSkipped
+                      ? t('wizardShell.sidebar.skipped')
+                      : step.required
+                        ? t('wizardShell.sidebar.required')
+                        : t('wizardShell.sidebar.optional');
 
-                return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => navigateToStep(index)}
-                    className={cn(
-                      'flex min-w-[170px] items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition sm:min-w-[190px]',
-                      isCurrent
-                        ? 'border-primary/40 bg-primary/10 shadow-sm'
-                        : isComplete
-                          ? 'border-emerald-500/35 bg-emerald-500/12 hover:bg-emerald-500/16'
-                          : isSkipped
-                            ? 'border-amber-400/40 bg-amber-500/12 hover:bg-amber-500/16'
-                            : 'border-border/70 bg-background/80 hover:bg-muted/50',
-                    )}
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={cn(
-                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
-                            isCurrent
-                              ? 'bg-primary text-primary-foreground'
-                              : isComplete
-                                ? 'bg-emerald-500 text-white'
-                                : isSkipped
-                                  ? 'bg-amber-500 text-white'
-                                  : 'bg-muted text-muted-foreground',
-                          )}
-                        >
-                          {index + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-foreground">
-                            {getStepLabel(step.id)}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">{stateLabel}</p>
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => navigateToStep(index)}
+                      className={cn(
+                        'flex min-w-[170px] items-start justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition sm:min-w-[190px]',
+                        isCurrent
+                          ? 'border-primary/30 bg-primary/5 shadow-sm'
+                          : isComplete
+                            ? 'border-border/70 bg-muted/20 hover:bg-muted/30'
+                            : isSkipped
+                              ? 'border-border/70 bg-muted/10 hover:bg-muted/20'
+                              : 'border-border/70 bg-background hover:bg-muted/30',
+                      )}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              'flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+                              isCurrent
+                                ? 'bg-primary text-primary-foreground'
+                                : isComplete
+                                  ? 'bg-foreground text-background'
+                                  : isSkipped
+                                    ? 'bg-muted text-foreground'
+                                    : 'bg-muted text-muted-foreground',
+                            )}
+                          >
+                            {index + 1}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground">
+                              {getStepLabel(step.id)}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">{stateLabel}</p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    {isComplete ? (
-                      <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-300" />
-                    ) : isSkipped ? (
-                      <SkipForward className="mt-1 h-4 w-4 shrink-0 text-amber-300" />
-                    ) : isCurrent ? (
-                      <Circle className="mt-1 h-4 w-4 shrink-0 text-primary" />
-                    ) : (
-                      <CircleDashed className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
-                    )}
-                  </button>
-                );
-              })}
+                      {isComplete ? (
+                        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-foreground" />
+                      ) : isSkipped ? (
+                        <SkipForward className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : isCurrent ? (
+                        <Circle className="mt-1 h-4 w-4 shrink-0 text-primary" />
+                      ) : (
+                        <CircleDashed className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -534,12 +559,12 @@ export function EventSetupWizardShell({
                     className={cn(
                       'inline-flex items-center gap-3 rounded-full border px-3 py-2 text-left text-sm transition',
                       isCurrent
-                        ? 'border-primary/40 bg-primary/10 shadow-sm'
+                        ? 'border-primary/30 bg-primary/5 shadow-sm'
                         : isComplete
-                          ? 'border-emerald-500/35 bg-emerald-500/12 hover:bg-emerald-500/16'
+                          ? 'border-border/70 bg-muted/20 hover:bg-muted/30'
                           : isSkipped
-                            ? 'border-amber-400/40 bg-amber-500/12 hover:bg-amber-500/16'
-                            : 'border-border/70 bg-background/80 hover:bg-muted/50',
+                            ? 'border-border/70 bg-muted/10 hover:bg-muted/20'
+                            : 'border-border/70 bg-background hover:bg-muted/30',
                     )}
                     aria-current={isCurrent ? 'step' : undefined}
                     aria-label={`${getStepLabel(step.id)} - ${stateLabel}`}
@@ -550,9 +575,9 @@ export function EventSetupWizardShell({
                         isCurrent
                           ? 'bg-primary text-primary-foreground'
                           : isComplete
-                            ? 'bg-emerald-500 text-white'
+                            ? 'bg-foreground text-background'
                             : isSkipped
-                              ? 'bg-amber-500 text-white'
+                              ? 'bg-muted text-foreground'
                               : 'bg-muted text-muted-foreground',
                       )}
                     >
@@ -560,9 +585,9 @@ export function EventSetupWizardShell({
                     </span>
                     <span className="font-medium text-foreground">{getStepLabel(step.id)}</span>
                     {isComplete ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" />
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-foreground" />
                     ) : isSkipped ? (
-                      <SkipForward className="h-4 w-4 shrink-0 text-amber-300" />
+                      <SkipForward className="h-4 w-4 shrink-0 text-muted-foreground" />
                     ) : isCurrent ? (
                       <Circle className="h-4 w-4 shrink-0 text-primary" />
                     ) : (
@@ -576,7 +601,12 @@ export function EventSetupWizardShell({
         </div>
 
         <div className="px-5 py-6 sm:px-6 lg:px-8">
-          <div className={cn('mx-auto', activeStep.id === 'review' ? 'max-w-[1280px]' : 'max-w-[1240px]')}>
+          <div
+            className={cn(
+              'mx-auto',
+              activeStep.id === 'review' ? 'max-w-[1280px]' : 'max-w-[1240px]',
+            )}
+          >
             {activeStep.id === 'review' ? (
               isReviewRefreshPending ? (
                 <div className="space-y-6">
@@ -605,11 +635,11 @@ export function EventSetupWizardShell({
                 <div className="space-y-6">
                   <div
                     className={cn(
-                      'rounded-[28px] border p-6 shadow-sm',
+                      'rounded-[28px] border p-6',
                       reviewState === 'ready'
-                        ? 'border-emerald-500/35 bg-emerald-500/12'
+                        ? 'border-border/60 bg-muted/15'
                         : reviewState === 'reviewRecommended'
-                          ? 'border-amber-400/45 bg-amber-500/10'
+                          ? 'border-border/60 bg-muted/15'
                           : 'border-destructive/20 bg-destructive/5',
                     )}
                   >
@@ -644,7 +674,10 @@ export function EventSetupWizardShell({
 
                       <div className="flex flex-wrap gap-3">
                         {reviewBlockers.length > 0 ? (
-                          <Button type="button" onClick={() => jumpToStep(reviewBlockers[0]!.stepId)}>
+                          <Button
+                            type="button"
+                            onClick={() => jumpToStep(reviewBlockers[0]!.stepId)}
+                          >
                             {t('wizardShell.review.goToFirstBlocker')}
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
@@ -656,33 +689,37 @@ export function EventSetupWizardShell({
                         )}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                        {t('wizardShell.review.blockersTitle')}
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-foreground">{reviewBlockers.length}</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                        {t('wizardShell.review.recommendationsTitle')}
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-foreground">{reviewRecommendations.length}</p>
-                    </div>
-                    <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-                        {t('wizardShell.review.skippedTitle')}
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-foreground">
-                        {sanitizedSkippedStepIds.length}
-                      </p>
-                    </div>
+                    <dl className="mt-5 grid gap-3 border-t border-border/50 pt-5 text-sm text-muted-foreground sm:grid-cols-3">
+                      <div className="space-y-1">
+                        <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {t('wizardShell.review.blockersTitle')}
+                        </dt>
+                        <dd className="text-base font-semibold text-foreground">
+                          {reviewBlockers.length}
+                        </dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {t('wizardShell.review.recommendationsTitle')}
+                        </dt>
+                        <dd className="text-base font-semibold text-foreground">
+                          {reviewRecommendations.length}
+                        </dd>
+                      </div>
+                      <div className="space-y-1">
+                        <dt className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          {t('wizardShell.review.skippedTitle')}
+                        </dt>
+                        <dd className="text-base font-semibold text-foreground">
+                          {sanitizedSkippedStepIds.length}
+                        </dd>
+                      </div>
+                    </dl>
                   </div>
 
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
+                    <div className="rounded-3xl border border-border/60 bg-background p-6">
                       <h2 className="text-lg font-semibold text-foreground">
                         {t('wizardShell.review.blockersTitle')}
                       </h2>
@@ -695,8 +732,8 @@ export function EventSetupWizardShell({
                             className={cn(
                               'rounded-2xl border p-4 text-sm',
                               reviewState === 'ready'
-                                ? 'border-emerald-500/35 bg-emerald-500/12 text-emerald-100'
-                                : 'border-amber-400/45 bg-amber-500/10 text-amber-950',
+                                ? 'border-border/60 bg-muted/20 text-foreground'
+                                : 'border-border/60 bg-muted/20 text-foreground',
                             )}
                           >
                             {reviewState === 'ready'
@@ -719,7 +756,7 @@ export function EventSetupWizardShell({
                                       'rounded-full px-2 py-0.5 text-[11px] font-medium',
                                       issue.kind === 'publish'
                                         ? 'bg-destructive/10 text-destructive'
-                                        : 'bg-amber-100 text-amber-900',
+                                        : 'bg-muted text-foreground',
                                     )}
                                   >
                                     {issue.kind === 'publish'
@@ -730,9 +767,13 @@ export function EventSetupWizardShell({
                                     {getStepLabel(issue.stepId)}
                                   </span>
                                 </span>
-                                <span className="mt-1 block text-sm text-foreground">{issue.label}</span>
+                                <span className="mt-1 block text-sm text-foreground">
+                                  {issue.label}
+                                </span>
                                 <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground">
-                                  {t('wizardShell.review.goToStep', { step: getStepLabel(issue.stepId) })}
+                                  {t('wizardShell.review.goToStep', {
+                                    step: getStepLabel(issue.stepId),
+                                  })}
                                   <ArrowRight className="ml-1 h-3.5 w-3.5" />
                                 </span>
                               </span>
@@ -743,7 +784,7 @@ export function EventSetupWizardShell({
                     </div>
 
                     <div className="space-y-4">
-                      <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
+                      <div className="rounded-3xl border border-border/60 bg-background p-6">
                         <h2 className="text-lg font-semibold text-foreground">
                           {t('wizardShell.review.recommendationsTitle')}
                         </h2>
@@ -752,7 +793,7 @@ export function EventSetupWizardShell({
                         </p>
                         <div className="mt-4 space-y-3">
                           {reviewRecommendations.length === 0 ? (
-                            <div className="rounded-2xl border border-border/70 bg-muted/40 p-4 text-sm text-muted-foreground">
+                            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
                               {t('wizardShell.review.noRecommendations')}
                             </div>
                           ) : (
@@ -761,21 +802,25 @@ export function EventSetupWizardShell({
                                 key={issue.id}
                                 type="button"
                                 onClick={() => jumpToStep(issue.stepId)}
-                                className="flex w-full items-start gap-3 rounded-2xl border border-border/70 bg-background px-4 py-3 text-left transition hover:bg-muted/50"
+                                className="flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background px-4 py-3 text-left transition hover:bg-muted/30"
                               >
                                 <CircleDashed className="mt-0.5 h-4 w-4 text-muted-foreground" />
                                 <span className="min-w-0 flex-1">
                                   <span className="flex flex-wrap items-center gap-2">
-                                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                    <span className="rounded-full bg-muted/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                                       {t('wizardShell.review.recommendationBadge')}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                       {getStepLabel(issue.stepId)}
                                     </span>
                                   </span>
-                                  <span className="mt-1 block text-sm text-foreground">{issue.label}</span>
+                                  <span className="mt-1 block text-sm text-foreground">
+                                    {issue.label}
+                                  </span>
                                   <span className="mt-2 inline-flex items-center text-xs font-medium text-muted-foreground">
-                                    {t('wizardShell.review.goToStep', { step: getStepLabel(issue.stepId) })}
+                                    {t('wizardShell.review.goToStep', {
+                                      step: getStepLabel(issue.stepId),
+                                    })}
                                     <ArrowRight className="ml-1 h-3.5 w-3.5" />
                                   </span>
                                 </span>
@@ -785,7 +830,7 @@ export function EventSetupWizardShell({
                         </div>
                       </div>
 
-                      <div className="rounded-3xl border border-border/70 bg-background/80 p-6">
+                      <div className="rounded-3xl border border-border/60 bg-background p-6">
                         <h2 className="text-lg font-semibold text-foreground">
                           {t('wizardShell.review.skippedTitle')}
                         </h2>
@@ -803,7 +848,7 @@ export function EventSetupWizardShell({
                                 key={stepId}
                                 type="button"
                                 onClick={() => jumpToStep(stepId)}
-                                className="flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm font-medium text-amber-800"
+                                className="flex items-center gap-2 rounded-full border border-border/60 bg-muted/20 px-3 py-1 text-sm font-medium text-foreground"
                               >
                                 <SkipForward className="h-3.5 w-3.5" />
                                 <span>{getStepLabel(stepId)}</span>

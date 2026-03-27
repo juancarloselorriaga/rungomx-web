@@ -165,6 +165,22 @@
     "title": "Setup assistant",
     "description": "Describe your event and I'll suggest changes you can review and apply.",
     "contract": "I suggest changes, but nothing updates until you apply them.",
+    "trust": {
+      "title": "Review before applying",
+      "applyLabel": "Apply changes",
+      "applyDescription": "Writes the current proposal to this event step.",
+      "applyOnly": "Only apply when this proposal looks right for the saved event.",
+      "saveLabel": "Save notes",
+      "saveDescription": "Updates your organizer notes only. It does not change the event fields.",
+      "recoveryLabel": "If something fails",
+      "recoveryDescription": "The proposal and your notes stay here so you can retry or adjust them without starting over."
+    },
+    "recovery": {
+      "title": "This proposal was not applied",
+      "description": "Nothing new was saved from that attempt. Review the proposal, adjust your request, or try Apply again when you're ready.",
+      "partialTitle": "Some changes were applied before the request failed",
+      "partialDescription": "Review the updated event settings before applying anything else. The proposal stayed here so you can confirm what still needs attention."
+    },
     "historyLabel": "Setup assistant conversation",
     "composer": {
       "sectionTitle": "What do you need help with in this step?",

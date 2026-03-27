@@ -42,7 +42,8 @@ jest.mock('next-intl', () => ({
     if (key === 'routing.goToStep') return `Go to ${values?.step}`;
     if (key === 'handoff.eyebrow') return 'Best place to continue';
     if (key === 'handoff.titleCrossStep') return `The strongest next move is in ${values?.step}`;
-    if (key === 'handoff.titleMixed') return `I can keep helping here, but the main work belongs in ${values?.step}`;
+    if (key === 'handoff.titleMixed')
+      return `I can keep helping here, but the main work belongs in ${values?.step}`;
     if (key === 'handoff.descriptionCrossStep')
       return `This request fits better in ${values?.step}, which is where that kind of work lives in the assistant flow.`;
     if (key === 'handoff.descriptionMixed')
@@ -69,8 +70,10 @@ jest.mock('next-intl', () => ({
       return `See the latest request and response plus ${values?.count} earlier messages.`;
     if (key === 'pending.requestLabel') return 'Your request';
     if (key === 'continuity.eyebrow') return 'Your thread is still here';
-    if (key === 'continuity.title') return `Still carrying the latest proposal from ${values?.step}`;
-    if (key === 'continuity.description') return 'Your last useful exchange stays visible while you continue.';
+    if (key === 'continuity.title')
+      return `Still carrying the latest proposal from ${values?.step}`;
+    if (key === 'continuity.description')
+      return 'Your last useful exchange stays visible while you continue.';
     if (key === 'continuity.proposalLabel') return 'What I had already drafted';
     if (key === 'continuity.reuseRequest') return 'Keep going from this request';
     if (key === 'appliedState.eyebrow') return 'Changes already applied';
@@ -83,15 +86,35 @@ jest.mock('next-intl', () => ({
     if (key === 'errors.rateLimited') return 'Too many requests.';
     if (key === 'errors.proRequired') return 'Pro required.';
     if (key === 'errors.disabled') return 'Assistant disabled.';
+    if (key === 'trust.title') return 'Review before applying';
+    if (key === 'trust.applyLabel') return 'Apply changes';
+    if (key === 'trust.applyDescription') return 'Writes the current proposal to this event step.';
+    if (key === 'trust.applyOnly')
+      return 'Only apply when this proposal looks right for the saved event.';
+    if (key === 'trust.saveLabel') return 'Save notes';
+    if (key === 'trust.saveDescription') return 'Updates your organizer notes only.';
+    if (key === 'trust.recoveryLabel') return 'If something fails';
+    if (key === 'trust.recoveryDescription')
+      return 'The proposal and your notes stay here so you can retry.';
+    if (key === 'recovery.title') return 'This proposal was not applied';
+    if (key === 'recovery.description') return 'Nothing new was saved from that attempt.';
+    if (key === 'recovery.partialTitle')
+      return 'Some changes were applied before the request failed';
+    if (key === 'recovery.partialDescription')
+      return 'Review the updated event settings before applying anything else.';
     if (key === 'brief.useForStepPrompt') return `Use saved notes for ${values?.step}`;
     if (key === 'progress.analyzing.title') return 'Reviewing your request';
-    if (key === 'progress.analyzing.description') return `Checking ${values?.step} before drafting.`;
+    if (key === 'progress.analyzing.description')
+      return `Checking ${values?.step} before drafting.`;
     if (key === 'progress.grounding.title') return 'Grounding the proposal';
-    if (key === 'progress.grounding.description') return `Cross-checking saved details for ${values?.step}.`;
+    if (key === 'progress.grounding.description')
+      return `Cross-checking saved details for ${values?.step}.`;
     if (key === 'progress.drafting.title') return 'Drafting your next move';
-    if (key === 'progress.drafting.description') return `Shaping organizer-friendly guidance for ${values?.step}.`;
+    if (key === 'progress.drafting.description')
+      return `Shaping organizer-friendly guidance for ${values?.step}.`;
     if (key === 'progress.finalizing.title') return 'Preparing the proposal card';
-    if (key === 'progress.finalizing.description') return 'Packaging the recommendation for safe review.';
+    if (key === 'progress.finalizing.description')
+      return 'Packaging the recommendation for safe review.';
     if (key === 'fastPath.eyebrow') return 'Early structure';
     if (key === 'fastPath.faq.title') return 'Starting with a usable FAQ structure';
     if (key === 'fastPath.faq.description')
@@ -120,7 +143,8 @@ jest.mock('next-intl', () => ({
     if (key === 'latency.verySlow.description')
       return 'I am still working through your notes and confirmed event data so the recommendation stays useful and safe to apply.';
     if (key === 'locationResolution.matched.eyebrow') return 'Location found';
-    if (key === 'locationResolution.matched.title') return 'This is the real location that will be applied';
+    if (key === 'locationResolution.matched.title')
+      return 'This is the real location that will be applied';
     if (key === 'locationResolution.matched.description')
       return 'The assistant resolved a concrete map-backed match for this basics proposal.';
     if (key === 'locationResolution.ambiguous.eyebrow') return 'Need location confirmation';
@@ -338,7 +362,9 @@ describe('EventAiWizardPanel', () => {
     });
     expect(mockUpdateEventEdition).not.toHaveBeenCalled();
     expect(screen.getByText('brief.savedLabel')).toBeInTheDocument();
-    expect(window.sessionStorage.getItem('event-ai-wizard:brief:evt-1')).toBe('Saved organizer brief');
+    expect(window.sessionStorage.getItem('event-ai-wizard:brief:evt-1')).toBe(
+      'Saved organizer brief',
+    );
   });
 
   it('renders review-before-apply proposal cards inline', () => {
@@ -519,9 +545,13 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getAllByText('archive.title')).toHaveLength(1);
     openDetailsBySummaryText('Supporting context');
     expect(screen.getByText('Please improve the participant content.')).toBeInTheDocument();
-    expect(screen.getByText('Here is the newest recommendation for this step.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Here is the newest recommendation for this step.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Old question that should move into the archive.')).toBeInTheDocument();
-    expect(latestProposal.compareDocumentPosition(savedNotes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      latestProposal.compareDocumentPosition(savedNotes) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('renders structured assistant-owned pending excerpts as markdown', () => {
@@ -879,7 +909,8 @@ describe('EventAiWizardPanel', () => {
                     {
                       lat: 20.67046657,
                       lng: -103.43992534,
-                      formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+                      formattedAddress:
+                        'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
                       address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
                       city: 'Zapopan',
                       region: 'Jalisco',
@@ -900,7 +931,8 @@ describe('EventAiWizardPanel', () => {
                     {
                       lat: 20.67046657,
                       lng: -103.43992534,
-                      formattedAddress: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+                      formattedAddress:
+                        'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
                       address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
                       city: 'Zapopan',
                       region: 'Jalisco',
@@ -973,7 +1005,8 @@ describe('EventAiWizardPanel', () => {
               type: 'data-event-patch',
               data: {
                 title: 'Keep the venue pending',
-                summary: 'The place still needs clarification before it can become a real event location.',
+                summary:
+                  'The place still needs clarification before it can become a real event location.',
                 ops: [
                   {
                     type: 'update_edition',
@@ -1008,7 +1041,9 @@ describe('EventAiWizardPanel', () => {
 
     expect(screen.getByText('Location still unresolved')).toBeInTheDocument();
     expect(screen.getByText('I could not confirm that place')).toBeInTheDocument();
-    expect(screen.getByText('Keep the location as notes only until the place is clearer.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Keep the location as notes only until the place is clearer.'),
+    ).toBeInTheDocument();
   });
 
   it('localizes routing labels when the model returns known intent keys', () => {
@@ -1240,15 +1275,21 @@ describe('EventAiWizardPanel', () => {
     );
 
     expect(screen.getByText('Best place to continue')).toBeInTheDocument();
-    expect(screen.getByText('The strongest next move is in Participant content')).toBeInTheDocument();
+    expect(
+      screen.getByText('The strongest next move is in Participant content'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('This is more participant-facing content work than event-basics setup.'),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Continue in Participant content' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Continue in Participant content' }),
+    ).toBeInTheDocument();
 
     openDetailsBySummaryText('latestProposal.detailsTitle');
     expect(screen.queryByText('Draft website overview')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Go to Participant content' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Go to Participant content' }),
+    ).not.toBeInTheDocument();
   });
 
   it('maps structured chat safety errors to localized organizer copy', () => {
@@ -1324,7 +1365,9 @@ describe('EventAiWizardPanel', () => {
       />,
     );
 
-    const onData = (mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void })?.onData;
+    const onData = (
+      mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void }
+    )?.onData;
     expect(onData).toBeDefined();
 
     act(() => {
@@ -1335,7 +1378,9 @@ describe('EventAiWizardPanel', () => {
     });
 
     expect(screen.getByText('Grounding the proposal')).toHaveClass('assistant-working-label');
-    expect(screen.getByText('Cross-checking saved details for Participant content.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Cross-checking saved details for Participant content.'),
+    ).toBeInTheDocument();
   });
 
   it('renders an early fast-path structure before the final proposal exists', () => {
@@ -1354,7 +1399,9 @@ describe('EventAiWizardPanel', () => {
       />,
     );
 
-    const onData = (mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void })?.onData;
+    const onData = (
+      mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void }
+    )?.onData;
     expect(onData).toBeDefined();
 
     act(() => {
@@ -1369,7 +1416,9 @@ describe('EventAiWizardPanel', () => {
 
     expect(screen.getByText('Early structure')).toBeInTheDocument();
     expect(screen.getByText('Starting with a usable FAQ structure')).toBeInTheDocument();
-    expect(screen.getByText('Grounded route or distance details that are already confirmed.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Grounded route or distance details that are already confirmed.'),
+    ).toBeInTheDocument();
   });
 
   it('renders an early grounded prose lead before the final proposal exists', () => {
@@ -1388,7 +1437,9 @@ describe('EventAiWizardPanel', () => {
       />,
     );
 
-    const onData = (mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void })?.onData;
+    const onData = (
+      mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void }
+    )?.onData;
     expect(onData).toBeDefined();
 
     act(() => {
@@ -1471,7 +1522,12 @@ describe('EventAiWizardPanel', () => {
         {
           id: 'assistant-inflight',
           role: 'assistant',
-          parts: [{ type: 'text', text: 'I am organizing your notes into a clearer participant-facing draft.' }],
+          parts: [
+            {
+              type: 'text',
+              text: 'I am organizing your notes into a clearer participant-facing draft.',
+            },
+          ],
         },
       ],
       status: 'streaming',
@@ -1487,7 +1543,9 @@ describe('EventAiWizardPanel', () => {
       />,
     );
 
-    expect(screen.getByText('I am organizing your notes into a clearer participant-facing draft.')).toBeInTheDocument();
+    expect(
+      screen.getByText('I am organizing your notes into a clearer participant-facing draft.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('latestProposal.pendingTitle')).toBeInTheDocument();
     expect(screen.getByText('Your request')).toBeInTheDocument();
     expect(screen.getByText('Help me improve the participant content.')).toBeInTheDocument();
@@ -1495,7 +1553,8 @@ describe('EventAiWizardPanel', () => {
 
   it('captures visible latency checkpoints as data attributes', async () => {
     const requestStartedAt = 1_710_000_000_000;
-    jest.spyOn(Date, 'now')
+    jest
+      .spyOn(Date, 'now')
       .mockReturnValueOnce(requestStartedAt - 1_000)
       .mockReturnValueOnce(requestStartedAt)
       .mockReturnValueOnce(requestStartedAt + 250)
@@ -1523,7 +1582,9 @@ describe('EventAiWizardPanel', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'send' }));
 
-    const onData = (mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void })?.onData;
+    const onData = (
+      mockUseChatConfig as { onData?: (part: { type: string; data: unknown }) => void }
+    )?.onData;
 
     act(() => {
       onData?.({
@@ -1655,7 +1716,9 @@ describe('EventAiWizardPanel', () => {
       jest.advanceTimersByTime(4500);
     });
 
-    expect(screen.getByText('Still shaping a grounded proposal')).toHaveClass('assistant-working-label');
+    expect(screen.getByText('Still shaping a grounded proposal')).toHaveClass(
+      'assistant-working-label',
+    );
     expect(
       screen.getByText(
         'This request needs a little more time because I am cross-checking your event details before I suggest anything.',
@@ -1666,7 +1729,9 @@ describe('EventAiWizardPanel', () => {
       jest.advanceTimersByTime(4000);
     });
 
-    expect(screen.getByText('Taking extra care with the final proposal')).toHaveClass('assistant-working-label');
+    expect(screen.getByText('Taking extra care with the final proposal')).toHaveClass(
+      'assistant-working-label',
+    );
     expect(
       screen.getByText(
         'I am still working through your notes and confirmed event data so the recommendation stays useful and safe to apply.',
@@ -1868,7 +1933,9 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getByText('Server-side organizer brief')).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(window.sessionStorage.getItem('event-ai-wizard:brief:evt-1')).toBe('Server-side organizer brief');
+      expect(window.sessionStorage.getItem('event-ai-wizard:brief:evt-1')).toBe(
+        'Server-side organizer brief',
+      );
     });
   });
 
@@ -2045,9 +2112,12 @@ describe('EventAiWizardPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'apply' }));
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('/api/events/ai-wizard/apply', expect.objectContaining({
-        method: 'POST',
-      }));
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/events/ai-wizard/apply',
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
     });
     await waitFor(() => {
       expect(toast.success).toHaveBeenCalledWith('applied');
@@ -2173,7 +2243,7 @@ describe('EventAiWizardPanel', () => {
     expect(mockRefresh).not.toHaveBeenCalled();
   });
 
-  it('closes the assistant workspace after an apply failure while keeping the error visible', async () => {
+  it('keeps the assistant workspace open after an apply failure so the proposal stays in context', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
       json: async () => ({ code: 'INVALID_PATCH', applied: [] }),
@@ -2222,7 +2292,70 @@ describe('EventAiWizardPanel', () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('errors.invalid');
     });
-    expect(mockSetAssistantOpen).toHaveBeenCalledWith(false);
+    expect(mockSetAssistantOpen).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('This proposal was not applied');
+    expect(screen.getByRole('alert')).toHaveTextContent('errors.invalid');
     expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it('uses a partial-apply recovery message when the server applied some changes before failing', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      json: async () => ({ code: 'FAILED', applied: ['faq-1'] }),
+    });
+    mockChatState = {
+      messages: [
+        {
+          id: 'assistant-apply-partial',
+          role: 'assistant',
+          parts: [
+            {
+              type: 'data-event-patch',
+              data: {
+                title: 'Create FAQ',
+                summary: 'Adds one FAQ item.',
+                ops: [
+                  {
+                    type: 'create_faq_item',
+                    editionId: 'evt-1',
+                    data: {
+                      question: 'What is included?',
+                      answerMarkdown: 'Trail access and timing support.',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      status: 'ready',
+      error: undefined,
+    };
+
+    render(
+      <EventAiWizardPanel
+        editionId="evt-1"
+        stepId="content"
+        stepTitle="Participant content"
+        suggestions={['Improve participant-facing copy']}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'apply' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('errors.partialApplied');
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Some changes were applied before the request failed',
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('errors.partialApplied');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Review the updated event settings before applying anything else.',
+    );
+    expect(screen.getByText('Changes already applied')).toBeInTheDocument();
+    expect(mockRefresh).toHaveBeenCalled();
   });
 });

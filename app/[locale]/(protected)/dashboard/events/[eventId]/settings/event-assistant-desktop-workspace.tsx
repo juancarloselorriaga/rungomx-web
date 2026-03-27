@@ -1,10 +1,16 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ArrowUpRight, Sparkles } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 
 import { useAssistantWorkspaceQueryState } from './event-assistant-workspace-state';
@@ -29,14 +35,15 @@ export function EventAssistantDesktopWorkspace({
   return (
     <>
       <div className="hidden lg:block">
-        <div className="w-full rounded-2xl border border-border/70 bg-card/80 p-5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/70">
+        <div className="w-full rounded-2xl border border-border/60 bg-background p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <div className="flex items-start justify-between gap-5">
-            <span className="mt-0.5 flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Sparkles className="size-5" />
-            </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground">{workspaceTitle}</p>
-              <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{triggerHint}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                {workspaceTitle}
+              </p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                {triggerHint}
+              </p>
             </div>
             <Button
               type="button"
@@ -54,7 +61,7 @@ export function EventAssistantDesktopWorkspace({
       <Sheet open={isOpen} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="hidden h-full w-[min(1120px,78vw)] max-w-none sm:max-w-none flex-col gap-0 overflow-hidden border-l border-border/70 bg-background/98 p-0 shadow-2xl lg:flex"
+          className="hidden h-full w-[min(1120px,78vw)] max-w-none flex-col gap-0 overflow-hidden border-l border-border/60 bg-background p-0 shadow-2xl sm:max-w-none lg:flex"
         >
           <SheetHeader className="border-b border-border/60 px-8 py-5">
             <SheetTitle className="text-xl">{workspaceTitle}</SheetTitle>
@@ -62,9 +69,7 @@ export function EventAssistantDesktopWorkspace({
               {workspaceDescription}
             </SheetDescription>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">
-            {children}
-          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto px-8 py-6">{children}</div>
         </SheetContent>
       </Sheet>
     </>

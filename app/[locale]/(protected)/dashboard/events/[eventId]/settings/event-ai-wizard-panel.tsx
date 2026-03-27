@@ -5,7 +5,7 @@ import type { UIMessagePart } from 'ai';
 import { useChat } from '@ai-sdk/react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
-import { Check, MapPin, Send, Sparkles, Square } from 'lucide-react';
+import { AlertCircle, Check, MapPin, Send, Square } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -72,12 +72,7 @@ type EventAiWizardLatencyMarks = {
   proposalReadyAt: number | null;
 };
 
-type EventAiWizardScaffoldKey =
-  | 'basics'
-  | 'content'
-  | 'policies'
-  | 'review'
-  | 'generic';
+type EventAiWizardScaffoldKey = 'basics' | 'content' | 'policies' | 'review' | 'generic';
 
 type EventAiWizardContinuitySnapshot = {
   sourceStepId: EventAiAssistantStepId;
@@ -100,6 +95,11 @@ type EventAiWizardAppliedState = {
         kind: 'step';
         stepId: EventAiAssistantStepId;
       };
+};
+
+type EventAiWizardApplyNotice = {
+  kind: 'failed' | 'partial';
+  message: string;
 };
 
 type EventAiWizardEditorFocusTarget = 'location';
@@ -179,7 +179,14 @@ function MarkdownOutputsList({ outputs }: { outputs: EventAiWizardMarkdownOutput
 
   if (!outputs.length) return null;
 
-  const participantFacingDomains = new Set(['description', 'faq', 'waiver', 'website', 'policy', 'summary']);
+  const participantFacingDomains = new Set([
+    'description',
+    'faq',
+    'waiver',
+    'website',
+    'policy',
+    'summary',
+  ]);
 
   return (
     <div className="mt-3 space-y-2 rounded-2xl border border-border/70 bg-background/80 p-3">
@@ -188,7 +195,10 @@ function MarkdownOutputsList({ outputs }: { outputs: EventAiWizardMarkdownOutput
       </p>
       <ul className="space-y-2">
         {outputs.map((output, index) => (
-          <li key={`${output.domain}-${index}`} className="rounded-xl border border-border/60 bg-card p-3">
+          <li
+            key={`${output.domain}-${index}`}
+            className="rounded-xl border border-border/60 bg-card p-3"
+          >
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-medium text-foreground">
                 {output.title ?? t(`outputs.domain.${output.domain}`)}
@@ -269,7 +279,10 @@ function LocationResolutionCard({
         </p>
         <ul className="mt-3 space-y-2 text-sm text-foreground">
           {resolution.candidates.map((candidate, index) => (
-            <li key={`${candidate.placeId ?? candidate.formattedAddress}-${index}`} className="rounded-xl border border-border/50 bg-background/70 px-3 py-2">
+            <li
+              key={`${candidate.placeId ?? candidate.formattedAddress}-${index}`}
+              className="rounded-xl border border-border/50 bg-background/70 px-3 py-2"
+            >
               {candidate.formattedAddress}
             </li>
           ))}
@@ -279,7 +292,7 @@ function LocationResolutionCard({
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-4">
+    <div className="mt-3 rounded-2xl border border-border/60 bg-muted/10 p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t('locationResolution.noMatch.eyebrow')}
       </p>
@@ -331,7 +344,10 @@ function buildPatchWithSelectedLocation(
   const updateEditionIndex = ops.findIndex((op) => op.type === 'update_edition');
 
   if (updateEditionIndex >= 0) {
-    const updateEdition = ops[updateEditionIndex] as Extract<EventAiWizardOp, { type: 'update_edition' }>;
+    const updateEdition = ops[updateEditionIndex] as Extract<
+      EventAiWizardOp,
+      { type: 'update_edition' }
+    >;
     ops[updateEditionIndex] = {
       ...updateEdition,
       data: {
@@ -417,10 +433,20 @@ function LocationChoiceRequestCard({
         })}
       </ul>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        <Button type="button" size="sm" variant="secondary" onClick={() => onRequestManualClarification(request.query)}>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => onRequestManualClarification(request.query)}
+        >
           {t('locationResolution.choice.noneOfThese')}
         </Button>
-        <Button type="button" size="sm" variant="secondary" onClick={() => onRevealEditor('location')}>
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
+          onClick={() => onRevealEditor('location')}
+        >
           {t('locationResolution.choice.searchInEditor')}
         </Button>
       </div>
@@ -451,10 +477,10 @@ function MessageBubble({
   return (
     <div
       className={cn(
-        'rounded-2xl border px-4 py-3 text-sm leading-relaxed shadow-sm',
+        'rounded-2xl border px-4 py-3 text-sm leading-relaxed',
         message.role === 'user'
-          ? 'border-primary/20 bg-primary text-primary-foreground'
-          : 'border-border/70 bg-card text-foreground',
+          ? 'border-border/60 bg-muted/20 text-foreground'
+          : 'border-border/60 bg-background text-foreground',
       )}
     >
       <p className="sr-only">{roleLabel}</p>
@@ -474,7 +500,7 @@ function RequestSummaryCard({
   if (!text) return null;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-background/50 px-4 py-3">
+    <div className="rounded-2xl border border-border/60 bg-muted/15 px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t('pending.requestLabel')}
       </p>
@@ -499,11 +525,13 @@ function ConversationExcerpt({
       className={cn(
         'rounded-xl border px-3 py-3',
         tone === 'assistant'
-          ? 'border-border/60 bg-background/55 dark:border-white/10 dark:bg-white/[0.03]'
-          : 'border-border/50 bg-background/45 dark:border-white/8 dark:bg-white/[0.02]',
+          ? 'border-border/60 bg-background dark:border-white/10 dark:bg-white/[0.03]'
+          : 'border-border/50 bg-muted/10 dark:border-white/8 dark:bg-white/[0.02]',
       )}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       {renderMarkdown ? (
         <MarkdownContent
           content={text}
@@ -532,11 +560,13 @@ function SupportingContextPanel({
   if (!latestRequestMessage && !latestProposalText && !archiveMessages.length) return null;
 
   return (
-    <details className="group rounded-2xl border border-border/60 bg-background/50 p-4">
+    <details className="group rounded-2xl border border-border/60 bg-muted/10 p-4">
       <summary className="cursor-pointer list-none">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-foreground">{t('latestProposal.supportingContextTitle')}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t('latestProposal.supportingContextTitle')}
+            </p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
               {t('latestProposal.supportingContextDescription', {
                 count: archiveMessages.length,
@@ -593,16 +623,12 @@ function SupportingContextPanel({
   );
 }
 
-function FastPathStructureCard({
-  structure,
-}: {
-  structure: EventAiWizardFastPathStructure;
-}) {
+function FastPathStructureCard({ structure }: { structure: EventAiWizardFastPathStructure }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const sectionBaseKey = `fastPath.${structure.kind}.sections` as const;
 
   return (
-    <div className="rounded-2xl border border-primary/15 bg-background/60 px-4 py-3">
+    <div className="rounded-2xl border border-border/60 bg-muted/10 px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">
         {t('fastPath.eyebrow')}
       </p>
@@ -615,7 +641,7 @@ function FastPathStructureCard({
       <ul className="mt-3 space-y-2 text-sm text-foreground">
         {structure.sectionKeys.map((sectionKey) => (
           <li key={sectionKey} className="flex gap-2">
-            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary/70" />
+            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-foreground/70" />
             <span>{t(`${sectionBaseKey}.${sectionKey}` as never)}</span>
           </li>
         ))}
@@ -624,17 +650,13 @@ function FastPathStructureCard({
   );
 }
 
-function SlowProposalScaffoldCard({
-  scaffoldKey,
-}: {
-  scaffoldKey: EventAiWizardScaffoldKey;
-}) {
+function SlowProposalScaffoldCard({ scaffoldKey }: { scaffoldKey: EventAiWizardScaffoldKey }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
   const sectionBaseKey = `scaffold.${scaffoldKey}.sections` as const;
   const sectionKeys = ['first_pass', 'confirmed_facts', 'open_points'] as const;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-background/55 px-4 py-3">
+    <div className="rounded-2xl border border-border/60 bg-muted/10 px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t('scaffold.eyebrow')}
       </p>
@@ -660,7 +682,7 @@ function EarlyProseLeadCard({ lead }: { lead: EventAiWizardEarlyProseLead }) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
 
   return (
-    <div className="rounded-2xl border border-primary/15 bg-background/60 px-4 py-3">
+    <div className="rounded-2xl border border-border/60 bg-muted/10 px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">
         {t('earlyProse.eyebrow')}
       </p>
@@ -719,7 +741,7 @@ function ContinuitySnapshotCard({
     : '';
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-background/55 p-4 dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="rounded-2xl border border-border/60 bg-muted/10 p-4 dark:border-white/10 dark:bg-white/[0.03]">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t('continuity.eyebrow')}
       </p>
@@ -731,10 +753,7 @@ function ContinuitySnapshotCard({
       <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('continuity.description')}</p>
       <div className="mt-3 space-y-3">
         {snapshot.latestRequestMessage && latestRequestText ? (
-          <ConversationExcerpt
-            label={t('latestProposal.requestLabel')}
-            text={latestRequestText}
-          />
+          <ConversationExcerpt label={t('latestProposal.requestLabel')} text={latestRequestText} />
         ) : null}
         {snapshot.latestProposalPatch ? (
           <ConversationExcerpt
@@ -801,7 +820,11 @@ function AppliedConfirmationCard({
               type="button"
               size="sm"
               variant="secondary"
-              onClick={() => onRevealEditor(appliedState.action?.kind === 'editor' ? appliedState.action.target : undefined)}
+              onClick={() =>
+                onRevealEditor(
+                  appliedState.action?.kind === 'editor' ? appliedState.action.target : undefined,
+                )
+              }
             >
               {t('appliedState.revealEditor')}
             </Button>
@@ -864,12 +887,11 @@ function buildAppliedState({
   if (activeStepId === 'basics') {
     const basicsUpdate = patch.ops.find((op) => op.type === 'update_edition');
     if (basicsUpdate?.type === 'update_edition') {
-      const savedLocation =
-        Boolean(
-          basicsUpdate.data.locationDisplay &&
-            String(basicsUpdate.data.latitude ?? '').trim() &&
-            String(basicsUpdate.data.longitude ?? '').trim(),
-        );
+      const savedLocation = Boolean(
+        basicsUpdate.data.locationDisplay &&
+        String(basicsUpdate.data.latitude ?? '').trim() &&
+        String(basicsUpdate.data.longitude ?? '').trim(),
+      );
 
       if (savedLocation) {
         return {
@@ -941,7 +963,7 @@ function CrossStepHandoffCard({
   );
 
   return (
-    <div className="mt-3 rounded-2xl border border-primary/20 bg-primary/[0.05] p-4">
+    <div className="mt-3 rounded-2xl border border-border/60 bg-muted/10 p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-primary">
         {t('handoff.eyebrow')}
       </p>
@@ -1066,30 +1088,32 @@ function RoutingCard({
     review: 7,
   };
 
-  const dedupedIntentRouting = intentRouting.reduce<
-    Array<EventAiWizardIntentRoute & { label: string; priority: number }>
-  >((acc, item) => {
-    const label = resolveIntentLabel(item.intent, item.stepId);
-    const priority = routingIntentPriority[item.intent] ?? 0;
-    const existingIndex = acc.findIndex((entry) => entry.stepId === item.stepId);
+  const dedupedIntentRouting = intentRouting
+    .reduce<Array<EventAiWizardIntentRoute & { label: string; priority: number }>>((acc, item) => {
+      const label = resolveIntentLabel(item.intent, item.stepId);
+      const priority = routingIntentPriority[item.intent] ?? 0;
+      const existingIndex = acc.findIndex((entry) => entry.stepId === item.stepId);
 
-    if (existingIndex === -1) {
-      acc.push({ ...item, label, priority });
+      if (existingIndex === -1) {
+        acc.push({ ...item, label, priority });
+        return acc;
+      }
+
+      if (priority > (acc[existingIndex]?.priority ?? 0)) {
+        acc[existingIndex] = { ...item, label, priority };
+      }
+
       return acc;
-    }
-
-    if (priority > (acc[existingIndex]?.priority ?? 0)) {
-      acc[existingIndex] = { ...item, label, priority };
-    }
-
-    return acc;
-  }, []).sort((left, right) => stepOrder[left.stepId] - stepOrder[right.stepId]);
+    }, [])
+    .sort((left, right) => stepOrder[left.stepId] - stepOrder[right.stepId]);
 
   const checklistStepIds = new Set(checklist.map((item) => item.stepId));
-  const visibleIntentRouting = dedupedIntentRouting.filter((item) => !checklistStepIds.has(item.stepId));
+  const visibleIntentRouting = dedupedIntentRouting.filter(
+    (item) => !checklistStepIds.has(item.stepId),
+  );
 
   return (
-    <div className="mt-3 space-y-3 rounded-2xl border border-border/60 bg-background/55 p-3">
+    <div className="mt-3 space-y-3 rounded-2xl border border-border/60 bg-muted/10 p-3">
       {checklist.length ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1154,6 +1178,7 @@ function PatchCard({
   locale,
   activeStepId,
   applied,
+  onApplyStart,
   onApplied,
   onApplyFailure,
   onRevealEditor,
@@ -1166,8 +1191,9 @@ function PatchCard({
   locale: string;
   activeStepId: EventAiAssistantStepId;
   applied: boolean;
+  onApplyStart?: () => void;
   onApplied: (appliedState: EventAiWizardAppliedState) => void;
-  onApplyFailure?: () => void;
+  onApplyFailure?: (message: string) => void;
   onRevealEditor: (target?: EventAiWizardEditorFocusTarget) => void;
   onNavigateToStep: (stepId: EventAiAssistantStepId) => void;
   onRequestManualClarification: (query: string) => void;
@@ -1192,7 +1218,7 @@ function PatchCard({
 
   function handleApplyFailure(message: string) {
     toast.error(message);
-    onApplyFailure?.();
+    onApplyFailure?.(message);
   }
 
   function formatOpLabel(op: EventAiWizardOp): string {
@@ -1256,6 +1282,7 @@ function PatchCard({
   async function applyPatch() {
     if (isApplying || applied) return;
     setIsApplying(true);
+    onApplyStart?.();
     try {
       const res = await fetch('/api/events/ai-wizard/apply', {
         method: 'POST',
@@ -1264,9 +1291,11 @@ function PatchCard({
       });
 
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as
-          | { code?: string; category?: string; applied?: unknown }
-          | null;
+        const data = (await res.json().catch(() => null)) as {
+          code?: string;
+          category?: string;
+          applied?: unknown;
+        } | null;
         if (data?.code === 'PRO_REQUIRED') {
           handleApplyFailure(t('errors.proRequired'));
           return;
@@ -1300,10 +1329,11 @@ function PatchCard({
           return;
         }
         if (Array.isArray(data?.applied) && data.applied.length > 0) {
-          toast.error(t('errors.partialApplied'));
+          const message = t('errors.partialApplied');
+          toast.error(message);
           onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
           router.refresh();
-          onApplyFailure?.();
+          onApplyFailure?.(message);
           return;
         }
         handleApplyFailure(t('errors.failed'));
@@ -1316,11 +1346,12 @@ function PatchCard({
         effectivePatch.ops.some(
           (op) =>
             op.type === 'update_edition' &&
-            Boolean(op.data.locationDisplay && op.data.latitude?.trim() && op.data.longitude?.trim()),
+            Boolean(
+              op.data.locationDisplay && op.data.latitude?.trim() && op.data.longitude?.trim(),
+            ),
         );
       const shouldRevealBasicsEditor =
-        activeStepId === 'basics' &&
-        effectivePatch.ops.some((op) => op.type === 'update_edition');
+        activeStepId === 'basics' && effectivePatch.ops.some((op) => op.type === 'update_edition');
       if (shouldRevealLocationInEditor) {
         onApplied(buildAppliedState({ patchId, patch: effectivePatch, activeStepId }));
         onRevealEditor('location');
@@ -1339,23 +1370,28 @@ function PatchCard({
   }
 
   return (
-    <article className="mt-3 rounded-2xl border border-border/60 bg-background/65 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-1">
+    <article className="mt-3 rounded-2xl border border-border/60 bg-background p-4 animate-in fade-in slide-in-from-bottom-1">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-foreground">{effectivePatch.title}</p>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">{effectivePatch.summary}</p>
         </div>
-        <Button
-          type="button"
-          size="sm"
-          variant={applied ? 'secondary' : 'default'}
-          disabled={isApplying || applied || requiresLocationSelection}
-          onClick={applyPatch}
-          className="w-full shrink-0 sm:w-auto"
-        >
-          {applied ? <Check className="mr-2 h-4 w-4" /> : null}
-          {isApplying ? t('applying') : applied ? t('applied') : t('apply')}
-        </Button>
+        <div className="w-full shrink-0 space-y-2 sm:w-auto sm:min-w-[11rem]">
+          <p className="text-xs leading-5 text-muted-foreground">
+            {(t as (key: string) => string)('trust.applyOnly')}
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant={applied ? 'secondary' : 'default'}
+            disabled={isApplying || applied || requiresLocationSelection}
+            onClick={applyPatch}
+            className="w-full"
+          >
+            {applied ? <Check className="mr-2 h-4 w-4" /> : null}
+            {isApplying ? t('applying') : applied ? t('applied') : t('apply')}
+          </Button>
+        </div>
       </div>
 
       <MarkdownOutputsList outputs={effectivePatch.markdownOutputs ?? []} />
@@ -1372,10 +1408,13 @@ function PatchCard({
         <LocationResolutionCard resolution={effectivePatch.locationResolution} />
       ) : null}
       {effectivePatch.crossStepIntent ? (
-        <CrossStepHandoffCard handoff={effectivePatch.crossStepIntent} onNavigateToStep={onNavigateToStep} />
+        <CrossStepHandoffCard
+          handoff={effectivePatch.crossStepIntent}
+          onNavigateToStep={onNavigateToStep}
+        />
       ) : null}
 
-      <details className="mt-3 rounded-2xl border border-border/60 bg-background/55 p-3">
+      <details className="mt-3 rounded-2xl border border-border/60 bg-muted/10 p-3">
         <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
           {t('latestProposal.detailsTitle')}
         </summary>
@@ -1418,10 +1457,10 @@ export function EventAiWizardPanel({
   embeddedInWorkspace = false,
 }: EventAiWizardPanelProps) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
+  const tAssistantLoose = (key: string) => t(key as never);
   const locale = useLocale();
   const router = useRouter();
-  const { isOpen: isAssistantWorkspaceOpen, setOpen: setAssistantOpen } =
-    useAssistantWorkspaceQueryState();
+  const { setOpen: setAssistantOpen } = useAssistantWorkspaceQueryState();
   const composerId = useId();
   const composerHintId = useId();
   const briefEditorId = useId();
@@ -1442,7 +1481,9 @@ export function EventAiWizardPanel({
   const [isEditingBrief, setIsEditingBrief] = useState(false);
   const [isPersistingBrief, setIsPersistingBrief] = useState(false);
   const [progressState, setProgressState] = useState<EventAiWizardProgressState | null>(null);
-  const [fastPathStructure, setFastPathStructure] = useState<EventAiWizardFastPathStructure | null>(null);
+  const [fastPathStructure, setFastPathStructure] = useState<EventAiWizardFastPathStructure | null>(
+    null,
+  );
   const [earlyProseLead, setEarlyProseLead] = useState<EventAiWizardEarlyProseLead | null>(null);
   const [lastSentText, setLastSentText] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -1454,19 +1495,20 @@ export function EventAiWizardPanel({
     proposalReadyAt: null,
   });
   const [continuitySnapshot] = useState<EventAiWizardContinuitySnapshot | null>(() => {
-      if (typeof window === 'undefined') return null;
+    if (typeof window === 'undefined') return null;
 
-      const rawSnapshot = window.sessionStorage.getItem(continuityStorageKey);
-      if (!rawSnapshot) return null;
+    const rawSnapshot = window.sessionStorage.getItem(continuityStorageKey);
+    if (!rawSnapshot) return null;
 
-      try {
-        return JSON.parse(rawSnapshot) as EventAiWizardContinuitySnapshot;
-      } catch {
-        window.sessionStorage.removeItem(continuityStorageKey);
-        return null;
-      }
-    });
+    try {
+      return JSON.parse(rawSnapshot) as EventAiWizardContinuitySnapshot;
+    } catch {
+      window.sessionStorage.removeItem(continuityStorageKey);
+      return null;
+    }
+  });
   const [lastAppliedPatch, setLastAppliedPatch] = useState<EventAiWizardAppliedState | null>(null);
+  const [lastApplyNotice, setLastApplyNotice] = useState<EventAiWizardApplyNotice | null>(null);
 
   function resolveBriefErrorMessage(code?: string) {
     switch (code) {
@@ -1498,38 +1540,47 @@ export function EventAiWizardPanel({
     window.sessionStorage.setItem(draftStorageKey, input);
   }, [draftStorageKey, input]);
 
-  const { messages, sendMessage, status, stop, error: chatError, clearError } =
-    useChat<EventAiWizardUIMessage>({
-      transport: new DefaultChatTransport({
-        api: '/api/events/ai-wizard',
-        body: { editionId, stepId, locale, eventBrief: eventBrief.trim() || null },
-      }),
-      onData: (part) => {
-        if (part.type === 'data-notification') {
-          setLatencyMarks((current) =>
-            current.requestStartedAt && !current.firstProgressAt
-              ? { ...current, firstProgressAt: Date.now() }
-              : current,
-          );
-          setProgressState(part.data);
-          return;
-        }
-        if (part.type === 'data-fast-path-structure') {
-          setFastPathStructure(part.data);
-          setLatencyMarks((current) =>
-            current.requestStartedAt && !current.firstStructureAt
-              ? { ...current, firstStructureAt: Date.now() }
-              : current,
-          );
-          return;
-        }
-        if (part.type === 'data-early-prose') {
-          setEarlyProseLead(part.data);
-        }
-      },
-    });
+  const {
+    messages,
+    sendMessage,
+    status,
+    stop,
+    error: chatError,
+    clearError,
+  } = useChat<EventAiWizardUIMessage>({
+    transport: new DefaultChatTransport({
+      api: '/api/events/ai-wizard',
+      body: { editionId, stepId, locale, eventBrief: eventBrief.trim() || null },
+    }),
+    onData: (part) => {
+      if (part.type === 'data-notification') {
+        setLatencyMarks((current) =>
+          current.requestStartedAt && !current.firstProgressAt
+            ? { ...current, firstProgressAt: Date.now() }
+            : current,
+        );
+        setProgressState(part.data);
+        return;
+      }
+      if (part.type === 'data-fast-path-structure') {
+        setFastPathStructure(part.data);
+        setLatencyMarks((current) =>
+          current.requestStartedAt && !current.firstStructureAt
+            ? { ...current, firstStructureAt: Date.now() }
+            : current,
+        );
+        return;
+      }
+      if (part.type === 'data-early-prose') {
+        setEarlyProseLead(part.data);
+      }
+    },
+  });
 
-  const renderedMessages = useMemo(() => messages.filter((message) => message.role !== 'system'), [messages]);
+  const renderedMessages = useMemo(
+    () => messages.filter((message) => message.role !== 'system'),
+    [messages],
+  );
   const latestUserMessageIndex = useMemo(() => {
     for (let index = renderedMessages.length - 1; index >= 0; index -= 1) {
       if (renderedMessages[index]?.role === 'user') {
@@ -1556,9 +1607,11 @@ export function EventAiWizardPanel({
       ? latestProposalMessageIndex
       : -1;
   const latestProposalMessage =
-    latestAuthoritativeProposalIndex >= 0 ? renderedMessages[latestAuthoritativeProposalIndex] : null;
+    latestAuthoritativeProposalIndex >= 0
+      ? renderedMessages[latestAuthoritativeProposalIndex]
+      : null;
   const latestProposalPatchPart = latestProposalMessage
-    ? [...latestProposalMessage.parts.filter(isEventPatchPart)].at(-1) ?? null
+    ? ([...latestProposalMessage.parts.filter(isEventPatchPart)].at(-1) ?? null)
     : null;
   const latestProposalText = latestProposalMessage ? getMessageText(latestProposalMessage) : '';
   const latestRequestIndex = useMemo(() => {
@@ -1572,7 +1625,8 @@ export function EventAiWizardPanel({
 
     return -1;
   }, [latestAuthoritativeProposalIndex, renderedMessages]);
-  const latestRequestMessage = latestRequestIndex >= 0 ? renderedMessages[latestRequestIndex] : null;
+  const latestRequestMessage =
+    latestRequestIndex >= 0 ? renderedMessages[latestRequestIndex] : null;
   const archiveMessages = useMemo(() => {
     if (latestAuthoritativeProposalIndex < 0) {
       return renderedMessages;
@@ -1649,7 +1703,11 @@ export function EventAiWizardPanel({
   }, [chatError, clearError, lastAppliedPatch, latestProposalMessage]);
 
   useEffect(() => {
-    if (!latencyMarks.requestStartedAt || latencyMarks.firstTextAt || !latestAssistantWithoutPatch) {
+    if (
+      !latencyMarks.requestStartedAt ||
+      latencyMarks.firstTextAt ||
+      !latestAssistantWithoutPatch
+    ) {
       return;
     }
 
@@ -1683,7 +1741,12 @@ export function EventAiWizardPanel({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [latencyMarks.proposalReadyAt, latencyMarks.requestStartedAt, latestProposalMessage, latestProposalText]);
+  }, [
+    latencyMarks.proposalReadyAt,
+    latencyMarks.requestStartedAt,
+    latestProposalMessage,
+    latestProposalText,
+  ]);
 
   useEffect(() => {
     if (!latencyMarks.requestStartedAt || latencyMarks.firstStructureAt || !slowScaffoldKey) {
@@ -1764,8 +1827,7 @@ export function EventAiWizardPanel({
   const activeProgressLabel = slowFeedback?.title ?? visibleProgressContent.title;
   const activeProgressDescription = slowFeedback?.description ?? visibleProgressContent.description;
   const activeProgressEmphasis = slowFeedback ? 'slow' : 'normal';
-  const shouldShowAnimatedProgress =
-    !!visibleProgressState && !latestAssistantWithoutPatch;
+  const shouldShowAnimatedProgress = !!visibleProgressState && !latestAssistantWithoutPatch;
   const recoveredContinuitySnapshot =
     !latestProposalMessage &&
     !isBusy &&
@@ -1870,6 +1932,7 @@ export function EventAiWizardPanel({
     setEarlyProseLead(null);
     setLastSentText(text);
     setLastAppliedPatch(null);
+    setLastApplyNotice(null);
     sendMessage({ text });
     setInput('');
     if (typeof window !== 'undefined') {
@@ -1891,9 +1954,12 @@ export function EventAiWizardPanel({
     setAssistantOpen(false);
   }
 
-  function handleApplyFailure() {
-    if (!isAssistantWorkspaceOpen) return;
-    setAssistantOpen(false);
+  function handleApplyFailure(message: string) {
+    setLastApplyNotice({ kind: 'failed', message });
+  }
+
+  function handlePartialApply(message: string) {
+    setLastApplyNotice({ kind: 'partial', message });
   }
 
   function handleReuseRequest(requestText: string) {
@@ -1916,8 +1982,8 @@ export function EventAiWizardPanel({
   return (
     <section
       className={cn(
-        'overflow-hidden rounded-3xl border border-border/60 bg-card/70 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/65 dark:border-white/8 dark:bg-[#0d1017]/96 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
-        embeddedInWorkspace && 'border-none bg-transparent shadow-none backdrop-blur-0 supports-[backdrop-filter]:bg-transparent',
+        'overflow-hidden rounded-3xl border border-border/60 bg-background shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-white/8 dark:bg-[#0d1017]/96 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
+        embeddedInWorkspace && 'border-none bg-transparent shadow-none',
       )}
       data-latency-request-started-at={latencyMarks.requestStartedAt ?? undefined}
       data-latency-first-progress-ms={firstProgressMs ?? undefined}
@@ -1928,40 +1994,85 @@ export function EventAiWizardPanel({
       {embeddedInWorkspace ? (
         <div className="px-1 pb-1 pt-2 sm:px-2">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{t('inline.title', { step: stepTitle })}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t('inline.title', { step: stepTitle })}
+            </p>
             {markdownFocus ? (
-              <span className="rounded-full bg-primary/12 px-2 py-0.5 text-[11px] font-medium text-primary">
+              <span className="rounded-full border border-border/60 bg-muted/15 px-2 py-0.5 text-[11px] font-medium text-foreground">
                 {t('inline.markdownBadge')}
               </span>
             ) : null}
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{t('contract')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('inline.description')}</p>
         </div>
       ) : (
         <header className="border-b border-border/60 px-4 py-4 sm:px-5 sm:py-5 dark:border-white/8">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Sparkles className="size-4" />
-            </span>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-sm font-semibold text-foreground">
                   {t('inline.title', { step: stepTitle })}
                 </h2>
                 {markdownFocus ? (
-                  <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <span className="rounded-full border border-border/60 bg-muted/15 px-2 py-0.5 text-[11px] font-medium text-foreground">
                     {t('inline.markdownBadge')}
                   </span>
                 ) : null}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{t('inline.description')}</p>
-              <p className="mt-2 text-xs text-muted-foreground">{t('contract')}</p>
             </div>
           </div>
         </header>
       )}
 
       <div className="space-y-5 px-4 py-4 sm:px-5">
+        <section className="rounded-2xl border border-border/60 bg-muted/10 px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {tAssistantLoose('trust.title')}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-foreground">{t('contract')}</p>
+          <dl className="mt-4 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
+            <div className="space-y-1">
+              <dt className="font-medium text-foreground">{tAssistantLoose('trust.applyLabel')}</dt>
+              <dd>{tAssistantLoose('trust.applyDescription')}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="font-medium text-foreground">{tAssistantLoose('trust.saveLabel')}</dt>
+              <dd>{tAssistantLoose('trust.saveDescription')}</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="font-medium text-foreground">
+                {tAssistantLoose('trust.recoveryLabel')}
+              </dt>
+              <dd>{tAssistantLoose('trust.recoveryDescription')}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {lastApplyNotice ? (
+          <div
+            role="alert"
+            className="rounded-2xl border border-destructive/30 bg-destructive/5 px-4 py-4"
+          >
+            <div className="flex gap-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {lastApplyNotice.kind === 'partial'
+                    ? tAssistantLoose('recovery.partialTitle')
+                    : tAssistantLoose('recovery.title')}
+                </p>
+                <p className="mt-1 text-sm text-destructive/90">{lastApplyNotice.message}</p>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  {lastApplyNotice.kind === 'partial'
+                    ? tAssistantLoose('recovery.partialDescription')
+                    : tAssistantLoose('recovery.description')}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {recoveredContinuitySnapshot ? (
           <ContinuitySnapshotCard
             snapshot={recoveredContinuitySnapshot}
@@ -1978,13 +2089,15 @@ export function EventAiWizardPanel({
         ) : null}
 
         {latestProposalMessage ? (
-          <section className="rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
+          <section className="rounded-2xl border border-border/60 bg-background p-4 dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <div className="space-y-4">
-              <div className="rounded-xl border border-primary/18 bg-primary/[0.05] px-4 py-3 dark:border-primary/20 dark:bg-primary/[0.08]">
-                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 dark:border-primary/20 dark:bg-primary/[0.08]">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t('latestProposal.title')}
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">{t('latestProposal.description')}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {t('latestProposal.description')}
+                </p>
               </div>
 
               {latestProposalPatchPart ? (
@@ -1997,13 +2110,22 @@ export function EventAiWizardPanel({
                   applied={appliedPatchIds.has(
                     latestProposalPatchPart.id ?? `${latestProposalMessage.id}-patch`,
                   )}
+                  onApplyStart={() => setLastApplyNotice(null)}
                   onApplied={(appliedState) => {
                     const patchId =
                       latestProposalPatchPart.id ?? `${latestProposalMessage.id}-patch`;
                     setAppliedPatchIds((prev) => new Set([...prev, patchId]));
+                    setLastApplyNotice(null);
                     setLastAppliedPatch(appliedState);
                   }}
-                  onApplyFailure={handleApplyFailure}
+                  onApplyFailure={(message) => {
+                    if (message === t('errors.partialApplied')) {
+                      handlePartialApply(message);
+                      return;
+                    }
+
+                    handleApplyFailure(message);
+                  }}
                   onRevealEditor={handleRevealEditor}
                   onNavigateToStep={handleNavigateToStep}
                   onRequestManualClarification={handleRequestManualLocationClarification}
@@ -2019,12 +2141,14 @@ export function EventAiWizardPanel({
             </div>
           </section>
         ) : renderedMessages.length > 0 ? (
-          <section className="rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
+          <section className="rounded-2xl border border-border/60 bg-background p-4 dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.pendingTitle')}
             </p>
             <div className="mt-3 space-y-3">
-              {latestVisibleUserMessage ? <RequestSummaryCard message={latestVisibleUserMessage} /> : null}
+              {latestVisibleUserMessage ? (
+                <RequestSummaryCard message={latestVisibleUserMessage} />
+              ) : null}
               {shouldShowAnimatedProgress ? (
                 <AnimatedProgressLabel
                   label={activeProgressLabel}
@@ -2046,7 +2170,7 @@ export function EventAiWizardPanel({
             </div>
           </section>
         ) : isBusy || visibleProgressState ? (
-          <section className="rounded-2xl border border-border/60 bg-background/55 p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
+          <section className="rounded-2xl border border-border/60 bg-background p-4 dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.pendingTitle')}
             </p>
@@ -2072,13 +2196,13 @@ export function EventAiWizardPanel({
             </div>
           </section>
         ) : (
-          <section className="rounded-2xl border border-dashed border-border/60 bg-background/35 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
+          <section className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
             <p className="font-medium text-foreground">{t('empty.heading')}</p>
             <p className="mt-1 leading-6">{t('empty.example')}</p>
           </section>
         )}
 
-        <section className="rounded-2xl border border-border/60 bg-background/65 px-4 py-4 shadow-sm sm:px-5 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
+        <section className="rounded-2xl border border-border/60 bg-background px-4 py-4 sm:px-5 dark:border-white/10 dark:bg-white/[0.04] dark:shadow-none">
           <label htmlFor={composerId} className="sr-only">
             {t('composer.label')}
           </label>
@@ -2088,7 +2212,9 @@ export function EventAiWizardPanel({
               <p id={composerHintId} className="mt-1 text-xs leading-5 text-muted-foreground">
                 {hasSavedBrief ? t('composer.savedBriefHint') : t('composer.briefHint')}
               </p>
-              <p className="mt-3 text-sm font-medium text-foreground">{t('composer.roughNotesTitle')}</p>
+              <p className="mt-3 text-sm font-medium text-foreground">
+                {t('composer.roughNotesTitle')}
+              </p>
               <p className="mt-1 text-xs leading-5 text-muted-foreground">
                 {t('composer.roughNotesExample')}
               </p>
@@ -2104,7 +2230,7 @@ export function EventAiWizardPanel({
               disabled={isBusy}
               rows={5}
               className={cn(
-                'min-h-[150px] w-full resize-y rounded-2xl border border-border/60 bg-background px-4 py-3 text-sm shadow-sm outline-none ring-offset-background transition sm:min-h-[180px] dark:border-primary/35 dark:bg-black/40 dark:shadow-none',
+                'min-h-[150px] w-full resize-y rounded-2xl border border-border/60 bg-background px-4 py-3 text-sm outline-none ring-offset-background transition sm:min-h-[180px] dark:border-primary/35 dark:bg-black/40 dark:shadow-none',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                 'disabled:opacity-60',
               )}
@@ -2159,7 +2285,10 @@ export function EventAiWizardPanel({
           </div>
         </section>
 
-        <details className="rounded-2xl border border-border/50 bg-background/40 p-4 dark:border-white/8 dark:bg-white/[0.025]" open={isEditingBrief}>
+        <details
+          className="rounded-2xl border border-border/50 bg-muted/10 p-4 dark:border-white/8 dark:bg-white/[0.025]"
+          open={isEditingBrief}
+        >
           <summary className="cursor-pointer list-none">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -2202,7 +2331,7 @@ export function EventAiWizardPanel({
                   onChange={(event) => setBriefDraft(event.target.value)}
                   rows={5}
                   className={cn(
-                    'min-h-[136px] w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm shadow-sm outline-none ring-offset-background transition dark:border-white/10 dark:bg-black/35 dark:shadow-none',
+                    'min-h-[136px] w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm outline-none ring-offset-background transition dark:border-white/10 dark:bg-black/35 dark:shadow-none',
                     'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                     'disabled:opacity-60',
                   )}
@@ -2234,7 +2363,9 @@ export function EventAiWizardPanel({
               </div>
             ) : hasSavedBrief ? (
               <div className="space-y-3">
-                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{eventBrief}</p>
+                <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">
+                  {eventBrief}
+                </p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <Button
                     type="button"
@@ -2271,7 +2402,10 @@ export function EventAiWizardPanel({
         </details>
 
         {chatError ? (
-          <div role="alert" className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+          <div
+            role="alert"
+            className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+          >
             <p className="font-medium">{t('errors.title')}</p>
             <p className="mt-1 text-xs text-destructive/80">{resolveChatErrorMessage()}</p>
           </div>
