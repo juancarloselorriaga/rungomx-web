@@ -12,11 +12,12 @@ import {
 } from '@/db/schema';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 
+import { normalizeMyRegistrationStatus, type MyRegistrationStatusKey } from './status';
+import type { MyRegistrationsView } from './view';
+
 // =============================================================================
 // Types
 // =============================================================================
-
-export type MyRegistrationsView = 'upcoming' | 'past' | 'cancelled' | 'in_progress';
 
 export type MyRegistrationListItem = {
   id: string;
@@ -40,6 +41,7 @@ export type MyRegistrationDetail = {
   registration: {
     id: string;
     status: string;
+    statusKey: MyRegistrationStatusKey;
     createdAt: Date;
     expiresAt: Date | null;
     basePriceCents: number | null;
@@ -215,6 +217,7 @@ export async function getMyRegistrationDetail(
   userId: string,
   registrationId: string,
 ): Promise<MyRegistrationDetail | null> {
+  const now = new Date();
   const [registration] = await db
     .select({
       id: registrations.id,
@@ -280,6 +283,11 @@ export async function getMyRegistrationDetail(
     registration: {
       id: registration.id,
       status: registration.status,
+      statusKey: normalizeMyRegistrationStatus({
+        status: registration.status,
+        expiresAt: registration.expiresAt,
+        now,
+      }),
       createdAt: registration.createdAt,
       expiresAt: registration.expiresAt,
       basePriceCents: registration.basePriceCents,

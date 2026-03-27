@@ -212,6 +212,7 @@ describe('my registrations queries - Database Integration', () => {
     const detail = await getMyRegistrationDetail(user.id, registration.id);
 
     expect(detail).not.toBeNull();
+    expect(detail?.registration.statusKey).toBe('confirmed');
     expect(detail?.registrant?.profileSnapshot?.firstName).toBe('Ana');
     expect(detail?.waiverAcceptances).toHaveLength(1);
     expect(detail?.waiverAcceptances[0]?.title).toBe(`Waiver ${suffix}`);

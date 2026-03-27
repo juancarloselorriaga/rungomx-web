@@ -3,32 +3,27 @@
 import { Button } from '@/components/ui/button';
 import { MobileNavSheet, useMobileNavSheet } from '@/components/ui/mobile-nav-sheet';
 import { Link } from '@/i18n/navigation';
+import {
+  DEFAULT_MY_REGISTRATIONS_VIEW,
+  MY_REGISTRATIONS_VIEWS,
+  parseMyRegistrationsView,
+  type MyRegistrationsView,
+} from '@/lib/events/my-registrations/view';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { ComponentProps } from 'react';
 
-const VIEWS = ['upcoming', 'in_progress', 'past', 'cancelled'] as const;
-
-type RegistrationView = (typeof VIEWS)[number];
-
-function getActiveView(value: string | null): RegistrationView {
-  if (value && VIEWS.includes(value as RegistrationView)) {
-    return value as RegistrationView;
-  }
-  return 'upcoming';
-}
-
-function getHref(view: RegistrationView) {
-  if (view === 'upcoming') {
+function getHref(view: MyRegistrationsView) {
+  if (view === DEFAULT_MY_REGISTRATIONS_VIEW) {
     return '/dashboard/my-registrations';
   }
   return `/dashboard/my-registrations?view=${view}`;
 }
 
 type MobileViewListProps = {
-  activeView: RegistrationView;
-  labels: Record<RegistrationView, { full: string; short: string }>;
+  activeView: MyRegistrationsView;
+  labels: Record<MyRegistrationsView, { full: string; short: string }>;
 };
 
 function MobileViewList({ activeView, labels }: MobileViewListProps) {
@@ -38,7 +33,7 @@ function MobileViewList({ activeView, labels }: MobileViewListProps) {
   return (
     <div className="py-2">
       <div className="space-y-1">
-        {VIEWS.map((view) => {
+        {MY_REGISTRATIONS_VIEWS.map((view) => {
           const isActive = activeView === view;
           const href = getHref(view) as LinkHref;
           return (
@@ -72,10 +67,10 @@ export function MyRegistrationsSubnav() {
   const t = useTranslations('pages.dashboard.myRegistrations');
   const tCommon = useTranslations('common');
   const searchParams = useSearchParams();
-  const activeView = getActiveView(searchParams?.get('view') ?? null);
+  const activeView = parseMyRegistrationsView(searchParams?.get('view'));
   type LinkHref = ComponentProps<typeof Link>['href'];
 
-  const labels: Record<RegistrationView, { full: string; short: string }> = {
+  const labels: Record<MyRegistrationsView, { full: string; short: string }> = {
     upcoming: {
       full: t('tabs.upcoming'),
       short: t('tabs.upcomingShort'),
@@ -108,7 +103,7 @@ export function MyRegistrationsSubnav() {
       </div>
 
       <div className="hidden md:flex items-stretch gap-1 rounded-lg border bg-background/60 p-1">
-        {VIEWS.map((view) => {
+        {MY_REGISTRATIONS_VIEWS.map((view) => {
           const isActive = activeView === view;
           const href = getHref(view) as LinkHref;
           return (

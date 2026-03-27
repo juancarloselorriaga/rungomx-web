@@ -6,16 +6,9 @@ import { Badge } from '@/components/common/badge';
 import { DemoPayButton } from '@/components/dashboard/demo-pay-button';
 import { PrintButton } from '@/components/dashboard/print-button';
 import { Button } from '@/components/ui/button';
+import type { MyRegistrationStatusKey } from '@/lib/events/my-registrations';
 
-type RegistrationStatusKey =
-  | 'confirmed'
-  | 'payment_pending'
-  | 'cancelled'
-  | 'started'
-  | 'submitted'
-  | 'expired';
-
-const statusVariants: Record<RegistrationStatusKey, 'green' | 'blue' | 'outline' | 'indigo'> = {
+const statusVariants: Record<MyRegistrationStatusKey, 'green' | 'blue' | 'outline' | 'indigo'> = {
   confirmed: 'green',
   payment_pending: 'blue',
   cancelled: 'outline',
@@ -26,8 +19,8 @@ const statusVariants: Record<RegistrationStatusKey, 'green' | 'blue' | 'outline'
 
 type RegistrationTicketStatusProps = {
   registrationId: string;
-  initialStatus: RegistrationStatusKey;
-  statusLabels: Record<RegistrationStatusKey, string>;
+  initialStatus: MyRegistrationStatusKey;
+  statusLabels: Record<MyRegistrationStatusKey, string>;
   ticketTitle: string;
   ticketCodeLabel: string;
   ticketCode: string;
@@ -55,7 +48,7 @@ export function RegistrationTicketStatus({
   printLabel,
   payNowLabel,
 }: RegistrationTicketStatusProps) {
-  const [status, setStatus] = useState<RegistrationStatusKey>(initialStatus);
+  const [status, setStatus] = useState<MyRegistrationStatusKey>(initialStatus);
   const isPaymentPending = status === 'payment_pending';
 
   return (
@@ -84,11 +77,14 @@ export function RegistrationTicketStatus({
         <PrintButton label={printLabel} />
         {isPaymentPending ? (
           demoPaymentsEnabled ? (
-            <DemoPayButton registrationId={registrationId} onSuccess={(nextStatus) => {
-              if (nextStatus === 'confirmed') {
-                setStatus('confirmed');
-              }
-            }} />
+            <DemoPayButton
+              registrationId={registrationId}
+              onSuccess={(nextStatus) => {
+                if (nextStatus === 'confirmed') {
+                  setStatus('confirmed');
+                }
+              }}
+            />
           ) : (
             <Button type="button" disabled>
               {payNowLabel}

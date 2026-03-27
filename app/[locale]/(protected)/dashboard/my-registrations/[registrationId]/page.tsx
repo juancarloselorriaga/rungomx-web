@@ -1,19 +1,22 @@
 import { RegistrationTicketStatus } from '@/components/dashboard/registration-ticket-status';
 import { Button } from '@/components/ui/button';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getPathname, Link } from '@/i18n/navigation';
 import { DEFAULT_TIMEZONE } from '@/i18n/routing';
 import { getAuthContext } from '@/lib/auth/server';
+import type { MyRegistrationStatusKey } from '@/lib/events/my-registrations';
 import { getMyRegistrationDetail } from '@/lib/events/queries';
 import { formatRegistrationTicketCode } from '@/lib/events/tickets';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { Calendar, MapPin, UserRound } from 'lucide-react';
+import { Calendar, MapPin, QrCode, UserRound } from 'lucide-react';
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
+import type { ReactNode } from 'react';
 
 const CURRENCY = 'MXN';
 
@@ -47,6 +50,51 @@ function formatCurrency(cents: number, locale: string) {
   });
 }
 
+function DetailSection({
+  title,
+  icon,
+  children,
+  className,
+}: {
+  title: string;
+  icon?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <Surface className={className}>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          {icon ? <span className="text-muted-foreground">{icon}</span> : null}
+          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+        </div>
+        {children}
+      </div>
+    </Surface>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+  emphasize = false,
+}: {
+  label: string;
+  value: ReactNode;
+  emphasize?: boolean;
+}) {
+  return (
+    <div
+      className={`flex items-start justify-between gap-4 ${emphasize ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+    >
+      <span>{label}</span>
+      <span className={`text-right ${emphasize ? 'text-foreground' : 'text-foreground/90'}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default async function MyRegistrationDetailPage({ params }: RegistrationDetailPageProps) {
   const { locale, registrationId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/my-registrations/[registrationId]' });
@@ -63,7 +111,15 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
     (!isProduction || allowDemoPaymentsInProduction);
 
   if (!authContext.permissions.canAccessUserArea) {
-    redirect(getPathname({ href: '/dashboard', locale }));
+    redirect(
+      getPathname({
+        href:
+          authContext.isInternal && authContext.permissions.canAccessAdminArea
+            ? '/admin'
+            : '/dashboard',
+        locale,
+      }),
+    );
   }
 
   const detail = await getMyRegistrationDetail(authContext.user!.id, registrationId);
@@ -74,20 +130,14 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
   const { registration, event, distance, registrant, waiverAcceptances } = detail;
   const ticketCode = formatRegistrationTicketCode(registration.id);
   const qrUrl = `/api/tickets/qr/${registration.id}`;
-  const isExpired =
-    (registration.status === 'started' || registration.status === 'submitted') &&
-    registration.expiresAt &&
-    registration.expiresAt <= new Date();
-  const statusCopy = {
+  const statusCopy: Record<MyRegistrationStatusKey, string> = {
     confirmed: t('status.confirmed'),
     payment_pending: t('status.payment_pending'),
     cancelled: t('status.cancelled'),
     started: t('status.started'),
     submitted: t('status.submitted'),
     expired: t('status.expired'),
-  } as const;
-  type StatusKey = keyof typeof statusCopy;
-  const statusKey = (isExpired ? 'expired' : registration.status) as StatusKey;
+  };
   const location = event.locationDisplay || [event.city, event.state].filter(Boolean).join(', ');
   const hasPriceDetails =
     registration.basePriceCents !== null ||
@@ -118,24 +168,38 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="space-y-3">
         <Link
           href="/dashboard/my-registrations"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           {t('title')}
         </Link>
-        <h1 className="text-3xl font-bold">
-          {event.seriesName} {event.editionLabel}
-        </h1>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            {event.seriesName} {event.editionLabel}
+          </h1>
+          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1">
+              <Calendar className="h-4 w-4" />
+              {formatDateTime(event.startsAt, locale, event.timezone)}
+            </span>
+            {location ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1">
+                <MapPin className="h-4 w-4" />
+                {location}
+              </span>
+            ) : null}
+          </div>
+        </div>
       </div>
 
-      <div className="rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-4">
+      <Surface className="overflow-hidden p-0">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1.4fr)_320px]">
+          <div className="p-6 sm:p-7">
             <RegistrationTicketStatus
               registrationId={registration.id}
-              initialStatus={statusKey}
+              initialStatus={registration.statusKey}
               statusLabels={statusCopy}
               ticketTitle={t('labels.ticket')}
               ticketCodeLabel={t('labels.ticketCode')}
@@ -149,38 +213,47 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
               payNowLabel={t('actions.payNow')}
             />
           </div>
-          <div className="flex items-center justify-center rounded-lg border bg-muted/20 p-4">
-            <Image
-              src={qrUrl}
-              alt={t('labels.ticketCode')}
-              width={160}
-              height={160}
-              className="h-40 w-40"
-              unoptimized
-            />
+          <div className="border-t bg-muted/20 p-6 lg:border-l lg:border-t-0 lg:p-7">
+            <InsetSurface className="flex h-full flex-col items-center justify-center gap-4 p-5 text-center">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <QrCode className="h-4 w-4" />
+                {t('labels.ticket')}
+              </div>
+              <Image
+                src={qrUrl}
+                alt={t('labels.ticketCode')}
+                width={176}
+                height={176}
+                className="h-44 w-44"
+                unoptimized
+              />
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  {t('labels.ticketCode')}
+                </p>
+                <p className="font-mono text-sm text-foreground">{ticketCode}</p>
+              </div>
+            </InsetSurface>
           </div>
         </div>
-      </div>
+      </Surface>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-          <h3 className="text-lg font-semibold">{t('labels.eventDetails')}</h3>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
+        <DetailSection title={t('labels.eventDetails')} icon={<Calendar className="h-5 w-5" />}>
+          <InsetSurface className="space-y-3 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
               <span>{formatDateTime(event.startsAt, locale, event.timezone)}</span>
             </div>
             {location ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
                 <span>{location}</span>
               </div>
             ) : null}
-            {event.address ? <p>{event.address}</p> : null}
-            <p>
-              {t('labels.distance')}: {distance.label}
-            </p>
-          </div>
+            {event.address ? <p className="text-muted-foreground">{event.address}</p> : null}
+            <DetailRow label={t('labels.distance')} value={distance.label} />
+          </InsetSurface>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="outline">
               <Link
@@ -200,98 +273,104 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
               </Button>
             ) : null}
           </div>
-        </div>
+        </DetailSection>
 
-        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-          <h3 className="text-lg font-semibold">{t('labels.registrationDetails')}</h3>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              {t('labels.createdAt')}: {formatDateTime(registration.createdAt, locale)}
-            </p>
+        <DetailSection title={t('labels.registrationDetails')}>
+          <InsetSurface className="space-y-3 text-sm">
+            <DetailRow
+              label={t('labels.createdAt')}
+              value={formatDateTime(registration.createdAt, locale)}
+            />
             {registration.status === 'payment_pending' && registration.expiresAt ? (
-              <p>
-                {t('labels.paymentHoldExpires')}: {formatDateTime(registration.expiresAt, locale)}
-              </p>
+              <DetailRow
+                label={t('labels.paymentHoldExpires')}
+                value={formatDateTime(registration.expiresAt, locale)}
+              />
             ) : null}
-          </div>
+          </InsetSurface>
           {hasPriceDetails ? (
-            <div className="space-y-2 text-sm">
-              <p className="font-semibold">{t('labels.priceBreakdown')}</p>
-              <div className="space-y-1 text-muted-foreground">
+            <InsetSurface className="space-y-3 text-sm">
+              <p className="font-semibold text-foreground">{t('labels.priceBreakdown')}</p>
+              <div className="space-y-2">
                 {registration.basePriceCents !== null ? (
-                  <div className="flex items-center justify-between">
-                    <span>{t('labels.basePrice')}</span>
-                    <span>{formatCurrency(registration.basePriceCents, locale)}</span>
-                  </div>
+                  <DetailRow
+                    label={t('labels.basePrice')}
+                    value={formatCurrency(registration.basePriceCents, locale)}
+                  />
                 ) : null}
                 {registration.feesCents !== null ? (
-                  <div className="flex items-center justify-between">
-                    <span>{t('labels.fees')}</span>
-                    <span>{formatCurrency(registration.feesCents, locale)}</span>
-                  </div>
+                  <DetailRow
+                    label={t('labels.fees')}
+                    value={formatCurrency(registration.feesCents, locale)}
+                  />
                 ) : null}
                 {registration.taxCents !== null ? (
-                  <div className="flex items-center justify-between">
-                    <span>{t('labels.tax')}</span>
-                    <span>{formatCurrency(registration.taxCents, locale)}</span>
-                  </div>
+                  <DetailRow
+                    label={t('labels.tax')}
+                    value={formatCurrency(registration.taxCents, locale)}
+                  />
                 ) : null}
                 {registration.totalCents !== null ? (
-                  <div className="flex items-center justify-between font-semibold text-foreground">
-                    <span>{t('labels.total')}</span>
-                    <span>{formatCurrency(registration.totalCents, locale)}</span>
-                  </div>
+                  <DetailRow
+                    label={t('labels.total')}
+                    value={formatCurrency(registration.totalCents, locale)}
+                    emphasize
+                  />
                 ) : null}
               </div>
-            </div>
+            </InsetSurface>
           ) : null}
-        </div>
+        </DetailSection>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <UserRound className="h-5 w-5 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">{t('labels.participantSnapshot')}</h3>
-          </div>
+        <DetailSection
+          title={t('labels.participantSnapshot')}
+          icon={<UserRound className="h-5 w-5" />}
+        >
           {participantFields.length === 0 ? (
-            <p className="text-sm text-muted-foreground">-</p>
+            <InsetSurface>
+              <p className="text-sm text-muted-foreground">-</p>
+            </InsetSurface>
           ) : (
-            <dl className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
               {participantFields.map(([label, value]) => (
-                <div key={label} className="space-y-1">
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {label}
-                  </dt>
+                <InsetSurface key={label} className="space-y-1">
+                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
                   <dd className="text-foreground">{value}</dd>
-                </div>
+                </InsetSurface>
               ))}
             </dl>
           )}
-        </div>
+        </DetailSection>
 
-        <div className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-          <h3 className="text-lg font-semibold">{t('labels.waivers')}</h3>
+        <DetailSection title={t('labels.waivers')}>
           {waiverAcceptances.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t('detail.noWaivers')}</p>
+            <InsetSurface>
+              <p className="text-sm text-muted-foreground">{t('detail.noWaivers')}</p>
+            </InsetSurface>
           ) : (
             <div className="space-y-3 text-sm">
               {waiverAcceptances.map((waiver) => (
-                <div key={`${waiver.title}-${waiver.acceptedAt.toISOString()}`} className="rounded-md border px-3 py-2">
+                <InsetSurface
+                  key={`${waiver.title}-${waiver.acceptedAt.toISOString()}`}
+                  className="space-y-2"
+                >
                   <p className="font-medium text-foreground">{waiver.title}</p>
-                  <div className="text-muted-foreground text-xs space-y-1">
+                  <div className="space-y-1 text-xs text-muted-foreground">
                     <p>
                       {t('detail.waiverAccepted')}: {formatDateTime(waiver.acceptedAt, locale)}
                     </p>
                     <p>
-                      {t('detail.waiverSignature')}: {signatureLabels[waiver.signatureType as keyof typeof signatureLabels]}
+                      {t('detail.waiverSignature')}:{' '}
+                      {signatureLabels[waiver.signatureType as keyof typeof signatureLabels]}
                     </p>
                   </div>
-                </div>
+                </InsetSurface>
               ))}
             </div>
           )}
-        </div>
+        </DetailSection>
       </div>
     </div>
   );
