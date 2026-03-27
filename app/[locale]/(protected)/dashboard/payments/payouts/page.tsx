@@ -1,16 +1,14 @@
 import { Link } from '@/i18n/navigation';
 import { getPathname } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
 import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { PaymentsStatePanel } from '@/components/payments/payments-state-panel';
 import { PayoutHistoryTable } from '@/components/payments/payout-history-table';
 import { PayoutRequestDialog } from '@/components/payments/payout-request-dialog';
 import { getAuthContext } from '@/lib/auth/server';
 import { getAllOrganizations, getUserOrganizations } from '@/lib/organizations/queries';
-import {
-  countOrganizerPayouts,
-  listOrganizerPayouts,
-} from '@/lib/payments/organizer/payout-views';
+import { countOrganizerPayouts, listOrganizerPayouts } from '@/lib/payments/organizer/payout-views';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
@@ -76,10 +74,7 @@ export default async function DashboardPaymentsPayoutsPage({
   if (organizations.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold">{t('payouts.title')}</h1>
-          <p className="text-muted-foreground">{t('payouts.description')}</p>
-        </div>
+        <DashboardPageIntro title={t('payouts.title')} description={t('payouts.description')} />
 
         <PaymentsStatePanel
           title={t('home.shell.emptyTitle')}
@@ -143,27 +138,35 @@ export default async function DashboardPaymentsPayoutsPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Link
-          href={{
-            pathname: '/dashboard/payments',
-            query: { organizationId: selectedOrganization.id },
-          }}
-          className="inline-flex text-sm font-medium text-muted-foreground transition hover:text-foreground"
-        >
-          {t('nav.backToPayments')}
-        </Link>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold">{t('payouts.title')}</h1>
-            <p className="text-muted-foreground">{t('payouts.description')}</p>
-          </div>
-          <PayoutRequestDialog
-            organizationId={selectedOrganization.id}
-            triggerLabel={t('actions.newPayout')}
+      <DashboardPageIntro
+        title={t('payouts.title')}
+        description={t('payouts.description')}
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link
+                href={{
+                  pathname: '/dashboard/payments',
+                  query: { organizationId: selectedOrganization.id },
+                }}
+              >
+                {t('nav.backToPayments')}
+              </Link>
+            </Button>
+            <PayoutRequestDialog
+              organizationId={selectedOrganization.id}
+              triggerLabel={t('actions.newPayout')}
+            />
+          </>
+        }
+        aside={
+          <DashboardPageIntroMeta
+            title={selectedOrganization.name}
+            items={[{ label: t('home.organization.title'), value: organizationCountLabel }]}
+            className="bg-background/72"
           />
-        </div>
-      </div>
+        }
+      />
 
       {hasInvalidSelection ? (
         <PaymentsStatePanel
@@ -204,9 +207,7 @@ export default async function DashboardPaymentsPayoutsPage({
         })}
         firstPageHref={payoutPage > 1 ? buildPayoutHistoryHref(1) : null}
         previousPageHref={payoutPage > 1 ? buildPayoutHistoryHref(payoutPage - 1) : null}
-        nextPageHref={
-          payoutPage < payoutPageCount ? buildPayoutHistoryHref(payoutPage + 1) : null
-        }
+        nextPageHref={payoutPage < payoutPageCount ? buildPayoutHistoryHref(payoutPage + 1) : null}
         lastPageHref={
           payoutPageCount > 0 && payoutPage < payoutPageCount
             ? buildPayoutHistoryHref(payoutPageCount)

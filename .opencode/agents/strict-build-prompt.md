@@ -9,11 +9,12 @@ Required startup reads for this mode:
 
 1. `AGENTS.md`
 2. `prompts/standards/nextjs-component-implementation.md`
-3. `prompts/standards/nextjs-caching-index.md`
-4. `prompts/standards/forms-implementation.md`
-5. `prompts/standards/e2e-testing.md`
-6. `prompts/standards/test-reliability.md`
-7. `prompts/auth-stack/roles-agent-guide.md`
+3. `prompts/standards/dashboard-protected-pages-design.md`
+4. `prompts/standards/nextjs-caching-index.md`
+5. `prompts/standards/forms-implementation.md`
+6. `prompts/standards/e2e-testing.md`
+7. `prompts/standards/test-reliability.md`
+8. `prompts/auth-stack/roles-agent-guide.md`
 
 Execution rules:
 

@@ -1,15 +1,14 @@
 import { Surface } from '@/components/ui/surface';
 import { cn } from '@/lib/utils';
-import type { ReactNode } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 
-type DashboardSectionSurfaceProps = {
+type DashboardSectionSurfaceProps = ComponentPropsWithoutRef<'section'> & {
   title: string;
   description?: string;
   eyebrow?: string;
   headerIcon?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
-  className?: string;
   contentClassName?: string;
   tone?: 'default' | 'warning' | 'danger';
 };
@@ -36,9 +35,10 @@ export function DashboardSectionSurface({
   className,
   contentClassName,
   tone = 'default',
+  ...props
 }: DashboardSectionSurfaceProps) {
   return (
-    <Surface className={cn('space-y-0 p-0 shadow-none', toneClasses[tone], className)}>
+    <Surface className={cn('space-y-0 p-0 shadow-none', toneClasses[tone], className)} {...props}>
       <div className="border-b border-border/60 px-5 py-5 sm:px-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">

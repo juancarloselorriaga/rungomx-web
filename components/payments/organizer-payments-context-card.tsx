@@ -1,5 +1,6 @@
 'use client';
 
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,11 +13,6 @@ import {
 import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
-import {
-  PaymentsEyebrow,
-  PaymentsSectionDescription,
-  PaymentsSectionTitle,
-} from './payments-typography';
 
 type OrganizationOption = {
   id: string;
@@ -45,22 +41,13 @@ export function OrganizerPaymentsContextCard({
   const router = useRouter();
 
   return (
-    <section className="rounded-xl border bg-card/60 p-4 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 space-y-1">
-          <PaymentsEyebrow>{title}</PaymentsEyebrow>
-          <div className="flex flex-col gap-1 lg:flex-row lg:items-center lg:gap-3">
-            <PaymentsSectionTitle compact className="truncate">
-              {selectedOrganization.name}
-            </PaymentsSectionTitle>
-            {organizations.length > 1 ? (
-              <p className="text-xs text-muted-foreground">{organizationCountLabel}</p>
-            ) : null}
-          </div>
-          <PaymentsSectionDescription className="max-w-2xl">{description}</PaymentsSectionDescription>
-        </div>
-
-        {organizations.length > 1 ? (
+    <DashboardSectionSurface
+      eyebrow={title}
+      title={selectedOrganization.name}
+      description={description}
+      contentClassName="pt-4"
+      actions={
+        organizations.length > 1 ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -110,8 +97,14 @@ export function OrganizerPaymentsContextCard({
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : null}
-      </div>
-    </section>
+        ) : null
+      }
+    >
+      {organizations.length > 1 ? (
+        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+          {organizationCountLabel}
+        </p>
+      ) : null}
+    </DashboardSectionSurface>
   );
 }

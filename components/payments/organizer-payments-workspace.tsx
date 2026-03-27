@@ -2,10 +2,7 @@
 
 import { Link } from '@/i18n/navigation';
 import type { AppHref } from '@/lib/payments/organizer/hrefs';
-import {
-  getGlobalPayoutHistoryHref,
-  getPayoutDetailHref,
-} from '@/lib/payments/organizer/hrefs';
+import { getGlobalPayoutHistoryHref, getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
 import {
   type OrganizerWalletIssuesApiResponse,
@@ -176,12 +173,11 @@ export function OrganizerPaymentsWorkspace({
     );
   }
 
-  const activePayoutId =
-    data.issues
-      ? [...data.issues.actionNeeded, ...data.issues.inProgress].find(
-          (item) => item.entityType === 'payout',
-        )?.entityId ?? null
-      : null;
+  const activePayoutId = data.issues
+    ? ([...data.issues.actionNeeded, ...data.issues.inProgress].find(
+        (item) => item.entityType === 'payout',
+      )?.entityId ?? null)
+    : null;
   const isPartial = workspaceStatus === 'partial';
   const isWalletUnavailable = data.wallet == null;
   const ctaState =
@@ -230,7 +226,7 @@ export function OrganizerPaymentsWorkspace({
           />
         )}
 
-        <PaymentsPanel className="p-4 sm:p-6">
+        <PaymentsPanel className="p-5 sm:p-6">
           <div className="space-y-4 sm:space-y-5">
             <div className="space-y-1">
               <PaymentsEyebrow>{t('home.nextStep.eyebrow')}</PaymentsEyebrow>

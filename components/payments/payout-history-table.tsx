@@ -8,6 +8,7 @@ import { shortIdentifier } from '@/lib/payments/organizer/presentation';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 import { ChevronRightIcon } from 'lucide-react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 
 import {
   PaymentsDataTable,
@@ -25,10 +26,7 @@ import {
 import { PaymentsStatePanel } from './payments-state-panel';
 import { PayoutStatusBadge } from './payout-status-badge';
 import { PaymentsMutedPanel, PaymentsPanel } from './payments-surfaces';
-import {
-  PaymentsSectionDescription,
-  PaymentsSectionTitle,
-} from './payments-typography';
+import { PaymentsSectionDescription, PaymentsSectionTitle } from './payments-typography';
 
 type PayoutHistoryHref = Parameters<typeof Link>[0]['href'];
 
@@ -95,22 +93,28 @@ export function PayoutHistoryTable({
   }
 
   return (
-    <PaymentsPanel className="space-y-4">
+    <PaymentsPanel className="space-y-4 p-5 sm:p-6">
       {title || description || scopeSummary || pageStatus || scopeHint ? (
         <div className="space-y-3">
           {title || description ? (
             <div className="space-y-1.5">
               {title ? <PaymentsSectionTitle compact>{title}</PaymentsSectionTitle> : null}
-              {description ? <PaymentsSectionDescription>{description}</PaymentsSectionDescription> : null}
+              {description ? (
+                <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
+              ) : null}
             </div>
           ) : null}
           {scopeSummary || pageStatus || scopeHint ? (
             <PaymentsMutedPanel className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-1">
-                {scopeSummary ? <p className="font-medium text-foreground">{scopeSummary}</p> : null}
+                {scopeSummary ? (
+                  <p className="font-medium text-foreground">{scopeSummary}</p>
+                ) : null}
                 {scopeHint ? <p>{scopeHint}</p> : null}
               </div>
-              {pageStatus ? <p className="text-xs uppercase tracking-[0.16em]">{pageStatus}</p> : null}
+              {pageStatus ? (
+                <p className="text-xs uppercase tracking-[0.16em]">{pageStatus}</p>
+              ) : null}
             </PaymentsMutedPanel>
           ) : null}
         </div>
@@ -121,7 +125,10 @@ export function PayoutHistoryTable({
           const detailHref = getPayoutDetailHref(item.payoutRequestId, { eventId });
 
           return (
-            <PaymentsResponsiveListItem key={item.payoutRequestId} data-testid="payout-history-mobile-card">
+            <PaymentsResponsiveListItem
+              key={item.payoutRequestId}
+              data-testid="payout-history-mobile-card"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <Link
@@ -142,24 +149,28 @@ export function PayoutHistoryTable({
 
               <PaymentsResponsiveListGrid className="mt-4">
                 <div>
-                  <PaymentsResponsiveListLabel>{t('payouts.table.requested')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListLabel>
+                    {t('payouts.table.requested')}
+                  </PaymentsResponsiveListLabel>
                   <PaymentsResponsiveListValue className="tabular-nums">
                     {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
                   </PaymentsResponsiveListValue>
                 </div>
                 <div>
-                  <PaymentsResponsiveListLabel>{t('payouts.table.currentAmount')}</PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListLabel>
+                    {t('payouts.table.currentAmount')}
+                  </PaymentsResponsiveListLabel>
                   <PaymentsResponsiveListValue className="tabular-nums">
-                    {formatMoneyFromMinor(
-                      item.currentRequestedAmountMinor,
-                      item.currency,
-                      locale,
-                    )}
+                    {formatMoneyFromMinor(item.currentRequestedAmountMinor, item.currency, locale)}
                   </PaymentsResponsiveListValue>
                 </div>
                 <div className="col-span-2">
-                  <PaymentsResponsiveListLabel>{t('payouts.table.requestedAt')}</PaymentsResponsiveListLabel>
-                  <PaymentsResponsiveListValue>{formatDate(item.requestedAt, locale)}</PaymentsResponsiveListValue>
+                  <PaymentsResponsiveListLabel>
+                    {t('payouts.table.requestedAt')}
+                  </PaymentsResponsiveListLabel>
+                  <PaymentsResponsiveListValue>
+                    {formatDate(item.requestedAt, locale)}
+                  </PaymentsResponsiveListValue>
                 </div>
               </PaymentsResponsiveListGrid>
 
@@ -174,7 +185,7 @@ export function PayoutHistoryTable({
       </PaymentsResponsiveList>
 
       <div className="hidden md:block">
-      <PaymentsDataTable minWidthClassName="min-w-[48rem]">
+        <PaymentsDataTable minWidthClassName="min-w-[48rem]">
           <PaymentsDataTableHead>
             <tr>
               <PaymentsDataTableHeader>{t('payouts.table.requestId')}</PaymentsDataTableHeader>
@@ -204,7 +215,7 @@ export function PayoutHistoryTable({
                   role="link"
                   tabIndex={0}
                   onClick={navigateToDetail}
-                  onKeyDown={(event) => {
+                  onKeyDown={(event: KeyboardEvent<HTMLTableRowElement>) => {
                     if (event.key === 'Enter' || event.key === ' ') {
                       event.preventDefault();
                       navigateToDetail();
@@ -215,9 +226,11 @@ export function PayoutHistoryTable({
                     <Link
                       href={detailHref}
                       className="font-medium text-primary underline-offset-2 hover:underline"
-                      onClick={(event) => event.stopPropagation()}
+                      onClick={(event: MouseEvent<HTMLAnchorElement>) => event.stopPropagation()}
                     >
-                      {t('payouts.table.requestLabel', { id: shortIdentifier(item.payoutRequestId) })}
+                      {t('payouts.table.requestLabel', {
+                        id: shortIdentifier(item.payoutRequestId),
+                      })}
                     </Link>
                     <PaymentsDataTableMeta className="font-mono">
                       {shortIdentifier(item.payoutRequestId)}
@@ -233,11 +246,7 @@ export function PayoutHistoryTable({
                     {formatMoneyFromMinor(item.requestedAmountMinor, item.currency, locale)}
                   </PaymentsDataTableCell>
                   <PaymentsDataTableCell align="right" className="tabular-nums whitespace-nowrap">
-                    {formatMoneyFromMinor(
-                      item.currentRequestedAmountMinor,
-                      item.currency,
-                      locale,
-                    )}
+                    {formatMoneyFromMinor(item.currentRequestedAmountMinor, item.currency, locale)}
                   </PaymentsDataTableCell>
                   <PaymentsDataTableCell className="whitespace-nowrap">
                     {formatDate(item.requestedAt, locale)}
@@ -247,7 +256,7 @@ export function PayoutHistoryTable({
                       href={detailHref}
                       aria-label={t('actions.openDetails')}
                       className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted/40 hover:text-foreground"
-                      onClick={(event) => event.stopPropagation()}
+                      onClick={(event: MouseEvent<HTMLAnchorElement>) => event.stopPropagation()}
                     >
                       <ChevronRightIcon className="size-4" />
                     </Link>
@@ -256,13 +265,22 @@ export function PayoutHistoryTable({
               );
             })}
           </tbody>
-      </PaymentsDataTable>
+        </PaymentsDataTable>
       </div>
 
       {firstPageLabel && previousPageLabel && nextPageLabel && lastPageLabel ? (
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button asChild={Boolean(firstPageHref)} variant="outline" size="sm" disabled={!firstPageHref}>
-            {firstPageHref ? <Link href={firstPageHref}>{firstPageLabel}</Link> : <span>{firstPageLabel}</span>}
+          <Button
+            asChild={Boolean(firstPageHref)}
+            variant="outline"
+            size="sm"
+            disabled={!firstPageHref}
+          >
+            {firstPageHref ? (
+              <Link href={firstPageHref}>{firstPageLabel}</Link>
+            ) : (
+              <span>{firstPageLabel}</span>
+            )}
           </Button>
           <Button
             asChild={Boolean(previousPageHref)}
@@ -276,11 +294,29 @@ export function PayoutHistoryTable({
               <span>{previousPageLabel}</span>
             )}
           </Button>
-          <Button asChild={Boolean(nextPageHref)} variant="outline" size="sm" disabled={!nextPageHref}>
-            {nextPageHref ? <Link href={nextPageHref}>{nextPageLabel}</Link> : <span>{nextPageLabel}</span>}
+          <Button
+            asChild={Boolean(nextPageHref)}
+            variant="outline"
+            size="sm"
+            disabled={!nextPageHref}
+          >
+            {nextPageHref ? (
+              <Link href={nextPageHref}>{nextPageLabel}</Link>
+            ) : (
+              <span>{nextPageLabel}</span>
+            )}
           </Button>
-          <Button asChild={Boolean(lastPageHref)} variant="outline" size="sm" disabled={!lastPageHref}>
-            {lastPageHref ? <Link href={lastPageHref}>{lastPageLabel}</Link> : <span>{lastPageLabel}</span>}
+          <Button
+            asChild={Boolean(lastPageHref)}
+            variant="outline"
+            size="sm"
+            disabled={!lastPageHref}
+          >
+            {lastPageHref ? (
+              <Link href={lastPageHref}>{lastPageLabel}</Link>
+            ) : (
+              <span>{lastPageLabel}</span>
+            )}
           </Button>
         </div>
       ) : null}

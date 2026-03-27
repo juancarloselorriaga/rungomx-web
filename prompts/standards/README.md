@@ -2,6 +2,15 @@
 
 This directory is the canonical source for project implementation and quality standards.
 
+Key standards used frequently in implementation work include:
+
+- `nextjs-component-implementation.md`
+- `dashboard-protected-pages-design.md`
+- `nextjs-caching-index.md`
+- `forms-implementation.md`
+- `e2e-testing.md`
+- `test-reliability.md`
+
 It is consumed by multiple agent/tooling ecosystems in this repository, including:
 
 - Codex

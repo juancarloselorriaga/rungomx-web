@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/common/badge';
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
@@ -78,14 +79,12 @@ function QueueSection({
   }
 
   return (
-    <PaymentsPanel
-      className="space-y-3"
-      aria-label={title}
-      data-testid={testId}
-    >
+    <PaymentsPanel className="space-y-3 p-5 sm:p-6" aria-label={title} data-testid={testId}>
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <PaymentsSectionTitle compact className="text-base sm:text-lg">{title}</PaymentsSectionTitle>
+          <PaymentsSectionTitle compact className="text-base sm:text-lg">
+            {title}
+          </PaymentsSectionTitle>
           <PaymentsCountPill>{items.length}</PaymentsCountPill>
         </div>
         <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
@@ -125,7 +124,9 @@ function QueueSection({
                     {getDetailHref(item) ? (
                       <div>
                         <Button asChild size="sm" variant="outline">
-                          <Link href={getDetailHref(item)!}>{t('wallet.queue.openPayoutAction')}</Link>
+                          <Link href={getDetailHref(item)!}>
+                            {t('wallet.queue.openPayoutAction')}
+                          </Link>
                         </Button>
                       </div>
                     ) : null}
@@ -169,7 +170,9 @@ function QueueSection({
                           {badgeLabel}
                         </Badge>
                       </div>
-                      <PaymentsTimestamp className="mt-3">{formatDate(item.occurredAt)}</PaymentsTimestamp>
+                      <PaymentsTimestamp className="mt-3">
+                        {formatDate(item.occurredAt)}
+                      </PaymentsTimestamp>
                     </li>
                   );
                 })}
@@ -192,22 +195,17 @@ export function OrganizerActionQueue({
   const isCompletelyEmpty = actionNeeded.length === 0 && inProgress.length === 0;
 
   return (
-    <section
-      className="space-y-4"
+    <DashboardSectionSurface
+      title={t('wallet.queue.title')}
+      description={t('wallet.queue.description')}
+      contentClassName="space-y-4"
       aria-label={t('wallet.queue.title')}
       data-testid="payments-action-queue"
     >
-      <div className="space-y-1">
-        <PaymentsSectionTitle>{t('wallet.queue.title')}</PaymentsSectionTitle>
-        <PaymentsSectionDescription>{t('wallet.queue.description')}</PaymentsSectionDescription>
-      </div>
-
       {isCompletelyEmpty ? (
         <div className="rounded-xl border border-dashed bg-muted/15 px-5 py-5">
           <p className="font-medium">{t('wallet.queue.emptyTitle')}</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t('wallet.queue.emptyDescription')}
-          </p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('wallet.queue.emptyDescription')}</p>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -233,6 +231,6 @@ export function OrganizerActionQueue({
           />
         </div>
       )}
-    </section>
+    </DashboardSectionSurface>
   );
 }

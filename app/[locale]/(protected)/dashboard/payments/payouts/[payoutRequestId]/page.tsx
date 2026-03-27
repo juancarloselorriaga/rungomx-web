@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { DashboardPageIntro } from '@/components/dashboard/page-intro';
 import { PayoutDetailScreen } from '@/components/payments/payout-detail-screen';
 import { Link } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
@@ -72,10 +73,7 @@ export default async function DashboardPaymentsPayoutDetailPage({
   if (!detail || (!isSupportUser && !membership)) {
     return (
       <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold">{pageTitle}</h1>
-          <p className="text-muted-foreground">{t('detail.description')}</p>
-        </div>
+        <DashboardPageIntro title={pageTitle} description={t('detail.description')} />
 
         <section className="rounded-lg border bg-card p-6 shadow-sm space-y-3">
           <h2 className="text-lg font-semibold">{t('detail.notFoundTitle')}</h2>

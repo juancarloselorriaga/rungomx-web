@@ -41,10 +41,12 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
   ] as const;
 
   return (
-    <PaymentsPanel aria-label={t('wallet.title')}>
+    <PaymentsPanel aria-label={t('wallet.title')} className="p-5 sm:p-6">
       <div className="flex flex-col gap-2 border-b border-border/70 pb-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="space-y-1">
-          <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">{t('wallet.title')}</PaymentsSectionTitle>
+          <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">
+            {t('wallet.title')}
+          </PaymentsSectionTitle>
           <PaymentsSectionDescription>{t('wallet.description')}</PaymentsSectionDescription>
         </div>
         <PaymentsTimestamp className="text-xs sm:text-sm">

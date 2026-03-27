@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/navigation';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
 import type { AppHref } from '@/lib/payments/organizer/hrefs';
 import type { OrganizerPayoutDetail } from '@/lib/payments/organizer/payout-views';
 import { PayoutDetailViewTelemetry } from '@/components/payments/payout-detail-view-telemetry';
@@ -69,34 +70,46 @@ export function PayoutDetailScreen({
         payoutRequestId={detail.payoutRequestId}
       />
 
-      <div className="space-y-3">
-        <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          {breadcrumbs.map((item, index) => (
-            <div key={`${item.href}-${item.label}`} className="flex items-center gap-2">
-              {index > 0 ? <span>/</span> : null}
-              <Link href={item.href} className="transition hover:text-foreground">
-                {item.label}
-              </Link>
-            </div>
-          ))}
-        </nav>
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{pageTitle}</h1>
-            <PayoutStatusBadge status={detail.status} label={labels.status} />
+      <DashboardPageIntro
+        title={pageTitle}
+        description={description}
+        eyebrow={breadcrumbs.map((item) => item.label).join(' / ')}
+        actions={<PayoutStatusBadge status={detail.status} label={labels.status} />}
+        aside={
+          <DashboardPageIntroMeta
+            title={organizationName ?? pageTitle}
+            items={[
+              { label: labels.requestId, value: detail.payoutRequestId },
+              { label: labels.requestedAt, value: formatDate(detail.requestedAt, locale) },
+            ]}
+            className="bg-background/72"
+          />
+        }
+      />
+
+      <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+        {breadcrumbs.map((item, index) => (
+          <div key={`${item.href}-${item.label}`} className="flex items-center gap-2">
+            {index > 0 ? <span>/</span> : null}
+            <Link href={item.href} className="transition hover:text-foreground">
+              {item.label}
+            </Link>
           </div>
-          <PaymentsSectionDescription>{description}</PaymentsSectionDescription>
-        </div>
-      </div>
+        ))}
+      </nav>
 
       <PaymentsPanel className="space-y-5">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">{labels.summaryTitle}</PaymentsSectionTitle>
+            <PaymentsSectionTitle className="text-xl sm:text-[1.65rem]">
+              {labels.summaryTitle}
+            </PaymentsSectionTitle>
             <PaymentsCountPill>3</PaymentsCountPill>
           </div>
           <PaymentsSectionDescription>{labels.summaryDescription}</PaymentsSectionDescription>
-          {organizationName ? <PaymentsSectionDescription>{organizationName}</PaymentsSectionDescription> : null}
+          {organizationName ? (
+            <PaymentsSectionDescription>{organizationName}</PaymentsSectionDescription>
+          ) : null}
         </div>
 
         <dl className="grid grid-cols-2 gap-3 text-sm xl:grid-cols-4">

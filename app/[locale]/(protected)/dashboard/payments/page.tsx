@@ -1,5 +1,6 @@
 import { Link } from '@/i18n/navigation';
 import { getPathname } from '@/i18n/navigation';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
 import { OrganizerPaymentsContextCard } from '@/components/payments/organizer-payments-context-card';
 import { PaymentsStatePanel } from '@/components/payments/payments-state-panel';
 import { OrganizerPaymentsWorkspace } from '@/components/payments/organizer-payments-workspace';
@@ -63,10 +64,7 @@ export default async function DashboardPaymentsPage({
   if (organizations.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold">{t('home.title')}</h1>
-          <p className="text-muted-foreground">{t('home.description')}</p>
-        </div>
+        <DashboardPageIntro title={t('home.title')} description={t('home.description')} />
 
         <PaymentsStatePanel
           title={t('home.shell.emptyTitle')}
@@ -97,10 +95,17 @@ export default async function DashboardPaymentsPage({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">{t('home.title')}</h1>
-        <p className="text-muted-foreground">{t('home.description')}</p>
-      </div>
+      <DashboardPageIntro
+        title={t('home.title')}
+        description={t('home.description')}
+        aside={
+          <DashboardPageIntroMeta
+            title={selectedOrganization.name}
+            items={[{ label: t('home.organization.title'), value: organizationCountLabel }]}
+            className="bg-background/72"
+          />
+        }
+      />
 
       {hasInvalidSelection ? (
         <PaymentsStatePanel

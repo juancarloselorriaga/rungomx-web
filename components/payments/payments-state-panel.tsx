@@ -14,8 +14,8 @@ type PaymentsStatePanelProps = {
 };
 
 const toneClasses: Record<NonNullable<PaymentsStatePanelProps['tone']>, string> = {
-  neutral: 'border bg-card/80',
-  warning: 'border-amber-200 bg-amber-50/60',
+  neutral: 'bg-card/80',
+  warning: 'border-amber-200/60 bg-amber-50/50 dark:bg-amber-950/20',
   error: 'border-destructive/25 bg-destructive/5',
 };
 
@@ -31,11 +31,7 @@ export function PaymentsStatePanel({
 }: PaymentsStatePanelProps) {
   return (
     <PaymentsPanel
-      className={cn(
-        toneClasses[tone],
-        dashed ? 'border-dashed' : 'border',
-        className,
-      )}
+      className={cn(toneClasses[tone], dashed ? 'border-dashed' : 'border', className)}
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1.5">
