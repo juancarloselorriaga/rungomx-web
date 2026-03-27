@@ -29,6 +29,7 @@ import { PricingTiersManager } from '../pricing/pricing-tiers-manager';
 import { QuestionsManager } from '../questions/questions-manager';
 import { WaiverManager } from '../waivers/waiver-manager';
 import { WebsiteContentEditor } from '../website/website-content-editor';
+import { EventPageIntro } from '../_event-page-intro';
 
 import { EventAiWizardPanel, type EventAiAssistantStepId } from './event-ai-wizard-panel';
 import { EventAssistantResponsiveSlot } from './event-assistant-responsive-slot';
@@ -659,28 +660,13 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
 
   return (
     <div className="space-y-6">
-      <Surface className="overflow-hidden border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-6 sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('title')}</h2>
-            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-              {t('description')}
-            </p>
-          </div>
-
-          <InsetSurface className="border-border/60 bg-background/80 p-5">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                {t('title')}
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                {event.seriesName} {event.editionLabel}
-              </p>
-              <p className="text-sm text-muted-foreground">{event.organizationName}</p>
-            </div>
-          </InsetSurface>
-        </div>
-      </Surface>
+      <EventPageIntro
+        title={t('title')}
+        description={t('description')}
+        eventName={`${event.seriesName} ${event.editionLabel}`}
+        organizationName={event.organizationName}
+        eyebrow={t('title')}
+      />
 
       <div className="max-w-4xl">
         <EventSettingsForm event={event} />

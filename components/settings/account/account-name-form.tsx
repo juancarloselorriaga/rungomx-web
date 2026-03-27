@@ -1,6 +1,7 @@
 'use client';
 
 import { updateAccountNameAction } from '@/app/actions/account';
+import { SettingsSurface } from '@/components/settings/settings-surface';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Spinner } from '@/components/ui/spinner';
@@ -84,15 +85,11 @@ export function AccountNameForm({ defaultName, email, variant = 'default' }: Acc
   const isSubmitting = form.isSubmitting;
 
   return (
-    <section className="space-y-5 rounded-lg border bg-card p-5 shadow-sm">
-      <div className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t('sectionLabel')}
-        </p>
-        <h2 className="text-lg font-semibold">{t(`title.${variant}`)}</h2>
-        <p className="text-sm text-muted-foreground">{t(`description.${variant}`)}</p>
-      </div>
-
+    <SettingsSurface
+      sectionLabel={t('sectionLabel')}
+      title={t(`title.${variant}`)}
+      description={t(`description.${variant}`)}
+    >
       <Form form={form} className="space-y-4 border-t border-border/70 pt-4">
         <FormError />
 
@@ -129,6 +126,6 @@ export function AccountNameForm({ defaultName, email, variant = 'default' }: Acc
           </Button>
         </div>
       </Form>
-    </section>
+    </SettingsSurface>
   );
 }

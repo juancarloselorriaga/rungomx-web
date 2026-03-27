@@ -1,6 +1,7 @@
 'use client';
 
 import { deleteOwnAccount } from '@/app/actions/account-delete';
+import { SettingsSurface } from '@/components/settings/settings-surface';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -93,22 +94,19 @@ export function AccountDeleteSection({ userEmail }: AccountDeleteSectionProps) {
 
   return (
     <>
-      <section className="space-y-5 rounded-lg border border-destructive/30 bg-card p-5 shadow-sm">
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-destructive">
-            {t('sectionLabel')}
-          </p>
-          <h2 className="text-lg font-semibold">{t('title')}</h2>
-          <p className="text-sm text-muted-foreground">{t('description')}</p>
-        </div>
-
+      <SettingsSurface
+        sectionLabel={t('sectionLabel')}
+        title={t('title')}
+        description={t('description')}
+        tone="danger"
+      >
         <div className="border-t border-border/70 pt-4">
           <Button variant="destructive" onClick={() => handleOpenChange(true)}>
             <Trash2 className="size-4" />
             {t('actions.delete')}
           </Button>
         </div>
-      </section>
+      </SettingsSurface>
 
       <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
         <DialogContent className="sm:max-w-md">

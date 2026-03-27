@@ -1,4 +1,6 @@
 import { getPathname, Link } from '@/i18n/navigation';
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
+import { MutedSurface, Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { getAllOrganizations, getUserOrganizations } from '@/lib/organizations/queries';
 import { LocalePageProps } from '@/types/next';
@@ -31,8 +33,7 @@ export default async function DashboardOrganizationsPage({ params }: LocalePageP
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -47,17 +48,16 @@ export default async function DashboardOrganizationsPage({ params }: LocalePageP
       <OrganizationsPageHeader title={t('title')} description={t('description')} />
 
       {organizations.length === 0 ? (
-        <div className="rounded-lg border bg-card p-8 shadow-sm">
+        <DashboardSectionSurface
+          title={t('emptyState.title')}
+          description={t('emptyState.description')}
+        >
           <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
             <div className="rounded-full bg-muted p-4">
               <Users className="h-8 w-8 text-muted-foreground" />
             </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold">{t('emptyState.title')}</h2>
-              <p className="text-muted-foreground max-w-md">{t('emptyState.description')}</p>
-            </div>
           </div>
-        </div>
+        </DashboardSectionSurface>
       ) : (
         <div className="space-y-4">
           {organizations.map((org) => {
@@ -66,26 +66,30 @@ export default async function DashboardOrganizationsPage({ params }: LocalePageP
               role === 'support' ? t('roles.support') : t(`roles.${role as OrganizationListRole}`);
 
             return (
-              <Link
+              <Surface
                 key={org.id}
-                href={{ pathname: '/dashboard/organizations/[orgId]', params: { orgId: org.id } }}
-                className="block rounded-lg border bg-card p-6 shadow-sm hover:border-primary/50 hover:shadow-md transition-all"
+                className="p-0 shadow-none transition-colors hover:border-primary/40"
               >
-                <div className="flex items-start justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="text-lg font-semibold">{org.name}</h3>
-                      <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                        {roleLabel}
-                      </span>
+                <Link
+                  href={{ pathname: '/dashboard/organizations/[orgId]', params: { orgId: org.id } }}
+                  className="block p-6"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold tracking-tight">{org.name}</h3>
+                        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                          {roleLabel}
+                        </span>
+                      </div>
+                      <MutedSurface className="px-3 py-2 text-sm text-muted-foreground">
+                        {t('table.slug')}: {org.slug}
+                      </MutedSurface>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {t('table.slug')}: {org.slug}
-                    </p>
+                    <ChevronRight className="h-5 w-5 flex-shrink-0 text-muted-foreground" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                </div>
-              </Link>
+                </Link>
+              </Surface>
             );
           })}
         </div>

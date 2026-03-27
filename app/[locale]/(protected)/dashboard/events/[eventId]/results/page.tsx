@@ -1,13 +1,14 @@
 import { OrganizerResultsLane } from '@/components/results/organizer/organizer-results-lane';
 import { Button } from '@/components/ui/button';
-import { InsetSurface, Surface } from '@/components/ui/surface';
+import { Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { ChevronRight, Radio, Trophy } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
+import { ResultsPageHero } from './_results-page-hero';
 import { getResultsWorkspacePageData } from './_results-workspace';
 
 type ResultsWorkspacePageProps = LocalePageProps & {
@@ -34,7 +35,6 @@ export default async function ResultsWorkspacePage({ params }: ResultsWorkspaceP
         pageData.railState.lifecycle === 'official'
           ? t('stateRail.lifecycleOfficial')
           : t('stateRail.lifecycleDraft'),
-      icon: Trophy,
     },
     {
       label: t('stateRail.connectivity'),
@@ -42,17 +42,14 @@ export default async function ResultsWorkspacePage({ params }: ResultsWorkspaceP
         pageData.railState.connectivity === 'online'
           ? t('stateRail.connectivityOnline')
           : t('stateRail.connectivityOffline'),
-      icon: Radio,
     },
     {
       label: t('stateRail.unsyncedCount'),
       value: String(pageData.railState.unsyncedCount),
-      icon: ChevronRight,
     },
     {
       label: t('versionVisibility.title'),
       value: String(pageData.versionVisibility.items.length),
-      icon: Trophy,
     },
   ] as const;
 
@@ -106,39 +103,7 @@ export default async function ResultsWorkspacePage({ params }: ResultsWorkspaceP
 
   return (
     <div className="space-y-6">
-      <Surface className="overflow-hidden border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-6 sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('title')}</h2>
-            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-              {t('description')}
-            </p>
-          </div>
-
-          <InsetSurface className="border-border/60 bg-background/80 p-5">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              {stats.map((stat) => {
-                const Icon = stat.icon;
-
-                return (
-                  <div
-                    key={stat.label}
-                    className="rounded-xl border border-border/60 bg-background/70 p-3"
-                  >
-                    <div className="mb-2 flex items-center gap-2 text-muted-foreground">
-                      <Icon className="h-4 w-4" />
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em]">
-                        {stat.label}
-                      </p>
-                    </div>
-                    <p className="text-sm font-medium text-foreground">{stat.value}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </InsetSurface>
-        </div>
-      </Surface>
+      <ResultsPageHero title={t('title')} description={t('description')} stats={stats} />
 
       <OrganizerResultsLane
         eventId={eventId}

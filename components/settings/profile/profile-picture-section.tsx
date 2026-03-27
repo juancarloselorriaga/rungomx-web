@@ -16,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { SettingsSurface } from '@/components/settings/settings-surface';
 import { Button } from '@/components/ui/button';
 import { useRouter } from '@/i18n/navigation';
 import { User } from '@/lib/auth/types';
@@ -73,10 +74,14 @@ export function ProfilePictureSection({
         });
 
         // Upload to Vercel Blob with a unique filename to avoid CDN caching issues
-        const blob = await upload(`${BLOB_STORE_PREFIX}/${user?.id}/profile-${Date.now()}.webp`, optimizedFile, {
-          access: 'public',
-          handleUploadUrl: '/api/profile-picture',
-        });
+        const blob = await upload(
+          `${BLOB_STORE_PREFIX}/${user?.id}/profile-${Date.now()}.webp`,
+          optimizedFile,
+          {
+            access: 'public',
+            handleUploadUrl: '/api/profile-picture',
+          },
+        );
 
         // Confirm the upload and update session
         const result = await confirmProfilePictureUpload(blob.url);
@@ -140,23 +145,14 @@ export function ProfilePictureSection({
   const hasImage = !!user?.image || !!previewUrl;
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('description')}</p>
-      </div>
-
+    <SettingsSurface title={t('title')} description={t('description')}>
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
         {/* Avatar Preview */}
         <div className="relative">
           {previewUrl ? (
             <div className="relative h-24 w-24 overflow-hidden rounded-full">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={previewUrl}
-                alt={t('preview')}
-                className="h-full w-full object-cover"
-              />
+              <img src={previewUrl} alt={t('preview')} className="h-full w-full object-cover" />
               {isUploading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                   <Loader2 className="h-6 w-6 animate-spin text-white" />
@@ -212,9 +208,7 @@ export function ProfilePictureSection({
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{t('deleteDialog.title')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t('deleteDialog.description')}
-                    </AlertDialogDescription>
+                    <AlertDialogDescription>{t('deleteDialog.description')}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t('deleteDialog.cancel')}</AlertDialogCancel>
@@ -241,6 +235,6 @@ export function ProfilePictureSection({
         className="hidden"
         data-testid="file-input"
       />
-    </section>
+    </SettingsSurface>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
@@ -142,12 +143,12 @@ export function OrganizationSettingsForm({
   };
 
   return (
-    <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-      <div className="flex items-center gap-2">
-        <Settings2 className="size-5 text-muted-foreground" />
-        <h2 className="text-lg font-semibold">{t('settings.title')}</h2>
-      </div>
-
+    <DashboardSectionSurface
+      title={t('settings.title')}
+      description={t('settings.fields.slug.hint')}
+      headerIcon={<Settings2 className="size-5" />}
+      contentClassName="space-y-4"
+    >
       <Form form={form} className="space-y-4">
         <FormError />
 
@@ -253,6 +254,6 @@ export function OrganizationSettingsForm({
         organizationId={organizationId}
         organizationName={initialName}
       />
-    </section>
+    </DashboardSectionSurface>
   );
 }

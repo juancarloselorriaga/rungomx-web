@@ -1,5 +1,6 @@
 import { ProfilePictureSection } from '@/components/settings/profile/profile-picture-section';
 import { ProfileSettingsForm } from '@/components/settings/profile/profile-settings-form';
+import { SettingsPageIntro } from '@/components/settings/settings-page-intro';
 import { getAuthContext } from '@/lib/auth/server';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -29,10 +30,13 @@ export default async function ProfileSettingsPage({ params }: LocalePageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-semibold">{tPage('title')}</h1>
-        <p className="text-muted-foreground">{tPage('description')}</p>
-      </div>
+      <SettingsPageIntro
+        title={tPage('title')}
+        description={tPage('description')}
+        eyebrow={tPage('title')}
+        userName={authContext.user?.name}
+        userEmail={authContext.user?.email}
+      />
 
       <ProfilePictureSection user={authContext.user} isInternal={authContext.isInternal} />
 

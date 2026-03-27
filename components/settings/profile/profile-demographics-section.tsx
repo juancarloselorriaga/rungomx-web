@@ -1,5 +1,6 @@
 import { LocationField } from '@/components/location/location-field';
 import { GenderField } from '@/components/settings/fields/gender-field';
+import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
@@ -59,12 +60,10 @@ export function ProfileDemographicsSection({
   }
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('sections.demographics.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('sections.demographics.description')}</p>
-      </div>
-
+    <ProfileFormSection
+      title={t('sections.demographics.title')}
+      description={t('sections.demographics.description')}
+    >
       <div className="grid gap-3 md:grid-cols-2">
         <div className="min-w-0">
           <GenderField
@@ -110,6 +109,6 @@ export function ProfileDemographicsSection({
           />
         </div>
       </div>
-    </section>
+    </ProfileFormSection>
   );
 }

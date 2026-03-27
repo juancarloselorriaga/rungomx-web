@@ -8,10 +8,11 @@ import {
   startTrialAction,
 } from '@/app/actions/billing';
 import { Badge } from '@/components/common/badge';
+import { SettingsSurface } from '@/components/settings/settings-surface';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Spinner } from '@/components/ui/spinner';
-import { InsetSurface, Surface } from '@/components/ui/surface';
+import { InsetSurface } from '@/components/ui/surface';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { SerializableBillingStatus } from '@/lib/billing/serialization';
 import type { EntitlementSource } from '@/lib/billing/types';
@@ -65,25 +66,15 @@ function BillingSection({
   children: React.ReactNode;
 }) {
   return (
-    <Surface className="overflow-hidden p-0">
-      <div className="border-b border-border/60 bg-[color-mix(in_oklch,var(--background)_84%,var(--background-surface)_16%)] px-5 py-5 sm:px-6">
-        <div className="flex items-start gap-3">
-          <div className="rounded-full bg-muted p-2 text-muted-foreground">{icon}</div>
-
-          <div className="space-y-2">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              {sectionLabel}
-            </p>
-            <div className="space-y-1">
-              <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-              <p className="text-sm leading-6 text-muted-foreground">{description}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-5 sm:p-6">{children}</div>
-    </Surface>
+    <SettingsSurface
+      sectionLabel={sectionLabel}
+      title={title}
+      description={description}
+      headerIcon={icon}
+      contentClassName="space-y-0"
+    >
+      {children}
+    </SettingsSurface>
   );
 }
 

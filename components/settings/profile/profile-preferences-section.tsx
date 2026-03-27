@@ -1,4 +1,5 @@
 import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
+import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import { FormField } from '@/components/ui/form-field';
 import { routing } from '@/i18n/routing';
 import type { UseFormReturn } from '@/lib/forms';
@@ -12,12 +13,10 @@ type ProfilePreferencesSectionProps = {
 
 export function ProfilePreferencesSection({ form, t, isBusy }: ProfilePreferencesSectionProps) {
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('sections.preferences.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('sections.preferences.description')}</p>
-      </div>
-
+    <ProfileFormSection
+      title={t('sections.preferences.title')}
+      description={t('sections.preferences.description')}
+    >
       <div className="grid gap-3 md:grid-cols-2">
         <FormField label={t('fields.locale')} error={form.errors.locale}>
           <select
@@ -30,7 +29,7 @@ export function ProfilePreferencesSection({ form, t, isBusy }: ProfilePreference
             disabled={isBusy}
           >
             <option value="">{t('fields.localeDefault')}</option>
-            {routing.locales.map((loc) => (
+            {routing.locales.map((loc: string) => (
               <option key={loc} value={loc}>
                 {t('fields.localeOption', { locale: loc })}
               </option>
@@ -38,6 +37,6 @@ export function ProfilePreferencesSection({ form, t, isBusy }: ProfilePreference
           </select>
         </FormField>
       </div>
-    </section>
+    </ProfileFormSection>
   );
 }

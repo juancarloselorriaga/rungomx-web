@@ -1,4 +1,6 @@
 import { RegistrationTicketStatus } from '@/components/dashboard/registration-ticket-status';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
 import { Button } from '@/components/ui/button';
 import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getPathname, Link } from '@/i18n/navigation';
@@ -52,25 +54,27 @@ function formatCurrency(cents: number, locale: string) {
 
 function DetailSection({
   title,
+  description,
   icon,
   children,
   className,
 }: {
   title: string;
+  description?: string;
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <Surface className={className}>
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          {icon ? <span className="text-muted-foreground">{icon}</span> : null}
-          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
-        </div>
-        {children}
-      </div>
-    </Surface>
+    <DashboardSectionSurface
+      title={title}
+      description={description}
+      headerIcon={icon}
+      className={className}
+      contentClassName="space-y-4"
+    >
+      {children}
+    </DashboardSectionSurface>
   );
 }
 
@@ -127,7 +131,8 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
     notFound();
   }
 
-  const { registration, event, distance, registrant, waiverAcceptances } = detail;
+  const registrationDetail = detail;
+  const { registration, event, distance, registrant, waiverAcceptances } = registrationDetail;
   const ticketCode = formatRegistrationTicketCode(registration.id);
   const qrUrl = `/api/tickets/qr/${registration.id}`;
   const statusCopy: Record<MyRegistrationStatusKey, string> = {
@@ -168,31 +173,30 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <Link
-          href="/dashboard/my-registrations"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          {t('title')}
-        </Link>
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            {event.seriesName} {event.editionLabel}
-          </h1>
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1">
-              <Calendar className="h-4 w-4" />
-              {formatDateTime(event.startsAt, locale, event.timezone)}
-            </span>
-            {location ? (
-              <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-3 py-1">
-                <MapPin className="h-4 w-4" />
-                {location}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      </div>
+      <DashboardPageIntro
+        title={`${event.seriesName} ${event.editionLabel}`}
+        description={distance.label}
+        eyebrow={t('title')}
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/dashboard/my-registrations">{t('title')}</Link>
+          </Button>
+        }
+        aside={
+          <DashboardPageIntroMeta
+            eyebrow={t('labels.ticket')}
+            title={ticketCode}
+            items={[
+              {
+                label: t('labels.eventDate'),
+                value: formatDateTime(event.startsAt, locale, event.timezone),
+              },
+              ...(location ? [{ label: t('labels.location'), value: location }] : []),
+            ]}
+            className="bg-background/72"
+          />
+        }
+      />
 
       <Surface className="overflow-hidden p-0">
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1.4fr)_320px]">
@@ -239,7 +243,11 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
       </Surface>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <DetailSection title={t('labels.eventDetails')} icon={<Calendar className="h-5 w-5" />}>
+        <DetailSection
+          title={t('labels.eventDetails')}
+          description={distance.label}
+          icon={<Calendar className="h-5 w-5" />}
+        >
           <InsetSurface className="space-y-3 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4" />
@@ -275,7 +283,7 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
           </div>
         </DetailSection>
 
-        <DetailSection title={t('labels.registrationDetails')}>
+        <DetailSection title={t('labels.registrationDetails')} description={t('detail.ticketNote')}>
           <InsetSurface className="space-y-3 text-sm">
             <DetailRow
               label={t('labels.createdAt')}
@@ -326,6 +334,7 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
       <div className="grid gap-6 lg:grid-cols-2">
         <DetailSection
           title={t('labels.participantSnapshot')}
+          description={t('detail.ticketNote')}
           icon={<UserRound className="h-5 w-5" />}
         >
           {participantFields.length === 0 ? (
@@ -344,14 +353,14 @@ export default async function MyRegistrationDetailPage({ params }: RegistrationD
           )}
         </DetailSection>
 
-        <DetailSection title={t('labels.waivers')}>
+        <DetailSection title={t('labels.waivers')} description={t('detail.noWaivers')}>
           {waiverAcceptances.length === 0 ? (
             <InsetSurface>
               <p className="text-sm text-muted-foreground">{t('detail.noWaivers')}</p>
             </InsetSurface>
           ) : (
             <div className="space-y-3 text-sm">
-              {waiverAcceptances.map((waiver) => (
+              {waiverAcceptances.map((waiver: (typeof waiverAcceptances)[number]) => (
                 <InsetSurface
                   key={`${waiver.title}-${waiver.acceptedAt.toISOString()}`}
                   className="space-y-2"

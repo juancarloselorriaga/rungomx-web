@@ -1,4 +1,5 @@
 import { MeasurementField } from '@/components/settings/fields/measurement-field';
+import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import { FormField } from '@/components/ui/form-field';
 import type { UseFormReturn } from '@/lib/forms';
@@ -24,12 +25,10 @@ export function ProfilePhysicalSection({
   const shirtSizeOptions = metadata.shirtSizes ?? [];
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('sections.physical.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('sections.physical.description')}</p>
-      </div>
-
+    <ProfileFormSection
+      title={t('sections.physical.title')}
+      description={t('sections.physical.description')}
+    >
       <div className="grid gap-3 md:grid-cols-3">
         <FormField
           label={t('fields.shirtSize')}
@@ -82,6 +81,6 @@ export function ProfilePhysicalSection({
           disabled={isBusy}
         />
       </div>
-    </section>
+    </ProfileFormSection>
   );
 }

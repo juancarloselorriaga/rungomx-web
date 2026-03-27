@@ -8,6 +8,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
+import { EventPageIntro } from '../_event-page-intro';
 import { EditionsManager } from './editions-manager';
 
 type EditionsPageProps = LocalePageProps & {
@@ -38,8 +39,7 @@ export default async function EventEditionsPage({ params }: EditionsPageProps) {
   const authContext = await getAuthContext();
 
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -58,10 +58,14 @@ export default async function EventEditionsPage({ params }: EditionsPageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
+      <EventPageIntro
+        title={t('title')}
+        description={t('description')}
+        eventName={event.seriesName}
+        organizationName={event.organizationName}
+        eyebrow={t('title')}
+        details={[{ label: t('title'), value: event.editionLabel }]}
+      />
 
       <EditionsManager
         currentEditionId={eventId}

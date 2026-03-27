@@ -1,12 +1,11 @@
 'use client';
 
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
+import { MutedSurface } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { Form, FormError, useForm } from '@/lib/forms';
-import {
-  updatePayoutProfile,
-  type PayoutProfileData,
-} from '@/lib/organizations/payout/actions';
+import { updatePayoutProfile, type PayoutProfileData } from '@/lib/organizations/payout/actions';
 import { AlertCircle, Building2, Info, Loader2, Lock, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -78,8 +77,8 @@ export function PayoutProfileForm({
               : Object.fromEntries(
                   Object.entries(result.fieldErrors as Record<string, string[]>).map(
                     ([field, messages]) => [
-                    field,
-                    messages.map((message) => translateValidationMessage(message)),
+                      field,
+                      messages.map((message) => translateValidationMessage(message)),
                     ],
                   ),
                 );
@@ -110,29 +109,28 @@ export function PayoutProfileForm({
 
   if (!canEdit) {
     return (
-      <div className="border border-border rounded-lg p-6 bg-card">
-        <div className="flex items-center gap-3 mb-4">
-          <Wallet className="h-5 w-5 text-muted-foreground" />
-          <h2 className="text-xl font-semibold">{t('title')}</h2>
-        </div>
+      <DashboardSectionSurface
+        title={t('title')}
+        description={t('description')}
+        headerIcon={<Wallet className="h-5 w-5" />}
+      >
         <div className="flex items-center gap-2 text-muted-foreground">
           <Lock className="h-4 w-4" />
           <p className="text-sm">{t('accessRestriction')}</p>
         </div>
-      </div>
+      </DashboardSectionSurface>
     );
   }
 
   return (
-    <div className="border border-border rounded-lg p-6 bg-card">
-      <div className="flex items-center gap-3 mb-2">
-        <Wallet className="h-5 w-5 text-muted-foreground" />
-        <h2 className="text-xl font-semibold">{t('title')}</h2>
-      </div>
-      <p className="text-muted-foreground mb-6">{t('description')}</p>
-
+    <DashboardSectionSurface
+      title={t('title')}
+      description={t('description')}
+      headerIcon={<Wallet className="h-5 w-5" />}
+      contentClassName="space-y-6"
+    >
       {initialError && (
-        <div className="mb-6 p-4 bg-destructive/10 text-destructive rounded-lg flex items-start gap-2">
+        <div className="p-4 bg-destructive/10 text-destructive rounded-lg flex items-start gap-2">
           <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <p>{initialError}</p>
         </div>
@@ -228,7 +226,7 @@ export function PayoutProfileForm({
         </div>
 
         {/* Help Section */}
-        <div className="border border-border rounded-lg p-4 bg-muted/30">
+        <MutedSurface className="p-4">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
             <div>
@@ -236,7 +234,7 @@ export function PayoutProfileForm({
               <p className="text-sm text-muted-foreground">{t('help.description')}</p>
             </div>
           </div>
-        </div>
+        </MutedSurface>
 
         <div className="flex justify-end">
           <Button type="submit" disabled={form.isSubmitting}>
@@ -245,6 +243,6 @@ export function PayoutProfileForm({
           </Button>
         </div>
       </Form>
-    </div>
+    </DashboardSectionSurface>
   );
 }

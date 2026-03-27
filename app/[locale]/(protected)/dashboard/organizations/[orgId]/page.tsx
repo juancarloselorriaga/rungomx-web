@@ -1,4 +1,5 @@
 import { SubmenuContextProvider } from '@/components/layout/navigation/submenu-context-provider';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
 import { getPathname } from '@/i18n/navigation';
 import { getAuthContext } from '@/lib/auth/server';
 import { getOrganizationWithMembers } from '@/lib/organizations/queries';
@@ -19,9 +20,7 @@ type OrganizationDetailPageProps = LocalePageProps & {
   params: Promise<{ locale: string; orgId: string }>;
 };
 
-export async function generateMetadata({
-  params,
-}: OrganizationDetailPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: OrganizationDetailPageProps): Promise<Metadata> {
   const { locale, orgId } = await params;
   return createLocalizedPageMetadata(
     locale,
@@ -42,8 +41,7 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -52,6 +50,8 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   if (!organization) {
     redirect(getPathname({ href: '/dashboard/organizations', locale }));
   }
+
+  const organizationDetail = organization;
 
   const membership = await getOrgMembership(authContext.user!.id, orgId);
   const isSupportUser = authContext.permissions.canManageEvents;
@@ -66,43 +66,48 @@ export default async function OrganizationDetailPage({ params }: OrganizationDet
   const canEditPayout = isSupportUser || isOwner || isAdmin;
 
   const payoutProfileResult = canEditPayout
-    ? await getPayoutProfile({ organizationId: organization.id })
+    ? await getPayoutProfile({ organizationId: organizationDetail.id })
     : { ok: true as const, data: null };
 
   return (
     <SubmenuContextProvider
       submenuId="org-detail"
-      title={organization.name}
+      title={organizationDetail.name}
       subtitle={undefined}
       params={{ orgId }}
       basePath={`/dashboard/organizations/${orgId}`}
       footerLink={null}
     >
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{organization.name}</h1>
-          <p className="text-muted-foreground">
-            {t('detail.slugLabel')}: {organization.slug}
-          </p>
-        </div>
+        <DashboardPageIntro
+          title={organizationDetail.name}
+          description={`${t('detail.slugLabel')}: ${organizationDetail.slug}`}
+          aside={
+            <DashboardPageIntroMeta
+              title={organizationDetail.name}
+              items={[{ label: t('detail.slugLabel'), value: organizationDetail.slug }]}
+              className="bg-background/72"
+            />
+          }
+        />
 
         <OrganizationSettingsForm
-          organizationId={organization.id}
-          name={organization.name}
-          slug={organization.slug}
+          organizationId={organizationDetail.id}
+          name={organizationDetail.name}
+          slug={organizationDetail.slug}
           canEdit={isOwner}
         />
 
         <OrganizationMembersManager
-          organizationId={organization.id}
-          members={organization.members}
+          organizationId={organizationDetail.id}
+          members={organizationDetail.members}
           canManageMembers={canManageMembers}
           currentUserId={authContext.user!.id}
           isSupportUser={isSupportUser}
         />
 
         <PayoutProfileForm
-          organizationId={organization.id}
+          organizationId={organizationDetail.id}
           canEdit={canEditPayout}
           initialProfile={payoutProfileResult.ok ? payoutProfileResult.data : null}
           initialError={payoutProfileResult.ok ? null : payoutProfileResult.error}

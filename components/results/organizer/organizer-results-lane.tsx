@@ -3,6 +3,7 @@ import { ResultsStateRail } from '@/components/results/primitives/results-state-
 import { ResultsVersionVisibilityPanel } from '@/components/results/organizer/results-version-visibility-panel';
 import { TableProResultsGrid } from '@/components/results/organizer/table-pro-results-grid';
 import { Button } from '@/components/ui/button';
+import { MutedSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import type {
   OrganizerResultVersionVisibility,
@@ -66,7 +67,8 @@ export function OrganizerResultsLane({
   feedbackItems,
   labels,
 }: OrganizerResultsLaneProps) {
-  const emptyReviewFeedback = rows.length === 0 ? feedbackItems.find((item) => item.id === 'review-empty') : null;
+  const emptyReviewFeedback =
+    rows.length === 0 ? feedbackItems.find((item) => item.id === 'review-empty') : null;
   const captureHref = {
     pathname: '/dashboard/events/[eventId]/results/capture',
     params: { eventId },
@@ -79,14 +81,18 @@ export function OrganizerResultsLane({
   if (emptyReviewFeedback) {
     return (
       <div className="space-y-6">
-        <ResultsStateRail state={railState} labels={labels.stateRail} nextActionHref={nextActionHref} />
+        <ResultsStateRail
+          state={railState}
+          labels={labels.stateRail}
+          nextActionHref={nextActionHref}
+        />
 
         <ResultsVersionVisibilityPanel
           visibility={versionVisibility}
           labels={labels.versionVisibility}
         />
 
-        <section className="rounded-xl border bg-card shadow-sm">
+        <Surface className="space-y-0 p-0 shadow-none">
           <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
             <div>
               <h3 className="text-sm font-semibold text-foreground sm:text-base">
@@ -133,14 +139,18 @@ export function OrganizerResultsLane({
               }
             />
           </div>
-        </section>
+        </Surface>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <ResultsStateRail state={railState} labels={labels.stateRail} nextActionHref={nextActionHref} />
+      <ResultsStateRail
+        state={railState}
+        labels={labels.stateRail}
+        nextActionHref={nextActionHref}
+      />
 
       <ResultsVersionVisibilityPanel
         visibility={versionVisibility}
@@ -160,18 +170,19 @@ export function OrganizerResultsLane({
           </h3>
           <div className="grid gap-3">
             {feedbackItems.map((item) => (
-              <SafeNextDetailsMessage
-                key={item.id}
-                safe={item.safe}
-                next={item.next}
-                details={item.details}
-                tone={item.tone}
-                labels={{
-                  safe: labels.feedback.safe,
-                  next: labels.feedback.next,
-                  details: labels.feedback.details,
-                }}
-              />
+              <MutedSurface key={item.id} className="p-0">
+                <SafeNextDetailsMessage
+                  safe={item.safe}
+                  next={item.next}
+                  details={item.details}
+                  tone={item.tone}
+                  labels={{
+                    safe: labels.feedback.safe,
+                    next: labels.feedback.next,
+                    details: labels.feedback.details,
+                  }}
+                />
+              </MutedSurface>
             ))}
           </div>
         </section>

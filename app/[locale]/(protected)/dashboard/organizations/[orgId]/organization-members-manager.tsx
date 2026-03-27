@@ -1,5 +1,7 @@
 'use client';
 
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
+import { MutedSurface } from '@/components/ui/surface';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { useRouter } from '@/i18n/navigation';
@@ -194,10 +196,12 @@ export function OrganizationMembersManager({
         </div>
       )}
 
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
+      <DashboardSectionSurface
+        title={t('detail.membersTitle')}
+        description={t('detail.membersDescription')}
+        contentClassName="space-y-4"
+      >
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold">{t('detail.membersTitle')}</h2>
-          <p className="text-sm text-muted-foreground">{t('detail.membersDescription')}</p>
           {!canManageMembers && (
             <p className="text-sm text-muted-foreground">{t('detail.membersReadOnly')}</p>
           )}
@@ -207,9 +211,9 @@ export function OrganizationMembersManager({
         </div>
 
         {members.length === 0 ? (
-          <div className="rounded-lg border bg-muted/40 p-6 text-sm text-muted-foreground">
+          <MutedSurface className="p-6 text-sm text-muted-foreground">
             {t('detail.membersEmpty')}
-          </div>
+          </MutedSurface>
         ) : (
           <div className="-mx-6 overflow-x-auto px-6 pb-1">
             <table className="w-full min-w-[720px] text-sm">
@@ -272,14 +276,13 @@ export function OrganizationMembersManager({
             </table>
           </div>
         )}
-      </section>
+      </DashboardSectionSurface>
 
-      <section className="rounded-lg border bg-card p-6 shadow-sm space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">{t('detail.addMemberTitle')}</h2>
-          <p className="text-sm text-muted-foreground">{t('detail.addMemberDescription')}</p>
-        </div>
-
+      <DashboardSectionSurface
+        title={t('detail.addMemberTitle')}
+        description={t('detail.addMemberDescription')}
+        contentClassName="space-y-4"
+      >
         <Form form={addMemberForm} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-[2fr_1fr_auto] md:items-end">
             <FormField label={t('detail.emailLabel')} required>
@@ -319,7 +322,7 @@ export function OrganizationMembersManager({
           </div>
           <FormError />
         </Form>
-      </section>
+      </DashboardSectionSurface>
     </div>
   );
 }

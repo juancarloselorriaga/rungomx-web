@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
+import { EventPageIntro } from '../_event-page-intro';
 import { AddOnsManager } from './add-ons-manager';
 
 type AddOnsPageProps = LocalePageProps & {
@@ -40,8 +41,7 @@ export default async function EventAddOnsPage({ params }: AddOnsPageProps) {
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -69,17 +69,16 @@ export default async function EventAddOnsPage({ params }: AddOnsPageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
+      <EventPageIntro
+        title={t('title')}
+        description={t('description')}
+        eventName={`${event.seriesName} ${event.editionLabel}`}
+        organizationName={event.organizationName}
+        eyebrow={t('title')}
+      />
 
       <div className="max-w-4xl">
-        <AddOnsManager
-          editionId={eventId}
-          distances={distances}
-          initialAddOns={addOns}
-        />
+        <AddOnsManager editionId={eventId} distances={distances} initialAddOns={addOns} />
       </div>
     </div>
   );

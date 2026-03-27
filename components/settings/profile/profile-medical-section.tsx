@@ -1,4 +1,5 @@
 import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
+import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import { FormField } from '@/components/ui/form-field';
 import type { UseFormReturn } from '@/lib/forms';
 import type { ProfileMetadata } from '@/lib/profiles/metadata';
@@ -23,12 +24,10 @@ export function ProfileMedicalSection({
   const bloodTypeOptions = metadata.bloodTypes ?? [];
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('sections.medical.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('sections.medical.description')}</p>
-      </div>
-
+    <ProfileFormSection
+      title={t('sections.medical.title')}
+      description={t('sections.medical.description')}
+    >
       <div className="space-y-3">
         <FormField
           label={t('fields.bloodType')}
@@ -85,6 +84,6 @@ export function ProfileMedicalSection({
           />
         </FormField>
       </div>
-    </section>
+    </ProfileFormSection>
   );
 }

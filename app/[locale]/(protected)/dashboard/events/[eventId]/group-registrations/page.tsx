@@ -1,5 +1,4 @@
 import { getPathname } from '@/i18n/navigation';
-import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import {
@@ -16,6 +15,7 @@ import { notFound, redirect } from 'next/navigation';
 
 import { GroupRegistrationsManager } from './group-registrations-manager';
 import { GroupUploadLinksManager } from './group-upload-links-manager';
+import { EventPageIntro } from '../_event-page-intro';
 
 type GroupRegistrationsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; eventId: string }>;
@@ -68,27 +68,13 @@ export default async function EventGroupRegistrationsPage({ params }: GroupRegis
 
   return (
     <div className="space-y-6">
-      <Surface className="overflow-hidden border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-6 sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-          <div className="space-y-3">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('title')}</h2>
-            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-              {t('description')}
-            </p>
-          </div>
-          <InsetSurface className="border-border/60 bg-background/80 p-5">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                {t('title')}
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                {event.seriesName} {event.editionLabel}
-              </p>
-              <p className="text-sm text-muted-foreground">{event.organizationName}</p>
-            </div>
-          </InsetSurface>
-        </div>
-      </Surface>
+      <EventPageIntro
+        title={t('title')}
+        description={t('description')}
+        eventName={`${event.seriesName} ${event.editionLabel}`}
+        organizationName={event.organizationName}
+        eyebrow={t('title')}
+      />
 
       <GroupRegistrationsManager
         editionId={eventId}

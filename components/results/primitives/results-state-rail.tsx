@@ -1,5 +1,6 @@
 import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
+import { MutedSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
 import type {
@@ -73,14 +74,10 @@ export function ResultsStateRail({
   const lifecycleLabel =
     state.lifecycle === 'official' ? labels.lifecycleOfficial : labels.lifecycleDraft;
   const lifecycleHint =
-    state.lifecycle === 'official'
-      ? labels.lifecycleOfficialHint
-      : labels.lifecycleDraftHint;
+    state.lifecycle === 'official' ? labels.lifecycleOfficialHint : labels.lifecycleDraftHint;
 
   const connectivityLabel =
-    state.connectivity === 'online'
-      ? labels.connectivityOnline
-      : labels.connectivityOffline;
+    state.connectivity === 'online' ? labels.connectivityOnline : labels.connectivityOffline;
   const connectivityHint =
     state.connectivity === 'online'
       ? labels.connectivityOnlineHint
@@ -88,11 +85,9 @@ export function ResultsStateRail({
   const nextActionLabel = getNextActionLabel(state.nextActionKey, labels);
 
   return (
-    <section
-      className={cn(
-        'rounded-xl border bg-card p-4 shadow-sm sm:p-5',
-        className,
-      )}
+    <Surface
+      as="section"
+      className={cn('rounded-2xl border-border/60 p-4 shadow-none sm:p-5', className)}
       aria-live="polite"
       aria-label={labels.title}
     >
@@ -102,7 +97,7 @@ export function ResultsStateRail({
       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
 
       <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
+        <MutedSurface className="space-y-2 rounded-xl p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.lifecycle}
           </dt>
@@ -116,9 +111,9 @@ export function ResultsStateRail({
             </Badge>
             <p className="text-xs text-muted-foreground">{lifecycleHint}</p>
           </dd>
-        </div>
+        </MutedSurface>
 
-        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
+        <MutedSurface className="space-y-2 rounded-xl p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.connectivity}
           </dt>
@@ -138,18 +133,18 @@ export function ResultsStateRail({
             </Badge>
             <p className="text-xs text-muted-foreground">{connectivityHint}</p>
           </dd>
-        </div>
+        </MutedSurface>
 
-        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
+        <MutedSurface className="space-y-2 rounded-xl p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.unsyncedCount}
           </dt>
           <dd className="mt-2 text-sm font-semibold text-foreground">
             {state.unsyncedCount.toLocaleString()}
           </dd>
-        </div>
+        </MutedSurface>
 
-        <div className="rounded-lg border bg-muted/30 dark:bg-muted/70 p-3">
+        <MutedSurface className="space-y-2 rounded-xl p-3">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.nextAction}
           </dt>
@@ -176,8 +171,8 @@ export function ResultsStateRail({
               </span>
             )}
           </dd>
-        </div>
+        </MutedSurface>
       </dl>
-    </section>
+    </Surface>
   );
 }

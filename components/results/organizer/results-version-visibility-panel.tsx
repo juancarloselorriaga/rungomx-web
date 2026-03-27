@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/common/badge';
-import { InsetSurface, Surface } from '@/components/ui/surface';
+import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
 import type { OrganizerResultVersionVisibility } from '@/lib/events/results/workspace';
 
 type ResultsVersionVisibilityPanelProps = {
@@ -75,12 +75,12 @@ export function ResultsVersionVisibilityPanel({
       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
 
       {visibility.items.length === 0 ? (
-        <InsetSurface className="mt-4 bg-muted/25 p-3">
+        <MutedSurface className="mt-4 p-3">
           <p className="text-sm text-muted-foreground">{labels.empty}</p>
-        </InsetSurface>
+        </MutedSurface>
       ) : (
         <>
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
             {visibility.activeOfficialVersionId ? (
               <Badge size="sm" variant="green">
                 {labels.activeOfficialLabel}
@@ -92,7 +92,7 @@ export function ResultsVersionVisibilityPanel({
             )}
           </div>
 
-          <InsetSurface className="mt-3 overflow-x-auto bg-background/60 p-0">
+          <InsetSurface className="mt-3 overflow-x-auto border-border/50 bg-background/55 p-0 shadow-none">
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/20 text-left text-xs uppercase tracking-wide text-muted-foreground">

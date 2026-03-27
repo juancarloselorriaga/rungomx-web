@@ -8,7 +8,7 @@ import { getProFeatureConfigSnapshot } from '@/lib/pro-features/server/config';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
-import { InsetSurface, Surface } from '@/components/ui/surface';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -65,35 +65,30 @@ export default async function CreateEventPage({ params }: LocalePageProps) {
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8">
-      <Surface className="overflow-hidden border-border/60 p-6 sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
-          <div className="space-y-3">
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              {t('createEvent.title')}
-            </h1>
-            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-              {t('createEvent.description')}
-            </p>
-          </div>
-
-          <InsetSurface className="border-border/60 p-5">
-            <ol className="space-y-3 text-sm">
-              <li className="flex items-center gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                  1
-                </span>
-                <span className="font-medium">{t('createEvent.steps.organization')}</span>
-              </li>
-              <li className="flex items-center gap-3">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
-                  2
-                </span>
-                <span className="text-muted-foreground">{t('createEvent.steps.event')}</span>
-              </li>
-            </ol>
-          </InsetSurface>
-        </div>
-      </Surface>
+      <DashboardPageIntro
+        title={t('createEvent.title')}
+        description={t('createEvent.description')}
+        aside={
+          <DashboardPageIntroMeta
+            title={
+              <ol className="space-y-3 text-sm">
+                <li className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    1
+                  </span>
+                  <span className="font-medium">{t('createEvent.steps.organization')}</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+                    2
+                  </span>
+                  <span className="text-muted-foreground">{t('createEvent.steps.event')}</span>
+                </li>
+              </ol>
+            }
+          />
+        }
+      />
 
       <CreateEventForm
         organizations={organizationsWithSeries}

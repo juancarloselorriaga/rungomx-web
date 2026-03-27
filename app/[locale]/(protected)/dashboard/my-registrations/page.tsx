@@ -1,4 +1,6 @@
 import { Badge } from '@/components/common/badge';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
+import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
 import { MyRegistrationsSubnav } from '@/components/dashboard/my-registrations-subnav';
 import { Button } from '@/components/ui/button';
 import { InsetSurface, Surface } from '@/components/ui/surface';
@@ -219,34 +221,39 @@ export default async function MyRegistrationsPage({
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <Surface className="overflow-hidden border-border/60 p-6 sm:p-8">
-        <div className="space-y-6">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-4">
-              <Badge variant="ghost">{viewLabels[view]}</Badge>
-              <div className="space-y-2">
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('title')}</h1>
-                <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  {t('description')}
-                </p>
-              </div>
-            </div>
+      <DashboardPageIntro
+        title={t('title')}
+        description={t('description')}
+        eyebrow={viewLabels[view]}
+        actions={
+          <Button asChild variant="outline">
+            <Link href="/events">{t('emptyState.action')}</Link>
+          </Button>
+        }
+        aside={
+          <DashboardPageIntroMeta
+            eyebrow={t('title')}
+            title={viewLabels[view]}
+            items={[{ label: t('title'), value: String(registrations.length) }]}
+            className="bg-background/72"
+          />
+        }
+      />
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
-              <Button asChild variant="outline">
-                <Link href="/events">{t('emptyState.action')}</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="border-t border-border/60 pt-4">
-            <MyRegistrationsSubnav />
-          </div>
-        </div>
-      </Surface>
+      <DashboardSectionSurface
+        title={t('title')}
+        description={t('description')}
+        eyebrow={t('tabs.menu')}
+        contentClassName="pt-4"
+      >
+        <MyRegistrationsSubnav />
+      </DashboardSectionSurface>
 
       {registrations.length === 0 ? (
-        <Surface className="p-6 sm:p-8">
+        <DashboardSectionSurface
+          title={t('emptyState.title')}
+          description={t('emptyState.description')}
+        >
           <div className="mx-auto flex max-w-2xl flex-col items-center justify-center gap-5 py-8 text-center sm:gap-6 sm:py-12">
             <div className="rounded-full border border-border/70 bg-[color-mix(in_oklch,var(--background)_78%,var(--background-surface)_22%)] p-4">
               <Calendar className="h-8 w-8 text-muted-foreground" />
@@ -265,7 +272,7 @@ export default async function MyRegistrationsPage({
               <Link href="/events">{t('emptyState.action')}</Link>
             </Button>
           </div>
-        </Surface>
+        </DashboardSectionSurface>
       ) : (
         <div className="space-y-4">
           {registrations.map((registration) => (

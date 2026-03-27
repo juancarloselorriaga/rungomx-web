@@ -1,5 +1,6 @@
 'use client';
 
+import { DashboardPageIntro } from '@/components/dashboard/page-intro';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -17,15 +18,17 @@ export function OrganizationsPageHeader({ title, description }: OrganizationsPag
   const [dialogOpen, setDialogOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-      <div className="min-w-0">
-        <h1 className="text-3xl font-bold mb-2">{title}</h1>
-        <p className="text-muted-foreground">{description}</p>
-      </div>
-      <Button onClick={() => setDialogOpen(true)} className="w-full min-w-0 sm:w-auto">
-        <Plus className="size-4" />
-        {t('createButton')}
-      </Button>
+    <div>
+      <DashboardPageIntro
+        title={title}
+        description={description}
+        actions={
+          <Button onClick={() => setDialogOpen(true)} className="w-full min-w-0 sm:w-auto">
+            <Plus className="size-4" />
+            {t('createButton')}
+          </Button>
+        }
+      />
       <CreateOrganizationDialog open={dialogOpen} onOpenChangeAction={setDialogOpen} />
     </div>
   );

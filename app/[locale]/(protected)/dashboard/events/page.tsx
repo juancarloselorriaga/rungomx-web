@@ -9,8 +9,8 @@ import {
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import { createLocalizedPageMetadata } from '@/utils/seo';
+import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboard/page-intro';
 import { Button } from '@/components/ui/button';
-import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Plus } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
@@ -61,34 +61,28 @@ export default async function DashboardEventsPage({
 
   return (
     <div className="space-y-6">
-      <Surface className="overflow-hidden border-border/60 p-6 sm:p-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
-          <div className="min-w-0 space-y-3">
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{t('title')}</h1>
-            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-              {t('description')}
-            </p>
-            <Button asChild className="w-full min-w-0 sm:w-auto">
-              <Link href="/dashboard/events/new">
-                <Plus className="h-4 w-4" />
-                {t('createEvent.button')}
-              </Link>
-            </Button>
-          </div>
-
-          <InsetSurface className="border-border/60 p-5">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                {t('filters.title')}
-              </p>
-              <p className="text-2xl font-semibold tracking-tight">{filteredEvents.length}</p>
-              <p className="text-sm text-muted-foreground">
-                {t('filters.summary', { filtered: filteredEvents.length, total: events.length })}
-              </p>
-            </div>
-          </InsetSurface>
-        </div>
-      </Surface>
+      <DashboardPageIntro
+        title={t('title')}
+        description={t('description')}
+        actions={
+          <Button asChild className="w-full min-w-0 sm:w-auto">
+            <Link href="/dashboard/events/new">
+              <Plus className="h-4 w-4" />
+              {t('createEvent.button')}
+            </Link>
+          </Button>
+        }
+        aside={
+          <DashboardPageIntroMeta
+            eyebrow={t('filters.title')}
+            title={filteredEvents.length}
+            subtitle={t('filters.summary', {
+              filtered: filteredEvents.length,
+              total: events.length,
+            })}
+          />
+        }
+      />
 
       <OrganizerEventsResults
         query={query}

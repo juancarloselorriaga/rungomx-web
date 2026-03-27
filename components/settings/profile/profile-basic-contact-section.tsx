@@ -1,5 +1,6 @@
 import { CountrySelectField } from '@/components/settings/fields/country-select-field-lazy';
 import { PhoneField } from '@/components/settings/fields/phone-field';
+import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import type { ProfileFormValues } from '@/components/settings/profile/profile-settings-form';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField } from '@/components/ui/form-field';
@@ -28,12 +29,10 @@ export function ProfileBasicContactSection({
   const dateOfBirthField = form.register('dateOfBirth');
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold">{t('sections.basicContact.title')}</h2>
-        <p className="text-sm text-muted-foreground">{t('sections.basicContact.description')}</p>
-      </div>
-
+    <ProfileFormSection
+      title={t('sections.basicContact.title')}
+      description={t('sections.basicContact.description')}
+    >
       <div className="grid gap-3 md:grid-cols-2">
         <PhoneField
           label={t('fields.phone')}
@@ -111,13 +110,13 @@ export function ProfileBasicContactSection({
         <CountrySelectField
           label={t('fields.country')}
           value={form.values.country}
-          onChangeAction={(value) => form.setFieldValue('country', value)}
+          onChangeAction={(value: string) => form.setFieldValue('country', value)}
           options={countryOptions}
           required={isRequiredField('country')}
           error={form.errors.country}
           disabled={isBusy}
         />
       </div>
-    </section>
+    </ProfileFormSection>
   );
 }

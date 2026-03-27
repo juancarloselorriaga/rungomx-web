@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/badge';
+import { OrganizerResultsLane } from '@/components/results/organizer/organizer-results-lane';
 import { Surface } from '@/components/ui/surface';
 import {
   getInternalResultsInvestigationViewData,
@@ -15,6 +16,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
 import { ResultsPageHero } from '../_results-page-hero';
+import { getResultsWorkspacePageData } from '../_results-workspace';
 import { ResultsInvestigationAuditFiltersForm } from './_audit-filters-form';
 
 type ResultsInvestigationPageProps = LocalePageProps & {
@@ -102,7 +104,8 @@ export default async function ResultsInvestigationPage({
   let auditLogs: Awaited<ReturnType<typeof listResultTrustAuditLogsForEdition>> = [];
   let loadFailed = false;
 
-  const [investigationResult, auditLogsResult] = await Promise.allSettled([
+  const [workspaceResult, investigationResult, auditLogsResult] = await Promise.allSettled([
+    getResultsWorkspacePageData(eventId, locale, 'review'),
     getInternalResultsInvestigationViewData({
       editionId: eventId,
       fromVersionId: resolvedSearchParams?.fromVersionId,
@@ -116,6 +119,16 @@ export default async function ResultsInvestigationPage({
       limit: 80,
     }),
   ]);
+
+  const workspaceData = workspaceResult.status === 'fulfilled' ? workspaceResult.value : null;
+
+  if (workspaceResult.status === 'rejected') {
+    loadFailed = true;
+    console.error('[ResultsInvestigationPage] Failed to load results workspace data', {
+      editionId: eventId,
+      error: workspaceResult.reason,
+    });
+  }
 
   if (investigationResult.status === 'fulfilled') {
     investigationData = investigationResult.value;
@@ -189,6 +202,19 @@ export default async function ResultsInvestigationPage({
           },
         ]}
       />
+
+      {workspaceData ? (
+        <OrganizerResultsLane
+          eventId={eventId}
+          densityStorageKey={workspaceData.densityStorageKey}
+          railState={workspaceData.railState}
+          nextActionHref={workspaceData.nextActionHref}
+          versionVisibility={workspaceData.versionVisibility}
+          rows={workspaceData.rows}
+          feedbackItems={workspaceData.feedbackItems}
+          labels={workspaceData.labels}
+        />
+      ) : null}
 
       {loadFailed ? (
         <Surface className="border-destructive/30 bg-destructive/5 p-4 text-sm shadow-none">

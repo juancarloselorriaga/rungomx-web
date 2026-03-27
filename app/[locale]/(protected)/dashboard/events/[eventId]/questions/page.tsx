@@ -9,6 +9,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { notFound, redirect } from 'next/navigation';
 
+import { EventPageIntro } from '../_event-page-intro';
 import { QuestionsManager } from './questions-manager';
 
 type QuestionsPageProps = LocalePageProps & {
@@ -40,8 +41,7 @@ export default async function EventQuestionsPage({ params }: QuestionsPageProps)
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -62,13 +62,20 @@ export default async function EventQuestionsPage({ params }: QuestionsPageProps)
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold tracking-tight mb-2">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </div>
+      <EventPageIntro
+        title={t('title')}
+        description={t('description')}
+        eventName={`${event.seriesName} ${event.editionLabel}`}
+        organizationName={event.organizationName}
+        eyebrow={t('title')}
+      />
 
       <div className="max-w-4xl">
-        <QuestionsManager editionId={eventId} distances={event.distances} initialQuestions={questions} />
+        <QuestionsManager
+          editionId={eventId}
+          distances={event.distances}
+          initialQuestions={questions}
+        />
       </div>
     </div>
   );
