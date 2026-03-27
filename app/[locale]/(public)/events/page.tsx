@@ -8,6 +8,7 @@ import { Hero, Section } from '@/components/common';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 import { EventsDirectory } from './events-directory';
 import {
@@ -105,12 +106,14 @@ export default async function EventsPage({ params, searchParams }: EventsPagePro
       />
 
       <Section padding="md" size="xl">
-        <EventsDirectory
-          initialEvents={events}
-          initialPagination={pagination}
-          initialNearbyEligible={initialNearbyEligible}
-          locale={locale}
-        />
+        <Suspense>
+          <EventsDirectory
+            initialEvents={events}
+            initialPagination={pagination}
+            initialNearbyEligible={initialNearbyEligible}
+            locale={locale}
+          />
+        </Suspense>
       </Section>
     </div>
   );

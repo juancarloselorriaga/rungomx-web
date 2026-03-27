@@ -211,6 +211,7 @@ export function EventsDirectory({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const distanceDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasHydratedRef = useRef(false);
+  const initialParamsRef = useRef(parsedParams);
   const shouldScrollRef = useRef(false);
   const pendingLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const resultsRef = useRef<HTMLDivElement | null>(null);
@@ -440,6 +441,15 @@ export function EventsDirectory({
   useEffect(() => {
     if (!hasHydratedRef.current) {
       hasHydratedRef.current = true;
+      initialParamsRef.current = parsedParams;
+      return;
+    }
+
+    // Skip the redundant fetch when params haven't actually changed from the
+    // server-provided initial values — this prevents the skeleton flash caused
+    // by dependency-reference churn (e.g. fetchEvents recreated after session
+    // loads) during the post-hydration settle.
+    if (initialParamsRef.current === parsedParams) {
       return;
     }
 
@@ -1146,43 +1156,14 @@ export function EventsDirectory({
         ) : null}
       </div>
 
-      {/* Loading state */}
-      {isPending && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: skeletonCount }).map((_, index) => (
-            <div
-              key={`event-skeleton-${index}`}
-              className="overflow-hidden rounded-[1.5rem] border border-border/50 bg-card/80"
-            >
-              <Skeleton className="aspect-[16/9] w-full" />
-              <div className="p-4 space-y-3">
-                <div className="space-y-2">
-                  <Skeleton className="h-5 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-2/3" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t">
-                  <Skeleton className="h-6 w-24 rounded-full" />
-                  <Skeleton className="h-5 w-16" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Events grid */}
-      {!isPending && events.length > 0 && (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Events grid — kept visible during transitions with reduced opacity */}
+      {events.length > 0 && (
+        <div
+          className={cn(
+            'grid gap-6 sm:grid-cols-2 lg:grid-cols-3 transition-opacity duration-150',
+            isPending && 'opacity-60 pointer-events-none',
+          )}
+        >
           {events.map((event) => (
             <EventCard key={event.id} event={event} locale={locale} />
           ))}
@@ -1210,7 +1191,7 @@ export function EventsDirectory({
       )}
 
       {/* Pagination */}
-      {!isPending && pagination.totalPages > 1 && (
+      {pagination.totalPages > 1 && (
         <div className="flex flex-col items-center justify-between gap-3 border-t border-border/70 pt-6 sm:flex-row">
           <p className="text-sm text-muted-foreground text-center sm:text-left">
             {t('pagination.showing', {
