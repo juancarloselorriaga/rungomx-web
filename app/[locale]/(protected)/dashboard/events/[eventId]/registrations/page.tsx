@@ -1,4 +1,5 @@
 import { getPathname } from '@/i18n/navigation';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getAuthContext } from '@/lib/auth/server';
 import { getEventEditionDetail } from '@/lib/events/queries';
 import { getRegistrationsForEdition } from '@/lib/events/registrations';
@@ -52,8 +53,7 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
 
   // Access gate: organizers and internal staff only.
   const canAccessEvents =
-    authContext.permissions.canViewOrganizersDashboard ||
-    authContext.permissions.canManageEvents;
+    authContext.permissions.canViewOrganizersDashboard || authContext.permissions.canManageEvents;
   if (!canAccessEvents) {
     redirect(getPathname({ href: '/dashboard', locale }));
   }
@@ -121,53 +121,65 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
-          <p className="text-muted-foreground mt-1">{t('description')}</p>
+      <Surface className="overflow-hidden border-border/60 bg-[color-mix(in_oklch,var(--background)_82%,var(--background-surface)_18%)] p-6 sm:p-8">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+          <div className="min-w-0 space-y-3">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t('title')}</h2>
+            <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+              {t('description')}
+            </p>
+            {canExport && (
+              <ExportRegistrationsButton
+                editionId={eventId}
+                distanceId={distanceId}
+                status={status}
+                search={search}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+              />
+            )}
+          </div>
+          <InsetSurface className="border-border/60 bg-background/80 p-5">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {t('title')}
+              </p>
+              <p className="text-sm font-medium text-foreground">
+                {event.seriesName} {event.editionLabel}
+              </p>
+              <p className="text-sm text-muted-foreground">{event.organizationName}</p>
+            </div>
+          </InsetSurface>
         </div>
-        {canExport && (
-          <ExportRegistrationsButton
-            editionId={eventId}
-            distanceId={distanceId}
-            status={status}
-            search={search}
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-          />
-        )}
-      </div>
+      </Surface>
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <Users className="h-4 w-4" />
             <span className="text-sm font-medium">{t('stats.total')}</span>
           </div>
           <p className="text-2xl font-bold">{total}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        </Surface>
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <span className="text-sm font-medium">{t('stats.distances')}</span>
           </div>
           <p className="text-2xl font-bold">{event.distances.length}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-4 shadow-sm">
+        </Surface>
+        <Surface className="space-y-1.5 p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-2">
             <span className="text-sm font-medium">{t('stats.avgPerDistance')}</span>
           </div>
           <p className="text-2xl font-bold">
-            {event.distances.length > 0
-              ? Math.round(total / event.distances.length)
-              : 0}
+            {event.distances.length > 0 ? Math.round(total / event.distances.length) : 0}
           </p>
-        </div>
+        </Surface>
       </div>
 
       {/* Registrations Table */}
-      <div className="rounded-lg border bg-card shadow-sm">
+      <Surface className="p-0">
         <RegistrationsTable
           registrations={registrations}
           distances={event.distances}
@@ -182,7 +194,7 @@ export default async function RegistrationsPage({ params, searchParams }: Regist
           total={total}
           locale={locale}
         />
-      </div>
+      </Surface>
     </div>
   );
 }

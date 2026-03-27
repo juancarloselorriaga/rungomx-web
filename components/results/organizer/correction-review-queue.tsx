@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { reviewResultCorrectionRequest } from '@/lib/events/results/actions';
 import type { OrganizerCorrectionRequestQueueItem } from '@/lib/events/results/types';
 import { useRouter } from '@/i18n/navigation';
@@ -118,7 +119,7 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
   };
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <Surface className="space-y-4 p-4 sm:p-5">
       <header className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
         <p className="text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
@@ -128,14 +129,15 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
       </header>
 
       {requests.length === 0 ? (
-        <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-          {labels.empty}
-        </p>
+        <InsetSurface className="bg-muted/25 px-3 py-2">
+          <p className="text-sm text-muted-foreground">{labels.empty}</p>
+        </InsetSurface>
       ) : (
         <div className="space-y-3">
           {requests.map((request) => {
             const isPendingRow = request.status === 'pending';
-            const isSubmittingRow = isPending && activeRequestId === request.requestId && isPendingRow;
+            const isSubmittingRow =
+              isPending && activeRequestId === request.requestId && isPendingRow;
             const feedback = feedbackByRequestId[request.requestId];
             const contextKeys = Object.keys(request.requestContext ?? {});
 
@@ -160,27 +162,39 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
 
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.fields.requestedBy}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.fields.requestedBy}
+                    </dt>
                     <dd>{request.requestedByUserId}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.fields.requestedAt}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.fields.requestedAt}
+                    </dt>
                     <dd>{request.requestedAtLabel}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.fields.reviewedBy}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.fields.reviewedBy}
+                    </dt>
                     <dd>{request.reviewedByUserId ?? labels.review.noDecisionYet}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.fields.reviewedAt}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.fields.reviewedAt}
+                    </dt>
                     <dd>{request.reviewedAtLabel ?? labels.review.noDecisionYet}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.fields.entryStatus}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.fields.entryStatus}
+                    </dt>
                     <dd>{request.resultStatus}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.fields.finishTime}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.fields.finishTime}
+                    </dt>
                     <dd>
                       {typeof request.finishTimeMillis === 'number'
                         ? request.finishTimeMillis.toLocaleString()
@@ -275,6 +289,6 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
           })}
         </div>
       )}
-    </section>
+    </Surface>
   );
 }

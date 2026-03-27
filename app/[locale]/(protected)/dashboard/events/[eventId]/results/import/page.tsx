@@ -5,6 +5,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
 type ResultsImportPageProps = LocalePageProps & {
@@ -26,10 +27,27 @@ export default async function ResultsImportPage({ params }: ResultsImportPagePro
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">{t('lanes.import.title')}</h2>
-        <p className="text-muted-foreground">{t('lanes.import.description')}</p>
-      </header>
+      <ResultsPageHero
+        title={t('lanes.import.title')}
+        description={t('lanes.import.description')}
+        stats={[
+          {
+            label: t('importMapping.columnsLabel'),
+            value: String(pageData.rows.length),
+          },
+          {
+            label: t('stateRail.lifecycle'),
+            value:
+              pageData.railState.lifecycle === 'official'
+                ? t('stateRail.lifecycleOfficial')
+                : t('stateRail.lifecycleDraft'),
+          },
+          {
+            label: t('stateRail.unsyncedCount'),
+            value: String(pageData.railState.unsyncedCount),
+          },
+        ]}
+      />
 
       <ImportMappingPreview
         storageKey={`results.import.mapping.${pageData.userScopeKey}.${eventId}`}

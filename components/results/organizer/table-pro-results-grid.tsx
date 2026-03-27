@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/common/badge';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { cn } from '@/lib/utils';
 import type {
   OrganizerResultsRow,
@@ -140,11 +141,7 @@ function getValidationStateLabel(
   }
 }
 
-export function TableProResultsGrid({
-  rows,
-  densityStorageKey,
-  labels,
-}: TableProResultsGridProps) {
+export function TableProResultsGrid({ rows, densityStorageKey, labels }: TableProResultsGridProps) {
   const [density] = useResultsDensityPreference(densityStorageKey, 'full');
   const isCompact = density === 'compact';
   const showValidationColumn =
@@ -152,7 +149,7 @@ export function TableProResultsGrid({
     Boolean(labels.headers.validation && labels.validationState);
 
   return (
-    <section className="rounded-xl border bg-card shadow-sm">
+    <Surface className="p-0 overflow-hidden">
       <div className="flex flex-col gap-3 border-b px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-5">
         <div>
           <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
@@ -162,14 +159,21 @@ export function TableProResultsGrid({
       </div>
 
       {rows.length === 0 ? (
-        <div className="px-5 py-8 text-sm text-muted-foreground">{labels.empty}</div>
+        <div className="px-5 py-5">
+          <InsetSurface className="bg-muted/25 p-4">
+            <p className="text-sm text-muted-foreground">{labels.empty}</p>
+          </InsetSurface>
+        </div>
       ) : (
         <>
           {/* Mobile: card/list layout to avoid horizontal hunting. */}
           <div className="sm:hidden" data-testid="pro-results-grid-mobile">
             <ul className="divide-y">
               {rows.map((row) => {
-                const resultStatusLabel = getResultStatusLabel(row.resultStatus, labels.resultStatus);
+                const resultStatusLabel = getResultStatusLabel(
+                  row.resultStatus,
+                  labels.resultStatus,
+                );
                 const syncStatusLabel = getSyncStatusLabel(row.syncStatus, labels.syncStatus);
                 const validationStateLabel =
                   row.validationState && labels.validationState
@@ -219,7 +223,9 @@ export function TableProResultsGrid({
                           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             {labels.headers.finishTime}
                           </dt>
-                          <dd className="text-foreground">{formatFinishTime(row.finishTimeMillis)}</dd>
+                          <dd className="text-foreground">
+                            {formatFinishTime(row.finishTimeMillis)}
+                          </dd>
                         </div>
 
                         <div className="flex items-center justify-between gap-4">
@@ -244,13 +250,10 @@ export function TableProResultsGrid({
           </div>
 
           {/* Desktop/tablet: keep the full table + density toggle behavior. */}
-          <div
-            className="hidden overflow-x-auto sm:block"
-            data-testid="pro-results-grid-table"
-          >
+          <div className="hidden overflow-x-auto sm:block" data-testid="pro-results-grid-table">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b bg-muted/20 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-2.5 font-semibold">{labels.headers.bib}</th>
                   <th className="px-4 py-2.5 font-semibold">{labels.headers.runner}</th>
                   {showValidationColumn ? (
@@ -267,7 +270,10 @@ export function TableProResultsGrid({
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const resultStatusLabel = getResultStatusLabel(row.resultStatus, labels.resultStatus);
+                  const resultStatusLabel = getResultStatusLabel(
+                    row.resultStatus,
+                    labels.resultStatus,
+                  );
                   const syncStatusLabel = getSyncStatusLabel(row.syncStatus, labels.syncStatus);
                   const validationStateLabel =
                     row.validationState && labels.validationState
@@ -310,7 +316,12 @@ export function TableProResultsGrid({
                           {syncStatusLabel}
                         </Badge>
                       </td>
-                      <td className={cn('px-4 text-foreground', isCompact ? 'py-2.5 text-xs' : 'py-3.5')}>
+                      <td
+                        className={cn(
+                          'px-4 text-foreground',
+                          isCompact ? 'py-2.5 text-xs' : 'py-3.5',
+                        )}
+                      >
                         {formatFinishTime(row.finishTimeMillis)}
                       </td>
                       <td
@@ -332,6 +343,6 @@ export function TableProResultsGrid({
           </div>
         </>
       )}
-    </section>
+    </Surface>
   );
 }

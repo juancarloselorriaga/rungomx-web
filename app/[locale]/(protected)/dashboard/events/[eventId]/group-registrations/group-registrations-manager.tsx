@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { uploadEventMediaFile } from '@/components/events/event-media-upload';
 import { Link, useRouter } from '@/i18n/navigation';
 import {
@@ -330,7 +331,9 @@ export function GroupRegistrationsManager({
     const pct = Number.parseInt(percentOff, 10);
 
     if (!Number.isFinite(min) || min <= 0) {
-      toast.error(t('discountRule.error'), { description: t('discountRule.errors.minParticipants') });
+      toast.error(t('discountRule.error'), {
+        description: t('discountRule.errors.minParticipants'),
+      });
       return;
     }
     if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
@@ -420,7 +423,7 @@ export function GroupRegistrationsManager({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-border bg-card/50">
+      <Surface className="p-0 overflow-hidden">
         <div className="border-b border-border px-6 py-3">
           <h2 className="text-base font-semibold">{t('template.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('template.description')}</p>
@@ -476,9 +479,9 @@ export function GroupRegistrationsManager({
             </Link>
           </Button>
         </div>
-      </div>
+      </Surface>
 
-      <div className="rounded-lg border border-border bg-card/50">
+      <Surface className="p-0 overflow-hidden">
         <div className="border-b border-border px-6 py-3">
           <h2 className="text-base font-semibold">{t('discountRule.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('discountRule.description')}</p>
@@ -488,7 +491,7 @@ export function GroupRegistrationsManager({
             <p className="text-sm text-muted-foreground">{t('discountRule.empty')}</p>
           ) : (
             <div className="overflow-x-auto -mx-6 px-6">
-              <div className="rounded-md border bg-background/30 min-w-[520px]">
+              <InsetSurface className="min-w-[520px] overflow-hidden bg-background/60 p-0">
                 <div className="grid grid-cols-4 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b">
                   <div>{t('discountRule.table.minParticipants')}</div>
                   <div>{t('discountRule.table.percentOff')}</div>
@@ -591,7 +594,7 @@ export function GroupRegistrationsManager({
                     </div>
                   ))}
                 </div>
-              </div>
+              </InsetSurface>
             </div>
           )}
 
@@ -635,9 +638,9 @@ export function GroupRegistrationsManager({
             </div>
           </div>
         </div>
-      </div>
+      </Surface>
 
-      <div className="rounded-lg border border-border bg-card/50">
+      <Surface className="p-0 overflow-hidden">
         <div className="border-b border-border px-6 py-3">
           <h2 className="text-base font-semibold">{t('upload.title')}</h2>
           <p className="text-sm text-muted-foreground">{t('upload.description')}</p>
@@ -664,9 +667,9 @@ export function GroupRegistrationsManager({
             )}
           </Button>
         </div>
-      </div>
+      </Surface>
 
-      <div className="rounded-lg border border-border bg-card/50">
+      <Surface className="p-0 overflow-hidden">
         <div className="border-b border-border px-6 py-3">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -715,7 +718,9 @@ export function GroupRegistrationsManager({
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{t('batches.batch')}</span>
-                      <span className="font-mono text-xs text-muted-foreground">{batch.id.slice(0, 8)}…</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {batch.id.slice(0, 8)}…
+                      </span>
                       {statusBadge(batch.status, t)}
                     </div>
                     <div className="text-sm text-muted-foreground">
@@ -730,7 +735,14 @@ export function GroupRegistrationsManager({
                       <FileSpreadsheet className="h-4 w-4" />
                       {t('batches.rows', { count: batch.rowCount })}
                     </span>
-                    <span className={cn('inline-flex items-center gap-1', batch.errorCount ? 'text-red-700 dark:text-red-300' : 'text-muted-foreground')}>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1',
+                        batch.errorCount
+                          ? 'text-red-700 dark:text-red-300'
+                          : 'text-muted-foreground',
+                      )}
+                    >
                       <AlertCircle className="h-4 w-4" />
                       {t('batches.errors', { count: batch.errorCount })}
                     </span>
@@ -740,10 +752,10 @@ export function GroupRegistrationsManager({
             ))
           )}
         </div>
-      </div>
+      </Surface>
 
       {selectedBatchListItem ? (
-        <div className="rounded-lg border border-border bg-card/50">
+        <Surface className="p-0 overflow-hidden">
           <div className="border-b border-border px-6 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -758,10 +770,7 @@ export function GroupRegistrationsManager({
               <Button
                 type="button"
                 onClick={handleProcess}
-                disabled={
-                  isProcessing ||
-                  !canProcessSelectedBatch
-                }
+                disabled={isProcessing || !canProcessSelectedBatch}
               >
                 {isProcessing ? (
                   <>
@@ -798,7 +807,7 @@ export function GroupRegistrationsManager({
                 )}
 
                 <div className="overflow-x-auto -mx-6 px-6">
-                  <div className="rounded-md border overflow-hidden min-w-[600px]">
+                  <InsetSurface className="min-w-[600px] overflow-hidden bg-background/60 p-0">
                     <div className="grid grid-cols-5 gap-3 px-4 py-2 text-xs font-semibold text-muted-foreground border-b bg-muted/20">
                       <div>{t('batch.table.row')}</div>
                       <div>{t('batch.table.name')}</div>
@@ -809,10 +818,13 @@ export function GroupRegistrationsManager({
                     <div className="divide-y">
                       {selectedBatch.rows.slice(0, 50).map((row) => (
                         <div key={row.id} className="grid grid-cols-5 gap-3 px-4 py-3 text-sm">
-                          <div className="font-mono text-xs text-muted-foreground">{row.rowIndex}</div>
+                          <div className="font-mono text-xs text-muted-foreground">
+                            {row.rowIndex}
+                          </div>
                           <div className="min-w-0">
                             <p className="truncate">
-                              {String(row.rawJson.firstName ?? '')} {String(row.rawJson.lastName ?? '')}
+                              {String(row.rawJson.firstName ?? '')}{' '}
+                              {String(row.rawJson.lastName ?? '')}
                             </p>
                           </div>
                           <div className="min-w-0">
@@ -840,7 +852,7 @@ export function GroupRegistrationsManager({
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </InsetSurface>
                 </div>
 
                 {selectedBatch.rows.length > 50 ? (
@@ -851,7 +863,7 @@ export function GroupRegistrationsManager({
               </>
             )}
           </div>
-        </div>
+        </Surface>
       ) : null}
     </div>
   );

@@ -2,6 +2,7 @@ import { CaptureBibEntryList } from '@/components/results/organizer/capture-bib-
 import { OrganizerResultsLane } from '@/components/results/organizer/organizer-results-lane';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
 type ResultsCaptureViewProps = {
@@ -27,10 +28,27 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">{t('lanes.capture.title')}</h2>
-        <p className="text-muted-foreground">{t('lanes.capture.description')}</p>
-      </header>
+      <ResultsPageHero
+        title={t('lanes.capture.title')}
+        description={t('lanes.capture.description')}
+        stats={[
+          {
+            label: t('captureEntry.entriesTitle'),
+            value: String(pageData.rows.length),
+          },
+          {
+            label: t('captureEntry.connectivityLabel'),
+            value:
+              pageData.railState.connectivity === 'online'
+                ? t('captureEntry.connectivityOnline')
+                : t('captureEntry.connectivityOffline'),
+          },
+          {
+            label: t('stateRail.unsyncedCount'),
+            value: String(pageData.railState.unsyncedCount),
+          },
+        ]}
+      />
 
       <CaptureBibEntryList
         storageKey={`results.capture.entries.${pageData.userScopeKey}.${eventId}`}

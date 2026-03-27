@@ -1,4 +1,5 @@
 import { Badge } from '@/components/common/badge';
+import { Surface } from '@/components/ui/surface';
 import {
   getInternalResultsInvestigationViewData,
   listResultTrustAuditLogsForEdition,
@@ -13,6 +14,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsPageHero } from '../_results-page-hero';
 import { ResultsInvestigationAuditFiltersForm } from './_audit-filters-form';
 
 type ResultsInvestigationPageProps = LocalePageProps & {
@@ -169,19 +171,33 @@ export default async function ResultsInvestigationPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </header>
+      <ResultsPageHero
+        title={t('title')}
+        description={t('description')}
+        stats={[
+          {
+            label: t('versions.title'),
+            value: String(investigationData.versions.length),
+          },
+          {
+            label: t('corrections.title'),
+            value: String(investigationData.corrections.length),
+          },
+          {
+            label: t('audit.title'),
+            value: String(auditLogs.length),
+          },
+        ]}
+      />
 
       {loadFailed ? (
-        <section className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+        <Surface className="border-destructive/30 bg-destructive/5 p-4 text-sm shadow-none">
           <p className="font-semibold text-destructive">{tCommon('error')}</p>
           <p className="mt-1 text-muted-foreground">{t('loadError')}</p>
-        </section>
+        </Surface>
       ) : null}
 
-      <section className="rounded-xl border bg-card p-4 shadow-sm">
+      <Surface>
         <h3 className="text-sm font-semibold">{t('selectedDiff.title')}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{t('selectedDiff.description')}</p>
 
@@ -210,9 +226,15 @@ export default async function ResultsInvestigationPage({
               <dd className="text-foreground">
                 {t('selectedDiff.transitionValue', {
                   fromVersion: investigationData.selectedDiff.fromVersionNumber ?? '?',
-                  fromStatus: statusLabel(investigationData.selectedDiff.fromStatus, t('fallback.unknown')),
+                  fromStatus: statusLabel(
+                    investigationData.selectedDiff.fromStatus,
+                    t('fallback.unknown'),
+                  ),
                   toVersion: investigationData.selectedDiff.toVersionNumber ?? '?',
-                  toStatus: statusLabel(investigationData.selectedDiff.toStatus, t('fallback.unknown')),
+                  toStatus: statusLabel(
+                    investigationData.selectedDiff.toStatus,
+                    t('fallback.unknown'),
+                  ),
                 })}
               </dd>
             </div>
@@ -260,9 +282,9 @@ export default async function ResultsInvestigationPage({
         ) : (
           <p className="mt-3 text-sm text-muted-foreground">{t('selectedDiff.empty')}</p>
         )}
-      </section>
+      </Surface>
 
-      <section className="rounded-xl border bg-card p-4 shadow-sm">
+      <Surface>
         <h3 className="text-sm font-semibold">{t('versions.title')}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{t('versions.description')}</p>
 
@@ -271,13 +293,20 @@ export default async function ResultsInvestigationPage({
         ) : (
           <div className="mt-3 space-y-3">
             {investigationData.versions.map((version) => (
-              <article key={version.id} className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40">
+              <article
+                key={version.id}
+                className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40"
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">
                     {t('versions.versionLabel', { version: version.versionNumber })}
                   </Badge>
-                  <Badge variant="indigo">{statusLabel(version.status, t('fallback.unknown'))}</Badge>
-                  <Badge variant="outline">{sourceLabel(version.source, t('fallback.unknown'))}</Badge>
+                  <Badge variant="indigo">
+                    {statusLabel(version.status, t('fallback.unknown'))}
+                  </Badge>
+                  <Badge variant="outline">
+                    {sourceLabel(version.source, t('fallback.unknown'))}
+                  </Badge>
                 </div>
 
                 <dl className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
@@ -299,7 +328,9 @@ export default async function ResultsInvestigationPage({
                     <dt className="font-semibold uppercase tracking-wide">
                       {t('versions.fields.createdAt')}
                     </dt>
-                    <dd>{formatDateTime(version.createdAt, formatter, t('fallback.notAvailable'))}</dd>
+                    <dd>
+                      {formatDateTime(version.createdAt, formatter, t('fallback.notAvailable'))}
+                    </dd>
                   </div>
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">
@@ -347,9 +378,7 @@ export default async function ResultsInvestigationPage({
                     <dt className="font-semibold uppercase tracking-wide">
                       {t('versions.fields.ingestionLane')}
                     </dt>
-                    <dd>
-                      {sourceLabel(version.ingestion.sourceLane, t('fallback.notAvailable'))}
-                    </dd>
+                    <dd>{sourceLabel(version.ingestion.sourceLane, t('fallback.notAvailable'))}</dd>
                   </div>
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">
@@ -386,9 +415,9 @@ export default async function ResultsInvestigationPage({
             ))}
           </div>
         )}
-      </section>
+      </Surface>
 
-      <section className="rounded-xl border bg-card p-4 shadow-sm">
+      <Surface>
         <h3 className="text-sm font-semibold">{t('corrections.title')}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{t('corrections.description')}</p>
 
@@ -397,7 +426,10 @@ export default async function ResultsInvestigationPage({
         ) : (
           <div className="mt-3 space-y-3">
             {investigationData.corrections.map((item) => (
-              <article key={item.requestId} className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40">
+              <article
+                key={item.requestId}
+                className="rounded-md border bg-muted/20 p-3 dark:bg-muted/40"
+              >
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">
@@ -437,7 +469,9 @@ export default async function ResultsInvestigationPage({
                     <dt className="font-semibold uppercase tracking-wide">
                       {t('corrections.fields.reviewedAt')}
                     </dt>
-                    <dd>{formatDateTime(item.reviewedAt, formatter, t('fallback.notAvailable'))}</dd>
+                    <dd>
+                      {formatDateTime(item.reviewedAt, formatter, t('fallback.notAvailable'))}
+                    </dd>
                   </div>
                   <div>
                     <dt className="font-semibold uppercase tracking-wide">
@@ -457,10 +491,7 @@ export default async function ResultsInvestigationPage({
 
                 <div className="mt-3">
                   <a
-                    href={encodeDiffLink(
-                      item.sourceResultVersionId,
-                      item.correctedResultVersionId,
-                    )}
+                    href={encodeDiffLink(item.sourceResultVersionId, item.correctedResultVersionId)}
                     className="text-sm font-medium text-primary underline-offset-2 hover:underline"
                   >
                     {t('corrections.viewDiff')}
@@ -470,9 +501,9 @@ export default async function ResultsInvestigationPage({
             ))}
           </div>
         )}
-      </section>
+      </Surface>
 
-      <section className="rounded-xl border bg-card p-4 shadow-sm">
+      <Surface>
         <h3 className="text-sm font-semibold">{t('audit.title')}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{t('audit.description')}</p>
 
@@ -537,7 +568,7 @@ export default async function ResultsInvestigationPage({
             ))}
           </div>
         )}
-      </section>
+      </Surface>
     </div>
   );
 }

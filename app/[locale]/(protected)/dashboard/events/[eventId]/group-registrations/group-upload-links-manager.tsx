@@ -21,9 +21,14 @@ import {
 } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { getPathname } from '@/i18n/navigation';
 import { Form, FormError, useForm } from '@/lib/forms';
-import { createUploadLink, listUploadLinksForEdition, revokeUploadLink } from '@/lib/events/group-upload/actions';
+import {
+  createUploadLink,
+  listUploadLinksForEdition,
+  revokeUploadLink,
+} from '@/lib/events/group-upload/actions';
 import { PAYMENT_RESPONSIBILITIES } from '@/lib/events/constants';
 import { siteUrl } from '@/config/url';
 import { cn } from '@/lib/utils';
@@ -32,13 +37,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 
-type UploadLinkStatus =
-  | 'ACTIVE'
-  | 'NOT_STARTED'
-  | 'EXPIRED'
-  | 'REVOKED'
-  | 'DISABLED'
-  | 'MAXED_OUT';
+type UploadLinkStatus = 'ACTIVE' | 'NOT_STARTED' | 'EXPIRED' | 'REVOKED' | 'DISABLED' | 'MAXED_OUT';
 
 type UploadLinkItem = {
   id: string;
@@ -55,7 +54,10 @@ type UploadLinkItem = {
   inviteCount: number;
 };
 
-type UploadLinkPayload = Omit<UploadLinkItem, 'status' | 'startsAt' | 'endsAt' | 'createdAt' | 'revokedAt'> & {
+type UploadLinkPayload = Omit<
+  UploadLinkItem,
+  'status' | 'startsAt' | 'endsAt' | 'createdAt' | 'revokedAt'
+> & {
   status: string;
   startsAt: string | Date | null;
   endsAt: string | Date | null;
@@ -135,7 +137,9 @@ export function GroupUploadLinksManager({
   const [links, setLinks] = useState<UploadLinkItem[]>(initialLinks.map(normalizeLink));
   const [isPending, startTransition] = useTransition();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [createdLink, setCreatedLink] = useState<{ token: string; tokenPrefix: string } | null>(null);
+  const [createdLink, setCreatedLink] = useState<{ token: string; tokenPrefix: string } | null>(
+    null,
+  );
   const [revokeTarget, setRevokeTarget] = useState<string | null>(null);
 
   const refreshLinks = async () => {
@@ -151,7 +155,8 @@ export function GroupUploadLinksManager({
       const result = await createUploadLink({
         editionId,
         name: values.name.trim() || undefined,
-        paymentResponsibility: values.paymentResponsibility as typeof PAYMENT_RESPONSIBILITIES[number],
+        paymentResponsibility:
+          values.paymentResponsibility as (typeof PAYMENT_RESPONSIBILITIES)[number],
         startsAt: toIsoString(values.startsAt),
         endsAt: toIsoString(values.endsAt),
         maxBatches: values.maxBatches ? Number.parseInt(values.maxBatches, 10) : undefined,
@@ -162,7 +167,10 @@ export function GroupUploadLinksManager({
         return { ok: false as const, error: result.code ?? 'SERVER_ERROR', message: result.error };
       }
 
-      return { ok: true as const, data: { token: result.data.token, tokenPrefix: result.data.tokenPrefix } };
+      return {
+        ok: true as const,
+        data: { token: result.data.token, tokenPrefix: result.data.tokenPrefix },
+      };
     },
     onSuccess: async (data) => {
       setCreatedLink({ token: data.token, tokenPrefix: data.tokenPrefix });
@@ -232,72 +240,83 @@ export function GroupUploadLinksManager({
         <p className="text-sm text-muted-foreground">{t('description')}</p>
       </div>
 
-      <Form form={form} className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
+      <Form form={form} className="space-y-4">
         <FormError />
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField label={t('fields.name')} error={form.errors.name}>
-            <input
-              type="text"
-              {...form.register('name')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              placeholder={t('fields.namePlaceholder')}
-            />
-          </FormField>
-          <FormField label={t('fields.paymentResponsibility')} error={form.errors.paymentResponsibility}>
-            <>
-              <select
-                {...form.register('paymentResponsibility')}
+        <Surface className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField label={t('fields.name')} error={form.errors.name}>
+              <input
+                type="text"
+                {...form.register('name')}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              >
-                <option value="self_pay">{t('payment.selfPay')}</option>
-                <option value="central_pay">{t('payment.centralPay')}</option>
-              </select>
-              <p className="text-xs text-muted-foreground">{t('fields.paymentResponsibilityHelp')}</p>
-            </>
-          </FormField>
-          <div className="md:col-span-2 grid gap-4 lg:grid-cols-2">
-            <FormField label={t('fields.startsAt')} error={form.errors.startsAt}>
-              <DateTimePicker
-                value={form.values.startsAt}
-                onChangeAction={(v) => form.setFieldValue('startsAt', v)}
-                locale={locale}
-                clearLabel={tCommon('clear')}
+                placeholder={t('fields.namePlaceholder')}
               />
             </FormField>
-            <FormField label={t('fields.endsAt')} error={form.errors.endsAt}>
-              <DateTimePicker
-                value={form.values.endsAt}
-                onChangeAction={(v) => form.setFieldValue('endsAt', v)}
-                locale={locale}
-                clearLabel={tCommon('clear')}
+            <FormField
+              label={t('fields.paymentResponsibility')}
+              error={form.errors.paymentResponsibility}
+            >
+              <>
+                <select
+                  {...form.register('paymentResponsibility')}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="self_pay">{t('payment.selfPay')}</option>
+                  <option value="central_pay">{t('payment.centralPay')}</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  {t('fields.paymentResponsibilityHelp')}
+                </p>
+              </>
+            </FormField>
+            <div className="md:col-span-2 grid gap-4 lg:grid-cols-2">
+              <FormField label={t('fields.startsAt')} error={form.errors.startsAt}>
+                <DateTimePicker
+                  value={form.values.startsAt}
+                  onChangeAction={(v) => form.setFieldValue('startsAt', v)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
+                />
+              </FormField>
+              <FormField label={t('fields.endsAt')} error={form.errors.endsAt}>
+                <DateTimePicker
+                  value={form.values.endsAt}
+                  onChangeAction={(v) => form.setFieldValue('endsAt', v)}
+                  locale={locale}
+                  clearLabel={tCommon('clear')}
+                />
+              </FormField>
+            </div>
+            <FormField label={t('fields.maxBatches')} error={form.errors.maxBatches}>
+              <input
+                type="number"
+                min={1}
+                {...form.register('maxBatches')}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </FormField>
+            <FormField label={t('fields.maxInvites')} error={form.errors.maxInvites}>
+              <input
+                type="number"
+                min={1}
+                {...form.register('maxInvites')}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
             </FormField>
           </div>
-          <FormField label={t('fields.maxBatches')} error={form.errors.maxBatches}>
-            <input
-              type="number"
-              min={1}
-              {...form.register('maxBatches')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
-          </FormField>
-          <FormField label={t('fields.maxInvites')} error={form.errors.maxInvites}>
-            <input
-              type="number"
-              min={1}
-              {...form.register('maxInvites')}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-            />
-          </FormField>
-        </div>
 
-        <Button type="submit" disabled={form.isSubmitting}>
-          {form.isSubmitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
-          {t('create')}
-        </Button>
+          <Button type="submit" disabled={form.isSubmitting}>
+            {form.isSubmitting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4 mr-2" />
+            )}
+            {t('create')}
+          </Button>
+        </Surface>
       </Form>
 
-      <div className="rounded-lg border bg-card p-4 shadow-sm overflow-hidden">
+      <Surface className="p-0 overflow-hidden">
         <table className="min-w-full text-sm">
           <thead className="border-b text-xs uppercase text-muted-foreground">
             <tr>
@@ -313,10 +332,17 @@ export function GroupUploadLinksManager({
               <tr key={link.id}>
                 <td className="px-3 py-2">
                   <div className="font-medium">{link.name || t('table.unnamed')}</div>
-                  <div className="text-xs text-muted-foreground">{new Date(link.createdAt).toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(link.createdAt).toLocaleString()}
+                  </div>
                 </td>
                 <td className="px-3 py-2">
-                  <span className={cn('rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide', STATUS_STYLES[link.status] ?? 'bg-muted text-muted-foreground')}>
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-1 text-xs font-semibold uppercase tracking-wide',
+                      STATUS_STYLES[link.status] ?? 'bg-muted text-muted-foreground',
+                    )}
+                  >
                     {statusLabelMap[link.status] ?? link.status}
                   </span>
                 </td>
@@ -324,27 +350,27 @@ export function GroupUploadLinksManager({
                   {t('table.usageCounts', { batches: link.batchCount, invites: link.inviteCount })}
                 </td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{link.tokenPrefix}…</td>
-                  <td className="px-3 py-2">
-                    <div className="flex flex-wrap gap-2">
-                      {link.status === 'ACTIVE' ? (
-                        <IconTooltipButton
-                          variant="ghost"
-                          size="icon"
-                          label={t('revoke')}
-                          onClick={() => handleRevoke(link.id)}
-                          disabled={isPending}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </IconTooltipButton>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                <td className="px-3 py-2">
+                  <div className="flex flex-wrap gap-2">
+                    {link.status === 'ACTIVE' ? (
+                      <IconTooltipButton
+                        variant="ghost"
+                        size="icon"
+                        label={t('revoke')}
+                        onClick={() => handleRevoke(link.id)}
+                        disabled={isPending}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </IconTooltipButton>
+                    ) : null}
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
-      </div>
+      </Surface>
 
       <AlertDialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
         <AlertDialogContent>
@@ -354,7 +380,10 @@ export function GroupUploadLinksManager({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{tCommon('cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmRevoke} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={confirmRevoke}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {t('revoke')}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -369,15 +398,15 @@ export function GroupUploadLinksManager({
           </DialogHeader>
 
           <div className="space-y-3 text-sm">
-            <div className="rounded-md border bg-muted/40 p-3">
+            <InsetSurface className="bg-muted/30 p-3">
               <div className="text-xs text-muted-foreground">{t('tokenLabel')}</div>
               <div className="font-mono break-all">{createdLink?.token}</div>
-            </div>
+            </InsetSurface>
             {linkUrl ? (
-              <div className="rounded-md border bg-muted/40 p-3">
+              <InsetSurface className="bg-muted/30 p-3">
                 <div className="text-xs text-muted-foreground">{t('linkLabel')}</div>
                 <div className="break-all">{linkUrl}</div>
-              </div>
+              </InsetSurface>
             ) : null}
           </div>
 

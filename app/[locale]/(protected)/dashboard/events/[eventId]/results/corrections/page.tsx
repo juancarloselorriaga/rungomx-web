@@ -12,6 +12,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
 type ResultsCorrectionsPageProps = LocalePageProps & {
@@ -71,10 +72,28 @@ export default async function ResultsCorrectionsPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">{t('lanes.corrections.title')}</h2>
-        <p className="text-muted-foreground">{t('lanes.corrections.description')}</p>
-      </header>
+      <ResultsPageHero
+        title={t('lanes.corrections.title')}
+        description={t('lanes.corrections.description')}
+        stats={[
+          {
+            label: t('corrections.metrics.summary.total'),
+            value: String(metrics.statusCounts.total),
+          },
+          {
+            label: t('corrections.metrics.summary.pending'),
+            value: String(metrics.statusCounts.pending),
+          },
+          {
+            label: t('corrections.metrics.summary.approved'),
+            value: String(metrics.statusCounts.approved),
+          },
+          {
+            label: t('corrections.metrics.summary.rejected'),
+            value: String(metrics.statusCounts.rejected),
+          },
+        ]}
+      />
 
       <CorrectionReviewQueue
         requests={correctionRequests.map((request) => ({

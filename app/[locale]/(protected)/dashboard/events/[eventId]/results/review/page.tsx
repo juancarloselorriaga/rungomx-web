@@ -5,6 +5,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
 type ResultsReviewPageProps = LocalePageProps & {
@@ -26,10 +27,24 @@ export default async function ResultsReviewPage({ params }: ResultsReviewPagePro
 
   return (
     <div className="space-y-6">
-      <header className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
-        <p className="text-muted-foreground">{t('description')}</p>
-      </header>
+      <ResultsPageHero
+        title={t('title')}
+        description={t('description')}
+        stats={[
+          {
+            label: pageData.labels.reviewGate.rowCountLabel,
+            value: String(pageData.reviewSummary?.rowCount ?? pageData.rows.length),
+          },
+          {
+            label: pageData.labels.reviewGate.blockerCountLabel,
+            value: String(pageData.reviewSummary?.blockerCount ?? 0),
+          },
+          {
+            label: pageData.labels.reviewGate.warningCountLabel,
+            value: String(pageData.reviewSummary?.warningCount ?? 0),
+          },
+        ]}
+      />
 
       <OrganizerResultsLane
         eventId={eventId}

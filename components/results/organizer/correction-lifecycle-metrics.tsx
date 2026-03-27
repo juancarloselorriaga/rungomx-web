@@ -1,3 +1,4 @@
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import type { CorrectionLifecycleMetrics } from '@/lib/events/results/types';
 
 type CorrectionLifecycleMetricsProps = {
@@ -118,7 +119,7 @@ export function CorrectionLifecycleMetricsPanel({
     .replaceAll(':', '-')}.csv`;
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <Surface className="space-y-4 p-4 sm:p-5">
       <header className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
         <p className="text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
@@ -127,7 +128,7 @@ export function CorrectionLifecycleMetricsPanel({
         </p>
       </header>
 
-      <div className="space-y-2 rounded-md border border-border/70 bg-muted/30 px-3 py-2 dark:bg-muted/60">
+      <InsetSurface className="space-y-2 bg-muted/25 px-3 py-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           {labels.filtersTitle}
         </p>
@@ -137,11 +138,15 @@ export function CorrectionLifecycleMetricsPanel({
             <dd>{toValueLabel(metrics.filters.editionId, labels.fallback.notSet)}</dd>
           </div>
           <div>
-            <dt className="font-semibold uppercase tracking-wide">{labels.filters.organizationId}</dt>
+            <dt className="font-semibold uppercase tracking-wide">
+              {labels.filters.organizationId}
+            </dt>
             <dd>{toValueLabel(metrics.filters.organizationId, labels.fallback.notSet)}</dd>
           </div>
           <div>
-            <dt className="font-semibold uppercase tracking-wide">{labels.filters.requestedFrom}</dt>
+            <dt className="font-semibold uppercase tracking-wide">
+              {labels.filters.requestedFrom}
+            </dt>
             <dd>
               {metrics.filters.requestedFrom
                 ? formatter.format(metrics.filters.requestedFrom)
@@ -157,32 +162,42 @@ export function CorrectionLifecycleMetricsPanel({
             </dd>
           </div>
         </dl>
-      </div>
+      </InsetSurface>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.total}</p>
-          <p className="text-xl font-semibold text-foreground">{metrics.statusCounts.total.toLocaleString()}</p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.pending}</p>
+        <InsetSurface as="article" className="bg-muted/25 p-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {labels.summary.total}
+          </p>
+          <p className="text-xl font-semibold text-foreground">
+            {metrics.statusCounts.total.toLocaleString()}
+          </p>
+        </InsetSurface>
+        <InsetSurface as="article" className="bg-muted/25 p-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {labels.summary.pending}
+          </p>
           <p className="text-xl font-semibold text-foreground">
             {metrics.statusCounts.pending.toLocaleString()}
           </p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.approved}</p>
+        </InsetSurface>
+        <InsetSurface as="article" className="bg-muted/25 p-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {labels.summary.approved}
+          </p>
           <p className="text-xl font-semibold text-foreground">
             {metrics.statusCounts.approved.toLocaleString()}
           </p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{labels.summary.rejected}</p>
+        </InsetSurface>
+        <InsetSurface as="article" className="bg-muted/25 p-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+            {labels.summary.rejected}
+          </p>
           <p className="text-xl font-semibold text-foreground">
             {metrics.statusCounts.rejected.toLocaleString()}
           </p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        </InsetSurface>
+        <InsetSurface as="article" className="bg-muted/25 p-3">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {labels.summary.medianResolutionHours}
           </p>
@@ -191,8 +206,8 @@ export function CorrectionLifecycleMetricsPanel({
               ? metrics.medianResolutionHours.toLocaleString()
               : labels.fallback.notAvailable}
           </p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        </InsetSurface>
+        <InsetSurface as="article" className="bg-muted/25 p-3">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {labels.summary.oldestPendingHours}
           </p>
@@ -201,7 +216,7 @@ export function CorrectionLifecycleMetricsPanel({
               ? metrics.pendingAging.oldestPendingAgeHours.toLocaleString()
               : labels.fallback.notAvailable}
           </p>
-        </article>
+        </InsetSurface>
       </div>
 
       <section className="space-y-2">
@@ -210,18 +225,22 @@ export function CorrectionLifecycleMetricsPanel({
         </p>
         <p className="text-xs text-muted-foreground">{labels.aging.description}</p>
         <div className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
-          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
-            {labels.aging.lessThan24Hours}: {metrics.pendingAging.buckets.lessThan24Hours.toLocaleString()}
-          </p>
-          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
-            {labels.aging.oneToThreeDays}: {metrics.pendingAging.buckets.oneToThreeDays.toLocaleString()}
-          </p>
-          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
-            {labels.aging.threeToSevenDays}: {metrics.pendingAging.buckets.threeToSevenDays.toLocaleString()}
-          </p>
-          <p className="rounded-md border bg-muted/30 px-3 py-2 dark:bg-muted/60">
-            {labels.aging.moreThanSevenDays}: {metrics.pendingAging.buckets.moreThanSevenDays.toLocaleString()}
-          </p>
+          <InsetSurface as="p" className="bg-muted/25 px-3 py-2">
+            {labels.aging.lessThan24Hours}:{' '}
+            {metrics.pendingAging.buckets.lessThan24Hours.toLocaleString()}
+          </InsetSurface>
+          <InsetSurface as="p" className="bg-muted/25 px-3 py-2">
+            {labels.aging.oneToThreeDays}:{' '}
+            {metrics.pendingAging.buckets.oneToThreeDays.toLocaleString()}
+          </InsetSurface>
+          <InsetSurface as="p" className="bg-muted/25 px-3 py-2">
+            {labels.aging.threeToSevenDays}:{' '}
+            {metrics.pendingAging.buckets.threeToSevenDays.toLocaleString()}
+          </InsetSurface>
+          <InsetSurface as="p" className="bg-muted/25 px-3 py-2">
+            {labels.aging.moreThanSevenDays}:{' '}
+            {metrics.pendingAging.buckets.moreThanSevenDays.toLocaleString()}
+          </InsetSurface>
         </div>
       </section>
 
@@ -230,32 +249,40 @@ export function CorrectionLifecycleMetricsPanel({
           {labels.aging.highlightsTitle}
         </p>
         {metrics.agingHighlights.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground dark:bg-muted/60">
-            {labels.aging.highlightsEmpty}
-          </p>
+          <InsetSurface className="bg-muted/25 px-3 py-2">
+            <p className="text-sm text-muted-foreground">{labels.aging.highlightsEmpty}</p>
+          </InsetSurface>
         ) : (
           <div className="space-y-2">
             {metrics.agingHighlights.map((item) => (
-              <article key={item.requestId} className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+              <InsetSurface as="article" key={item.requestId} className="bg-muted/25 p-3">
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.aging.edition}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.aging.edition}
+                    </dt>
                     <dd>{item.editionLabel}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.aging.requestedBy}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.aging.requestedBy}
+                    </dt>
                     <dd>{item.requestedByUserId}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.aging.requestedAt}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.aging.requestedAt}
+                    </dt>
                     <dd>{formatter.format(item.requestedAt)}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.aging.ageHours}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.aging.ageHours}
+                    </dt>
                     <dd>{item.pendingAgeHours.toLocaleString()}</dd>
                   </div>
                 </dl>
-              </article>
+              </InsetSurface>
             ))}
           </div>
         )}
@@ -281,6 +308,6 @@ export function CorrectionLifecycleMetricsPanel({
           </div>
         )}
       </section>
-    </section>
+    </Surface>
   );
 }

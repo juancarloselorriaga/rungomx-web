@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import {
   parseResultImportFile,
   type ParsedResultImportFile,
@@ -109,10 +110,7 @@ function persistTemplates(storageKey: string, templates: ResultImportMappingTemp
   window.localStorage.setItem(storageKey, JSON.stringify(templates));
 }
 
-function getParseErrorMessage(
-  error: unknown,
-  labels: ImportMappingPreviewLabels,
-): string {
+function getParseErrorMessage(error: unknown, labels: ImportMappingPreviewLabels): string {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     const code = error.code as ResultImportParseErrorCode;
     if (labels.parseErrors[code]) {
@@ -151,8 +149,8 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
   const [mapping, setMapping] = useState<ResultImportFieldMapping>(
     createEmptyResultImportFieldMapping(),
   );
-  const [savedTemplates, setSavedTemplates] = useState<ResultImportMappingTemplate[]>(
-    () => toStoredTemplates(storageKey),
+  const [savedTemplates, setSavedTemplates] = useState<ResultImportMappingTemplate[]>(() =>
+    toStoredTemplates(storageKey),
   );
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [templateName, setTemplateName] = useState('');
@@ -167,10 +165,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
     );
   }, [parsedImport, savedTemplates]);
 
-  const deterministicMapping = useMemo(
-    () => buildDeterministicMapping(mapping),
-    [mapping],
-  );
+  const deterministicMapping = useMemo(() => buildDeterministicMapping(mapping), [mapping]);
 
   const validationResult = useMemo(() => {
     if (!parsedImport) return null;
@@ -270,7 +265,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
   };
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <Surface className="space-y-4 p-4 sm:p-5">
       <header className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
         <p className="text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
@@ -313,29 +308,25 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
 
       {parsedImport ? (
         <div className="space-y-5">
-          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+          <InsetSurface className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.parseSummary}</h4>
             <dl className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <div>
                 <dt className="text-xs uppercase tracking-wide">{labels.columnsLabel}</dt>
-                <dd className="font-medium text-foreground">
-                  {parsedImport.headers.length}
-                </dd>
+                <dd className="font-medium text-foreground">{parsedImport.headers.length}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide">{labels.sampleRowsLabel}</dt>
-                <dd className="font-medium text-foreground">
-                  {parsedImport.sampleRows.length}
-                </dd>
+                <dd className="font-medium text-foreground">{parsedImport.sampleRows.length}</dd>
               </div>
               <div>
                 <dt className="text-xs uppercase tracking-wide">{labels.totalRowsLabel}</dt>
                 <dd className="font-medium text-foreground">{parsedImport.totalRows}</dd>
               </div>
             </dl>
-          </section>
+          </InsetSurface>
 
-          <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+          <InsetSurface className="space-y-3 bg-muted/25 p-3">
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {labels.savedTemplatesLabel}
@@ -376,13 +367,13 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                 {labels.saveTemplateAction}
               </Button>
             </div>
-          </section>
+          </InsetSurface>
 
-          <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+          <InsetSurface className="space-y-3 bg-muted/25 p-3">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b bg-muted/20 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="px-2 py-2 font-semibold">{labels.mappingTableFieldLabel}</th>
                     <th className="px-2 py-2 font-semibold">{labels.mappingTableSourceLabel}</th>
                   </tr>
@@ -423,9 +414,9 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                 </tbody>
               </table>
             </div>
-          </section>
+          </InsetSurface>
 
-          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+          <InsetSurface className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.mappingPreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.mappingPreviewDescription}</p>
             <pre
@@ -434,10 +425,10 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             >
               {JSON.stringify(deterministicMapping, null, 2)}
             </pre>
-          </section>
+          </InsetSurface>
 
           {validationResult ? (
-            <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+            <InsetSurface className="space-y-3 bg-muted/25 p-3">
               <h4 className="text-sm font-semibold text-foreground">{labels.validationTitle}</h4>
               <p className="text-xs text-muted-foreground">{labels.validationDescription}</p>
 
@@ -496,7 +487,9 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                           <dt className="font-semibold uppercase tracking-wide text-muted-foreground">
                             {labels.issuesTableSourceLabel}
                           </dt>
-                          <dd className="text-foreground">{issue.sourceColumn ?? labels.unmappedOption}</dd>
+                          <dd className="text-foreground">
+                            {issue.sourceColumn ?? labels.unmappedOption}
+                          </dd>
                         </div>
                       </dl>
                       <p className="text-sm text-foreground">
@@ -511,10 +504,10 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                   ))}
                 </div>
               ) : null}
-            </section>
+            </InsetSurface>
           ) : null}
 
-          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+          <InsetSurface className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.derivedPreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.derivedPreviewDescription}</p>
 
@@ -530,23 +523,42 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr className="border-b bg-muted/20 text-left text-xs uppercase tracking-wide text-muted-foreground">
                       <th className="px-2 py-2 font-semibold">#</th>
-                      <th className="px-2 py-2 font-semibold">{labels.derivedPreviewHeaders.runner}</th>
-                      <th className="px-2 py-2 font-semibold">{labels.derivedPreviewHeaders.bib}</th>
-                      <th className="px-2 py-2 font-semibold">{labels.derivedPreviewHeaders.status}</th>
-                      <th className="px-2 py-2 font-semibold">{labels.derivedPreviewHeaders.finishTime}</th>
-                      <th className="px-2 py-2 font-semibold">{labels.derivedPreviewHeaders.derivedOverall}</th>
+                      <th className="px-2 py-2 font-semibold">
+                        {labels.derivedPreviewHeaders.runner}
+                      </th>
+                      <th className="px-2 py-2 font-semibold">
+                        {labels.derivedPreviewHeaders.bib}
+                      </th>
+                      <th className="px-2 py-2 font-semibold">
+                        {labels.derivedPreviewHeaders.status}
+                      </th>
+                      <th className="px-2 py-2 font-semibold">
+                        {labels.derivedPreviewHeaders.finishTime}
+                      </th>
+                      <th className="px-2 py-2 font-semibold">
+                        {labels.derivedPreviewHeaders.derivedOverall}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {validationResult?.previewRows.map((previewRow) => (
-                      <tr key={`preview-${previewRow.rowNumber}`} className="border-b last:border-b-0">
+                      <tr
+                        key={`preview-${previewRow.rowNumber}`}
+                        className="border-b last:border-b-0"
+                      >
                         <td className="px-2 py-2 text-muted-foreground">{previewRow.rowNumber}</td>
-                        <td className="px-2 py-2 text-foreground">{previewRow.runnerName || '-'}</td>
+                        <td className="px-2 py-2 text-foreground">
+                          {previewRow.runnerName || '-'}
+                        </td>
                         <td className="px-2 py-2 text-foreground">{previewRow.bibNumber || '-'}</td>
-                        <td className="px-2 py-2 text-foreground">{previewRow.status.toUpperCase()}</td>
-                        <td className="px-2 py-2 text-foreground">{previewRow.finishTimeText || '-'}</td>
+                        <td className="px-2 py-2 text-foreground">
+                          {previewRow.status.toUpperCase()}
+                        </td>
+                        <td className="px-2 py-2 text-foreground">
+                          {previewRow.finishTimeText || '-'}
+                        </td>
                         <td className="px-2 py-2 text-foreground">
                           {previewRow.derivedOverallPlace ?? '-'}
                         </td>
@@ -556,16 +568,16 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                 </table>
               </div>
             )}
-          </section>
+          </InsetSurface>
 
-          <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+          <InsetSurface className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.samplePreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.samplePreviewDescription}</p>
 
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr className="border-b bg-muted/20 text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="px-2 py-2 font-semibold">#</th>
                     {parsedImport.headers.map((header) => (
                       <th key={header} className="px-2 py-2 font-semibold">
@@ -579,7 +591,10 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                     <tr key={sampleRow.rowNumber} className="border-b last:border-b-0">
                       <td className="px-2 py-2 text-muted-foreground">{sampleRow.rowNumber}</td>
                       {parsedImport.headers.map((header) => (
-                        <td key={`${sampleRow.rowNumber}-${header}`} className="px-2 py-2 text-foreground">
+                        <td
+                          key={`${sampleRow.rowNumber}-${header}`}
+                          className="px-2 py-2 text-foreground"
+                        >
                           {sampleRow.values[header] || '-'}
                         </td>
                       ))}
@@ -588,9 +603,9 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                 </tbody>
               </table>
             </div>
-          </section>
+          </InsetSurface>
         </div>
       ) : null}
-    </section>
+    </Surface>
   );
 }

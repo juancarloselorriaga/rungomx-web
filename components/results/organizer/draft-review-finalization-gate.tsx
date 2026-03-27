@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { finalizeResultVersionAttestation } from '@/lib/events/results/actions';
 import type {
@@ -63,9 +64,7 @@ function getRemediationRoute(
   };
 }
 
-function getSeverityVariant(
-  severity: OrganizerDraftReviewIssue['severity'],
-): 'outline' | 'indigo' {
+function getSeverityVariant(severity: OrganizerDraftReviewIssue['severity']): 'outline' | 'indigo' {
   return severity === 'blocker' ? 'outline' : 'indigo';
 }
 
@@ -116,48 +115,46 @@ export function DraftReviewFinalizationGate({
   };
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <Surface className="space-y-4 p-4 sm:p-5">
       <header className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
         <p className="text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
       </header>
 
       <dl className="grid gap-2 text-sm sm:grid-cols-3">
-        <div className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        <InsetSurface className="bg-muted/25 p-3">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.rowCountLabel}
           </dt>
           <dd className="mt-1 text-sm font-semibold text-foreground">
             {summary.rowCount.toLocaleString()}
           </dd>
-        </div>
-        <div className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        </InsetSurface>
+        <InsetSurface className="bg-muted/25 p-3">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.blockerCountLabel}
           </dt>
           <dd className="mt-1 text-sm font-semibold text-foreground">
             {summary.blockerCount.toLocaleString()}
           </dd>
-        </div>
-        <div className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        </InsetSurface>
+        <InsetSurface className="bg-muted/25 p-3">
           <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.warningCountLabel}
           </dt>
           <dd className="mt-1 text-sm font-semibold text-foreground">
             {summary.warningCount.toLocaleString()}
           </dd>
-        </div>
+        </InsetSurface>
       </dl>
 
-      <div className="space-y-3 rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+      <InsetSurface className="space-y-3 bg-muted/25 p-3">
         <Button
           type="button"
           disabled={isDraftEmpty || isSubmittingFinalization}
           onClick={handleAttemptProceed}
         >
-          {isSubmittingFinalization
-            ? labels.finalizePendingAction
-            : labels.attemptProceedAction}
+          {isSubmittingFinalization ? labels.finalizePendingAction : labels.attemptProceedAction}
         </Button>
 
         {proceedFeedback === 'blocked' ? (
@@ -205,7 +202,7 @@ export function DraftReviewFinalizationGate({
             {finalizationFeedback.message}
           </p>
         ) : null}
-      </div>
+      </InsetSurface>
 
       <section className="space-y-3">
         <h4 className="text-sm font-semibold text-foreground">{labels.issueListTitle}</h4>
@@ -240,15 +237,21 @@ export function DraftReviewFinalizationGate({
                 <p className="text-sm font-medium text-foreground">{issue.message}</p>
                 <dl className="grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.issueFields.bib}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.issueFields.bib}
+                    </dt>
                     <dd>{issue.rowBibNumber ?? '-'}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.issueFields.runner}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.issueFields.runner}
+                    </dt>
                     <dd>{issue.rowRunnerName}</dd>
                   </div>
                   <div>
-                    <dt className="font-semibold uppercase tracking-wide">{labels.issueFields.guidance}</dt>
+                    <dt className="font-semibold uppercase tracking-wide">
+                      {labels.issueFields.guidance}
+                    </dt>
                     <dd>{issue.guidance}</dd>
                   </div>
                 </dl>
@@ -257,6 +260,6 @@ export function DraftReviewFinalizationGate({
           </div>
         )}
       </section>
-    </section>
+    </Surface>
   );
 }

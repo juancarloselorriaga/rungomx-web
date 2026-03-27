@@ -1,6 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/common/badge';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import type { OrganizerResultVersionVisibility } from '@/lib/events/results/workspace';
 
 type ResultsVersionVisibilityPanelProps = {
@@ -69,12 +70,14 @@ export function ResultsVersionVisibilityPanel({
   labels,
 }: ResultsVersionVisibilityPanelProps) {
   return (
-    <section className="rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <Surface className="space-y-4 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
 
       {visibility.items.length === 0 ? (
-        <p className="mt-4 text-sm text-muted-foreground">{labels.empty}</p>
+        <InsetSurface className="mt-4 bg-muted/25 p-3">
+          <p className="text-sm text-muted-foreground">{labels.empty}</p>
+        </InsetSurface>
       ) : (
         <>
           <div className="mt-4">
@@ -89,10 +92,10 @@ export function ResultsVersionVisibilityPanel({
             )}
           </div>
 
-          <div className="mt-3 overflow-x-auto">
+          <InsetSurface className="mt-3 overflow-x-auto bg-background/60 p-0">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr className="border-b bg-muted/20 text-left text-xs uppercase tracking-wide text-muted-foreground">
                   <th className="px-3 py-2 font-semibold">{labels.headers.version}</th>
                   <th className="px-3 py-2 font-semibold">{labels.headers.status}</th>
                   <th className="px-3 py-2 font-semibold">{labels.headers.finalizedAt}</th>
@@ -119,18 +122,16 @@ export function ResultsVersionVisibilityPanel({
                     </td>
                     <td className="px-3 py-2.5">
                       <Badge size="sm" variant={item.isActiveOfficial ? 'green' : 'outline'}>
-                        {item.isActiveOfficial
-                          ? labels.activeMarker
-                          : labels.historicalMarker}
+                        {item.isActiveOfficial ? labels.activeMarker : labels.historicalMarker}
                       </Badge>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </InsetSurface>
         </>
       )}
-    </section>
+    </Surface>
   );
 }

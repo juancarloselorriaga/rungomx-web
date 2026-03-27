@@ -151,20 +151,14 @@ function getConflictChoiceLabel(
     : labels.conflictChoiceKeepServer;
 }
 
-export function CaptureBibEntryList({
-  storageKey,
-  locale,
-  labels,
-}: CaptureBibEntryListProps) {
+export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEntryListProps) {
   const [store, setStore] = useState(() => loadOfflineCaptureStore(storageKey));
   const [bibNumber, setBibNumber] = useState('');
   const [finishTimeInput, setFinishTimeInput] = useState('');
   const [status, setStatus] = useState<OfflineCaptureStatus>('finish');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(() =>
-    typeof navigator === 'undefined' ? true : navigator.onLine,
-  );
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
     persistOfflineCaptureStore(storageKey, store);
@@ -172,6 +166,8 @@ export function CaptureBibEntryList({
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
+
+    setIsOnline(window.navigator.onLine);
 
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);
@@ -246,9 +242,7 @@ export function CaptureBibEntryList({
       checkpoint: store.syncCheckpoint,
       existingConflicts: store.syncConflicts,
       conflictResolutions: store.syncConflicts
-        .filter(
-          (conflict) => conflict.finalizedAt === null && conflict.resolution !== null,
-        )
+        .filter((conflict) => conflict.finalizedAt === null && conflict.resolution !== null)
         .map((conflict) => ({
           conflictId: conflict.id,
           choice: conflict.resolution!.choice,
@@ -290,10 +284,7 @@ export function CaptureBibEntryList({
     );
   };
 
-  const onResolveConflict = (
-    conflictId: string,
-    choice: 'keep_local' | 'keep_server',
-  ) => {
+  const onResolveConflict = (conflictId: string, choice: 'keep_local' | 'keep_server') => {
     setStore((current) => ({
       ...current,
       syncConflicts: current.syncConflicts.map((conflict) => {
@@ -315,9 +306,7 @@ export function CaptureBibEntryList({
     }));
     setErrorMessage(null);
     setFeedbackMessage(
-      choice === 'keep_local'
-        ? labels.conflictChoiceKeepLocal
-        : labels.conflictChoiceKeepServer,
+      choice === 'keep_local' ? labels.conflictChoiceKeepLocal : labels.conflictChoiceKeepServer,
     );
   };
 
@@ -474,10 +463,7 @@ export function CaptureBibEntryList({
               const keepLocalSelected = conflict.resolution?.choice === 'keep_local';
               const keepServerSelected = conflict.resolution?.choice === 'keep_server';
               return (
-                <article
-                  key={conflict.id}
-                  className="space-y-3 rounded-md border bg-card p-3"
-                >
+                <article key={conflict.id} className="space-y-3 rounded-md border bg-card p-3">
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="space-y-1 rounded-md border bg-muted/30 p-3 dark:bg-muted/50">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -486,7 +472,9 @@ export function CaptureBibEntryList({
                       <dl className="space-y-1 text-sm">
                         <div className="flex justify-between gap-2">
                           <dt className="text-muted-foreground">{labels.conflictFieldBib}</dt>
-                          <dd className="font-medium text-foreground">{conflict.local.bibNumber}</dd>
+                          <dd className="font-medium text-foreground">
+                            {conflict.local.bibNumber}
+                          </dd>
                         </div>
                         <div className="flex justify-between gap-2">
                           <dt className="text-muted-foreground">{labels.conflictFieldStatus}</dt>
@@ -495,7 +483,9 @@ export function CaptureBibEntryList({
                           </dd>
                         </div>
                         <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldFinishTime}</dt>
+                          <dt className="text-muted-foreground">
+                            {labels.conflictFieldFinishTime}
+                          </dt>
                           <dd className="font-medium text-foreground">
                             {formatTimeForPreview(conflict.local.finishTimeInput)}
                           </dd>
@@ -516,7 +506,9 @@ export function CaptureBibEntryList({
                       <dl className="space-y-1 text-sm">
                         <div className="flex justify-between gap-2">
                           <dt className="text-muted-foreground">{labels.conflictFieldBib}</dt>
-                          <dd className="font-medium text-foreground">{conflict.server.bibNumber}</dd>
+                          <dd className="font-medium text-foreground">
+                            {conflict.server.bibNumber}
+                          </dd>
                         </div>
                         <div className="flex justify-between gap-2">
                           <dt className="text-muted-foreground">{labels.conflictFieldStatus}</dt>
@@ -525,7 +517,9 @@ export function CaptureBibEntryList({
                           </dd>
                         </div>
                         <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldFinishTime}</dt>
+                          <dt className="text-muted-foreground">
+                            {labels.conflictFieldFinishTime}
+                          </dt>
                           <dd className="font-medium text-foreground">
                             {formatTimeForPreview(conflict.server.finishTimeInput)}
                           </dd>
@@ -615,7 +609,8 @@ export function CaptureBibEntryList({
                       <td className="px-2 py-2 text-muted-foreground">
                         {source ? (
                           <span className="text-xs">
-                            {labels.provenanceSession}: {abbreviateSession(source.provenance.sessionId)}
+                            {labels.provenanceSession}:{' '}
+                            {abbreviateSession(source.provenance.sessionId)}
                             <br />
                             {labels.provenanceDevice}: {source.provenance.deviceLabel}
                             <br />
