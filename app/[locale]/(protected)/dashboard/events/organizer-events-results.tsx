@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import type { OrganizerEventSummary } from '@/lib/events/queries';
@@ -15,6 +14,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import { OrganizerEventsListSkeleton } from './_loading-skeletons';
 import { OrganizerEventsFilters } from './organizer-events-filters';
 
 type OrganizerEventsResultsProps = {
@@ -34,42 +34,11 @@ const visibilityStyles: Record<VisibilityType, string> = {
   archived: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
-const LIST_ITEMS = Array.from({ length: 5 });
-
 function formatDate(date: Date | null, locale: string): string {
   if (!date) return '-';
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
   }).format(date);
-}
-
-function OrganizerEventsListSkeleton() {
-  return (
-    <div className="space-y-4" aria-hidden="true">
-      {LIST_ITEMS.map((_, index) => (
-        <Surface key={`event-skeleton-${index}`} className="overflow-hidden p-0">
-          <div className="flex flex-col sm:flex-row">
-            <Skeleton className="relative aspect-[16/9] w-full sm:aspect-auto sm:h-28 sm:w-44" />
-            <div className="flex min-w-0 flex-1 items-start justify-between gap-4 p-4 sm:p-5">
-              <div className="min-w-0 space-y-3 flex-1">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-5 w-20" />
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-4 w-20" />
-                </div>
-                <Skeleton className="h-3 w-40" />
-              </div>
-              <Skeleton className="h-5 w-5" />
-            </div>
-          </div>
-        </Surface>
-      ))}
-    </div>
-  );
 }
 
 export function OrganizerEventsResults({

@@ -98,10 +98,26 @@ export default async function DashboardPaymentsPage({
       <DashboardPageIntro
         title={t('home.title')}
         description={t('home.description')}
+        actions={
+          <Button asChild variant="outline" className="w-full min-w-0 sm:w-auto">
+            <Link
+              href={{
+                pathname: '/dashboard/payments/payouts',
+                query: { organizationId: selectedOrganization.id },
+              }}
+            >
+              {t('actions.viewPayouts')}
+            </Link>
+          </Button>
+        }
         aside={
           <DashboardPageIntroMeta
+            eyebrow={t('home.organization.current')}
             title={selectedOrganization.name}
-            items={[{ label: t('home.organization.title'), value: organizationCountLabel }]}
+            items={[
+              { label: t('home.organization.title'), value: organizationCountLabel },
+              { label: t('home.organization.slugLabel'), value: selectedOrganization.slug },
+            ]}
             className="bg-background/72"
           />
         }
@@ -143,6 +159,9 @@ export default async function DashboardPaymentsPage({
         description={t('home.organization.help')}
         selectorLabel={t('home.organization.label')}
         organizationCountLabel={organizationCountLabel}
+        slugLabel={t('home.organization.slugLabel')}
+        currentLabel={t('home.organization.current')}
+        selectedBadgeLabel={t('home.organization.selectedBadge')}
       />
     </div>
   );

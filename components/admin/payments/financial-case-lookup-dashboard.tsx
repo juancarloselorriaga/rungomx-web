@@ -1,6 +1,7 @@
 'use client';
 
 import { SampledReferenceList } from '@/components/admin/payments/sampled-reference-list';
+import { LoadingSurface, LoadingTextBlock } from '@/components/dashboard/page-skeleton';
 import { PaymentsCountPill } from '@/components/payments/payments-typography';
 import { PaymentsInsetPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import { Button } from '@/components/ui/button';
@@ -142,10 +143,7 @@ export function FinancialCaseLookupDashboard({
       <PaymentsPanel>
         <h3 className="text-sm font-semibold">{labels.searchTitle}</h3>
         <p className="mt-1 text-xs text-muted-foreground">{labels.searchDescription}</p>
-        <form
-          action={handleSearchSubmit}
-          className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]"
-        >
+        <form action={handleSearchSubmit} className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input type="hidden" name="range" value={selectedRange} />
           {workspace ? <input type="hidden" name="workspace" value={workspace} /> : null}
           {investigationTool ? (
@@ -174,16 +172,14 @@ export function FinancialCaseLookupDashboard({
 
       {isPending ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="mt-2 h-4 w-72" />
-          </div>
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <Skeleton className="h-4 w-44" />
-            <Skeleton className="mt-2 h-3 w-80" />
+          <LoadingSurface variant="muted" className="border-dashed p-4">
+            <LoadingTextBlock lines={['w-40', 'w-72']} lineClassName="h-4" className="space-y-3" />
+          </LoadingSurface>
+          <LoadingSurface className="p-4">
+            <LoadingTextBlock lines={['w-44', 'w-80']} lineClassName="h-4" className="space-y-3" />
             <div className="mt-4 space-y-3">
               {Array.from({ length: 2 }).map((_, index) => (
-                <div key={`case-lookup-pending-${index}`} className="rounded-xl border p-4">
+                <PaymentsInsetPanel key={`case-lookup-pending-${index}`}>
                   <Skeleton className="h-4 w-48" />
                   <Skeleton className="mt-3 h-3 w-64" />
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -191,10 +187,10 @@ export function FinancialCaseLookupDashboard({
                     <Skeleton className="h-7 w-28 rounded-full" />
                     <Skeleton className="h-7 w-32 rounded-full" />
                   </div>
-                </div>
+                </PaymentsInsetPanel>
               ))}
             </div>
-          </div>
+          </LoadingSurface>
         </div>
       ) : !hasQuery ? (
         <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
@@ -222,9 +218,7 @@ export function FinancialCaseLookupDashboard({
                     className="border-dashed"
                   >
                     <p className="font-mono text-xs">{group.displayIdentifier}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {group.uiReason}
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{group.uiReason}</p>
                     <SampledReferenceList
                       compact
                       items={group.traceIds}
@@ -243,16 +237,16 @@ export function FinancialCaseLookupDashboard({
           <PaymentsPanel>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold">{labels.resultsTitle}</h3>
-              <PaymentsCountPill>{result?.returnedCaseCount ?? result?.cases.length ?? 0}</PaymentsCountPill>
+              <PaymentsCountPill>
+                {result?.returnedCaseCount ?? result?.cases.length ?? 0}
+              </PaymentsCountPill>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">{labels.resultsDescription}</p>
             {summaryLabel ? (
               <p className="mt-3 text-xs text-muted-foreground">{summaryLabel}</p>
             ) : null}
             {result?.isResultLimitApplied && summaryLimitedHint ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {summaryLimitedHint}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{summaryLimitedHint}</p>
             ) : null}
 
             <div className="mt-4 space-y-3">
@@ -270,10 +264,7 @@ export function FinancialCaseLookupDashboard({
                 }
 
                 return (
-                  <PaymentsInsetPanel
-                    key={entry.traceId}
-                    className="bg-background/40"
-                  >
+                  <PaymentsInsetPanel key={entry.traceId} className="bg-background/40">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-2">
                         <div>

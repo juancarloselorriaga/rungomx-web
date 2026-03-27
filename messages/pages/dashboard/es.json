@@ -163,6 +163,12 @@
     "title": "Organizaciones",
     "description": "Administra tus organizaciones y el acceso del equipo.",
     "createButton": "Crear Organización",
+    "summary": {
+      "eyebrow": "Resumen",
+      "total": "{count, plural, one {# organización} other {# organizaciones}}",
+      "memberSubtitle": "Organizaciones en las que colaboras actualmente.",
+      "supportSubtitle": "El modo de soporte muestra todas las organizaciones del sistema."
+    },
     "emptyState": {
       "title": "Sin organizaciones aún",
       "description": "Verás organizaciones aquí cuando te inviten o crees una."

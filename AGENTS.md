@@ -18,14 +18,15 @@ This repository hosts the RunGoMX web platform built with a server-first Next.js
 Read and follow these canonical standards in this order:
 
 1. `prompts/standards/nextjs-component-implementation.md`
-2. `prompts/standards/dashboard-protected-pages-design.md`
-3. `prompts/standards/nextjs-caching-index.md`
-4. `prompts/standards/forms-implementation.md`
-5. `prompts/standards/e2e-testing.md`
-6. `prompts/standards/test-reliability.md`
-7. `prompts/auth-stack/roles-agent-guide.md`
+2. `prompts/standards/nextjs-caching-index.md`
+3. `prompts/standards/forms-implementation.md`
+4. `prompts/standards/e2e-testing.md`
+5. `prompts/standards/test-reliability.md`
+6. `prompts/auth-stack/roles-agent-guide.md`
 
 These standards take precedence over agent heuristics or local assumptions.
+
+After these baseline reads, use `prompts/standards/README.md` to discover and load task-relevant standards by scope instead of treating every design, copy, or loading policy as a universal startup read.
 
 ## Stable public boundaries
 

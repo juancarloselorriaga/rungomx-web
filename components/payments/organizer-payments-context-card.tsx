@@ -2,6 +2,7 @@
 
 import { DashboardSectionSurface } from '@/components/dashboard/dashboard-section-surface';
 import { Button } from '@/components/ui/button';
+import { MutedSurface } from '@/components/ui/surface';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +13,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
-import { CheckIcon, ChevronDownIcon } from 'lucide-react';
+import { Building2, CheckIcon, ChevronDownIcon } from 'lucide-react';
 
 type OrganizationOption = {
   id: string;
   name: string;
+  slug?: string;
 };
 
 type OrganizerPaymentsContextCardProps = {
@@ -27,6 +29,7 @@ type OrganizerPaymentsContextCardProps = {
   description: string;
   selectorLabel: string;
   organizationCountLabel: string;
+  slugLabel?: string;
 };
 
 export function OrganizerPaymentsContextCard({
@@ -37,6 +40,7 @@ export function OrganizerPaymentsContextCard({
   description,
   selectorLabel,
   organizationCountLabel,
+  slugLabel,
 }: OrganizerPaymentsContextCardProps) {
   const router = useRouter();
 
@@ -46,16 +50,17 @@ export function OrganizerPaymentsContextCard({
       title={selectedOrganization.name}
       description={description}
       contentClassName="pt-4"
+      headerIcon={<Building2 className="size-4" />}
       actions={
         organizations.length > 1 ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between gap-3 whitespace-nowrap lg:w-auto lg:min-w-[15rem]"
+                className="w-full min-w-0 justify-between gap-3 sm:w-auto sm:min-w-[15rem]"
               >
-                {selectorLabel}
-                <ChevronDownIcon className="size-4 text-muted-foreground" />
+                <span className="truncate">{selectorLabel}</span>
+                <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="max-h-[22rem] w-[18rem] overflow-y-auto">
@@ -85,9 +90,17 @@ export function OrganizerPaymentsContextCard({
                         <span className="block max-w-[13rem] truncate font-medium">
                           {organization.name}
                         </span>
+                        {slugLabel && organization.slug ? (
+                          <span className="block max-w-[13rem] truncate text-xs text-muted-foreground">
+                            {slugLabel}: {organization.slug}
+                          </span>
+                        ) : null}
                       </span>
                       {isSelected ? (
-                        <span className="inline-flex items-center text-muted-foreground">
+                        <span
+                          className="inline-flex items-center text-muted-foreground"
+                          aria-hidden
+                        >
                           <CheckIcon className="size-4" />
                         </span>
                       ) : null}
@@ -100,11 +113,22 @@ export function OrganizerPaymentsContextCard({
         ) : null
       }
     >
-      {organizations.length > 1 ? (
-        <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
-          {organizationCountLabel}
-        </p>
-      ) : null}
+      <div className="space-y-3">
+        {organizations.length > 1 ? (
+          <MutedSurface className="py-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+            {organizationCountLabel}
+          </MutedSurface>
+        ) : null}
+
+        {slugLabel && selectedOrganization.slug ? (
+          <p className="text-sm text-muted-foreground">
+            {slugLabel}:{' '}
+            <span className="break-all font-medium text-foreground/90">
+              {selectedOrganization.slug}
+            </span>
+          </p>
+        ) : null}
+      </div>
     </DashboardSectionSurface>
   );
 }

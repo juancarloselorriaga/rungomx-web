@@ -19,12 +19,16 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { LoadingSurface, LoadingTextBlock } from '@/components/dashboard/page-skeleton';
 import { IconButton } from '@/components/ui/icon-button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BulkDocumentUploader } from '@/components/events/bulk-document-uploader';
-import { SortableDocumentList, type DocumentItem } from '@/components/events/sortable-document-list';
+import {
+  SortableDocumentList,
+  type DocumentItem,
+} from '@/components/events/sortable-document-list';
 import { BulkPhotoUploader } from '@/components/events/bulk-photo-uploader';
 import { SortablePhotoGrid, type PhotoItem } from '@/components/events/sortable-photo-grid';
 import {
@@ -34,7 +38,11 @@ import {
 import { cn } from '@/lib/utils';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
-import { getWebsiteContent, updateWebsiteContent, deleteEventMedia } from '@/lib/events/website/actions';
+import {
+  getWebsiteContent,
+  updateWebsiteContent,
+  deleteEventMedia,
+} from '@/lib/events/website/actions';
 import {
   DEFAULT_WEBSITE_BLOCKS,
   SPONSOR_DISPLAY_SIZES,
@@ -59,7 +67,11 @@ interface WebsiteContentEditorProps {
   organizationId: string;
 }
 
-export function WebsiteContentEditor({ editionId, locale, organizationId }: WebsiteContentEditorProps) {
+export function WebsiteContentEditor({
+  editionId,
+  locale,
+  organizationId,
+}: WebsiteContentEditorProps) {
   const t = useTranslations('pages.dashboardEventWebsite');
   const tCommon = useTranslations('common');
   const router = useRouter();
@@ -81,10 +93,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     scheduleRaceDay: false,
   });
 
-  const toggleMarkdownPreview = (
-    key: keyof typeof markdownPreviews,
-    nextValue?: boolean,
-  ) => {
+  const toggleMarkdownPreview = (key: keyof typeof markdownPreviews, nextValue?: boolean) => {
     setMarkdownPreviews((prev) => ({ ...prev, [key]: nextValue ?? !prev[key] }));
   };
 
@@ -220,7 +229,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   };
 
   // Document helpers
-  const handleBulkDocumentUpload = (results: Array<{ mediaId: string; blobUrl: string; label: string }>) => {
+  const handleBulkDocumentUpload = (
+    results: Array<{ mediaId: string; blobUrl: string; label: string }>,
+  ) => {
     const current = blocks.media?.documents ?? [];
     const newDocs: DocumentRef[] = results.map((result, idx) => ({
       mediaId: result.mediaId,
@@ -274,9 +285,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
   const handleDocumentLabelChange = (mediaId: string, label: string) => {
     const current = blocks.media?.documents ?? [];
-    const updated = current.map((d) =>
-      d.mediaId === mediaId ? { ...d, label } : d,
-    );
+    const updated = current.map((d) => (d.mediaId === mediaId ? { ...d, label } : d));
     updateMedia('documents', updated);
   };
 
@@ -359,9 +368,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
 
   const handlePhotoCaptionChange = (mediaId: string, caption: string) => {
     const current = blocks.media?.photos ?? [];
-    const updated = current.map((p) =>
-      p.mediaId === mediaId ? { ...p, caption } : p,
-    );
+    const updated = current.map((p) => (p.mediaId === mediaId ? { ...p, caption } : p));
     updateMedia('photos', updated);
   };
 
@@ -538,25 +545,24 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
   if (isLoading) {
     return (
       <div className="space-y-6">
-        {/* Skeleton for collapsible sections */}
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="rounded-lg border bg-card shadow-sm">
+          <LoadingSurface key={i} className="overflow-hidden rounded-lg p-0 shadow-sm">
             <div className="px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1">
                 <Skeleton className="h-5 w-5 rounded" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-64" />
-                </div>
+                <LoadingTextBlock
+                  className="flex-1 space-y-2"
+                  lines={['w-32', 'w-64']}
+                  lineClassName="h-4"
+                />
               </div>
               <div className="flex items-center gap-3">
                 <Skeleton className="h-5 w-9 rounded-full" />
                 <Skeleton className="h-5 w-5 rounded" />
               </div>
             </div>
-          </div>
+          </LoadingSurface>
         ))}
-        {/* Skeleton for save button */}
         <div className="flex justify-end">
           <Skeleton className="h-10 w-24" />
         </div>
@@ -564,16 +570,19 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
     );
   }
 
-  const inputClassName = "w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30";
-  const textareaClassName = cn(inputClassName, "resize-y");
+  const inputClassName =
+    'w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/30';
+  const textareaClassName = cn(inputClassName, 'resize-y');
 
   return (
     <div className="space-y-6">
       {/* Overview Section */}
-      <div className={cn(
-        "rounded-lg border bg-card shadow-sm transition-all",
-        blocks.overview?.enabled && "ring-1 ring-primary/20"
-      )}>
+      <div
+        className={cn(
+          'rounded-lg border bg-card shadow-sm transition-all',
+          blocks.overview?.enabled && 'ring-1 ring-primary/20',
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleSection('overview')}
@@ -596,7 +605,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.overview?.enabled ?? true}
                   onChange={(e) => updateOverview('enabled', e.target.checked)}
-                  aria-label={(blocks.overview?.enabled ?? true) ? t('disableSection') : t('enableSection')}
+                  aria-label={
+                    (blocks.overview?.enabled ?? true) ? t('disableSection') : t('enableSection')
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -641,10 +652,12 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       </div>
 
       {/* Course Section */}
-      <div className={cn(
-        "rounded-lg border bg-card shadow-sm transition-all",
-        blocks.course?.enabled && "ring-1 ring-primary/20"
-      )}>
+      <div
+        className={cn(
+          'rounded-lg border bg-card shadow-sm transition-all',
+          blocks.course?.enabled && 'ring-1 ring-primary/20',
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleSection('course')}
@@ -667,7 +680,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.course?.enabled ?? false}
                   onChange={(e) => updateCourse('enabled', e.target.checked)}
-                  aria-label={(blocks.course?.enabled ?? false) ? t('disableSection') : t('enableSection')}
+                  aria-label={
+                    (blocks.course?.enabled ?? false) ? t('disableSection') : t('enableSection')
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -728,7 +743,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
             {/* Aid Stations */}
             <div className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm font-medium">{t('sections.course.aidStations.title')}</span>
+                <span className="text-sm font-medium">
+                  {t('sections.course.aidStations.title')}
+                </span>
                 <Button
                   type="button"
                   variant="outline"
@@ -814,10 +831,12 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       </div>
 
       {/* Schedule Section */}
-      <div className={cn(
-        "rounded-lg border bg-card shadow-sm transition-all",
-        blocks.schedule?.enabled && "ring-1 ring-primary/20"
-      )}>
+      <div
+        className={cn(
+          'rounded-lg border bg-card shadow-sm transition-all',
+          blocks.schedule?.enabled && 'ring-1 ring-primary/20',
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleSection('schedule')}
@@ -840,7 +859,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.schedule?.enabled ?? false}
                   onChange={(e) => updateSchedule('enabled', e.target.checked)}
-                  aria-label={(blocks.schedule?.enabled ?? false) ? t('disableSection') : t('enableSection')}
+                  aria-label={
+                    (blocks.schedule?.enabled ?? false) ? t('disableSection') : t('enableSection')
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -896,7 +917,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
             {/* Start Times */}
             <div className="space-y-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-sm font-medium">{t('sections.schedule.startTimes.title')}</span>
+                <span className="text-sm font-medium">
+                  {t('sections.schedule.startTimes.title')}
+                </span>
                 <Button
                   type="button"
                   variant="outline"
@@ -968,10 +991,12 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       </div>
 
       {/* Media Section */}
-      <div className={cn(
-        "rounded-lg border bg-card shadow-sm transition-all",
-        blocks.media?.enabled && "ring-1 ring-primary/20"
-      )}>
+      <div
+        className={cn(
+          'rounded-lg border bg-card shadow-sm transition-all',
+          blocks.media?.enabled && 'ring-1 ring-primary/20',
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleSection('media')}
@@ -994,7 +1019,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.media?.enabled ?? false}
                   onChange={(e) => updateMedia('enabled', e.target.checked)}
-                  aria-label={(blocks.media?.enabled ?? false) ? t('disableSection') : t('enableSection')}
+                  aria-label={
+                    (blocks.media?.enabled ?? false) ? t('disableSection') : t('enableSection')
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -1172,10 +1199,12 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
       </div>
 
       {/* Sponsors Section */}
-      <div className={cn(
-        "rounded-lg border bg-card shadow-sm transition-all",
-        blocks.sponsors?.enabled && "ring-1 ring-primary/20"
-      )}>
+      <div
+        className={cn(
+          'rounded-lg border bg-card shadow-sm transition-all',
+          blocks.sponsors?.enabled && 'ring-1 ring-primary/20',
+        )}
+      >
         <button
           type="button"
           onClick={() => toggleSection('sponsors')}
@@ -1198,7 +1227,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                   type="checkbox"
                   checked={blocks.sponsors?.enabled ?? false}
                   onChange={(e) => updateSponsors('enabled', e.target.checked)}
-                  aria-label={(blocks.sponsors?.enabled ?? false) ? t('disableSection') : t('enableSection')}
+                  aria-label={
+                    (blocks.sponsors?.enabled ?? false) ? t('disableSection') : t('enableSection')
+                  }
                   className="sr-only peer"
                 />
                 <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
@@ -1271,10 +1302,7 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                     .slice()
                     .sort((a, b) => a.sortOrder - b.sortOrder)
                     .map((tier) => (
-                      <div
-                        key={tier.id}
-                        className="rounded-lg border bg-muted/30 overflow-hidden"
-                      >
+                      <div key={tier.id} className="rounded-lg border bg-muted/30 overflow-hidden">
                         {/* Tier Header */}
                         <div className="p-4 bg-muted/50 border-b">
                           <div className="grid gap-3 sm:grid-cols-3">
@@ -1298,7 +1326,11 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                               <select
                                 value={tier.displaySize}
                                 onChange={(e) =>
-                                  updateTier(tier.id, 'displaySize', e.target.value as SponsorDisplaySize)
+                                  updateTier(
+                                    tier.id,
+                                    'displaySize',
+                                    e.target.value as SponsorDisplaySize,
+                                  )
                                 }
                                 className={inputClassName}
                               >
@@ -1354,7 +1386,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                                 nameLabel: t('sections.sponsors.sponsors.nameLabel'),
                                 namePlaceholder: t('sections.sponsors.sponsors.namePlaceholder'),
                                 websiteLabel: t('sections.sponsors.sponsors.websiteLabel'),
-                                websitePlaceholder: t('sections.sponsors.sponsors.websitePlaceholder'),
+                                websitePlaceholder: t(
+                                  'sections.sponsors.sponsors.websitePlaceholder',
+                                ),
                                 upload: t('sections.sponsors.sponsors.upload'),
                                 uploading: t('sections.sponsors.sponsors.uploading'),
                                 cancel: t('sections.sponsors.sponsors.cancel'),
@@ -1404,7 +1438,9 @@ export function WebsiteContentEditor({ editionId, locale, organizationId }: Webs
                                         )}
                                       </div>
                                       <div className="p-3 space-y-2 border-t">
-                                        <p className="text-sm font-medium truncate">{sponsor.name}</p>
+                                        <p className="text-sm font-medium truncate">
+                                          {sponsor.name}
+                                        </p>
                                         {sponsor.websiteUrl && (
                                           <p className="text-xs text-muted-foreground truncate">
                                             {sponsor.websiteUrl}

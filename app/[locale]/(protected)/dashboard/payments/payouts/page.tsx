@@ -161,8 +161,12 @@ export default async function DashboardPaymentsPayoutsPage({
         }
         aside={
           <DashboardPageIntroMeta
+            eyebrow={t('home.organization.current')}
             title={selectedOrganization.name}
-            items={[{ label: t('home.organization.title'), value: organizationCountLabel }]}
+            items={[
+              { label: t('home.organization.title'), value: organizationCountLabel },
+              { label: t('home.organization.slugLabel'), value: selectedOrganization.slug },
+            ]}
             className="bg-background/72"
           />
         }
@@ -227,6 +231,9 @@ export default async function DashboardPaymentsPayoutsPage({
         description={t('home.organization.help')}
         selectorLabel={t('home.organization.label')}
         organizationCountLabel={organizationCountLabel}
+        slugLabel={t('home.organization.slugLabel')}
+        currentLabel={t('home.organization.current')}
+        selectedBadgeLabel={t('home.organization.selectedBadge')}
       />
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadingSurface, LoadingTextBlock } from '@/components/dashboard/page-skeleton';
 import { PaymentsCountPill } from '@/components/payments/payments-typography';
 import { PaymentsInsetPanel, PaymentsPanel } from '@/components/payments/payments-surfaces';
 import { Button } from '@/components/ui/button';
@@ -108,7 +109,9 @@ function formatOwnershipState(value: string, labels: EvidencePackReviewLabels): 
   return value;
 }
 
-function formatPolicyContext(value: Record<string, unknown>): Array<{ key: string; value: string }> {
+function formatPolicyContext(
+  value: Record<string, unknown>,
+): Array<{ key: string; value: string }> {
   return Object.entries(value).map(([key, entry]) => ({
     key,
     value: truncateJson(entry, 180),
@@ -204,19 +207,21 @@ export function EvidencePackReviewDashboard({
 
       {isPending ? (
         <div className="space-y-4">
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="mt-2 h-3 w-72" />
+          <LoadingSurface className="p-4">
+            <LoadingTextBlock lines={['w-36', 'w-72']} lineClassName="h-4" className="space-y-3" />
             <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }).map((_, index) => (
-                <Skeleton key={`evidence-summary-pending-${index}`} className="h-24 w-full rounded-xl" />
+                <Skeleton
+                  key={`evidence-summary-pending-${index}`}
+                  className="h-24 w-full rounded-xl"
+                />
               ))}
             </div>
-          </div>
-          <div className="rounded-xl border bg-card/80 p-4 shadow-sm">
+          </LoadingSurface>
+          <LoadingSurface className="p-4">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="mt-4 h-48 w-full rounded-xl" />
-          </div>
+          </LoadingSurface>
         </div>
       ) : !hasTrace ? (
         <div className="rounded-xl border border-dashed bg-card/60 p-4 shadow-sm">
@@ -241,19 +246,25 @@ export function EvidencePackReviewDashboard({
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.traceCreatedLabel}
                 </p>
-                <p className="mt-1 text-sm">{formatDate(evidencePack.keyTimestamps.traceCreatedAt, locale)}</p>
+                <p className="mt-1 text-sm">
+                  {formatDate(evidencePack.keyTimestamps.traceCreatedAt, locale)}
+                </p>
               </PaymentsInsetPanel>
               <PaymentsInsetPanel className="rounded border p-3 shadow-none">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.firstEventLabel}
                 </p>
-                <p className="mt-1 text-sm">{formatDate(evidencePack.keyTimestamps.firstEventAt, locale)}</p>
+                <p className="mt-1 text-sm">
+                  {formatDate(evidencePack.keyTimestamps.firstEventAt, locale)}
+                </p>
               </PaymentsInsetPanel>
               <PaymentsInsetPanel className="rounded border p-3 shadow-none">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.lastEventLabel}
                 </p>
-                <p className="mt-1 text-sm">{formatDate(evidencePack.keyTimestamps.lastEventAt, locale)}</p>
+                <p className="mt-1 text-sm">
+                  {formatDate(evidencePack.keyTimestamps.lastEventAt, locale)}
+                </p>
               </PaymentsInsetPanel>
               <PaymentsInsetPanel className="rounded border p-3 shadow-none">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -272,7 +283,10 @@ export function EvidencePackReviewDashboard({
                   {evidencePack.redaction.viewRole} ({evidencePack.redaction.redactedPaths.length})
                 </p>
               </PaymentsInsetPanel>
-              <PaymentsInsetPanel className="rounded border p-3 shadow-none" data-testid="admin-payments-evidence-current-state">
+              <PaymentsInsetPanel
+                className="rounded border p-3 shadow-none"
+                data-testid="admin-payments-evidence-current-state"
+              >
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.currentStateLabel}
                 </p>
@@ -280,7 +294,10 @@ export function EvidencePackReviewDashboard({
                   {formatOwnershipState(evidencePack.ownership.currentState, labels)}
                 </p>
               </PaymentsInsetPanel>
-              <PaymentsInsetPanel className="rounded border p-3 shadow-none" data-testid="admin-payments-evidence-current-owner">
+              <PaymentsInsetPanel
+                className="rounded border p-3 shadow-none"
+                data-testid="admin-payments-evidence-current-owner"
+              >
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">
                   {labels.currentOwnerLabel}
                 </p>
@@ -309,7 +326,9 @@ export function EvidencePackReviewDashboard({
               <div className="mt-3 space-y-2">
                 {policyRows.map((row) => (
                   <PaymentsInsetPanel key={row.key} className="rounded border p-3 shadow-none">
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{row.key}</p>
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {row.key}
+                    </p>
                     <p className="mt-1 text-xs font-mono">{row.value}</p>
                   </PaymentsInsetPanel>
                 ))}
@@ -332,13 +351,17 @@ export function EvidencePackReviewDashboard({
                   </div>
                   <PaymentsResponsiveListGrid className="mt-4">
                     <div className="col-span-2">
-                      <PaymentsResponsiveListLabel>{labels.eventEntityHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListLabel>
+                        {labels.eventEntityHeader}
+                      </PaymentsResponsiveListLabel>
                       <PaymentsResponsiveListValue className="text-xs">
                         {event.entityType}:{event.entityId}
                       </PaymentsResponsiveListValue>
                     </div>
                     <div>
-                      <PaymentsResponsiveListLabel>{labels.eventOwnershipStateHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListLabel>
+                        {labels.eventOwnershipStateHeader}
+                      </PaymentsResponsiveListLabel>
                       <PaymentsResponsiveListValue className="text-xs">
                         {formatOwnershipState(
                           ownershipByEventId.get(event.id)?.ownershipState ?? 'in_progress',
@@ -347,19 +370,26 @@ export function EvidencePackReviewDashboard({
                       </PaymentsResponsiveListValue>
                     </div>
                     <div>
-                      <PaymentsResponsiveListLabel>{labels.eventOwnershipOwnerHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListLabel>
+                        {labels.eventOwnershipOwnerHeader}
+                      </PaymentsResponsiveListLabel>
                       <PaymentsResponsiveListValue className="text-xs">
                         {ownershipByEventId.get(event.id)?.currentOwner ?? 'platform'}
                       </PaymentsResponsiveListValue>
                     </div>
                     <div className="col-span-2">
-                      <PaymentsResponsiveListLabel>{labels.eventOwnershipNextHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListLabel>
+                        {labels.eventOwnershipNextHeader}
+                      </PaymentsResponsiveListLabel>
                       <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
-                        {ownershipByEventId.get(event.id)?.nextExpectedTransition ?? 'platform.lifecycle_update'}
+                        {ownershipByEventId.get(event.id)?.nextExpectedTransition ??
+                          'platform.lifecycle_update'}
                       </PaymentsResponsiveListValue>
                     </div>
                     <div className="col-span-2">
-                      <PaymentsResponsiveListLabel>{labels.eventPayloadHeader}</PaymentsResponsiveListLabel>
+                      <PaymentsResponsiveListLabel>
+                        {labels.eventPayloadHeader}
+                      </PaymentsResponsiveListLabel>
                       <PaymentsResponsiveListValue className="font-mono text-xs">
                         {truncateJson(event.payloadJson, 180)}
                       </PaymentsResponsiveListValue>
@@ -375,9 +405,15 @@ export function EvidencePackReviewDashboard({
                     <PaymentsDataTableHeader>{labels.eventTimeHeader}</PaymentsDataTableHeader>
                     <PaymentsDataTableHeader>{labels.eventNameHeader}</PaymentsDataTableHeader>
                     <PaymentsDataTableHeader>{labels.eventEntityHeader}</PaymentsDataTableHeader>
-                    <PaymentsDataTableHeader>{labels.eventOwnershipStateHeader}</PaymentsDataTableHeader>
-                    <PaymentsDataTableHeader>{labels.eventOwnershipOwnerHeader}</PaymentsDataTableHeader>
-                    <PaymentsDataTableHeader>{labels.eventOwnershipNextHeader}</PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>
+                      {labels.eventOwnershipStateHeader}
+                    </PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>
+                      {labels.eventOwnershipOwnerHeader}
+                    </PaymentsDataTableHeader>
+                    <PaymentsDataTableHeader>
+                      {labels.eventOwnershipNextHeader}
+                    </PaymentsDataTableHeader>
                     <PaymentsDataTableHeader>{labels.eventPayloadHeader}</PaymentsDataTableHeader>
                   </tr>
                 </PaymentsDataTableHead>
@@ -387,7 +423,9 @@ export function EvidencePackReviewDashboard({
                       <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         {formatDate(event.occurredAt, locale)}
                       </PaymentsDataTableCell>
-                      <PaymentsDataTableCell className="text-xs whitespace-nowrap">{event.eventName}</PaymentsDataTableCell>
+                      <PaymentsDataTableCell className="text-xs whitespace-nowrap">
+                        {event.eventName}
+                      </PaymentsDataTableCell>
                       <PaymentsDataTableCell className="text-xs whitespace-nowrap">
                         {event.entityType}:{event.entityId}
                       </PaymentsDataTableCell>
@@ -401,7 +439,8 @@ export function EvidencePackReviewDashboard({
                         {ownershipByEventId.get(event.id)?.currentOwner ?? 'platform'}
                       </PaymentsDataTableCell>
                       <PaymentsDataTableCell className="text-xs text-muted-foreground">
-                        {ownershipByEventId.get(event.id)?.nextExpectedTransition ?? 'platform.lifecycle_update'}
+                        {ownershipByEventId.get(event.id)?.nextExpectedTransition ??
+                          'platform.lifecycle_update'}
                       </PaymentsDataTableCell>
                       <PaymentsDataTableCell className="text-xs font-mono">
                         {truncateJson(event.payloadJson, 180)}
@@ -430,13 +469,17 @@ export function EvidencePackReviewDashboard({
                     </div>
                     <PaymentsResponsiveListGrid className="mt-4">
                       <div className="col-span-2">
-                        <PaymentsResponsiveListLabel>{labels.artifactFingerprintHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListLabel>
+                          {labels.artifactFingerprintHeader}
+                        </PaymentsResponsiveListLabel>
                         <PaymentsResponsiveListValue className="font-mono text-xs">
                           {truncateMiddle(version.fingerprint)}
                         </PaymentsResponsiveListValue>
                       </div>
                       <div className="col-span-2">
-                        <PaymentsResponsiveListLabel>{labels.artifactLineageHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListLabel>
+                          {labels.artifactLineageHeader}
+                        </PaymentsResponsiveListLabel>
                         <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
                           {version.rebuiltFromVersionId
                             ? truncateMiddle(version.rebuiltFromVersionId)
@@ -444,7 +487,9 @@ export function EvidencePackReviewDashboard({
                         </PaymentsResponsiveListValue>
                       </div>
                       <div className="col-span-2">
-                        <PaymentsResponsiveListLabel>{labels.artifactReasonHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListLabel>
+                          {labels.artifactReasonHeader}
+                        </PaymentsResponsiveListLabel>
                         <PaymentsResponsiveListValue className="text-xs">
                           {version.reasonCode}
                         </PaymentsResponsiveListValue>
@@ -457,18 +502,33 @@ export function EvidencePackReviewDashboard({
                 <PaymentsDataTable minWidthClassName="min-w-[34rem]">
                   <PaymentsDataTableHead>
                     <tr>
-                      <PaymentsDataTableHeader>{labels.artifactVersionHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.artifactFingerprintHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.artifactLineageHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.artifactReasonHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.artifactCreatedHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.artifactVersionHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.artifactFingerprintHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.artifactLineageHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.artifactReasonHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.artifactCreatedHeader}
+                      </PaymentsDataTableHeader>
                     </tr>
                   </PaymentsDataTableHead>
                   <tbody>
                     {evidencePack.artifacts.versions.map((version) => (
                       <PaymentsDataTableRow key={version.id}>
-                        <PaymentsDataTableCell className="tabular-nums whitespace-nowrap">{version.artifactVersion}</PaymentsDataTableCell>
-                        <PaymentsDataTableCell className="font-mono text-xs whitespace-nowrap" title={version.fingerprint}>
+                        <PaymentsDataTableCell className="tabular-nums whitespace-nowrap">
+                          {version.artifactVersion}
+                        </PaymentsDataTableCell>
+                        <PaymentsDataTableCell
+                          className="font-mono text-xs whitespace-nowrap"
+                          title={version.fingerprint}
+                        >
                           {truncateMiddle(version.fingerprint)}
                         </PaymentsDataTableCell>
                         <PaymentsDataTableCell className="text-xs text-muted-foreground">
@@ -476,7 +536,9 @@ export function EvidencePackReviewDashboard({
                             ? truncateMiddle(version.rebuiltFromVersionId)
                             : labels.artifactLineageRootLabel}
                         </PaymentsDataTableCell>
-                        <PaymentsDataTableCell className="text-xs">{version.reasonCode}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs">
+                          {version.reasonCode}
+                        </PaymentsDataTableCell>
                         <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(version.createdAt, locale)}
                         </PaymentsDataTableCell>
@@ -497,17 +559,23 @@ export function EvidencePackReviewDashboard({
                   <PaymentsResponsiveListItem key={delivery.id}>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold">{delivery.channel}</p>
-                      <PaymentsCountPill>{formatDate(delivery.createdAt, locale)}</PaymentsCountPill>
+                      <PaymentsCountPill>
+                        {formatDate(delivery.createdAt, locale)}
+                      </PaymentsCountPill>
                     </div>
                     <PaymentsResponsiveListGrid className="mt-4">
                       <div className="col-span-2">
-                        <PaymentsResponsiveListLabel>{labels.deliveryRecipientHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListLabel>
+                          {labels.deliveryRecipientHeader}
+                        </PaymentsResponsiveListLabel>
                         <PaymentsResponsiveListValue className="text-xs text-muted-foreground">
                           {truncateMiddle(delivery.recipientReference, 14, 6)}
                         </PaymentsResponsiveListValue>
                       </div>
                       <div className="col-span-2">
-                        <PaymentsResponsiveListLabel>{labels.deliveryReasonHeader}</PaymentsResponsiveListLabel>
+                        <PaymentsResponsiveListLabel>
+                          {labels.deliveryReasonHeader}
+                        </PaymentsResponsiveListLabel>
                         <PaymentsResponsiveListValue className="text-xs">
                           {delivery.reasonCode}
                         </PaymentsResponsiveListValue>
@@ -520,20 +588,32 @@ export function EvidencePackReviewDashboard({
                 <PaymentsDataTable minWidthClassName="min-w-[34rem]">
                   <PaymentsDataTableHead>
                     <tr>
-                      <PaymentsDataTableHeader>{labels.deliveryChannelHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.deliveryRecipientHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.deliveryReasonHeader}</PaymentsDataTableHeader>
-                      <PaymentsDataTableHeader>{labels.deliveryCreatedHeader}</PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.deliveryChannelHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.deliveryRecipientHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.deliveryReasonHeader}
+                      </PaymentsDataTableHeader>
+                      <PaymentsDataTableHeader>
+                        {labels.deliveryCreatedHeader}
+                      </PaymentsDataTableHeader>
                     </tr>
                   </PaymentsDataTableHead>
                   <tbody>
                     {evidencePack.artifacts.deliveries.map((delivery) => (
                       <PaymentsDataTableRow key={delivery.id}>
-                        <PaymentsDataTableCell className="text-xs whitespace-nowrap">{delivery.channel}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs whitespace-nowrap">
+                          {delivery.channel}
+                        </PaymentsDataTableCell>
                         <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {truncateMiddle(delivery.recipientReference, 14, 6)}
                         </PaymentsDataTableCell>
-                        <PaymentsDataTableCell className="text-xs">{delivery.reasonCode}</PaymentsDataTableCell>
+                        <PaymentsDataTableCell className="text-xs">
+                          {delivery.reasonCode}
+                        </PaymentsDataTableCell>
                         <PaymentsDataTableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(delivery.createdAt, locale)}
                         </PaymentsDataTableCell>

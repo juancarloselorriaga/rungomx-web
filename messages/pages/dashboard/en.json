@@ -163,6 +163,12 @@
     "title": "Organizations",
     "description": "Manage your organization memberships and team access.",
     "createButton": "Create Organization",
+    "summary": {
+      "eyebrow": "Overview",
+      "total": "{count, plural, one {# organization} other {# organizations}}",
+      "memberSubtitle": "Organizations where you currently collaborate.",
+      "supportSubtitle": "Support mode lists all organizations in the system."
+    },
     "emptyState": {
       "title": "No organizations yet",
       "description": "You'll see organizations here once you're invited or create one."
