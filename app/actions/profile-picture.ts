@@ -39,8 +39,19 @@ export const confirmProfilePictureUpload = withAuthenticatedUser<UploadProfilePi
       };
     }
 
+    const oldImageUrl = ctx.user.image;
+
     // Update the user's image URL
     await db.update(users).set({ image: imageUrl }).where(eq(users.id, ctx.user.id));
+
+    // Delete old blob now that DB points to the new one
+    if (oldImageUrl && oldImageUrl !== imageUrl) {
+      try {
+        await del(oldImageUrl);
+      } catch (error) {
+        console.warn('[profile-picture] Failed to delete old blob:', error);
+      }
+    }
 
     // Force the session cache to refresh so client hooks see the updated image
     const h = await headers();

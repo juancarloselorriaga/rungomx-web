@@ -24,19 +24,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     const jsonResponse = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
+      onBeforeGenerateToken: async (pathname) => {
         // Validate pathname starts with expected prefix
         if (!pathname.startsWith(BLOB_STORE_PREFIX)) {
           throw new Error('Invalid upload path');
         }
 
-        // Parse client payload to check for allowOverwrite option
-        const payload = clientPayload ? JSON.parse(clientPayload) : {};
-
         return {
           allowedContentTypes: [...ALLOWED_IMAGE_TYPES],
           maximumSizeInBytes: MAX_FILE_SIZE,
-          allowOverwrite: payload.allowOverwrite === true,
           tokenPayload: JSON.stringify({
             userId: authContext.user!.id,
           }),

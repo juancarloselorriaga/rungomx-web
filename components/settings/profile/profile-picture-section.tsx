@@ -72,11 +72,10 @@ export function ProfilePictureSection({
           type: 'image/webp',
         });
 
-        // Upload to Vercel Blob (allowOverwrite for replacing existing picture)
-        const blob = await upload(`${BLOB_STORE_PREFIX}/${user?.id}/profile.webp`, optimizedFile, {
+        // Upload to Vercel Blob with a unique filename to avoid CDN caching issues
+        const blob = await upload(`${BLOB_STORE_PREFIX}/${user?.id}/profile-${Date.now()}.webp`, optimizedFile, {
           access: 'public',
           handleUploadUrl: '/api/profile-picture',
-          clientPayload: JSON.stringify({ allowOverwrite: true }),
         });
 
         // Confirm the upload and update session
