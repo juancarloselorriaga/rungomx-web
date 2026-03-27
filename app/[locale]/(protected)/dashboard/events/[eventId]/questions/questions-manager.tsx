@@ -293,7 +293,11 @@ function QuestionForm({
   );
 }
 
-export function QuestionsManager({ editionId, distances, initialQuestions }: QuestionsManagerProps) {
+export function QuestionsManager({
+  editionId,
+  distances,
+  initialQuestions,
+}: QuestionsManagerProps) {
   const t = useTranslations('pages.dashboardEvents.questions');
   const tForm = useTranslations('pages.dashboardEvents.questions.form');
   const tCommon = useTranslations('common');
@@ -306,7 +310,7 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
   const [deletingQuestionId, setDeletingQuestionId] = useState<string | null>(null);
 
   const editingQuestion = useMemo(
-    () => (editingId ? questions.find((q) => q.id === editingId) ?? null : null),
+    () => (editingId ? (questions.find((q) => q.id === editingId) ?? null) : null),
     [editingId, questions],
   );
 
@@ -336,10 +340,10 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
     const [moved] = reordered.splice(currentIndex, 1);
     reordered.splice(nextIndex, 0, moved);
 
-    const normalized = normalizeQuestions(reordered);
-    const previous = questions;
-
-    setQuestions(normalized);
+    const normalized = reordered.map((question, index) => ({
+      ...question,
+      sortOrder: index,
+    }));
 
     startTransition(async () => {
       const result = await reorderQuestions({
@@ -348,11 +352,11 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
       });
 
       if (!result.ok) {
-        setQuestions(previous);
         toast.error(t('toast.error'), { description: result.error });
         return;
       }
 
+      setQuestions(normalized);
       toast.success(t('toast.reordered'));
     });
   };
@@ -414,7 +418,8 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
             const distanceLabel =
               question.distanceId === null
                 ? tForm('distanceAll')
-                : distances.find((d) => d.id === question.distanceId)?.label ?? tForm('distanceAll');
+                : (distances.find((d) => d.id === question.distanceId)?.label ??
+                  tForm('distanceAll'));
 
             return (
               <div key={question.id} className="rounded-lg border bg-card p-4">
@@ -436,11 +441,11 @@ export function QuestionsManager({ editionId, distances, initialQuestions }: Que
                     </div>
 
                     <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                      <span>{tForm('distance')}: {distanceLabel}</span>
+                      <span>
+                        {tForm('distance')}: {distanceLabel}
+                      </span>
                       {question.type === 'single_select' && (
-                        <span>
-                          {t('optionsCount', { count: question.options?.length ?? 0 })}
-                        </span>
+                        <span>{t('optionsCount', { count: question.options?.length ?? 0 })}</span>
                       )}
                     </div>
 
