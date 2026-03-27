@@ -10,6 +10,8 @@ type MarkdownContentProps = {
 export function MarkdownContent({ content, className }: MarkdownContentProps) {
   if (!content) return null;
 
+  const normalizedContent = content.includes('\\n') ? content.replace(/\\n/g, '\n') : content;
+
   return (
     <div className={cn('prose prose-sm dark:prose-invert max-w-none', className)}>
       <Markdown
@@ -42,7 +44,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
           ),
         }}
       >
-        {content}
+        {normalizedContent}
       </Markdown>
     </div>
   );
