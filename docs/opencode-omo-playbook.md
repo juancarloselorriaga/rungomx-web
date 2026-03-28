@@ -26,7 +26,7 @@ It applies a small OMO-inspired loop:
 1. categorize the task (`quick`, `deep`, `visual`, `writing`)
 2. follow the baseline reading order in `AGENTS.md`, then use `prompts/standards/README.md` to load only additional relevant standards
 3. plan the smallest viable change
-4. use repo-native agents (`boundary-planner`, `change-builder`, `diff-reviewer`, `validation-planner`)
+4. use repo-native agents (`boundary-planner` when needed, `change-builder`, `diff-reviewer`, `coherence-reviewer` when applicable, `validation-planner`)
 5. report boundary impacts, tests, and remaining risks
 
 Category guidance:
@@ -50,6 +50,7 @@ Notes:
 - `orchestrator` is the repo's default OpenCode intake agent.
 - Specialist work is delegated to clearly named agents under `.opencode/agents/`, and those specialists remain directly selectable when needed.
 - The repo no longer depends on a custom mode for this workflow.
+- `coherence-reviewer` is a conditional final-pass reviewer used for visual, writing, and non-trivial UX/copy/pattern-coherence work after diff review and before validation.
 
 Rename map:
 
@@ -114,7 +115,7 @@ proves materially better for real tasks.
 Good candidates to borrow from OMO without a full install:
 
 - explicit task categories
-- orchestrator -> change-builder -> diff-reviewer -> validation-planner sequencing
+- orchestrator -> change-builder -> diff-reviewer -> coherence-reviewer -> validation-planner sequencing when applicable
 - stronger model specialization by task type
 - one-command orchestration for repetitive work
 

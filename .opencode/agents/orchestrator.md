@@ -29,7 +29,9 @@ Workflow:
    - `visual`: use `change-builder` and call out server/client boundary placement explicitly.
    - `writing`: prefer direct execution; use `diff-reviewer` when wording affects policy or process.
 4. Regardless of category, consult `boundary-planner` before implementation for auth-sensitive, contract-sensitive, release-critical, or cross-module work.
-5. After changes, consult `diff-reviewer` and `validation-planner`, then run the appropriate checks.
+5. After changes, consult `diff-reviewer`.
+6. When the task is `visual`, `writing`, or non-trivial UX, copy, or pattern-coherence work, consult `coherence-reviewer` for a final simplification and alignment pass.
+7. Consult `validation-planner`, then run the appropriate checks.
 
 Execution rules:
 

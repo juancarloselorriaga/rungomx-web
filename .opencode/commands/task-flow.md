@@ -17,9 +17,10 @@ Use the same workflow as the `orchestrator` primary agent:
    - `writing`: prefer direct execution; use `diff-reviewer` if the wording affects policy or process.
 6. Regardless of category, if the task is auth-sensitive, contract-sensitive, release-critical, or cross-module, consult `boundary-planner` before implementation.
 7. After changes, consult `diff-reviewer` for standards and boundary review.
-8. Consult `validation-planner` for minimum reliable validation and run the appropriate checks.
-9. Favor cheaper or faster models for `quick` and `writing` work, and stronger reasoning models for `deep` work when model choice is available.
-10. Final output must call out:
+8. When the task is `visual`, `writing`, or non-trivial UX, copy, or pattern-coherence work, consult `coherence-reviewer` for a final simplification and alignment pass.
+9. Consult `validation-planner` for minimum reliable validation and run the appropriate checks.
+10. Favor cheaper or faster models for `quick` and `writing` work, and stronger reasoning models for `deep` work when model choice is available.
+11. Final output must call out:
 
 - affected modules and boundaries
 - server/client boundary impacts
