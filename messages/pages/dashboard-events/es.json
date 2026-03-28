@@ -170,7 +170,7 @@
       "addOns": "Extras",
       "coupons": "Cupones",
       "payments": "Pagos",
-      "results": "Centro de resultados",
+      "results": "Resultados",
       "groupRegistrations": "Inscripciones grupales",
       "registrations": "Inscripciones",
       "menu": "Secciones",
@@ -245,7 +245,7 @@
       },
       "publishReadiness": {
         "title": "Contexto de revisión",
-        "description": "Mantén a la vista el estado del borrador y el historial de versiones mientras capturas nuevas filas."
+        "description": "Consulta el estado del borrador y las versiones publicadas mientras sigues capturando filas."
       },
       "draftSnapshot": {
         "title": "Vista actual del borrador",
@@ -262,7 +262,7 @@
     },
     "stateRail": {
       "title": "Estado para publicar",
-      "description": "El estado del borrador, la conectividad, lo pendiente por sincronizar y el siguiente paso recomendado siguen visibles.",
+      "description": "Mantén a la vista el estado del borrador, la conectividad, lo pendiente por sincronizar y el siguiente paso.",
       "lifecycle": "Ciclo",
       "lifecycleDraft": "Borrador",
       "lifecycleOfficial": "Oficial",
@@ -282,12 +282,12 @@
     },
     "versionVisibility": {
       "title": "Versiones publicadas",
-      "description": "Consulta la versión oficial activa y el historial reciente de versiones para este evento.",
+      "description": "Revisa la versión oficial activa y el historial reciente de este evento.",
       "empty": "Aún no hay versiones de resultados para esta edición.",
-      "noOfficialVersion": "Aún no hay versión Oficial",
-      "activeOfficialLabel": "Hay una versión Oficial activa",
+      "noOfficialVersion": "Aún no hay versión oficial",
+      "activeOfficialLabel": "Hay una versión oficial activa",
       "activeMarker": "Oficial activa",
-      "historicalMarker": "Histórica",
+      "historicalMarker": "Anterior",
       "headers": {
         "version": "Versión",
         "status": "Estado",
@@ -344,7 +344,7 @@
       "details": "Detalles"
     },
     "fallbackRows": {
-      "defaultDetails": "Fila de resultados en borrador disponible en el flujo del Director de Carrera.",
+      "defaultDetails": "Fila del borrador disponible para revisión del director de carrera.",
       "capture": {
         "savedLocally": "Guardado localmente desde una sesión de captura móvil.",
         "offlineCheckpoint": "Estado confirmado durante el punto de control sin conexión."
@@ -406,16 +406,16 @@
       },
       "capture": {
         "syncPending": {
-          "safe": "Las filas capturadas permanecen en Borrador y se guardan localmente.",
-          "next": "Reconéctate y ejecuta la sincronización para subir las entradas pendientes.",
+          "safe": "Lo capturado sigue en borrador y guardado en este dispositivo.",
+          "next": "Reconéctate y sincroniza las entradas pendientes.",
           "details": {
             "rowsWaitingForSync": "{count, plural, one {# fila está esperando sincronización.} other {# filas están esperando sincronización.}}",
-            "noPublicChanges": "No se modificaron registros públicos u oficiales."
+            "noPublicChanges": "Los resultados oficiales todavía no cambian."
           }
         },
         "blocked": {
-          "safe": "La captura en borrador permanece protegida mientras haya bloqueadores sin resolver.",
-          "next": "Resuelve conflictos/bloqueadores, luego vuelve a sincronizar y revisar.",
+          "safe": "El borrador sigue protegido mientras haya bloqueadores sin resolver.",
+          "next": "Resuelve los conflictos y bloqueadores, luego vuelve a sincronizar.",
           "details": {
             "conflictCount": "{count, plural, one {# fila requiere confirmación de conflicto.} other {# filas requieren confirmación de conflicto.}}",
             "noConflicts": "No hay conflictos marcados actualmente.",
@@ -424,8 +424,8 @@
           }
         },
         "warnings": {
-          "safe": "La captura en borrador está protegida y puede refinarse antes de la revisión.",
-          "next": "Revisa las advertencias y luego continúa a Revisar y publicar.",
+          "safe": "El borrador sigue protegido y todavía puedes ajustarlo.",
+          "next": "Revisa las advertencias y después pasa a Revisar y publicar.",
           "details": {
             "warningCount": "{count, plural, one {# advertencia está presente en el borrador.} other {# advertencias están presentes en el borrador.}}",
             "warningsDoNotPublish": "Las advertencias no publican datos, pero deben revisarse antes de publicar resultados oficiales."
@@ -457,7 +457,7 @@
       "capture": {
         "eyebrow": "Crear o actualizar un borrador",
         "title": "Capturar resultados",
-        "description": "Ingresa dorsales, tiempos y estados desde la carrera mientras el trabajo sin sincronizar sigue protegido.",
+        "description": "Captura dorsales, tiempos y estados desde la meta. Lo pendiente se queda en borrador hasta sincronizar.",
         "action": "Abrir captura"
       },
       "import": {
@@ -475,19 +475,19 @@
       "corrections": {
         "eyebrow": "Seguimiento después de publicar",
         "title": "Correcciones",
-        "description": "Revisa solicitudes de corrección y registra decisiones del director de carrera con historial claro.",
+        "description": "Revisa solicitudes de corrección y deja claro qué se aprobó, qué se rechazó y por qué.",
         "action": "Abrir correcciones"
       },
       "investigation": {
         "eyebrow": "Auditoría y trazabilidad",
         "title": "Investigación",
-        "description": "Consulta procedencia de versiones, transiciones de correcciones e historial de auditoría cuando necesites más contexto.",
+        "description": "Revisa versiones, correcciones e historial de actividad cuando necesites entender qué pasó.",
         "action": "Abrir investigación"
       }
     },
     "corrections": {
-      "title": "Cola de revisión de correcciones",
-      "description": "Las solicitudes pendientes se priorizan primero. Revisa cada solicitud y aprueba o rechaza con atribución auditable.",
+      "title": "Solicitudes de corrección",
+      "description": "Las pendientes aparecen primero. Revisa cada solicitud y decide si la apruebas o la rechazas.",
       "empty": "No se encontraron solicitudes de corrección para esta edición.",
       "status": {
         "pending": "Pendiente",
@@ -508,20 +508,20 @@
         "finishTime": "Tiempo final (ms)"
       },
       "review": {
-        "notePlaceholder": "Nota opcional de decisión del Director de Carrera",
+        "notePlaceholder": "Nota opcional sobre tu decisión",
         "approveAction": "Aprobar solicitud",
         "rejectAction": "Rechazar solicitud",
         "pendingAction": "Guardando decisión...",
-        "successMessage": "La decisión se guardó correctamente.",
+        "successMessage": "Decisión guardada.",
         "failurePrefix": "No se pudo guardar la decisión:",
         "noDecisionYet": "Pendiente de revisión",
-        "noContext": "No se proporcionó contexto adicional.",
-        "noReviewNote": "No se proporcionó nota de decisión.",
+        "noContext": "No hay contexto adicional.",
+        "noReviewNote": "No hay nota de decisión.",
         "noValue": "N/D"
       },
       "audit": {
         "title": "Bitácora de auditoría de correcciones",
-        "description": "Línea de tiempo interna que vincula cada solicitud con su transición de versión publicada.",
+        "description": "Aquí ves cuándo se revisó cada solicitud y en qué versión quedó reflejada.",
         "empty": "No se encontraron transiciones de corrección publicadas para esta edición.",
         "fields": {
           "requestId": "ID de solicitud",
@@ -540,7 +540,7 @@
       },
       "metrics": {
         "title": "Métricas del ciclo de correcciones",
-        "description": "Monitorea SLA y KPIs de confianza usando estados y marcas de tiempo del ciclo.",
+        "description": "Sigue el ritmo de revisión de correcciones y detecta si algo se está atrasando.",
         "generatedAtLabel": "Generado en",
         "filtersTitle": "Filtros aplicados",
         "summary": {
@@ -558,8 +558,8 @@
           "requestedTo": "Solicitada hasta"
         },
         "aging": {
-          "title": "Buckets de antigüedad pendientes",
-          "description": "La antigüedad destaca riesgo de backlog sin resolver y prioridad operativa.",
+          "title": "Antigüedad de pendientes",
+          "description": "Te ayuda a ver qué solicitudes llevan más tiempo esperando revisión.",
           "lessThan24Hours": "< 24h",
           "oneToThreeDays": "1-3 días",
           "threeToSevenDays": "3-7 días",
@@ -573,7 +573,7 @@
         },
         "export": {
           "action": "Descargar CSV de métricas",
-          "helper": "Filas exportadas",
+          "helper": "Filas incluidas",
           "empty": "No hay filas disponibles para exportar.",
           "filePrefix": "metricas-ciclo-correcciones"
         },
@@ -584,12 +584,12 @@
       }
     },
     "investigation": {
-      "title": "Vista interna de investigación",
-      "description": "Traza procedencia de versiones y transiciones de correcciones sin acceso directo a la base de datos.",
+      "title": "Investigación interna",
+      "description": "Aquí puedes revisar versiones, correcciones e historial de actividad sin ir directo a la base de datos.",
       "loadError": "No se pudieron cargar algunos datos de investigación en este momento. Intenta de nuevo más tarde.",
       "selectedDiff": {
         "title": "Transición de versión seleccionada",
-        "description": "Usa este resumen para explicar exactamente qué cambió y quién lo aprobó.",
+        "description": "Este resumen te ayuda a ver qué cambió y quién aprobó el cambio.",
         "empty": "Aún no se seleccionó una transición de corrección.",
         "transitionValue": "v{fromVersion} ({fromStatus}) -> v{toVersion} ({toStatus})",
         "fields": {
@@ -603,8 +603,8 @@
         }
       },
       "versions": {
-        "title": "Línea de tiempo de versiones y procedencia",
-        "description": "Cada versión de resultados incluye contexto de fuente e ingesta.",
+        "title": "Versiones y origen",
+        "description": "Revisa de dónde salió cada versión y cuándo se creó o publicó.",
         "empty": "No se encontraron versiones de resultados para esta edición.",
         "versionLabel": "Versión {version}",
         "fields": {
@@ -623,10 +623,10 @@
         }
       },
       "corrections": {
-        "title": "Línea de tiempo de transiciones de corrección",
-        "description": "Cada corrección aprobada enlaza directamente a su contexto de transición de versión.",
+        "title": "Correcciones publicadas",
+        "description": "Aquí ves las correcciones aprobadas y la transición de versión que generó cada una.",
         "empty": "No se encontraron transiciones de corrección aprobadas para esta edición.",
-        "viewDiff": "Abrir contexto de diff de versión",
+        "viewDiff": "Ver transición de versión",
         "fields": {
           "requestId": "ID de solicitud",
           "transition": "Transición de versión",
@@ -638,9 +638,9 @@
         }
       },
       "audit": {
-        "title": "Bitácora de auditoría de acciones críticas",
-        "description": "Filtra acciones críticas de confianza por evento, tipo de acción y ventana de tiempo.",
-        "empty": "Ninguna entrada de auditoría coincide con los filtros seleccionados.",
+        "title": "Historial de actividad",
+        "description": "Filtra las acciones clave de resultados por tipo y por fecha.",
+        "empty": "No se encontraron movimientos con esos filtros.",
         "fields": {
           "action": "Acción",
           "actor": "Actor",
@@ -649,7 +649,7 @@
         },
         "filters": {
           "action": "Filtro de acción",
-          "allActions": "Todas las acciones críticas",
+          "allActions": "Todas las acciones",
           "from": "Desde",
           "to": "Hasta",
           "apply": "Aplicar"
@@ -718,40 +718,44 @@
       }
     },
     "captureEntry": {
-      "title": "Captura dorsales y tiempos finales",
-      "description": "Guarda filas en borrador desde la carrera, aunque la conectividad sea inestable.",
+      "title": "Captura dorsales y tiempos",
+      "description": "Guarda filas en borrador desde la meta, incluso si la señal falla.",
       "connectivityLabel": "Conectividad",
       "connectivityOnline": "En línea",
       "connectivityOffline": "Sin conexión",
-      "reassuranceSavedLocally": "Guardado localmente",
-      "reassuranceNotPublic": "Aún no es público",
-      "reassurancePendingSync": "{count} entradas pendientes de sincronizar",
+      "reassuranceSavedLocally": "Se guarda en este dispositivo",
+      "reassuranceNotPublic": "Sigue en borrador hasta que lo revises y publiques",
+      "reassurancePendingSync": "{count} pendientes por sincronizar",
+      "lastSyncLabel": "Última sincronización",
+      "lastSyncNever": "Todavía no sincronizas",
+      "draftStatusTitle": "Estado del borrador del evento",
+      "draftStatusDescription": "Cuando termines de capturar, revisa el borrador completo y confirma si ya está listo para publicar.",
       "bibLabel": "Número de dorsal",
       "bibPlaceholder": "ej. 245",
       "timeLabel": "Tiempo final",
       "timePlaceholder": "HH:MM:SS o MM:SS",
       "statusLabel": "Estado del resultado",
-      "submitAction": "Guardar entrada en borrador",
-      "validationBibRequired": "El número de dorsal es obligatorio antes de guardar una entrada en borrador.",
-      "validationFinishTimeInvalid": "El estado Finalizó requiere un tiempo final válido.",
-      "entrySaved": "Entrada guardada localmente en estado borrador.",
-      "entriesTitle": "Filas del borrador capturadas aquí",
-      "entriesDescription": "Los estados se conservan y el lugar general se deriva solo a partir de los tiempos finales.",
-      "entriesEmpty": "Aún no hay entradas de captura sin conexión.",
-      "syncTitle": "Sincronizar filas del borrador",
-      "syncDescription": "Envía las filas pendientes del borrador de forma segura. Los reintentos continúan desde el último punto de control consistente.",
-      "syncAction": "Ejecutar sincronización",
+      "submitAction": "Guardar en borrador",
+      "validationBibRequired": "Ingresa un dorsal antes de guardar.",
+      "validationFinishTimeInvalid": "Si el estado es Finalizó, agrega un tiempo válido.",
+      "entrySaved": "Entrada guardada en borrador en este dispositivo.",
+      "entriesTitle": "Últimas capturas en este dispositivo",
+      "entriesDescription": "Revisa lo que acabas de guardar. El lugar general se calcula solo con tiempos finales.",
+      "entriesEmpty": "Aún no has capturado filas en este dispositivo.",
+      "syncTitle": "Sincronizar borrador",
+      "syncDescription": "Envía las filas pendientes al borrador del evento. Si algo se corta, puedes retomar después.",
+      "syncAction": "Sincronizar pendientes",
       "syncOfflineGuard": "Reconéctate antes de ejecutar la sincronización.",
       "syncProgressMessage": "Se sincronizaron {processed} entradas. Quedan {remaining} pendientes.",
-      "syncCompleteMessage": "Todas las entradas pendientes se sincronizaron sin duplicaciones.",
-      "syncInterruptedMessage": "Punto de control de sincronización guardado tras {processed} entradas. Reintenta para continuar con las {remaining} restantes.",
-      "syncBlockedByConflicts": "Resuelve todos los conflictos pendientes antes de completar la sincronización.",
-      "conflictTitle": "Resolver conflictos de sincronización",
-      "conflictDescription": "Compara los valores locales y del servidor, y luego elige cuál conservar en cada conflicto.",
+      "syncCompleteMessage": "Todas las entradas pendientes ya se sincronizaron.",
+      "syncInterruptedMessage": "La sincronización se pausó después de {processed} entradas. Vuelve a intentarlo para continuar con las {remaining} restantes.",
+      "syncBlockedByConflicts": "Resuelve los conflictos pendientes antes de terminar la sincronización.",
+      "conflictTitle": "Conflictos de sincronización",
+      "conflictDescription": "Compara lo que tienes aquí con lo que ya está en el servidor y elige qué versión conservar.",
       "conflictEmpty": "No hay conflictos de sincronización pendientes.",
-      "conflictNeedsDecision": "Resolución obligatoria",
-      "conflictResolved": "Resolución seleccionada",
-      "conflictLocalValues": "Valores locales",
+      "conflictNeedsDecision": "Falta elegir una resolución",
+      "conflictResolved": "Resolución elegida",
+      "conflictLocalValues": "Valores en este dispositivo",
       "conflictServerValues": "Valores del servidor",
       "conflictFieldBib": "Dorsal",
       "conflictFieldStatus": "Estado",
@@ -766,9 +770,9 @@
         "status": "Estado",
         "syncStatus": "Estado de sincronización",
         "finishTime": "Tiempo final",
-        "derivedOverall": "Lugar general derivado",
+        "derivedOverall": "Lugar general",
         "capturedAt": "Capturado en",
-        "provenance": "Procedencia"
+        "provenance": "Origen"
       },
       "statusOptions": {
         "finish": "Finalizó",
@@ -787,10 +791,10 @@
         "safe": "Estado",
         "next": "Siguiente paso",
         "details": "Detalles",
-        "safeMessage": "Los datos en borrador permanecen protegidos mientras existan conflictos sin resolver.",
+        "safeMessage": "El borrador sigue protegido mientras haya conflictos sin resolver.",
         "nextMessage": "Elige una resolución para cada conflicto y vuelve a ejecutar la sincronización.",
-        "detailConflictSummary": "{count} conflictos requieren acción del Director de Carrera.",
-        "detailDraftProtection": "Los resultados oficiales no cambian hasta finalizar la sincronización."
+        "detailConflictSummary": "{count} conflictos requieren revisión del director de carrera.",
+        "detailDraftProtection": "Los resultados oficiales no cambian hasta que termines la sincronización."
       }
     },
     "importMapping": {

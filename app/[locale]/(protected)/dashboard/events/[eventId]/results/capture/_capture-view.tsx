@@ -3,8 +3,10 @@ import { ResultsVersionVisibilityPanel } from '@/components/results/organizer/re
 import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
 import { ResultsStateRail } from '@/components/results/primitives/results-state-rail';
 import { MutedSurface } from '@/components/ui/surface';
+import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsSecondaryBackLink } from '../_results-secondary-back-link';
 import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
@@ -13,53 +15,65 @@ type ResultsCaptureViewProps = {
   eventId: string;
 };
 
+type CaptureTemplateKey =
+  | 'captureEntry.reassurancePendingSync'
+  | 'captureEntry.syncProgressMessage'
+  | 'captureEntry.syncInterruptedMessage'
+  | 'captureEntry.safeNextDetails.detailConflictSummary';
+
+function getRawTranslation(
+  t: Awaited<ReturnType<typeof getTranslations<'pages.dashboardEvents.resultsWorkspace'>>>,
+  key: CaptureTemplateKey,
+) {
+  const value = t.raw(key);
+  return typeof value === 'string' ? value : String(value ?? '');
+}
+
 export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureViewProps) {
-  const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
-  const captureEyebrow = t('lanes.capture.eyebrow' as never);
-  const publishContextTitle = t('home.publishReadiness.title' as never);
-  const publishContextDescription = t('home.publishReadiness.description' as never);
+  const [t, pageData] = await Promise.all([
+    getTranslations('pages.dashboardEvents.resultsWorkspace'),
+    getResultsWorkspacePageData(eventId, locale, 'capture'),
+  ]);
 
-  type CaptureTemplateKey =
-    | 'captureEntry.reassurancePendingSync'
-    | 'captureEntry.syncProgressMessage'
-    | 'captureEntry.syncInterruptedMessage'
-    | 'captureEntry.safeNextDetails.detailConflictSummary';
-
-  const rawLabel = (key: CaptureTemplateKey) => {
-    const value = t.raw(key);
-    return typeof value === 'string' ? value : String(value ?? '');
-  };
-
-  const pageData = await getResultsWorkspacePageData(eventId, locale, 'capture');
+  const reviewHref = {
+    pathname: '/dashboard/events/[eventId]/results/review',
+    params: { eventId },
+  } as const;
 
   return (
     <div className="space-y-6">
       <ResultsPageHero
-        eyebrow={captureEyebrow}
+        backLink={<ResultsSecondaryBackLink eventId={eventId} label={t('title')} />}
+        eyebrow={t('lanes.capture.eyebrow' as never)}
         title={t('lanes.capture.title')}
         description={t('lanes.capture.description')}
         stats={[
           {
-            label: t('captureEntry.entriesTitle'),
-            value: String(pageData.rows.length),
-          },
-          {
-            label: t('captureEntry.connectivityLabel'),
+            label: t('stateRail.lifecycle'),
             value:
-              pageData.railState.connectivity === 'online'
-                ? t('captureEntry.connectivityOnline')
-                : t('captureEntry.connectivityOffline'),
+              pageData.railState.lifecycle === 'official'
+                ? t('stateRail.lifecycleOfficial')
+                : t('stateRail.lifecycleDraft'),
           },
           {
-            label: t('stateRail.unsyncedCount'),
-            value: String(pageData.railState.unsyncedCount),
+            label: t('versionVisibility.title'),
+            value: String(pageData.versionVisibility.items.length),
           },
         ]}
+        actions={
+          <Link
+            href={reviewHref}
+            className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          >
+            {t('lanes.review.action')}
+          </Link>
+        }
       />
 
       <CaptureBibEntryList
         storageKey={`results.capture.entries.${pageData.userScopeKey}.${eventId}`}
         locale={locale}
+        reviewHref={reviewHref}
         labels={{
           title: t('captureEntry.title'),
           description: t('captureEntry.description'),
@@ -68,7 +82,11 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
           connectivityOffline: t('captureEntry.connectivityOffline'),
           reassuranceSavedLocally: t('captureEntry.reassuranceSavedLocally'),
           reassuranceNotPublic: t('captureEntry.reassuranceNotPublic'),
-          reassurancePendingSync: rawLabel('captureEntry.reassurancePendingSync'),
+          reassurancePendingSync: getRawTranslation(t, 'captureEntry.reassurancePendingSync'),
+          pendingSyncLabel: t('stateRail.unsyncedCount'),
+          lastSyncLabel: t('captureEntry.lastSyncLabel' as never),
+          lastSyncNever: t('captureEntry.lastSyncNever' as never),
+          reviewAction: t('lanes.review.action'),
           bibLabel: t('captureEntry.bibLabel'),
           bibPlaceholder: t('captureEntry.bibPlaceholder'),
           timeLabel: t('captureEntry.timeLabel'),
@@ -85,9 +103,9 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
           syncDescription: t('captureEntry.syncDescription'),
           syncAction: t('captureEntry.syncAction'),
           syncOfflineGuard: t('captureEntry.syncOfflineGuard'),
-          syncProgressMessage: rawLabel('captureEntry.syncProgressMessage'),
+          syncProgressMessage: getRawTranslation(t, 'captureEntry.syncProgressMessage'),
           syncCompleteMessage: t('captureEntry.syncCompleteMessage'),
-          syncInterruptedMessage: rawLabel('captureEntry.syncInterruptedMessage'),
+          syncInterruptedMessage: getRawTranslation(t, 'captureEntry.syncInterruptedMessage'),
           syncBlockedByConflicts: t('captureEntry.syncBlockedByConflicts'),
           conflictTitle: t('captureEntry.conflictTitle'),
           conflictDescription: t('captureEntry.conflictDescription'),
@@ -131,36 +149,14 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
             details: t('captureEntry.safeNextDetails.details'),
             safeMessage: t('captureEntry.safeNextDetails.safeMessage'),
             nextMessage: t('captureEntry.safeNextDetails.nextMessage'),
-            detailConflictSummary: rawLabel('captureEntry.safeNextDetails.detailConflictSummary'),
+            detailConflictSummary: getRawTranslation(
+              t,
+              'captureEntry.safeNextDetails.detailConflictSummary',
+            ),
             detailDraftProtection: t('captureEntry.safeNextDetails.detailDraftProtection'),
           },
         }}
       />
-
-      <section className="space-y-3" aria-labelledby="results-capture-publish-context-title">
-        <div className="space-y-1">
-          <h2
-            id="results-capture-publish-context-title"
-            className="text-sm font-semibold text-foreground sm:text-base"
-          >
-            {publishContextTitle}
-          </h2>
-          <p className="text-sm text-muted-foreground">{publishContextDescription}</p>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:items-start">
-          <ResultsStateRail
-            state={pageData.railState}
-            labels={pageData.labels.stateRail}
-            nextActionHref={pageData.nextActionHref}
-            compact
-          />
-          <ResultsVersionVisibilityPanel
-            visibility={pageData.versionVisibility}
-            labels={pageData.labels.versionVisibility}
-          />
-        </div>
-      </section>
 
       {pageData.feedbackItems.length > 0 ? (
         <section className="space-y-3" aria-labelledby="results-capture-guidance-title">
@@ -189,6 +185,28 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
           </div>
         </section>
       ) : null}
+
+      <section className="space-y-3" aria-labelledby="results-capture-publish-context-title">
+        <div className="space-y-1">
+          <h2
+            id="results-capture-publish-context-title"
+            className="text-sm font-semibold text-foreground sm:text-base"
+          >
+            {t('captureEntry.draftStatusTitle' as never)}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {t('captureEntry.draftStatusDescription' as never)}
+          </p>
+        </div>
+
+        <div className="grid gap-4">
+          <ResultsStateRail state={pageData.railState} labels={pageData.labels.stateRail} compact />
+          <ResultsVersionVisibilityPanel
+            visibility={pageData.versionVisibility}
+            labels={pageData.labels.versionVisibility}
+          />
+        </div>
+      </section>
     </div>
   );
 }

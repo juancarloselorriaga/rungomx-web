@@ -3,6 +3,7 @@
 import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
 import { Button } from '@/components/ui/button';
 import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
+import { Link } from '@/i18n/navigation';
 import {
   createOfflineCaptureEntry,
   deriveOfflineCapturePreviewRows,
@@ -14,6 +15,7 @@ import {
 } from '@/lib/events/results/offline/capture-store';
 import { runDeterministicOfflineSync } from '@/lib/events/results/offline/sync-engine';
 import { cn } from '@/lib/utils';
+import { CloudOff, Wifi } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type CaptureBibEntryListLabels = {
@@ -25,6 +27,10 @@ type CaptureBibEntryListLabels = {
   reassuranceSavedLocally: string;
   reassuranceNotPublic: string;
   reassurancePendingSync: string;
+  pendingSyncLabel: string;
+  lastSyncLabel: string;
+  lastSyncNever: string;
+  reviewAction: string;
   bibLabel: string;
   bibPlaceholder: string;
   timeLabel: string;
@@ -96,6 +102,7 @@ type CaptureBibEntryListProps = {
   storageKey: string;
   locale: string;
   labels: CaptureBibEntryListLabels;
+  reviewHref?: Parameters<typeof Link>[0]['href'];
 };
 
 const STATUS_OPTIONS: OfflineCaptureStatus[] = ['finish', 'dnf', 'dns', 'dq'];
@@ -128,11 +135,6 @@ function formatTimeForPreview(value: string): string {
   return value.trim() || '-';
 }
 
-function abbreviateSession(sessionId: string): string {
-  if (sessionId.length <= 12) return sessionId;
-  return `${sessionId.slice(0, 6)}…${sessionId.slice(-4)}`;
-}
-
 function getSyncStatusLabel(
   syncStatus: 'pending_sync' | 'synced' | 'conflict',
   labels: CaptureBibEntryListLabels,
@@ -152,7 +154,12 @@ function getConflictChoiceLabel(
     : labels.conflictChoiceKeepServer;
 }
 
-export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEntryListProps) {
+export function CaptureBibEntryList({
+  storageKey,
+  locale,
+  labels,
+  reviewHref,
+}: CaptureBibEntryListProps) {
   const [store, setStore] = useState(() => loadOfflineCaptureStore(storageKey));
   const [bibNumber, setBibNumber] = useState('');
   const [finishTimeInput, setFinishTimeInput] = useState('');
@@ -167,8 +174,6 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
 
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
-
-    setIsOnline(window.navigator.onLine);
 
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);
@@ -187,6 +192,16 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
     () => deriveOfflineCapturePreviewRows(store.entries),
     [store.entries],
   );
+  const latestPreviewRows = useMemo(
+    () =>
+      [...previewRows].sort((left, right) => {
+        const rightTime = Date.parse(right.capturedAt);
+        const leftTime = Date.parse(left.capturedAt);
+        if (rightTime !== leftTime) return rightTime - leftTime;
+        return right.id.localeCompare(left.id);
+      }),
+    [previewRows],
+  );
   const timestampFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(locale, {
@@ -199,6 +214,13 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
     () => store.syncConflicts.filter((conflict) => conflict.finalizedAt === null),
     [store.syncConflicts],
   );
+  const entryById = useMemo(
+    () => new Map(store.entries.map((entry) => [entry.id, entry])),
+    [store.entries],
+  );
+  const lastSyncLabel = store.syncCheckpoint.updatedAt
+    ? timestampFormatter.format(new Date(store.syncCheckpoint.updatedAt))
+    : labels.lastSyncNever;
 
   const onSubmit = () => {
     const result = createOfflineCaptureEntry({
@@ -312,136 +334,141 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
   };
 
   return (
-    <Surface className="space-y-4 border-border/60 p-4 shadow-none sm:p-5">
-      <header className="space-y-1">
-        <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
-        <p className="text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
-      </header>
+    <Surface className="space-y-0 border-border/60 p-0 shadow-none overflow-hidden">
+      {/* Status bar — ambient, not primary */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/60 px-4 py-3 sm:px-5">
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 text-xs font-medium',
+            isOnline ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground',
+          )}
+        >
+          {isOnline ? (
+            <Wifi className="h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <CloudOff className="h-3.5 w-3.5 shrink-0" />
+          )}
+          {isOnline ? labels.connectivityOnline : labels.connectivityOffline}
+        </span>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MutedSurface as="article" className="p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {labels.connectivityLabel}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-foreground">
-            {isOnline ? labels.connectivityOnline : labels.connectivityOffline}
-          </p>
-        </MutedSurface>
-        <MutedSurface as="article" className="p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {labels.reassuranceSavedLocally}
-          </p>
-          <p className="mt-2 text-sm text-foreground">{labels.reassuranceNotPublic}</p>
-        </MutedSurface>
-        <MutedSurface as="article" className="p-3 sm:col-span-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {labels.reassuranceNotPublic}
-          </p>
-          <p className="mt-2 text-sm font-semibold text-foreground">
-            {formatTemplateLabel(labels.reassurancePendingSync, pendingSyncCount)}
-          </p>
-        </MutedSurface>
+        <span className="text-xs text-muted-foreground">
+          {formatTemplateLabel(labels.reassurancePendingSync, pendingSyncCount)}
+        </span>
+
+        <span className="text-xs text-muted-foreground">
+          {labels.lastSyncLabel}: {lastSyncLabel}
+        </span>
+
+        <div className="ml-auto">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRunSync}
+            className="h-8 text-xs"
+          >
+            {labels.syncAction}
+          </Button>
+        </div>
       </div>
 
-      <InsetSurface as="section" className="space-y-3 p-3">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {labels.bibLabel}
-            </span>
-            <input
-              value={bibNumber}
-              onChange={(event) => setBibNumber(event.target.value)}
-              inputMode="numeric"
-              placeholder={labels.bibPlaceholder}
-              className="h-11 w-full rounded-md border bg-background px-3 text-base text-foreground"
-            />
-          </label>
+      <div className="space-y-5 p-4 sm:p-5">
+        {/* Entry form — the primary action */}
+        <section aria-label={labels.title}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {labels.bibLabel}
+              </span>
+              <input
+                value={bibNumber}
+                onChange={(event) => setBibNumber(event.target.value)}
+                inputMode="numeric"
+                placeholder={labels.bibPlaceholder}
+                className="h-12 w-full rounded-lg border bg-background px-3 text-base font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
 
-          <label className="space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {labels.timeLabel}
-            </span>
-            <input
-              value={finishTimeInput}
-              onChange={(event) => setFinishTimeInput(event.target.value)}
-              inputMode="numeric"
-              placeholder={labels.timePlaceholder}
-              className="h-11 w-full rounded-md border bg-background px-3 text-base text-foreground"
-            />
-          </label>
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {labels.statusLabel}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_OPTIONS.map((option) => {
-              const selected = status === option;
-              return (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setStatus(option)}
-                  aria-pressed={selected}
-                  className={cn(
-                    'min-h-11 rounded-md border px-4 py-2 text-sm font-semibold transition-colors',
-                    selected
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-background text-foreground',
-                  )}
-                >
-                  {getStatusLabel(option, labels)}
-                </button>
-              );
-            })}
+            <label className="space-y-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {labels.timeLabel}
+              </span>
+              <input
+                value={finishTimeInput}
+                onChange={(event) => setFinishTimeInput(event.target.value)}
+                inputMode="numeric"
+                placeholder={labels.timePlaceholder}
+                className="h-12 w-full rounded-lg border bg-background px-3 text-base font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </label>
           </div>
-        </div>
 
-        <Button type="button" onClick={onSubmit} className="h-11 w-full sm:w-auto">
-          {labels.submitAction}
-        </Button>
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {labels.statusLabel}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_OPTIONS.map((option) => {
+                const selected = status === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => setStatus(option)}
+                    aria-pressed={selected}
+                    className={cn(
+                      'min-h-10 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors',
+                      selected
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-background text-foreground hover:bg-muted',
+                    )}
+                  >
+                    {getStatusLabel(option, labels)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        {errorMessage ? (
-          <p
-            className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            role="alert"
-          >
-            {errorMessage}
-          </p>
-        ) : null}
+          {errorMessage ? (
+            <p
+              className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              role="alert"
+            >
+              {errorMessage}
+            </p>
+          ) : null}
 
-        {feedbackMessage ? (
-          <p className="rounded-md border border-emerald-300/60 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
-            {feedbackMessage}
-          </p>
-        ) : null}
-      </InsetSurface>
+          {feedbackMessage ? (
+            <p className="mt-3 rounded-lg border border-emerald-300/60 bg-emerald-50/60 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
+              {feedbackMessage}
+            </p>
+          ) : null}
 
-      <InsetSurface as="section" className="space-y-2 p-3">
-        <h4 className="text-sm font-semibold text-foreground">{labels.syncTitle}</h4>
-        <p className="text-xs text-muted-foreground">{labels.syncDescription}</p>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onRunSync}
-          className="h-11 w-full sm:w-auto"
-        >
-          {labels.syncAction}
-        </Button>
-      </InsetSurface>
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button type="button" onClick={onSubmit} className="h-11 sm:min-w-[10rem]">
+              {labels.submitAction}
+            </Button>
 
-      <InsetSurface as="section" className="space-y-3 p-3">
-        <h4 className="text-sm font-semibold text-foreground">{labels.conflictTitle}</h4>
-        <p className="text-xs text-muted-foreground">{labels.conflictDescription}</p>
+            {reviewHref ? (
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-muted-foreground">{labels.reassuranceNotPublic}</p>
+                <Button asChild type="button" variant="outline" size="sm" className="h-9 shrink-0">
+                  <Link href={reviewHref}>{labels.reviewAction}</Link>
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </section>
 
-        {unresolvedConflicts.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-            {labels.conflictEmpty}
-          </p>
-        ) : (
-          <div className="space-y-3">
+        {/* Conflict resolution — inline, shown only when needed */}
+        {unresolvedConflicts.length > 0 ? (
+          <InsetSurface as="section" className="space-y-3 p-3 sm:p-4">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">{labels.conflictTitle}</h4>
+              <p className="mt-0.5 text-xs text-muted-foreground">{labels.conflictDescription}</p>
+            </div>
+
             <SafeNextDetailsMessage
               safe={labels.safeNextDetails.safeMessage}
               next={labels.safeNextDetails.nextMessage}
@@ -460,179 +487,175 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
               tone="warning"
             />
 
-            {unresolvedConflicts.map((conflict) => {
-              const keepLocalSelected = conflict.resolution?.choice === 'keep_local';
-              const keepServerSelected = conflict.resolution?.choice === 'keep_server';
-              return (
-                <Surface
-                  key={conflict.id}
-                  as="article"
-                  className="space-y-3 rounded-xl p-3 shadow-none"
-                >
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <MutedSurface className="space-y-1 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {labels.conflictLocalValues}
-                      </p>
-                      <dl className="space-y-1 text-sm">
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldBib}</dt>
-                          <dd className="font-medium text-foreground">
-                            {conflict.local.bibNumber}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldStatus}</dt>
-                          <dd className="font-medium text-foreground">
-                            {getStatusLabel(conflict.local.status, labels)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">
-                            {labels.conflictFieldFinishTime}
-                          </dt>
-                          <dd className="font-medium text-foreground">
-                            {formatTimeForPreview(conflict.local.finishTimeInput)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldUpdatedAt}</dt>
-                          <dd className="font-medium text-foreground">
-                            {timestampFormatter.format(new Date(conflict.local.updatedAt))}
-                          </dd>
-                        </div>
-                      </dl>
-                    </MutedSurface>
+            <div className="space-y-3">
+              {unresolvedConflicts.map((conflict) => {
+                const keepLocalSelected = conflict.resolution?.choice === 'keep_local';
+                const keepServerSelected = conflict.resolution?.choice === 'keep_server';
+                return (
+                  <Surface
+                    key={conflict.id}
+                    as="article"
+                    className="space-y-3 rounded-xl p-3 shadow-none"
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <MutedSurface className="space-y-1 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {labels.conflictLocalValues}
+                        </p>
+                        <dl className="space-y-1 text-sm">
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">{labels.conflictFieldBib}</dt>
+                            <dd className="font-medium text-foreground">
+                              {conflict.local.bibNumber}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">{labels.conflictFieldStatus}</dt>
+                            <dd className="font-medium text-foreground">
+                              {getStatusLabel(conflict.local.status, labels)}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">
+                              {labels.conflictFieldFinishTime}
+                            </dt>
+                            <dd className="font-medium text-foreground">
+                              {formatTimeForPreview(conflict.local.finishTimeInput)}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">
+                              {labels.conflictFieldUpdatedAt}
+                            </dt>
+                            <dd className="font-medium text-foreground">
+                              {timestampFormatter.format(new Date(conflict.local.updatedAt))}
+                            </dd>
+                          </div>
+                        </dl>
+                      </MutedSurface>
 
-                    <MutedSurface className="space-y-1 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {labels.conflictServerValues}
-                      </p>
-                      <dl className="space-y-1 text-sm">
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldBib}</dt>
-                          <dd className="font-medium text-foreground">
-                            {conflict.server.bibNumber}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldStatus}</dt>
-                          <dd className="font-medium text-foreground">
-                            {getStatusLabel(conflict.server.status, labels)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">
-                            {labels.conflictFieldFinishTime}
-                          </dt>
-                          <dd className="font-medium text-foreground">
-                            {formatTimeForPreview(conflict.server.finishTimeInput)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between gap-2">
-                          <dt className="text-muted-foreground">{labels.conflictFieldUpdatedAt}</dt>
-                          <dd className="font-medium text-foreground">
-                            {timestampFormatter.format(new Date(conflict.server.updatedAt))}
-                          </dd>
-                        </div>
-                      </dl>
-                    </MutedSurface>
-                  </div>
+                      <MutedSurface className="space-y-1 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {labels.conflictServerValues}
+                        </p>
+                        <dl className="space-y-1 text-sm">
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">{labels.conflictFieldBib}</dt>
+                            <dd className="font-medium text-foreground">
+                              {conflict.server.bibNumber}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">{labels.conflictFieldStatus}</dt>
+                            <dd className="font-medium text-foreground">
+                              {getStatusLabel(conflict.server.status, labels)}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">
+                              {labels.conflictFieldFinishTime}
+                            </dt>
+                            <dd className="font-medium text-foreground">
+                              {formatTimeForPreview(conflict.server.finishTimeInput)}
+                            </dd>
+                          </div>
+                          <div className="flex justify-between gap-2">
+                            <dt className="text-muted-foreground">
+                              {labels.conflictFieldUpdatedAt}
+                            </dt>
+                            <dd className="font-medium text-foreground">
+                              {timestampFormatter.format(new Date(conflict.server.updatedAt))}
+                            </dd>
+                          </div>
+                        </dl>
+                      </MutedSurface>
+                    </div>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant={keepLocalSelected ? 'default' : 'outline'}
-                      onClick={() => onResolveConflict(conflict.id, 'keep_local')}
-                    >
-                      {labels.conflictActionKeepLocal}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={keepServerSelected ? 'default' : 'outline'}
-                      onClick={() => onResolveConflict(conflict.id, 'keep_server')}
-                    >
-                      {labels.conflictActionKeepServer}
-                    </Button>
-                  </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant={keepLocalSelected ? 'default' : 'outline'}
+                        onClick={() => onResolveConflict(conflict.id, 'keep_local')}
+                      >
+                        {labels.conflictActionKeepLocal}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={keepServerSelected ? 'default' : 'outline'}
+                        onClick={() => onResolveConflict(conflict.id, 'keep_server')}
+                      >
+                        {labels.conflictActionKeepServer}
+                      </Button>
+                    </div>
 
-                  <p className="text-sm text-foreground">
-                    {conflict.resolution
-                      ? `${labels.conflictResolved}: ${getConflictChoiceLabel(conflict, labels)}`
-                      : labels.conflictNeedsDecision}
-                  </p>
-                </Surface>
-              );
-            })}
+                    <p className="text-sm text-foreground">
+                      {conflict.resolution
+                        ? `${labels.conflictResolved}: ${getConflictChoiceLabel(conflict, labels)}`
+                        : labels.conflictNeedsDecision}
+                    </p>
+                  </Surface>
+                );
+              })}
+            </div>
+          </InsetSurface>
+        ) : null}
+
+        {/* Entries log */}
+        <section>
+          <div className="mb-3">
+            <h4 className="text-sm font-semibold text-foreground">{labels.entriesTitle}</h4>
+            <p className="mt-0.5 text-xs text-muted-foreground">{labels.entriesDescription}</p>
           </div>
-        )}
-      </InsetSurface>
 
-      <InsetSurface as="section" className="space-y-2 p-3">
-        <h4 className="text-sm font-semibold text-foreground">{labels.entriesTitle}</h4>
-        <p className="text-xs text-muted-foreground">{labels.entriesDescription}</p>
-
-        {previewRows.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-            {labels.entriesEmpty}
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-2 py-2 font-semibold">{labels.headers.bib}</th>
-                  <th className="px-2 py-2 font-semibold">{labels.headers.status}</th>
-                  <th className="px-2 py-2 font-semibold">{labels.headers.syncStatus}</th>
-                  <th className="px-2 py-2 font-semibold">{labels.headers.finishTime}</th>
-                  <th className="px-2 py-2 font-semibold">{labels.headers.derivedOverall}</th>
-                  <th className="px-2 py-2 font-semibold">{labels.headers.capturedAt}</th>
-                  <th className="px-2 py-2 font-semibold">{labels.headers.provenance}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((row) => {
-                  const source = store.entries.find((entry) => entry.id === row.id);
-                  return (
-                    <tr key={row.id} className="border-b last:border-b-0">
-                      <td className="px-2 py-2 text-foreground">{row.bibNumber}</td>
-                      <td className="px-2 py-2 text-foreground">
-                        {getStatusLabel(row.status, labels)}
-                      </td>
-                      <td className="px-2 py-2 text-foreground">
-                        {source ? getSyncStatusLabel(source.syncStatus, labels) : '-'}
-                      </td>
-                      <td className="px-2 py-2 text-foreground">
-                        {formatTimeForPreview(row.finishTimeInput)}
-                      </td>
-                      <td className="px-2 py-2 text-foreground">
-                        {row.derivedOverallPlace ?? '-'}
-                      </td>
-                      <td className="px-2 py-2 text-muted-foreground">
-                        {timestampFormatter.format(new Date(row.capturedAt))}
-                      </td>
-                      <td className="px-2 py-2 text-muted-foreground">
-                        {source ? (
-                          <span className="text-xs">
-                            {labels.provenanceSession}:{' '}
-                            {abbreviateSession(source.provenance.sessionId)}
-                            <br />
-                            {labels.provenanceDevice}: {source.provenance.deviceLabel}
-                            <br />
-                            {labels.provenanceEditor}: {source.provenance.editorLabel}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </InsetSurface>
+          {latestPreviewRows.length === 0 ? (
+            <p className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
+              {labels.entriesEmpty}
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border/70">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/70 bg-muted/30 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                    <th className="px-3 py-2.5 font-semibold">{labels.headers.bib}</th>
+                    <th className="px-3 py-2.5 font-semibold">{labels.headers.status}</th>
+                    <th className="px-3 py-2.5 font-semibold">{labels.headers.finishTime}</th>
+                    <th className="px-3 py-2.5 font-semibold">{labels.headers.syncStatus}</th>
+                    <th className="px-3 py-2.5 font-semibold">{labels.headers.derivedOverall}</th>
+                    <th className="px-3 py-2.5 font-semibold">{labels.headers.capturedAt}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {latestPreviewRows.map((row) => {
+                    const source = entryById.get(row.id);
+                    return (
+                      <tr key={row.id} className="border-b border-border/50 last:border-b-0">
+                        <td className="px-3 py-2.5 font-semibold tabular-nums text-foreground">
+                          {row.bibNumber}
+                        </td>
+                        <td className="px-3 py-2.5 text-foreground">
+                          {getStatusLabel(row.status, labels)}
+                        </td>
+                        <td className="px-3 py-2.5 tabular-nums text-foreground">
+                          {formatTimeForPreview(row.finishTimeInput)}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted-foreground">
+                          {source ? getSyncStatusLabel(source.syncStatus, labels) : '-'}
+                        </td>
+                        <td className="px-3 py-2.5 tabular-nums text-foreground">
+                          {row.derivedOverallPlace ?? '-'}
+                        </td>
+                        <td className="px-3 py-2.5 text-muted-foreground">
+                          {timestampFormatter.format(new Date(row.capturedAt))}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </div>
     </Surface>
   );
 }

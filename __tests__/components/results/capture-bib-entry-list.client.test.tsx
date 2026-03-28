@@ -1,5 +1,31 @@
 import { CaptureBibEntryList } from '@/components/results/organizer/capture-bib-entry-list';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import type { ReactNode } from 'react';
+
+jest.mock('@/i18n/navigation', () => ({
+  Link: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: ReactNode;
+    href: string | { pathname: string; params?: Record<string, string> };
+  }) => {
+    const resolvedHref =
+      typeof href === 'string'
+        ? href
+        : `/en${Object.entries(href.params ?? {}).reduce(
+            (pathname, [key, value]) => pathname.replace(`[${key}]`, value),
+            href.pathname,
+          )}`;
+
+    return (
+      <a href={resolvedHref} {...props}>
+        {children}
+      </a>
+    );
+  },
+}));
 
 const storageKey = 'results.capture.offline.test';
 
@@ -10,8 +36,12 @@ const labels = {
   connectivityOnline: 'Online',
   connectivityOffline: 'Offline',
   reassuranceSavedLocally: 'Saved locally',
-  reassuranceNotPublic: 'Not public yet',
+  reassuranceNotPublic: 'Stays in draft until you review and publish it',
   reassurancePendingSync: '{count} entries pending sync',
+  pendingSyncLabel: 'Pending sync',
+  lastSyncLabel: 'Last sync',
+  lastSyncNever: 'Not synced yet',
+  reviewAction: 'Open review',
   bibLabel: 'Bib number',
   bibPlaceholder: 'e.g. 245',
   timeLabel: 'Finish time',
@@ -32,11 +62,9 @@ const labels = {
   syncCompleteMessage: 'All pending entries were synced without duplication.',
   syncInterruptedMessage:
     'Sync checkpoint saved after {processed} entries. Retry to continue the remaining {remaining}.',
-  syncBlockedByConflicts:
-    'Resolve all pending conflicts before sync can complete.',
+  syncBlockedByConflicts: 'Resolve all pending conflicts before sync can complete.',
   conflictTitle: 'Conflict review',
-  conflictDescription:
-    'Choose an explicit outcome for each conflict before finalizing sync.',
+  conflictDescription: 'Choose an explicit outcome for each conflict before finalizing sync.',
   conflictEmpty: 'No conflicts found.',
   conflictNeedsDecision: 'Resolution required',
   conflictResolved: 'Resolution selected',
@@ -76,8 +104,7 @@ const labels = {
     safe: 'Status',
     next: 'Next step',
     details: 'Details',
-    safeMessage:
-      'Draft records remain protected while conflicts are unresolved.',
+    safeMessage: 'Draft records remain protected while conflicts are unresolved.',
     nextMessage: 'Select an explicit resolution for each conflict and rerun sync.',
     detailConflictSummary: '{count} conflicts require organizer action.',
     detailDraftProtection: 'Official results remain unchanged until sync is finalized.',
@@ -92,12 +119,14 @@ function setOnlineState(isOnline: boolean) {
 }
 
 function renderComponent() {
-  return render(
-    <CaptureBibEntryList storageKey={storageKey} locale="en-US" labels={labels} />,
-  );
+  return render(<CaptureBibEntryList storageKey={storageKey} locale="en-US" labels={labels} />);
 }
 
-function saveEntry(params: { bib: string; time?: string; status?: 'Finish' | 'DNF' | 'DNS' | 'DQ' }) {
+function saveEntry(params: {
+  bib: string;
+  time?: string;
+  status?: 'Finish' | 'DNF' | 'DNS' | 'DQ';
+}) {
   fireEvent.change(screen.getByLabelText(labels.bibLabel), {
     target: { value: params.bib },
   });
@@ -118,10 +147,17 @@ describe('CaptureBibEntryList', () => {
     setOnlineState(false);
   });
 
-  it('persists entries locally and keeps unsynced count visible', () => {
+  it('persists entries locally and keeps unsynced count visible', async () => {
     const { unmount } = renderComponent();
 
+    await act(async () => {
+      window.dispatchEvent(new Event('offline'));
+    });
+
     expect(screen.getByText(labels.connectivityOffline)).toBeInTheDocument();
+    expect(
+      screen.getByText(`${labels.lastSyncLabel}: ${labels.lastSyncNever}`),
+    ).toBeInTheDocument();
 
     saveEntry({ bib: '101', time: '00:24:10', status: 'Finish' });
 
@@ -134,6 +170,24 @@ describe('CaptureBibEntryList', () => {
 
     expect(screen.getByText('101')).toBeInTheDocument();
     expect(screen.getByText('1 entries pending sync')).toBeInTheDocument();
+  });
+
+  it('shows review action next to sync controls', () => {
+    render(
+      <CaptureBibEntryList
+        storageKey={storageKey}
+        locale="en-US"
+        labels={labels}
+        reviewHref={{
+          pathname: '/dashboard/events/[eventId]/results/review',
+          params: { eventId: 'event-1' },
+        }}
+      />,
+    );
+
+    const reviewLink = screen.getByRole('link', { name: labels.reviewAction });
+    expect(reviewLink).toHaveAttribute('href', '/en/dashboard/events/event-1/results/review');
+    expect(screen.getByText(labels.reassuranceNotPublic)).toBeInTheDocument();
   });
 
   it('preserves DNF, DNS, and DQ status labels in preview', () => {
@@ -156,7 +210,7 @@ describe('CaptureBibEntryList', () => {
     expect(within(dqRow).getByText('DQ')).toBeInTheDocument();
   });
 
-  it('derives placement for finish rows and excludes DNF from ranking', () => {
+  it('renders simplified recent captures rows with status and sync state', () => {
     renderComponent();
 
     saveEntry({ bib: '301', time: '00:24:10', status: 'Finish' });
@@ -171,9 +225,11 @@ describe('CaptureBibEntryList', () => {
       throw new Error('Expected captured rows were not rendered.');
     }
 
-    expect(within(firstFinishRow).getAllByRole('cell')[4]).toHaveTextContent('2');
-    expect(within(secondFinishRow).getAllByRole('cell')[4]).toHaveTextContent('1');
-    expect(within(dnfRow).getAllByRole('cell')[4]).toHaveTextContent('-');
+    expect(within(firstFinishRow).getAllByRole('cell')[2]).toHaveTextContent('00:24:10');
+    expect(within(firstFinishRow).getAllByRole('cell')[3]).toHaveTextContent('Pending sync');
+    expect(within(secondFinishRow).getAllByRole('cell')[2]).toHaveTextContent('00:23:05');
+    expect(within(dnfRow).getAllByRole('cell')[1]).toHaveTextContent('DNF');
+    expect(within(dnfRow).getAllByRole('cell')[2]).toHaveTextContent('-');
   });
 
   it('syncs idempotently and resumes from checkpoint on retry', () => {
@@ -186,7 +242,9 @@ describe('CaptureBibEntryList', () => {
     saveEntry({ bib: '404', time: '00:26:10', status: 'Finish' });
 
     fireEvent.click(screen.getByRole('button', { name: labels.syncAction }));
-    expect(screen.getByText('Sync checkpoint saved after 3 entries. Retry to continue the remaining 1.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Sync checkpoint saved after 3 entries. Retry to continue the remaining 1.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('1 entries pending sync')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: labels.syncAction }));
