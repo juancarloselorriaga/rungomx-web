@@ -1,4 +1,4 @@
-import type { ResultEntryStatus } from '@/lib/events/results/types';
+import type { ResultEntryStatus } from '@/lib/events/results/status';
 import { deriveResultAgeGroupKey } from '@/lib/events/results/derivation/age-group';
 
 type StatusDerivationPolicy = {
@@ -165,7 +165,8 @@ export function deriveResultPlacements(
     .map((entry) => {
       const effectiveFinishTime = normalizeFinishTime(entry.finishTimeMillis);
       const statusRules = policy[entry.status];
-      const includeInOverall = Boolean(statusRules?.includeInOverall) && effectiveFinishTime !== null;
+      const includeInOverall =
+        Boolean(statusRules?.includeInOverall) && effectiveFinishTime !== null;
       const includeInCategories =
         Boolean(statusRules?.includeInCategories) && effectiveFinishTime !== null;
 

@@ -8,10 +8,11 @@ import type {
   rankingSnapshots,
   resultVersions,
 } from '@/db/schema';
+import type { ResultEntryStatus } from '@/lib/events/results/status';
+export { RESULT_ENTRY_STATUSES } from '@/lib/events/results/status';
 
 export const RESULT_VERSION_STATUSES = ['draft', 'official', 'corrected'] as const;
 export const RESULT_VERSION_SOURCES = ['manual_offline', 'csv_excel', 'correction'] as const;
-export const RESULT_ENTRY_STATUSES = ['finish', 'dq', 'dnf', 'dns'] as const;
 export const RESULT_ENTRY_CLAIM_STATUSES = ['pending_review', 'linked', 'rejected'] as const;
 export const RESULT_CORRECTION_REQUEST_STATUSES = ['pending', 'approved', 'rejected'] as const;
 export const RESULT_INGESTION_SOURCE_LANES = ['manual_offline', 'csv_excel'] as const;
@@ -30,7 +31,6 @@ export const RESULT_DISCIPLINES = [
 
 export type ResultVersionStatus = (typeof RESULT_VERSION_STATUSES)[number];
 export type ResultVersionSource = (typeof RESULT_VERSION_SOURCES)[number];
-export type ResultEntryStatus = (typeof RESULT_ENTRY_STATUSES)[number];
 export type ResultEntryClaimStatus = (typeof RESULT_ENTRY_CLAIM_STATUSES)[number];
 export type ResultCorrectionRequestStatus = (typeof RESULT_CORRECTION_REQUEST_STATUSES)[number];
 export type ResultIngestionSourceLane = (typeof RESULT_INGESTION_SOURCE_LANES)[number];

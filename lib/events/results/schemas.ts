@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
+import { RESULT_ENTRY_STATUSES } from '@/lib/events/results/status';
 import {
   RESULT_INGESTION_SOURCE_LANES,
   RESULT_DISCIPLINES,
-  RESULT_ENTRY_STATUSES,
   RESULT_VERSION_SOURCES,
 } from '@/lib/events/results/types';
 
@@ -120,7 +120,9 @@ export type GetRunnerResultClaimCandidatesInput = z.input<
 >;
 export type ConfirmRunnerResultClaimInput = z.input<typeof confirmRunnerResultClaimSchema>;
 export type ReviewRunnerResultClaimInput = z.input<typeof reviewRunnerResultClaimSchema>;
-export type RequestRunnerResultCorrectionInput = z.input<typeof requestRunnerResultCorrectionSchema>;
+export type RequestRunnerResultCorrectionInput = z.input<
+  typeof requestRunnerResultCorrectionSchema
+>;
 export type ReviewResultCorrectionRequestInput = z.input<
   typeof reviewResultCorrectionRequestSchema
 >;

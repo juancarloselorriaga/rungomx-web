@@ -3,7 +3,7 @@ import {
   parseResultFinishTimeToMillis,
 } from '@/lib/events/results/ingestion/validation';
 import { deriveResultPlacements } from '@/lib/events/results/derivation/placement';
-import type { ResultEntryStatus } from '@/lib/events/results/types';
+import type { ResultEntryStatus } from '@/lib/events/results/status';
 
 export type OfflineCaptureStatus = ResultEntryStatus;
 export type OfflineCaptureSyncStatus = 'pending_sync' | 'synced' | 'conflict';
@@ -136,8 +136,7 @@ export function createOfflineCaptureSessionId(): string {
 export function getBrowserDeviceLabel(): string {
   if (typeof navigator === 'undefined') return 'unknown-device';
 
-  const platform =
-    typeof navigator.platform === 'string' ? navigator.platform.trim() : '';
+  const platform = typeof navigator.platform === 'string' ? navigator.platform.trim() : '';
   return platform || 'browser-device';
 }
 
@@ -198,7 +197,16 @@ function coerceEntry(value: unknown): OfflineCaptureEntry | null {
       ? provenance.editorLabel
       : null;
 
-  if (!id || !bibNumber || !status || !capturedAt || !updatedAt || !sessionId || !deviceLabel || !editorLabel) {
+  if (
+    !id ||
+    !bibNumber ||
+    !status ||
+    !capturedAt ||
+    !updatedAt ||
+    !sessionId ||
+    !deviceLabel ||
+    !editorLabel
+  ) {
     return null;
   }
 
@@ -246,9 +254,7 @@ function coerceConflictSnapshot(value: unknown): OfflineCaptureSyncConflictSnaps
   };
 }
 
-function coerceConflictResolution(
-  value: unknown,
-): OfflineCaptureSyncConflictResolution | null {
+function coerceConflictResolution(value: unknown): OfflineCaptureSyncConflictResolution | null {
   if (!isRecord(value)) return null;
 
   const choice =
