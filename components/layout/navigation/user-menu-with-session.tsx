@@ -2,17 +2,17 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSession } from '@/lib/auth/client';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { UserMenu } from './user-menu';
+
+const emptySubscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 export function UserMenuWithSession() {
   const { data, isPending } = useSession();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
   const user = data?.user ?? null;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Show skeleton until mounted (avoids SSR/client mismatch) and while session loads
   if (!mounted || isPending) {

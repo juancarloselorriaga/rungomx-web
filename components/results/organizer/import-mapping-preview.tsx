@@ -308,7 +308,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
 
       {parsedImport ? (
         <div className="space-y-5">
-          <InsetSurface className="space-y-2 bg-muted/25 p-3">
+          <InsetSurface as="section" className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.parseSummary}</h4>
             <dl className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
               <div>
@@ -416,7 +416,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             </div>
           </InsetSurface>
 
-          <InsetSurface className="space-y-2 bg-muted/25 p-3">
+          <InsetSurface as="section" className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.mappingPreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.mappingPreviewDescription}</p>
             <pre
@@ -507,7 +507,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             </InsetSurface>
           ) : null}
 
-          <InsetSurface className="space-y-2 bg-muted/25 p-3">
+          <InsetSurface as="section" className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.derivedPreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.derivedPreviewDescription}</p>
 
@@ -570,7 +570,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
             )}
           </InsetSurface>
 
-          <InsetSurface className="space-y-2 bg-muted/25 p-3">
+          <InsetSurface as="section" className="space-y-2 bg-muted/25 p-3">
             <h4 className="text-sm font-semibold text-foreground">{labels.samplePreviewTitle}</h4>
             <p className="text-xs text-muted-foreground">{labels.samplePreviewDescription}</p>
 
