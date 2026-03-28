@@ -3,10 +3,10 @@
   "description": "Busca resultados oficiales y revisa las clasificaciones más recientes de una carrera.",
   "discovery": {
     "title": "Encontrar resultados oficiales",
-    "description": "Busca por nombre, dorsal o evento para abrir rápido la página correcta de resultados.",
+    "description": "Busca por nombre, BIB o evento para abrir rápido la página correcta de resultados.",
     "searchNameLabel": "Nombre del corredor",
     "searchNamePlaceholder": "ej. Ana Martínez",
-    "searchBibLabel": "Dorsal",
+    "searchBibLabel": "BIB",
     "searchBibPlaceholder": "ej. 101",
     "seriesFilterLabel": "Serie",
     "seriesFilterAll": "Todas las series",
@@ -24,7 +24,7 @@
     "title": "Coincidencias de búsqueda",
     "description": "Resultados oficiales que coinciden con tu búsqueda.",
     "empty": "No se encontraron coincidencias oficiales para esta búsqueda.",
-    "context": "Dorsal {bib} · Lugar {place} · {status} · {finishTime}",
+    "context": "BIB {bib} · Lugar {place} · {status} · {finishTime}",
     "openOfficial": "Abrir página oficial"
   },
   "howItWorks": {
@@ -119,7 +119,7 @@
       "headers": {
         "place": "Lugar",
         "runner": "Corredor",
-        "bib": "Dorsal",
+        "bib": "BIB",
         "distance": "Distancia",
         "status": "Estado",
         "finishTime": "Tiempo final"

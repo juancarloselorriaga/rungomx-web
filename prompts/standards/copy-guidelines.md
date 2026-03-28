@@ -54,6 +54,7 @@ Runners are deciding whether to participate and need clear, motivating informati
 | Waiver | Waiver | deslinde de responsabilidad |
 | Add-on | Add-on | complemento |
 | Publish blockers | Publish blockers | bloqueos para publicar |
+| Runner identifier | BIB | BIB |
 
 ---
 

@@ -239,7 +239,7 @@
         "title": "Crear o actualizar un borrador",
         "description": "Usa cualquiera de estas dos opciones para preparar el borrador que revisarás antes de publicar.",
         "captureTitle": "Captura manual",
-        "captureDescription": "Registra dorsales, tiempos y estados desde la meta mientras el trabajo sin sincronizar sigue protegido.",
+        "captureDescription": "Registra BIBs, tiempos y estados desde la meta mientras el trabajo sin sincronizar sigue protegido.",
         "importTitle": "Importación de archivo",
         "importDescription": "Carga archivos CSV o Excel para actualizar el borrador y detectar incidencias antes de revisarlo."
       },
@@ -313,7 +313,7 @@
       "description": "Las semánticas de confianza se mantienen visibles en modo Compacto y Completo.",
       "empty": "Aún no hay filas de borrador. Inicia captura o importación para poblar esta tabla.",
       "headers": {
-        "bib": "Dorsal",
+        "bib": "BIB",
         "runner": "Corredor",
         "validation": "Validación",
         "resultStatus": "Estado del resultado",
@@ -329,7 +329,7 @@
       "blocker": "Bloqueador"
     },
     "status": {
-      "finish": "Finalizó",
+      "finish": "Finish",
       "dnf": "DNF",
       "dns": "DNS",
       "dq": "DQ",
@@ -351,7 +351,7 @@
       },
       "import": {
         "parsed": "Parseado de la última importación de borrador CSV.",
-        "duplicateBib": "Conflicto de dorsal duplicado marcado para revisión."
+        "duplicateBib": "BIB duplicado marcado para revisión."
       },
       "review": {
         "ready": "Fila de borrador lista para revisión final del Director de Carrera.",
@@ -368,11 +368,11 @@
         "guidance": "Ejecuta la sincronización determinista hasta que las filas pendientes lleguen a estado sincronizado."
       },
       "missingFinishTime": {
-        "message": "La fila con estado Finalizó no tiene un tiempo final.",
+        "message": "La fila con estado Finish no tiene un tiempo final.",
         "guidance": "Proporciona un tiempo final válido antes de continuar con la finalización."
       },
       "statusTimeMismatch": {
-        "message": "Una fila con estado distinto de Finalizó aún incluye un valor de tiempo final.",
+        "message": "Una fila con estado distinto de Finish aún incluye un valor de tiempo final.",
         "guidance": "Confirma que la combinación estado/tiempo sea intencional antes de publicar."
       }
     },
@@ -407,9 +407,9 @@
       "capture": {
         "syncPending": {
           "safe": "Lo capturado sigue en borrador y guardado en este dispositivo.",
-          "next": "Reconéctate y sincroniza las entradas pendientes.",
+          "next": "Sincroniza las entradas pendientes para actualizar el borrador.",
           "details": {
-            "rowsWaitingForSync": "{count, plural, one {# fila está esperando sincronización.} other {# filas están esperando sincronización.}}",
+            "rowsWaitingForSync": "{count, plural, one {# fila pendiente de sincronizar.} other {# filas pendientes de sincronizar.}}",
             "noPublicChanges": "Los resultados oficiales todavía no cambian."
           }
         },
@@ -457,7 +457,7 @@
       "capture": {
         "eyebrow": "Crear o actualizar un borrador",
         "title": "Capturar resultados",
-        "description": "Captura dorsales, tiempos y estados desde la meta. Lo pendiente se queda en borrador hasta sincronizar.",
+        "description": "Captura BIBs, tiempos y estados desde la meta. Lo pendiente se queda en borrador hasta sincronizar.",
         "action": "Abrir captura"
       },
       "import": {
@@ -503,7 +503,7 @@
         "reviewedAt": "Revisada en",
         "reviewNote": "Nota de decisión",
         "runner": "Corredor",
-        "bib": "Dorsal",
+        "bib": "BIB",
         "entryStatus": "Estado de la entrada",
         "finishTime": "Tiempo final (ms)"
       },
@@ -708,7 +708,7 @@
         "warning": "Advertencia"
       },
       "issueFields": {
-        "bib": "Dorsal",
+        "bib": "BIB",
         "runner": "Corredor",
         "guidance": "Guía"
       },
@@ -717,8 +717,11 @@
         "import": "Abrir importación"
       }
     },
+    "captureBanner": {
+      "pendingSyncMessage": "{count, plural, one {# fila pendiente de sincronizar} other {# filas pendientes de sincronizar}} — los resultados oficiales no se ven afectados."
+    },
     "captureEntry": {
-      "title": "Captura dorsales y tiempos",
+      "title": "Captura BIBs y tiempos",
       "description": "Guarda filas en borrador desde la meta, incluso si la señal falla.",
       "connectivityLabel": "Conectividad",
       "connectivityOnline": "En línea",
@@ -730,14 +733,14 @@
       "lastSyncNever": "Todavía no sincronizas",
       "draftStatusTitle": "Estado del borrador del evento",
       "draftStatusDescription": "Cuando termines de capturar, revisa el borrador completo y confirma si ya está listo para publicar.",
-      "bibLabel": "Número de dorsal",
+      "bibLabel": "Número de BIB",
       "bibPlaceholder": "ej. 245",
       "timeLabel": "Tiempo final",
       "timePlaceholder": "HH:MM:SS o MM:SS",
       "statusLabel": "Estado del resultado",
       "submitAction": "Guardar en borrador",
-      "validationBibRequired": "Ingresa un dorsal antes de guardar.",
-      "validationFinishTimeInvalid": "Si el estado es Finalizó, agrega un tiempo válido.",
+      "validationBibRequired": "Ingresa un BIB antes de guardar.",
+      "validationFinishTimeInvalid": "Si el estado es Finish, agrega un tiempo válido.",
       "entrySaved": "Entrada guardada en borrador en este dispositivo.",
       "entriesTitle": "Últimas capturas en este dispositivo",
       "entriesDescription": "Revisa lo que acabas de guardar. El lugar general se calcula solo con tiempos finales.",
@@ -757,7 +760,7 @@
       "conflictResolved": "Resolución elegida",
       "conflictLocalValues": "Valores en este dispositivo",
       "conflictServerValues": "Valores del servidor",
-      "conflictFieldBib": "Dorsal",
+      "conflictFieldBib": "BIB",
       "conflictFieldStatus": "Estado",
       "conflictFieldFinishTime": "Tiempo final",
       "conflictFieldUpdatedAt": "Actualizado en",
@@ -766,7 +769,7 @@
       "conflictChoiceKeepLocal": "Se conservan valores locales",
       "conflictChoiceKeepServer": "Se conservan valores del servidor",
       "headers": {
-        "bib": "Dorsal",
+        "bib": "BIB",
         "status": "Estado",
         "syncStatus": "Estado de sincronización",
         "finishTime": "Tiempo final",
@@ -775,7 +778,7 @@
         "provenance": "Origen"
       },
       "statusOptions": {
-        "finish": "Finalizó",
+        "finish": "Finish",
         "dnf": "DNF",
         "dns": "DNS",
         "dq": "DQ"
@@ -841,7 +844,7 @@
       "derivedPreviewEmpty": "Aún no hay filas mapeadas disponibles para vista previa.",
       "derivedPreviewHeaders": {
         "runner": "Corredor",
-        "bib": "Dorsal",
+        "bib": "BIB",
         "status": "Estado",
         "finishTime": "Tiempo final",
         "derivedOverall": "Lugar general derivado"
@@ -856,7 +859,7 @@
       },
       "canonicalFields": {
         "runnerFullName": "Nombre del corredor",
-        "bibNumber": "Número de dorsal",
+        "bibNumber": "Número de BIB",
         "finishTimeMillis": "Tiempo final",
         "status": "Estado del resultado",
         "gender": "Género",

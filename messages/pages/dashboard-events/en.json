@@ -407,9 +407,9 @@
       "capture": {
         "syncPending": {
           "safe": "Captured rows stay in Draft and are saved locally.",
-          "next": "Reconnect and run sync to upload pending entries.",
+          "next": "Sync pending entries to update the draft.",
           "details": {
-            "rowsWaitingForSync": "{count, plural, one {# row is waiting for sync.} other {# rows are waiting for sync.}}",
+            "rowsWaitingForSync": "{count, plural, one {# row pending sync.} other {# rows pending sync.}}",
             "noPublicChanges": "No public or official records were changed."
           }
         },
@@ -716,6 +716,9 @@
         "capture": "Open capture",
         "import": "Open import"
       }
+    },
+    "captureBanner": {
+      "pendingSyncMessage": "{count, plural, one {# row pending sync} other {# rows pending sync}} — official results are not affected."
     },
     "captureEntry": {
       "title": "Capture bibs and finish times",

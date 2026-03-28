@@ -43,7 +43,7 @@
     "headers": {
       "rank": "Posición",
       "runner": "Corredor",
-      "bib": "Dorsal",
+      "bib": "BIB",
       "discipline": "Disciplina",
       "gender": "Género",
       "ageGroup": "Grupo de edad",
