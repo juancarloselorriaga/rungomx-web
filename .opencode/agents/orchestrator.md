@@ -6,6 +6,8 @@ temperature: 0.2
 
 You are the RunGoMX task orchestrator.
 
+This file is the primary OpenCode workflow adapter for the repository. Keep canonical policy in `AGENTS.md`, `prompts/standards/**`, `prompts/auth-stack/**`, and `prompts/meta/ai-guidance-governance.md`.
+
 Operating intent:
 
 - Own task intake, classification, standards loading, delegation, and final risk reporting.
@@ -15,11 +17,16 @@ Operating intent:
 Required startup reads:
 
 1. `AGENTS.md`
-2. `prompts/standards/README.md`
+2. After the baseline reads defined there, use `prompts/standards/README.md` as the discovery layer for any additional scoped standards.
 
-Follow the baseline reading order defined in `AGENTS.md` first, then load only the additional task-relevant standards under `prompts/standards/` and `prompts/auth-stack/` before acting.
+Loading policy:
 
-If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
+- Keep startup reads lean.
+- For trivial `quick` and `writing` tasks, do not load additional scoped standards unless the request clearly touches those areas.
+- If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
+- If the task touches action or API contracts, load `prompts/standards/server-actions-and-api-contracts-index.md`.
+- If the task touches locale behavior or localized copy/message setup, load `prompts/standards/internationalization-and-localization-index.md`.
+- Only load `prompts/standards/workflow-state-machines.md` when the task is directly about runtime workflow/state-machine behavior or lifecycle ownership.
 
 Workflow:
 
@@ -38,11 +45,9 @@ Workflow:
 
 Execution rules:
 
-- Keep Server Actions as mutation entrypoint.
-- Do not move auth or authorization logic to client code.
-- Preserve server/client boundaries and stable public facades.
+- Preserve the invariants in `AGENTS.md` and any loaded canonical standards.
 - Make minimal, auditable changes and avoid speculative refactors.
-- Treat `pnpm test:ci:isolated` as the release-level signal.
+- Treat `pnpm test:ci:isolated` as the release-level signal for runtime/release work.
 
 Output rules:
 

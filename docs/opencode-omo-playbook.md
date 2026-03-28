@@ -21,12 +21,14 @@ Use the repo-local slash command:
 /task-flow <task>
 ```
 
-It applies a small OMO-inspired loop:
+`/task-flow` is a thin entrypoint into `.opencode/agents/orchestrator.md`.
 
-1. categorize the task (`quick`, `deep`, `visual`, `writing`)
-2. follow the baseline reading order in `AGENTS.md`, then use `prompts/standards/README.md` to load only additional relevant standards
-3. plan the smallest viable change
-4. use repo-native agents (`boundary-planner` when needed, `change-builder`, `diff-reviewer`, `coherence-reviewer` when applicable, `validation-planner`)
+In practice, the repo-native loop is:
+
+1. classify the task (`quick`, `deep`, `visual`, `writing`)
+2. follow the baseline reading order in `AGENTS.md`
+3. use `prompts/standards/README.md` only to discover the smallest sufficient set of additional standards
+4. route to repo-native specialists when needed (`boundary-planner`, `change-builder`, `diff-reviewer`, conditional `coherence-reviewer`, `validation-planner`)
 5. report boundary impacts, tests, and remaining risks
 
 Category guidance:
@@ -43,13 +45,14 @@ Use the custom OpenCode primary agent:
 - `.opencode/agents/orchestrator.md`
 
 This keeps the repository on its existing invariants while borrowing OMO's habit of explicit
-task classification and orchestration.
+task classification and orchestration without turning `.opencode/**` into a second policy system.
 
 Notes:
 
 - `orchestrator` is the repo's default OpenCode intake agent.
 - Specialist work is delegated to clearly named agents under `.opencode/agents/`, and those specialists remain directly selectable when needed.
 - The repo no longer depends on a custom mode for this workflow.
+- `orchestrator` is the single detailed OpenCode workflow adapter; `/task-flow` should stay thin.
 - `diff-reviewer` is the blocking review gate for non-trivial code changes.
 - `coherence-reviewer` is a conditional final-pass reviewer used for visual, writing, and non-trivial UX/copy/pattern-coherence work after diff review and before validation.
 
@@ -116,7 +119,7 @@ proves materially better for real tasks.
 Good candidates to borrow from OMO without a full install:
 
 - explicit task categories
-- orchestrator -> change-builder -> diff-reviewer -> coherence-reviewer -> validation-planner sequencing when applicable
+- orchestrator-led routing to `change-builder`, `diff-reviewer`, conditional `coherence-reviewer`, and `validation-planner`
 - non-trivial code work stays open until `diff-reviewer` has no blocking findings
 - stronger model specialization by task type
 - one-command orchestration for repetitive work
