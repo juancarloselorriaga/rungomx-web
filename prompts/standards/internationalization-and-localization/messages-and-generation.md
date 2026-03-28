@@ -31,7 +31,7 @@ owner: web-platform
 
 ## Namespace organization
 
-- Root namespaces live under `messages/{common,navigation,auth,errors,emails}`.
+- Root namespaces live under top-level `messages/*` directories such as `common`, `navigation`, `auth`, `errors`, `emails`, and `metadata`.
 - Component namespaces live under `messages/components/*`.
 - Page namespaces live under `messages/pages/*`.
 - Keep namespace names explicit and task-readable so generation and review stay predictable.
