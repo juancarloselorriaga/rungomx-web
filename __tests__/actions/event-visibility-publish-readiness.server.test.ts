@@ -2,10 +2,20 @@ import type { AuthContext } from '@/lib/auth/server';
 import type { EventEditionDetail } from '@/lib/events/queries';
 
 const mockHeaders = jest.fn();
-const mockCreateAuditLog = jest.fn(async (_payload: unknown, _tx: unknown) => ({ ok: true }));
-const mockGetRequestContext = jest.fn(async (_headersValue: unknown) => ({
-  ipAddress: '127.0.0.1',
-}));
+const mockCreateAuditLog = jest.fn<Promise<{ ok: boolean }>, [unknown, unknown]>(
+  async (...args) => {
+    void args;
+    return { ok: true };
+  },
+);
+const mockGetRequestContext = jest.fn<Promise<{ ipAddress: string }>, [unknown]>(
+  async (...args) => {
+    void args;
+    return {
+      ipAddress: '127.0.0.1',
+    };
+  },
+);
 const mockSafeUpdateTag = jest.fn();
 const mockSafeRefresh = jest.fn();
 const mockGetEventEditionDetail = jest.fn();

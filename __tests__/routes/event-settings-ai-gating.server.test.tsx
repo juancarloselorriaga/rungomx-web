@@ -99,9 +99,10 @@ jest.mock(
   }),
 );
 
-const mockEventSettingsForm = jest.fn((_: unknown) => (
-  <div data-testid="settings-form">settings-form</div>
-));
+const mockEventSettingsForm: jest.Mock<React.JSX.Element, [unknown]> = jest.fn((...args) => {
+  void args;
+  return <div data-testid="settings-form">settings-form</div>;
+});
 
 jest.mock(
   '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-settings-form',
