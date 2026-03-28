@@ -37,6 +37,7 @@ type ResultsStateRailProps = {
   labels: ResultsStateRailLabels;
   nextActionHref?: Parameters<typeof Link>[0]['href'];
   className?: string;
+  compact?: boolean;
 };
 
 const lifecycleBadgeVariant: Record<ResultsLifecycleState, 'indigo' | 'green'> = {
@@ -70,6 +71,7 @@ export function ResultsStateRail({
   labels,
   nextActionHref,
   className,
+  compact = false,
 }: ResultsStateRailProps) {
   const lifecycleLabel =
     state.lifecycle === 'official' ? labels.lifecycleOfficial : labels.lifecycleDraft;
@@ -96,8 +98,15 @@ export function ResultsStateRail({
       </h2>
       <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
 
-      <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MutedSurface className="space-y-2 rounded-xl p-3">
+      <dl
+        className={cn(
+          'mt-4 grid gap-3 sm:grid-cols-2',
+          compact ? 'xl:grid-cols-2' : 'lg:grid-cols-4',
+        )}
+      >
+        <MutedSurface
+          className={cn('space-y-2 rounded-xl p-3', compact ? 'bg-muted/12' : undefined)}
+        >
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.lifecycle}
           </dt>
@@ -113,7 +122,9 @@ export function ResultsStateRail({
           </dd>
         </MutedSurface>
 
-        <MutedSurface className="space-y-2 rounded-xl p-3">
+        <MutedSurface
+          className={cn('space-y-2 rounded-xl p-3', compact ? 'bg-muted/12' : undefined)}
+        >
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.connectivity}
           </dt>
@@ -135,7 +146,9 @@ export function ResultsStateRail({
           </dd>
         </MutedSurface>
 
-        <MutedSurface className="space-y-2 rounded-xl p-3">
+        <MutedSurface
+          className={cn('space-y-2 rounded-xl p-3', compact ? 'bg-muted/12' : undefined)}
+        >
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.unsyncedCount}
           </dt>
@@ -144,7 +157,9 @@ export function ResultsStateRail({
           </dd>
         </MutedSurface>
 
-        <MutedSurface className="space-y-2 rounded-xl p-3">
+        <MutedSurface
+          className={cn('space-y-2 rounded-xl p-3', compact ? 'bg-muted/12' : undefined)}
+        >
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.nextAction}
           </dt>
@@ -153,13 +168,24 @@ export function ResultsStateRail({
               <Button
                 asChild
                 variant="outline"
-                className="h-auto min-w-0 w-full justify-start !whitespace-normal px-5 py-3 text-left"
+                className={cn(
+                  'h-auto min-w-0 w-full justify-start !whitespace-normal text-left',
+                  compact ? 'px-4 py-3' : 'px-5 py-3',
+                )}
               >
-                <Link href={nextActionHref} className="min-w-0 !items-start">
-                  <span className="mt-0.5 flex h-4 w-4 items-center justify-center">
+                <Link
+                  href={nextActionHref}
+                  className={cn('min-w-0 gap-2', compact ? '!items-center' : '!items-start')}
+                >
+                  <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
                     <ArrowRightCircle className="h-4 w-4" />
                   </span>
-                  <span className="min-w-0 flex-1 break-words !whitespace-normal leading-snug">
+                  <span
+                    className={cn(
+                      'min-w-0 flex-1 break-words !whitespace-normal leading-snug',
+                      compact ? 'text-sm' : undefined,
+                    )}
+                  >
                     {nextActionLabel}
                   </span>
                 </Link>

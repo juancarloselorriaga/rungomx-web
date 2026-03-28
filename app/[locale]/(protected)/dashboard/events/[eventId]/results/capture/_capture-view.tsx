@@ -1,5 +1,8 @@
 import { CaptureBibEntryList } from '@/components/results/organizer/capture-bib-entry-list';
-import { OrganizerResultsLane } from '@/components/results/organizer/organizer-results-lane';
+import { ResultsVersionVisibilityPanel } from '@/components/results/organizer/results-version-visibility-panel';
+import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
+import { ResultsStateRail } from '@/components/results/primitives/results-state-rail';
+import { MutedSurface } from '@/components/ui/surface';
 import { getTranslations } from 'next-intl/server';
 
 import { ResultsPageHero } from '../_results-page-hero';
@@ -12,6 +15,9 @@ type ResultsCaptureViewProps = {
 
 export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureViewProps) {
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
+  const captureEyebrow = t('lanes.capture.eyebrow' as never);
+  const publishContextTitle = t('home.publishReadiness.title' as never);
+  const publishContextDescription = t('home.publishReadiness.description' as never);
 
   type CaptureTemplateKey =
     | 'captureEntry.reassurancePendingSync'
@@ -29,6 +35,7 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        eyebrow={captureEyebrow}
         title={t('lanes.capture.title')}
         description={t('lanes.capture.description')}
         stats={[
@@ -130,16 +137,58 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
         }}
       />
 
-      <OrganizerResultsLane
-        eventId={eventId}
-        densityStorageKey={pageData.densityStorageKey}
-        railState={pageData.railState}
-        nextActionHref={pageData.nextActionHref}
-        versionVisibility={pageData.versionVisibility}
-        rows={pageData.rows}
-        feedbackItems={pageData.feedbackItems}
-        labels={pageData.labels}
-      />
+      <section className="space-y-3" aria-labelledby="results-capture-publish-context-title">
+        <div className="space-y-1">
+          <h2
+            id="results-capture-publish-context-title"
+            className="text-sm font-semibold text-foreground sm:text-base"
+          >
+            {publishContextTitle}
+          </h2>
+          <p className="text-sm text-muted-foreground">{publishContextDescription}</p>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:items-start">
+          <ResultsStateRail
+            state={pageData.railState}
+            labels={pageData.labels.stateRail}
+            nextActionHref={pageData.nextActionHref}
+            compact
+          />
+          <ResultsVersionVisibilityPanel
+            visibility={pageData.versionVisibility}
+            labels={pageData.labels.versionVisibility}
+          />
+        </div>
+      </section>
+
+      {pageData.feedbackItems.length > 0 ? (
+        <section className="space-y-3" aria-labelledby="results-capture-guidance-title">
+          <h2
+            id="results-capture-guidance-title"
+            className="text-sm font-semibold text-foreground sm:text-base"
+          >
+            {pageData.labels.feedback.heading}
+          </h2>
+          <div className="grid gap-3">
+            {pageData.feedbackItems.map((item) => (
+              <MutedSurface key={item.id} className="p-0">
+                <SafeNextDetailsMessage
+                  safe={item.safe}
+                  next={item.next}
+                  details={item.details}
+                  tone={item.tone}
+                  labels={{
+                    safe: pageData.labels.feedback.safe,
+                    next: pageData.labels.feedback.next,
+                    details: pageData.labels.feedback.details,
+                  }}
+                />
+              </MutedSurface>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

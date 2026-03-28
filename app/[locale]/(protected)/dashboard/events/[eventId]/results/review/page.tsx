@@ -22,14 +22,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ResultsReviewPage({ params }: ResultsReviewPageProps) {
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/results/review' });
-  const t = await getTranslations('pages.dashboardEvents.resultsWorkspace.lanes.review');
+  const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
+  const reviewEyebrow = t('lanes.review.eyebrow' as never);
   const pageData = await getResultsWorkspacePageData(eventId, locale, 'review');
 
   return (
     <div className="space-y-6">
       <ResultsPageHero
-        title={t('title')}
-        description={t('description')}
+        eyebrow={reviewEyebrow}
+        title={t('lanes.review.title')}
+        description={t('lanes.review.description')}
         stats={[
           {
             label: pageData.labels.reviewGate.rowCountLabel,

@@ -2,6 +2,7 @@
 
 import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
 import { Button } from '@/components/ui/button';
+import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
 import {
   createOfflineCaptureEntry,
   deriveOfflineCapturePreviewRows,
@@ -311,38 +312,38 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
   };
 
   return (
-    <section className="space-y-4 rounded-xl border bg-card p-4 shadow-sm sm:p-5">
+    <Surface className="space-y-4 border-border/60 p-4 shadow-none sm:p-5">
       <header className="space-y-1">
         <h3 className="text-sm font-semibold text-foreground sm:text-base">{labels.title}</h3>
         <p className="text-xs text-muted-foreground sm:text-sm">{labels.description}</p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        <MutedSurface as="article" className="p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.connectivityLabel}
           </p>
           <p className="mt-2 text-sm font-semibold text-foreground">
             {isOnline ? labels.connectivityOnline : labels.connectivityOffline}
           </p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60">
+        </MutedSurface>
+        <MutedSurface as="article" className="p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.reassuranceSavedLocally}
           </p>
           <p className="mt-2 text-sm text-foreground">{labels.reassuranceNotPublic}</p>
-        </article>
-        <article className="rounded-md border bg-muted/30 p-3 dark:bg-muted/60 sm:col-span-2">
+        </MutedSurface>
+        <MutedSurface as="article" className="p-3 sm:col-span-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             {labels.reassuranceNotPublic}
           </p>
           <p className="mt-2 text-sm font-semibold text-foreground">
             {formatTemplateLabel(labels.reassurancePendingSync, pendingSyncCount)}
           </p>
-        </article>
+        </MutedSurface>
       </div>
 
-      <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+      <InsetSurface as="section" className="space-y-3 p-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1">
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -416,9 +417,9 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
             {feedbackMessage}
           </p>
         ) : null}
-      </section>
+      </InsetSurface>
 
-      <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+      <InsetSurface as="section" className="space-y-2 p-3">
         <h4 className="text-sm font-semibold text-foreground">{labels.syncTitle}</h4>
         <p className="text-xs text-muted-foreground">{labels.syncDescription}</p>
         <Button
@@ -429,9 +430,9 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
         >
           {labels.syncAction}
         </Button>
-      </section>
+      </InsetSurface>
 
-      <section className="space-y-3 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+      <InsetSurface as="section" className="space-y-3 p-3">
         <h4 className="text-sm font-semibold text-foreground">{labels.conflictTitle}</h4>
         <p className="text-xs text-muted-foreground">{labels.conflictDescription}</p>
 
@@ -463,9 +464,13 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
               const keepLocalSelected = conflict.resolution?.choice === 'keep_local';
               const keepServerSelected = conflict.resolution?.choice === 'keep_server';
               return (
-                <article key={conflict.id} className="space-y-3 rounded-md border bg-card p-3">
+                <Surface
+                  key={conflict.id}
+                  as="article"
+                  className="space-y-3 rounded-xl p-3 shadow-none"
+                >
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1 rounded-md border bg-muted/30 p-3 dark:bg-muted/50">
+                    <MutedSurface className="space-y-1 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {labels.conflictLocalValues}
                       </p>
@@ -497,9 +502,9 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
                           </dd>
                         </div>
                       </dl>
-                    </div>
+                    </MutedSurface>
 
-                    <div className="space-y-1 rounded-md border bg-muted/30 p-3 dark:bg-muted/50">
+                    <MutedSurface className="space-y-1 p-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         {labels.conflictServerValues}
                       </p>
@@ -531,7 +536,7 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
                           </dd>
                         </div>
                       </dl>
-                    </div>
+                    </MutedSurface>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -556,14 +561,14 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
                       ? `${labels.conflictResolved}: ${getConflictChoiceLabel(conflict, labels)}`
                       : labels.conflictNeedsDecision}
                   </p>
-                </article>
+                </Surface>
               );
             })}
           </div>
         )}
-      </section>
+      </InsetSurface>
 
-      <section className="space-y-2 rounded-lg border bg-muted/30 p-3 dark:bg-muted/60">
+      <InsetSurface as="section" className="space-y-2 p-3">
         <h4 className="text-sm font-semibold text-foreground">{labels.entriesTitle}</h4>
         <p className="text-xs text-muted-foreground">{labels.entriesDescription}</p>
 
@@ -627,7 +632,7 @@ export function CaptureBibEntryList({ storageKey, locale, labels }: CaptureBibEn
             </table>
           </div>
         )}
-      </section>
-    </section>
+      </InsetSurface>
+    </Surface>
   );
 }

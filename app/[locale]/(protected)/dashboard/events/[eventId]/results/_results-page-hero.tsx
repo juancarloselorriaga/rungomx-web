@@ -2,6 +2,7 @@ import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboa
 import type { ReactNode } from 'react';
 
 type ResultsPageHeroProps = {
+  eyebrow?: string;
   title: string;
   description: string;
   stats: ReadonlyArray<{
@@ -11,9 +12,16 @@ type ResultsPageHeroProps = {
   actions?: ReactNode;
 };
 
-export function ResultsPageHero({ title, description, stats, actions }: ResultsPageHeroProps) {
+export function ResultsPageHero({
+  eyebrow,
+  title,
+  description,
+  stats,
+  actions,
+}: ResultsPageHeroProps) {
   return (
     <DashboardPageIntro
+      eyebrow={eyebrow}
       title={title}
       description={description}
       actions={actions}

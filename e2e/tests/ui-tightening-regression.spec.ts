@@ -76,6 +76,26 @@ test.describe('UI Tightening Regression', () => {
     await expect(gate.getByRole('button').first()).toBeDisabled();
   });
 
+  test('Results home: primary next step is prioritized above supporting work', async ({ page }) => {
+    await signInAsOrganizer(page, organizerCreds);
+
+    await page.goto(`/en/dashboard/events/${eventId}/results`);
+
+    await expect(page.getByRole('heading', { name: /what to do now/i })).toBeVisible({
+      timeout: 30000,
+    });
+    await expect(page.getByRole('heading', { name: /create or update a draft/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /supporting work after publication/i }),
+    ).toBeVisible();
+
+    const nextStepLink = page.getByRole('link', { name: /start a new draft/i }).first();
+    await expect(nextStepLink).toHaveAttribute(
+      'href',
+      new RegExp(`/en/dashboard/events/${eventId}/results/capture/?$`),
+    );
+  });
+
   test('Results import: Next action is an actionable link to the review lane', async ({ page }) => {
     await signInAsOrganizer(page, organizerCreds);
 

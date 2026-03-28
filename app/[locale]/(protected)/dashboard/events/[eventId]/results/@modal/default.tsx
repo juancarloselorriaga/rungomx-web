@@ -1,4 +1,3 @@
-export default function Default() {
+export default function ResultsModalDefault() {
   return null;
 }
-

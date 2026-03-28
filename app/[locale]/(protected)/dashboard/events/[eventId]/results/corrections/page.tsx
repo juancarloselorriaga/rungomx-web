@@ -45,6 +45,7 @@ export default async function ResultsCorrectionsPage({
   const resolvedSearchParams = await searchParams;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/results/corrections' });
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
+  const correctionsEyebrow = t('lanes.corrections.eyebrow' as never);
 
   const organizationId = resolvedSearchParams?.organizationId;
   const dateFrom = resolvedSearchParams?.dateFrom;
@@ -73,6 +74,7 @@ export default async function ResultsCorrectionsPage({
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        eyebrow={correctionsEyebrow}
         title={t('lanes.corrections.title')}
         description={t('lanes.corrections.description')}
         stats={[

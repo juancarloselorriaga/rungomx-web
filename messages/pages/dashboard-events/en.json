@@ -221,11 +221,48 @@
     "viewAllFaq": "+{count} more questions"
   },
   "resultsWorkspace": {
-    "title": "Results workspace",
-    "description": "Trust-state foundations for capture, import, and review lanes.",
+    "title": "Results",
+    "description": "Create drafts, review readiness, and publish official results for this event.",
+    "home": {
+      "eyebrow": "Race Director workspace",
+      "nextStep": {
+        "eyebrow": "Next step",
+        "title": "What to do now",
+        "descriptions": {
+          "syncPending": "You still have draft rows waiting to sync. Finish that upload before moving on to review.",
+          "reviewDraft": "Your draft is ready for Race Director review. Confirm the rows, then decide if it can be published.",
+          "readyToPublish": "The draft is ready. Review one last time, then publish the next official version when you're confident.",
+          "startIngestion": "No draft is in progress yet. Start with capture or file import to create one."
+        }
+      },
+      "draftSources": {
+        "title": "Create or update a draft",
+        "description": "Use either workflow below to build the draft you will review before publishing.",
+        "captureTitle": "Manual capture",
+        "captureDescription": "Record bibs, finish times, and statuses from the course while protecting unsynced work.",
+        "importTitle": "File import",
+        "importDescription": "Upload CSV or Excel files to update a draft and catch issues before review."
+      },
+      "publishReadiness": {
+        "title": "Review context",
+        "description": "Keep draft status and version history in view while you capture new rows."
+      },
+      "draftSnapshot": {
+        "title": "Current draft snapshot",
+        "description": "Recent draft rows stay visible here so the Race Director can spot issues quickly."
+      },
+      "supportingOps": {
+        "title": "Supporting work after publication",
+        "description": "Use these areas when you need to handle follow-up work, not as the main way to create a draft.",
+        "correctionsTitle": "Corrections",
+        "correctionsDescription": "Handle post-publication requests and record each Race Director decision.",
+        "investigationTitle": "Investigation",
+        "investigationDescription": "Review version history and audit context when you need deeper traceability."
+      }
+    },
     "stateRail": {
-      "title": "Results state rail",
-      "description": "Draft/official lifecycle, connectivity, unsynced count, and next action are always visible.",
+      "title": "Publish status",
+      "description": "Draft status, connectivity, pending sync work, and the next recommended step stay visible.",
       "lifecycle": "Lifecycle",
       "lifecycleDraft": "Draft",
       "lifecycleOfficial": "Official",
@@ -241,11 +278,11 @@
       "nextActionSyncPending": "Sync pending draft rows",
       "nextActionReviewDraft": "Review draft rows before publishing",
       "nextActionReadyToPublish": "Publish official results",
-      "nextActionStartIngestion": "Start a new draft ingestion"
+      "nextActionStartIngestion": "Start a new draft"
     },
     "versionVisibility": {
-      "title": "Official version visibility",
-      "description": "Track the active Official version and prior lifecycle history for this edition.",
+      "title": "Published versions",
+      "description": "Track the live official version and the recent version history for this event.",
       "empty": "No result versions are available for this edition yet.",
       "noOfficialVersion": "No Official version yet",
       "activeOfficialLabel": "Active Official version available",
@@ -301,7 +338,7 @@
       "conflict": "Conflict"
     },
     "feedback": {
-      "heading": "Guidance",
+      "heading": "Race Director guidance",
       "safe": "Status",
       "next": "Next step",
       "details": "Details"
@@ -388,7 +425,7 @@
         },
         "warnings": {
           "safe": "Draft capture is protected and can be refined before review.",
-          "next": "Review warnings, then move to the Review lane.",
+          "next": "Review warnings, then continue to Review and publish.",
           "details": {
             "warningCount": "{count, plural, one {# warning is present in the draft.} other {# warnings are present in the draft.}}",
             "warningsDoNotPublish": "Warnings do not publish data, but should be reviewed before publishing official results."
@@ -408,7 +445,7 @@
         },
         "warnings": {
           "safe": "Draft import is protected and can be refined before review.",
-          "next": "Review warnings, then move to the Review lane.",
+          "next": "Review warnings, then continue to Review and publish.",
           "details": {
             "warningCount": "{count, plural, one {# warning is present in the draft.} other {# warnings are present in the draft.}}",
             "warningsDoNotPublish": "Warnings do not publish data, but should be reviewed before publishing official results."
@@ -418,29 +455,34 @@
     },
     "lanes": {
       "capture": {
-        "title": "Capture lane",
-        "description": "Mobile-first, local-first draft capture with clear sync state.",
-        "action": "Open capture lane"
+        "eyebrow": "Create or update a draft",
+        "title": "Capture results",
+        "description": "Enter bibs, finish times, and statuses from the course while unsynced work stays protected.",
+        "action": "Open capture"
       },
       "import": {
-        "title": "Import lane",
-        "description": "CSV/Excel ingestion with trust-state visibility and conflict cues.",
-        "action": "Open import lane"
+        "eyebrow": "Create or update a draft",
+        "title": "Import results",
+        "description": "Upload CSV or Excel files, map fields, and update the draft before review.",
+        "action": "Open import"
       },
       "review": {
-        "title": "Review lane",
-        "description": "Unified draft review before publishing official results.",
-        "action": "Open review lane"
+        "eyebrow": "Review before publish",
+        "title": "Review and publish",
+        "description": "Check blockers, confirm warnings, and publish the next official version when ready.",
+        "action": "Open review"
       },
       "corrections": {
-        "title": "Corrections lane",
-        "description": "Review pending correction requests and record Race Director decisions with audit metadata.",
-        "action": "Open corrections lane"
+        "eyebrow": "Post-publication support",
+        "title": "Corrections",
+        "description": "Review correction requests and record Race Director decisions with clear history.",
+        "action": "Open corrections"
       },
       "investigation": {
-        "title": "Investigation lane",
-        "description": "Consolidated internal view for version provenance and correction transitions.",
-        "action": "Open investigation lane"
+        "eyebrow": "Audit and traceability",
+        "title": "Investigation",
+        "description": "Review version provenance, correction transitions, and audit history when you need more context.",
+        "action": "Open investigation"
       }
     },
     "corrections": {
@@ -574,7 +616,7 @@
           "finalizedBy": "Finalized by",
           "sourceReference": "Source reference",
           "sourceChecksum": "Source checksum",
-          "ingestionLane": "Ingestion lane",
+          "ingestionLane": "Ingestion source",
           "ingestionStartedAt": "Ingestion started",
           "ingestionStartedBy": "Ingestion started by",
           "ingestionSessionId": "Ingestion session"
@@ -656,7 +698,7 @@
       "finalizeFailurePrefix": "Finalization failed:",
       "nextRequiredActionLabel": "Next required action",
       "issueListTitle": "Issue navigation",
-      "issueListDescription": "Open the remediation lane directly from each issue before finalization.",
+      "issueListDescription": "Open the matching draft update page from each issue before publishing.",
       "issueListEmpty": "No unresolved review issues. You can continue to finalization.",
       "blockerCountLabel": "Blockers",
       "warningCountLabel": "Warnings",
@@ -671,13 +713,13 @@
         "guidance": "Guidance"
       },
       "remediationAction": {
-        "capture": "Open capture lane",
-        "import": "Open import lane"
+        "capture": "Open capture",
+        "import": "Open import"
       }
     },
     "captureEntry": {
-      "title": "Offline bib capture",
-      "description": "Capture bib, time, and status in Draft even when connectivity is unstable.",
+      "title": "Capture bibs and finish times",
+      "description": "Save draft rows from the course, even when connectivity is unstable.",
       "connectivityLabel": "Connectivity",
       "connectivityOnline": "Online",
       "connectivityOffline": "Offline",
@@ -693,19 +735,19 @@
       "validationBibRequired": "Bib number is required before saving a draft entry.",
       "validationFinishTimeInvalid": "Finish status requires a valid finish time.",
       "entrySaved": "Entry saved locally in draft state.",
-      "entriesTitle": "Draft preview from offline capture",
-      "entriesDescription": "Status semantics are preserved and overall placement is derived from finish times only.",
+      "entriesTitle": "Draft rows captured here",
+      "entriesDescription": "Statuses stay intact and overall place is derived only from finish times.",
       "entriesEmpty": "No offline capture entries yet.",
-      "syncTitle": "Deterministic sync",
-      "syncDescription": "Sync pending draft rows idempotently. Retries continue from the last consistent checkpoint.",
+      "syncTitle": "Sync draft rows",
+      "syncDescription": "Send pending draft rows safely. Retries continue from the last consistent checkpoint.",
       "syncAction": "Run sync",
       "syncOfflineGuard": "Reconnect before running sync.",
       "syncProgressMessage": "Synced {processed} entries. {remaining} entries remain pending.",
       "syncCompleteMessage": "All pending entries were synced without duplication.",
       "syncInterruptedMessage": "Sync checkpoint saved after {processed} entries. Retry to continue the remaining {remaining}.",
       "syncBlockedByConflicts": "Resolve all pending conflicts before sync can complete.",
-      "conflictTitle": "Conflict review",
-      "conflictDescription": "Compare local and server values side-by-side, then choose an explicit resolution for each conflict.",
+      "conflictTitle": "Resolve sync conflicts",
+      "conflictDescription": "Compare local and server values, then choose which version to keep for each conflict.",
       "conflictEmpty": "No unresolved sync conflicts.",
       "conflictNeedsDecision": "Resolution required",
       "conflictResolved": "Resolution selected",

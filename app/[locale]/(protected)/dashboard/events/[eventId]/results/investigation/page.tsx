@@ -84,7 +84,9 @@ export default async function ResultsInvestigationPage({
     pathname: '/dashboard/events/[eventId]/results/investigation',
   });
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace.investigation');
+  const tWorkspace = await getTranslations('pages.dashboardEvents.resultsWorkspace');
   const tCommon = await getTranslations('common');
+  const investigationEyebrow = tWorkspace('lanes.investigation.eyebrow' as never);
   const auditAction = isTrustAuditActionOption(resolvedSearchParams?.auditAction)
     ? resolvedSearchParams?.auditAction
     : undefined;
@@ -185,6 +187,7 @@ export default async function ResultsInvestigationPage({
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        eyebrow={investigationEyebrow}
         title={t('title')}
         description={t('description')}
         stats={[

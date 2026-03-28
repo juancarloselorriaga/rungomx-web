@@ -1,5 +1,3 @@
-'use client';
-
 import { Badge } from '@/components/common/badge';
 import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
 import type { OrganizerResultVersionVisibility } from '@/lib/events/results/workspace';

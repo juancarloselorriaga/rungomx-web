@@ -23,11 +23,13 @@ export default async function ResultsImportPage({ params }: ResultsImportPagePro
   const { locale, eventId } = await params;
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/results/import' });
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
+  const importEyebrow = t('lanes.import.eyebrow' as never);
   const pageData = await getResultsWorkspacePageData(eventId, locale, 'import');
 
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        eyebrow={importEyebrow}
         title={t('lanes.import.title')}
         description={t('lanes.import.description')}
         stats={[

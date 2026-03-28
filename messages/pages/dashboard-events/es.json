@@ -221,11 +221,48 @@
     "viewAllFaq": "+{count} preguntas más"
   },
   "resultsWorkspace": {
-    "title": "Centro de resultados",
-    "description": "Base de estados de confianza para los flujos de captura, importación y revisión.",
+    "title": "Resultados",
+    "description": "Crea borradores, revisa si todo está listo y publica resultados oficiales para este evento.",
+    "home": {
+      "eyebrow": "Espacio del director de carrera",
+      "nextStep": {
+        "eyebrow": "Siguiente paso",
+        "title": "Qué hacer ahora",
+        "descriptions": {
+          "syncPending": "Todavía tienes filas del borrador pendientes de sincronizar. Termina esa carga antes de pasar a revisión.",
+          "reviewDraft": "Tu borrador ya está listo para revisión del director de carrera. Confirma las filas y decide si ya se puede publicar.",
+          "readyToPublish": "El borrador está listo. Haz una última revisión y publica la siguiente versión oficial cuando tengas confianza.",
+          "startIngestion": "Aún no hay un borrador en curso. Empieza con captura o importación para crear uno."
+        }
+      },
+      "draftSources": {
+        "title": "Crear o actualizar un borrador",
+        "description": "Usa cualquiera de estas dos opciones para preparar el borrador que revisarás antes de publicar.",
+        "captureTitle": "Captura manual",
+        "captureDescription": "Registra dorsales, tiempos y estados desde la meta mientras el trabajo sin sincronizar sigue protegido.",
+        "importTitle": "Importación de archivo",
+        "importDescription": "Carga archivos CSV o Excel para actualizar el borrador y detectar incidencias antes de revisarlo."
+      },
+      "publishReadiness": {
+        "title": "Contexto de revisión",
+        "description": "Mantén a la vista el estado del borrador y el historial de versiones mientras capturas nuevas filas."
+      },
+      "draftSnapshot": {
+        "title": "Vista actual del borrador",
+        "description": "Las filas recientes del borrador se muestran aquí para que el director de carrera detecte incidencias rápido."
+      },
+      "supportingOps": {
+        "title": "Trabajo de apoyo después de publicar",
+        "description": "Usa estas áreas para dar seguimiento después de publicar, no como la vía principal para crear un borrador.",
+        "correctionsTitle": "Correcciones",
+        "correctionsDescription": "Atiende solicitudes posteriores a la publicación y registra cada decisión del director de carrera.",
+        "investigationTitle": "Investigación",
+        "investigationDescription": "Consulta historial de versiones y auditoría cuando necesites más trazabilidad."
+      }
+    },
     "stateRail": {
-      "title": "Barra de estado de resultados",
-      "description": "El ciclo Borrador/Oficial, conectividad, conteo pendiente y siguiente acción siempre están visibles.",
+      "title": "Estado para publicar",
+      "description": "El estado del borrador, la conectividad, lo pendiente por sincronizar y el siguiente paso recomendado siguen visibles.",
       "lifecycle": "Ciclo",
       "lifecycleDraft": "Borrador",
       "lifecycleOfficial": "Oficial",
@@ -241,11 +278,11 @@
       "nextActionSyncPending": "Sincronizar pendientes del borrador",
       "nextActionReviewDraft": "Revisar borrador antes de publicar",
       "nextActionReadyToPublish": "Publicar resultados oficiales",
-      "nextActionStartIngestion": "Iniciar una nueva ingesta en borrador"
+      "nextActionStartIngestion": "Iniciar un nuevo borrador"
     },
     "versionVisibility": {
-      "title": "Visibilidad de versiones oficiales",
-      "description": "Visualiza la versión Oficial activa y el historial previo del ciclo para esta edición.",
+      "title": "Versiones publicadas",
+      "description": "Consulta la versión oficial activa y el historial reciente de versiones para este evento.",
       "empty": "Aún no hay versiones de resultados para esta edición.",
       "noOfficialVersion": "Aún no hay versión Oficial",
       "activeOfficialLabel": "Hay una versión Oficial activa",
@@ -301,7 +338,7 @@
       "conflict": "Conflicto"
     },
     "feedback": {
-      "heading": "Guía",
+      "heading": "Guía del director de carrera",
       "safe": "Estado",
       "next": "Siguiente paso",
       "details": "Detalles"
@@ -388,7 +425,7 @@
         },
         "warnings": {
           "safe": "La captura en borrador está protegida y puede refinarse antes de la revisión.",
-          "next": "Revisa las advertencias y luego pasa al flujo de revisión.",
+          "next": "Revisa las advertencias y luego continúa a Revisar y publicar.",
           "details": {
             "warningCount": "{count, plural, one {# advertencia está presente en el borrador.} other {# advertencias están presentes en el borrador.}}",
             "warningsDoNotPublish": "Las advertencias no publican datos, pero deben revisarse antes de publicar resultados oficiales."
@@ -408,7 +445,7 @@
         },
         "warnings": {
           "safe": "La importación en borrador está protegida y puede refinarse antes de la revisión.",
-          "next": "Revisa las advertencias y luego pasa al flujo de revisión.",
+          "next": "Revisa las advertencias y luego continúa a Revisar y publicar.",
           "details": {
             "warningCount": "{count, plural, one {# advertencia está presente en el borrador.} other {# advertencias están presentes en el borrador.}}",
             "warningsDoNotPublish": "Las advertencias no publican datos, pero deben revisarse antes de publicar resultados oficiales."
@@ -418,29 +455,34 @@
     },
     "lanes": {
       "capture": {
-        "title": "Flujo de captura",
-        "description": "Captura móvil y primero local en borrador con estado de sincronización claro.",
-        "action": "Abrir flujo de captura"
+        "eyebrow": "Crear o actualizar un borrador",
+        "title": "Capturar resultados",
+        "description": "Ingresa dorsales, tiempos y estados desde la carrera mientras el trabajo sin sincronizar sigue protegido.",
+        "action": "Abrir captura"
       },
       "import": {
-        "title": "Flujo de importación",
-        "description": "Ingesta CSV/Excel con visibilidad de estado de confianza y señales de conflicto.",
-        "action": "Abrir flujo de importación"
+        "eyebrow": "Crear o actualizar un borrador",
+        "title": "Importar resultados",
+        "description": "Carga archivos CSV o Excel, mapea campos y actualiza el borrador antes de revisarlo.",
+        "action": "Abrir importación"
       },
       "review": {
-        "title": "Flujo de revisión",
-        "description": "Revisión unificada del borrador antes de publicar resultados oficiales.",
-        "action": "Abrir flujo de revisión"
+        "eyebrow": "Revisión antes de publicar",
+        "title": "Revisar y publicar",
+        "description": "Revisa bloqueadores, confirma advertencias y publica la siguiente versión oficial cuando esté lista.",
+        "action": "Abrir revisión"
       },
       "corrections": {
-        "title": "Flujo de correcciones",
-        "description": "Revisa solicitudes pendientes y registra decisiones del Director de Carrera con metadatos auditables.",
-        "action": "Abrir flujo de correcciones"
+        "eyebrow": "Seguimiento después de publicar",
+        "title": "Correcciones",
+        "description": "Revisa solicitudes de corrección y registra decisiones del director de carrera con historial claro.",
+        "action": "Abrir correcciones"
       },
       "investigation": {
-        "title": "Flujo de investigación",
-        "description": "Vista interna consolidada para procedencia de versiones y transiciones de correcciones.",
-        "action": "Abrir flujo de investigación"
+        "eyebrow": "Auditoría y trazabilidad",
+        "title": "Investigación",
+        "description": "Consulta procedencia de versiones, transiciones de correcciones e historial de auditoría cuando necesites más contexto.",
+        "action": "Abrir investigación"
       }
     },
     "corrections": {
@@ -574,7 +616,7 @@
           "finalizedBy": "Finalizada por",
           "sourceReference": "Referencia de fuente",
           "sourceChecksum": "Checksum de fuente",
-          "ingestionLane": "Flujo de ingesta",
+          "ingestionLane": "Origen de ingesta",
           "ingestionStartedAt": "Ingesta iniciada",
           "ingestionStartedBy": "Ingesta iniciada por",
           "ingestionSessionId": "Sesión de ingesta"
@@ -656,7 +698,7 @@
       "finalizeFailurePrefix": "La finalización falló:",
       "nextRequiredActionLabel": "Siguiente acción requerida",
       "issueListTitle": "Navegación de incidencias",
-      "issueListDescription": "Abre el flujo de remediación directamente desde cada incidencia antes de finalizar.",
+      "issueListDescription": "Abre la página correcta para actualizar el borrador desde cada incidencia antes de publicar.",
       "issueListEmpty": "No hay incidencias de revisión pendientes. Puedes continuar a finalización.",
       "blockerCountLabel": "Bloqueadores",
       "warningCountLabel": "Advertencias",
@@ -671,13 +713,13 @@
         "guidance": "Guía"
       },
       "remediationAction": {
-        "capture": "Abrir flujo de captura",
-        "import": "Abrir flujo de importación"
+        "capture": "Abrir captura",
+        "import": "Abrir importación"
       }
     },
     "captureEntry": {
-      "title": "Captura sin conexión por dorsal",
-      "description": "Captura número de dorsal, tiempo y estado en Borrador aunque la conectividad sea inestable.",
+      "title": "Captura dorsales y tiempos finales",
+      "description": "Guarda filas en borrador desde la carrera, aunque la conectividad sea inestable.",
       "connectivityLabel": "Conectividad",
       "connectivityOnline": "En línea",
       "connectivityOffline": "Sin conexión",
@@ -693,19 +735,19 @@
       "validationBibRequired": "El número de dorsal es obligatorio antes de guardar una entrada en borrador.",
       "validationFinishTimeInvalid": "El estado Finalizó requiere un tiempo final válido.",
       "entrySaved": "Entrada guardada localmente en estado borrador.",
-      "entriesTitle": "Vista previa de borrador desde captura sin conexión",
-      "entriesDescription": "Se preserva la semántica de estado y el lugar general se deriva solo de tiempos de finalización.",
+      "entriesTitle": "Filas del borrador capturadas aquí",
+      "entriesDescription": "Los estados se conservan y el lugar general se deriva solo a partir de los tiempos finales.",
       "entriesEmpty": "Aún no hay entradas de captura sin conexión.",
-      "syncTitle": "Sincronización determinista",
-      "syncDescription": "Sincroniza filas pendientes del borrador de forma idempotente. Los reintentos continúan desde el último punto de control consistente.",
+      "syncTitle": "Sincronizar filas del borrador",
+      "syncDescription": "Envía las filas pendientes del borrador de forma segura. Los reintentos continúan desde el último punto de control consistente.",
       "syncAction": "Ejecutar sincronización",
       "syncOfflineGuard": "Reconéctate antes de ejecutar la sincronización.",
       "syncProgressMessage": "Se sincronizaron {processed} entradas. Quedan {remaining} pendientes.",
       "syncCompleteMessage": "Todas las entradas pendientes se sincronizaron sin duplicaciones.",
       "syncInterruptedMessage": "Punto de control de sincronización guardado tras {processed} entradas. Reintenta para continuar con las {remaining} restantes.",
       "syncBlockedByConflicts": "Resuelve todos los conflictos pendientes antes de completar la sincronización.",
-      "conflictTitle": "Revisión de conflictos",
-      "conflictDescription": "Compara valores locales y del servidor lado a lado, luego elige una resolución explícita para cada conflicto.",
+      "conflictTitle": "Resolver conflictos de sincronización",
+      "conflictDescription": "Compara los valores locales y del servidor, y luego elige cuál conservar en cada conflicto.",
       "conflictEmpty": "No hay conflictos de sincronización pendientes.",
       "conflictNeedsDecision": "Resolución obligatoria",
       "conflictResolved": "Resolución seleccionada",
@@ -740,7 +782,7 @@
       "syncStatusPending": "Sincronización pendiente",
       "syncStatusSynced": "Sincronizado",
       "syncStatusConflict": "Conflicto",
-    "safeNextDetails": {
+      "safeNextDetails": {
         "title": "Guía",
         "safe": "Estado",
         "next": "Siguiente paso",
