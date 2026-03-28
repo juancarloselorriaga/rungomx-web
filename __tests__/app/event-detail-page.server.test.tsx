@@ -201,7 +201,7 @@ describe('EventDetailPage', () => {
   it('renders overview sections with capacity, distances, and faq preview', async () => {
     const html = renderToStaticMarkup(
       await EventDetailPage({
-        params: Promise.resolve({ locale: 'en', eventId: 'event-1' }),
+        params: Promise.resolve({ locale: 'en' as const, eventId: 'event-1' }),
       }),
     );
 
@@ -223,7 +223,7 @@ describe('EventDetailPage', () => {
 
     await expect(
       EventDetailPage({
-        params: Promise.resolve({ locale: 'en', eventId: 'event-1' }),
+        params: Promise.resolve({ locale: 'en' as const, eventId: 'event-1' }),
       }),
     ).rejects.toThrow('REDIRECT:/en/dashboard');
 

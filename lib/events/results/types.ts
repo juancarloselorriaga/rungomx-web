@@ -10,6 +10,7 @@ import type {
 } from '@/db/schema';
 import type { ResultEntryStatus } from '@/lib/events/results/status';
 export { RESULT_ENTRY_STATUSES } from '@/lib/events/results/status';
+export type { ResultEntryStatus } from '@/lib/events/results/status';
 
 export const RESULT_VERSION_STATUSES = ['draft', 'official', 'corrected'] as const;
 export const RESULT_VERSION_SOURCES = ['manual_offline', 'csv_excel', 'correction'] as const;

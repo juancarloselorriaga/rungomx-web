@@ -40,7 +40,6 @@ export {
 
 // User registrations queries
 export {
-  type MyRegistrationsView,
   type MyRegistrationListItem,
   type MyRegistrationDetail,
   type ActiveRegistrationInfo,
@@ -48,6 +47,7 @@ export {
   getMyRegistrationDetail,
   getActiveRegistrationForEdition,
 } from './my-registrations/queries';
+export { type MyRegistrationsView } from './my-registrations/view';
 
 // Results queries
 export {
