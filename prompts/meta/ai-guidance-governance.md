@@ -34,7 +34,7 @@ This document governs **AI guidance surfaces only**. It does not define runtime 
 Apply conflicts in this order:
 
 1. `prompts/standards/**` and `prompts/auth-stack/**` — canonical runtime, architecture, testing, and auth guidance.
-2. `AGENTS.md` — repo entrypoint, invariant summary, required baseline reading order, and stable boundary reminders.
+2. `AGENTS.md` — repo entrypoint, invariant summary, startup-read policy, and stable boundary reminders.
 3. `prompts/meta/**` — canonical governance for how AI guidance is organized, referenced, and maintained.
 4. Tool-specific guidance such as `CLAUDE.md`, `.claude/**`, `.opencode/**`, and `opencode.json` — referential adapters only.
 5. `PROJECT_CONTEXT.md` — descriptive background only.
@@ -67,7 +67,8 @@ These should summarize, route, or contextualize. They should not become independ
 - Keep startup reads lean.
 - `AGENTS.md` remains the repo entrypoint.
 - `prompts/standards/README.md` remains the shared discovery/index layer.
-- Only baseline reads explicitly required by `AGENTS.md` should be treated as default startup standards.
+- `AGENTS.md` may define a lightweight path and a full baseline path; tool adapters should follow that canonical split rather than inventing their own startup policy.
+- Only baseline reads explicitly required by the selected `AGENTS.md` path should be treated as default startup standards.
 - Do not add new baseline startup reads unless the rule is truly universal across most implementation tasks.
 
 ## 4. Task-scoped loading policy

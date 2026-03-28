@@ -2,15 +2,17 @@
 
 This directory is the canonical source for project implementation and quality standards.
 
-## Baseline standards usually read first
+## Baseline standards for the full baseline path
 
-These are the standards most implementation tasks should consult early:
+These are the standards most implementation, runtime, policy-sensitive, or cross-module tasks should consult early when `AGENTS.md` routes the work to the full baseline path:
 
 - `nextjs-component-implementation.md`
 - `nextjs-caching-index.md`
 - `forms-implementation.md`
 - `e2e-testing.md`
 - `test-reliability.md`
+
+For lightweight-path tasks, this file remains the shared discovery/index layer; load only the smallest sufficient set of additional standards.
 
 ## Task-specific standards loaded by relevance
 

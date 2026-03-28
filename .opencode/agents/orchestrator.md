@@ -17,12 +17,14 @@ Operating intent:
 Required startup reads:
 
 1. `AGENTS.md`
-2. After the baseline reads defined there, use `prompts/standards/README.md` as the discovery layer for any additional scoped standards.
+2. Classify the task and follow the startup path defined there.
+3. Use `prompts/standards/README.md` only as the discovery layer for additional scoped standards.
 
 Loading policy:
 
 - Keep startup reads lean.
-- For trivial `quick` and `writing` tasks, do not load additional scoped standards unless the request clearly touches those areas.
+- Use the lightweight path only when the task matches the eligibility rule in `AGENTS.md`.
+- If uncertain, use the full baseline path.
 - If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
 - If the task touches action or API contracts, load `prompts/standards/server-actions-and-api-contracts-index.md`.
 - If the task touches locale behavior or localized copy/message setup, load `prompts/standards/internationalization-and-localization-index.md`.

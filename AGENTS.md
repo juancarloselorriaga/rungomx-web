@@ -13,7 +13,21 @@ This repository hosts the RunGoMX web platform built with a server-first Next.js
 - Pro feature enforcement is centralized and should remain server-side.
 - Typed `FormActionResult` is the contract for action outcomes and must remain stable for callers.
 
-## Required reading order
+## Startup reading policy
+
+`AGENTS.md` is the universal entrypoint. After initial classification, choose one of the two startup paths below.
+
+### Lightweight path
+
+Use the lightweight path only when the task is limited to guidance-only, docs-only, classification-only, or guidance-review work with no runtime, product-behavior, auth, contract, policy, or cross-module impact.
+
+- Use `prompts/standards/README.md` only as the discovery layer.
+- Load `prompts/meta/ai-guidance-governance.md` when the task touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`.
+- Load additional scoped standards only when the request clearly touches them.
+
+### Full baseline path
+
+Use the full baseline path for any implementation, runtime, policy-sensitive, auth-sensitive, contract-sensitive, or cross-module work.
 
 Read and follow these canonical standards in this order:
 
@@ -26,7 +40,9 @@ Read and follow these canonical standards in this order:
 
 These standards take precedence over agent heuristics or local assumptions.
 
-After these baseline reads, use `prompts/standards/README.md` to discover and load task-relevant standards by scope instead of treating every design, copy, or loading policy as a universal startup read.
+After the full baseline reads, use `prompts/standards/README.md` to discover and load task-relevant standards by scope instead of treating every design, copy, or loading policy as a universal startup read.
+
+If uncertain, use the full baseline path.
 
 ## Stable public boundaries
 
