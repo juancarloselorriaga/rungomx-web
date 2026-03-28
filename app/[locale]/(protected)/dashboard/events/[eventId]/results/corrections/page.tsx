@@ -12,6 +12,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsSecondaryBackLink } from '../_results-secondary-back-link';
 import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
@@ -74,6 +75,7 @@ export default async function ResultsCorrectionsPage({
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        backLink={<ResultsSecondaryBackLink eventId={eventId} label={t('title')} />}
         eyebrow={correctionsEyebrow}
         title={t('lanes.corrections.title')}
         description={t('lanes.corrections.description')}

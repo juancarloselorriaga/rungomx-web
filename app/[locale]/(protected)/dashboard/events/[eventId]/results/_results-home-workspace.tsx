@@ -200,7 +200,7 @@ export function ResultsHomeWorkspace({ eventId, pageData, labels }: ResultsHomeW
           </h2>
           <p className="text-sm text-muted-foreground">{labels.publishReadiness.description}</p>
         </div>
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] xl:items-start">
+        <div className="grid gap-4">
           <ResultsStateRail
             state={pageData.railState}
             labels={pageData.labels.stateRail}

@@ -5,6 +5,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsSecondaryBackLink } from '../_results-secondary-back-link';
 import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 
@@ -29,6 +30,7 @@ export default async function ResultsReviewPage({ params }: ResultsReviewPagePro
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        backLink={<ResultsSecondaryBackLink eventId={eventId} label={t('title')} />}
         eyebrow={reviewEyebrow}
         title={t('lanes.review.title')}
         description={t('lanes.review.description')}

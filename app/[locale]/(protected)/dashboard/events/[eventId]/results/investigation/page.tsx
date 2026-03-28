@@ -15,6 +15,7 @@ import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 
+import { ResultsSecondaryBackLink } from '../_results-secondary-back-link';
 import { ResultsPageHero } from '../_results-page-hero';
 import { getResultsWorkspacePageData } from '../_results-workspace';
 import { ResultsInvestigationAuditFiltersForm } from './_audit-filters-form';
@@ -187,6 +188,7 @@ export default async function ResultsInvestigationPage({
   return (
     <div className="space-y-6">
       <ResultsPageHero
+        backLink={<ResultsSecondaryBackLink eventId={eventId} label={tWorkspace('title')} />}
         eyebrow={investigationEyebrow}
         title={t('title')}
         description={t('description')}

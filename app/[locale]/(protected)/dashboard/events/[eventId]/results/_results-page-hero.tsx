@@ -2,6 +2,7 @@ import { DashboardPageIntro, DashboardPageIntroMeta } from '@/components/dashboa
 import type { ReactNode } from 'react';
 
 type ResultsPageHeroProps = {
+  backLink?: ReactNode;
   eyebrow?: string;
   title: string;
   description: string;
@@ -13,6 +14,7 @@ type ResultsPageHeroProps = {
 };
 
 export function ResultsPageHero({
+  backLink,
   eyebrow,
   title,
   description,
@@ -20,12 +22,15 @@ export function ResultsPageHero({
   actions,
 }: ResultsPageHeroProps) {
   return (
-    <DashboardPageIntro
-      eyebrow={eyebrow}
-      title={title}
-      description={description}
-      actions={actions}
-      aside={<DashboardPageIntroMeta title={title} items={stats} className="bg-background/72" />}
-    />
+    <div className="space-y-4">
+      {backLink ? backLink : null}
+      <DashboardPageIntro
+        eyebrow={eyebrow}
+        title={title}
+        description={description}
+        actions={actions}
+        aside={<DashboardPageIntroMeta title={title} items={stats} className="bg-background/72" />}
+      />
+    </div>
   );
 }

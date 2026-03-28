@@ -156,6 +156,14 @@ jest.mock('next-intl/server', () => ({
   setRequestLocale: jest.fn(),
 }));
 
+jest.mock('@/i18n/navigation', () => ({
+  Link: ({ children, href, ...props }: { children: React.ReactNode; href: unknown }) => (
+    <a href={typeof href === 'string' ? href : '#'} {...props}>
+      {children}
+    </a>
+  ),
+}));
+
 import ResultsInvestigationPage from '@/app/[locale]/(protected)/dashboard/events/[eventId]/results/investigation/page';
 
 describe('results investigation page', () => {
@@ -262,6 +270,7 @@ describe('results investigation page', () => {
       createdTo: undefined,
       limit: 80,
     });
+    expect(screen.getByRole('link', { name: 'title' })).toHaveAttribute('href', '#');
     expect(screen.getByText('selectedDiff.title')).toBeInTheDocument();
     expect(screen.getByText('request-1')).toBeInTheDocument();
     const diffLink = screen.getByRole('link', {
