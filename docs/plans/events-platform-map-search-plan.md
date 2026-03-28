@@ -1,6 +1,6 @@
 # Events Platform — Map Search (Full “visual discovery” experience)
 
-Owner: implementer agent  
+Owner: change-builder agent  
 Status: READY (decisions captured; see “Locked decisions”)  
 Related: `docs/plans/events-platform-runsignup-ultrasignup-plan.md`
 
@@ -111,6 +111,7 @@ Keep existing params and add:
   - Used only when `view` is `map` or `split` OR when the user has interacted with the map.
 
 Rationale:
+
 - A single `bbox` param keeps URLs shareable and avoids adding 4 separate params.
 - Existing `lat/lng/radiusKm` continue to work for “near a location” searches (and can set initial map center).
 
@@ -118,11 +119,13 @@ Rationale:
 
 Keep `GET /api/events` for the list as-is, but extend it.
 
-1) **List endpoint** (existing): `GET /api/events`
+1. **List endpoint** (existing): `GET /api/events`
+
 - Add optional `bbox` support for filtering.
 - Return coordinates in each event summary (so the client can reuse results for markers if desired).
 
-2) **Map endpoint** (new): `GET /api/events/map`
+2. **Map endpoint** (new): `GET /api/events/map`
+
 - Same filters as list, but optimized response for the map:
   - Always filters to a `bbox` (required).
   - Returns a GeoJSON `FeatureCollection` of points:
@@ -131,7 +134,8 @@ Keep `GET /api/events` for the list as-is, but extend it.
   - Returns `isTruncated` if a hard limit is exceeded (e.g., 1000 points).
 
 Why a separate endpoint:
-- The map may need *many* points, while the list stays paginated.
+
+- The map may need _many_ points, while the list stays paginated.
 - The payload should be compact (GeoJSON) and stable for clustering.
 
 ## Implementation plan (step-by-step)
@@ -209,6 +213,7 @@ Implement a small “map runtime selector” so the UI runs tokenless by default
      - `pnpm db:push`
 
 Acceptance checks:
+
 - `GET /api/events?bbox=...` returns only events within viewport and includes lat/lng.
 - Existing non-map searches behave unchanged.
 
@@ -230,9 +235,10 @@ Acceptance checks:
        - Applies same filters as `searchPublicEvents`
        - Forces `latitude/longitude IS NOT NULL`
        - Uses bbox (required)
-       - Returns *only* the fields needed for map
+       - Returns _only_ the fields needed for map
 
 Acceptance checks:
+
 - Endpoint returns GeoJSON quickly and consistently with list filters.
 - Handles “too many points” by truncating deterministically.
 
@@ -247,11 +253,12 @@ Acceptance checks:
      - Layers:
        - Cluster circles (filter cluster)
        - Cluster count labels (symbol layer, `text-field: {point_count_abbreviated}`)
-        - Unclustered points
+       - Unclustered points
    - Map ref:
      - Use `MapRef` to compute bounds and to `flyTo()`/`easeTo()` on cluster click.
 
 References (already validated via Context7 docs):
+
 - `react-map-gl` Map/Source/Layer usage and controlled view state.
 - Mapbox GL GeoJSON clustering patterns (`cluster`, `clusterRadius`, cluster layers and filters).
 
@@ -272,6 +279,7 @@ References (already validated via Context7 docs):
      - Keep selection in sync with list (see Phase 4)
 
 Acceptance checks:
+
 - Markers render and cluster correctly.
 - Cluster click zooms into cluster (expansion zoom).
 - Clicking a point opens popup without breaking map controls.
@@ -302,6 +310,7 @@ Acceptance checks:
    - Error: allow retry; don’t break list view.
 
 Acceptance checks:
+
 - View toggle works and is shareable via URL.
 - Split view keeps map stable while list scrolls.
 - Hover and click sync are reliable.
