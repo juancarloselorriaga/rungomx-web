@@ -1,5 +1,8 @@
 # RunGoMX Web — Structured Project Context
 
+> Descriptive/contextual only. This file is not a canonical policy source.
+> If it conflicts with `AGENTS.md`, `prompts/standards/**`, `prompts/auth-stack/**`, or `prompts/meta/ai-guidance-governance.md`, follow those files and treat this one as needing update.
+
 ---
 
 ## 1. Repository Overview
@@ -129,11 +132,11 @@ rungomx-web/
 
 ### `.claude/skills/` (repo-local)
 
-| Path                                            | Purpose                                                                     | Typical Use Case                            |
-| ----------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------- |
-| `.claude/skills/rungomx-quality-gates/SKILL.md` | Runs `pnpm test:ci` and subscopes; reports pass/fail                        | Before declaring work done, after refactors |
-| `.claude/skills/standards-checker/SKILL.md`     | Reviews git diff against `/prompts` standards; MUST FIX / SUGGESTION output | Code review on changed files                |
-| `.claude/skills/clean-commit/SKILL.md`          | Conventional Commits format, no AI attribution                              | Creating git commits                        |
+| Path                                            | Purpose                                                                                                                     | Typical Use Case                            |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `.claude/skills/rungomx-quality-gates/SKILL.md` | Runs the repo quality-gate skill entrypoint; see the skill file for current canonical release-level and diagnostic commands | Before declaring work done, after refactors |
+| `.claude/skills/standards-checker/SKILL.md`     | Reviews git diff against `/prompts` standards; MUST FIX / SUGGESTION output                                                 | Code review on changed files                |
+| `.claude/skills/clean-commit/SKILL.md`          | Conventional Commits format, no AI attribution                                                                              | Creating git commits                        |
 
 ### `.agents/skills/` (BMAD framework skills)
 

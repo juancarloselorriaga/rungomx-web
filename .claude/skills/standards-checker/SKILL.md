@@ -21,27 +21,13 @@ Acts like a PR reviewer by:
 
 ## Authoritative standards locations
 
-All standards content comes from `/prompts`. You **MUST** read these files before reviewing code:
+All standards content comes from `/prompts`. Start from:
 
-### Core standards (always consult for relevant changes)
-- `/prompts/standards/nextjs-component-implementation.md` - Server/Client component rules, composition patterns
-- `/prompts/standards/nextjs-caching-rules.md` - Routing stub to topic cards
-- `/prompts/standards/nextjs-caching-index.md` - Index for selecting 1-2 relevant caching docs
-- `/prompts/standards/forms-implementation.md` - Interactive form patterns
-- `/prompts/auth-stack/roles-agent-guide.md` - Auth, roles, guards, permissions
-- `/prompts/standards/copy-guidelines.md` - Voice, terminology, tone, UX writing rules
+- `/prompts/standards/README.md` for canonical discovery and task-scoped loading
+- `/prompts/standards/nextjs-caching-index.md` for selecting only the relevant caching topic cards
+- `/prompts/auth-stack/roles-agent-guide.md` when auth, roles, or protected-route behavior is in scope
 
-### Next.js caching topic cards (load 1-2 as needed)
-- `/prompts/standards/nextjs-caching/overview.md` - Quick orientation
-- `/prompts/standards/nextjs-caching/caching-mechanisms.md` - Four caches explained
-- `/prompts/standards/nextjs-caching/critical-rules.md` - What can/cannot be cached
-- `/prompts/standards/nextjs-caching/directives.md` - `use cache` variants
-- `/prompts/standards/nextjs-caching/protected-routes.md` - Auth layout caching patterns
-- `/prompts/standards/nextjs-caching/proxy-vs-layout-auth.md` - Security layering
-- `/prompts/standards/nextjs-caching/invalidation-revalidation.md` - Cache expiry strategies
-- `/prompts/standards/nextjs-caching/patterns.md` - Decision trees, concrete examples
-- `/prompts/standards/nextjs-caching/checklist.md` - Review/QA checklist
-- `/prompts/standards/nextjs-caching/quick-reference.md` - Fast lookup reference
+Load only the canonical docs relevant to the changed files. Do not build or maintain a duplicated standards inventory here.
 
 ## Repo conventions (discover from the repo)
 
@@ -68,12 +54,7 @@ Identify repo conventions by inspecting:
 
 2. **Read relevant /prompts standards docs first:**
    - Always read `nextjs-component-implementation.md` for UI/component changes
-   - Always read `nextjs-caching-rules.md` and `critical-rules.md` for data fetching or caching changes
-   - Read additional nextjs-caching docs as needed based on change type:
-     - For invalidation/revalidation: `invalidation-revalidation.md`
-     - For directive usage: `directives.md`
-     - For protected routes: `protected-routes.md` and `proxy-vs-layout-auth.md`
-     - For patterns/decisions: `patterns.md`
+   - For data fetching or caching changes, start with `nextjs-caching-index.md` and load only the needed topic cards
    - If auth is touched, consult `roles-agent-guide.md` and relevant auth-related caching standards
    - If forms are touched, consult `forms-implementation.md`
    - If user-facing text is touched (labels, messages, toasts, placeholders, assistant output, i18n strings), consult `copy-guidelines.md`

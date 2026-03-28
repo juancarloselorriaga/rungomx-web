@@ -68,8 +68,8 @@ compliance.
     - Retrieve authenticated user context via `getAuthContext` (`lib/auth/server.ts`), which
       uses:
       - `getSession()` and `'use cache: private'` for user-specific caching.
-    - Fetch other data via cached server helpers if needed (using the caching rules in
-      `prompts/standards/nextjs-caching/*`).
+    - Fetch other data via cached server helpers if needed (using the discovery flow in
+      `prompts/standards/nextjs-caching-index.md`).
   - Pass fully prepared initial props into client form components (`profile`, `profileStatus`,
     `profileMetadata`, etc.).
 
@@ -79,17 +79,20 @@ compliance.
     - Do **not** fetch data via `fetch` or call `headers()`/`cookies()` inside the form.
     - Call server actions imported from `app/actions/*` inside `useForm`’s `onSubmit` or via
       wrapped helpers.
+    - If an existing form imports from `@/lib/**/actions`, treat that as a **legacy compatibility
+      surface**, not the preferred new default. See
+      `prompts/standards/server-actions-and-api-contracts/stable-facades.md`.
   - Keep client components as leaf nodes when possible:
     - Higher-level route composition and data fetching stays in server components.
 
-- **Server actions & validation**
-  - Server actions live under `app/actions/*` and are responsible for:
-    - Validating input (typically with Zod schemas).
-    - Returning a `FormActionResult`-shaped object with:
-      - `ok: true` + `data` on success.
-      - `ok: false`, `error`, `fieldErrors`, `message` on failure.
-  - Validation is **server-side only**; client-side logic should display errors from the action,
-    not revalidate.
+- **Mutation boundary & validation**
+  - For canonical mutation boundary rules, contract families, auth/error mapping, and route-handler
+    decisions, load `prompts/standards/server-actions-and-api-contracts-index.md`.
+  - For forms specifically:
+    - Use server-side validation.
+    - Prefer `app/actions/*` for app-facing form submissions.
+    - Return `FormActionResult` from `lib/forms/types.ts` for `useForm` consumers.
+    - Client form code should display action-returned errors instead of re-deriving validation.
 
 ---
 
@@ -112,6 +115,10 @@ compliance.
   - `onSubmit`: async function calling the server action and returning a `FormActionResult`.
   - `onSuccess`: updates form state from server data, clears errors, shows toast, and optionally
     calls `router.refresh()`.
+  - Current `useForm` behavior in `lib/forms/use-form.ts` is intentionally limited:
+    - only the first message per field is surfaced
+    - only keys present in submitted values are mapped into `form.errors`
+  - Keep form UX compatible with those limits unless a coordinated migration is explicitly planned.
 
 Example pattern (see `ProfileSettingsForm` for the full implementation):
 
@@ -221,22 +228,26 @@ For profile-related forms (settings and completion), use the shared utilities in
 
 ---
 
-## 6. Error handling & messaging
+## 6. Form error handling & messaging
 
-- **Server actions**
-  - On validation failure:
+- For canonical auth/error mapping rules across Server Actions and route handlers, see:
+  - `prompts/standards/server-actions-and-api-contracts/auth-and-error-mapping.md`
+  - `prompts/standards/server-actions-and-api-contracts/contract-families.md`
+
+- **Form-facing server action expectations**
+  - On validation failure for `useForm` consumers:
     - Return `error: 'INVALID_INPUT'`.
     - Populate `fieldErrors` with a map of field name -> string[] messages.
-    - Provide a user-facing `message` to show in `FormError`.
-  - On other failures:
-    - Use appropriate `error` code (e.g. `'SERVER_ERROR'`) and a generic `message` localized via
-      `next-intl`.
+    - Provide a user-facing `message` for `FormError` when helpful.
+  - Keep machine-readable `error` values separate from display `message` text.
 
 - **Client forms**
   - In `useForm`’s `onSubmit`, simply forward the server action result.
   - `useForm`:
     - Maps `fieldErrors` into `form.errors`.
     - Populates `form.error` for `FormError`.
+    - Only surfaces the first message per field.
+    - Only maps field error keys present in the submitted values object.
   - Custom mappings:
     - For profile min-age errors (or other structured validation messages), map the raw
       messages through a localized helper near the form (e.g. the `translateFieldErrors`
@@ -244,19 +255,15 @@ For profile-related forms (settings and completion), use the shared utilities in
 
 ---
 
-## 7. Caching & protected routes (alignment with Next.js docs)
+## 7. Form refresh behavior and cached data alignment
 
-- Auth-related helpers like `getAuthContext` and `getSession` use:
-  - `'use cache: private'` for user-specific data.
-  - `cache()` from `react` to memoize per-request.
-- Form components:
-  - Do **not** directly use caching directives.
-  - Rely on server-side helpers for cached data.
-- When adding new server helpers used by forms:
-  - Choose `'use cache'`, `'use cache: remote'`, or `'use cache: private'` based on:
-    - Public vs user-specific data.
-    - Whether the route is dynamic (uses `headers()`/`cookies()`/`searchParams`).
-  - Always tag cache entries and revalidate on writes as per `prompts/standards/nextjs-caching/*`.
+- Form components do **not** directly own caching directives.
+- Route/server helpers own caching.
+- For canonical invalidation and refresh rules after form submissions, see:
+  - `prompts/standards/server-actions-and-api-contracts/invalidation-and-refresh.md`
+  - `prompts/standards/nextjs-caching-index.md`
+- Form success handlers may call `router.refresh()` when needed for UX, but server-side
+  invalidation and any session refresh remain server responsibilities.
 
 ---
 
@@ -275,7 +282,9 @@ When reviewing or generating a form, verify:
   - [ ] `FormField` (or `FieldLabel` + `FieldError`) is used for labels and errors.
 
 - **Server interactions**
-  - [ ] Form `onSubmit` calls a server action under `app/actions/*`.
+  - [ ] Form `onSubmit` prefers a server action under `app/actions/*` for new or migrated entrypoints.
+  - [ ] If a legacy client import from `@/lib/**/actions` remains, it is treated as compatibility,
+        not a preferred new default.
   - [ ] Server action returns a proper `FormActionResult` with `fieldErrors` and `message`.
   - [ ] Success handler updates form state, clears errors, and optionally calls
         `router.refresh()`.

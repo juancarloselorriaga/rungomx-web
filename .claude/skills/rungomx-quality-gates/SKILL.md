@@ -9,8 +9,8 @@ description: Run this repo’s CI-equivalent checks (lint, i18n generation, type
 
 Runs the repo’s standard local CI gate and reports results:
 
-- Primary: `pnpm test:ci`
-- If you ask for smaller scopes, it can run:
+- Release-level green signal: `pnpm -s test:ci:isolated`
+- Smaller scopes are diagnostics only and do **not** mean the branch is stable. If you ask for smaller scopes, it can run:
   - Lint only: `pnpm lint`
   - Typecheck only: `pnpm type-check`
   - Locales validation only: `pnpm validate:locales`
@@ -24,10 +24,10 @@ Runs the repo’s standard local CI gate and reports results:
 2. Ensure dependencies are installed:
    - If `node_modules` is missing, run `pnpm install`.
 3. Default run (recommended):
-   - `pnpm test:ci`
+   - `pnpm -s test:ci:isolated`
 4. If the user requests a smaller check, run only that script.
 5. Always paste the command output in the chat and summarize:
-   - Success: list what ran.
+   - Success: list what ran and whether it was release-level or diagnostic-only.
    - Failure: point to the first actionable error and suggest the next command to isolate it.
 
 ## Safety

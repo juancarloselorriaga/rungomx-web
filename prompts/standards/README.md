@@ -16,10 +16,15 @@ These are the standards most implementation tasks should consult early:
 
 These standards are discovered through this index and should be loaded when the task calls for them:
 
+- `server-actions-and-api-contracts-index.md` — mutation boundary, contract family, auth/error mapping, invalidation, and stable-facade discovery
 - `dashboard-protected-pages-design.md` — visual/system coherence for protected dashboard pages
 - `loading-and-skeletons.md` — route fallbacks, Suspense, dynamic loading states, and skeleton policy
 - `copy-guidelines.md` — product voice, terminology, labels, and user-facing text
 - `pro-features.md` — pro feature gating and rollout rules
+
+## Meta / governance
+
+- `../meta/ai-guidance-governance.md` — governance for AI guidance surfaces, authority hierarchy, startup-read policy, and anti-drift rules; load when editing agent/tool-specific guidance rather than product/runtime code
 
 ## Naming guidance for future standards
 
