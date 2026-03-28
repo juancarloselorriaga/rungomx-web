@@ -135,7 +135,9 @@ test.describe('Athlete Registration', () => {
     await expect(page.getByRole('link', { name: /register now/i })).toBeVisible();
   });
 
-  test('Test 1.8b: Clicking register shows login required for unauthenticated users', async ({ page }) => {
+  test('Test 1.8b: Clicking register shows login required for unauthenticated users', async ({
+    page,
+  }) => {
     await page.goto(`/en/events/${seriesSlug}/${editionSlug}`);
 
     // Click register button
@@ -143,7 +145,9 @@ test.describe('Athlete Registration', () => {
 
     // Should show login required page (not redirect)
     await expect(page).toHaveURL(/\/register/);
-    await expect(page.getByRole('heading', { name: /save your spot with an account/i })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /save your spot with an account/i }),
+    ).toBeVisible();
 
     // Sign-in button in the login required card should have callback URL
     // Use the one with callbackURL in the href (not the navbar sign-in)
@@ -258,7 +262,10 @@ test.describe('Athlete Registration', () => {
     await expect(page.getByText(registrationId)).toBeVisible();
     await expect(page.getByText(seriesName)).toBeVisible();
 
-    await page.getByRole('link', { name: /view details/i }).first().click();
+    await page
+      .getByRole('link', { name: /view details/i })
+      .first()
+      .click();
     await expect(page.getByText(registrationId)).toBeVisible();
     await expect(page.getByText(seriesName)).toBeVisible();
     await expect(
@@ -266,7 +273,12 @@ test.describe('Athlete Registration', () => {
         name: new RegExp(`${escapeRegExp(seriesName)}\\s+${escapeRegExp(editionLabel)}`),
       }),
     ).toBeVisible();
-    await expect(page.getByText(DISTANCE_DATA.trail10k.label)).toBeVisible();
+    await expect(
+      page
+        .getByRole('definition')
+        .filter({ hasText: new RegExp(`^${escapeRegExp(DISTANCE_DATA.trail10k.label)}$`) })
+        .first(),
+    ).toBeVisible();
   });
 
   test('Test 1.8i: Verify registration cannot be duplicated', async ({ page }) => {

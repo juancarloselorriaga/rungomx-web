@@ -282,41 +282,27 @@ async function assertLink(main: Locator, name: string, path: string) {
 async function followLinkAndAssertDestination(
   page: Page,
   originPath: string,
-  link: Locator,
+  getLink: () => Locator,
   destination: DestinationSpec,
   originHeading: string,
 ) {
   const destinationPattern = new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`);
+  const link = getLink();
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute('href', destination.path);
   await link.scrollIntoViewIfNeeded();
-  await link.click();
-  await expect(page).toHaveURL(destinationPattern);
-  await expect(
-    page.getByRole('heading', { level: 1, name: destination.heading, exact: true }),
-  ).toBeVisible();
 
-  await page.goto(originPath, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(new RegExp(`${escapeForRegex(originPath)}(?:\\?|$)`));
-  await expect(
-    page.getByRole('heading', { level: 1, name: originHeading, exact: true }),
-  ).toBeVisible();
-}
+  const newTabPromise = page.context().waitForEvent('page');
+  await link.click({ modifiers: [process.platform === 'darwin' ? 'Meta' : 'Control'] });
+  const destinationPage = await newTabPromise;
 
-async function openDestinationAndReturn(
-  page: Page,
-  originPath: string,
-  destination: DestinationSpec,
-  originHeading: string,
-) {
-  const destinationPattern = new RegExp(`${escapeForRegex(destination.path)}(?:\\?|$)`);
-  await page.goto(destination.path, { waitUntil: 'domcontentloaded' });
-  await expect(page).toHaveURL(destinationPattern);
+  await destinationPage.waitForLoadState('domcontentloaded');
+  await expect(destinationPage).toHaveURL(destinationPattern);
   await expect(
-    page.getByRole('heading', { level: 1, name: destination.heading, exact: true }),
+    destinationPage.getByRole('heading', { level: 1, name: destination.heading, exact: true }),
   ).toBeVisible();
+  await destinationPage.close();
 
-  await page.goto(originPath, { waitUntil: 'domcontentloaded' });
   await expect(page).toHaveURL(new RegExp(`${escapeForRegex(originPath)}(?:\\?|$)`));
   await expect(
     page.getByRole('heading', { level: 1, name: originHeading, exact: true }),
@@ -340,22 +326,40 @@ test.describe('Public narrative regression', () => {
       await assertLink(main, locale.about.ctaLinks.results, locale.destinations.results.path);
 
       if (locale.fullNavigation) {
-        await openDestinationAndReturn(
+        await followLinkAndAssertDestination(
           page,
           locale.about.path,
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.about.heroLinks.events,
+              locale.destinations.events.path,
+            ),
           locale.destinations.events,
           locale.about.heading,
         );
-        await openDestinationAndReturn(
+        await followLinkAndAssertDestination(
           page,
           locale.about.path,
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.about.heroLinks.results,
+              locale.destinations.results.path,
+            ),
           locale.destinations.results,
           locale.about.heading,
         );
       } else {
-        await openDestinationAndReturn(
+        await followLinkAndAssertDestination(
           page,
           locale.about.path,
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.about.heroLinks.results,
+              locale.destinations.results.path,
+            ),
           locale.destinations.results,
           locale.about.heading,
         );
@@ -410,29 +414,36 @@ test.describe('Public narrative regression', () => {
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(main, locale.news.updateLinks.help, locale.destinations.help.path),
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.news.updateLinks.help,
+              locale.destinations.help.path,
+            ),
           locale.destinations.help,
           locale.news.heading,
         );
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(
-            main,
-            locale.news.updateLinks.rankings,
-            locale.destinations.rankings.path,
-          ),
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.news.updateLinks.rankings,
+              locale.destinations.rankings.path,
+            ),
           locale.destinations.rankings,
           locale.news.heading,
         );
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(
-            main,
-            locale.news.updateLinks.contact,
-            locale.destinations.contact.path,
-          ),
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.news.updateLinks.contact,
+              locale.destinations.contact.path,
+            ),
           locale.destinations.contact,
           locale.news.heading,
         );
@@ -440,7 +451,12 @@ test.describe('Public narrative regression', () => {
         await followLinkAndAssertDestination(
           page,
           locale.news.path,
-          getLinkByHrefAndText(main, locale.news.updateLinks.help, locale.destinations.help.path),
+          () =>
+            getLinkByHrefAndText(
+              page.locator('main'),
+              locale.news.updateLinks.help,
+              locale.destinations.help.path,
+            ),
           locale.destinations.help,
           locale.news.heading,
         );

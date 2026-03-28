@@ -53,6 +53,48 @@ export function generateTestName(prefix: string): string {
   return `${prefix} ${generateTimestamp()}`;
 }
 
+function normalizeLocationKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function resolveEventVenueSearch(
+  city: string,
+  state: string,
+): {
+  query: string;
+  expectedResultText: RegExp;
+  expectedCityText?: RegExp;
+} {
+  const cityKey = normalizeLocationKey(city);
+  const stateKey = normalizeLocationKey(state);
+
+  if (cityKey === 'monterrey' && stateKey === 'nuevo leon') {
+    return {
+      query: 'Parque Fundidora Monterrey',
+      expectedResultText: /Parque Fundidora/i,
+      expectedCityText: /Monterrey/i,
+    };
+  }
+
+  if (cityKey === 'guadalajara' && stateKey === 'jalisco') {
+    return {
+      query: 'Parque Metropolitano de Guadalajara',
+      expectedResultText: /Parque Metropolitano de Guadalajara/i,
+      expectedCityText: /Zapopan|Guadalajara/i,
+    };
+  }
+
+  return {
+    query: `${city}, ${state}, Mexico`,
+    expectedResultText: new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+    expectedCityText: new RegExp(city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'),
+  };
+}
+
 /**
  * Sign in as any user with provided credentials
  * Handles role selection and profile completion modals for new users
@@ -244,12 +286,16 @@ export async function fillPhoneInput(
 
   // Strategy 2: Find by label text and locate the input within the form field
   // This works for both old and new phone input implementations
-  const labelToFind = typeof labelTextOrTestId === 'string'
-    ? new RegExp(labelTextOrTestId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
-    : labelTextOrTestId;
+  const labelToFind =
+    typeof labelTextOrTestId === 'string'
+      ? new RegExp(labelTextOrTestId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      : labelTextOrTestId;
 
   // Find the label element and then find the input inside the same form field container
-  const formField = page.locator('label').filter({ hasText: labelToFind }).locator('xpath=ancestor::div[1]');
+  const formField = page
+    .locator('label')
+    .filter({ hasText: labelToFind })
+    .locator('xpath=ancestor::div[1]');
   phoneInput = formField.locator('input[type="tel"], input:not([type="hidden"])').first();
 
   try {
@@ -294,7 +340,10 @@ async function fillPhoneInputWithin(
       ? new RegExp(labelTextOrTestId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
       : labelTextOrTestId;
 
-  const formField = root.locator('label').filter({ hasText: labelToFind }).locator('xpath=ancestor::div[1]');
+  const formField = root
+    .locator('label')
+    .filter({ hasText: labelToFind })
+    .locator('xpath=ancestor::div[1]');
   phoneInput = formField.locator('input[type="tel"], input:not([type="hidden"])').first();
 
   try {
@@ -388,11 +437,7 @@ export async function completeProfileCompletionModal(
     const emergencyPhoneValue = await emergencyPhoneInput.inputValue().catch(() => '');
     const nextEmergencyPhone = (options?.emergencyPhone ?? emergencyPhoneValue) || '+523387654321';
     if (options?.emergencyPhone || !emergencyPhoneValue) {
-      await fillPhoneInputWithin(
-        profileDialog,
-        /emergency.*phone/i,
-        nextEmergencyPhone,
-      );
+      await fillPhoneInputWithin(profileDialog, /emergency.*phone/i, nextEmergencyPhone);
     }
   }
 
@@ -409,7 +454,10 @@ export async function completeProfileCompletionModal(
 export async function createOrganization(page: Page, name?: string): Promise<string> {
   const timestamp = Date.now();
   const orgName = name || `Test Org ${timestamp}`;
-  const orgSlug = orgName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const orgSlug = orgName
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
   const createNewOrgBtn = page.getByRole('button', { name: /create new organization/i });
   const orgNameInput = page.getByPlaceholder(/my race organization/i);
 
@@ -476,12 +524,17 @@ export async function createEvent(
 ): Promise<{ seriesName: string; editionLabel: string; eventId: string }> {
   const timestamp = Date.now();
   const seriesName = options?.seriesName || `E2E Test Event ${timestamp}`;
-  const seriesSlug = seriesName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  const seriesSlug = seriesName
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
   const editionLabel = options?.editionLabel || '2026';
   const eventDate =
-    options?.eventDate || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    options?.eventDate ||
+    new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const city = options?.city || 'Monterrey';
   const state = options?.state || 'Nuevo León';
+  const venueSearch = resolveEventVenueSearch(city, state);
 
   // Wait for event details step to be visible
   await expect(page.getByText(/event details/i).first()).toBeVisible({ timeout: 10000 });
@@ -517,10 +570,16 @@ export async function createEvent(
 
   // Search for the location in the search input
   const searchInput = locationDialog.getByPlaceholder(/search for a place or address/i);
-  await searchInput.fill(`${city}, ${state}, Mexico`);
+  await searchInput.fill(venueSearch.query);
 
-  // Wait for and click the first search result
-  const firstResult = locationDialog.locator('button').filter({ hasText: city }).first();
+  // Wait for and click the first venue result, preferring the expected city when available.
+  const firstResult = venueSearch.expectedCityText
+    ? locationDialog
+        .locator('button')
+        .filter({ hasText: venueSearch.expectedResultText })
+        .filter({ hasText: venueSearch.expectedCityText })
+        .first()
+    : locationDialog.locator('button').filter({ hasText: venueSearch.expectedResultText }).first();
   await expect(firstResult).toBeVisible({ timeout: 10000 });
   await firstResult.click();
 
@@ -567,9 +626,7 @@ export async function createEvent(
   // Wait for the URL contract itself instead of waiting on navigation load-state semantics.
   const eventRoutePattern =
     /\/(?:en\/)?(?:dashboard\/events|tablero\/eventos)\/([a-f0-9-]{36})(?:\/|$)/i;
-  await expect
-    .poll(() => page.url(), { timeout: 90000 })
-    .toMatch(eventRoutePattern);
+  await expect.poll(() => page.url(), { timeout: 90000 }).toMatch(eventRoutePattern);
 
   // Extract event ID from URL
   const url = page.url();
@@ -683,19 +740,22 @@ export async function addDistance(
   const { label, distance, terrain, price, capacity } = options;
   const editionId = page.url().match(/\/dashboard\/events\/([a-f0-9-]{36})(?:\/|$)/i)?.[1];
   const db = editionId ? getTestDb() : null;
-  const distancesHeading = () => page.getByRole('heading', { name: /distances|distancias/i }).first();
+  const distancesHeading = () =>
+    page.getByRole('heading', { name: /distances|distancias/i }).first();
   const distancesSection = () => distancesHeading().locator('xpath=ancestor::section[1]');
-  const distancesStepButton = () => page.getByRole('button', { name: /distances|distancias/i }).first();
+  const distancesStepButton = () =>
+    page.getByRole('button', { name: /distances|distancias/i }).first();
   const manualSetupButton = () =>
     page.getByRole('button', { name: /manual setup|configuraci[oó]n manual/i }).first();
   const manualPathHint = () =>
-    page
-      .getByText(/manual path selected|ruta manual seleccionada/i)
-      .first();
+    page.getByText(/manual path selected|ruta manual seleccionada/i).first();
   const addDistanceBtn = () =>
-    distancesSection().getByRole('button', { name: /add distance|agregar distancia/i }).first();
+    distancesSection()
+      .getByRole('button', { name: /add distance|agregar distancia/i })
+      .first();
   const labelInput = () => distancesSection().locator('input[name="label"]:visible').first();
-  const distanceInput = () => distancesSection().locator('input[name="distanceValue"]:visible').first();
+  const distanceInput = () =>
+    distancesSection().locator('input[name="distanceValue"]:visible').first();
   const terrainSelect = () => distancesSection().locator('select[name="terrain"]:visible').first();
   const priceInput = () => distancesSection().locator('input[name="price"]:visible').first();
   const capacityInput = () => distancesSection().locator('input[name="capacity"]:visible').first();
@@ -739,9 +799,15 @@ export async function addDistance(
       : false;
 
   const isDistanceEditorVisible = async () =>
-    (await distancesHeading().isVisible().catch(() => false)) ||
-    (await addDistanceBtn().isVisible().catch(() => false)) ||
-    (await submitBtn().isVisible().catch(() => false));
+    (await distancesHeading()
+      .isVisible()
+      .catch(() => false)) ||
+    (await addDistanceBtn()
+      .isVisible()
+      .catch(() => false)) ||
+    (await submitBtn()
+      .isVisible()
+      .catch(() => false));
 
   if (!(await isDistanceEditorVisible())) {
     const manualButton = manualSetupButton();
@@ -762,14 +828,13 @@ export async function addDistance(
     }
   }
 
-  await expect
-    .poll(
-      async () => isDistanceEditorVisible(),
-      { timeout: 30000 },
-    )
-    .toBe(true);
+  await expect.poll(async () => isDistanceEditorVisible(), { timeout: 30000 }).toBe(true);
 
-  if (await distancesHeading().isVisible({ timeout: 1000 }).catch(() => false)) {
+  if (
+    await distancesHeading()
+      .isVisible({ timeout: 1000 })
+      .catch(() => false)
+  ) {
     await retryOnDomDetach(async () => {
       await distancesHeading().scrollIntoViewIfNeeded();
     });
@@ -780,7 +845,11 @@ export async function addDistance(
   }
 
   // Check if form is already visible using the form's input name attribute.
-  if (!(await submitBtn().isVisible({ timeout: 1000 }).catch(() => false))) {
+  if (
+    !(await submitBtn()
+      .isVisible({ timeout: 1000 })
+      .catch(() => false))
+  ) {
     await expect(addDistanceBtn()).toBeVisible({ timeout: 10000 });
     await expect(addDistanceBtn()).toBeEnabled({ timeout: 10000 });
     await retryOnDomDetach(async () => {
@@ -824,7 +893,13 @@ export async function addDistance(
     await expect.poll(persistedDistanceExists, { timeout: 15000 }).toBe(true);
   }
   await expect
-    .poll(async () => distanceLabel().isVisible().catch(() => false), { timeout: 15000 })
+    .poll(
+      async () =>
+        distanceLabel()
+          .isVisible()
+          .catch(() => false),
+      { timeout: 15000 },
+    )
     .toBe(true);
 }
 
@@ -841,14 +916,21 @@ export async function publishEvent(page: Page) {
   }
 
   // Scroll to visibility section first.
-  const visibilityHeading = page
-    .getByRole('heading', { name: /event visibility|visibilidad del evento|visibility/i })
-    .first();
-  await expect(visibilityHeading).toBeVisible({ timeout: 30000 });
+  const visibilityHeading = () =>
+    page
+      .getByRole('heading', { name: /event visibility|visibilidad del evento|visibility/i })
+      .first();
+  const visibilitySection = () => visibilityHeading().locator('xpath=ancestor::section[1]');
+  const publishedBtn = () =>
+    visibilitySection()
+      .getByRole('button', { name: /published|publicado/i })
+      .first();
+
+  await expect(visibilityHeading()).toBeVisible({ timeout: 30000 });
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      await visibilityHeading.scrollIntoViewIfNeeded();
+      await visibilityHeading().scrollIntoViewIfNeeded();
       break;
     } catch (error) {
       if (attempt === 2) throw error;
@@ -856,18 +938,83 @@ export async function publishEvent(page: Page) {
     }
   }
 
-  const visibilitySection = visibilityHeading.locator('xpath=ancestor::section[1]');
-  const publishedBtn = visibilitySection.getByRole('button', { name: /published|publicado/i }).first();
-  await expect(publishedBtn).toBeVisible({ timeout: 15000 });
-  await expect(publishedBtn).toBeEnabled({ timeout: 15000 });
+  await expect(publishedBtn()).toBeVisible({ timeout: 15000 });
 
   const editionId = page.url().match(/\/dashboard\/events\/([a-f0-9-]{36})(?:\/|$)/i)?.[1];
-  const publishedSelectedIndicator = publishedBtn.locator('svg');
   const db = editionId ? getTestDb() : null;
+
+  const readDisabledReasons = async () =>
+    visibilitySection()
+      .locator('li')
+      .allTextContents()
+      .catch(() => [] as string[]);
+  const readPersistedEdition = async () =>
+    db && editionId
+      ? await db.query.eventEditions.findFirst({
+          where: and(eq(eventEditions.id, editionId), isNull(eventEditions.deletedAt)),
+          columns: {
+            locationDisplay: true,
+            address: true,
+            city: true,
+            state: true,
+            latitude: true,
+            longitude: true,
+          },
+        })
+      : null;
+  const readPersistedDistances = async () =>
+    db && editionId
+      ? await db.query.eventDistances.findMany({
+          where: and(eq(eventDistances.editionId, editionId), isNull(eventDistances.deletedAt)),
+          columns: { label: true },
+        })
+      : [];
+
+  if (
+    !(await publishedBtn()
+      .isEnabled()
+      .catch(() => false))
+  ) {
+    const disabledReasons = await readDisabledReasons();
+    const persistedDistances = await readPersistedDistances();
+
+    if (
+      persistedDistances.length > 0 &&
+      disabledReasons.some((reason) => /add at least one distance|distance/i.test(reason))
+    ) {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      if (await buildIndicator.isVisible().catch(() => false)) {
+        await expect(buildIndicator).not.toBeVisible({ timeout: 60000 });
+      }
+      await expect(visibilityHeading()).toBeVisible({ timeout: 30000 });
+      await visibilityHeading().scrollIntoViewIfNeeded();
+      await expect(publishedBtn()).toBeVisible({ timeout: 15000 });
+    }
+  }
+
+  if (
+    !(await publishedBtn()
+      .isEnabled()
+      .catch(() => false))
+  ) {
+    const disabledReasons = await readDisabledReasons();
+    const locationButtonText = await page
+      .getByRole('button', { name: /event location/i })
+      .textContent()
+      .catch(() => null);
+    const persistedEdition = await readPersistedEdition();
+    const persistedDistances = await readPersistedDistances();
+
+    throw new Error(
+      `Published button disabled. reasons=${JSON.stringify(disabledReasons)} locationButton=${JSON.stringify(locationButtonText)} edition=${JSON.stringify(persistedEdition)} distances=${JSON.stringify(persistedDistances)}`,
+    );
+  }
+
+  const publishedSelectedIndicator = publishedBtn().locator('svg');
 
   for (let attempt = 0; attempt < 2; attempt += 1) {
     if (!(await publishedSelectedIndicator.isVisible({ timeout: 1000 }).catch(() => false))) {
-      await publishedBtn.click();
+      await publishedBtn().click();
     }
 
     try {
@@ -1081,7 +1228,7 @@ export async function extractRegistrationId(page: Page): Promise<string> {
   // Fallback: look for ticket code pattern in any element
   if (!ticketCode) {
     const allText = await page.locator('p, span, div').allTextContents();
-    ticketCode = allText.find(text => /^RG-[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(text.trim())) || '';
+    ticketCode = allText.find((text) => /^RG-[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(text.trim())) || '';
   }
 
   return ticketCode?.trim() || '';

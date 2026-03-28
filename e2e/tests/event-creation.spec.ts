@@ -6,11 +6,7 @@ import {
   createTestProfile,
   assignExternalRole,
 } from '../utils/fixtures';
-import {
-  signInAsOrganizer,
-  createEvent,
-  generateTestName,
-} from '../utils/helpers';
+import { signInAsOrganizer, createEvent, generateTestName } from '../utils/helpers';
 
 /**
  * Event Creation Tests
@@ -90,7 +86,7 @@ test.describe('Event Creation', () => {
     await continueBtn.click();
 
     // Should advance to event details step
-    await expect(page.getByText(/event details|series name/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /event details/i })).toBeVisible();
   });
 
   test('Test 1.2: Create event with basic details', async ({ page }) => {
@@ -105,7 +101,10 @@ test.describe('Event Creation', () => {
     if (await createNewOrgButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       // Existing organizations shown - find and click ours
       // The button text contains the org name plus series count
-      const existingOrgButton = page.locator('button').filter({ hasText: organizationName }).first();
+      const existingOrgButton = page
+        .locator('button')
+        .filter({ hasText: organizationName })
+        .first();
 
       if (await existingOrgButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         // Select existing organization

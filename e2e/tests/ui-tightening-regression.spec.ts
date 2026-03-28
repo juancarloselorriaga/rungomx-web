@@ -101,7 +101,7 @@ test.describe('UI Tightening Regression', () => {
 
     await page.goto(`/en/dashboard/events/${eventId}/results/import`);
 
-    const rail = page.getByRole('region', { name: /results state rail/i });
+    const rail = page.getByRole('region', { name: /results state rail|publish status/i });
     const nextActionLink = rail.locator('a');
 
     await expect(nextActionLink).toHaveAttribute(
@@ -110,13 +110,20 @@ test.describe('UI Tightening Regression', () => {
     );
   });
 
-  test('Results capture: mobile viewport uses card layout for results table', async ({ page }) => {
+  test('Results capture: mobile viewport keeps the mobile-first capture workspace without a desktop table', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signInAsOrganizer(page, organizerCreds);
 
     await page.goto(`/en/dashboard/events/${eventId}/results/capture`);
 
-    await expect(page.getByTestId('pro-results-grid-mobile')).toBeVisible({ timeout: 30000 });
-    await expect(page.getByTestId('pro-results-grid-table')).toBeHidden();
+    await expect(page.getByRole('region', { name: /capture bibs and finish times/i })).toBeVisible({
+      timeout: 30000,
+    });
+    await expect(
+      page.getByRole('heading', { name: /latest captures on this device/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('table')).toHaveCount(0);
   });
 });
