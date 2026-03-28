@@ -4,6 +4,7 @@ This repository already has a strong repo-native OpenCode setup:
 
 - `AGENTS.md` as the memory and safety entrypoint
 - canonical standards under `prompts/standards/**`
+- `opencode.json` as the default repo-safe profile and `opencode.strict.json` as a supported experimental profile
 - repo-local agents under `.opencode/agents/**`
 - repo-local skills under `.claude/skills/**` and `.agents/skills/**`
 
@@ -26,7 +27,7 @@ Use the repo-local slash command:
 In practice, the repo-native loop is:
 
 1. classify the task (`quick`, `deep`, `visual`, `writing`)
-2. follow the baseline reading order in `AGENTS.md`
+2. follow the startup-read policy in `AGENTS.md`
 3. use `prompts/standards/README.md` only to discover the smallest sufficient set of additional standards
 4. route to repo-native specialists when needed (`boundary-planner`, `change-builder`, `diff-reviewer`, conditional `coherence-reviewer`, `validation-planner`)
 5. report boundary impacts, tests, and remaining risks
@@ -47,9 +48,15 @@ Use the custom OpenCode primary agent:
 This keeps the repository on its existing invariants while borrowing OMO's habit of explicit
 task classification and orchestration without turning `.opencode/**` into a second policy system.
 
+Tooling note:
+
+- Context7 remains the documentation-validation tool when work depends on external framework, library, API, or setup/configuration guidance.
+- `next-devtools` remains optional and disabled by default; use it only when a targeted Next.js-specific investigation would help.
+
 Notes:
 
 - `orchestrator` is the repo's default OpenCode intake agent.
+- `orchestrator` should remain the default intake agent across both the default and strict repo profiles.
 - Specialist work is delegated to clearly named agents under `.opencode/agents/`, and those specialists remain directly selectable when needed.
 - The repo no longer depends on a custom mode for this workflow.
 - `orchestrator` is the single detailed OpenCode workflow adapter; `/task-flow` should stay thin.

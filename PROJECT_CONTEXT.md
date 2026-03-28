@@ -113,13 +113,11 @@ rungomx-web/
 | --------------------------------------------- | --------------------------------------------------------------- | ------------------- |
 | `prompts/upgrade-ticketing-system/01–07_*.md` | Multi-step agent prompt pipeline for dependency upgrade tickets | workflow definition |
 
-### Gaps
+### Gaps / follow-ups
 
-- No dedicated database/ORM standards doc (Drizzle patterns undocumented)
-- No payments domain standards doc despite payments being a major domain
-- No i18n conventions doc (structure/naming exists but undocumented)
-- No state machine standards (registration flow uses a custom machine)
-- No component visual/design system doc (`.impeccable.md` is design intent, not code standards)
+- No dedicated payments domain standards doc despite payments being a major domain
+- No broad component visual/design system doc (`.impeccable.md` is design intent, not code standards, and `dashboard-protected-pages-design.md` is scoped rather than universal)
+- Database/ORM, i18n, and workflow/state-machine guidance now exist as indexed standards under `prompts/standards/`
 
 ### Overlaps
 
@@ -146,10 +144,13 @@ BMAD modules: `bmm` (PM, dev, QA, architect, SM, UX, tech-writer), `bmb` (agent/
 
 - Defines three Playwright MCP server configurations (`playwright`, `playwright_isolated`, `playwright_persistent`) for Codex-based visual testing and screenshot capture
 
-### `opencode.json`
+### `opencode.json` / `opencode.strict.json`
 
-- MCP servers configured (all disabled by default): `next-devtools`, `codex` (MCP server), `serena`, `better-auth`
-- Custom OpenCode repo-local workflow artifacts exist: `default_agent` is `orchestrator`, repo-local agents live under `.opencode/agents/`, and the one-shot workflow command lives at `.opencode/commands/task-flow.md`
+- `opencode.json` is the default repo-safe profile; `default_agent` is `orchestrator`
+- `opencode.strict.json` is a supported experimental profile that preloads broader standards/auth instructions for evaluation while keeping the same canonical sources
+- MCP servers configured in both profiles (all disabled by default): `next-devtools`, `codex` (MCP server), `serena`, `better-auth`
+- Custom OpenCode repo-local workflow artifacts exist: repo-local agents live under `.opencode/agents/`, and the one-shot workflow command lives at `.opencode/commands/task-flow.md`
+- Context7 remains the canonical documentation-validation path from `AGENTS.md`; `next-devtools` is optional when enabled for targeted Next.js investigation
 
 ---
 

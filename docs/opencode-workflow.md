@@ -2,6 +2,13 @@
 
 The repository's primary OpenCode workflow lives in `.opencode/agents/orchestrator.md`.
 
+## Config profiles
+
+- `opencode.json` is the default repo-safe profile. It keeps startup reads lean, sets `orchestrator` as the default agent, and relies on `AGENTS.md` plus `prompts/standards/README.md` to route additional standards loading.
+- `opencode.strict.json` is a supported experimental profile. It intentionally preloads a broader standards/auth bundle for experimentation, but it still relies on the same canonical sources and should not be treated as a second policy system.
+
+Both profiles should route through the same repo-native agent set, with `orchestrator` as the default intake agent.
+
 Role summary:
 
 - `orchestrator`: primary repo-safe intake agent and the canonical OpenCode workflow adapter.
@@ -15,9 +22,15 @@ Role summary:
 Typical flow when applicable:
 
 - classify the task
-- read `AGENTS.md`, follow the baseline reading order defined there, then use `prompts/standards/README.md` to discover only the smallest sufficient set of additional standards
+- read `AGENTS.md`, follow the startup-read policy defined there, then use `prompts/standards/README.md` to discover only the smallest sufficient set of additional standards
 - route to `boundary-planner`, `change-builder`, `diff-reviewer`, conditional `coherence-reviewer`, and `validation-planner` as needed
 - treat non-trivial code work as incomplete while `diff-reviewer` still has blocking findings
+
+Tooling notes:
+
+- Use Context7 when work depends on validating framework, library, API, or setup/configuration documentation.
+- `next-devtools` is optional and disabled by default in the repo configs. It can help with targeted Next.js investigation, but it is not part of the canonical startup policy.
+- Specialists remain directly usable for focused tasks; `orchestrator` is the preferred intake layer for ambiguous or multi-step work.
 
 Rename map:
 

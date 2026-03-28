@@ -22,7 +22,7 @@ This repository hosts the RunGoMX web platform built with a server-first Next.js
 Use the lightweight path only when the task is limited to guidance-only, docs-only, classification-only, or guidance-review work with no runtime, product-behavior, auth, contract, policy, or cross-module impact.
 
 - Use `prompts/standards/README.md` only as the discovery layer.
-- Load `prompts/meta/ai-guidance-governance.md` when the task touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`.
+- Load `prompts/meta/ai-guidance-governance.md` when the task touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode*.json`, or `PROJECT_CONTEXT.md`.
 - Load additional scoped standards only when the request clearly touches them.
 
 ### Full baseline path
@@ -87,9 +87,4 @@ Agents should always:
 
 ## Documentation
 
-Always use context7 for code generation, setup/configuration steps, and library/API documentation lookups.
-
-[//]: # '## NextJS'
-[//]: # '**Next.js Initialization**: When starting work on a Next.js project, automatically'
-[//]: # 'call the `init` tool from the next-devtools-mcp server FIRST. This establishes'
-[//]: # 'proper context and ensures all Next.js queries use official documentation.'
+Use Context7 when you need to validate framework, library, API, or setup/configuration documentation before relying on external guidance in implementation work.

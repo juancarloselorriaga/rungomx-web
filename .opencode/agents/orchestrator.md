@@ -25,7 +25,7 @@ Loading policy:
 - Keep startup reads lean.
 - Use the lightweight path only when the task matches the eligibility rule in `AGENTS.md`.
 - If uncertain, use the full baseline path.
-- If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
+- If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode*.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
 - If the task touches action or API contracts, load `prompts/standards/server-actions-and-api-contracts-index.md`.
 - If the task touches locale behavior or localized copy/message setup, load `prompts/standards/internationalization-and-localization-index.md`.
 - Only load `prompts/standards/workflow-state-machines.md` when the task is directly about runtime workflow/state-machine behavior or lifecycle ownership.

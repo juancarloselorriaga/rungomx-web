@@ -14,17 +14,15 @@ Operating mode:
 - Do not modify code, schema, tests, or configs.
 - Produce recommendations, risk analysis, and migration sequencing only.
 
-Required references:
+Required startup reads:
 
-Before proposing changes, review in order:
+Before proposing changes:
 
-1. `AGENTS.md`
-2. `prompts/standards/nextjs-component-implementation.md`
-3. `prompts/standards/nextjs-caching-index.md`
-4. `prompts/standards/forms-implementation.md`
-5. `prompts/standards/e2e-testing.md`
-6. `prompts/standards/test-reliability.md`
-7. `prompts/auth-stack/roles-agent-guide.md`
+1. Read `AGENTS.md` and follow the startup-read policy defined there.
+2. Use `prompts/standards/README.md` only as the discovery layer for additional scoped standards.
+3. If the task is auth-sensitive, contract-sensitive, release-critical, cross-module, or uncertain, default to the full baseline path from `AGENTS.md`.
+4. If the task touches action or API contracts, load `prompts/standards/server-actions-and-api-contracts-index.md`.
+5. If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode*.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
 
 Focus areas:
 

@@ -18,6 +18,7 @@ surfaces:
   - .claude/**
   - .opencode/**
   - opencode.json
+  - opencode.strict.json
   - PROJECT_CONTEXT.md
 pair_with:
   - prompts/standards/README.md
@@ -36,7 +37,7 @@ Apply conflicts in this order:
 1. `prompts/standards/**` and `prompts/auth-stack/**` — canonical runtime, architecture, testing, and auth guidance.
 2. `AGENTS.md` — repo entrypoint, invariant summary, startup-read policy, and stable boundary reminders.
 3. `prompts/meta/**` — canonical governance for how AI guidance is organized, referenced, and maintained.
-4. Tool-specific guidance such as `CLAUDE.md`, `.claude/**`, `.opencode/**`, and `opencode.json` — referential adapters only.
+4. Tool-specific guidance such as `CLAUDE.md`, `.claude/**`, `.opencode/**`, and `opencode*.json` — referential adapters only.
 5. `PROJECT_CONTEXT.md` — descriptive background only.
 
 If a lower-level file conflicts with a higher-level file, update the lower-level file or mark it as legacy/follow-up. Do not canonize the conflict by duplicating both versions.
@@ -58,6 +59,7 @@ These may define required behavior for agents or canonical conflict resolution.
 - `.claude/**`
 - `.opencode/**`
 - `opencode.json`
+- `opencode.strict.json`
 - `PROJECT_CONTEXT.md`
 
 These should summarize, route, or contextualize. They should not become independent policy sources.
@@ -70,6 +72,7 @@ These should summarize, route, or contextualize. They should not become independ
 - `AGENTS.md` may define a lightweight path and a full baseline path; tool adapters should follow that canonical split rather than inventing their own startup policy.
 - Only baseline reads explicitly required by the selected `AGENTS.md` path should be treated as default startup standards.
 - Do not add new baseline startup reads unless the rule is truly universal across most implementation tasks.
+- Supported experimental tool profiles may intentionally preload broader instruction bundles, but they must be documented as opt-in exceptions and must not replace the canonical startup policy.
 
 ## 4. Task-scoped loading policy
 

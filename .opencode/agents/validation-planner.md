@@ -18,8 +18,8 @@ Required references:
 
 Review before making recommendations:
 
-1. `AGENTS.md`
-2. `prompts/standards/README.md`
+1. Read `AGENTS.md` and follow the startup-read policy defined there.
+2. Use `prompts/standards/README.md` only as the discovery layer for additional scoped standards.
 3. Always load `prompts/standards/e2e-testing.md`.
 4. Always load `prompts/standards/test-reliability.md`.
 5. Load related feature standards under `prompts/standards/` as needed.

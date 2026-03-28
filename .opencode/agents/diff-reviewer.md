@@ -19,11 +19,11 @@ Required references:
 - `AGENTS.md`
 - `prompts/standards/README.md`
 
-Load only the task-relevant canonical standards under `prompts/standards/` and `prompts/auth-stack/` before final findings.
+Follow the startup-read policy in `AGENTS.md` for the diff under review, then load only the task-relevant canonical standards under `prompts/standards/` and `prompts/auth-stack/` before final findings.
 
 Special cases:
 
-- If the diff touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
+- If the diff touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode*.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
 - If the diff changes code and maintainability, readability, naming, duplication, side-effect clarity, or abstraction discipline are in scope, load `prompts/standards/engineering-principles.md`.
 
 Review focus:
