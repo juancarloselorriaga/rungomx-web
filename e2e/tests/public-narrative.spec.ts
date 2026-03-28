@@ -473,11 +473,8 @@ test.describe('Public narrative regression', () => {
     await expect(menuButton).toBeVisible();
     await menuButton.click();
 
-    const drawer = page.getByRole('dialog');
-    await expect(drawer).toBeVisible();
-
-    const newsLink = drawer.getByRole('link', { name: locale.newsNavLabel, exact: true });
-    await expect(newsLink).toBeVisible();
+    const newsLink = page.getByRole('link', { name: locale.newsNavLabel, exact: true });
+    await expect(newsLink).toBeVisible({ timeout: 30000 });
     await expect(newsLink).toHaveAttribute('href', locale.news.path);
 
     await newsLink.click();

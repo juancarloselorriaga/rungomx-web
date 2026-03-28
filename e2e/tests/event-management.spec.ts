@@ -50,7 +50,7 @@ async function scrollIntoViewDetachSafe(target: () => Locator) {
 async function ensureDistanceExists(
   page: import('@playwright/test').Page,
   editionId: string,
-  distance: (typeof DISTANCE_DATA)[keyof typeof DISTANCE_DATA]
+  distance: (typeof DISTANCE_DATA)[keyof typeof DISTANCE_DATA],
 ) {
   const db = getTestDb();
   const existingDistances = await db.query.eventDistances.findMany({
@@ -112,7 +112,13 @@ async function ensureRegistrationPausedInSettings(
   });
 
   if (edition?.isRegistrationPaused) {
-    await expect(page.getByText(/^Paused$/)).toBeVisible({ timeout: 15000 });
+    const registrationHeading = page.getByRole('heading', { name: /registration/i }).first();
+    await expect(registrationHeading).toBeVisible({ timeout: 15000 });
+    const registrationSection = registrationHeading.locator('xpath=ancestor::section[1]');
+    await expect(registrationSection.getByText(/^Paused$/)).toBeVisible({ timeout: 15000 });
+    await expect(
+      registrationSection.getByRole('button', { name: /resume registration|reopen registration/i }),
+    ).toBeVisible({ timeout: 15000 });
     return;
   }
 
@@ -142,7 +148,13 @@ async function ensureRegistrationActiveInSettings(
   });
 
   if (!edition?.isRegistrationPaused) {
-    await expect(page.getByText(/^(Active|Open)$/i)).toBeVisible({ timeout: 15000 });
+    const registrationHeading = page.getByRole('heading', { name: /registration/i }).first();
+    await expect(registrationHeading).toBeVisible({ timeout: 15000 });
+    const registrationSection = registrationHeading.locator('xpath=ancestor::section[1]');
+    await expect(registrationSection.getByText(/^(Active|Open)$/i)).toBeVisible({ timeout: 15000 });
+    await expect(
+      registrationSection.getByRole('button', { name: /pause registration/i }),
+    ).toBeVisible({ timeout: 15000 });
     return;
   }
 
@@ -241,7 +253,7 @@ test.describe('Event Management', () => {
     const distanceHeading = page.getByRole('heading', { name: '10K Trail Run', exact: true });
     await expect(distanceHeading).toBeVisible();
     const distanceCard = distanceHeading.locator(
-      'xpath=ancestor::div[./div/h3[normalize-space()="10K Trail Run"]][1]'
+      'xpath=ancestor::div[./div/h3[normalize-space()="10K Trail Run"]][1]',
     );
 
     await expect(distanceCard).toContainText(/100 spots/i, { timeout: 15000 });
@@ -265,7 +277,9 @@ test.describe('Event Management', () => {
     await navigateToEventSettings(page, eventId);
 
     // Scroll to visibility section
-    await scrollIntoViewDetachSafe(() => page.getByRole('heading', { name: /visibility/i }).first());
+    await scrollIntoViewDetachSafe(() =>
+      page.getByRole('heading', { name: /visibility/i }).first(),
+    );
 
     // Publish event - this validates that the visibility badge shows "Published"
     await publishEvent(page);
@@ -320,7 +334,7 @@ test.describe('Event Management', () => {
 
     // Scroll to registration status section
     await scrollIntoViewDetachSafe(() =>
-      page.getByRole('heading', { name: /registration/i }).first()
+      page.getByRole('heading', { name: /registration/i }).first(),
     );
 
     // Pause registration
@@ -375,7 +389,7 @@ test.describe('Event Management', () => {
 
     // Scroll to registration status section
     await scrollIntoViewDetachSafe(() =>
-      page.getByRole('heading', { name: /registration/i }).first()
+      page.getByRole('heading', { name: /registration/i }).first(),
     );
 
     // Resume registration
@@ -441,14 +455,20 @@ test.describe('Event Management', () => {
       await searchInput.waitFor({ state: 'visible', timeout: 30000 });
     }
 
-    const locationDialog = page.locator('[data-slot="dialog-content"]').filter({ has: searchInput }).first();
+    const locationDialog = page
+      .locator('[data-slot="dialog-content"]')
+      .filter({ has: searchInput })
+      .first();
     await expect(locationDialog).toBeVisible({ timeout: 30000 });
 
     // Search for new location
     await searchInput.fill('Guadalajara, Jalisco, Mexico');
 
     // Select first result
-    const firstResult = locationDialog.locator('button').filter({ hasText: /Guadalajara/i }).first();
+    const firstResult = locationDialog
+      .locator('button')
+      .filter({ hasText: /Guadalajara/i })
+      .first();
     await expect(firstResult).toBeVisible({ timeout: 10000 });
     await firstResult.click();
 
