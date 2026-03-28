@@ -1,6 +1,6 @@
 import { PayoutRequestForm } from '@/components/payments/payout-request-form';
 import { organizerPaymentsTelemetryStorageKey } from '@/lib/payments/organizer/telemetry';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import {
   queueOrganizerPayoutIntentAction,
@@ -40,7 +40,9 @@ describe('PayoutRequestForm', () => {
     typeof requestOrganizerPayoutAction
   >;
   const mockQueueOrganizerPayoutIntentAction =
-    queueOrganizerPayoutIntentAction as jest.MockedFunction<typeof queueOrganizerPayoutIntentAction>;
+    queueOrganizerPayoutIntentAction as jest.MockedFunction<
+      typeof queueOrganizerPayoutIntentAction
+    >;
 
   beforeEach(() => {
     mockRequestOrganizerPayoutAction.mockReset();
@@ -55,27 +57,15 @@ describe('PayoutRequestForm', () => {
   });
 
   it('submits a payout request and renders outcome summary', async () => {
-    mockRequestOrganizerPayoutAction.mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          setTimeout(
-            () =>
-              resolve(
-                {
-                  ok: true,
-                  data: {
-                    payoutQuoteId: 'quote-1',
-                    payoutRequestId: 'request-1',
-                    payoutContractId: 'contract-1',
-                    maxWithdrawableAmountMinor: 100_000,
-                    requestedAmountMinor: 50_000,
-                  },
-                } as never,
-              ),
-            10,
-          );
-        }),
+    let resolveRequest:
+      | ((value: Awaited<ReturnType<typeof requestOrganizerPayoutAction>>) => void)
+      | undefined;
+    const requestPromise = new Promise<Awaited<ReturnType<typeof requestOrganizerPayoutAction>>>(
+      (resolve) => {
+        resolveRequest = resolve;
+      },
     );
+    mockRequestOrganizerPayoutAction.mockReturnValueOnce(requestPromise as never);
 
     render(<PayoutRequestForm organizationId="org-1" />);
 
@@ -89,9 +79,21 @@ describe('PayoutRequestForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'actions.requestPayout' }));
 
-    expect(
-      screen.getByRole('button', { name: 'request.submittingAction' }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'request.submittingAction' })).toBeInTheDocument();
+
+    await act(async () => {
+      resolveRequest?.({
+        ok: true,
+        data: {
+          payoutQuoteId: 'quote-1',
+          payoutRequestId: 'request-1',
+          payoutContractId: 'contract-1',
+          maxWithdrawableAmountMinor: 100_000,
+          requestedAmountMinor: 50_000,
+        },
+      } as never);
+      await requestPromise;
+    });
 
     await waitFor(() => {
       expect(screen.getByText('request.successTitle')).toBeInTheDocument();
@@ -168,27 +170,15 @@ describe('PayoutRequestForm', () => {
   });
 
   it('guards against duplicate submit while the payout request is in flight', async () => {
-    mockRequestOrganizerPayoutAction.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          setTimeout(
-            () =>
-              resolve(
-                {
-                  ok: true,
-                  data: {
-                    payoutQuoteId: 'quote-dup',
-                    payoutRequestId: 'request-dup',
-                    payoutContractId: 'contract-dup',
-                    maxWithdrawableAmountMinor: 100_000,
-                    requestedAmountMinor: 50_000,
-                  },
-                } as never,
-              ),
-            25,
-          );
-        }),
+    let resolveRequest:
+      | ((value: Awaited<ReturnType<typeof requestOrganizerPayoutAction>>) => void)
+      | undefined;
+    const requestPromise = new Promise<Awaited<ReturnType<typeof requestOrganizerPayoutAction>>>(
+      (resolve) => {
+        resolveRequest = resolve;
+      },
     );
+    mockRequestOrganizerPayoutAction.mockReturnValue(requestPromise as never);
 
     render(<PayoutRequestForm organizationId="org-1" />);
 
@@ -199,6 +189,20 @@ describe('PayoutRequestForm', () => {
     const submitButton = screen.getByRole('button', { name: 'actions.requestPayout' });
     fireEvent.click(submitButton);
     fireEvent.click(submitButton);
+
+    await act(async () => {
+      resolveRequest?.({
+        ok: true,
+        data: {
+          payoutQuoteId: 'quote-dup',
+          payoutRequestId: 'request-dup',
+          payoutContractId: 'contract-dup',
+          maxWithdrawableAmountMinor: 100_000,
+          requestedAmountMinor: 50_000,
+        },
+      } as never);
+      await requestPromise;
+    });
 
     await waitFor(() => {
       expect(screen.getByText('request.successTitle')).toBeInTheDocument();
