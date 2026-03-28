@@ -26,6 +26,12 @@
   - Third-party libraries that depend on client-side features
 - Cannot be async functions (use React's `use` hook for promises)
 - Place `'use client'` as close to the leaf components as possible to minimize bundle size
+- Treat the **entire transitive import graph** of a Client Component as client code:
+  - Do not import `db/schema.ts` from client-reachable modules.
+  - Do not import modules that themselves depend on `db/schema.ts`, server-only APIs, or other server-only resources.
+  - Be careful with shared `types.ts` files that mix DB-backed record types with UI-safe literals or unions; these are not safe client dependencies.
+  - If client code needs shared literals/types/constants, extract them into a small boundary-safe module (for example `status.ts`, `constants.ts`, or `shared-types.ts`) with no database or server-only imports.
+  - Treat `import type` from DB-coupled modules as unsafe for client graphs when it pulls a client component across a server boundary or causes manifest instability.
 - Example:
 
   ```tsx
