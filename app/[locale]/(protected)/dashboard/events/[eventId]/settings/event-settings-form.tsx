@@ -1083,6 +1083,7 @@ export function EventSettingsForm({
                     language={locale}
                     onLocationChangeAction={(location) => {
                       if (location) {
+                        detailsForm.setFieldValue('address', location.address || '');
                         detailsForm.setFieldValue('latitude', String(location.lat));
                         detailsForm.setFieldValue('longitude', String(location.lng));
                         detailsForm.setFieldValue(
@@ -1092,6 +1093,7 @@ export function EventSettingsForm({
                         if (location.city) detailsForm.setFieldValue('city', location.city);
                         if (location.region) detailsForm.setFieldValue('state', location.region);
                       } else {
+                        detailsForm.setFieldValue('address', '');
                         detailsForm.setFieldValue('latitude', '');
                         detailsForm.setFieldValue('longitude', '');
                         detailsForm.setFieldValue('locationDisplay', '');

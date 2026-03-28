@@ -20,6 +20,7 @@ const createEventStepSchema = z
     description: z.string(),
     organizerBrief: z.string().optional(),
     startsAt: z.string(),
+    address: z.string(),
     city: z.string(),
     state: z.string(),
     latitude: z.string(),
@@ -122,6 +123,7 @@ export const createEventStepAction = withAuthenticatedUser<CreateEventStepResult
           'America/Mexico_City',
         ) ?? undefined)
       : undefined,
+    address: values.address.trim() || undefined,
     city: values.city.trim() || undefined,
     state: values.state.trim() || undefined,
     latitude: values.latitude || undefined,

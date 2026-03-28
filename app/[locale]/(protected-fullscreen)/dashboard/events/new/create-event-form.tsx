@@ -256,6 +256,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
       description: string;
       organizerBrief: string;
       startsAt: string;
+      address: string;
       city: string;
       state: string;
       latitude: string;
@@ -273,6 +274,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
       description: '',
       organizerBrief: '',
       startsAt: '',
+      address: '',
       city: '',
       state: '',
       latitude: '',
@@ -300,6 +302,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
         description: values.description,
         organizerBrief: values.organizerBrief,
         startsAt: values.startsAt,
+        address: values.address,
         city: values.city,
         state: values.state,
         latitude: values.latitude,
@@ -922,6 +925,7 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                       lat: number;
                       lng: number;
                       formattedAddress?: string | null;
+                      address?: string | null;
                       city?: string | null;
                       region?: string | null;
                     } | null,
@@ -930,9 +934,11 @@ export function CreateEventForm({ organizations, showAiContextDisclosure }: Crea
                       form.setFieldValue('latitude', String(location.lat));
                       form.setFieldValue('longitude', String(location.lng));
                       form.setFieldValue('locationDisplay', location.formattedAddress || '');
+                      form.setFieldValue('address', location.address || '');
                       if (location.city) form.setFieldValue('city', location.city);
                       if (location.region) form.setFieldValue('state', location.region);
                     } else {
+                      form.setFieldValue('address', '');
                       form.setFieldValue('latitude', '');
                       form.setFieldValue('longitude', '');
                       form.setFieldValue('locationDisplay', '');

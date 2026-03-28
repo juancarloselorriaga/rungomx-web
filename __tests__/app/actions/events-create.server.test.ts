@@ -86,6 +86,7 @@ describe('createEventStepAction', () => {
         description: '',
         organizerBrief: '',
         startsAt: '',
+        address: '',
         city: '',
         state: '',
         latitude: '',
@@ -106,6 +107,7 @@ describe('createEventStepAction', () => {
       description: '',
       organizerBrief: '',
       startsAt: '',
+      address: '',
       city: '',
       state: '',
       latitude: '',
@@ -133,6 +135,7 @@ describe('createEventStepAction', () => {
       description: '',
       organizerBrief: '',
       startsAt: '',
+      address: '',
       city: '',
       state: '',
       latitude: '',
@@ -164,6 +167,7 @@ describe('createEventStepAction', () => {
       description: '',
       organizerBrief: '',
       startsAt: '',
+      address: '',
       city: '',
       state: '',
       latitude: '',
@@ -196,6 +200,7 @@ describe('createEventStepAction', () => {
       description: '',
       organizerBrief: 'Should not be sent',
       startsAt: '',
+      address: '',
       city: '',
       state: '',
       latitude: '',
@@ -228,6 +233,7 @@ describe('createEventStepAction', () => {
       description: '',
       organizerBrief: 'Premium trail weekend',
       startsAt: '',
+      address: '',
       city: '',
       state: '',
       latitude: '',
@@ -237,5 +243,32 @@ describe('createEventStepAction', () => {
     });
 
     expect(result).toEqual({ ok: false, error: 'FORBIDDEN', message: 'FORBIDDEN' });
+  });
+
+  it('forwards a structured address to edition creation when location selection resolved it', async () => {
+    await createEventStepAction({
+      organizationId,
+      selectedSeriesId: seriesId,
+      showNewSeries: false,
+      sportType: 'trail_running',
+      editionLabel: '2027',
+      editionSlug: '2027',
+      description: '',
+      organizerBrief: '',
+      startsAt: '',
+      address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+      city: 'Zapopan',
+      state: 'Jalisco',
+      latitude: '20.67046657',
+      longitude: '-103.43992534',
+      locationDisplay: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+      showAiContextDisclosure: false,
+    });
+
+    expect(mockCreateEventEdition).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+      }),
+    );
   });
 });

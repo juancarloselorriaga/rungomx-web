@@ -182,6 +182,33 @@ describe('event settings payload shaping', () => {
     expect(payload.registrationOpensAt).toBe('2026-09-01T06:00:00.000Z');
     expect(payload.registrationClosesAt).toBe('2026-09-02T05:59:00.000Z');
   });
+
+  it('preserves the resolved structured address fields for event settings edits', () => {
+    const payload = buildEventEditionPayload({
+      editionId: 'evt-1',
+      surface: 'full',
+      values: {
+        ...baseValues,
+        address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+        city: 'Zapopan',
+        state: 'Jalisco',
+        locationDisplay: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+        latitude: '20.67046657',
+        longitude: '-103.43992534',
+      },
+    });
+
+    expect(payload).toEqual(
+      expect.objectContaining({
+        address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
+        city: 'Zapopan',
+        state: 'Jalisco',
+        locationDisplay: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
+        latitude: '20.67046657',
+        longitude: '-103.43992534',
+      }),
+    );
+  });
 });
 
 describe('publish disabled hint helpers', () => {
