@@ -181,17 +181,6 @@ export default async function DashboardPaymentsPayoutsPage({
         />
       ) : null}
 
-      <OrganizerPaymentsContextCard
-        pathname="/dashboard/payments/payouts"
-        organizations={organizations}
-        selectedOrganization={selectedOrganization}
-        title={t('home.organization.title')}
-        description={t('home.organization.help')}
-        selectorLabel={t('home.organization.label')}
-        organizationCountLabel={organizationCountLabel}
-        slugLabel={t('home.organization.slugLabel')}
-      />
-
       <PayoutHistoryTable
         items={payouts}
         locale={locale as 'es' | 'en'}
@@ -221,6 +210,17 @@ export default async function DashboardPaymentsPayoutsPage({
         previousPageLabel={t('payouts.previousPageLabel')}
         nextPageLabel={t('payouts.nextPageLabel')}
         lastPageLabel={t('payouts.lastPageLabel')}
+      />
+
+      <OrganizerPaymentsContextCard
+        pathname="/dashboard/payments/payouts"
+        organizations={organizations}
+        selectedOrganization={selectedOrganization}
+        title={t('home.organization.title')}
+        description={t('home.organization.help')}
+        selectorLabel={t('home.organization.label')}
+        organizationCountLabel={organizationCountLabel}
+        slugLabel={t('home.organization.slugLabel')}
       />
     </div>
   );

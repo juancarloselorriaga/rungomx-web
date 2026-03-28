@@ -132,6 +132,14 @@ export default async function DashboardPaymentsPage({
         />
       ) : null}
 
+      <OrganizerPaymentsWorkspace
+        key={selectedOrganization.id}
+        locale={locale as 'es' | 'en'}
+        organizationId={selectedOrganization.id}
+        organizationName={selectedOrganization.name}
+        initialData={initialWorkspaceData}
+      />
+
       <OrganizerPaymentsContextCard
         pathname="/dashboard/payments"
         organizations={organizations}
@@ -141,14 +149,6 @@ export default async function DashboardPaymentsPage({
         selectorLabel={t('home.organization.label')}
         organizationCountLabel={organizationCountLabel}
         slugLabel={t('home.organization.slugLabel')}
-      />
-
-      <OrganizerPaymentsWorkspace
-        key={selectedOrganization.id}
-        locale={locale as 'es' | 'en'}
-        organizationId={selectedOrganization.id}
-        organizationName={selectedOrganization.name}
-        initialData={initialWorkspaceData}
       />
     </div>
   );
