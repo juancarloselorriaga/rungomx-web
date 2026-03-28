@@ -17,6 +17,7 @@ These are the standards most implementation tasks should consult early:
 These standards are discovered through this index and should be loaded when the task calls for them:
 
 - `server-actions-and-api-contracts-index.md` — mutation boundary, contract family, auth/error mapping, invalidation, and stable-facade discovery
+- `database-and-drizzle-implementation-index.md` — database entrypoints, schema ownership, import boundaries, query placement, transactions, and DB test utility guidance
 - `dashboard-protected-pages-design.md` — visual/system coherence for protected dashboard pages
 - `loading-and-skeletons.md` — route fallbacks, Suspense, dynamic loading states, and skeleton policy
 - `copy-guidelines.md` — product voice, terminology, labels, and user-facing text
