@@ -166,9 +166,7 @@ test.describe('Event wizard regression coverage', () => {
     await db.execute(
       sql`ALTER TABLE event_editions ADD COLUMN IF NOT EXISTS primary_locale varchar(10)`,
     );
-    await db.execute(
-      sql`ALTER TABLE event_editions ADD COLUMN IF NOT EXISTS organizer_brief text`,
-    );
+    await db.execute(sql`ALTER TABLE event_editions ADD COLUMN IF NOT EXISTS organizer_brief text`);
 
     nonProOrganizerCreds = await signUpTestUser(page, 'wizard-regression-non-pro-', {
       name: 'Wizard Regression Non-Pro Organizer',
@@ -283,7 +281,9 @@ test.describe('Event wizard regression coverage', () => {
     await page.goBack();
     await waitForWizardReady(page);
     await expect.poll(() => new URL(page.url()).searchParams.get('step')).toBe('pricing');
-    await expect(page.getByRole('heading', { name: /pricing tiers|precios/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /pricing tiers|precios/i }).first(),
+    ).toBeVisible();
 
     await page.goForward();
     await waitForWizardReady(page);
@@ -296,7 +296,10 @@ test.describe('Event wizard regression coverage', () => {
     if (await exitWizardLink.isVisible().catch(() => false)) {
       await exitWizardLink.click();
     } else {
-      await page.getByRole('button', { name: /exit (wizard|setup)/i }).first().click();
+      await page
+        .getByRole('button', { name: /exit (wizard|setup)/i })
+        .first()
+        .click();
     }
     await waitForStandardSettingsReady(page);
     await expect(
@@ -366,14 +369,16 @@ test.describe('Event wizard regression coverage', () => {
     await page.goto(`/en/dashboard/events/${blockedEventId}/settings?wizard=1&step=review`);
     await waitForWizardReady(page);
     await expect(
-      page.getByRole('heading', { name: /resolve these blockers before publishing|fix these issues before publishing/i }),
+      page.getByRole('heading', {
+        name: /resolve these blockers before publishing|fix these issues before publishing/i,
+      }),
     ).toBeVisible();
     await expect(page.getByText('Publish blocker', { exact: true })).toBeVisible();
     await expect(page.getByText('Required setup', { exact: true })).toBeVisible();
 
     await page.getByRole('button', { name: /fix first blocker|fix first issue/i }).click();
-    await expect.poll(() => new URL(page.url()).searchParams.get('step')).toBe('basics');
-    await expect(page.getByRole('heading', { name: /event basics/i })).toBeVisible();
+    await expect.poll(() => new URL(page.url()).searchParams.get('step')).toBe('distances');
+    await expect(page.getByRole('heading', { name: /distances/i }).first()).toBeVisible();
   });
 
   test('read-only organizer memberships see an explicit assistant lock state instead of a dead-end copilot', async ({
@@ -383,11 +388,17 @@ test.describe('Event wizard regression coverage', () => {
 
     await page.goto(`/en/dashboard/events/${readyEventId}/settings?wizard=1&step=content`);
     await waitForWizardReady(page);
-    await expect(page.getByText(/assistant is read-only for this membership|view-only access/i)).toBeVisible();
     await expect(
-      page.getByText(/only organizers with edit access can use or apply assistant proposals|only race directors with edit access can apply proposals/i),
+      page.getByText(/assistant is read-only for this membership|view-only access/i),
     ).toBeVisible();
-    await expect(page.getByRole('textbox', { name: /message for setup assistant/i })).toHaveCount(0);
+    await expect(
+      page.getByText(
+        /only organizers with edit access can use or apply assistant proposals|only race directors with edit access can apply proposals/i,
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /message for setup assistant/i })).toHaveCount(
+      0,
+    );
   });
 
   test('desktop assistant route mounts exactly one workspace panel subtree and keeps draft continuity without duplicate controls', async ({
@@ -436,7 +447,9 @@ test.describe('Event wizard regression coverage', () => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'synthetic assistant failure for duplicate-mount regression' }),
+        body: JSON.stringify({
+          error: 'synthetic assistant failure for duplicate-mount regression',
+        }),
       });
     });
 

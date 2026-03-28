@@ -724,7 +724,7 @@ export function EventSetupWizardShell({
                         ) : (
                           <>
                             <Button type="button" onClick={scrollToReviewControls}>
-                              {t('wizardShell.review.reviewPublishSettings')}
+                              {t('wizardShell.review.openPublishControls')}
                               <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                             {isAssistantOpen ? (

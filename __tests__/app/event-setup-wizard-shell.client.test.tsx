@@ -6,6 +6,7 @@ import {
 } from '@/app/[locale]/(protected)/dashboard/events/[eventId]/settings/event-setup-wizard-shell';
 
 const refreshMock = jest.fn();
+const assistantRouterPushMock = jest.fn();
 
 jest.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
@@ -25,20 +26,34 @@ jest.mock('@/i18n/navigation', () => ({
       {children}
     </a>
   ),
+  usePathname: () => '/en/dashboard/events/evt-1/settings',
+  useRouter: () => ({
+    push: assistantRouterPushMock,
+  }),
 }));
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
+    push: assistantRouterPushMock,
     refresh: refreshMock,
   }),
+  usePathname: () => '/en/dashboard/events/evt-1/settings',
+  useSearchParams: () => new URLSearchParams(window.location.search),
 }));
 
-function buildSteps(overrides?: Partial<Record<EventSetupWizardStep['id'], Partial<EventSetupWizardStep>>>) {
+function buildSteps(
+  overrides?: Partial<Record<EventSetupWizardStep['id'], Partial<EventSetupWizardStep>>>,
+) {
   const baseSteps: EventSetupWizardStep[] = [
     { id: 'basics', required: true, completed: true, content: <div>basics-step-body</div> },
     { id: 'distances', required: true, completed: true, content: <div>distances-step-body</div> },
     { id: 'pricing', required: true, completed: true, content: <div>pricing-step-body</div> },
-    { id: 'registration', required: false, completed: false, content: <div>registration-step-body</div> },
+    {
+      id: 'registration',
+      required: false,
+      completed: false,
+      content: <div>registration-step-body</div>,
+    },
     { id: 'policies', required: false, completed: false, content: <div>policies-step-body</div> },
     { id: 'content', required: false, completed: false, content: <div>content-step-body</div> },
     { id: 'extras', required: false, completed: false, content: <div>extras-step-body</div> },
@@ -98,6 +113,7 @@ describe('EventSetupWizardShell', () => {
     window.history.replaceState({}, '', '/');
     pushStateSpy = jest.spyOn(window.history, 'pushState');
     refreshMock.mockClear();
+    assistantRouterPushMock.mockClear();
   });
 
   afterEach(() => {
@@ -139,7 +155,9 @@ describe('EventSetupWizardShell', () => {
     expect(screen.getByText('basics-step-body')).toBeInTheDocument();
     expect(screen.queryByText('content-step-body')).not.toBeInTheDocument();
     expect(window.location.search).toContain('step=basics');
-    expect(screen.getByText('wizardShell.footer.completeRequired:wizardShell.steps.basics')).toBeInTheDocument();
+    expect(
+      screen.getByText('wizardShell.footer.completeRequired:wizardShell.steps.basics'),
+    ).toBeInTheDocument();
   });
 
   it('renders review content with controls on the review step', () => {
@@ -150,7 +168,9 @@ describe('EventSetupWizardShell', () => {
 
     expect(screen.getByText('review-controls')).toBeInTheDocument();
     expect(screen.getByText('wizardShell.review.readyTitle')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i }),
+    ).toBeInTheDocument();
   });
 
   it('holds review in a rechecking state instead of showing stale blockers when entering review', () => {
@@ -174,7 +194,9 @@ describe('EventSetupWizardShell', () => {
     expect(screen.getByText('wizardShell.review.recheckingTitle')).toBeInTheDocument();
     expect(screen.getByText('wizardShell.review.recheckingBody')).toBeInTheDocument();
     expect(screen.queryByText('Participant content still blocks publish')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /wizardShell.review.goToFirstBlocker/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /wizardShell.review.goToFirstBlocker/i }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows refreshed review readiness once fresh server props arrive', () => {
@@ -201,7 +223,10 @@ describe('EventSetupWizardShell', () => {
         eventName="TrailMX 2026"
         organizationName="TrailMX"
         statusLabel="Draft"
-        exitHref={{ pathname: '/dashboard/events/[eventId]/settings', params: { eventId: 'evt-1' } }}
+        exitHref={{
+          pathname: '/dashboard/events/[eventId]/settings',
+          params: { eventId: 'evt-1' },
+        }}
         steps={buildSteps({ content: { completed: true }, review: { completed: true } })}
         reviewControls={<div>review-controls</div>}
         reviewBlockers={[]}
@@ -214,7 +239,9 @@ describe('EventSetupWizardShell', () => {
     expect(screen.queryByText('wizardShell.review.recheckingTitle')).not.toBeInTheDocument();
     expect(screen.getByText('wizardShell.review.readyTitle')).toBeInTheDocument();
     expect(screen.getByText('wizardShell.review.noBlockers')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /wizardShell.review.openPublishControls/i }),
+    ).toBeInTheDocument();
   });
 
   it('uses the softer review state when blockers are clear but recommendations remain', () => {
