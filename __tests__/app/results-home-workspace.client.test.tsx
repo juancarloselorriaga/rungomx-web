@@ -14,15 +14,6 @@ jest.mock('@/components/results/organizer/table-pro-results-grid', () => ({
   TableProResultsGrid: () => <div data-testid="results-draft-grid" />,
 }));
 
-jest.mock('@/components/results/primitives/safe-next-details-message', () => ({
-  SafeNextDetailsMessage: ({ safe, next }: { safe: string; next: string }) => (
-    <div>
-      <span>{safe}</span>
-      <span>{next}</span>
-    </div>
-  ),
-}));
-
 jest.mock('@/components/ui/button', () => ({
   Button: ({ asChild, children, ...props }: { asChild?: boolean; children: React.ReactNode }) =>
     asChild ? <>{children}</> : <button {...props}>{children}</button>,
@@ -31,7 +22,6 @@ jest.mock('@/components/ui/button', () => ({
 jest.mock('@/components/ui/surface', () => ({
   Surface: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
   InsetSurface: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
-  MutedSurface: ({ children }: { children: React.ReactNode }) => <section>{children}</section>,
 }));
 
 jest.mock('@/i18n/navigation', () => ({

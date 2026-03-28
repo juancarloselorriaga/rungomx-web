@@ -93,7 +93,6 @@ export type SafeNextDetailsFeedback = {
 
 type TranslationFn = (key: string, values?: Record<string, string | number>) => string;
 
-const OFFLINE_FALLBACK_UNSYNCED_COUNT = 2;
 const DEFAULT_RESULT_STATUS: ResultEntryStatus = 'finish';
 const DEFAULT_SYNC_STATUS_BY_LANE: Record<OrganizerResultsLane, ResultsSyncStatus> = {
   capture: 'pending_sync',
@@ -368,13 +367,12 @@ export async function getOrganizerResultsRailState(
   const lifecycle: ResultsLifecycleState =
     latestVersion?.status === 'official' ? 'official' : 'draft';
 
-  const laneFallbackUnsynced = lane === 'capture' ? OFFLINE_FALLBACK_UNSYNCED_COUNT : 0;
   const unsyncedCount = readUnsyncedCount(
     latestSession?.provenanceJson ?? null,
-    laneFallbackUnsynced,
+    0,
   );
   const connectivity: ResultsConnectivityState =
-    unsyncedCount > 0 || lane === 'capture' ? 'offline' : 'online';
+    unsyncedCount > 0 ? 'offline' : 'online';
 
   const nextActionKey: ResultsNextActionKey =
     unsyncedCount > 0
@@ -748,11 +746,11 @@ export function getSafeNextDetailsFeedback(
             : 'Captured rows stay in Draft and are saved locally.',
           next: t
             ? t('laneFeedback.capture.syncPending.next')
-            : 'Reconnect and run sync to upload pending entries.',
+            : 'Sync pending entries to update the draft.',
           details: [
             t
               ? t('laneFeedback.capture.syncPending.details.rowsWaitingForSync', { count: pending })
-              : `${pluralize(pending, 'row is', 'rows are')} waiting for sync.`,
+              : `${pluralize(pending, 'row', 'rows')} pending sync.`,
             t
               ? t('laneFeedback.capture.syncPending.details.noPublicChanges')
               : 'No public or official records were changed.',

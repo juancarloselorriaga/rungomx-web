@@ -1,9 +1,8 @@
-import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
 import { ResultsStateRail } from '@/components/results/primitives/results-state-rail';
 import { ResultsVersionVisibilityPanel } from '@/components/results/organizer/results-version-visibility-panel';
 import { TableProResultsGrid } from '@/components/results/organizer/table-pro-results-grid';
 import { Button } from '@/components/ui/button';
-import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { ChevronRight } from 'lucide-react';
 
@@ -229,34 +228,6 @@ export function ResultsHomeWorkspace({ eventId, pageData, labels }: ResultsHomeW
           labels={pageData.labels.table}
         />
       </section>
-
-      {pageData.feedbackItems.length > 0 ? (
-        <section className="space-y-3" aria-labelledby="results-guidance-title">
-          <h2
-            id="results-guidance-title"
-            className="text-sm font-semibold text-foreground sm:text-base"
-          >
-            {pageData.labels.feedback.heading}
-          </h2>
-          <div className="grid gap-3">
-            {pageData.feedbackItems.map((item) => (
-              <MutedSurface key={item.id} className="p-0">
-                <SafeNextDetailsMessage
-                  safe={item.safe}
-                  next={item.next}
-                  details={item.details}
-                  tone={item.tone}
-                  labels={{
-                    safe: pageData.labels.feedback.safe,
-                    next: pageData.labels.feedback.next,
-                    details: pageData.labels.feedback.details,
-                  }}
-                />
-              </MutedSurface>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <section className="space-y-3" aria-labelledby="results-supporting-ops-title">
         <div className="space-y-1">

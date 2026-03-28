@@ -1,10 +1,9 @@
 import { CaptureBibEntryList } from '@/components/results/organizer/capture-bib-entry-list';
 import { ResultsVersionVisibilityPanel } from '@/components/results/organizer/results-version-visibility-panel';
-import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
 import { ResultsStateRail } from '@/components/results/primitives/results-state-rail';
-import { MutedSurface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
+import { AlertTriangle } from 'lucide-react';
 
 import { ResultsSecondaryBackLink } from '../_results-secondary-back-link';
 import { ResultsPageHero } from '../_results-page-hero';
@@ -69,6 +68,21 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
           </Link>
         }
       />
+
+      {pageData.railState.unsyncedCount > 0 ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="flex items-center gap-3 rounded-lg border border-amber-200/80 bg-amber-50/60 p-3 text-sm dark:border-amber-900/80 dark:bg-amber-950/45"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <p className="flex-1 text-foreground">
+            {t('captureBanner.pendingSyncMessage', {
+              count: pageData.railState.unsyncedCount,
+            })}
+          </p>
+        </div>
+      ) : null}
 
       <CaptureBibEntryList
         storageKey={`results.capture.entries.${pageData.userScopeKey}.${eventId}`}
@@ -157,34 +171,6 @@ export async function ResultsCaptureView({ locale, eventId }: ResultsCaptureView
           },
         }}
       />
-
-      {pageData.feedbackItems.length > 0 ? (
-        <section className="space-y-3" aria-labelledby="results-capture-guidance-title">
-          <h2
-            id="results-capture-guidance-title"
-            className="text-sm font-semibold text-foreground sm:text-base"
-          >
-            {pageData.labels.feedback.heading}
-          </h2>
-          <div className="grid gap-3">
-            {pageData.feedbackItems.map((item) => (
-              <MutedSurface key={item.id} className="p-0">
-                <SafeNextDetailsMessage
-                  safe={item.safe}
-                  next={item.next}
-                  details={item.details}
-                  tone={item.tone}
-                  labels={{
-                    safe: pageData.labels.feedback.safe,
-                    next: pageData.labels.feedback.next,
-                    details: pageData.labels.feedback.details,
-                  }}
-                />
-              </MutedSurface>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <section className="space-y-3" aria-labelledby="results-capture-publish-context-title">
         <div className="space-y-1">
