@@ -9,7 +9,17 @@ import { auditLogs } from '@/db/schema';
 import type { CreateAuditLogParams, CreateAuditLogResult } from './types';
 
 export { AUDIT_ACTIONS, getAuditActionDescription } from './actions';
-export type { AuditAction, AuditEntityType, CreateAuditLogParams, CreateAuditLogResult } from './types';
+export type {
+  AuditAction,
+  AuditEntityType,
+  CreateAuditLogParams,
+  CreateAuditLogResult,
+} from './types';
+
+type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export type AuditDbTransaction = DbTransaction;
+export type AuditDbClient = typeof db | AuditDbTransaction;
 
 /**
  * Create an audit log entry.
@@ -66,8 +76,7 @@ export type { AuditAction, AuditEntityType, CreateAuditLogParams, CreateAuditLog
  */
 export async function createAuditLog(
   params: CreateAuditLogParams,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx?: any,
+  tx?: AuditDbClient,
 ): Promise<CreateAuditLogResult> {
   try {
     const dbClient = tx || db;

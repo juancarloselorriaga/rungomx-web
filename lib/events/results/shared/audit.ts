@@ -1,14 +1,11 @@
-import { createAuditLog, type CreateAuditLogResult } from '@/lib/audit';
+import { createAuditLog, type AuditDbClient, type CreateAuditLogResult } from '@/lib/audit';
 import type { ResultVersionFinalizationGateSummary } from '@/lib/events/results/types';
 
 export type CorrectionDeniedAuditAction =
   | 'results.correction.request.denied'
   | 'results.correction.review.denied';
 
-export function throwIfAuditLogFailed(
-  result: CreateAuditLogResult,
-  context: string,
-): void {
+export function throwIfAuditLogFailed(result: CreateAuditLogResult, context: string): void {
   if (result.ok) return;
   throw new Error(`AUDIT_LOG_FAILED:${context}`);
 }
@@ -25,8 +22,7 @@ export async function createResultsIngestionInitializeAudit(
     sourceFileChecksum: string | null;
     startedAtIso: string;
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx?: any,
+  tx?: AuditDbClient,
 ): Promise<CreateAuditLogResult> {
   return createAuditLog(
     {
@@ -128,8 +124,7 @@ export async function createResultsCorrectionPublishAudit(
     publishedByUserId: string;
     publishedAtIso: string;
   },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tx?: any,
+  tx?: AuditDbClient,
 ): Promise<CreateAuditLogResult> {
   return createAuditLog(
     {
