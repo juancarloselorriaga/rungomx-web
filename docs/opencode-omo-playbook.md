@@ -9,7 +9,7 @@ This repository already has a strong repo-native OpenCode setup:
 
 The goal of this playbook is **not** to replace that workflow with `oh-my-openagent`.
 Instead, it captures the useful parts of the OMO style while keeping RunGoMX on a
-standards-first, repo-safe setup.
+repo-safe, standards-led agent workflow.
 
 ## What we adopted
 
@@ -18,15 +18,15 @@ standards-first, repo-safe setup.
 Use the repo-local slash command:
 
 ```text
-/ulw-lite <task>
+/task-flow <task>
 ```
 
 It applies a small OMO-inspired loop:
 
 1. categorize the task (`quick`, `deep`, `visual`, `writing`)
-2. load the relevant repo standards
+2. follow the baseline reading order in `AGENTS.md`, then use `prompts/standards/README.md` to load only additional relevant standards
 3. plan the smallest viable change
-4. use repo-native agents (`architect`, `implementer`, `reviewer`, `test-guardian`)
+4. use repo-native agents (`boundary-planner`, `change-builder`, `diff-reviewer`, `validation-planner`)
 5. report boundary impacts, tests, and remaining risks
 
 Category guidance:
@@ -36,14 +36,28 @@ Category guidance:
 - `visual`: UI-heavy work with explicit server/client boundary review
 - `writing`: docs/process/copy work with minimal code churn
 
-### 2. Standards-first mode
+### 2. Primary orchestration agent
 
-Use the custom OpenCode mode:
+Use the custom OpenCode primary agent:
 
-- `.opencode/modes/standards-first.md`
+- `.opencode/agents/orchestrator.md`
 
 This keeps the repository on its existing invariants while borrowing OMO's habit of explicit
 task classification and orchestration.
+
+Notes:
+
+- `orchestrator` is the repo's default OpenCode intake agent.
+- Specialist work is delegated to clearly named agents under `.opencode/agents/`, and those specialists remain directly selectable when needed.
+- The repo no longer depends on a custom mode for this workflow.
+
+Rename map:
+
+- `strict-build` + `standards-first` -> `orchestrator`
+- `architect` -> `boundary-planner`
+- `implementer` -> `change-builder`
+- `reviewer` -> `diff-reviewer`
+- `test-guardian` -> `validation-planner`
 
 ### 3. Isolated profile instead of global replacement
 
@@ -100,7 +114,7 @@ proves materially better for real tasks.
 Good candidates to borrow from OMO without a full install:
 
 - explicit task categories
-- planner -> implementer -> reviewer -> validation sequencing
+- orchestrator -> change-builder -> diff-reviewer -> validation-planner sequencing
 - stronger model specialization by task type
 - one-command orchestration for repetitive work
 

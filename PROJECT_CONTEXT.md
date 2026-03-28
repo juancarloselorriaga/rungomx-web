@@ -146,7 +146,7 @@ BMAD modules: `bmm` (PM, dev, QA, architect, SM, UX, tech-writer), `bmb` (agent/
 ### `opencode.json`
 
 - MCP servers configured (all disabled by default): `next-devtools`, `codex` (MCP server), `serena`, `better-auth`
-- No custom OpenCode model or prompt overrides defined
+- Custom OpenCode repo-local workflow artifacts exist: `default_agent` is `orchestrator`, repo-local agents live under `.opencode/agents/`, and the one-shot workflow command lives at `.opencode/commands/task-flow.md`
 
 ---
 
