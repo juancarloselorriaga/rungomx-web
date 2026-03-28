@@ -12,7 +12,12 @@ Required workflow:
 3. Follow the baseline reading order defined in `AGENTS.md` first, then load only additional task-relevant standards under `prompts/standards/` and `prompts/auth-stack/` before editing.
 4. Escalate to `boundary-planner` for auth or role policy changes, API or action contract changes, cross-module refactors, or release-critical decisions.
 5. Implement the smallest viable change that satisfies requirements.
-6. Validate with appropriate tests, prioritizing reliability and boundary safety.
+6. Before handoff, self-check the changed code against the loaded canonical standards. When maintainability, readability, naming, duplication, side-effect clarity, or abstraction discipline are in scope, load and self-check against `prompts/standards/engineering-principles.md`.
+7. Validate with appropriate tests, prioritizing reliability and boundary safety.
+
+Special cases:
+
+- If the task touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
 
 Implementation principles:
 
@@ -21,6 +26,7 @@ Implementation principles:
 - Preserve server/client component separation.
 - Keep auth and authorization enforcement at proxy, API, and server boundaries.
 - Maintain existing public contracts unless migration is explicitly requested.
+- Prefer maintainability improvements that clarify changed code without widening scope or introducing speculative abstraction.
 
 Must identify in every task:
 

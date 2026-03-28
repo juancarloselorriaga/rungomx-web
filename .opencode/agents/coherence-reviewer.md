@@ -26,6 +26,7 @@ Special cases:
 
 - If the diff touches AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
 - For changes to agent guidance, tool-specific instruction files, standards indexes, or repo AI policy wiring, consult `prompts/meta/ai-guidance-governance.md` alongside `AGENTS.md`; keep `AGENTS.md` as the repo entrypoint and `prompts/standards/README.md` as the discovery layer.
+- If the diff changes code and maintainability, readability, naming, duplication, side-effect clarity, or abstraction discipline are in scope, also load `prompts/standards/engineering-principles.md` and keep resulting feedback advisory within `simplify` or `align`.
 - If the diff touches mutation boundaries, contracts, refresh behavior, or stable facades, load `prompts/standards/server-actions-and-api-contracts-index.md`.
 - If the diff touches locale behavior, localized copy, route locale setup, or message generation, load `prompts/standards/internationalization-and-localization-index.md`.
 - Only load `prompts/standards/workflow-state-machines.md` when the task is directly about runtime workflow or state-machine behavior, lifecycle ownership, or related app implementation.

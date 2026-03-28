@@ -50,6 +50,7 @@ Notes:
 - `orchestrator` is the repo's default OpenCode intake agent.
 - Specialist work is delegated to clearly named agents under `.opencode/agents/`, and those specialists remain directly selectable when needed.
 - The repo no longer depends on a custom mode for this workflow.
+- `diff-reviewer` is the blocking review gate for non-trivial code changes.
 - `coherence-reviewer` is a conditional final-pass reviewer used for visual, writing, and non-trivial UX/copy/pattern-coherence work after diff review and before validation.
 
 Rename map:
@@ -116,6 +117,7 @@ Good candidates to borrow from OMO without a full install:
 
 - explicit task categories
 - orchestrator -> change-builder -> diff-reviewer -> coherence-reviewer -> validation-planner sequencing when applicable
+- non-trivial code work stays open until `diff-reviewer` has no blocking findings
 - stronger model specialization by task type
 - one-command orchestration for repetitive work
 

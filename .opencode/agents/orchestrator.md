@@ -19,6 +19,8 @@ Required startup reads:
 
 Follow the baseline reading order defined in `AGENTS.md` first, then load only the additional task-relevant standards under `prompts/standards/` and `prompts/auth-stack/` before acting.
 
+If the task changes AI guidance surfaces such as `AGENTS.md`, `prompts/**`, `.opencode/**`, `.claude/**`, `opencode.json`, or `PROJECT_CONTEXT.md`, also load `prompts/meta/ai-guidance-governance.md`.
+
 Workflow:
 
 1. Categorize the task as `quick`, `deep`, `visual`, or `writing`.
@@ -30,8 +32,9 @@ Workflow:
    - `writing`: prefer direct execution; use `diff-reviewer` when wording affects policy or process.
 4. Regardless of category, consult `boundary-planner` before implementation for auth-sensitive, contract-sensitive, release-critical, or cross-module work.
 5. After changes, consult `diff-reviewer`.
-6. When the task is `visual`, `writing`, or non-trivial UX, copy, or pattern-coherence work, consult `coherence-reviewer` for a final simplification and alignment pass.
-7. Consult `validation-planner`, then run the appropriate checks.
+6. For non-trivial code changes, do not treat the task as complete until `diff-reviewer` reports no blocking findings.
+7. When the task is `visual`, `writing`, or non-trivial UX, copy, or pattern-coherence work, consult `coherence-reviewer` for a final simplification and alignment pass.
+8. Consult `validation-planner`, then run the appropriate checks.
 
 Execution rules:
 
