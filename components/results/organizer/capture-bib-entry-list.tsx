@@ -4,6 +4,7 @@ import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-nex
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
+import { TimeInput } from '@/components/ui/time-input';
 import { Link } from '@/i18n/navigation';
 import {
   createEmptyOfflineCaptureStore,
@@ -434,10 +435,9 @@ export function CaptureBibEntryList({
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {labels.timeLabel}
               </span>
-              <Input
+              <TimeInput
                 value={finishTimeInput}
-                onChange={(event) => setFinishTimeInput(event.target.value)}
-                inputMode="numeric"
+                onChange={setFinishTimeInput}
                 placeholder={labels.timePlaceholder}
                 className="h-12 text-base font-medium placeholder:font-normal placeholder:text-muted-foreground/60"
               />
