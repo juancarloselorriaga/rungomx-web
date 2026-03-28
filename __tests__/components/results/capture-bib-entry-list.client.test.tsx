@@ -1,5 +1,9 @@
 import { CaptureBibEntryList } from '@/components/results/organizer/capture-bib-entry-list';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  createEmptyOfflineCaptureStore,
+  createOfflineCaptureEntry,
+} from '@/lib/events/results/offline/capture-store';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 jest.mock('@/i18n/navigation', () => ({
@@ -135,7 +139,7 @@ function saveEntry(params: {
   });
 
   if (params.status) {
-    fireEvent.click(screen.getByRole('button', { name: params.status }));
+    fireEvent.click(screen.getByRole('radio', { name: params.status }));
   }
 
   fireEvent.click(screen.getByRole('button', { name: labels.submitAction }));
@@ -170,6 +174,59 @@ describe('CaptureBibEntryList', () => {
 
     expect(screen.getByText('101')).toBeInTheDocument();
     expect(screen.getByText('1 entries pending sync')).toBeInTheDocument();
+  });
+
+  it('hydrates persisted sync metadata after mount without relying on first render storage reads', async () => {
+    const store = createEmptyOfflineCaptureStore({
+      sessionId: 'capture-session-test',
+      deviceLabel: 'browser-device',
+      editorLabel: 'organizer',
+    });
+    const entryResult = createOfflineCaptureEntry({
+      bibNumber: '777',
+      finishTimeInput: '00:42:10',
+      status: 'finish',
+      sessionId: store.sessionId,
+      deviceLabel: store.deviceLabel,
+      editorLabel: store.editorLabel,
+    });
+
+    if (!entryResult.ok) {
+      throw new Error('Expected offline capture entry creation to succeed.');
+    }
+
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        ...store,
+        entries: [entryResult.entry],
+        syncCheckpoint: {
+          syncedEntryIds: [],
+          lastProcessedEntryId: null,
+          updatedAt: '2026-03-28T18:00:00.000Z',
+        },
+      }),
+    );
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('777')).toBeInTheDocument();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Last sync: 3\/28\/26,/)).toBeInTheDocument();
+    });
+  });
+
+  it('reflects offline state immediately after mount from navigator state', async () => {
+    setOnlineState(false);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(labels.connectivityOffline)).toBeInTheDocument();
+    });
   });
 
   it('shows review action next to sync controls', () => {

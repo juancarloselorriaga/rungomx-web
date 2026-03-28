@@ -2,21 +2,24 @@
 
 import { SafeNextDetailsMessage } from '@/components/results/primitives/safe-next-details-message';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { InsetSurface, MutedSurface, Surface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
 import {
+  createEmptyOfflineCaptureStore,
   createOfflineCaptureEntry,
   deriveOfflineCapturePreviewRows,
   getOfflinePendingSyncCount,
   loadOfflineCaptureStore,
   persistOfflineCaptureStore,
   type OfflineCaptureSyncConflict,
+  type OfflineCaptureStore,
   type OfflineCaptureStatus,
 } from '@/lib/events/results/offline/capture-store';
 import { runDeterministicOfflineSync } from '@/lib/events/results/offline/sync-engine';
 import { cn } from '@/lib/utils';
 import { CloudOff, Wifi } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
 
 type CaptureBibEntryListLabels = {
   title: string;
@@ -106,6 +109,7 @@ type CaptureBibEntryListProps = {
 };
 
 const STATUS_OPTIONS: OfflineCaptureStatus[] = ['finish', 'dnf', 'dns', 'dq'];
+const OFFLINE_CAPTURE_STORE_EVENT = 'results-offline-capture-store-change';
 
 function formatTemplateLabel(template: string, count: number): string {
   return template.replace('{count}', count.toLocaleString());
@@ -160,48 +164,89 @@ export function CaptureBibEntryList({
   labels,
   reviewHref,
 }: CaptureBibEntryListProps) {
-  const [store, setStore] = useState(() => loadOfflineCaptureStore(storageKey));
   const [bibNumber, setBibNumber] = useState('');
   const [finishTimeInput, setFinishTimeInput] = useState('');
   const [status, setStatus] = useState<OfflineCaptureStatus>('finish');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const fallbackStore = useMemo(
+    () =>
+      createEmptyOfflineCaptureStore({
+        sessionId: 'capture-session',
+        deviceLabel: 'browser-device',
+        editorLabel: 'organizer',
+      }),
+    [],
+  );
+  const storeSnapshot = useSyncExternalStore(
+    useCallback(
+      (onStoreChange) => {
+        if (typeof window === 'undefined') return () => undefined;
 
-  useEffect(() => {
-    persistOfflineCaptureStore(storageKey, store);
-  }, [storageKey, store]);
+        const onStorage = (event: StorageEvent) => {
+          if (event.key === storageKey) onStoreChange();
+        };
+        const onCustomStoreChange = (event: Event) => {
+          if ((event as CustomEvent<string>).detail === storageKey) onStoreChange();
+        };
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
+        window.addEventListener('storage', onStorage);
+        window.addEventListener(OFFLINE_CAPTURE_STORE_EVENT, onCustomStoreChange);
 
-    const onOnline = () => setIsOnline(true);
-    const onOffline = () => setIsOnline(false);
+        return () => {
+          window.removeEventListener('storage', onStorage);
+          window.removeEventListener(OFFLINE_CAPTURE_STORE_EVENT, onCustomStoreChange);
+        };
+      },
+      [storageKey],
+    ),
+    useCallback(() => {
+      if (typeof window === 'undefined') return null;
+      return window.localStorage.getItem(storageKey);
+    }, [storageKey]),
+    () => null,
+  );
+  const store = useMemo(() => {
+    if (storeSnapshot === null) return fallbackStore;
 
-    window.addEventListener('online', onOnline);
-    window.addEventListener('offline', onOffline);
+    return loadOfflineCaptureStore(storageKey);
+  }, [fallbackStore, storageKey, storeSnapshot]);
+  const isOnline = useSyncExternalStore(
+    useCallback((onOnlineChange) => {
+      if (typeof window === 'undefined') return () => undefined;
 
-    return () => {
-      window.removeEventListener('online', onOnline);
-      window.removeEventListener('offline', onOffline);
-    };
-  }, []);
+      window.addEventListener('online', onOnlineChange);
+      window.addEventListener('offline', onOnlineChange);
+
+      return () => {
+        window.removeEventListener('online', onOnlineChange);
+        window.removeEventListener('offline', onOnlineChange);
+      };
+    }, []),
+    () => (typeof navigator === 'undefined' ? true : navigator.onLine),
+    () => true,
+  );
+  const commitStore = useCallback(
+    (updater: (current: OfflineCaptureStore) => OfflineCaptureStore) => {
+      const nextStore = updater(loadOfflineCaptureStore(storageKey));
+      persistOfflineCaptureStore(storageKey, nextStore);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent<string>(OFFLINE_CAPTURE_STORE_EVENT, { detail: storageKey }),
+        );
+      }
+    },
+    [storageKey],
+  );
 
   const pendingSyncCount = getOfflinePendingSyncCount(store.entries);
-  const previewRows = useMemo(
-    () => deriveOfflineCapturePreviewRows(store.entries),
-    [store.entries],
-  );
-  const latestPreviewRows = useMemo(
-    () =>
-      [...previewRows].sort((left, right) => {
-        const rightTime = Date.parse(right.capturedAt);
-        const leftTime = Date.parse(left.capturedAt);
-        if (rightTime !== leftTime) return rightTime - leftTime;
-        return right.id.localeCompare(left.id);
-      }),
-    [previewRows],
-  );
+  const previewRows = deriveOfflineCapturePreviewRows(store.entries);
+  const latestPreviewRows = [...previewRows].sort((left, right) => {
+    const rightTime = Date.parse(right.capturedAt);
+    const leftTime = Date.parse(left.capturedAt);
+    if (rightTime !== leftTime) return rightTime - leftTime;
+    return right.id.localeCompare(left.id);
+  });
   const timestampFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(locale, {
@@ -210,14 +255,10 @@ export function CaptureBibEntryList({
       }),
     [locale],
   );
-  const unresolvedConflicts = useMemo(
-    () => store.syncConflicts.filter((conflict) => conflict.finalizedAt === null),
-    [store.syncConflicts],
+  const unresolvedConflicts = store.syncConflicts.filter(
+    (conflict) => conflict.finalizedAt === null,
   );
-  const entryById = useMemo(
-    () => new Map(store.entries.map((entry) => [entry.id, entry])),
-    [store.entries],
-  );
+  const entryById = new Map(store.entries.map((entry) => [entry.id, entry]));
   const lastSyncLabel = store.syncCheckpoint.updatedAt
     ? timestampFormatter.format(new Date(store.syncCheckpoint.updatedAt))
     : labels.lastSyncNever;
@@ -242,7 +283,7 @@ export function CaptureBibEntryList({
       return;
     }
 
-    setStore((current) => ({
+    commitStore((current) => ({
       ...current,
       entries: [...current.entries, result.entry],
     }));
@@ -275,7 +316,7 @@ export function CaptureBibEntryList({
       maxBatchSize: 3,
     });
 
-    setStore((current) => ({
+    commitStore((current) => ({
       ...current,
       entries: syncResult.entries,
       syncCheckpoint: syncResult.checkpoint,
@@ -308,7 +349,7 @@ export function CaptureBibEntryList({
   };
 
   const onResolveConflict = (conflictId: string, choice: 'keep_local' | 'keep_server') => {
-    setStore((current) => ({
+    commitStore((current) => ({
       ...current,
       syncConflicts: current.syncConflicts.map((conflict) => {
         if (conflict.id !== conflictId) return conflict;
@@ -380,12 +421,12 @@ export function CaptureBibEntryList({
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {labels.bibLabel}
               </span>
-              <input
+              <Input
                 value={bibNumber}
                 onChange={(event) => setBibNumber(event.target.value)}
                 inputMode="numeric"
                 placeholder={labels.bibPlaceholder}
-                className="h-12 w-full rounded-lg border bg-background px-3 text-base font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 text-base font-medium placeholder:font-normal placeholder:text-muted-foreground/60"
               />
             </label>
 
@@ -393,12 +434,12 @@ export function CaptureBibEntryList({
               <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 {labels.timeLabel}
               </span>
-              <input
+              <Input
                 value={finishTimeInput}
                 onChange={(event) => setFinishTimeInput(event.target.value)}
                 inputMode="numeric"
                 placeholder={labels.timePlaceholder}
-                className="h-12 w-full rounded-lg border bg-background px-3 text-base font-medium text-foreground placeholder:font-normal placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-12 text-base font-medium placeholder:font-normal placeholder:text-muted-foreground/60"
               />
             </label>
           </div>
@@ -407,20 +448,25 @@ export function CaptureBibEntryList({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {labels.statusLabel}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div
+              role="radiogroup"
+              aria-label={labels.statusLabel}
+              className="flex rounded-xl bg-muted/70 p-1 gap-1"
+            >
               {STATUS_OPTIONS.map((option) => {
                 const selected = status === option;
                 return (
                   <button
                     key={option}
                     type="button"
+                    role="radio"
+                    aria-checked={selected}
                     onClick={() => setStatus(option)}
-                    aria-pressed={selected}
                     className={cn(
-                      'min-h-10 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors',
+                      'flex-1 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all',
                       selected
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-border bg-background text-foreground hover:bg-muted',
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
                     {getStatusLabel(option, labels)}
@@ -445,20 +491,18 @@ export function CaptureBibEntryList({
             </p>
           ) : null}
 
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="button" onClick={onSubmit} className="h-11 sm:min-w-[10rem]">
-              {labels.submitAction}
-            </Button>
+          <Button type="button" onClick={onSubmit} className="mt-4 h-11 w-full">
+            {labels.submitAction}
+          </Button>
 
-            {reviewHref ? (
-              <div className="flex items-center gap-3">
-                <p className="text-xs text-muted-foreground">{labels.reassuranceNotPublic}</p>
-                <Button asChild type="button" variant="outline" size="sm" className="h-9 shrink-0">
-                  <Link href={reviewHref}>{labels.reviewAction}</Link>
-                </Button>
-              </div>
-            ) : null}
-          </div>
+          {reviewHref ? (
+            <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
+              <p className="text-xs text-muted-foreground">{labels.reassuranceNotPublic}</p>
+              <Button asChild type="button" variant="ghost" size="sm" className="shrink-0">
+                <Link href={reviewHref}>{labels.reviewAction}</Link>
+              </Button>
+            </div>
+          ) : null}
         </section>
 
         {/* Conflict resolution — inline, shown only when needed */}
