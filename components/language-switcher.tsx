@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,14 +13,14 @@ import { routing } from '@/i18n/routing';
 import { Languages } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({ triggerClassName }: { triggerClassName?: string } = {}) {
   const { changeLocale, currentLocale } = useLocaleChange();
   const t = useTranslations('components.localeSwitcher');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" className={cn(triggerClassName)}>
           <Languages className="h-[1.2rem] w-[1.2rem]" />
           <span className="sr-only">{t('label')}</span>
         </Button>

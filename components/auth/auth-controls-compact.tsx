@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Link, useRouter } from '@/i18n/navigation';
 import { signOut } from '@/lib/auth/client';
 import type { User } from '@/lib/auth/types';
+import { cn } from '@/lib/utils';
 import { LucideLogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { FC, useTransition } from 'react';
@@ -12,9 +13,14 @@ import { FC, useTransition } from 'react';
 interface AuthenticationControlsCompactProps {
   initialUser: User | null;
   cb?: () => void;
+  className?: string;
 }
 
-const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({ cb, initialUser }) => {
+const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({
+  cb,
+  initialUser,
+  className,
+}) => {
   const t = useTranslations('auth');
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -32,11 +38,16 @@ const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({ cb, initi
 
   if (!initialUser) {
     return (
-      <div className="flex gap-2">
-        <Button asChild size="sm" variant="outline">
+      <div className={cn('grid w-full grid-cols-2 gap-2', className)}>
+        <Button
+          asChild
+          size="sm"
+          variant="outline"
+          className="w-full rounded-2xl px-4 py-2.5 whitespace-nowrap"
+        >
           <Link href="/sign-in">{t('signIn')}</Link>
         </Button>
-        <Button asChild size="sm">
+        <Button asChild size="sm" className="w-full rounded-2xl px-4 py-2.5 whitespace-nowrap">
           <Link href="/sign-up">{t('signUp')}</Link>
         </Button>
       </div>
@@ -44,7 +55,7 @@ const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({ cb, initi
   }
 
   return (
-    <div className="flex gap-3 items-center">
+    <div className={cn('flex items-center justify-between gap-3', className)}>
       <UserAvatar size="sm" onClick={cb} user={initialUser} />
       <Button
         aria-label={t('signOut')}
@@ -52,6 +63,7 @@ const AuthControlsCompact: FC<AuthenticationControlsCompactProps> = ({ cb, initi
         onClick={handleSignOut}
         variant="ghost"
         size="icon"
+        className="rounded-full border border-border/55 bg-background/70 shadow-xs hover:bg-background"
       >
         <LucideLogOut size={16} />
       </Button>

@@ -147,14 +147,14 @@ export function NavigationDrawerContent({
               </div>
             </div>
           ) : null}
-          <div className="flex w-full items-center justify-between">
+          <div className="flex w-full flex-col gap-3">
             <AuthControlsCompact initialUser={resolvedUser} />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-end gap-2">
               <Suspense fallback={null}>
-                <LanguageSwitcher />
+                <LanguageSwitcher triggerClassName="rounded-full border border-border/55 bg-background/70 shadow-xs hover:bg-background" />
               </Suspense>
               <Suspense fallback={null}>
-                <ThemeSwitcher />
+                <ThemeSwitcher triggerClassName="rounded-full border border-border/55 bg-background/70 shadow-xs hover:bg-background" />
               </Suspense>
             </div>
           </div>
