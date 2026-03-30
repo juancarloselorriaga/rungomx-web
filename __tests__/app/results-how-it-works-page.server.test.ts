@@ -60,6 +60,9 @@ describe('results how-it-works page', () => {
     const html = renderToStaticMarkup(page);
 
     expect(html).toContain('title');
+    expect(html).toContain('trustSummary.publishedByDirector.title');
+    expect(html).toContain('trustSummary.visibleHistory.title');
+    expect(html).toContain('trustSummary.publishedVersionsOnly.title');
     expect(html).toContain('officialMeaning.title');
     expect(html).toContain('correctionProcess.title');
     expect(html).toContain('rankingsRules.title');

@@ -20,6 +20,21 @@ export default async function ResultsHowItWorksPage({ params }: LocalePageProps)
   await configPageLocale(params, { pathname: '/results/how-it-works' });
   const t = await getTranslations('pages.results.howItWorks.explainer');
 
+  const trustPillars = [
+    {
+      title: t('trustSummary.publishedByDirector.title'),
+      description: t('trustSummary.publishedByDirector.description'),
+    },
+    {
+      title: t('trustSummary.visibleHistory.title'),
+      description: t('trustSummary.visibleHistory.description'),
+    },
+    {
+      title: t('trustSummary.publishedVersionsOnly.title'),
+      description: t('trustSummary.publishedVersionsOnly.description'),
+    },
+  ];
+
   const sections = [
     {
       title: t('officialMeaning.title'),
@@ -48,9 +63,26 @@ export default async function ResultsHowItWorksPage({ params }: LocalePageProps)
       />
 
       <Section padding="lg" size="lg">
-        <div className="space-y-10 border-t border-border/70 pt-8 md:space-y-12 md:pt-10">
+        <div className="grid gap-4 md:grid-cols-3 md:gap-5">
+          {trustPillars.map((pillar) => (
+            <article
+              key={pillar.title}
+              className="rounded-[1.25rem] border border-border/60 bg-background/80 p-5"
+            >
+              <h2 className="text-sm font-semibold tracking-[-0.01em] text-foreground md:text-base">
+                {pillar.title}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">{pillar.description}</p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-8 space-y-10 border-t border-border/70 pt-8 md:mt-10 md:space-y-12 md:pt-10">
           {sections.map((section) => (
-            <article key={section.title} className="border-t border-border/70 pt-8 md:pt-10 first:border-t-0 first:pt-0">
+            <article
+              key={section.title}
+              className="border-t border-border/70 pt-8 md:pt-10 first:border-t-0 first:pt-0"
+            >
               <TextBlock title={section.title} size="sm" className="max-w-[42rem]" />
               <div className="mt-5 max-w-[42rem] space-y-4 text-sm leading-7 text-muted-foreground md:text-base">
                 {section.points.map((point) => (

@@ -30,30 +30,44 @@
   "howItWorks": {
     "panel": {
       "title": "Cómo funciona",
-      "description": "Qué significa “oficial”, cuándo puede cambiar un resultado y cómo lo usan los rankings.",
-      "point1": "Oficial significa que el organizador de la carrera ya hizo públicos los resultados de esa edición.",
-      "point2": "Si hay una corrección, mostramos la nueva versión sin ocultar que hubo un cambio.",
-      "point3": "Los rankings solo usan resultados oficiales o corregidos.",
-      "cta": "Leer el explicador completo"
+      "description": "Aquí ves qué vuelve oficial a un resultado, cómo siguen visibles las correcciones y cómo los rankings se mantienen ligados a versiones publicadas.",
+      "point1": "Oficial significa que el director de carrera publicó esa versión para la carrera.",
+      "point2": "Si se aprueba una corrección, publicamos la nueva versión sin ocultar que hubo un cambio.",
+      "point3": "Los rankings solo usan versiones oficiales publicadas y correcciones aprobadas.",
+      "cta": "Leer la explicación completa"
     },
     "explainer": {
       "eyebrow": "Cómo funciona",
-      "title": "Cómo funcionan los resultados y rankings oficiales",
-      "description": "Aquí te explicamos qué significa “Oficial”, cómo aparecen las correcciones y cómo los rankings usan esos resultados.",
+      "title": "Por qué puedes confiar en los resultados y rankings oficiales",
+      "description": "Los resultados oficiales los publica el director de carrera, las correcciones quedan visibles y los rankings usan solo versiones oficiales publicadas.",
+      "trustSummary": {
+        "publishedByDirector": {
+          "title": "Publicación oficial",
+          "description": "Un resultado se vuelve oficial solo cuando el director de carrera publica esa versión para la carrera."
+        },
+        "visibleHistory": {
+          "title": "Historial de correcciones",
+          "description": "Si algo cambia, la corrección publicada sigue visible para que sepas que hubo una actualización."
+        },
+        "publishedVersionsOnly": {
+          "title": "Rankings de versiones publicadas",
+          "description": "Los rankings cuentan solo versiones oficiales publicadas y correcciones aprobadas de esa carrera."
+        }
+      },
       "officialMeaning": {
-        "title": "Qué significa “Oficial”",
-        "point1": "Los resultados oficiales son los que el organizador de la carrera hizo públicos para esa edición.",
-        "point2": "Los tiempos en borrador y los datos no publicados no aparecen como resultados oficiales."
+        "title": "Publicado por el director de carrera",
+        "point1": "Un resultado se vuelve oficial solo cuando el director de carrera lo publica para esa edición.",
+        "point2": "Los tiempos en borrador, los datos en revisión privada y los cambios no publicados no aparecen en esta página pública de resultados."
       },
       "correctionProcess": {
-        "title": "Cómo funcionan las correcciones",
-        "point1": "Cuando se corrige un tiempo o una posición, se publica una nueva versión en lugar de reemplazar la anterior sin aviso.",
-        "point2": "Puedes ver que hubo una corrección y cuándo se hizo."
+        "title": "Historial visible de correcciones",
+        "point1": "Si el director de carrera aprueba una corrección de tiempo, posición o clasificación, publicamos una nueva versión en lugar de sobrescribir la anterior sin aviso.",
+        "point2": "Puedes ver que hubo una corrección y cuándo se publicó esa versión."
       },
       "rankingsRules": {
-        "title": "Cómo los rankings usan resultados",
-        "point1": "Los rankings se calculan solo con resultados oficiales o corregidos.",
-        "point2": "Cada actualización del ranking conserva una referencia de reglas para que sepas qué versión se usó."
+        "title": "Los rankings usan solo versiones publicadas",
+        "point1": "Los rankings se calculan solo con versiones oficiales publicadas y correcciones aprobadas.",
+        "point2": "Cada actualización del ranking conserva la referencia de reglas de la versión que se usó."
       }
     }
   },
@@ -69,7 +83,7 @@
       "versionTransition": "Transición de versión"
     },
     "fallback": {
-      "unknownApprover": "Director de Carrera",
+      "unknownApprover": "director de carrera",
       "unknownTime": "No disponible",
       "noChanges": "No se proporcionaron cambios detallados por campo."
     }
@@ -98,7 +112,7 @@
       "description": "Datos clave de esta página oficial de resultados.",
       "scopeValue": "Resultados oficiales de esta carrera",
       "fields": {
-        "organizer": "Organizador",
+        "organizer": "Organización",
         "scope": "Página",
         "version": "Versión",
         "updatedAt": "Última actualización",
