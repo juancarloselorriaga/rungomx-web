@@ -30,30 +30,44 @@
   "howItWorks": {
     "panel": {
       "title": "How it works",
-      "description": "What “official” means, when results can change, and how rankings use them.",
-      "point1": "Official means the race organizer has made the results public for that race.",
-      "point2": "If a result is corrected, we show the new version without hiding that a change was made.",
-      "point3": "Rankings use only official or corrected results.",
+      "description": "See what makes a result official, how corrections stay visible, and how rankings stay tied to published versions.",
+      "point1": "Official means the Race Director published that version for the race.",
+      "point2": "If a correction is approved, we publish the new version without hiding that a change was made.",
+      "point3": "Rankings use only official published versions and approved corrections.",
       "cta": "Read the full explainer"
     },
     "explainer": {
       "eyebrow": "How it works",
-      "title": "How official results and rankings work",
-      "description": "This page explains what “Official” means, how corrections appear, and how rankings use those results.",
+      "title": "Why you can trust official results and rankings",
+      "description": "Official results are published by the Race Director, corrections stay visible, and rankings use only published official versions.",
+      "trustSummary": {
+        "publishedByDirector": {
+          "title": "Official publication",
+          "description": "A result becomes official only after the Race Director publishes that version for the race."
+        },
+        "visibleHistory": {
+          "title": "Correction history",
+          "description": "If something changes, the published correction stays visible so you can see that an update happened."
+        },
+        "publishedVersionsOnly": {
+          "title": "Published rankings only",
+          "description": "Rankings count only official published versions and approved corrections for that race."
+        }
+      },
       "officialMeaning": {
-        "title": "What “Official” means",
-        "point1": "Official results are the results the race organizer has made public for that edition.",
-        "point2": "Draft times and unpublished data do not appear as official public results."
+        "title": "Published by the Race Director",
+        "point1": "A result becomes official only when the Race Director publishes it for that edition.",
+        "point2": "Draft times, private review data, and unpublished changes do not appear on this public results page."
       },
       "correctionProcess": {
-        "title": "How corrections work",
-        "point1": "When a time or placing is corrected, a new version is posted instead of replacing the old one silently.",
-        "point2": "You can see that a correction happened and when it was made."
+        "title": "Visible correction history",
+        "point1": "If the Race Director approves a correction to a time, placing, or classification, we publish a new version instead of silently overwriting the old one.",
+        "point2": "You can see that a correction happened and when that published version went live."
       },
       "rankingsRules": {
-        "title": "How rankings use results",
-        "point1": "Rankings are calculated from official or corrected results only.",
-        "point2": "Each ranking update keeps a rules reference so you can see what version was used."
+        "title": "Rankings use published versions only",
+        "point1": "Rankings are calculated only from official published versions and approved corrections.",
+        "point2": "Each ranking update keeps the rules reference for the version that was used."
       }
     }
   },
@@ -98,7 +112,7 @@
       "description": "Key details about this official results page.",
       "scopeValue": "Official results for this race",
       "fields": {
-        "organizer": "Organizer",
+        "organizer": "Organization",
         "scope": "Page",
         "version": "Version",
         "updatedAt": "Last update",
