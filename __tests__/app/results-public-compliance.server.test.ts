@@ -66,6 +66,12 @@ const REQUIRED_RESULTS_TRUST_KEYS = [
   'howItWorks.panel.cta',
   'howItWorks.explainer.title',
   'howItWorks.explainer.description',
+  'howItWorks.explainer.trustSummary.publishedByDirector.title',
+  'howItWorks.explainer.trustSummary.publishedByDirector.description',
+  'howItWorks.explainer.trustSummary.visibleHistory.title',
+  'howItWorks.explainer.trustSummary.visibleHistory.description',
+  'howItWorks.explainer.trustSummary.publishedVersionsOnly.title',
+  'howItWorks.explainer.trustSummary.publishedVersionsOnly.description',
   'howItWorks.explainer.officialMeaning.title',
   'howItWorks.explainer.correctionProcess.title',
   'howItWorks.explainer.rankingsRules.title',
@@ -108,9 +114,7 @@ describe('results public i18n + SEO compliance suite', () => {
       const messages = readResultsMessages(locale);
 
       for (const keyPath of REQUIRED_RESULTS_TRUST_KEYS) {
-        expect(
-          hasObjectKeyPath(messages, keyPath),
-        ).toBe(true);
+        expect(hasObjectKeyPath(messages, keyPath)).toBe(true);
       }
     }
   });
