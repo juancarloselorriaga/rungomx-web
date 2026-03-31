@@ -40,7 +40,7 @@ jest.mock('@/lib/events/actions', () => ({
   createEventEdition: (...args: unknown[]) => mockCreateEventEdition(...args),
 }));
 
-jest.mock('@/lib/events/ai-wizard/datetime', () => ({
+jest.mock('@/lib/events/datetime', () => ({
   normalizeEditionDateTimeForPersistence: (...args: unknown[]) =>
     mockNormalizeEditionDateTimeForPersistence(...args),
 }));

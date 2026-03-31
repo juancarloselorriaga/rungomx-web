@@ -20,6 +20,35 @@ let capturedToolChoice: unknown = null;
 let capturedProviderOptions: unknown = null;
 let capturedToolNames: string[] = [];
 const mockConvertToModelMessages = jest.fn(async () => []);
+const mockCreateUIMessageStreamResponse = jest.fn(
+  async ({
+    stream,
+  }: {
+    stream: {
+      execute: (ctx: {
+        writer: { write: (part: unknown) => void; merge: (stream: unknown) => void };
+      }) => Promise<void>;
+    };
+  }) => {
+    await stream.execute({
+      writer: {
+        write: (part: unknown) => {
+          if (part && typeof part === 'object' && 'type' in (part as Record<string, unknown>)) {
+            capturedStreamParts.push(
+              part as { type: string; data?: unknown; id?: string; delta?: string },
+            );
+          }
+        },
+        merge: () => undefined,
+      },
+    });
+
+    return new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  },
+);
 
 jest.mock('@/lib/auth/guards', () => ({
   requireAuthenticatedUser: (...args: unknown[]) => mockRequireAuthenticatedUser(...args),
@@ -91,25 +120,11 @@ jest.mock('@ai-sdk/openai', () => ({
 
 jest.mock('ai', () => ({
   tool: (config: unknown) => config,
-  convertToModelMessages: (...args: unknown[]) => (mockConvertToModelMessages as (...innerArgs: unknown[]) => unknown)(...args),
+  convertToModelMessages: (...args: unknown[]) =>
+    (mockConvertToModelMessages as (...innerArgs: unknown[]) => unknown)(...args),
   createUIMessageStream: jest.fn((config: unknown) => config),
-  createUIMessageStreamResponse: jest.fn(async ({ stream }: { stream: { execute: (ctx: { writer: { write: (part: unknown) => void; merge: (stream: unknown) => void } }) => Promise<void> } }) => {
-    await stream.execute({
-      writer: {
-        write: (part: unknown) => {
-          if (part && typeof part === 'object' && 'type' in (part as Record<string, unknown>)) {
-            capturedStreamParts.push(part as { type: string; data?: unknown; id?: string; delta?: string });
-          }
-        },
-        merge: () => undefined,
-      },
-    });
-
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
-  }),
+  createUIMessageStreamResponse: (...args: unknown[]) =>
+    (mockCreateUIMessageStreamResponse as (...innerArgs: unknown[]) => unknown)(...args),
   streamText: jest.fn(
     ({
       system,
@@ -122,13 +137,13 @@ jest.mock('ai', () => ({
       providerOptions?: unknown;
       tools?: Record<string, unknown>;
     }) => {
-    capturedSystemPrompt = system;
-    capturedToolChoice = toolChoice ?? null;
-    capturedProviderOptions = providerOptions ?? null;
-    capturedToolNames = tools ? Object.keys(tools) : [];
-    return {
-      toUIMessageStream: () => ({}),
-    };
+      capturedSystemPrompt = system;
+      capturedToolChoice = toolChoice ?? null;
+      capturedProviderOptions = providerOptions ?? null;
+      capturedToolNames = tools ? Object.keys(tools) : [];
+      return {
+        toUIMessageStream: () => ({}),
+      };
     },
   ),
   stepCountIs: jest.fn((count: number) => {
@@ -137,13 +152,14 @@ jest.mock('ai', () => ({
   }),
 }));
 
+import { POST } from '@/app/api/events/ai-wizard/route';
+import { finalizeProposalForUi } from '@/lib/events/ai-wizard/server/proposals/finalize/finalize-proposal';
+import { enrichPatchWithResolvedLocation } from '@/lib/events/ai-wizard/server/context/enrich-patch-with-resolved-location';
+import { resolveCrossStepIntent } from '@/lib/events/ai-wizard/server/planning/resolve-cross-step-intent';
 import {
-  POST,
-  enrichPatchWithResolvedLocation,
-  finalizeWizardPatchForUi,
-  resolveCrossStepIntent,
-} from '@/app/api/events/ai-wizard/route';
-import { resolveAssistantLocationQuery, buildAssistantLocationResolutionOptions } from '@/lib/events/ai-wizard/location-resolution';
+  resolveAssistantLocationQuery,
+  buildAssistantLocationResolutionOptions,
+} from '@/lib/events/ai-wizard/location-resolution';
 import type { EventEditionDetail } from '@/lib/events/queries';
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
 
@@ -211,6 +227,7 @@ describe('POST /api/events/ai-wizard', () => {
     capturedToolNames = [];
     mockConvertToModelMessages.mockReset();
     mockConvertToModelMessages.mockResolvedValue([]);
+    mockCreateUIMessageStreamResponse.mockClear();
 
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: '11111111-1111-4111-8111-111111111112' },
@@ -324,7 +341,7 @@ describe('POST /api/events/ai-wizard', () => {
       progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
     });
 
-    const patch = finalizeWizardPatchForUi(
+    const patch = finalizeProposalForUi(
       buildEvent(),
       {
         title: 'Patch title',
@@ -406,7 +423,7 @@ describe('POST /api/events/ai-wizard', () => {
       progress: { completedRequired: 0, totalRequired: 0, percent: 0 },
     }));
 
-    const patch = finalizeWizardPatchForUi(
+    const patch = finalizeProposalForUi(
       buildEvent(),
       {
         title: 'Set basics',
@@ -463,7 +480,7 @@ describe('POST /api/events/ai-wizard', () => {
       },
     };
 
-    const patchWithLocation = finalizeWizardPatchForUi(
+    const patchWithLocation = finalizeProposalForUi(
       buildEvent(),
       {
         title: 'Set basics location',
@@ -491,7 +508,7 @@ describe('POST /api/events/ai-wizard', () => {
       resolvedLocation,
     );
 
-    const patchWithoutLocation = finalizeWizardPatchForUi(
+    const patchWithoutLocation = finalizeProposalForUi(
       buildEvent(),
       {
         title: 'Rewrite description only',
@@ -564,7 +581,7 @@ describe('POST /api/events/ai-wizard', () => {
       'Redacta las políticas de cancelación y transferencias con lo que ya sabes del evento.',
     );
 
-    const patch = finalizeWizardPatchForUi(
+    const patch = finalizeProposalForUi(
       buildEvent(),
       {
         title: 'Draft policy support',
@@ -786,6 +803,22 @@ describe('POST /api/events/ai-wizard', () => {
         },
       },
     });
+    expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        featureKey: 'event_ai_wizard',
+        userId: '11111111-1111-4111-8111-111111111112',
+        eventType: 'used',
+        meta: expect.objectContaining({
+          endpoint: 'stream',
+          phase: 'proposal_finalized',
+          editionId: '11111111-1111-4111-8111-111111111111',
+          stepId: 'basics',
+          executionMode: expect.any(String),
+          opCount: 1,
+          hasLocationResolution: true,
+        }),
+      }),
+    );
   });
 
   it('keeps Parque Metropolitano de Guadalajara candidate text human-readable in ambiguous proposals', async () => {
@@ -842,7 +875,9 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-parque-structured',
               role: 'user',
-              parts: [{ type: 'text', text: 'La salida será en Parque Metropolitano de Guadalajara.' }],
+              parts: [
+                { type: 'text', text: 'La salida será en Parque Metropolitano de Guadalajara.' },
+              ],
             },
           ],
         }),
@@ -991,6 +1026,7 @@ describe('POST /api/events/ai-wizard', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mockCreateUIMessageStreamResponse).toHaveBeenCalledTimes(1);
     expect(capturedModelName).toBe('gpt-5-nano');
     expect(capturedStepBudget).toBe(4);
     expect(capturedToolChoice).toEqual({ type: 'tool', toolName: 'proposeWebsiteOverviewPatch' });
@@ -1045,6 +1081,7 @@ describe('POST /api/events/ai-wizard', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mockCreateUIMessageStreamResponse).toHaveBeenCalledTimes(1);
     expect(capturedSystemPrompt).toContain(
       '"schedule":{"summary":"15 de marzo de 2026 from 12:00 a.m. to 8:00 a.m."',
     );
@@ -1116,10 +1153,10 @@ describe('POST /api/events/ai-wizard', () => {
 
     expect(response.status).toBe(200);
     expect(mockConvertToModelMessages).toHaveBeenCalled();
-    const lastModelCall = mockConvertToModelMessages.mock.calls.at(-1) as [Array<Record<string, unknown>>] | undefined;
-    const convertedMessages = lastModelCall?.[0] as
-      | Array<Record<string, unknown>>
+    const lastModelCall = mockConvertToModelMessages.mock.calls.at(-1) as
+      | [Array<Record<string, unknown>>]
       | undefined;
+    const convertedMessages = lastModelCall?.[0] as Array<Record<string, unknown>> | undefined;
     expect(convertedMessages).toEqual([
       expect.objectContaining({
         role: 'user',
@@ -1152,7 +1189,9 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-1',
               role: 'user',
-              parts: [{ type: 'text', text: 'La ubicación es Bosque de Chapultepec, Ciudad de México.' }],
+              parts: [
+                { type: 'text', text: 'La ubicación es Bosque de Chapultepec, Ciudad de México.' },
+              ],
             },
           ],
         }),
@@ -1240,7 +1279,9 @@ describe('POST /api/events/ai-wizard', () => {
         },
       });
       expect(capturedToolNames).toEqual(['proposeFaqPatch']);
-      expect(capturedSystemPrompt).toContain('Goal: move quickly to one grounded, reviewable patch for the active wizard step.');
+      expect(capturedSystemPrompt).toContain(
+        'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
+      );
       expect(capturedStreamParts).toContainEqual({
         type: 'data-early-prose',
         data: {
@@ -1278,7 +1319,12 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-4',
               role: 'user',
-              parts: [{ type: 'text', text: 'Ayúdame a redactar políticas claras para cambios y cancelaciones' }],
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Ayúdame a redactar políticas claras para cambios y cancelaciones',
+                },
+              ],
             },
           ],
         }),
@@ -1301,7 +1347,9 @@ describe('POST /api/events/ai-wizard', () => {
     expect(capturedSystemPrompt).toContain(
       'In Policies, explicit race director constraints about eligibility, proof, deadlines, or no-deferral rules are the highest-priority source of truth for the draft.',
     );
-    expect(capturedSystemPrompt).toContain('Goal: move quickly to one grounded, reviewable patch for the active wizard step.');
+    expect(capturedSystemPrompt).toContain(
+      'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
+    );
   });
 
   it('supports a first-pass FAQ proposal even when the organizer asks from basics', async () => {
@@ -1321,7 +1369,12 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-5',
               role: 'user',
-              parts: [{ type: 'text', text: 'Crea FAQ para participantes con lo que ya sabes del evento.' }],
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Crea FAQ para participantes con lo que ya sabes del evento.',
+                },
+              ],
             },
           ],
         }),
@@ -1769,7 +1822,12 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-6',
               role: 'user',
-              parts: [{ type: 'text', text: 'Redacta las políticas de cancelación con lo que ya tienes confirmado.' }],
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Redacta las políticas de cancelación con lo que ya tienes confirmado.',
+                },
+              ],
             },
           ],
         }),
@@ -1799,7 +1857,12 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-7',
               role: 'user',
-              parts: [{ type: 'text', text: 'Redacta texto para participantes con lo que ya sabes del evento.' }],
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Redacta texto para participantes con lo que ya sabes del evento.',
+                },
+              ],
             },
           ],
         }),
@@ -1889,7 +1952,12 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-8',
               role: 'user',
-              parts: [{ type: 'text', text: 'Dime cuáles son los aspectos básicos más importantes que faltan.' }],
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Dime cuáles son los aspectos básicos más importantes que faltan.',
+                },
+              ],
             },
           ],
         }),
@@ -1937,7 +2005,12 @@ describe('POST /api/events/ai-wizard', () => {
             {
               id: 'msg-9',
               role: 'assistant',
-              parts: [{ type: 'text', text: 'Todavía falta confirmar la ubicación exacta y crear la primera distancia.' }],
+              parts: [
+                {
+                  type: 'text',
+                  text: 'Todavía falta confirmar la ubicación exacta y crear la primera distancia.',
+                },
+              ],
             },
             {
               id: 'msg-10',
@@ -2075,7 +2148,14 @@ describe('POST /api/events/ai-wizard', () => {
     mockBuildEventWizardAggregate.mockReturnValue({
       missingRequired: [],
       publishBlockers: [],
-      optionalRecommendations: [{ stepId: 'faq', code: 'RECOMMEND_FAQ', labelKey: 'wizard.issues.recommendFaq', severity: 'optional' }],
+      optionalRecommendations: [
+        {
+          stepId: 'faq',
+          code: 'RECOMMEND_FAQ',
+          labelKey: 'wizard.issues.recommendFaq',
+          severity: 'optional',
+        },
+      ],
       prioritizedChecklist: [],
       completionByStepId: {} as never,
       setupStepStateById: {} as never,
@@ -2119,8 +2199,12 @@ describe('POST /api/events/ai-wizard', () => {
       .map((part) => part.delta ?? '')
       .join('');
     expect(diagnosisDelta).toContain('Qué ya tiene Contenido ahora');
-    expect(diagnosisDelta).toContain('Sería recomendable agregar FAQ para resolver dudas frecuentes.');
-    expect(diagnosisDelta).toContain('Sería recomendable completar el contenido del sitio del evento.');
+    expect(diagnosisDelta).toContain(
+      'Sería recomendable agregar FAQ para resolver dudas frecuentes.',
+    );
+    expect(diagnosisDelta).toContain(
+      'Sería recomendable completar el contenido del sitio del evento.',
+    );
     expect(diagnosisDelta).toContain('Conviene seguir aquí en Contenido para participantes.');
   });
 
@@ -2131,9 +2215,7 @@ describe('POST /api/events/ai-wizard', () => {
     });
     mockGetEventEditionDetail.mockResolvedValue({
       ...buildEvent(),
-      faqItems: [
-        { id: 'faq-1', question: 'What is included?', answer: 'Timing support.' },
-      ],
+      faqItems: [{ id: 'faq-1', question: 'What is included?', answer: 'Timing support.' }],
       waivers: [],
     });
     mockBuildEventWizardAggregate.mockReturnValue({
@@ -2231,7 +2313,9 @@ describe('POST /api/events/ai-wizard', () => {
       organizationId: 'org-1',
       role: 'owner',
     });
-    const actualOrchestrator = jest.requireActual('@/lib/events/wizard/orchestrator') as typeof import('@/lib/events/wizard/orchestrator');
+    const actualOrchestrator = jest.requireActual(
+      '@/lib/events/wizard/orchestrator',
+    ) as typeof import('@/lib/events/wizard/orchestrator');
     const websiteContent: WebsiteContentBlocks = {
       overview: {
         type: 'overview',
@@ -2304,7 +2388,9 @@ describe('POST /api/events/ai-wizard', () => {
       'El contenido para participantes todavía dice que la fecha u hora no están confirmadas aunque la programación estructurada ya está guardada.',
     );
     expect(diagnosisDelta).not.toContain('Ya no quedan bloqueos obligatorios de publicación.');
-    expect(diagnosisDelta).not.toContain('Puedes revisar la visibilidad y publicar cuando quieras.');
+    expect(diagnosisDelta).not.toContain(
+      'Puedes revisar la visibilidad y publicar cuando quieras.',
+    );
   });
 
   it('keeps a genuinely ready review diagnosis available when no blockers or recommendations remain', async () => {
@@ -2347,7 +2433,9 @@ describe('POST /api/events/ai-wizard', () => {
       .map((part) => part.delta)
       .join('');
     expect(diagnosisDelta).toContain('Ya no quedan bloqueos obligatorios de publicación.');
-    expect(diagnosisDelta).toContain('No hay bloqueos obligatorios de publicación ni mejoras recomendadas pendientes.');
+    expect(diagnosisDelta).toContain(
+      'No hay bloqueos obligatorios de publicación ni mejoras recomendadas pendientes.',
+    );
     expect(diagnosisDelta).toContain('Puedes revisar la visibilidad y publicar cuando quieras.');
     expect(diagnosisDelta).not.toContain('todavía conviene revisar estos puntos');
   });
@@ -2592,8 +2680,7 @@ describe('POST /api/events/ai-wizard', () => {
         {
           type: 'update_edition',
           data: expect.objectContaining({
-            locationDisplay:
-              'Bosque de Chapultepec — Área de Campamento, Ciudad de México, México',
+            locationDisplay: 'Bosque de Chapultepec — Área de Campamento, Ciudad de México, México',
             city: 'Ciudad de México',
             state: 'Ciudad de México',
             latitude: '19.4204',
@@ -2895,7 +2982,9 @@ describe('POST /api/events/ai-wizard', () => {
     expect(capturedSystemPrompt).toBeNull();
     expect(capturedToolChoice).toBeNull();
     expect(capturedToolNames).toEqual([]);
-    expect(capturedStreamParts.find((part) => part.type === 'data-event-patch')?.data).toMatchObject({
+    expect(
+      capturedStreamParts.find((part) => part.type === 'data-event-patch')?.data,
+    ).toMatchObject({
       title: 'Confirmar la ubicación del evento',
       ops: [
         {

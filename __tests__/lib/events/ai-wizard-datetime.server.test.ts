@@ -4,19 +4,21 @@ import {
   formatEditionTimeForInputInTimeZone,
   hasTrustedEventStartTime,
   normalizeEditionDateTimeForPersistence,
-} from '@/lib/events/ai-wizard/datetime';
+} from '@/lib/events/datetime';
 
 describe('event datetime helpers', () => {
   it('persists naive local event start datetimes using the event timezone instead of host-local parsing', () => {
-    expect(
-      normalizeEditionDateTimeForPersistence('2026-10-12T07:00', 'America/Mexico_City'),
-    ).toBe('2026-10-12T13:00:00.000Z');
+    expect(normalizeEditionDateTimeForPersistence('2026-10-12T07:00', 'America/Mexico_City')).toBe(
+      '2026-10-12T13:00:00.000Z',
+    );
   });
 
   it('rebuilds saved UTC instants into the organizer-local date and time inputs', () => {
     const savedStart = new Date('2026-10-12T13:00:00.000Z');
 
-    expect(formatEditionDateForInputInTimeZone(savedStart, 'America/Mexico_City')).toBe('2026-10-12');
+    expect(formatEditionDateForInputInTimeZone(savedStart, 'America/Mexico_City')).toBe(
+      '2026-10-12',
+    );
     expect(formatEditionTimeForInputInTimeZone(savedStart, 'America/Mexico_City')).toBe('07:00');
   });
 
@@ -50,9 +52,9 @@ describe('event datetime helpers', () => {
     );
 
     expect(reloadedInput).toBe('2026-09-01T23:59');
-    expect(
-      normalizeEditionDateTimeForPersistence(reloadedInput, 'America/Mexico_City'),
-    ).toBe(firstSave);
+    expect(normalizeEditionDateTimeForPersistence(reloadedInput, 'America/Mexico_City')).toBe(
+      firstSave,
+    );
   });
 
   it('treats legacy UTC-midnight schedule values as missing a trustworthy event start time for non-UTC events', () => {

@@ -545,6 +545,7 @@ describe('EventAiWizardPanel', () => {
     expect(screen.getAllByText('archive.title')).toHaveLength(1);
     openDetailsBySummaryText('Supporting context');
     expect(screen.getByText('Please improve the participant content.')).toBeInTheDocument();
+    expect(screen.getByTestId('markdown-content')).toBeInTheDocument();
     expect(
       screen.getByText('Here is the newest recommendation for this step.'),
     ).toBeInTheDocument();
@@ -982,16 +983,11 @@ describe('EventAiWizardPanel', () => {
         type: 'update_edition',
         editionId: 'evt-1',
         data: {
-          locationDisplay: 'Parque Metropolitano de Guadalajara, Zapopan, Jalisco, México',
-          address: 'Calle Ludwig Van Beethoven 5800, 45010 Zapopan, Jalisco, México',
-          city: 'Zapopan',
-          state: 'Jalisco',
-          country: 'MX',
-          latitude: '20.67046657',
-          longitude: '-103.43992534',
+          locationDisplay: 'Parque Metropolitano de Guadalajara',
         },
       },
     ]);
+    expect(payload.locationChoice).toEqual({ optionIndex: 0 });
   });
 
   it('renders a truthful no-match review card when the place could not be resolved', () => {
@@ -1345,6 +1341,7 @@ describe('EventAiWizardPanel', () => {
 
     expect(screen.getByText('Your thread is still here')).toBeInTheDocument();
     expect(screen.getByText(/Draft participant FAQ/)).toBeInTheDocument();
+    expect(screen.getByTestId('markdown-content')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Keep going from this request' }));
     expect(screen.getByLabelText('composer.label')).toHaveValue('Draft FAQ from these notes.');
   });
