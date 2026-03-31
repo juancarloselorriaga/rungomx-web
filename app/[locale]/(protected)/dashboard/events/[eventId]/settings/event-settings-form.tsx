@@ -37,13 +37,13 @@ import {
   EVENT_MEDIA_MAX_FILE_SIZE,
 } from '@/lib/events/media/constants';
 import { validateEventImageFile } from '@/lib/events/media/utils';
-import type { EventEditionDetail, EventDistanceDetail } from '@/lib/events/queries';
 import {
   formatEditionDateTimeForInputInTimeZone,
   formatEditionDateForInputInTimeZone,
   formatEditionTimeForInputInTimeZone,
   normalizeEditionDateTimeForPersistence,
-} from '@/lib/events/ai-wizard/datetime';
+} from '@/lib/events/datetime';
+import type { EventEditionDetail, EventDistanceDetail } from '@/lib/events/queries';
 import { Form, FormError, useForm } from '@/lib/forms';
 import { cn } from '@/lib/utils';
 import {

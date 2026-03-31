@@ -8,8 +8,12 @@ import { getQuestionsForEdition } from '@/lib/events/questions/queries';
 import {
   buildEventWizardAggregate,
   hasEventPublishReadinessBlockers,
-  type EventWizardStepId,
 } from '@/lib/events/wizard/orchestrator';
+import {
+  isEventSetupWizardStepId,
+  mapWizardIssueStepToSetupStep,
+  type EventSetupWizardStepId,
+} from '@/lib/events/wizard/steps';
 import {
   getPublicWebsiteContent,
   getWebsiteContentsForEdition,
@@ -37,11 +41,7 @@ import { EventPageIntro } from '../_event-page-intro';
 import { EventAiWizardPanel, type EventAiAssistantStepId } from './event-ai-wizard-panel';
 import { EventAssistantResponsiveSlot } from './event-assistant-responsive-slot';
 import { EventSettingsForm } from './event-settings-form';
-import {
-  EventSetupWizardShell,
-  type EventSetupWizardStep,
-  type EventSetupWizardStepId,
-} from './event-setup-wizard-shell';
+import { EventSetupWizardShell, type EventSetupWizardStep } from './event-setup-wizard-shell';
 import { buildEventSettingsMetadata } from './settings-metadata';
 import type { AppLocale } from '@/i18n/routing';
 
@@ -90,30 +90,6 @@ const STEP_ASSISTANT_CONFIG: Record<
     markdownFocus: true,
   },
 };
-
-function mapIssueStepId(stepId: EventWizardStepId): EventSetupWizardStepId {
-  switch (stepId) {
-    case 'event_details':
-      return 'basics';
-    case 'distances':
-      return 'distances';
-    case 'pricing':
-      return 'pricing';
-    case 'waivers':
-    case 'policies':
-      return 'policies';
-    case 'faq':
-    case 'website':
-      return 'content';
-    case 'questions':
-    case 'add_ons':
-      return 'extras';
-    case 'publish':
-      return 'review';
-    default:
-      return 'basics';
-  }
-}
 
 function StepSurface({
   title,
@@ -200,21 +176,7 @@ function resolveInitialWizardStepId(
   value: string | string[] | undefined,
 ): EventSetupWizardStepId | undefined {
   const stepId = Array.isArray(value) ? value[0] : value;
-  if (!stepId) return undefined;
-
-  switch (stepId) {
-    case 'basics':
-    case 'distances':
-    case 'pricing':
-    case 'registration':
-    case 'policies':
-    case 'content':
-    case 'extras':
-    case 'review':
-      return stepId;
-    default:
-      return undefined;
-  }
+  return isEventSetupWizardStepId(stepId) ? stepId : undefined;
 }
 
 export async function generateMetadata({ params }: SettingsPageProps): Promise<Metadata> {
@@ -308,7 +270,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         label: t(issue.labelKey),
         href: issue.href,
         severity: issue.severity,
-        stepId: mapIssueStepId(issue.stepId),
+        stepId: mapWizardIssueStepToSetupStep(issue.stepId),
         kind: issue.severity === 'blocker' ? 'publish' : 'required',
       }));
 
@@ -323,7 +285,7 @@ export default async function EventSettingsPage({ params, searchParams }: Settin
         label: t(issue.labelKey),
         href: issue.href,
         severity: issue.severity,
-        stepId: mapIssueStepId(issue.stepId),
+        stepId: mapWizardIssueStepToSetupStep(issue.stepId),
         kind: 'optional',
       }),
     );

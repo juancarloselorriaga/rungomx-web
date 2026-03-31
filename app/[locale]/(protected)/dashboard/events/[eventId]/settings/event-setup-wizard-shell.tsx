@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MutedSurface } from '@/components/ui/surface';
 import { Link } from '@/i18n/navigation';
+import { isEventSetupWizardStepId, type EventSetupWizardStepId } from '@/lib/events/wizard/steps';
 import { cn } from '@/lib/utils';
 import {
   AlertCircle,
@@ -28,16 +29,6 @@ import {
 } from 'react';
 
 import { useAssistantWorkspaceQueryState } from './event-assistant-workspace-state';
-
-export type EventSetupWizardStepId =
-  | 'basics'
-  | 'distances'
-  | 'pricing'
-  | 'registration'
-  | 'policies'
-  | 'content'
-  | 'extras'
-  | 'review';
 
 export type EventSetupWizardStep = {
   id: EventSetupWizardStepId;
@@ -72,38 +63,14 @@ function readStepIdFromLocation(): EventSetupWizardStepId | undefined {
   if (typeof window === 'undefined') return undefined;
 
   const stepId = new URLSearchParams(window.location.search).get('step');
-  switch (stepId) {
-    case 'basics':
-    case 'distances':
-    case 'pricing':
-    case 'registration':
-    case 'policies':
-    case 'content':
-    case 'extras':
-    case 'review':
-      return stepId;
-    default:
-      return undefined;
-  }
+  return isEventSetupWizardStepId(stepId) ? stepId : undefined;
 }
 
 function readStoredStepId(storageKey: string): EventSetupWizardStepId | undefined {
   if (typeof window === 'undefined') return undefined;
 
   const storedStepId = window.sessionStorage.getItem(storageKey);
-  switch (storedStepId) {
-    case 'basics':
-    case 'distances':
-    case 'pricing':
-    case 'registration':
-    case 'policies':
-    case 'content':
-    case 'extras':
-    case 'review':
-      return storedStepId;
-    default:
-      return undefined;
-  }
+  return isEventSetupWizardStepId(storedStepId) ? storedStepId : undefined;
 }
 
 function resolveCanonicalStepIndex(
