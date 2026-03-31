@@ -19,6 +19,7 @@ type EventTimeZoneInputParts = {
   time: string;
 };
 
+const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 const DATE_TIME_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
 const EXPLICIT_OFFSET_RE = /(Z|[+-]\d{2}:\d{2})$/i;
 
@@ -166,6 +167,10 @@ export function normalizeEditionDateTimeForPersistence(
 ): string | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
+
+  if (DATE_ONLY_RE.test(trimmed) && timeZone) {
+    return convertNaiveLocalDateTimeToUtcIso(`${trimmed}T00:00`, timeZone);
+  }
 
   if (!EXPLICIT_OFFSET_RE.test(trimmed) && trimmed.includes('T')) {
     const naiveLocal = parseNaiveLocalDateTime(trimmed);

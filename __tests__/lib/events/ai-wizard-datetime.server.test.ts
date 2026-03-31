@@ -65,4 +65,20 @@ describe('event datetime helpers', () => {
       hasTrustedEventStartTime(new Date('2026-10-12T13:00:00.000Z'), 'America/Mexico_City'),
     ).toBe(true);
   });
+
+  it('normalizes date-only strings as midnight in the event timezone, not midnight UTC', () => {
+    const result = normalizeEditionDateTimeForPersistence('2026-10-12', 'America/Mexico_City');
+    expect(result).toBe('2026-10-12T06:00:00.000Z');
+  });
+
+  it('produces a trusted start time when a date-only string is normalized with a timezone', () => {
+    const persisted = normalizeEditionDateTimeForPersistence('2026-10-12', 'America/Mexico_City');
+    expect(persisted).not.toBeNull();
+    expect(hasTrustedEventStartTime(new Date(persisted!), 'America/Mexico_City')).toBe(true);
+  });
+
+  it('falls back to UTC midnight for date-only strings when no timezone is provided', () => {
+    const result = normalizeEditionDateTimeForPersistence('2026-10-12', null);
+    expect(result).toBe('2026-10-12T00:00:00.000Z');
+  });
 });

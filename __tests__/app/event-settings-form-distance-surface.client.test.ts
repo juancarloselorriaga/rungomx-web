@@ -146,7 +146,7 @@ describe('event settings payload shaping', () => {
       });
 
       expect(payload.startsAt).toBe('2026-10-18T13:00:00.000Z');
-      expect(payload.endsAt).toBe(new Date(baseValues.endsAt).toISOString());
+      expect(payload.endsAt).toBe('2026-10-19T06:00:00.000Z');
     }
   });
 

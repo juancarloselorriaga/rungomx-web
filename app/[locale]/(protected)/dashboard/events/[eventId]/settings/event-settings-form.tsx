@@ -253,7 +253,9 @@ export function buildEventEditionPayload({
           startsAt: startsAtInput
             ? normalizeEditionDateTimeForPersistence(startsAtInput, values.timezone)
             : null,
-          endsAt: values.endsAt ? new Date(values.endsAt).toISOString() : null,
+          endsAt: values.endsAt
+            ? normalizeEditionDateTimeForPersistence(values.endsAt, values.timezone)
+            : null,
         }),
     city: values.city || null,
     state: values.state || null,
