@@ -67,7 +67,7 @@
       "rankingsRules": {
         "title": "Rankings use published versions only",
         "point1": "Rankings are calculated only from official published versions and approved corrections.",
-        "point2": "Each ranking update keeps the rules reference for the version that was used."
+        "point2": "When official results from different races clearly belong to the same runner, the ranking may show them together. If something looks off, check the Results page first, then contact support."
       }
     }
   },

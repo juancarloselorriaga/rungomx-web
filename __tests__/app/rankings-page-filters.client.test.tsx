@@ -3,8 +3,7 @@ import { render, screen } from '@testing-library/react';
 const mockGetPublicRankingLeaderboard = jest.fn();
 
 jest.mock('@/lib/events/results/rankings', () => ({
-  getPublicRankingLeaderboard: (...args: unknown[]) =>
-    mockGetPublicRankingLeaderboard(...args),
+  getPublicRankingLeaderboard: (...args: unknown[]) => mockGetPublicRankingLeaderboard(...args),
 }));
 
 jest.mock('@/utils/config-page-locale', () => ({
@@ -40,9 +39,8 @@ jest.mock('@/i18n/routing', () => {
 });
 
 jest.mock('next-intl/server', () => ({
-  getTranslations: async () =>
-    (key: string, values?: Record<string, string | number>) =>
-      values ? `${key} ${JSON.stringify(values)}` : key,
+  getTranslations: async () => (key: string, values?: Record<string, string | number>) =>
+    values ? `${key} ${JSON.stringify(values)}` : key,
   setRequestLocale: jest.fn(),
 }));
 
@@ -127,6 +125,9 @@ describe('rankings page filter URL behavior', () => {
     expect(screen.getByText('table.title')).toBeInTheDocument();
     expect(screen.getByText(/snapshot\.summary/)).toBeInTheDocument();
     expect(screen.getByText('reproducibility.referenceLink')).toBeInTheDocument();
+    expect(screen.getByText('runnerGrouping.title')).toBeInTheDocument();
+    expect(screen.getByText('runnerGrouping.description')).toBeInTheDocument();
+    expect(screen.getByText('runnerGrouping.support')).toBeInTheDocument();
   });
 
   it('switches to organizer scope from URL params without mixing national context', async () => {
