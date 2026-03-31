@@ -61,7 +61,7 @@ export function EventAssistantDesktopWorkspace({
       <Sheet open={isOpen} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="hidden h-full w-[min(1120px,78vw)] max-w-none flex-col gap-0 overflow-hidden border-l border-border/60 bg-background p-0 shadow-2xl sm:max-w-none lg:flex"
+          className="hidden h-full w-[min(780px,58vw)] max-w-none flex-col gap-0 overflow-hidden border-l border-border/60 bg-background p-0 shadow-2xl sm:max-w-none lg:flex"
         >
           <SheetHeader className="border-b border-border/60 px-8 py-5">
             <SheetTitle className="text-xl">{workspaceTitle}</SheetTitle>
