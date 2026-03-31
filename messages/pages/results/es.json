@@ -67,7 +67,7 @@
       "rankingsRules": {
         "title": "Los rankings usan solo versiones publicadas",
         "point1": "Los rankings se calculan solo con versiones oficiales publicadas y correcciones aprobadas.",
-        "point2": "Cada actualización del ranking conserva la referencia de reglas de la versión que se usó."
+        "point2": "Cuando los resultados oficiales de distintas carreras claramente pertenecen al mismo corredor, el ranking puede mostrarlos juntos. Si algo no cuadra, revisa primero la página de Resultados y luego contacta soporte."
       }
     }
   },

@@ -179,6 +179,18 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                     {t('reproducibility.referenceMissing')}
                   </p>
                 )}
+
+                <div className="mt-6 border-t border-border/70 pt-5">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-foreground/75">
+                    {t('runnerGrouping.title')}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {t('runnerGrouping.description')}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                    {t('runnerGrouping.support')}
+                  </p>
+                </div>
               </>
             ) : (
               <p className="mt-6 text-sm leading-7 text-muted-foreground">

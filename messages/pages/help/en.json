@@ -160,6 +160,7 @@
             "question": "How do rankings get updated?",
             "paragraphs": [
               "Rankings update automatically when new race results are added or an existing result is corrected.",
+              "When official results from different races clearly belong to the same runner, the ranking may show them together.",
               "If you see a change, check the related Results page first to confirm the latest race data."
             ],
             "links": [
@@ -177,7 +178,7 @@
             "question": "What should I do if I am missing from a ranking?",
             "paragraphs": [
               "First make sure your result is already listed and correct on the Results page.",
-              "If your result is there and you still do not appear in the ranking, contact support with the event name and participant details."
+              "If your result is there and you still do not appear in the ranking, or your results appear separately, contact support with the event name and participant details."
             ],
             "links": [
               {

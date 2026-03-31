@@ -160,6 +160,7 @@
             "question": "¿Cómo se actualizan los rankings?",
             "paragraphs": [
               "Los rankings se actualizan automáticamente cuando se agregan resultados nuevos o se corrige un resultado existente.",
+              "Cuando los resultados oficiales de distintas carreras claramente pertenecen al mismo corredor, el ranking puede mostrarlos juntos.",
               "Si ves un cambio, revisa primero la página de Resultados relacionada para confirmar la información más reciente de la carrera."
             ],
             "links": [
@@ -177,7 +178,7 @@
             "question": "¿Qué hago si no aparezco en un ranking?",
             "paragraphs": [
               "Primero asegúrate de que tu resultado ya aparece y está correcto en la página de Resultados.",
-              "Si tu resultado está ahí y aun así no apareces en el ranking, contacta soporte con el nombre del evento y los datos de la persona participante."
+              "Si tu resultado está ahí y aun así no apareces en el ranking, o tus resultados aparecen por separado, contacta soporte con el nombre del evento y los datos de la persona participante."
             ],
             "links": [
               {

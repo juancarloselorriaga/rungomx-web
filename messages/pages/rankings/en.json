@@ -24,6 +24,11 @@
       "snapshotId": "Update ID"
     }
   },
+  "runnerGrouping": {
+    "title": "Why some results appear together",
+    "description": "When official results from different races clearly belong to the same runner, the ranking may show them together.",
+    "support": "If a result looks missing or appears separately, check the related Results page first. If it still looks wrong, contact support."
+  },
   "filters": {
     "scope": "Ranking view",
     "organization": "Organizer",
