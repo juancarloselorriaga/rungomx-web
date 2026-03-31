@@ -168,8 +168,8 @@
   },
   "assistant": {
     "title": "Asistente de configuración",
-    "description": "Cuéntame sobre tu evento y te sugeriré cambios que puedes revisar y aplicar.",
-    "contract": "Yo solo sugiero cambios. Nada se actualiza hasta que tú los apliques.",
+    "description": "Cuéntame qué necesitas resolver y te preparo cambios para revisar antes de aplicarlos.",
+    "contract": "Puedo redactar, ordenar y afinar este paso, pero tu evento solo cambia cuando aplicas la propuesta.",
     "trust": {
       "title": "Revisa antes de aplicar",
       "applyLabel": "Aplicar cambios",
@@ -191,9 +191,9 @@
       "sectionTitle": "¿En qué necesitas ayuda en este paso?",
       "label": "Mensaje",
       "hint": "Describe qué quieres y te propongo cambios. Las notas en borrador están bien.",
-      "briefHint": "Usa este espacio para lo que quieres resolver ahora. Tus notas guardadas se muestran arriba.",
-      "savedBriefHint": "Ya tengo tus notas del evento. Agrega aquí cualquier detalle extra — en borrador está bien.",
-      "roughNotesTitle": "Pega notas sueltas y las convierto en una propuesta clara.",
+      "briefHint": "Usa este espacio para lo que quieres resolver ahora. Tus notas guardadas siguen disponibles abajo.",
+      "savedBriefHint": "Ya tengo tus notas del evento. Agrega aquí lo que cambia en este paso, aunque siga en borrador.",
+      "roughNotesTitle": "Empieza con notas sueltas y las convierto en una propuesta clara.",
       "roughNotesExample": "Por ejemplo: \"10K nocturno en Guadalajara, abierto para principiantes, música en meta\" o \"Necesito FAQ y texto del sitio — sin inventar logística.\""
     },
     "inline": {
@@ -204,24 +204,24 @@
     },
     "mobile": {
       "open": "Abrir asistente",
-      "stepHint": "Recibe ayuda con {step} sin perder tu lugar."
+      "stepHint": "Abre un espacio claro para {step} sin perder tu lugar."
     },
     "desktop": {
       "open": "Abrir asistente",
-      "stepHint": "Abre el asistente para {step} cuando necesites más espacio de trabajo.",
+      "stepHint": "Abre un espacio más amplio para {step} cuando necesites revisar y aplicar con calma.",
       "workspaceTitle": "Asistente para {step}",
-      "workspaceDescription": "Revisa propuestas, afina tu solicitud y aplica cambios sin comprimir el editor."
+      "workspaceDescription": "Revisa la propuesta más reciente, mantén el contexto a la mano y aplica cambios solo cuando se vean bien."
     },
     "latestProposal": {
       "title": "Última propuesta",
-      "description": "Revisa la sugerencia más reciente y sigue refinando desde aquí.",
-      "detailsTitle": "Ver detalles de la propuesta",
+      "description": "Mantén la propuesta principal al frente. Abre el contexto lateral solo cuando necesites un repaso.",
+      "detailsTitle": "Desglose de la propuesta",
       "contextTitle": "Ver contexto",
       "supportingContextTitle": "Contexto de apoyo",
-      "supportingContextDescription": "{count, plural, =0 {Consulta la última solicitud y respuesta si necesitas más contexto.} one {Consulta la última solicitud y respuesta, más # mensaje anterior.} other {Consulta la última solicitud y respuesta, más # mensajes anteriores.}}",
+      "supportingContextDescription": "{count, plural, =0 {Abre la última solicitud y respuesta si quieres un repaso rápido.} one {Abre la última solicitud y respuesta, más # mensaje anterior.} other {Abre la última solicitud y respuesta, más # mensajes anteriores.}}",
       "requestLabel": "Tu solicitud",
       "responseLabel": "Lo que llevo hasta ahora",
-      "pendingTitle": "Trabajando en ello"
+      "pendingTitle": "Propuesta en proceso"
     },
     "pending": {
       "requestLabel": "Lo que pediste"
@@ -382,7 +382,7 @@
     "continuity": {
       "eyebrow": "Retomando donde quedamos",
       "title": "Sigo trayendo la propuesta más reciente desde {step}",
-      "description": "Si cambiaste de paso por una sugerencia, el último intercambio útil se mantiene visible mientras sigues.",
+      "description": "Si llegaste aquí desde otro paso, el último intercambio útil se mantiene visible para que sigas con ritmo.",
       "proposalLabel": "Mi última propuesta",
       "reuseRequest": "Continuar desde esta solicitud"
     },
@@ -425,11 +425,11 @@
     },
     "brief": {
       "savedLabel": "Notas del evento",
-      "description": "Contexto que uso a lo largo de todo el proceso de configuración.",
+      "description": "Contexto que mantengo presente durante toda la configuración.",
       "empty": "Sin notas guardadas aún.",
-      "emptyHint": "Guarda la visión de tu evento, audiencia, tono y detalles clave una vez — los usaré en cada paso.",
+      "emptyHint": "Guarda una vez la visión de tu evento, la audiencia, el tono y los detalles clave — los mantendré presentes en cada paso.",
       "inputLabel": "Notas del evento",
-      "inputHint": "Edita las notas que quieres que use a lo largo de la configuración.",
+      "inputHint": "Edita las notas que quieres que mantenga presentes durante la configuración.",
       "add": "Agregar notas",
       "edit": "Editar notas",
       "save": "Guardar notas",
@@ -510,7 +510,7 @@
     },
     "placeholder": "¿En qué necesitas ayuda en este paso?",
     "empty": {
-      "heading": "Las notas en borrador son suficientes para empezar.",
+      "heading": "Puedes empezar con notas en borrador.",
       "example": "Por ejemplo: 10K nocturno en Guadalajara, ambiente amigable, música en meta — ayúdame a escribir el resumen del evento y dime qué sigue pendiente."
     },
     "send": "Enviar",

@@ -152,12 +152,15 @@ export function ProgressStateCard({
   slowScaffoldKey,
 }: ProgressStateCardProps) {
   const t = useTranslations('pages.dashboardEventSettings.assistant');
+  const showSupportingCards = !latestAssistantWithoutPatch;
 
   return (
-    <section className="rounded-2xl border border-border/60 bg-background p-4 dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {t('latestProposal.pendingTitle')}
-      </p>
+    <section className="rounded-[28px] border border-border/60 bg-[linear-gradient(180deg,color-mix(in_oklch,var(--background)_97%,var(--primary)_3%),var(--background))] p-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
+      <div className="space-y-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+          {t('latestProposal.pendingTitle')}
+        </p>
+      </div>
       <div className="mt-3 space-y-3">
         {latestVisibleUserMessage ? (
           <RequestSummaryCard message={latestVisibleUserMessage} />
@@ -169,11 +172,17 @@ export function ProgressStateCard({
             emphasis={progressEmphasis}
           />
         ) : null}
-        {earlyProseLead ? <EarlyProseLeadCard lead={earlyProseLead} /> : null}
-        {fastPathStructure ? <FastPathStructureCard structure={fastPathStructure} /> : null}
-        {slowScaffoldKey ? <SlowProposalScaffoldCard scaffoldKey={slowScaffoldKey} /> : null}
+        {earlyProseLead && showSupportingCards ? (
+          <EarlyProseLeadCard lead={earlyProseLead} />
+        ) : null}
+        {fastPathStructure && showSupportingCards ? (
+          <FastPathStructureCard structure={fastPathStructure} />
+        ) : null}
+        {slowScaffoldKey && showSupportingCards ? (
+          <SlowProposalScaffoldCard scaffoldKey={slowScaffoldKey} />
+        ) : null}
         {latestAssistantWithoutPatch ? (
-          <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
+          <div className="rounded-[24px] border border-border/60 bg-background/85 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.responseLabel')}
             </p>

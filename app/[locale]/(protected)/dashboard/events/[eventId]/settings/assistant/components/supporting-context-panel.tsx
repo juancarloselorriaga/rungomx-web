@@ -12,24 +12,20 @@ function MessageBubble({
 }: {
   message: Pick<SupportingContextProps['archiveMessages'][number], 'id' | 'role' | 'parts'>;
 }) {
-  const t = useTranslations('pages.dashboardEventSettings.assistant');
   const text = getMessageText(message);
 
   if (!text) return null;
 
-  const roleLabel = message.role === 'user' ? t('messages.user') : t('messages.assistant');
-
   return (
     <div
       className={cn(
-        'rounded-2xl border px-4 py-3 text-sm leading-relaxed',
+        'rounded-[24px] border px-4 py-4 text-sm leading-relaxed',
         message.role === 'user'
           ? 'border-border/60 bg-muted/20 text-foreground'
-          : 'border-border/60 bg-background text-foreground',
+          : 'border-border/60 bg-background/90 text-foreground',
       )}
     >
-      <p className="sr-only">{roleLabel}</p>
-      <p className="whitespace-pre-wrap">{text}</p>
+      <p className="whitespace-pre-wrap leading-6">{text}</p>
     </div>
   );
 }
@@ -39,22 +35,34 @@ function ConversationExcerpt({
   text,
   renderMarkdown = false,
 }: {
-  label: string;
+  label?: string;
   text: string;
   renderMarkdown?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </p>
+      {label ? (
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+      ) : null}
       {renderMarkdown ? (
         <MarkdownContent
           content={text}
-          className="mt-2 text-sm leading-6 text-foreground prose-p:my-0 prose-headings:my-0 prose-ul:my-2 prose-li:my-1"
+          className={cn(
+            'text-sm leading-6 text-foreground prose-p:my-0 prose-headings:my-0 prose-ul:my-2 prose-li:my-1',
+            label ? 'mt-2' : '',
+          )}
         />
       ) : (
-        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{text}</p>
+        <p
+          className={cn(
+            'whitespace-pre-wrap text-sm leading-6 text-foreground',
+            label ? 'mt-2' : '',
+          )}
+        >
+          {text}
+        </p>
       )}
     </div>
   );
@@ -71,23 +79,30 @@ export function SupportingContextPanel({
   if (!latestRequestMessage && !latestProposalText && !archiveMessages.length) return null;
 
   return (
-    <details className="group rounded-2xl border border-border/60 bg-muted/10 p-4">
+    <details className="group rounded-[28px] border border-border/60 bg-muted/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]">
       <summary className="cursor-pointer list-none">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-foreground">
               {t('latestProposal.supportingContextTitle')}
             </p>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
               {t('latestProposal.supportingContextDescription', { count: archiveMessages.length })}
             </p>
           </div>
-          <span className="text-xs font-medium text-muted-foreground group-open:hidden">
-            {t('archive.expand')}
-          </span>
-          <span className="hidden text-xs font-medium text-muted-foreground group-open:inline">
-            {t('archive.collapse')}
-          </span>
+          <div className="flex items-center gap-2">
+            {archiveMessages.length ? (
+              <span className="rounded-full border border-border/50 bg-background/70 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                {archiveMessages.length}
+              </span>
+            ) : null}
+            <span className="text-xs font-medium text-muted-foreground group-open:hidden">
+              {t('archive.expand')}
+            </span>
+            <span className="hidden text-xs font-medium text-muted-foreground group-open:inline">
+              {t('archive.collapse')}
+            </span>
+          </div>
         </div>
       </summary>
 
@@ -106,11 +121,7 @@ export function SupportingContextPanel({
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.responseLabel')}
             </p>
-            <ConversationExcerpt
-              label={t('latestProposal.responseLabel')}
-              text={latestProposalText}
-              renderMarkdown
-            />
+            <ConversationExcerpt text={latestProposalText} renderMarkdown />
           </div>
         ) : null}
 

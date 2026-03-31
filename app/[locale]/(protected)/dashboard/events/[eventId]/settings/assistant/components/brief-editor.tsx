@@ -27,16 +27,16 @@ export function BriefEditor({
 
   return (
     <details
-      className="rounded-2xl border border-border/50 bg-muted/10 p-4 dark:border-white/8 dark:bg-white/[0.025]"
+      className="rounded-[28px] border border-border/50 bg-muted/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] dark:border-white/8 dark:bg-white/[0.025]"
       open={isEditingBrief}
     >
       <summary className="cursor-pointer list-none">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               {t('brief.savedLabel')}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">{t('brief.description')}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('brief.description')}</p>
           </div>
 
           {!isEditingBrief ? (
@@ -44,6 +44,7 @@ export function BriefEditor({
               type="button"
               size="sm"
               variant="secondary"
+              className="rounded-2xl"
               onClick={(event) => {
                 event.preventDefault();
                 onStartEditing();
@@ -61,7 +62,7 @@ export function BriefEditor({
             <label htmlFor={briefEditorId} className="sr-only">
               {t('brief.inputLabel')}
             </label>
-            <p id={briefEditorHintId} className="text-xs leading-5 text-muted-foreground">
+            <p id={briefEditorHintId} className="text-sm leading-6 text-muted-foreground">
               {t('brief.inputHint')}
             </p>
             <textarea
@@ -71,7 +72,7 @@ export function BriefEditor({
               onChange={(event) => onBriefDraftChange(event.target.value)}
               rows={5}
               className={cn(
-                'min-h-[136px] w-full resize-y rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm outline-none ring-offset-background transition dark:border-white/10 dark:bg-black/35 dark:shadow-none',
+                'min-h-[136px] w-full resize-y rounded-[24px] border border-border/60 bg-background/90 px-4 py-3 text-sm leading-6 outline-none ring-offset-background transition dark:border-white/10 dark:bg-black/35 dark:shadow-none',
                 'focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
                 'disabled:opacity-60',
               )}
@@ -81,7 +82,7 @@ export function BriefEditor({
                 type="button"
                 size="sm"
                 disabled={isPersistingBrief || !hasBriefDraftChanges}
-                className="w-full sm:w-auto"
+                className="w-full rounded-2xl sm:w-auto"
                 onClick={onSave}
               >
                 {t('brief.save')}
@@ -91,7 +92,7 @@ export function BriefEditor({
                 size="sm"
                 variant="ghost"
                 disabled={isPersistingBrief}
-                className="w-full sm:w-auto"
+                className="w-full rounded-2xl sm:w-auto"
                 onClick={onCancelEditing}
               >
                 {t('brief.cancel')}
@@ -100,13 +101,15 @@ export function BriefEditor({
           </div>
         ) : hasSavedBrief ? (
           <div className="space-y-3">
-            <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{eventBrief}</p>
+            <div className="rounded-[24px] border border-border/60 bg-background/80 px-4 py-4">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{eventBrief}</p>
+            </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               <Button
                 type="button"
                 size="sm"
                 variant="secondary"
-                className="w-full sm:w-auto"
+                className="w-full rounded-2xl sm:w-auto"
                 onClick={onUseForStep}
               >
                 {t('brief.useForStep')}
@@ -116,7 +119,7 @@ export function BriefEditor({
                 size="sm"
                 variant="ghost"
                 disabled={isPersistingBrief}
-                className="w-full sm:w-auto"
+                className="w-full rounded-2xl sm:w-auto"
                 onClick={onClear}
               >
                 {t('brief.clear')}
@@ -124,9 +127,9 @@ export function BriefEditor({
             </div>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="rounded-[24px] border border-dashed border-border/60 bg-background/50 px-4 py-4">
             <p className="text-sm text-foreground">{t('brief.empty')}</p>
-            <p className="text-xs leading-5 text-muted-foreground">{t('brief.emptyHint')}</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('brief.emptyHint')}</p>
           </div>
         )}
       </div>

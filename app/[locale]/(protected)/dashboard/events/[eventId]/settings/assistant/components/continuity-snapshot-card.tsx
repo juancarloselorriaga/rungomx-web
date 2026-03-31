@@ -15,19 +15,36 @@ export function ContinuitySnapshotCard({ snapshot, onReuseRequest }: ContinuityS
     : '';
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-muted/10 p-4 dark:border-white/10 dark:bg-white/[0.03]">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {t('continuity.eyebrow')}
-      </p>
-      <p className="mt-1 text-sm font-semibold text-foreground">
-        {t('continuity.title', {
-          step: tPage(`wizardShell.steps.${snapshot.sourceStepId}` as never),
-        })}
-      </p>
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">{t('continuity.description')}</p>
+    <div className="rounded-[28px] border border-border/60 bg-muted/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            {t('continuity.eyebrow')}
+          </p>
+          <p className="mt-2 text-sm font-semibold text-foreground">
+            {t('continuity.title', {
+              step: tPage(`wizardShell.steps.${snapshot.sourceStepId}` as never),
+            })}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {t('continuity.description')}
+          </p>
+        </div>
+        {latestRequestText ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            className="w-full rounded-2xl sm:w-auto"
+            onClick={() => onReuseRequest(latestRequestText)}
+          >
+            {t('continuity.reuseRequest')}
+          </Button>
+        ) : null}
+      </div>
       <div className="mt-3 space-y-3">
         {snapshot.latestRequestMessage && latestRequestText ? (
-          <div className="rounded-xl border border-border/50 bg-muted/10 px-3 py-3">
+          <div className="rounded-[24px] border border-border/50 bg-background/60 px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.requestLabel')}
             </p>
@@ -37,7 +54,7 @@ export function ContinuitySnapshotCard({ snapshot, onReuseRequest }: ContinuityS
           </div>
         ) : null}
         {snapshot.latestProposalPatch ? (
-          <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
+          <div className="rounded-[24px] border border-border/60 bg-background px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('continuity.proposalLabel')}
             </p>
@@ -47,7 +64,7 @@ export function ContinuitySnapshotCard({ snapshot, onReuseRequest }: ContinuityS
             />
           </div>
         ) : snapshot.latestProposalText ? (
-          <div className="rounded-xl border border-border/60 bg-background px-3 py-3">
+          <div className="rounded-[24px] border border-border/60 bg-background px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('latestProposal.responseLabel')}
             </p>
@@ -58,18 +75,6 @@ export function ContinuitySnapshotCard({ snapshot, onReuseRequest }: ContinuityS
           </div>
         ) : null}
       </div>
-      {latestRequestText ? (
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => onReuseRequest(latestRequestText)}
-          >
-            {t('continuity.reuseRequest')}
-          </Button>
-        </div>
-      ) : null}
     </div>
   );
 }

@@ -29,15 +29,15 @@ function MarkdownOutputsList({
   ]);
 
   return (
-    <div className="mt-3 space-y-2 rounded-2xl border border-border/70 bg-background/80 p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="mt-3 space-y-2 rounded-[24px] border border-border/70 bg-background/80 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {t('outputs.title')}
       </p>
       <ul className="space-y-2">
         {outputs.map((output, index) => (
           <li
             key={`${output.domain}-${index}`}
-            className="rounded-xl border border-border/60 bg-card p-3"
+            className="rounded-[20px] border border-border/60 bg-card p-4"
           >
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-xs font-medium text-foreground">
@@ -56,10 +56,10 @@ function MarkdownOutputsList({
                   : t('outputs.structuredBadge')}
               </span>
             </div>
-            <p className="mt-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            <p className="mt-3 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
               {t('outputs.previewLabel')}
             </p>
-            <div className="mt-2 rounded-2xl border border-border/60 bg-background/90 p-4">
+            <div className="mt-2 rounded-[20px] border border-border/60 bg-background/90 p-4">
               <MarkdownContent
                 content={output.contentMarkdown}
                 className="text-sm [&_h1]:mt-0 [&_h2]:mt-0 [&_h3]:mt-0 [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2"
@@ -81,7 +81,7 @@ function LocationResolutionCard({
 
   if (resolution.status === 'matched') {
     return (
-      <div className="mt-3 rounded-2xl border border-primary/25 bg-primary/5 p-4">
+      <div className="mt-3 rounded-[24px] border border-primary/25 bg-primary/5 p-4">
         <div className="flex items-start gap-3">
           <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
             <MapPin className="h-4 w-4" />
@@ -107,8 +107,8 @@ function LocationResolutionCard({
 
   if (resolution.status === 'ambiguous') {
     return (
-      <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+      <div className="mt-3 rounded-[24px] border border-amber-400/30 bg-amber-400/10 p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
           {t('locationResolution.ambiguous.eyebrow')}
         </p>
         <p className="mt-1 text-sm font-semibold text-foreground">
@@ -121,7 +121,7 @@ function LocationResolutionCard({
           {resolution.candidates.map((candidate, index) => (
             <li
               key={`${candidate.placeId ?? candidate.formattedAddress}-${index}`}
-              className="rounded-xl border border-border/50 bg-background/70 px-3 py-2"
+              className="rounded-[20px] border border-border/50 bg-background/70 px-3 py-2.5"
             >
               {candidate.formattedAddress}
             </li>
@@ -132,8 +132,8 @@ function LocationResolutionCard({
   }
 
   return (
-    <div className="mt-3 rounded-2xl border border-border/60 bg-muted/10 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+    <div className="mt-3 rounded-[24px] border border-border/60 bg-muted/10 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
         {t('locationResolution.noMatch.eyebrow')}
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">
@@ -162,8 +162,8 @@ function LocationChoiceRequestCard({
   const t = useTranslations('pages.dashboardEventSettings.assistant');
 
   return (
-    <div className="mt-3 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
+    <div className="mt-3 rounded-[24px] border border-amber-400/30 bg-amber-400/10 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700 dark:text-amber-300">
         {t('locationResolution.ambiguous.eyebrow')}
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">
@@ -179,7 +179,7 @@ function LocationChoiceRequestCard({
             <li
               key={`${candidate.placeId ?? candidate.formattedAddress}-${index}`}
               className={cn(
-                'rounded-xl border px-3 py-3',
+                'rounded-[20px] border px-3 py-3',
                 isSelected
                   ? 'border-primary/40 bg-primary/10'
                   : 'border-border/50 bg-background/70',
@@ -253,8 +253,8 @@ function CrossStepHandoffCard({
   );
 
   return (
-    <div className="mt-3 rounded-2xl border border-border/60 bg-muted/10 p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+    <div className="mt-3 rounded-[24px] border border-border/60 bg-muted/10 p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
         {t('handoff.eyebrow')}
       </p>
       <p className="mt-1 text-sm font-semibold text-foreground">
@@ -406,7 +406,7 @@ function RoutingCard({
   );
 
   return (
-    <div className="mt-3 space-y-3 rounded-2xl border border-border/60 bg-muted/10 p-3">
+    <div className="mt-3 space-y-3 rounded-[24px] border border-border/60 bg-muted/10 p-4">
       {checklist?.length ? (
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -418,7 +418,7 @@ function RoutingCard({
                 key={`${item.code}-${item.stepId}-${index}`}
                 type="button"
                 className={cn(
-                  'w-full rounded-2xl border px-4 py-3 text-left text-sm leading-6 transition',
+                  'w-full rounded-[20px] border px-4 py-3 text-left text-sm leading-6 transition',
                   item.severity === 'blocker'
                     ? 'border-destructive/40 bg-destructive/5 text-destructive hover:bg-destructive/10'
                     : item.severity === 'required'
@@ -443,7 +443,7 @@ function RoutingCard({
             {visibleIntentRouting.map((item, index) => (
               <li
                 key={`${item.intent}-${item.stepId}-${index}`}
-                className="rounded-2xl border border-border/60 bg-background/70 px-4 py-3 text-sm"
+                className="rounded-[20px] border border-border/60 bg-background/70 px-4 py-3 text-sm"
               >
                 <p className="font-medium text-foreground">{item.label}</p>
                 <Button
@@ -561,11 +561,11 @@ export function ProposalDetails(props: ProposalDetailsProps) {
         <CrossStepHandoffCard handoff={patch.crossStepIntent} onNavigateToStep={onNavigateToStep} />
       ) : null}
 
-      <details className="mt-3 rounded-2xl border border-border/60 bg-muted/10 p-3">
+      <details className="mt-3 rounded-[24px] border border-border/60 bg-muted/10 p-4">
         <summary className="cursor-pointer list-none text-sm font-medium text-foreground">
           {t('latestProposal.detailsTitle')}
         </summary>
-        <div className="mt-3 space-y-3 border-t border-border/60 pt-3">
+        <div className="mt-3 space-y-3 border-t border-border/60 pt-4">
           <ul className="space-y-1 text-sm text-muted-foreground">
             {patch.ops.map((op, idx) => (
               <li key={`${patchId}-${idx}`} className="flex gap-2">

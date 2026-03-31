@@ -53,13 +53,13 @@ export function ProposalCard(props: ProposalCardPatchProps & { router: { refresh
     : patch.locationResolution;
 
   return (
-    <article className="mt-3 rounded-2xl border border-border/60 bg-background p-4 animate-in fade-in slide-in-from-bottom-1">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{patch.title}</p>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">{patch.summary}</p>
+    <article className="mt-3 rounded-[28px] border border-border/60 bg-[linear-gradient(180deg,color-mix(in_oklch,var(--background)_96%,var(--primary)_4%),var(--background))] p-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)] animate-in fade-in slide-in-from-bottom-1">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_14rem] lg:items-start">
+        <div className="min-w-0 space-y-2">
+          <p className="truncate text-base font-semibold text-foreground">{patch.title}</p>
+          <p className="text-sm leading-6 text-muted-foreground">{patch.summary}</p>
         </div>
-        <div className="w-full shrink-0 space-y-2 sm:w-auto sm:min-w-[11rem]">
+        <div className="w-full shrink-0 rounded-[24px] border border-border/50 bg-background/80 p-3">
           <p className="text-xs leading-5 text-muted-foreground">{t('trust.applyOnly')}</p>
           <Button
             type="button"
@@ -67,7 +67,7 @@ export function ProposalCard(props: ProposalCardPatchProps & { router: { refresh
             variant={applied ? 'secondary' : 'default'}
             disabled={isApplying || applied || requiresLocationSelection}
             onClick={() => applyPatch({ patchId, patch, applied, locationChoice, onApplyStart })}
-            className="w-full"
+            className="mt-3 w-full rounded-2xl"
           >
             {applied ? <Check className="mr-2 h-4 w-4" /> : null}
             {isApplying ? t('applying') : applied ? t('applied') : t('apply')}
@@ -75,17 +75,19 @@ export function ProposalCard(props: ProposalCardPatchProps & { router: { refresh
         </div>
       </div>
 
-      <ProposalDetails
-        patchId={patchId}
-        patch={patch}
-        locale={locale}
-        locationResolution={locationResolution}
-        selectedCandidate={selectedCandidate}
-        onSelectLocationChoice={selectCandidate}
-        onRevealEditor={onRevealEditor}
-        onNavigateToStep={onNavigateToStep}
-        onRequestManualClarification={onRequestManualClarification}
-      />
+      <div className="mt-4 border-t border-border/50 pt-4">
+        <ProposalDetails
+          patchId={patchId}
+          patch={patch}
+          locale={locale}
+          locationResolution={locationResolution}
+          selectedCandidate={selectedCandidate}
+          onSelectLocationChoice={selectCandidate}
+          onRevealEditor={onRevealEditor}
+          onNavigateToStep={onNavigateToStep}
+          onRequestManualClarification={onRequestManualClarification}
+        />
+      </div>
     </article>
   );
 }

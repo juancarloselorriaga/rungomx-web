@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import { useRouter } from '@/i18n/navigation';
 import { cn } from '@/lib/utils';
+import { MutedSurface, Surface } from '@/components/ui/surface';
 
 import { useAssistantWorkspaceQueryState } from '../event-assistant-workspace-state';
 import { useEventAiWizardBrief } from './use-event-ai-wizard-brief';
@@ -346,7 +347,7 @@ export function EventAiWizardPanel({
   return (
     <section
       className={cn(
-        'overflow-hidden rounded-3xl border border-border/60 bg-background shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:border-white/8 dark:bg-[#0d1017]/96 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
+        'overflow-hidden rounded-[32px] border border-border/60 bg-[linear-gradient(180deg,color-mix(in_oklch,var(--background)_96%,var(--primary)_4%),var(--background))] shadow-[0_24px_80px_rgba(15,23,42,0.08)] dark:border-white/8 dark:bg-[#0d1017]/96 dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
         embeddedInWorkspace && 'border-none bg-transparent shadow-none',
       )}
       data-latency-request-started-at={transport.latencyMarks.requestStartedAt ?? undefined}
@@ -386,11 +387,11 @@ export function EventAiWizardPanel({
           <p className="mt-1 text-sm text-muted-foreground">{t('inline.description')}</p>
         </div>
       ) : (
-        <header className="border-b border-border/60 px-4 py-4 sm:px-5 sm:py-5 dark:border-white/8">
+        <header className="border-b border-border/60 px-4 py-5 sm:px-5 sm:py-6 dark:border-white/8">
           <div className="flex items-start gap-3">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-sm font-semibold text-foreground">
+                <h2 className="text-base font-semibold tracking-tight text-foreground">
                   {t('inline.title', { step: stepTitle })}
                 </h2>
                 {markdownFocus ? (
@@ -399,35 +400,37 @@ export function EventAiWizardPanel({
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">{t('inline.description')}</p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                {t('inline.description')}
+              </p>
             </div>
           </div>
         </header>
       )}
 
-      <div className="space-y-5 px-4 py-4 sm:px-5">
-        <section className="rounded-2xl border border-border/60 bg-muted/10 px-4 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
+        <Surface className="rounded-[28px] border-border/50 bg-[linear-gradient(180deg,color-mix(in_oklch,var(--background)_90%,var(--primary)_10%),color-mix(in_oklch,var(--background)_98%,var(--primary)_2%))] p-4 sm:p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
             {tAssistantLoose('trust.title')}
           </p>
-          <p className="mt-2 text-sm leading-6 text-foreground">{t('contract')}</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-foreground">{t('contract')}</p>
           <dl className="mt-4 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
-            <div className="space-y-1">
+            <MutedSurface className="space-y-1 border-border/40 bg-background/65 px-4 py-3">
               <dt className="font-medium text-foreground">{tAssistantLoose('trust.applyLabel')}</dt>
               <dd>{tAssistantLoose('trust.applyDescription')}</dd>
-            </div>
-            <div className="space-y-1">
+            </MutedSurface>
+            <MutedSurface className="space-y-1 border-border/40 bg-background/65 px-4 py-3">
               <dt className="font-medium text-foreground">{tAssistantLoose('trust.saveLabel')}</dt>
               <dd>{tAssistantLoose('trust.saveDescription')}</dd>
-            </div>
-            <div className="space-y-1">
+            </MutedSurface>
+            <MutedSurface className="space-y-1 border-border/40 bg-background/65 px-4 py-3">
               <dt className="font-medium text-foreground">
                 {tAssistantLoose('trust.recoveryLabel')}
               </dt>
               <dd>{tAssistantLoose('trust.recoveryDescription')}</dd>
-            </div>
+            </MutedSurface>
           </dl>
-        </section>
+        </Surface>
 
         {lastApplyNotice ? (
           <div
@@ -469,57 +472,61 @@ export function EventAiWizardPanel({
         ) : null}
 
         {proposalView.latestProposalMessage && proposalView.latestProposalPatchPart ? (
-          <section className="rounded-2xl border border-border/60 bg-background p-4 dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
+          <section className="rounded-[28px] border border-border/60 bg-background/70 p-4 dark:border-white/10 dark:bg-white/[0.035] dark:shadow-none">
             <div className="space-y-4">
-              <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 dark:border-primary/20 dark:bg-primary/[0.08]">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="rounded-[24px] border border-border/60 bg-muted/10 px-4 py-4 dark:border-primary/20 dark:bg-primary/[0.08]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   {t('latestProposal.title')}
                 </p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {t('latestProposal.description')}
                 </p>
               </div>
 
-              <ProposalCard
-                editionId={editionId}
-                patchId={
-                  proposalView.latestProposalPatchPart.id ??
-                  `${proposalView.latestProposalMessage.id}-patch`
-                }
-                patch={proposalView.latestProposalPatchPart.data}
-                locale={locale}
-                activeStepId={stepId}
-                applied={appliedPatchIds.has(
-                  proposalView.latestProposalPatchPart.id ??
-                    `${proposalView.latestProposalMessage.id}-patch`,
-                )}
-                onApplyStart={() => setLastApplyNotice(null)}
-                onApplied={(appliedState) => {
-                  const patchId =
-                    proposalView.latestProposalPatchPart?.id ??
-                    `${proposalView.latestProposalMessage?.id}-patch`;
-                  setAppliedPatchIds((prev) => new Set([...prev, patchId]));
-                  setLastApplyNotice(null);
-                  setLastAppliedPatch(appliedState);
-                }}
-                onApplyFailure={(message) => {
-                  setLastApplyNotice({
-                    kind: message === t('errors.partialApplied') ? 'partial' : 'failed',
-                    message,
-                  });
-                }}
-                onRevealEditor={handleRevealEditor}
-                onNavigateToStep={handleNavigateToStep}
-                onRequestManualClarification={handleRequestManualLocationClarification}
-                router={router}
-              />
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.95fr)] xl:items-start">
+                <ProposalCard
+                  editionId={editionId}
+                  patchId={
+                    proposalView.latestProposalPatchPart.id ??
+                    `${proposalView.latestProposalMessage.id}-patch`
+                  }
+                  patch={proposalView.latestProposalPatchPart.data}
+                  locale={locale}
+                  activeStepId={stepId}
+                  applied={appliedPatchIds.has(
+                    proposalView.latestProposalPatchPart.id ??
+                      `${proposalView.latestProposalMessage.id}-patch`,
+                  )}
+                  onApplyStart={() => setLastApplyNotice(null)}
+                  onApplied={(appliedState) => {
+                    const patchId =
+                      proposalView.latestProposalPatchPart?.id ??
+                      `${proposalView.latestProposalMessage?.id}-patch`;
+                    setAppliedPatchIds((prev) => new Set([...prev, patchId]));
+                    setLastApplyNotice(null);
+                    setLastAppliedPatch(appliedState);
+                  }}
+                  onApplyFailure={(message) => {
+                    setLastApplyNotice({
+                      kind: message === t('errors.partialApplied') ? 'partial' : 'failed',
+                      message,
+                    });
+                  }}
+                  onRevealEditor={handleRevealEditor}
+                  onNavigateToStep={handleNavigateToStep}
+                  onRequestManualClarification={handleRequestManualLocationClarification}
+                  router={router}
+                />
 
-              <SupportingContextPanel
-                latestRequestMessage={proposalView.latestRequestMessage}
-                latestProposalMessage={proposalView.latestProposalMessage}
-                latestProposalText={proposalView.latestProposalText}
-                archiveMessages={proposalView.archiveMessages}
-              />
+                <div className="xl:sticky xl:top-4">
+                  <SupportingContextPanel
+                    latestRequestMessage={proposalView.latestRequestMessage}
+                    latestProposalMessage={proposalView.latestProposalMessage}
+                    latestProposalText={proposalView.latestProposalText}
+                    archiveMessages={proposalView.archiveMessages}
+                  />
+                </div>
+              </div>
             </div>
           </section>
         ) : proposalView.renderedMessages.length > 0 || isBusy || visibleProgressState ? (
@@ -535,9 +542,9 @@ export function EventAiWizardPanel({
             slowScaffoldKey={slowScaffoldKey}
           />
         ) : (
-          <section className="rounded-2xl border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
-            <p className="font-medium text-foreground">{t('empty.heading')}</p>
-            <p className="mt-1 leading-6">{t('empty.example')}</p>
+          <section className="rounded-[28px] border border-dashed border-border/60 bg-muted/10 p-4 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.025]">
+            <p className="text-sm font-semibold text-foreground">{t('empty.heading')}</p>
+            <p className="mt-2 leading-6">{t('empty.example')}</p>
           </section>
         )}
 

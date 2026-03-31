@@ -168,8 +168,8 @@
   },
   "assistant": {
     "title": "Setup assistant",
-    "description": "Describe your event and I'll suggest changes you can review and apply.",
-    "contract": "I suggest changes, but nothing updates until you apply them.",
+    "description": "Describe the work you need and I'll draft changes you can review before applying.",
+    "contract": "I can draft, organize, and refine this step, but your event only changes when you apply the proposal.",
     "trust": {
       "title": "Review before applying",
       "applyLabel": "Apply changes",
@@ -191,9 +191,9 @@
       "sectionTitle": "What do you need help with in this step?",
       "label": "Message",
       "hint": "Describe what you want and I'll propose changes. Rough notes are fine.",
-      "briefHint": "Use this box for what you want to solve right now. Your saved notes stay above.",
-      "savedBriefHint": "I already have your saved event notes. Add any extra details here — rough is fine.",
-      "roughNotesTitle": "Paste rough notes. I will turn them into a clear proposal.",
+      "briefHint": "Use this box for what you want to solve right now. Your saved notes stay available below.",
+      "savedBriefHint": "I already have your saved event notes. Add what's different for this step, even if it's still rough.",
+      "roughNotesTitle": "Start with rough notes. I'll turn them into a clear proposal.",
       "roughNotesExample": "Examples: \"10K at night in Guadalajara, first-timers welcome, music at the finish\" or \"Need FAQ and site copy, but keep logistics grounded in confirmed details.\""
     },
     "inline": {
@@ -204,24 +204,24 @@
     },
     "mobile": {
       "open": "Open assistant",
-      "stepHint": "Get help with {step} without losing your place."
+      "stepHint": "Open a clear workspace for {step} without losing your place."
     },
     "desktop": {
       "open": "Open assistant",
-      "stepHint": "Open the assistant for {step} when you need a wider workspace.",
+      "stepHint": "Open a larger workspace for {step} when you need room to review and apply changes.",
       "workspaceTitle": "Assistant for {step}",
-      "workspaceDescription": "Review proposals, refine your request, and apply changes without cramping the editor."
+      "workspaceDescription": "Review the latest proposal, keep context close by, and apply changes only when they look right."
     },
     "latestProposal": {
       "title": "Latest proposal",
-      "description": "Review the latest suggestion, then keep refining from here.",
-      "detailsTitle": "Show proposal details",
+      "description": "Keep the latest proposal in front. Open the side context only when you need a recap.",
+      "detailsTitle": "Proposal breakdown",
       "contextTitle": "Show context",
       "supportingContextTitle": "Supporting context",
-      "supportingContextDescription": "{count, plural, =0 {See the latest request and response if you need extra context.} one {See the latest request and response plus # earlier message.} other {See the latest request and response plus # earlier messages.}}",
+      "supportingContextDescription": "{count, plural, =0 {Open the latest request and response if you want a quick recap.} one {Open the latest request and response plus # earlier message.} other {Open the latest request and response plus # earlier messages.}}",
       "requestLabel": "Your request",
       "responseLabel": "What I have so far",
-      "pendingTitle": "Working on it"
+      "pendingTitle": "Proposal in progress"
     },
     "pending": {
       "requestLabel": "What you asked for"
@@ -382,7 +382,7 @@
     "continuity": {
       "eyebrow": "Picking up where we left off",
       "title": "I still have your latest proposal from {step}",
-      "description": "If you moved here from a suggestion, the last useful exchange stays visible while you continue.",
+      "description": "If you moved here from another step, the last useful exchange stays visible so you can keep momentum.",
       "proposalLabel": "My last proposal",
       "reuseRequest": "Continue from this request"
     },
@@ -425,11 +425,11 @@
     },
     "brief": {
       "savedLabel": "Saved event notes",
-      "description": "Context I use throughout the setup process.",
+      "description": "Background I keep in mind across the full setup process.",
       "empty": "No saved event notes yet.",
-      "emptyHint": "Save your event vision, target audience, tone, and key details once — I'll use them across every step.",
+      "emptyHint": "Save your event vision, audience, tone, and key details once — I'll keep them in mind across every step.",
       "inputLabel": "Event notes",
-      "inputHint": "Edit the notes you want me to keep using throughout setup.",
+      "inputHint": "Edit the notes you want me to keep in view throughout setup.",
       "add": "Add notes",
       "edit": "Edit notes",
       "save": "Save notes",
@@ -510,7 +510,7 @@
     },
     "placeholder": "What do you need help with in this step?",
     "empty": {
-      "heading": "Rough notes are enough to get started.",
+      "heading": "You can start with rough notes.",
       "example": "For example: evening 10K in Guadalajara, friendly vibe, live music at the finish, help me write the event summary and tell me what still needs attention."
     },
     "send": "Send",
