@@ -1,17 +1,7 @@
 import { z } from 'zod';
+import { EVENT_SETUP_WIZARD_STEP_IDS } from '@/lib/events/wizard/steps';
 
-const wizardStepIds = [
-  'basics',
-  'distances',
-  'pricing',
-  'registration',
-  'policies',
-  'content',
-  'extras',
-  'review',
-] as const;
-
-export const eventAiWizardStepIdSchema = z.enum(wizardStepIds);
+export const eventAiWizardStepIdSchema = z.enum(EVENT_SETUP_WIZARD_STEP_IDS);
 
 const questionTypeSchema = z.enum(['text', 'single_select', 'checkbox']);
 const waiverSignatureTypeSchema = z.enum(['checkbox', 'initials', 'signature']);
@@ -167,7 +157,9 @@ export const eventAiWizardCreateQuestionOpSchema = z
       })
       .strict()
       .refine(
-        (value) => value.type !== 'single_select' || (Array.isArray(value.options) && value.options.length >= 2),
+        (value) =>
+          value.type !== 'single_select' ||
+          (Array.isArray(value.options) && value.options.length >= 2),
         {
           message: 'Single select questions must have at least 2 options',
           path: ['options'],
@@ -195,11 +187,9 @@ export const eventAiWizardCreateAddOnOpSchema = z
         optionMaxQtyPerOrder: z.number().int().min(1).max(10).optional(),
       })
       .strict()
-      .refine(
-        (value) =>
-          value.optionPriceCents !== undefined || value.optionPrice !== undefined,
-        { message: 'optionPriceCents or optionPrice is required' },
-      ),
+      .refine((value) => value.optionPriceCents !== undefined || value.optionPrice !== undefined, {
+        message: 'optionPriceCents or optionPrice is required',
+      }),
   })
   .strict();
 
@@ -249,13 +239,9 @@ export const eventAiWizardUpdatePolicyConfigOpSchema = z
         deferralDeadline: z.string().nullable().optional(),
       })
       .strict()
-      .refine(
-        (value) =>
-          Object.values(value).some((entry) => entry !== undefined),
-        {
-          message: 'At least one policy field must be provided',
-        },
-      ),
+      .refine((value) => Object.values(value).some((entry) => entry !== undefined), {
+        message: 'At least one policy field must be provided',
+      }),
   })
   .strict();
 
@@ -393,13 +379,25 @@ export const eventAiWizardChoiceRequestSchema = z
 
 export type EventAiWizardChoiceRequest = z.infer<typeof eventAiWizardChoiceRequestSchema>;
 
+export const eventAiWizardApplyLocationChoiceSchema = z
+  .object({
+    optionIndex: z.number().int().min(0),
+  })
+  .strict();
+
+export type EventAiWizardApplyLocationChoice = z.infer<
+  typeof eventAiWizardApplyLocationChoiceSchema
+>;
+
 type ExpectedMarkdownOutput = Pick<EventAiWizardMarkdownOutput, 'domain' | 'contentMarkdown'>;
 
 function collectExpectedMarkdownOutputs(ops: EventAiWizardOp[]): ExpectedMarkdownOutput[] {
   return ops.flatMap((op): ExpectedMarkdownOutput[] => {
     switch (op.type) {
       case 'update_edition':
-        return op.data.description ? [{ domain: 'description', contentMarkdown: op.data.description }] : [];
+        return op.data.description
+          ? [{ domain: 'description', contentMarkdown: op.data.description }]
+          : [];
       case 'create_faq_item':
         return [{ domain: 'faq', contentMarkdown: op.data.answerMarkdown }];
       case 'create_waiver':
@@ -478,7 +476,9 @@ export const eventAiWizardPatchSchema = z
 
     const expectedKeys = expectedOutputs.map(toOutputKey).sort();
     const providedKeys = providedOutputs
-      .map((output) => toOutputKey({ domain: output.domain, contentMarkdown: output.contentMarkdown }))
+      .map((output) =>
+        toOutputKey({ domain: output.domain, contentMarkdown: output.contentMarkdown }),
+      )
       .sort();
 
     for (let index = 0; index < expectedKeys.length; index += 1) {
@@ -500,6 +500,7 @@ export const eventAiWizardApplyRequestSchema = z
     editionId: z.string().uuid(),
     locale: z.string().min(2).max(10).optional(),
     patch: eventAiWizardPatchSchema,
+    locationChoice: eventAiWizardApplyLocationChoiceSchema.optional(),
   })
   .strict();
 

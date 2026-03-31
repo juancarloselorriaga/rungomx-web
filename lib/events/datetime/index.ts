@@ -36,10 +36,7 @@ function parseNaiveLocalDateTime(value: string): NaiveLocalDateTimeParts | null 
   };
 }
 
-function getTimeZoneParts(
-  date: Date,
-  timeZone: string,
-): NaiveLocalDateTimeParts | null {
+function getTimeZoneParts(date: Date, timeZone: string): NaiveLocalDateTimeParts | null {
   try {
     const parts = new Intl.DateTimeFormat('en-CA', {
       timeZone,
@@ -53,9 +50,7 @@ function getTimeZoneParts(
     }).formatToParts(date);
 
     const values = Object.fromEntries(
-      parts
-        .filter((part) => part.type !== 'literal')
-        .map((part) => [part.type, part.value]),
+      parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]),
     ) as Record<string, string>;
 
     return {
@@ -87,10 +82,7 @@ function getTimeZoneOffsetMilliseconds(date: Date, timeZone: string): number | n
   return localInstant - date.getTime();
 }
 
-function convertNaiveLocalDateTimeToUtcIso(
-  value: string,
-  timeZone: string,
-): string | null {
+function convertNaiveLocalDateTimeToUtcIso(value: string, timeZone: string): string | null {
   const parsed = parseNaiveLocalDateTime(value);
   if (!parsed) return null;
 
@@ -187,18 +179,12 @@ export function normalizeEditionDateTimeForPersistence(
   return parsed.toISOString();
 }
 
-export function formatEditionDateForInputInTimeZone(
-  date: Date,
-  timeZone?: string | null,
-): string {
+export function formatEditionDateForInputInTimeZone(date: Date, timeZone?: string | null): string {
   const parts = timeZone ? getTimeZoneParts(date, timeZone) : null;
   return parts ? formatInputParts(parts).date : getFallbackUtcInputParts(date).date;
 }
 
-export function formatEditionTimeForInputInTimeZone(
-  date: Date,
-  timeZone?: string | null,
-): string {
+export function formatEditionTimeForInputInTimeZone(date: Date, timeZone?: string | null): string {
   const parts = timeZone ? getTimeZoneParts(date, timeZone) : null;
   return parts ? formatInputParts(parts).time : getFallbackUtcInputParts(date).time;
 }

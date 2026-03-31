@@ -1,3 +1,7 @@
+export type { EventSetupWizardStepDefinition, EventSetupWizardStepId } from './steps';
+
+import type { EventSetupWizardStepId } from './steps';
+
 export type EventCreationPath = 'ai' | 'manual';
 
 export type EventWizardRegistryLabelKey =
@@ -78,16 +82,6 @@ export type EventWizardCompleteness = {
   };
 };
 
-export type EventSetupWizardStepId =
-  | 'basics'
-  | 'distances'
-  | 'pricing'
-  | 'registration'
-  | 'policies'
-  | 'content'
-  | 'extras'
-  | 'review';
-
 export type EventWizardCapabilityLocks = {
   canUseAiAssistant: boolean;
   canApplyAiPatch: boolean;
@@ -115,6 +109,15 @@ export type EventWizardStepModule = {
   labelKey: EventWizardRegistryLabelKey;
   required: boolean;
   paths: EventCreationPath[];
-  routeSuffix: '' | '/settings' | '/pricing' | '/faq' | '/waivers' | '/questions' | '/policies' | '/website' | '/add-ons';
+  routeSuffix:
+    | ''
+    | '/settings'
+    | '/pricing'
+    | '/faq'
+    | '/waivers'
+    | '/questions'
+    | '/policies'
+    | '/website'
+    | '/add-ons';
   reuseTarget: string;
 };

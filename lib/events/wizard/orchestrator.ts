@@ -1,7 +1,8 @@
 import type { EventEditionDetail } from '@/lib/events/queries';
 import type { WebsiteContentBlocks } from '@/lib/events/website/types';
-import { hasTrustedEventStartTime } from '@/lib/events/ai-wizard/datetime';
+import { hasTrustedEventStartTime } from '@/lib/events/datetime';
 import { EVENT_WIZARD_STEP_MODULES } from './step-modules';
+import { mapWizardIssueStepToSetupStep } from './steps';
 import type {
   EventCreationPath,
   EventSetupWizardStepId,
@@ -14,6 +15,7 @@ import type {
 } from './types';
 
 export type {
+  EventSetupWizardStepDefinition,
   EventCreationPath,
   EventSetupWizardStepId,
   EventSetupWizardStepState,
@@ -27,6 +29,12 @@ export type {
   EventWizardStepId,
   EventWizardStepModule,
 } from './types';
+export {
+  EVENT_SETUP_WIZARD_STEP_DEFINITIONS,
+  EVENT_SETUP_WIZARD_STEP_IDS,
+  isEventSetupWizardStepId,
+  mapWizardIssueStepToSetupStep,
+} from './steps';
 
 function eventPath(eventId: string, suffix = ''): string {
   return `/dashboard/events/${eventId}${suffix}`;
@@ -397,30 +405,6 @@ function buildSetupStepState(
   };
 }
 
-function mapIssueToSetupStepId(stepId: EventWizardStepId): EventSetupWizardStepId {
-  switch (stepId) {
-    case 'event_details':
-      return 'basics';
-    case 'distances':
-      return 'distances';
-    case 'pricing':
-      return 'pricing';
-    case 'questions':
-    case 'add_ons':
-      return 'extras';
-    case 'faq':
-    case 'website':
-      return 'content';
-    case 'waivers':
-    case 'policies':
-      return 'policies';
-    case 'publish':
-      return 'review';
-    default:
-      return 'basics';
-  }
-}
-
 export function buildEventWizardAggregate(
   event: EventEditionDetail,
   {
@@ -660,10 +644,12 @@ export function buildEventWizardAggregate(
   const percent = totalRequired === 0 ? 100 : Math.round((completedRequired / totalRequired) * 100);
 
   const blockerStepIds = new Set(
-    [...publishBlockers, ...missingRequired].map((issue) => mapIssueToSetupStepId(issue.stepId)),
+    [...publishBlockers, ...missingRequired].map((issue) =>
+      mapWizardIssueStepToSetupStep(issue.stepId),
+    ),
   );
   const recommendationStepIds = optionalRecommendations.map((issue) =>
-    mapIssueToSetupStepId(issue.stepId),
+    mapWizardIssueStepToSetupStep(issue.stepId),
   );
 
   const setupStepStateById: EventWizardAggregate['setupStepStateById'] = {
