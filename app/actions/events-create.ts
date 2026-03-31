@@ -1,10 +1,10 @@
 'use server';
 
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
-import { type FormActionResult, validateInput } from '@/lib/forms';
 import { createEventEdition, createEventSeries } from '@/lib/events/actions';
-import { normalizeEditionDateTimeForPersistence } from '@/lib/events/ai-wizard/datetime';
 import { SPORT_TYPES } from '@/lib/events/constants';
+import { normalizeEditionDateTimeForPersistence } from '@/lib/events/datetime';
+import { type FormActionResult, validateInput } from '@/lib/forms';
 import { z } from 'zod';
 
 const createEventStepSchema = z
