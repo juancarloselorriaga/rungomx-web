@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
 import { IconButton } from '@/components/ui/icon-button';
-import { Surface } from '@/components/ui/surface';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createWaiver, updateWaiver, reorderWaivers } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
@@ -203,7 +203,7 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
             className={cn('transition-all', editingId === item.id && 'ring-2 ring-primary')}
           >
             {editingId === item.id ? (
-              <div className="p-4 space-y-4">
+              <InsetSurface className="space-y-4">
                 <FormField label={t('titleLabel')} required>
                   <input
                     type="text"
@@ -250,7 +250,7 @@ export function WaiverManager({ eventId, initialWaivers }: WaiverManagerProps) {
                     {t('save')}
                   </Button>
                 </div>
-              </div>
+              </InsetSurface>
             ) : (
               <div className="p-4">
                 <div className="flex items-start gap-3">

@@ -22,7 +22,7 @@ import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-di
 import { FormField } from '@/components/ui/form-field';
 import { IconTooltipButton } from '@/components/ui/icon-tooltip-button';
 import { MarkdownField } from '@/components/ui/markdown-field';
-import { Surface } from '@/components/ui/surface';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
@@ -362,7 +362,7 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
         <div className="divide-y">
           {/* Add new add-on form */}
           {isAddingAddOn && (
-            <div className="p-6 bg-muted/30">
+            <InsetSurface className="p-6">
               <h3 className="font-medium mb-4">{t('addOn.add')}</h3>
               <AddOnForm
                 formData={addOnFormData}
@@ -373,7 +373,7 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
                 isPending={isPending}
                 t={t}
               />
-            </div>
+            </InsetSurface>
           )}
 
           {/* Empty state */}
@@ -439,7 +439,7 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
                 </button>
 
                 {isExpanded && (
-                  <div className="px-6 pb-6 pt-2 border-t bg-muted/20">
+                  <InsetSurface className="px-6 pb-6 pt-2">
                     {isEditing ? (
                       <AddOnForm
                         formData={addOnFormData}
@@ -490,7 +490,7 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
 
                           {/* Add new option form */}
                           {addingOptionToAddOn === addOn.id && (
-                            <div className="mb-4 p-4 rounded-lg border bg-background">
+                            <InsetSurface className="mb-4">
                               <OptionForm
                                 formData={optionFormData}
                                 setFormData={setOptionFormData}
@@ -499,7 +499,7 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
                                 isPending={isPending}
                                 t={t}
                               />
-                            </div>
+                            </InsetSurface>
                           )}
 
                           {/* Options list */}
@@ -511,9 +511,9 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
 
                           <div className="space-y-2">
                             {addOn.options.map((option) => (
-                              <div
+                              <InsetSurface
                                 key={option.id}
-                                className="flex items-center justify-between p-3 rounded-lg border bg-background"
+                                className="flex items-center justify-between"
                               >
                                 {editingOption === option.id ? (
                                   <div className="w-full">
@@ -571,13 +571,13 @@ export function AddOnsManager({ editionId, distances, initialAddOns }: AddOnsMan
                                     </div>
                                   </>
                                 )}
-                              </div>
+                              </InsetSurface>
                             ))}
                           </div>
                         </div>
                       </div>
                     )}
-                  </div>
+                  </InsetSurface>
                 )}
               </div>
             );

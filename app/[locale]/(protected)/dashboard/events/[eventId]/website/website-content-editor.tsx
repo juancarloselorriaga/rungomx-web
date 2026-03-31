@@ -36,6 +36,7 @@ import {
   type UploadedSponsorLogo,
 } from '@/components/events/sponsor-logo-uploader';
 import { cn } from '@/lib/utils';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { EVENT_MEDIA_MAX_FILE_SIZE } from '@/lib/events/media/constants';
 
 import {
@@ -577,9 +578,10 @@ export function WebsiteContentEditor({
   return (
     <div className="space-y-6">
       {/* Overview Section */}
-      <div
+      <Surface
+        as="div"
         className={cn(
-          'rounded-lg border bg-card shadow-sm transition-all',
+          'p-0 overflow-hidden transition-all',
           blocks.overview?.enabled && 'ring-1 ring-primary/20',
         )}
       >
@@ -649,12 +651,13 @@ export function WebsiteContentEditor({
             />
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Course Section */}
-      <div
+      <Surface
+        as="div"
         className={cn(
-          'rounded-lg border bg-card shadow-sm transition-all',
+          'p-0 overflow-hidden transition-all',
           blocks.course?.enabled && 'ring-1 ring-primary/20',
         )}
       >
@@ -758,10 +761,7 @@ export function WebsiteContentEditor({
                 </Button>
               </div>
               {(blocks.course?.aidStations ?? []).map((station, idx) => (
-                <div
-                  key={idx}
-                  className="grid gap-3 p-3 border rounded-lg bg-muted/30 sm:grid-cols-2 lg:grid-cols-4"
-                >
+                <InsetSurface key={idx} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <div className="space-y-1">
                     <label className="text-xs font-medium">
                       {t('sections.course.aidStations.nameLabel')}
@@ -823,17 +823,18 @@ export function WebsiteContentEditor({
                       </IconButton>
                     </div>
                   </div>
-                </div>
+                </InsetSurface>
               ))}
             </div>
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Schedule Section */}
-      <div
+      <Surface
+        as="div"
         className={cn(
-          'rounded-lg border bg-card shadow-sm transition-all',
+          'p-0 overflow-hidden transition-all',
           blocks.schedule?.enabled && 'ring-1 ring-primary/20',
         )}
       >
@@ -932,10 +933,7 @@ export function WebsiteContentEditor({
                 </Button>
               </div>
               {(blocks.schedule?.startTimes ?? []).map((st, idx) => (
-                <div
-                  key={idx}
-                  className="grid gap-3 p-3 border rounded-lg bg-muted/30 sm:grid-cols-3"
-                >
+                <InsetSurface key={idx} className="grid gap-3 sm:grid-cols-3">
                   <div className="space-y-1">
                     <label className="text-xs font-medium">
                       {t('sections.schedule.startTimes.distanceLabel')}
@@ -983,17 +981,18 @@ export function WebsiteContentEditor({
                       </IconButton>
                     </div>
                   </div>
-                </div>
+                </InsetSurface>
               ))}
             </div>
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Media Section */}
-      <div
+      <Surface
+        as="div"
         className={cn(
-          'rounded-lg border bg-card shadow-sm transition-all',
+          'p-0 overflow-hidden transition-all',
           blocks.media?.enabled && 'ring-1 ring-primary/20',
         )}
       >
@@ -1196,12 +1195,13 @@ export function WebsiteContentEditor({
             </div>
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Sponsors Section */}
-      <div
+      <Surface
+        as="div"
         className={cn(
-          'rounded-lg border bg-card shadow-sm transition-all',
+          'p-0 overflow-hidden transition-all',
           blocks.sponsors?.enabled && 'ring-1 ring-primary/20',
         )}
       >
@@ -1302,7 +1302,7 @@ export function WebsiteContentEditor({
                     .slice()
                     .sort((a, b) => a.sortOrder - b.sortOrder)
                     .map((tier) => (
-                      <div key={tier.id} className="rounded-lg border bg-muted/30 overflow-hidden">
+                      <Surface key={tier.id} as="div" className="p-0 overflow-hidden">
                         {/* Tier Header */}
                         <div className="p-4 bg-muted/50 border-b">
                           <div className="grid gap-3 sm:grid-cols-3">
@@ -1421,9 +1421,10 @@ export function WebsiteContentEditor({
                                   const logoUrl = mediaUrls[sponsor.logoMediaId];
 
                                   return (
-                                    <div
+                                    <InsetSurface
                                       key={sponsor.id}
-                                      className="rounded-lg border bg-card overflow-hidden"
+                                      as="div"
+                                      className="p-0 overflow-hidden"
                                     >
                                       <div className="relative h-20 bg-white flex items-center justify-center p-2">
                                         {logoUrl ? (
@@ -1458,20 +1459,20 @@ export function WebsiteContentEditor({
                                           </IconButton>
                                         </div>
                                       </div>
-                                    </div>
+                                    </InsetSurface>
                                   );
                                 })}
                             </div>
                           )}
                         </div>
-                      </div>
+                      </Surface>
                     ))}
                 </div>
               )}
             </div>
           </div>
         )}
-      </div>
+      </Surface>
 
       {/* Save Button */}
       <div className="flex justify-end">

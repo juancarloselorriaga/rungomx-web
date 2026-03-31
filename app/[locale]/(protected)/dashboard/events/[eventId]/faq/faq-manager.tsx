@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { FormField } from '@/components/ui/form-field';
 import { MarkdownField } from '@/components/ui/markdown-field';
-import { Surface } from '@/components/ui/surface';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { MarkdownContent } from '@/components/markdown/markdown-content';
 import { createFaqItem, updateFaqItem, deleteFaqItem, reorderFaqItems } from '@/lib/events/actions';
 import { cn } from '@/lib/utils';
@@ -239,7 +239,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
           >
             {editingId === item.id ? (
               // Editing mode
-              <form className="p-4 space-y-4" onSubmit={handleSaveEdit}>
+              <InsetSurface as="form" className="space-y-4" onSubmit={handleSaveEdit}>
                 <FormField label={t('questionLabel')} required>
                   <input
                     name="question"
@@ -284,7 +284,7 @@ export function FaqManager({ eventId, initialFaqItems }: FaqManagerProps) {
                     )}
                   </Button>
                 </div>
-              </form>
+              </InsetSurface>
             ) : (
               // View mode
               <div className="p-4">

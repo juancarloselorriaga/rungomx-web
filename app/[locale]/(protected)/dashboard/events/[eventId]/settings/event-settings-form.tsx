@@ -1177,14 +1177,12 @@ export function EventSettingsForm({
       )}
 
       {showCapacitySection && (
-        <section className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            <h2 className="text-lg font-semibold">{tCapacity('title')}</h2>
-          </div>
-          <p className="text-sm text-muted-foreground mb-4">{tCapacity('description')}</p>
-
-          <div className="space-y-4">
+        <SettingsSection
+          icon={<Users className="h-5 w-5" />}
+          title={tCapacity('title')}
+          description={tCapacity('description')}
+        >
+          <SettingsSubsection>
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium">{tCapacity('toggleLabel')}</p>
@@ -1220,25 +1218,25 @@ export function EventSettingsForm({
             {!sharedCapacityEnabled && capacityError && (
               <p className="text-sm text-destructive">{capacityError}</p>
             )}
+          </SettingsSubsection>
 
-            <div className="flex justify-end">
-              <Button type="button" onClick={handleCapacitySave} disabled={isUpdatingCapacity}>
-                {isUpdatingCapacity ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                {tCapacity('save')}
-              </Button>
-            </div>
+          <div className="flex justify-end">
+            <Button type="button" onClick={handleCapacitySave} disabled={isUpdatingCapacity}>
+              {isUpdatingCapacity ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {tCapacity('save')}
+            </Button>
           </div>
-        </section>
+        </SettingsSection>
       )}
 
       {showDistancesSection && (
-        <section className="rounded-lg border bg-card p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">{t('distances.title')}</h2>
+        <SettingsSection
+          title={t('distances.title')}
+          badge={
             <Button
               type="button"
               variant="outline"
@@ -1249,8 +1247,8 @@ export function EventSettingsForm({
               <Plus className="h-4 w-4 mr-1" />
               {t('distances.add')}
             </Button>
-          </div>
-
+          }
+        >
           {showAddDistance && (
             <AddDistanceForm
               eventId={event.id}
@@ -1288,7 +1286,7 @@ export function EventSettingsForm({
               ))}
             </div>
           )}
-        </section>
+        </SettingsSection>
       )}
 
       <Dialog open={showSlugConfirm} onOpenChange={setShowSlugConfirm}>

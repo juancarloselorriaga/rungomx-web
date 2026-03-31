@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { IconButton } from '@/components/ui/icon-button';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
-import { Surface } from '@/components/ui/surface';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { Form, FormError, useForm } from '@/lib/forms';
 import type { RegistrationQuestionType } from '@/lib/events/constants';
 import {
@@ -513,7 +513,7 @@ export function QuestionsManager({
                 </div>
 
                 {isEditing && editingQuestion && (
-                  <div className="mt-4 border-t pt-4">
+                  <InsetSurface className="mt-4">
                     <QuestionForm
                       editionId={editionId}
                       questionId={question.id}
@@ -529,7 +529,7 @@ export function QuestionsManager({
                         setEditingId(null);
                       }}
                     />
-                  </div>
+                  </InsetSurface>
                 )}
               </Surface>
             );

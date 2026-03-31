@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { DeleteConfirmationDialog } from '@/components/ui/delete-confirmation-dialog';
 import { FormField } from '@/components/ui/form-field';
-import { Surface } from '@/components/ui/surface';
+import { InsetSurface, Surface } from '@/components/ui/surface';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { cn } from '@/lib/utils';
 
@@ -366,7 +366,7 @@ export function PricingTiersManager({ distances, initialPricingData }: PricingTi
           <div className="divide-y">
             {/* Add new tier form */}
             {isAddingNew && (
-              <div className="p-6 bg-muted/30">
+              <InsetSurface className="p-6">
                 <h3 className="font-medium mb-4">{t('tier.add')}</h3>
                 <TierForm
                   formData={tierFormData}
@@ -376,7 +376,7 @@ export function PricingTiersManager({ distances, initialPricingData }: PricingTi
                   isPending={isPending}
                   t={t}
                 />
-              </div>
+              </InsetSurface>
             )}
 
             {/* Existing tiers */}
@@ -456,7 +456,7 @@ export function PricingTiersManager({ distances, initialPricingData }: PricingTi
                     </button>
 
                     {isExpanded && (
-                      <div className="px-6 pb-6 pt-2 border-t bg-muted/20">
+                      <InsetSurface className="px-6 pb-6 pt-2">
                         {isEditing ? (
                           <TierForm
                             formData={tierFormData}
@@ -483,7 +483,7 @@ export function PricingTiersManager({ distances, initialPricingData }: PricingTi
                             </Button>
                           </div>
                         )}
-                      </div>
+                      </InsetSurface>
                     )}
                   </div>
                 );
