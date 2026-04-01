@@ -32,6 +32,8 @@ In practice, the repo-native loop is:
 4. route to repo-native specialists when needed (`boundary-planner`, `change-builder`, `diff-reviewer`, conditional `coherence-reviewer`, `validation-planner`)
 5. report boundary impacts, tests, and remaining risks
 
+For genuinely multi-phase or interruption-prone work, the repo-native flow may also use the optional phased-memory protocol in `prompts/meta/phased-orchestration-memory-protocol.md`. This stays protocol-first, remains optional, and must not become a second policy system.
+
 Category guidance:
 
 - `quick`: localized implementation, smaller validation scope
@@ -62,6 +64,7 @@ Notes:
 - `orchestrator` is the single detailed OpenCode workflow adapter; `/task-flow` should stay thin.
 - `diff-reviewer` is the blocking review gate for non-trivial code changes.
 - `coherence-reviewer` is a conditional final-pass reviewer used for visual, writing, and non-trivial UX/copy/pattern-coherence work after diff review and before validation.
+- Optional phased memory exists only for long-running, multi-phase continuity; see `prompts/meta/phased-orchestration-memory-protocol.md` for the governing rules.
 
 Rename map:
 

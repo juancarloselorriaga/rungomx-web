@@ -50,6 +50,7 @@ If a lower-level file conflicts with a higher-level file, update the lower-level
 - `prompts/auth-stack/**`
 - `AGENTS.md`
 - `prompts/meta/ai-guidance-governance.md`
+- `prompts/meta/phased-orchestration-memory-protocol.md`
 
 These may define required behavior for agents or canonical conflict resolution.
 
@@ -80,6 +81,7 @@ These should summarize, route, or contextualize. They should not become independ
 - Use `prompts/standards/README.md` and focused indexes such as `prompts/standards/nextjs-caching-index.md` to discover what to load.
 - Prefer loading the smallest sufficient set of canonical docs rather than broad prompt bundles.
 - For governance edits, pair this doc with `AGENTS.md` and `prompts/standards/README.md`.
+- When defining or operating optional phased-memory behavior for orchestrators or other adapters, also load `prompts/meta/phased-orchestration-memory-protocol.md`.
 
 ## 5. Compatibility stub policy
 

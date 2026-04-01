@@ -11,8 +11,10 @@ Use `.opencode/agents/orchestrator.md` as the canonical OpenCode workflow adapte
 3. Use `prompts/standards/README.md` only as the discovery layer for additional scoped standards.
 4. Use the lightweight path only when the task matches the eligibility rule in `AGENTS.md`.
 5. If this request changes AI guidance surfaces, also load `prompts/meta/ai-guidance-governance.md`.
-6. Categorize the task, route specialists, and validate according to `orchestrator`.
-7. Final output must still call out:
+6. If this request is genuinely multi-phase, resume-sensitive, or about phased-memory behavior, also load `prompts/meta/phased-orchestration-memory-protocol.md` and let `orchestrator` keep memory optional, mode-gated, and current-phase focused.
+7. If `deep` mode is selected, `orchestrator` may initialize or refresh durable scratch memory through `pnpm opencode:phased-memory:init` or `/phased-memory-init`.
+8. Categorize the task, route specialists, and validate according to `orchestrator`.
+9. Final output must still call out:
 
 - whether `diff-reviewer` reported blocking findings
 

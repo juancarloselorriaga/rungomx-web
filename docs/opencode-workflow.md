@@ -18,13 +18,23 @@ Role summary:
 - `coherence-reviewer`: read-only final-pass specialist for simplification, coherence, and standards-aligned normalization before validation.
 - `validation-planner`: read-only specialist for minimum reliable test and validation scope.
 - `/task-flow`: thin one-shot wrapper that routes through `orchestrator`.
+- `/phased-memory-init`: thin helper wrapper for creating or refreshing a deep-memory scratch artifact when `deep` mode is actually selected.
 
 Typical flow when applicable:
 
 - classify the task
 - read `AGENTS.md`, follow the startup-read policy defined there, then use `prompts/standards/README.md` to discover only the smallest sufficient set of additional standards
+- for genuinely multi-phase or resume-sensitive work, optionally load `prompts/meta/phased-orchestration-memory-protocol.md`, start `lightweight` by default, and escalate to `deep` only when interruption risk, checkpoint count, or dependency on actual prior outcomes materially increases
 - route to `boundary-planner`, `change-builder`, `diff-reviewer`, conditional `coherence-reviewer`, and `validation-planner` as needed
 - treat non-trivial code work as incomplete while `diff-reviewer` still has blocking findings
+
+Optional phased memory:
+
+- This capability is protocol-first and optional; it is not part of the default startup bundle.
+- When used, it starts `lightweight` and escalates to `deep` only when the protocol says the continuity benefits justify durable memory.
+- It must stay non-authoritative, non-tracked, and current-phase focused.
+- See `prompts/meta/phased-orchestration-memory-protocol.md` for the governing rules.
+- When `deep` mode is selected, the OpenCode helper path is `pnpm opencode:phased-memory:init` or `/phased-memory-init`.
 
 Tooling notes:
 
