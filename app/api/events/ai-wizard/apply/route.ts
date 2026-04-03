@@ -11,6 +11,7 @@ import {
   buildApplyCoreFromPatch,
   fingerprintApplyCore,
 } from '@/lib/events/ai-wizard/server/apply/idempotency';
+import { getExistingApplyReplay } from '@/lib/events/ai-wizard/server/apply/replay-store';
 import { resolveLocationChoice } from '@/lib/events/ai-wizard/server/apply/resolve-location-choice';
 import type { EventAiWizardApplyFailure } from '@/lib/events/ai-wizard/server/apply/types';
 import { getEventEditionDetail } from '@/lib/events/queries';
@@ -150,34 +151,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ code: 'READ_ONLY' }, { status: 403 });
   }
 
-  const applyRateLimit = await checkRateLimit(`${authContext.user.id}:${editionId}`, 'user', {
-    action: 'event_ai_wizard_apply',
-    maxRequests: 20,
-    windowMs: 5 * 60 * 1000,
-  });
-  if (!applyRateLimit.allowed) {
-    await trackProFeatureEvent({
-      featureKey: 'event_ai_wizard',
-      userId: authContext.user.id,
-      eventType: 'blocked',
-      meta: {
-        blockCategory: 'rate_limit',
-        endpoint: 'apply',
-        editionId,
-        resetAt: applyRateLimit.resetAt.toISOString(),
-      },
-    });
-    return NextResponse.json(
-      {
-        code: 'RATE_LIMITED',
-        category: 'rate_limit',
-        endpoint: 'apply',
-        resetAt: applyRateLimit.resetAt.toISOString(),
-      },
-      { status: 429 },
-    );
-  }
-
   const resolvedLocationChoice = resolveLocationChoice({ patch, locationChoice });
   if (!resolvedLocationChoice.ok) {
     return NextResponse.json(
@@ -242,6 +215,107 @@ export async function POST(req: Request) {
     proposalFingerprint,
     idempotencyKey,
   });
+
+  const existingReplay = await getExistingApplyReplay({
+    actorUserId: authContext.user.id,
+    organizationId: membership.organizationId,
+    editionId,
+    replayKey: replayIdentity.replayKey,
+  });
+
+  if (existingReplay?.proposalFingerprint === proposalFingerprint) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'used',
+      meta: {
+        endpoint: 'apply',
+        outcome: 'duplicate',
+        editionId,
+        proposalId,
+        proposalFingerprint,
+        replayKey: replayIdentity.replayKey,
+        replayKeyKind: replayIdentity.replayKeyKind,
+        duplicate: true,
+        opCount: effectivePatch.ops.length,
+        appliedCount: 0,
+        missingChecklistCount: effectivePatch.missingFieldsChecklist?.length ?? 0,
+        intentRouteCount: effectivePatch.intentRouting?.length ?? 0,
+        hadLocationChoice: Boolean(locationChoice),
+        hadChoiceRequest: Boolean(patch.choiceRequest),
+      },
+    });
+
+    return NextResponse.json({ ok: true, applied: [], duplicate: true });
+  }
+
+  if (
+    replayIdentity.replayKeyKind === 'explicit' &&
+    existingReplay &&
+    existingReplay.proposalFingerprint !== proposalFingerprint
+  ) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'blocked',
+      meta: {
+        endpoint: 'apply',
+        outcome: 'rejected',
+        editionId,
+        proposalId,
+        proposalFingerprint,
+        replayKey: replayIdentity.replayKey,
+        replayKeyKind: replayIdentity.replayKeyKind,
+        code: 'IDEMPOTENCY_KEY_REUSED',
+        retryable: false,
+        appliedCount: 0,
+        hadLocationChoice: Boolean(locationChoice),
+        hadChoiceRequest: Boolean(patch.choiceRequest),
+      },
+    });
+
+    return NextResponse.json(
+      {
+        code: 'INVALID_PATCH',
+        details: {
+          reason: 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PATCH',
+          existingProposalFingerprint: existingReplay.proposalFingerprint,
+          existingProposalId: existingReplay.proposalId,
+        },
+        applied: [],
+      },
+      { status: 409 },
+    );
+  }
+
+  const applyRateLimit = await checkRateLimit(`${authContext.user.id}:${editionId}`, 'user', {
+    action: 'event_ai_wizard_apply',
+    maxRequests: 20,
+    windowMs: 5 * 60 * 1000,
+  });
+  if (!applyRateLimit.allowed) {
+    await trackProFeatureEvent({
+      featureKey: 'event_ai_wizard',
+      userId: authContext.user.id,
+      eventType: 'blocked',
+      meta: {
+        blockCategory: 'rate_limit',
+        endpoint: 'apply',
+        editionId,
+        resetAt: applyRateLimit.resetAt.toISOString(),
+      },
+    });
+    return NextResponse.json(
+      {
+        code: 'RATE_LIMITED',
+        category: 'rate_limit',
+        endpoint: 'apply',
+        resetAt: applyRateLimit.resetAt.toISOString(),
+      },
+      { status: 429 },
+    );
+  }
+
   const requestContext = await getRequestContext(await headers());
 
   const result = await applyAiWizardPatch({

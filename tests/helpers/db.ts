@@ -91,6 +91,7 @@ export async function cleanDatabase(db: TestDb) {
     await db.delete(schema.groupUploadLinks); // References event editions, users
     await db.delete(schema.registrationGroupMembers); // References registration groups, users
     await db.delete(schema.registrationGroups); // References event distances, users
+    await db.delete(schema.eventAiWizardApplyReplays);
     await db.delete(schema.groupDiscountRules);
     await db.delete(schema.eventSlugRedirects);
     await db.delete(schema.waiverAcceptances);

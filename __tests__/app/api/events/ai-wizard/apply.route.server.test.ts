@@ -7,6 +7,7 @@ const mockTrackProFeatureEvent = jest.fn();
 const mockCreateAuditLog = jest.fn();
 const mockEvaluateAiWizardPatchSafety = jest.fn();
 const mockClaimApplyReplay = jest.fn();
+const mockGetExistingApplyReplay = jest.fn();
 const mockPersistenceCreateDistance = jest.fn();
 const mockPersistenceCreateFaqItem = jest.fn();
 const mockPersistenceCreatePricingTier = jest.fn();
@@ -144,6 +145,7 @@ jest.mock('@/lib/audit', () => ({
 
 jest.mock('@/lib/events/ai-wizard/server/apply/replay-store', () => ({
   claimApplyReplay: (...args: unknown[]) => mockClaimApplyReplay(...args),
+  getExistingApplyReplay: (...args: unknown[]) => mockGetExistingApplyReplay(...args),
 }));
 
 jest.mock('@/lib/events/ai-wizard/server/apply/persistence', () => ({
@@ -188,6 +190,11 @@ jest.mock('next/headers', () => ({
 }));
 
 import { POST } from '@/app/api/events/ai-wizard/apply/route';
+import {
+  buildApplyCoreFromPatch,
+  fingerprintApplyCore,
+} from '@/lib/events/ai-wizard/server/apply/idempotency';
+import type { EventAiWizardApplyRequest } from '@/lib/events/ai-wizard/schemas';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 describe('POST /api/events/ai-wizard/apply', () => {
@@ -200,6 +207,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockCreateAuditLog.mockReset();
     mockEvaluateAiWizardPatchSafety.mockReset();
     mockClaimApplyReplay.mockReset();
+    mockGetExistingApplyReplay.mockReset();
     mockPersistenceCreateDistance.mockReset();
     mockPersistenceCreateFaqItem.mockReset();
     mockPersistenceCreatePricingTier.mockReset();
@@ -239,6 +247,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockCreateAuditLog.mockResolvedValue({ ok: true, auditLogId: 'audit-1' });
     mockEvaluateAiWizardPatchSafety.mockReturnValue({ blocked: false });
     mockClaimApplyReplay.mockResolvedValue({ status: 'claimed' });
+    mockGetExistingApplyReplay.mockResolvedValue(undefined);
     mockPersistenceCreateDistance.mockResolvedValue({ ok: true, data: { id: 'distance-1' } });
     mockPersistenceCreateFaqItem.mockResolvedValue({ ok: true, data: { id: 'faq-1' } });
     mockPersistenceCreatePricingTier.mockResolvedValue({ ok: true, data: { id: 'tier-1' } });
@@ -319,7 +328,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     });
   });
 
-  function buildFaqApplyBody() {
+  function buildFaqApplyBody(): EventAiWizardApplyRequest {
     return {
       editionId: '11111111-1111-4111-8111-111111111111',
       locale: 'es',
@@ -344,6 +353,10 @@ describe('POST /api/events/ai-wizard/apply', () => {
         ],
       },
     };
+  }
+
+  function buildFaqFingerprint() {
+    return fingerprintApplyCore(buildApplyCoreFromPatch(buildFaqApplyBody().patch));
   }
 
   it('returns INVALID_BODY for malformed requests before any auth or apply work', async () => {
@@ -385,6 +398,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'FORBIDDEN' });
+    expect(mockClaimApplyReplay).not.toHaveBeenCalled();
   });
 
   it('returns RATE_LIMITED and tracks the blocked usage when the apply rate limit is exceeded', async () => {
@@ -412,6 +426,35 @@ describe('POST /api/events/ai-wizard/apply', () => {
     expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
       expect.objectContaining({ eventType: 'blocked' }),
     );
+  });
+
+  it('returns duplicate before rate limiting for a replayed apply retry', async () => {
+    mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
+    mockGetExistingApplyReplay.mockResolvedValueOnce({
+      proposalFingerprint: buildFaqFingerprint(),
+      proposalId: 'proposal-duplicate',
+    });
+    (checkRateLimit as jest.Mock).mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date('2026-03-11T00:00:00.000Z'),
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...buildFaqApplyBody(),
+          proposalId: 'proposal-duplicate',
+          idempotencyKey: 'idem-duplicate',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, applied: [], duplicate: true });
+    expect(checkRateLimit).not.toHaveBeenCalled();
+    expect(mockClaimApplyReplay).not.toHaveBeenCalled();
   });
 
   it('returns SAFETY_BLOCKED when patch safety blocks the apply request', async () => {
@@ -602,7 +645,10 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
   it('returns a deterministic duplicate apply response when the replay key was already claimed', async () => {
     mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
-    mockClaimApplyReplay.mockResolvedValueOnce({ status: 'duplicate' });
+    mockGetExistingApplyReplay.mockResolvedValueOnce({
+      proposalFingerprint: buildFaqFingerprint(),
+      proposalId: 'proposal-duplicate',
+    });
 
     const response = await POST(
       new Request('http://localhost/api/events/ai-wizard/apply', {
@@ -617,7 +663,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, applied: [], duplicate: true });
-    expect(mockClaimApplyReplay).toHaveBeenCalled();
+    expect(mockGetExistingApplyReplay).toHaveBeenCalled();
     expect(mockCreateAuditLog).not.toHaveBeenCalled();
     expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -635,11 +681,14 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
   it('returns conflict when an explicit idempotency key is reused with a different patch fingerprint', async () => {
     mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
-    mockClaimApplyReplay.mockResolvedValueOnce({
-      status: 'conflict',
-      existingProposalFingerprint:
-        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-      existingProposalId: 'proposal-existing',
+    mockGetExistingApplyReplay.mockResolvedValueOnce({
+      proposalFingerprint: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      proposalId: 'proposal-existing',
+    });
+    (checkRateLimit as jest.Mock).mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date('2026-03-11T00:00:00.000Z'),
     });
 
     const response = await POST(
@@ -664,6 +713,8 @@ describe('POST /api/events/ai-wizard/apply', () => {
       },
       applied: [],
     });
+    expect(checkRateLimit).not.toHaveBeenCalled();
+    expect(mockClaimApplyReplay).not.toHaveBeenCalled();
     expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         eventType: 'blocked',
@@ -1071,6 +1122,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ code: 'READ_ONLY' });
+    expect(mockClaimApplyReplay).not.toHaveBeenCalled();
   });
 
   it('returns FEATURE_DISABLED when the shared Pro-feature guard disables apply', async () => {

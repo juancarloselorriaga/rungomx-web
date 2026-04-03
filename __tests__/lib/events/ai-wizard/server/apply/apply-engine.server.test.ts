@@ -7,6 +7,7 @@ const mockRecordApplySuccessAudit = jest.fn();
 const mockClaimApplyReplay = jest.fn();
 const mockDbTransaction = jest.fn();
 const mockEventEditionsFindFirst = jest.fn();
+const mockSafeRevalidateTag = jest.fn();
 
 jest.mock('@/db', () => ({
   db: {
@@ -17,6 +18,10 @@ jest.mock('@/db', () => ({
       },
     },
   },
+}));
+
+jest.mock('@/lib/next-cache', () => ({
+  safeRevalidateTag: (...args: unknown[]) => mockSafeRevalidateTag(...args),
 }));
 
 jest.mock('@/lib/events/ai-wizard/server/apply/preflight', () => ({
@@ -134,6 +139,7 @@ describe('applyAiWizardPatch', () => {
     mockClaimApplyReplay.mockReset();
     mockDbTransaction.mockReset();
     mockEventEditionsFindFirst.mockReset();
+    mockSafeRevalidateTag.mockReset();
 
     mockValidateReferencedDistanceIds.mockResolvedValue(null);
     mockPreflightPatch.mockResolvedValue(null);
@@ -355,6 +361,7 @@ describe('applyAiWizardPatch', () => {
     expect(mockExecuteApplyOp).not.toHaveBeenCalled();
     expect(mockRecordApplyOpAudit).not.toHaveBeenCalled();
     expect(mockRecordApplySuccessAudit).not.toHaveBeenCalled();
+    expect(mockSafeRevalidateTag).not.toHaveBeenCalled();
   });
 
   it('does not short-circuit a retry after partial failure when no replay duplicate is detected', async () => {
@@ -383,6 +390,7 @@ describe('applyAiWizardPatch', () => {
       expect.objectContaining({ input: expect.objectContaining({ replayKey: 'replay-key-1' }) }),
     );
     expect(mockRecordApplySuccessAudit).not.toHaveBeenCalled();
+    expect(mockSafeRevalidateTag).not.toHaveBeenCalled();
   });
 
   it('rejects explicit idempotency key reuse when the stored fingerprint belongs to a different patch', async () => {
@@ -413,5 +421,74 @@ describe('applyAiWizardPatch', () => {
       proposalFingerprint: 'fingerprint-1',
     });
     expect(mockExecuteApplyOp).not.toHaveBeenCalled();
+    expect(mockSafeRevalidateTag).not.toHaveBeenCalled();
+  });
+
+  it('revalidates protected and public cache tags after a successful slug-changing apply', async () => {
+    mockExecuteApplyOp.mockResolvedValueOnce({
+      ok: true,
+      appliedOp: {
+        opIndex: 0,
+        type: 'update_edition',
+        status: 'applied',
+      },
+      policyState: { refundsAllowed: false },
+    });
+    mockEventEditionsFindFirst.mockResolvedValueOnce({
+      slug: 'trail-2027',
+      series: { slug: 'series-2026' },
+    });
+
+    const result = await applyAiWizardPatch({
+      ...baseInput,
+      event: {
+        ...baseInput.event,
+        seriesSlug: 'series-2026',
+      },
+      patch: {
+        ...baseInput.patch,
+        ops: [
+          {
+            type: 'update_edition',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: { slug: 'trail-2027' },
+          },
+        ],
+        markdownOutputs: [],
+      },
+      core: {
+        ...baseInput.core,
+        ops: [
+          {
+            type: 'update_edition',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: { slug: 'trail-2027' },
+          },
+        ],
+        markdownOutputs: [],
+      },
+    } as never);
+
+    expect(result).toEqual({
+      ok: true,
+      outcome: 'applied',
+      applied: [
+        {
+          opIndex: 0,
+          type: 'update_edition',
+          status: 'applied',
+          auditLogId: 'audit-1',
+        },
+      ],
+      proposalId: undefined,
+      proposalFingerprint: 'fingerprint-1',
+    });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('event-edition:11111111-1111-4111-8111-111111111111:detail', { expire: 0 });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('event-edition:11111111-1111-4111-8111-111111111111:pricing', { expire: 0 });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('event-edition:11111111-1111-4111-8111-111111111111:website', { expire: 0 });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('event-edition:11111111-1111-4111-8111-111111111111:questions', { expire: 0 });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('event-edition:11111111-1111-4111-8111-111111111111:add-ons', { expire: 0 });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('public-event:series-2026:trail-2026', { expire: 0 });
+    expect(mockSafeRevalidateTag).toHaveBeenCalledWith('public-event:series-2026:trail-2027', { expire: 0 });
   });
 });

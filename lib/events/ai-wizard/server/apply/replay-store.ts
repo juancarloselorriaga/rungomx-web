@@ -1,9 +1,42 @@
 import { and, eq } from 'drizzle-orm';
 
+import { db } from '@/db';
 import { eventAiWizardApplyReplays } from '@/db/schema';
 
 import type { EventAiWizardApplyEngineInput } from './types';
 import type { ApplyTx } from './db-client';
+
+export async function getExistingApplyReplay(params: {
+  actorUserId: string;
+  organizationId: string;
+  editionId: string;
+  replayKey: string;
+}) {
+  return dbQueryApplyReplay(params);
+}
+
+async function dbQueryApplyReplay(params: {
+  actorUserId: string;
+  organizationId: string;
+  editionId: string;
+  replayKey: string;
+  tx?: ApplyTx;
+}) {
+  const replayQuery = params.tx?.query.eventAiWizardApplyReplays ?? db.query.eventAiWizardApplyReplays;
+
+  return replayQuery.findFirst({
+    where: and(
+      eq(eventAiWizardApplyReplays.actorUserId, params.actorUserId),
+      eq(eventAiWizardApplyReplays.organizationId, params.organizationId),
+      eq(eventAiWizardApplyReplays.editionId, params.editionId),
+      eq(eventAiWizardApplyReplays.replayKey, params.replayKey),
+    ),
+    columns: {
+      proposalFingerprint: true,
+      proposalId: true,
+    },
+  });
+}
 
 export async function claimApplyReplay(params: {
   input: EventAiWizardApplyEngineInput;
@@ -44,17 +77,12 @@ export async function claimApplyReplay(params: {
     return { status: 'claimed' };
   }
 
-  const existingReplay = await params.tx.query.eventAiWizardApplyReplays.findFirst({
-    where: and(
-      eq(eventAiWizardApplyReplays.actorUserId, params.input.actorUserId),
-      eq(eventAiWizardApplyReplays.organizationId, params.input.organizationId),
-      eq(eventAiWizardApplyReplays.editionId, params.input.editionId),
-      eq(eventAiWizardApplyReplays.replayKey, params.input.replayKey),
-    ),
-    columns: {
-      proposalFingerprint: true,
-      proposalId: true,
-    },
+  const existingReplay = await dbQueryApplyReplay({
+    actorUserId: params.input.actorUserId,
+    organizationId: params.input.organizationId,
+    editionId: params.input.editionId,
+    replayKey: params.input.replayKey,
+    tx: params.tx,
   });
 
   if (
