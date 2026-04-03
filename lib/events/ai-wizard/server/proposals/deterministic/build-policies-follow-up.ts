@@ -160,10 +160,10 @@ export function buildDeterministicPoliciesFollowUpPatch(args: {
             '### Refunds',
             deadlineLabel
               ? `Refund requests are accepted through **${deadlineLabel}**.`
-              : 'Refund requests will be reviewed through the organizer channel.',
+              : 'Refund requests are reviewed by the Race Director.',
             adminFeePercent
               ? `An administrative fee of **${adminFeePercent}%** applies to the original registration amount.`
-              : 'Administrative conditions apply according to the organizer review process.',
+              : 'Any administrative conditions follow the Race Director review process.',
             'After the cutoff, the registration is treated as final.',
           ].join('\n\n')
         : [
@@ -191,8 +191,8 @@ export function buildDeterministicPoliciesFollowUpPatch(args: {
             '### Transfers',
             deadlineLabel
               ? `Participant transfers are allowed through **${deadlineLabel}**.`
-              : 'Participant transfers are allowed through the organizer channel.',
-            'The transfer keeps the same paid price and current registration conditions unless the organizer confirms something different.',
+              : 'Participant transfers are allowed with Race Director approval.',
+            'The transfer keeps the same paid price and current registration conditions unless the Race Director confirms a different exception.',
           ].join('\n\n')
         : [
             '### Transferencias',
@@ -243,16 +243,16 @@ export function buildDeterministicPoliciesFollowUpPatch(args: {
           ? [
               '### Deferrals',
               mentionsInjuryOnly
-                ? 'Deferrals are allowed only for injury cases confirmed by the organizer.'
-                : 'Deferrals are allowed only under the organizer rule described below.',
+                ? 'Deferrals are allowed only for injury cases confirmed by the Race Director.'
+                : 'Deferrals are allowed only under the Race Director rule described below.',
               requiresMedicalProof
                 ? 'Medical proof is required to review and approve the deferral request.'
-                : 'The organizer will review the request against the documented eligibility rule.',
+                : 'The Race Director will review the request against the documented eligibility rule.',
               deadlineLabel
                 ? `The request must be submitted no later than **${deadlineLabel}**.`
                 : relativeDeadlineDays !== null
                   ? `The request must be submitted no later than **${relativeDeadlineDays} days before the event**.`
-                  : 'The request must respect the organizer deadline already provided.',
+                  : 'The request must respect the Race Director deadline already provided.',
               requiresMedicalProof || mentionsInjuryOnly
                 ? 'Requests that do not meet these conditions will not qualify for deferral.'
                 : 'Requests that fall outside these conditions will not qualify for deferral.',
@@ -311,7 +311,7 @@ export function buildDeterministicPoliciesFollowUpPatch(args: {
   return {
     title: isEnglish ? 'Clarify participant policies' : 'Aclarar políticas para participantes',
     summary: isEnglish
-      ? 'This proposal rewrites the participant-facing policy fields with the dates and rules you just confirmed.'
+      ? 'This proposal rewrites the public policy text with the dates and rules you just confirmed.'
       : 'Esta propuesta reescribe las políticas para participantes con las fechas y reglas que acabas de confirmar.',
     ops: [
       {

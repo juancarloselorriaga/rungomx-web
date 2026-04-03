@@ -1,9 +1,12 @@
+import { eq } from 'drizzle-orm';
+
 import { createAuditLog } from '@/lib/audit';
+import { auditLogs } from '@/db/schema';
 import type { AuditAction } from '@/lib/audit';
 import type { EventAiWizardOp } from '@/lib/events/ai-wizard/schemas';
 
-import { buildSyntheticReplayKey } from './idempotency';
 import { resolvePriceCents } from './preflight';
+import type { ApplyTx } from './db-client';
 import type { EventAiWizardApplyEngineInput, EventAiWizardAppliedOpResult } from './types';
 
 function getResultId(result: unknown): string | null {
@@ -33,17 +36,15 @@ function buildAuditTarget(params: {
   entityId: string;
   after: Record<string, unknown>;
 } {
-  const syntheticReplayKey = buildSyntheticReplayKey({
-    actorUserId: params.input.actorUserId,
-    editionId: params.input.editionId,
-    proposalFingerprint: params.input.proposalFingerprint,
-  });
-
   const baseAfter = {
     aiWizardApply: {
       editionId: params.input.editionId,
+      proposalId: params.input.proposalId ?? null,
       proposalFingerprint: params.input.proposalFingerprint,
-      syntheticReplayKey,
+      idempotencyKey: params.input.idempotencyKey ?? null,
+      replayKey: params.input.replayKey,
+      replayKeyKind: params.input.replayKeyKind,
+      syntheticReplayKey: params.input.syntheticReplayKey,
       opIndex: params.appliedOp.opIndex,
       opType: params.op.type,
       status: params.appliedOp.status,
@@ -187,6 +188,7 @@ function buildAuditTarget(params: {
 export async function recordApplyOpAudit(params: {
   input: EventAiWizardApplyEngineInput;
   appliedOp: EventAiWizardAppliedOpResult;
+  tx: ApplyTx;
 }): Promise<{ ok: true; auditLogId?: string } | { ok: false; error: string }> {
   const op = params.input.patch.ops[params.appliedOp.opIndex];
   const auditTarget = buildAuditTarget({
@@ -195,18 +197,59 @@ export async function recordApplyOpAudit(params: {
     appliedOp: params.appliedOp,
   });
 
-  const auditResult = await createAuditLog({
-    organizationId: params.input.organizationId,
-    actorUserId: params.input.actorUserId,
-    action: auditTarget.action,
-    entityType: auditTarget.entityType,
-    entityId: auditTarget.entityId,
-    after: auditTarget.after,
-    request: params.input.requestContext,
-  });
+  const auditResult = await createAuditLog(
+    {
+      organizationId: params.input.organizationId,
+      actorUserId: params.input.actorUserId,
+      action: auditTarget.action,
+      entityType: auditTarget.entityType,
+      entityId: auditTarget.entityId,
+      after: auditTarget.after,
+      request: params.input.requestContext,
+    },
+    params.tx,
+  );
 
   if (!auditResult.ok) {
     return { ok: false, error: auditResult.error ?? 'AI_WIZARD_APPLY_AUDIT_FAILED' };
+  }
+
+  return { ok: true, auditLogId: auditResult.auditLogId };
+}
+
+export async function recordApplySuccessAudit(params: {
+  input: EventAiWizardApplyEngineInput;
+  applied: EventAiWizardAppliedOpResult[];
+  tx: ApplyTx;
+}): Promise<{ ok: true; auditLogId?: string } | { ok: false; error: string }> {
+  const auditResult = await createAuditLog(
+    {
+      organizationId: params.input.organizationId,
+      actorUserId: params.input.actorUserId,
+      action: 'event_ai_wizard.apply' as AuditAction,
+      entityType: 'event_edition',
+      entityId: params.input.editionId,
+      after: {
+        aiWizardApply: {
+          editionId: params.input.editionId,
+          proposalId: params.input.proposalId ?? null,
+          proposalFingerprint: params.input.proposalFingerprint,
+          idempotencyKey: params.input.idempotencyKey ?? null,
+          replayKey: params.input.replayKey,
+          replayKeyKind: params.input.replayKeyKind,
+          syntheticReplayKey: params.input.syntheticReplayKey,
+          status: 'completed',
+          appliedCount: params.applied.length,
+          opTypes: params.applied.map((entry) => entry.type),
+        },
+      },
+      request: params.input.requestContext,
+    },
+    params.tx,
+  );
+
+  if (!auditResult.ok) {
+    return { ok: false, error: auditResult.error ?? 'AI_WIZARD_APPLY_SUCCESS_AUDIT_FAILED' };
   }
 
   return { ok: true, auditLogId: auditResult.auditLogId };

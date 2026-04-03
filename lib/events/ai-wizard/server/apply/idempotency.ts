@@ -4,6 +4,8 @@ import type { EventAiWizardPatch } from '@/lib/events/ai-wizard/schemas';
 
 import type { EventAiWizardApplyCore } from './types';
 
+export type EventAiWizardApplyReplayKeyKind = 'explicit' | 'synthetic';
+
 export function buildApplyCoreFromPatch(patch: EventAiWizardPatch): EventAiWizardApplyCore {
   return {
     title: patch.title,
@@ -42,4 +44,49 @@ export function buildSyntheticReplayKey(params: {
 }): string {
   const base = `${params.actorUserId}:${params.editionId}:${params.proposalFingerprint}`;
   return createHash('sha256').update(base).digest('hex');
+}
+
+export function buildExplicitReplayKey(params: {
+  actorUserId: string;
+  editionId: string;
+  idempotencyKey: string;
+}): string {
+  const base = `${params.actorUserId}:${params.editionId}:idempotency:${params.idempotencyKey}`;
+  return createHash('sha256').update(base).digest('hex');
+}
+
+export function buildApplyReplayIdentity(params: {
+  actorUserId: string;
+  editionId: string;
+  proposalFingerprint: string;
+  idempotencyKey?: string;
+}): {
+  replayKey: string;
+  replayKeyKind: EventAiWizardApplyReplayKeyKind;
+  syntheticReplayKey: string;
+} {
+  const syntheticReplayKey = buildSyntheticReplayKey({
+    actorUserId: params.actorUserId,
+    editionId: params.editionId,
+    proposalFingerprint: params.proposalFingerprint,
+  });
+
+  const normalizedIdempotencyKey = params.idempotencyKey?.trim();
+  if (normalizedIdempotencyKey) {
+    return {
+      replayKey: buildExplicitReplayKey({
+        actorUserId: params.actorUserId,
+        editionId: params.editionId,
+        idempotencyKey: normalizedIdempotencyKey,
+      }),
+      replayKeyKind: 'explicit',
+      syntheticReplayKey,
+    };
+  }
+
+  return {
+    replayKey: syntheticReplayKey,
+    replayKeyKind: 'synthetic',
+    syntheticReplayKey,
+  };
 }

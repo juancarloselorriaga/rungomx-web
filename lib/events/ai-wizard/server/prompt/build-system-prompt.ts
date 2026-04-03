@@ -347,10 +347,11 @@ function describeLanguageRules(locale: string | null | undefined): string[] {
 
   return [
     'Language and localization rules:',
-    `- Current wizard locale is "${normalizedLocale}". Write participant-facing copy in ${language} unless the race director explicitly requests a different language.`,
+    `- Current wizard locale is "${normalizedLocale}". Write visible event copy in ${language} unless the race director explicitly requests a different language.`,
     '- Keep section titles, FAQ answers, waiver language, and website markdown internally consistent in one language.',
     '- If you reference existing localized website content, preserve its language, tone, and formatting conventions unless the race director asks for a rewrite.',
     '- Never leak internal enum words, implementation labels, or untranslated product keys in visible prose. Do not output terms like "blocker", "required", "optional", route ids, or localization keys unless they are fully translated into the active locale.',
+    '- Never use the words "participant-facing", "publish-facing", "grounded", or "organizer" in visible copy. Prefer "race page", "before publishing", "confirmed details", and "Race Director" where needed.',
     '- If the locale is Spanish, keep the visible response fully in Spanish, including severity language, subheads, bullets, and transition phrases.',
   ];
 }
@@ -381,7 +382,7 @@ function describeOrganizerInteractionRules(
     context.activeStepId === 'review'
   ) {
     baseRules.push(
-      '- For this step, default to publish-ready participant-facing markdown when drafting copy, even if the race director asks in plain language.',
+      '- For this step, default to publish-ready race-page markdown when drafting copy, even if the race director asks in plain language.',
     );
   }
 
@@ -821,7 +822,7 @@ export function buildEventAiWizardSystemPrompt(
     return [
       'You are RunGoMX Setup Assistant, the premium event setup copilot for race directors.',
       '',
-      'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
+      'Goal: move quickly to one confirmed, reviewable patch for the active wizard step.',
       '- Propose a patch; never change data directly.',
       '- Stay grounded in the snapshot and race director brief.',
       '- Omit unknown logistics instead of inventing them.',
@@ -878,7 +879,8 @@ export function buildEventAiWizardSystemPrompt(
             '- Do not replace explicit race director policy rules with generic defaults. Use template language only to clarify gaps the race director did not specify.',
           ]
         : []),
-      '- Participant-facing markdown should read polished, specific, and renderer-ready, not generic or hypey.',
+      '- Visible markdown should read polished, specific, and renderer-ready, not generic or hypey.',
+      '- Never use the words "participant-facing", "publish-facing", "grounded", or "organizer" in visible copy. Prefer "race page", "before publishing", "confirmed details", and "Race Director" where needed.',
       ...(fastPathPatchScope.length > 0 ? ['', ...fastPathPatchScope] : []),
       '',
       'Patch rules:',
@@ -970,7 +972,7 @@ export function buildEventAiWizardSystemPrompt(
     '- Pricing tier startsAt/endsAt should be local datetime strings without timezone, like: 2026-12-01T00:00:00',
     '- Edition startsAt/endsAt may be ISO strings; if you only know the date, use YYYY-MM-DD and ask if they want a start time.',
     '- Markdown should use short sections, meaningful headings, compact lists, and concrete race logistics details.',
-    '- Avoid generic AI phrasing, filler adjectives, or vague promises. Sound like a strong event organizer or race director.',
+    '- Avoid generic AI phrasing, filler adjectives, or vague promises. Sound like an experienced Race Director.',
     '- Prefer content that will look good immediately in a polished markdown renderer without manual cleanup.',
     '',
     'Tone:',

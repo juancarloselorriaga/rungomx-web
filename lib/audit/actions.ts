@@ -58,6 +58,9 @@ export const AUDIT_ACTIONS = {
   // Policies
   'policy.update': 'Policy configuration updated',
 
+  // Event AI Wizard
+  'event_ai_wizard.apply': 'AI wizard patch applied',
+
   // Pro Features
   'pro_feature_config.update': 'Pro feature configuration updated',
 

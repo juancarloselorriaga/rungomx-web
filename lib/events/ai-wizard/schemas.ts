@@ -501,6 +501,9 @@ export const eventAiWizardApplyRequestSchema = z
     locale: z.string().min(2).max(10).optional(),
     patch: eventAiWizardPatchSchema,
     locationChoice: eventAiWizardApplyLocationChoiceSchema.optional(),
+    proposalId: z.string().trim().min(1).max(200).optional(),
+    proposalFingerprint: z.string().trim().length(64).optional(),
+    idempotencyKey: z.string().trim().min(1).max(200).optional(),
   })
   .strict();
 

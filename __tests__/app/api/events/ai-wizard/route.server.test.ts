@@ -1003,7 +1003,7 @@ describe('POST /api/events/ai-wizard', () => {
     });
     mockGetEventEditionDetail.mockResolvedValue({
       ...buildEvent(),
-      organizerBrief: 'Trail race in Valle de Bravo with premium but grounded tone',
+      organizerBrief: 'Trail race in Valle de Bravo with a premium tone',
       locationDisplay: 'Valle de Bravo',
     });
 
@@ -1038,7 +1038,7 @@ describe('POST /api/events/ai-wizard', () => {
     });
     expect(capturedToolNames).toEqual(['proposeWebsiteOverviewPatch']);
     expect(capturedSystemPrompt).toContain(
-      'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
+      'Goal: move quickly to one confirmed, reviewable patch for the active wizard step.',
     );
     expect(capturedSystemPrompt).toContain('Fast-path focus:\nwebsite_overview');
     expect(capturedSystemPrompt).toContain(
@@ -1280,7 +1280,7 @@ describe('POST /api/events/ai-wizard', () => {
       });
       expect(capturedToolNames).toEqual(['proposeFaqPatch']);
       expect(capturedSystemPrompt).toContain(
-        'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
+        'Goal: move quickly to one confirmed, reviewable patch for the active wizard step.',
       );
       expect(capturedStreamParts).toContainEqual({
         type: 'data-early-prose',
@@ -1348,7 +1348,7 @@ describe('POST /api/events/ai-wizard', () => {
       'In Policies, explicit race director constraints about eligibility, proof, deadlines, or no-deferral rules are the highest-priority source of truth for the draft.',
     );
     expect(capturedSystemPrompt).toContain(
-      'Goal: move quickly to one grounded, reviewable patch for the active wizard step.',
+      'Goal: move quickly to one confirmed, reviewable patch for the active wizard step.',
     );
   });
 

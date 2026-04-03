@@ -1,5 +1,7 @@
 import {
+  buildApplyReplayIdentity,
   buildApplyCoreFromPatch,
+  buildExplicitReplayKey,
   buildSyntheticReplayKey,
   fingerprintApplyCore,
 } from '@/lib/events/ai-wizard/server/apply/idempotency';
@@ -79,5 +81,30 @@ describe('ai wizard apply idempotency seam', () => {
         proposalFingerprint: fingerprint,
       }),
     );
+  });
+
+  it('prefers an explicit idempotency key for replay identity while preserving the synthetic fallback', () => {
+    const fingerprint = fingerprintApplyCore(buildApplyCoreFromPatch(buildPatch()));
+
+    expect(
+      buildApplyReplayIdentity({
+        actorUserId: 'user-1',
+        editionId: 'edition-1',
+        proposalFingerprint: fingerprint,
+        idempotencyKey: 'apply-123',
+      }),
+    ).toEqual({
+      replayKey: buildExplicitReplayKey({
+        actorUserId: 'user-1',
+        editionId: 'edition-1',
+        idempotencyKey: 'apply-123',
+      }),
+      replayKeyKind: 'explicit',
+      syntheticReplayKey: buildSyntheticReplayKey({
+        actorUserId: 'user-1',
+        editionId: 'edition-1',
+        proposalFingerprint: fingerprint,
+      }),
+    });
   });
 });

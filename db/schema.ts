@@ -23,7 +23,12 @@ import { sql } from 'drizzle-orm';
 // ENUMS
 // =============================================================================
 
-export const organizationRoleEnum = pgEnum('organization_role', ['owner', 'admin', 'editor', 'viewer']);
+export const organizationRoleEnum = pgEnum('organization_role', [
+  'owner',
+  'admin',
+  'editor',
+  'viewer',
+]);
 export const paymentResponsibilityEnum = pgEnum('payment_responsibility', [
   'self_pay',
   'central_pay',
@@ -83,9 +88,7 @@ export const users = pgTable(
     email: varchar('email', { length: 255 }).notNull().unique(),
     emailVerified: boolean('email_verified').default(false).notNull(),
     image: text('image'),
-    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
       .notNull()
@@ -338,9 +341,7 @@ export const billingEntitlementOverrides = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    entitlementKey: varchar('entitlement_key', { length: 50 })
-      .notNull()
-      .default('pro_access'),
+    entitlementKey: varchar('entitlement_key', { length: 50 }).notNull().default('pro_access'),
     startsAt: timestamp('starts_at', { withTimezone: true, mode: 'date' }).notNull(),
     endsAt: timestamp('ends_at', { withTimezone: true, mode: 'date' }).notNull(),
     sourceType: varchar('source_type', { length: 30 }).notNull(),
@@ -363,10 +364,7 @@ export const billingEntitlementOverrides = pgTable(
       table.startsAt,
       table.endsAt,
     ),
-    check(
-      'billing_entitlement_overrides_window_check',
-      sql`${table.endsAt} > ${table.startsAt}`,
-    ),
+    check('billing_entitlement_overrides_window_check', sql`${table.endsAt} > ${table.startsAt}`),
   ],
 );
 
@@ -404,9 +402,7 @@ export const billingPromotions = pgTable(
     codePrefix: varchar('code_prefix', { length: 16 }),
     name: varchar('name', { length: 255 }),
     description: text('description'),
-    entitlementKey: varchar('entitlement_key', { length: 50 })
-      .notNull()
-      .default('pro_access'),
+    entitlementKey: varchar('entitlement_key', { length: 50 }).notNull().default('pro_access'),
     grantDurationDays: integer('grant_duration_days'),
     grantFixedEndsAt: timestamp('grant_fixed_ends_at', { withTimezone: true, mode: 'date' }),
     isActive: boolean('is_active').notNull().default(true),
@@ -461,9 +457,7 @@ export const billingPendingEntitlementGrants = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     hashVersion: integer('hash_version').notNull(),
     emailHash: varchar('email_hash', { length: 64 }).notNull(),
-    entitlementKey: varchar('entitlement_key', { length: 50 })
-      .notNull()
-      .default('pro_access'),
+    entitlementKey: varchar('entitlement_key', { length: 50 }).notNull().default('pro_access'),
     grantDurationDays: integer('grant_duration_days'),
     grantFixedEndsAt: timestamp('grant_fixed_ends_at', { withTimezone: true, mode: 'date' }),
     isActive: boolean('is_active').notNull().default(true),
@@ -592,9 +586,7 @@ export const paymentCaptureVolumeDaily = pgTable(
   {
     bucketDate: date('bucket_date', { mode: 'date' }).notNull(),
     sourceCurrency: varchar('source_currency', { length: 3 }).notNull(),
-    grossProcessedMinor: bigint('gross_processed_minor', { mode: 'number' })
-      .notNull()
-      .default(0),
+    grossProcessedMinor: bigint('gross_processed_minor', { mode: 'number' }).notNull().default(0),
     platformFeeMinor: bigint('platform_fee_minor', { mode: 'number' }).notNull().default(0),
     organizerProceedsMinor: bigint('organizer_proceeds_minor', { mode: 'number' })
       .notNull()
@@ -602,7 +594,10 @@ export const paymentCaptureVolumeDaily = pgTable(
     captureCount: integer('capture_count').notNull().default(0),
     firstOccurredAt: timestamp('first_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
     lastOccurredAt: timestamp('last_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
-    sampleTraceIds: text('sample_trace_ids').array().notNull().default(sql`ARRAY[]::text[]`),
+    sampleTraceIds: text('sample_trace_ids')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
       .notNull()
@@ -624,9 +619,7 @@ export const paymentCaptureVolumeOrganizerDaily = pgTable(
     bucketDate: date('bucket_date', { mode: 'date' }).notNull(),
     organizerId: uuid('organizer_id').notNull(),
     sourceCurrency: varchar('source_currency', { length: 3 }).notNull(),
-    grossProcessedMinor: bigint('gross_processed_minor', { mode: 'number' })
-      .notNull()
-      .default(0),
+    grossProcessedMinor: bigint('gross_processed_minor', { mode: 'number' }).notNull().default(0),
     platformFeeMinor: bigint('platform_fee_minor', { mode: 'number' }).notNull().default(0),
     organizerProceedsMinor: bigint('organizer_proceeds_minor', { mode: 'number' })
       .notNull()
@@ -634,7 +627,10 @@ export const paymentCaptureVolumeOrganizerDaily = pgTable(
     captureCount: integer('capture_count').notNull().default(0),
     firstOccurredAt: timestamp('first_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
     lastOccurredAt: timestamp('last_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
-    sampleTraceIds: text('sample_trace_ids').array().notNull().default(sql`ARRAY[]::text[]`),
+    sampleTraceIds: text('sample_trace_ids')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
       .notNull()
@@ -670,7 +666,10 @@ export const paymentCaptureVolumeReconciliationDaily = pgTable(
     excludedEventCount: integer('excluded_event_count').notNull().default(0),
     firstOccurredAt: timestamp('first_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
     lastOccurredAt: timestamp('last_occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
-    sampleTraceIds: text('sample_trace_ids').array().notNull().default(sql`ARRAY[]::text[]`),
+    sampleTraceIds: text('sample_trace_ids')
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
     excludedEventSamplesJson: jsonb('excluded_event_samples_json')
       .$type<Record<string, unknown>[]>()
       .notNull()
@@ -825,7 +824,10 @@ export const organizationMemberships = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => ({
-    orgUserUnique: uniqueIndex('org_memberships_org_user_idx').on(table.organizationId, table.userId),
+    orgUserUnique: uniqueIndex('org_memberships_org_user_idx').on(
+      table.organizationId,
+      table.userId,
+    ),
   }),
 );
 
@@ -985,10 +987,7 @@ export const rankingRulesetStatusEnum = pgEnum('ranking_ruleset_status', [
   'retired',
 ]);
 
-export const rankingSnapshotScopeEnum = pgEnum('ranking_snapshot_scope', [
-  'national',
-  'organizer',
-]);
+export const rankingSnapshotScopeEnum = pgEnum('ranking_snapshot_scope', ['national', 'organizer']);
 
 export const resultVersions = pgTable(
   'result_versions',
@@ -1054,7 +1053,10 @@ export const resultEntries = pgTable(
     overallPlace: integer('overall_place'),
     genderPlace: integer('gender_place'),
     ageGroupPlace: integer('age_group_place'),
-    identitySnapshot: jsonb('identity_snapshot').$type<Record<string, unknown>>().notNull().default({}),
+    identitySnapshot: jsonb('identity_snapshot')
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
     rawSourceData: jsonb('raw_source_data').$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
@@ -1065,7 +1067,9 @@ export const resultEntries = pgTable(
   },
   (table) => [
     index('result_entries_version_idx').on(table.resultVersionId),
-    index('result_entries_user_idx').on(table.userId).where(sql`${table.userId} is not null`),
+    index('result_entries_user_idx')
+      .on(table.userId)
+      .where(sql`${table.userId} is not null`),
     index('result_entries_distance_idx')
       .on(table.distanceId)
       .where(sql`${table.distanceId} is not null`),
@@ -1098,7 +1102,9 @@ export const resultEntryClaims = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     linkedUserId: uuid('linked_user_id').references(() => users.id, { onDelete: 'set null' }),
-    reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     reviewedAt: timestamp('reviewed_at', { withTimezone: true, mode: 'date' }),
     status: resultEntryClaimStatusEnum('status').notNull().default('pending_review'),
     confidenceBasisPoints: integer('confidence_basis_points'),
@@ -1153,7 +1159,9 @@ export const resultIngestionSessions = pgTable(
       .notNull()
       .references(() => resultVersions.id, { onDelete: 'cascade' }),
     sourceLane: resultIngestionSourceLaneEnum('source_lane').notNull(),
-    startedByUserId: uuid('started_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    startedByUserId: uuid('started_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     sourceReference: varchar('source_reference', { length: 255 }),
     sourceFileChecksum: varchar('source_file_checksum', { length: 128 }),
     provenanceJson: jsonb('provenance_json').$type<Record<string, unknown>>().notNull().default({}),
@@ -1230,8 +1238,10 @@ export const rankingRulesets = pgTable(
       .notNull()
       .default({}),
     explainabilityReference: varchar('explainability_reference', { length: 255 }),
-    activationStartsAt: timestamp('activation_starts_at', { withTimezone: true, mode: 'date' })
-      .notNull(),
+    activationStartsAt: timestamp('activation_starts_at', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
     activationEndsAt: timestamp('activation_ends_at', { withTimezone: true, mode: 'date' }),
     publishedByUserId: uuid('published_by_user_id').references(() => users.id, {
       onDelete: 'set null',
@@ -1278,10 +1288,7 @@ export const rankingSnapshots = pgTable(
     organizationId: uuid('organization_id').references(() => organizations.id, {
       onDelete: 'set null',
     }),
-    sourceVersionIdsJson: jsonb('source_version_ids_json')
-      .$type<string[]>()
-      .notNull()
-      .default([]),
+    sourceVersionIdsJson: jsonb('source_version_ids_json').$type<string[]>().notNull().default([]),
     exclusionLogJson: jsonb('exclusion_log_json')
       .$type<Record<string, unknown>[]>()
       .notNull()
@@ -1292,7 +1299,9 @@ export const rankingSnapshots = pgTable(
     isCurrent: boolean('is_current').notNull().default(false),
     promotedAt: timestamp('promoted_at', { withTimezone: true, mode: 'date' }),
     rowCount: integer('row_count').notNull().default(0),
-    generatedAt: timestamp('generated_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    generatedAt: timestamp('generated_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -1391,8 +1400,7 @@ export const registrations = pgTable(
     distanceId: uuid('distance_id')
       .notNull()
       .references(() => eventDistances.id, { onDelete: 'cascade' }),
-    buyerUserId: uuid('buyer_user_id')
-      .references(() => users.id, { onDelete: 'cascade' }),
+    buyerUserId: uuid('buyer_user_id').references(() => users.id, { onDelete: 'cascade' }),
     paymentResponsibility: paymentResponsibilityEnum('payment_responsibility')
       .notNull()
       .default('self_pay'),
@@ -1471,27 +1479,31 @@ export const waivers = pgTable('waivers', {
   deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
 });
 
-export const waiverAcceptances = pgTable('waiver_acceptances', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  registrationId: uuid('registration_id')
-    .notNull()
-    .references(() => registrations.id, { onDelete: 'cascade' }),
-  waiverId: uuid('waiver_id')
-    .notNull()
-    .references(() => waivers.id, { onDelete: 'cascade' }),
-  waiverVersionHash: varchar('waiver_version_hash', { length: 64 }).notNull(),
-  acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }).notNull(),
-  ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
-  userAgent: text('user_agent'),
-  signatureType: varchar('signature_type', { length: 20 }).notNull(), // 'checkbox' | 'initials' | 'signature'
-  signatureValue: text('signature_value'), // For initials/signature, stores the value
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
-}, (table) => ({
-  registrationWaiverUnique: uniqueIndex('waiver_acceptances_registration_waiver_idx').on(
-    table.registrationId,
-    table.waiverId,
-  ),
-}));
+export const waiverAcceptances = pgTable(
+  'waiver_acceptances',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    registrationId: uuid('registration_id')
+      .notNull()
+      .references(() => registrations.id, { onDelete: 'cascade' }),
+    waiverId: uuid('waiver_id')
+      .notNull()
+      .references(() => waivers.id, { onDelete: 'cascade' }),
+    waiverVersionHash: varchar('waiver_version_hash', { length: 64 }).notNull(),
+    acceptedAt: timestamp('accepted_at', { withTimezone: true, mode: 'date' }).notNull(),
+    ipAddress: varchar('ip_address', { length: 45 }), // IPv6 compatible
+    userAgent: text('user_agent'),
+    signatureType: varchar('signature_type', { length: 20 }).notNull(), // 'checkbox' | 'initials' | 'signature'
+    signatureValue: text('signature_value'), // For initials/signature, stores the value
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => ({
+    registrationWaiverUnique: uniqueIndex('waiver_acceptances_registration_waiver_idx').on(
+      table.registrationId,
+      table.waiverId,
+    ),
+  }),
+);
 
 export const eventWebsiteContent = pgTable('event_website_content', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -1580,9 +1592,13 @@ export const refundRequests = pgTable(
       .$type<Record<string, unknown>>()
       .notNull()
       .default({}),
-    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
     decisionAt: timestamp('decision_at', { withTimezone: true, mode: 'date' }),
-    decidedByUserId: uuid('decided_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    decidedByUserId: uuid('decided_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
     decisionReason: text('decision_reason'),
     escalatedAt: timestamp('escalated_at', { withTimezone: true, mode: 'date' }),
     executedAt: timestamp('executed_at', { withTimezone: true, mode: 'date' }),
@@ -1594,15 +1610,17 @@ export const refundRequests = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => [
-    index('refund_requests_organizer_status_idx').on(table.organizerId, table.status, table.requestedAt),
+    index('refund_requests_organizer_status_idx').on(
+      table.organizerId,
+      table.status,
+      table.requestedAt,
+    ),
     index('refund_requests_attendee_idx').on(table.attendeeUserId, table.requestedAt),
     index('refund_requests_registration_idx').on(table.registrationId),
     index('refund_requests_edition_idx').on(table.editionId, table.requestedAt),
     uniqueIndex('refund_requests_registration_pending_unique_idx')
       .on(table.registrationId)
-      .where(
-        sql`${table.status} = 'pending_organizer_decision' and ${table.deletedAt} is null`,
-      ),
+      .where(sql`${table.status} = 'pending_organizer_decision' and ${table.deletedAt} is null`),
   ],
 );
 
@@ -1632,8 +1650,10 @@ export const disputeCases = pgTable(
     reasonNote: text('reason_note'),
     amountAtRiskMinor: integer('amount_at_risk_minor').notNull().default(0),
     currency: varchar('currency', { length: 3 }).notNull().default('MXN'),
-    evidenceDeadlineAt: timestamp('evidence_deadline_at', { withTimezone: true, mode: 'date' })
-      .notNull(),
+    evidenceDeadlineAt: timestamp('evidence_deadline_at', {
+      withTimezone: true,
+      mode: 'date',
+    }).notNull(),
     openedAt: timestamp('opened_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     lastTransitionAt: timestamp('last_transition_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -1696,7 +1716,9 @@ export const payoutQuotes = pgTable(
     createdByUserId: uuid('created_by_user_id').references(() => users.id, {
       onDelete: 'set null',
     }),
-    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -1710,22 +1732,13 @@ export const payoutQuotes = pgTable(
       .where(sql`${table.deletedAt} is null`),
     index('payout_quotes_organizer_requested_idx').on(table.organizerId, table.requestedAt),
     index('payout_quotes_fingerprint_idx').on(table.organizerId, table.quoteFingerprint),
-    check(
-      'payout_quotes_included_nonnegative_chk',
-      sql`${table.includedAmountMinor} >= 0`,
-    ),
-    check(
-      'payout_quotes_deduction_nonnegative_chk',
-      sql`${table.deductionAmountMinor} >= 0`,
-    ),
+    check('payout_quotes_included_nonnegative_chk', sql`${table.includedAmountMinor} >= 0`),
+    check('payout_quotes_deduction_nonnegative_chk', sql`${table.deductionAmountMinor} >= 0`),
     check(
       'payout_quotes_max_withdrawable_nonnegative_chk',
       sql`${table.maxWithdrawableAmountMinor} >= 0`,
     ),
-    check(
-      'payout_quotes_requested_positive_chk',
-      sql`${table.requestedAmountMinor} > 0`,
-    ),
+    check('payout_quotes_requested_positive_chk', sql`${table.requestedAmountMinor} > 0`),
     check(
       'payout_quotes_requested_within_max_chk',
       sql`${table.requestedAmountMinor} <= ${table.maxWithdrawableAmountMinor}`,
@@ -1748,7 +1761,9 @@ export const payoutRequests = pgTable(
     requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
       onDelete: 'set null',
     }),
-    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true, mode: 'date' })
+      .defaultNow()
+      .notNull(),
     lifecycleContextJson: jsonb('lifecycle_context_json')
       .$type<Record<string, unknown>>()
       .notNull()
@@ -1767,10 +1782,16 @@ export const payoutRequests = pgTable(
     uniqueIndex('payout_requests_trace_unique_idx')
       .on(table.traceId)
       .where(sql`${table.deletedAt} is null`),
-    uniqueIndex('payout_requests_active_organizer_unique_idx').on(table.organizerId).where(
-      sql`${table.deletedAt} is null and ${table.status} in ('requested', 'processing', 'paused')`,
+    uniqueIndex('payout_requests_active_organizer_unique_idx')
+      .on(table.organizerId)
+      .where(
+        sql`${table.deletedAt} is null and ${table.status} in ('requested', 'processing', 'paused')`,
+      ),
+    index('payout_requests_organizer_status_idx').on(
+      table.organizerId,
+      table.status,
+      table.requestedAt,
     ),
-    index('payout_requests_organizer_status_idx').on(table.organizerId, table.status, table.requestedAt),
   ],
 );
 
@@ -1787,7 +1808,9 @@ export const payoutContracts = pgTable(
     payoutRequestId: uuid('payout_request_id')
       .notNull()
       .references(() => payoutRequests.id, { onDelete: 'cascade' }),
-    policyVersion: varchar('policy_version', { length: 64 }).notNull().default('payout-contract-v1'),
+    policyVersion: varchar('policy_version', { length: 64 })
+      .notNull()
+      .default('payout-contract-v1'),
     immutableFingerprint: varchar('immutable_fingerprint', { length: 128 }).notNull(),
     baselineSnapshotJson: jsonb('baseline_snapshot_json')
       .$type<Record<string, unknown>>()
@@ -1836,9 +1859,12 @@ export const payoutQueuedIntents = pgTable(
     activatedPayoutQuoteId: uuid('activated_payout_quote_id').references(() => payoutQuotes.id, {
       onDelete: 'set null',
     }),
-    activatedPayoutRequestId: uuid('activated_payout_request_id').references(() => payoutRequests.id, {
-      onDelete: 'set null',
-    }),
+    activatedPayoutRequestId: uuid('activated_payout_request_id').references(
+      () => payoutRequests.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
       .defaultNow()
@@ -1856,11 +1882,12 @@ export const payoutQueuedIntents = pgTable(
     uniqueIndex('payout_queued_intents_trace_unique_idx')
       .on(table.queueTraceId)
       .where(sql`${table.deletedAt} is null`),
-    index('payout_queued_intents_organizer_status_idx').on(table.organizerId, table.status, table.createdAt),
-    check(
-      'payout_queued_intents_requested_positive_chk',
-      sql`${table.requestedAmountMinor} > 0`,
+    index('payout_queued_intents_organizer_status_idx').on(
+      table.organizerId,
+      table.status,
+      table.createdAt,
     ),
+    check('payout_queued_intents_requested_positive_chk', sql`${table.requestedAmountMinor} > 0`),
   ],
 );
 
@@ -1992,10 +2019,7 @@ export const groupRegistrationBatchRows = pgTable(
       .references(() => groupRegistrationBatches.id, { onDelete: 'cascade' }),
     rowIndex: integer('row_index').notNull(),
     rawJson: jsonb('raw_json').$type<Record<string, unknown>>().notNull().default({}),
-    validationErrorsJson: jsonb('validation_errors_json')
-      .$type<string[]>()
-      .notNull()
-      .default([]),
+    validationErrorsJson: jsonb('validation_errors_json').$type<string[]>().notNull().default([]),
     createdRegistrationId: uuid('created_registration_id').references(() => registrations.id, {
       onDelete: 'set null',
     }),
@@ -2040,9 +2064,12 @@ export const registrationInvites = pgTable(
     registrationId: uuid('registration_id')
       .notNull()
       .references(() => registrations.id, { onDelete: 'cascade' }),
-    supersedesInviteId: uuid('supersedes_invite_id').references((): AnyPgColumn => registrationInvites.id, {
-      onDelete: 'set null',
-    }),
+    supersedesInviteId: uuid('supersedes_invite_id').references(
+      (): AnyPgColumn => registrationInvites.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
     isCurrent: boolean('is_current').notNull().default(true),
     createdByUserId: uuid('created_by_user_id')
       .notNull()
@@ -2077,9 +2104,7 @@ export const registrationInvites = pgTable(
       .where(sql`${table.isCurrent} = true`),
     editionEmailCurrentUnique: uniqueIndex('registration_invites_edition_email_current_idx')
       .on(table.editionId, table.emailNormalized)
-      .where(
-        sql`${table.isCurrent} = true and ${table.status} in ('draft', 'sent')`,
-      ),
+      .where(sql`${table.isCurrent} = true and ${table.status} in ('draft', 'sent')`),
   }),
 );
 
@@ -2111,7 +2136,10 @@ export const registrationGroups = pgTable(
   (table) => [
     uniqueIndex('registration_groups_token_hash_idx').on(table.tokenHash),
     index('registration_groups_edition_created_at_idx').on(table.editionId, table.createdAt),
-    index('registration_groups_created_by_user_created_at_idx').on(table.createdByUserId, table.createdAt),
+    index('registration_groups_created_by_user_created_at_idx').on(
+      table.createdByUserId,
+      table.createdAt,
+    ),
     check('registration_groups_max_members_check', sql`${table.maxMembers} > 0`),
   ],
 );
@@ -2133,7 +2161,10 @@ export const registrationGroupMembers = pgTable(
     groupUserActiveUnique: uniqueIndex('registration_group_members_group_user_active_idx')
       .on(table.groupId, table.userId)
       .where(sql`${table.leftAt} is null`),
-    groupJoinedAtIdx: index('registration_group_members_group_joined_at_idx').on(table.groupId, table.joinedAt),
+    groupJoinedAtIdx: index('registration_group_members_group_joined_at_idx').on(
+      table.groupId,
+      table.joinedAt,
+    ),
   }),
 );
 
@@ -2182,8 +2213,9 @@ export const media = pgTable('media', {
 
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').defaultRandom().primaryKey(),
-  organizationId: uuid('organization_id')
-    .references(() => organizations.id, { onDelete: 'restrict' }), // required for org-scoped event audits
+  organizationId: uuid('organization_id').references(() => organizations.id, {
+    onDelete: 'restrict',
+  }), // required for org-scoped event audits
   actorUserId: uuid('actor_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'restrict' }), // preserve audit trail even if user is deleted
@@ -2196,6 +2228,42 @@ export const auditLogs = pgTable('audit_logs', {
   userAgent: text('user_agent'),
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 });
+
+export const eventAiWizardApplyReplays = pgTable(
+  'event_ai_wizard_apply_replays',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    actorUserId: uuid('actor_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    editionId: uuid('edition_id')
+      .notNull()
+      .references(() => eventEditions.id, { onDelete: 'cascade' }),
+    proposalId: varchar('proposal_id', { length: 255 }),
+    proposalFingerprint: varchar('proposal_fingerprint', { length: 64 }).notNull(),
+    idempotencyKey: varchar('idempotency_key', { length: 255 }),
+    replayKey: varchar('replay_key', { length: 64 }).notNull(),
+    replayKeyKind: varchar('replay_key_kind', { length: 20 }).notNull(),
+    syntheticReplayKey: varchar('synthetic_replay_key', { length: 64 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ai_wizard_apply_replays_claim_unique_idx').on(
+      table.actorUserId,
+      table.organizationId,
+      table.editionId,
+      table.replayKey,
+    ),
+    index('ai_wizard_apply_replays_edition_created_at_idx').on(table.editionId, table.createdAt),
+    check(
+      'ai_wizard_apply_replays_replay_key_kind_chk',
+      sql`${table.replayKeyKind} in ('explicit', 'synthetic')`,
+    ),
+  ],
+);
 
 export const proFeatureConfigs = pgTable(
   'pro_feature_configs',
@@ -2254,7 +2322,11 @@ export const proFeatureUsageEvents = pgTable(
 export const addOnTypeEnum = pgEnum('add_on_type', ['merch', 'donation']);
 
 // Add-on delivery method enum
-export const addOnDeliveryMethodEnum = pgEnum('add_on_delivery_method', ['pickup', 'shipping', 'none']);
+export const addOnDeliveryMethodEnum = pgEnum('add_on_delivery_method', [
+  'pickup',
+  'shipping',
+  'none',
+]);
 
 // Registration question type enum
 export const registrationQuestionTypeEnum = pgEnum('registration_question_type', [
@@ -2376,7 +2448,9 @@ export const discountRedemptions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
   },
   (table) => ({
-    registrationUnique: uniqueIndex('discount_redemptions_registration_unique_idx').on(table.registrationId),
+    registrationUnique: uniqueIndex('discount_redemptions_registration_unique_idx').on(
+      table.registrationId,
+    ),
     discountCodeIdIdx: index('discount_redemptions_discount_code_id_idx').on(table.discountCodeId),
   }),
 );

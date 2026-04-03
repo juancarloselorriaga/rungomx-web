@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "concurrently --raw \"pnpm watch:i18n\" \"node scripts/next-dev-with-port.mjs\"",
     "dev:no-watch": "node scripts/next-dev-with-port.mjs",
+    "quality:ai-wizard:manual": "node --import tsx scripts/run-event-ai-wizard-manual-quality.ts",
     "build": "pnpm generate:i18n && next build --webpack",
     "start": "next start",
     "lint": "eslint",

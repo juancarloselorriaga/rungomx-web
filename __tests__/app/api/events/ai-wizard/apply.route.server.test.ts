@@ -6,9 +6,92 @@ const mockHeaders = jest.fn();
 const mockTrackProFeatureEvent = jest.fn();
 const mockCreateAuditLog = jest.fn();
 const mockEvaluateAiWizardPatchSafety = jest.fn();
+const mockClaimApplyReplay = jest.fn();
+const mockPersistenceCreateDistance = jest.fn();
+const mockPersistenceCreateFaqItem = jest.fn();
+const mockPersistenceCreatePricingTier = jest.fn();
+const mockPersistenceCreateQuestion = jest.fn();
+const mockPersistenceCreateWaiver = jest.fn();
+const mockPersistenceGetWebsiteContent = jest.fn();
+const mockPersistenceUpdateDistancePrice = jest.fn();
+const mockPersistenceUpdateEventEdition = jest.fn();
+const mockPersistenceUpdateEventPolicyConfig = jest.fn();
+const mockPersistenceUpdateWebsiteContent = jest.fn();
 const mockDbSelectWhere = jest.fn();
+const mockDbSelectLimit = jest.fn();
 const mockFindExistingEdition = jest.fn();
 const mockFindPricingTiers = jest.fn();
+const mockDbTransaction = jest.fn();
+const mockTxEventEditionsFindFirst = jest.fn();
+const mockTxEventDistancesFindMany = jest.fn();
+const mockTxEventFaqItemsFindMany = jest.fn();
+const mockTxWaiversFindMany = jest.fn();
+const mockTxEventWebsiteContentFindFirst = jest.fn();
+const mockTxEventPolicyConfigsFindFirst = jest.fn();
+const mockTxEventDistancesFindFirst = jest.fn();
+const mockTxPricingTiersFindMany = jest.fn();
+const mockTxInsertReturning = jest.fn();
+const mockTxUpdateReturning = jest.fn();
+const mockTxInsertValues = jest.fn();
+const mockTxUpdateSet = jest.fn();
+
+const transactionClient = {
+  query: {
+    eventEditions: {
+      findFirst: (...args: unknown[]) => mockTxEventEditionsFindFirst(...args),
+    },
+    eventDistances: {
+      findMany: (...args: unknown[]) => mockTxEventDistancesFindMany(...args),
+      findFirst: (...args: unknown[]) => mockTxEventDistancesFindFirst(...args),
+    },
+    eventFaqItems: {
+      findMany: (...args: unknown[]) => mockTxEventFaqItemsFindMany(...args),
+    },
+    waivers: {
+      findMany: (...args: unknown[]) => mockTxWaiversFindMany(...args),
+    },
+    eventWebsiteContent: {
+      findFirst: (...args: unknown[]) => mockTxEventWebsiteContentFindFirst(...args),
+    },
+    eventPolicyConfigs: {
+      findFirst: (...args: unknown[]) => mockTxEventPolicyConfigsFindFirst(...args),
+    },
+    pricingTiers: {
+      findMany: (...args: unknown[]) => mockTxPricingTiersFindMany(...args),
+    },
+  },
+  insert: jest.fn(() => ({
+    values: (...args: unknown[]) => {
+      mockTxInsertValues(...args);
+      return {
+        returning: (...returningArgs: unknown[]) => mockTxInsertReturning(...returningArgs),
+        onConflictDoNothing: () => ({
+          returning: (...returningArgs: unknown[]) => mockTxInsertReturning(...returningArgs),
+        }),
+      };
+    },
+  })),
+  update: jest.fn(() => ({
+    set: (...args: unknown[]) => {
+      mockTxUpdateSet(...args);
+      return {
+        where: () => ({
+          returning: (...returningArgs: unknown[]) => mockTxUpdateReturning(...returningArgs),
+        }),
+      };
+    },
+  })),
+};
+
+function createAwaitableQuery<TValue>(value: TValue, extras?: Record<string, unknown>) {
+  const promise = Promise.resolve(value);
+  return {
+    then: promise.then.bind(promise),
+    catch: promise.catch.bind(promise),
+    finally: promise.finally.bind(promise),
+    ...extras,
+  };
+}
 
 jest.mock('@/lib/auth/guards', () => ({
   requireAuthenticatedUser: (...args: unknown[]) => mockRequireAuthenticatedUser(...args),
@@ -32,6 +115,7 @@ jest.mock('@/lib/events/queries', () => ({
 
 jest.mock('@/db', () => ({
   db: {
+    transaction: (...args: unknown[]) => mockDbTransaction(...args),
     query: {
       eventEditions: {
         findFirst: (...args: unknown[]) => mockFindExistingEdition(...args),
@@ -42,7 +126,12 @@ jest.mock('@/db', () => ({
     },
     select: jest.fn(() => ({
       from: jest.fn(() => ({
-        where: (...args: unknown[]) => mockDbSelectWhere(...args),
+        where: (...args: unknown[]) =>
+          createAwaitableQuery(mockDbSelectWhere(...args), {
+            orderBy: (...orderByArgs: unknown[]) => ({
+              limit: (...limitArgs: unknown[]) => mockDbSelectLimit(...orderByArgs, ...limitArgs),
+            }),
+          }),
       })),
     })),
   },
@@ -53,26 +142,21 @@ jest.mock('@/lib/audit', () => ({
   getRequestContext: jest.fn(async () => ({})),
 }));
 
-jest.mock('@/lib/events/actions', () => ({
-  createDistance: jest.fn(),
-  createFaqItem: jest.fn(),
-  createWaiver: jest.fn(),
-  updateDistancePrice: jest.fn(),
-  updateEventEdition: jest.fn(),
-  updateEventPolicyConfig: jest.fn(),
+jest.mock('@/lib/events/ai-wizard/server/apply/replay-store', () => ({
+  claimApplyReplay: (...args: unknown[]) => mockClaimApplyReplay(...args),
 }));
 
-jest.mock('@/lib/events/pricing/actions', () => ({
-  createPricingTier: jest.fn(),
-}));
-
-jest.mock('@/lib/events/questions/actions', () => ({
-  createQuestion: jest.fn(),
-}));
-
-jest.mock('@/lib/events/website/actions', () => ({
-  getWebsiteContent: jest.fn(),
-  updateWebsiteContent: jest.fn(),
+jest.mock('@/lib/events/ai-wizard/server/apply/persistence', () => ({
+  createDistance: (...args: unknown[]) => mockPersistenceCreateDistance(...args),
+  createFaqItem: (...args: unknown[]) => mockPersistenceCreateFaqItem(...args),
+  createPricingTier: (...args: unknown[]) => mockPersistenceCreatePricingTier(...args),
+  createQuestion: (...args: unknown[]) => mockPersistenceCreateQuestion(...args),
+  createWaiver: (...args: unknown[]) => mockPersistenceCreateWaiver(...args),
+  getWebsiteContent: (...args: unknown[]) => mockPersistenceGetWebsiteContent(...args),
+  updateDistancePrice: (...args: unknown[]) => mockPersistenceUpdateDistancePrice(...args),
+  updateEventEdition: (...args: unknown[]) => mockPersistenceUpdateEventEdition(...args),
+  updateEventPolicyConfig: (...args: unknown[]) => mockPersistenceUpdateEventPolicyConfig(...args),
+  updateWebsiteContent: (...args: unknown[]) => mockPersistenceUpdateWebsiteContent(...args),
 }));
 
 jest.mock('@/lib/events/ai-wizard/safety', () => ({
@@ -104,14 +188,7 @@ jest.mock('next/headers', () => ({
 }));
 
 import { POST } from '@/app/api/events/ai-wizard/apply/route';
-import {
-  createDistance,
-  createFaqItem,
-  updateEventEdition,
-  updateEventPolicyConfig,
-} from '@/lib/events/actions';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
 
 describe('POST /api/events/ai-wizard/apply', () => {
   beforeEach(() => {
@@ -122,16 +199,35 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockTrackProFeatureEvent.mockReset();
     mockCreateAuditLog.mockReset();
     mockEvaluateAiWizardPatchSafety.mockReset();
+    mockClaimApplyReplay.mockReset();
+    mockPersistenceCreateDistance.mockReset();
+    mockPersistenceCreateFaqItem.mockReset();
+    mockPersistenceCreatePricingTier.mockReset();
+    mockPersistenceCreateQuestion.mockReset();
+    mockPersistenceCreateWaiver.mockReset();
+    mockPersistenceGetWebsiteContent.mockReset();
+    mockPersistenceUpdateDistancePrice.mockReset();
+    mockPersistenceUpdateEventEdition.mockReset();
+    mockPersistenceUpdateEventPolicyConfig.mockReset();
+    mockPersistenceUpdateWebsiteContent.mockReset();
     mockDbSelectWhere.mockReset();
+    mockDbSelectLimit.mockReset();
     mockFindExistingEdition.mockReset();
     mockFindPricingTiers.mockReset();
+    mockDbTransaction.mockReset();
+    mockTxEventEditionsFindFirst.mockReset();
+    mockTxEventDistancesFindMany.mockReset();
+    mockTxEventFaqItemsFindMany.mockReset();
+    mockTxWaiversFindMany.mockReset();
+    mockTxEventWebsiteContentFindFirst.mockReset();
+    mockTxEventPolicyConfigsFindFirst.mockReset();
+    mockTxEventDistancesFindFirst.mockReset();
+    mockTxPricingTiersFindMany.mockReset();
+    mockTxInsertReturning.mockReset();
+    mockTxUpdateReturning.mockReset();
+    mockTxInsertValues.mockReset();
+    mockTxUpdateSet.mockReset();
     (checkRateLimit as jest.Mock).mockReset();
-    (createDistance as jest.Mock).mockReset();
-    (createFaqItem as jest.Mock).mockReset();
-    (updateEventEdition as jest.Mock).mockReset();
-    (updateEventPolicyConfig as jest.Mock).mockReset();
-    (getWebsiteContent as jest.Mock).mockReset();
-    (updateWebsiteContent as jest.Mock).mockReset();
 
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'user-1' },
@@ -142,18 +238,13 @@ describe('POST /api/events/ai-wizard/apply', () => {
     mockTrackProFeatureEvent.mockResolvedValue(undefined);
     mockCreateAuditLog.mockResolvedValue({ ok: true, auditLogId: 'audit-1' });
     mockEvaluateAiWizardPatchSafety.mockReturnValue({ blocked: false });
-    mockDbSelectWhere.mockResolvedValue([]);
-    mockFindExistingEdition.mockResolvedValue(null);
-    mockFindPricingTiers.mockResolvedValue([]);
-    (checkRateLimit as jest.Mock).mockResolvedValue({
-      allowed: true,
-      remaining: 1,
-      resetAt: new Date('2026-03-11T00:00:00.000Z'),
-    });
-    (createDistance as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'distance-1' } });
-    (createFaqItem as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'faq-1' } });
-    (updateEventEdition as jest.Mock).mockResolvedValue({ ok: true, data: { id: 'edition-1' } });
-    (getWebsiteContent as jest.Mock).mockResolvedValue({
+    mockClaimApplyReplay.mockResolvedValue({ status: 'claimed' });
+    mockPersistenceCreateDistance.mockResolvedValue({ ok: true, data: { id: 'distance-1' } });
+    mockPersistenceCreateFaqItem.mockResolvedValue({ ok: true, data: { id: 'faq-1' } });
+    mockPersistenceCreatePricingTier.mockResolvedValue({ ok: true, data: { id: 'tier-1' } });
+    mockPersistenceCreateQuestion.mockResolvedValue({ ok: true, data: { id: 'question-1' } });
+    mockPersistenceCreateWaiver.mockResolvedValue({ ok: true, data: { id: 'waiver-1' } });
+    mockPersistenceGetWebsiteContent.mockResolvedValue({
       ok: true,
       data: {
         id: 'content-1',
@@ -162,13 +253,64 @@ describe('POST /api/events/ai-wizard/apply', () => {
         blocks: {},
       },
     });
-    (updateWebsiteContent as jest.Mock).mockResolvedValue({
+    mockPersistenceUpdateDistancePrice.mockResolvedValue({ ok: true, data: undefined });
+    mockPersistenceUpdateEventEdition.mockResolvedValue({ ok: true, data: { id: 'edition-1' } });
+    mockPersistenceUpdateEventPolicyConfig.mockResolvedValue({
+      ok: true,
+      data: {
+        refundsAllowed: true,
+        refundPolicyText: null,
+        refundDeadline: null,
+        transfersAllowed: false,
+        transferPolicyText: null,
+        transferDeadline: null,
+        deferralsAllowed: false,
+        deferralPolicyText: null,
+        deferralDeadline: null,
+      },
+    });
+    mockPersistenceUpdateWebsiteContent.mockResolvedValue({
       ok: true,
       data: { id: 'content-1' },
+    });
+    mockDbSelectWhere.mockResolvedValue([]);
+    mockDbSelectLimit.mockResolvedValue([]);
+    mockFindExistingEdition.mockResolvedValue(null);
+    mockFindPricingTiers.mockResolvedValue([]);
+    mockDbTransaction.mockImplementation(async (callback: (tx: typeof transactionClient) => unknown) =>
+      callback(transactionClient),
+    );
+    mockTxEventEditionsFindFirst.mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      slug: 'edition-2026',
+      seriesId: 'series-1',
+      sharedCapacity: null,
+      deletedAt: null,
+      series: {
+        id: 'series-1',
+        slug: 'series-trail',
+        organizationId: 'org-1',
+      },
+    });
+    mockTxEventDistancesFindMany.mockResolvedValue([]);
+    mockTxEventFaqItemsFindMany.mockResolvedValue([]);
+    mockTxWaiversFindMany.mockResolvedValue([]);
+    mockTxEventWebsiteContentFindFirst.mockResolvedValue(null);
+    mockTxEventPolicyConfigsFindFirst.mockResolvedValue(null);
+    mockTxEventDistancesFindFirst.mockResolvedValue({ id: 'distance-1', pricingTiers: [] });
+    mockTxPricingTiersFindMany.mockResolvedValue([]);
+    mockTxInsertReturning.mockResolvedValue([{ id: 'inserted-1' }]);
+    mockTxUpdateReturning.mockResolvedValue([{ id: 'updated-1' }]);
+    (checkRateLimit as jest.Mock).mockResolvedValue({
+      allowed: true,
+      remaining: 1,
+      resetAt: new Date('2026-03-11T00:00:00.000Z'),
     });
     mockGetEventEditionDetail.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
       seriesId: 'series-1',
+      slug: 'edition-2026',
+      timezone: 'America/Mexico_City',
       organizerBrief: null,
       policyConfig: null,
       faqItems: [],
@@ -382,6 +524,160 @@ describe('POST /api/events/ai-wizard/apply', () => {
     });
   });
 
+  it('rejects an explicitly supplied proposalFingerprint when it does not match the server fingerprint', async () => {
+    mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...buildFaqApplyBody(),
+          proposalFingerprint: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      code: 'INVALID_PATCH',
+      details: {
+        reason: 'PROPOSAL_FINGERPRINT_MISMATCH',
+        proposalFingerprint: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
+      },
+      applied: [],
+    });
+    expect(mockPersistenceCreateFaqItem).not.toHaveBeenCalled();
+  });
+
+  it('accepts additive proposal identity fields and forwards duplicate-safe replay metadata', async () => {
+    mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...buildFaqApplyBody(),
+          proposalId: 'proposal-123',
+          idempotencyKey: 'idem-apply-123',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      ok: true,
+      applied: [
+        {
+          opIndex: 0,
+          type: 'create_faq_item',
+          result: { id: 'faq-1' },
+        },
+      ],
+    });
+    expect(mockCreateAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        after: expect.objectContaining({
+          aiWizardApply: expect.objectContaining({
+            proposalId: 'proposal-123',
+            idempotencyKey: 'idem-apply-123',
+            replayKeyKind: 'explicit',
+            replayKey: expect.any(String),
+            syntheticReplayKey: expect.any(String),
+          }),
+        }),
+      }),
+      expect.anything(),
+    );
+    expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'used',
+        meta: expect.objectContaining({
+          proposalId: 'proposal-123',
+          replayKeyKind: 'explicit',
+          duplicate: false,
+        }),
+      }),
+    );
+  });
+
+  it('returns a deterministic duplicate apply response when the replay key was already claimed', async () => {
+    mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
+    mockClaimApplyReplay.mockResolvedValueOnce({ status: 'duplicate' });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...buildFaqApplyBody(),
+          proposalId: 'proposal-duplicate',
+          idempotencyKey: 'idem-duplicate',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, applied: [], duplicate: true });
+    expect(mockClaimApplyReplay).toHaveBeenCalled();
+    expect(mockCreateAuditLog).not.toHaveBeenCalled();
+    expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'used',
+        meta: expect.objectContaining({
+          outcome: 'duplicate',
+          duplicate: true,
+          proposalId: 'proposal-duplicate',
+          replayKeyKind: 'explicit',
+          appliedCount: 0,
+        }),
+      }),
+    );
+  });
+
+  it('returns conflict when an explicit idempotency key is reused with a different patch fingerprint', async () => {
+    mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
+    mockClaimApplyReplay.mockResolvedValueOnce({
+      status: 'conflict',
+      existingProposalFingerprint:
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      existingProposalId: 'proposal-existing',
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/events/ai-wizard/apply', {
+        method: 'POST',
+        body: JSON.stringify({
+          ...buildFaqApplyBody(),
+          proposalId: 'proposal-next',
+          idempotencyKey: 'idem-reused',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      code: 'INVALID_PATCH',
+      details: {
+        reason: 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PATCH',
+        existingProposalFingerprint:
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        existingProposalId: 'proposal-existing',
+      },
+      applied: [],
+    });
+    expect(mockTrackProFeatureEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'blocked',
+        meta: expect.objectContaining({
+          endpoint: 'apply',
+          outcome: 'rejected',
+          code: 'IDEMPOTENCY_KEY_REUSED',
+          proposalId: 'proposal-next',
+          replayKeyKind: 'explicit',
+        }),
+      }),
+    );
+  });
+
   it('applies a selected location choice server-side without mutating the client patch', async () => {
     mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
 
@@ -431,9 +727,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateEventEdition).toHaveBeenCalledWith(
+    expect(mockPersistenceUpdateEventEdition).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
         address: 'Gran Avenida, 11580 Ciudad de México, México',
         city: 'Ciudad de México',
@@ -503,7 +799,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
   it('maps engine READ_ONLY failures from op execution back to the HTTP adapter', async () => {
     mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
-    (createDistance as jest.Mock).mockResolvedValueOnce({ ok: false, code: 'FORBIDDEN' });
+    mockPersistenceCreateDistance.mockResolvedValueOnce({ ok: false, code: 'FORBIDDEN' });
 
     const response = await POST(
       new Request('http://localhost/api/events/ai-wizard/apply', {
@@ -559,7 +855,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
 
   it('maps engine RETRY_LATER failures from op execution back to the HTTP adapter', async () => {
     mockCanUserAccessSeries.mockResolvedValueOnce({ organizationId: 'org-1', role: 'owner' });
-    (createDistance as jest.Mock).mockResolvedValueOnce({ ok: false, code: 'SERVER_ERROR' });
+    mockPersistenceCreateDistance.mockResolvedValueOnce({ ok: false, code: 'SERVER_ERROR' });
 
     const response = await POST(
       new Request('http://localhost/api/events/ai-wizard/apply', {
@@ -641,9 +937,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
         },
       ],
     });
-    expect(createDistance).toHaveBeenCalledWith(
+    expect(mockPersistenceCreateDistance).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         label: '10K',
         startTimeLocal: undefined,
       }),
@@ -684,9 +980,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(createDistance).toHaveBeenCalledWith(
+    expect(mockPersistenceCreateDistance).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         label: '5K',
         startTimeLocal: undefined,
       }),
@@ -728,9 +1024,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(createDistance).toHaveBeenCalledWith(
+    expect(mockPersistenceCreateDistance).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         label: '21K',
         startTimeLocal: '2026-03-29T13:00:00.000Z',
       }),
@@ -836,7 +1132,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
         deferralDeadline: null,
       },
     });
-    (updateEventPolicyConfig as jest.Mock).mockResolvedValue({
+    mockPersistenceUpdateEventPolicyConfig.mockResolvedValue({
       ok: true,
       data: {
         refundsAllowed: true,
@@ -888,9 +1184,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateEventPolicyConfig).toHaveBeenCalledWith(
+    expect(mockPersistenceUpdateEventPolicyConfig).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         refundDeadline: '2026-03-15T00:00:00.000Z',
         transferDeadline: '2026-03-22T00:00:00.000Z',
         deferralDeadline: null,
@@ -947,9 +1243,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
         );
 
         expect(response.status).toBe(200);
-        expect(updateEventEdition).toHaveBeenLastCalledWith(
+        expect(mockPersistenceUpdateEventEdition).toHaveBeenLastCalledWith(
+          expect.anything(),
           expect.objectContaining({
-            editionId: '11111111-1111-4111-8111-111111111111',
             startsAt: '2026-10-12T13:00:00.000Z',
             endsAt: '2026-10-12T19:00:00.000Z',
           }),
@@ -1008,9 +1304,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateEventEdition).toHaveBeenCalledWith(
+    expect(mockPersistenceUpdateEventEdition).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         locationDisplay: 'Bosque de Chapultepec, Ciudad de México, México',
         address: 'Gran Avenida, 11580 Ciudad de México, México',
         city: 'Ciudad de México',
@@ -1065,9 +1361,9 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateEventEdition).toHaveBeenCalledWith(
+    expect(mockPersistenceUpdateEventEdition).toHaveBeenCalledWith(
+      expect.anything(),
       expect.objectContaining({
-        editionId: '11111111-1111-4111-8111-111111111111',
         startsAt: '2026-10-12T13:00:00.000Z',
         endsAt: '2026-10-12T19:00:00.000Z',
       }),
@@ -1079,7 +1375,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
       organizationId: 'org-1',
       role: 'owner',
     });
-    (getWebsiteContent as jest.Mock).mockResolvedValue({
+    mockPersistenceGetWebsiteContent.mockResolvedValue({
       ok: true,
       data: {
         id: 'content-1',
@@ -1095,7 +1391,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
         },
       },
     });
-    (updateWebsiteContent as jest.Mock).mockResolvedValue({
+    mockPersistenceUpdateWebsiteContent.mockResolvedValue({
       ok: true,
       data: { id: 'content-1' },
     });
@@ -1128,18 +1424,20 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(updateWebsiteContent).toHaveBeenCalledWith({
-      editionId: '11111111-1111-4111-8111-111111111111',
-      locale: 'es',
-      blocks: {
-        overview: {
-          type: 'overview',
-          title: 'Resumen del sitio',
-          content: 'Texto nuevo del sitio',
-          enabled: true,
+    expect(mockPersistenceUpdateWebsiteContent).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        locale: 'es',
+        blocks: {
+          overview: {
+            type: 'overview',
+            title: 'Resumen del sitio',
+            content: 'Texto nuevo del sitio',
+            enabled: true,
+          },
         },
       },
-    });
+    );
   });
 
   it('does not block grounded mixed patches that say they are avoiding invented logistics', async () => {
@@ -1198,7 +1496,7 @@ describe('POST /api/events/ai-wizard/apply', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(createFaqItem).toHaveBeenCalledTimes(1);
-    expect(updateWebsiteContent).toHaveBeenCalledTimes(1);
+    expect(mockPersistenceCreateFaqItem).toHaveBeenCalledTimes(1);
+    expect(mockPersistenceUpdateWebsiteContent).toHaveBeenCalledTimes(1);
   });
 });

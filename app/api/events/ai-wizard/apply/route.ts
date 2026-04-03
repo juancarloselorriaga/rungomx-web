@@ -7,6 +7,7 @@ import { eventAiWizardApplyRequestSchema } from '@/lib/events/ai-wizard/schemas'
 import { evaluateAiWizardPatchSafety } from '@/lib/events/ai-wizard/safety';
 import { applyAiWizardPatch } from '@/lib/events/ai-wizard/server/apply/apply-engine';
 import {
+  buildApplyReplayIdentity,
   buildApplyCoreFromPatch,
   fingerprintApplyCore,
 } from '@/lib/events/ai-wizard/server/apply/idempotency';
@@ -44,6 +45,11 @@ function toLegacyAppliedPayload(
   }));
 }
 
+function trimOptionalIdentifier(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 function toApplyFailureResponse(result: EventAiWizardApplyFailure) {
   if (result.code === 'INVALID_DISTANCE') {
     return NextResponse.json(
@@ -71,6 +77,17 @@ function toApplyFailureResponse(result: EventAiWizardApplyFailure) {
         applied: toLegacyAppliedPayload(result.applied),
       },
       { status: 400 },
+    );
+  }
+
+  if (result.code === 'IDEMPOTENCY_KEY_REUSED') {
+    return NextResponse.json(
+      {
+        code: 'INVALID_PATCH',
+        details: result.details,
+        applied: toLegacyAppliedPayload(result.applied),
+      },
+      { status: 409 },
     );
   }
 
@@ -110,7 +127,15 @@ export async function POST(req: Request) {
     throw error;
   }
 
-  const { editionId, locale: requestLocale, patch, locationChoice } = parsed.data;
+  const {
+    editionId,
+    locale: requestLocale,
+    patch,
+    locationChoice,
+    proposalId: rawProposalId,
+    proposalFingerprint: rawProposalFingerprint,
+    idempotencyKey: rawIdempotencyKey,
+  } = parsed.data;
 
   const event = await getEventEditionDetail(editionId);
   if (!event) {
@@ -192,7 +217,31 @@ export async function POST(req: Request) {
   }
 
   const core = buildApplyCoreFromPatch(effectivePatch);
-  const proposalFingerprint = fingerprintApplyCore(core);
+  const computedProposalFingerprint = fingerprintApplyCore(core);
+  const proposalFingerprint =
+    trimOptionalIdentifier(rawProposalFingerprint) ?? computedProposalFingerprint;
+  if (rawProposalFingerprint && proposalFingerprint !== computedProposalFingerprint) {
+    return NextResponse.json(
+      {
+        code: 'INVALID_PATCH',
+        details: {
+          reason: 'PROPOSAL_FINGERPRINT_MISMATCH',
+          proposalFingerprint: rawProposalFingerprint,
+        },
+        applied: [],
+      },
+      { status: 409 },
+    );
+  }
+
+  const proposalId = trimOptionalIdentifier(rawProposalId);
+  const idempotencyKey = trimOptionalIdentifier(rawIdempotencyKey);
+  const replayIdentity = buildApplyReplayIdentity({
+    actorUserId: authContext.user.id,
+    editionId,
+    proposalFingerprint,
+    idempotencyKey,
+  });
   const requestContext = await getRequestContext(await headers());
 
   const result = await applyAiWizardPatch({
@@ -203,7 +252,12 @@ export async function POST(req: Request) {
     event,
     patch: effectivePatch,
     core,
+    proposalId,
     proposalFingerprint,
+    idempotencyKey,
+    replayKey: replayIdentity.replayKey,
+    replayKeyKind: replayIdentity.replayKeyKind,
+    syntheticReplayKey: replayIdentity.syntheticReplayKey,
     requestContext,
   });
 
@@ -216,7 +270,10 @@ export async function POST(req: Request) {
         endpoint: 'apply',
         outcome: 'rejected',
         editionId,
+        proposalId,
         proposalFingerprint,
+        replayKey: replayIdentity.replayKey,
+        replayKeyKind: replayIdentity.replayKeyKind,
         code: result.code,
         retryable: result.retryable,
         failedOpIndex: result.failedOpIndex,
@@ -234,9 +291,13 @@ export async function POST(req: Request) {
     eventType: 'used',
     meta: {
       endpoint: 'apply',
-      outcome: 'applied',
+      outcome: result.outcome,
       editionId,
+      proposalId,
       proposalFingerprint,
+      replayKey: replayIdentity.replayKey,
+      replayKeyKind: replayIdentity.replayKeyKind,
+      duplicate: result.outcome === 'duplicate',
       opCount: effectivePatch.ops.length,
       appliedCount: result.applied.length,
       missingChecklistCount: effectivePatch.missingFieldsChecklist?.length ?? 0,
@@ -246,5 +307,9 @@ export async function POST(req: Request) {
     },
   });
 
-  return NextResponse.json({ ok: true, applied: toLegacyAppliedPayload(result.applied) });
+  return NextResponse.json({
+    ok: true,
+    applied: toLegacyAppliedPayload(result.applied),
+    ...(result.outcome === 'duplicate' ? { duplicate: true } : {}),
+  });
 }

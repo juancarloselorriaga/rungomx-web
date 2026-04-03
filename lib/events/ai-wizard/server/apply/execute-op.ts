@@ -1,18 +1,18 @@
+import { normalizeEditionDateTimeForPersistence } from '@/lib/events/datetime';
+
+import { createAddOnBundle } from './op-handlers/create-add-on-bundle';
 import {
   createDistance,
   createFaqItem,
+  createPricingTier,
+  createQuestion,
   createWaiver,
+  getWebsiteContent,
   updateDistancePrice,
   updateEventEdition,
   updateEventPolicyConfig,
-} from '@/lib/events/actions';
-import { createPricingTier } from '@/lib/events/pricing/actions';
-import { createQuestion } from '@/lib/events/questions/actions';
-import { getWebsiteContent, updateWebsiteContent } from '@/lib/events/website/actions';
-import { normalizeEditionDateTimeForPersistence } from '@/lib/events/datetime';
-
-import { buildSyntheticReplayKey } from './idempotency';
-import { createAddOnBundle } from './op-handlers/create-add-on-bundle';
+  updateWebsiteContent,
+} from './persistence';
 import {
   appendMarkdown,
   normalizeDistanceStartTimeLocal,
@@ -20,6 +20,7 @@ import {
   normalizeLocalDateTime,
   resolvePriceCents,
 } from './preflight';
+import type { ApplyTx } from './db-client';
 import type {
   EventAiWizardApplyEngineInput,
   EventAiWizardApplyFailureCode,
@@ -49,9 +50,17 @@ export async function executeApplyOp(params: {
   input: EventAiWizardApplyEngineInput;
   opIndex: number;
   policyState: PolicyState;
+  tx: ApplyTx;
 }): Promise<EventAiWizardOpExecutionResult> {
   const { input, opIndex } = params;
   const op = input.patch.ops[opIndex];
+  const mutationContext = {
+    tx: params.tx,
+    editionId: input.editionId,
+    actorUserId: input.actorUserId,
+    organizationId: input.organizationId,
+    requestContext: input.requestContext,
+  };
 
   if ('editionId' in op && op.editionId !== input.editionId) {
     return {
@@ -103,8 +112,7 @@ export async function executeApplyOp(params: {
       };
     }
 
-    const result = await updateEventEdition({
-      editionId: input.editionId,
+    const result = await updateEventEdition(mutationContext, {
       editionLabel: op.data.editionLabel,
       slug: op.data.slug,
       description: op.data.description,
@@ -152,8 +160,7 @@ export async function executeApplyOp(params: {
       };
     }
 
-    const result = await createDistance({
-      editionId: input.editionId,
+    const result = await createDistance(mutationContext, {
       label: op.data.label,
       distanceValue: op.data.distanceValue,
       distanceUnit: op.data.distanceUnit ?? 'km',
@@ -185,7 +192,7 @@ export async function executeApplyOp(params: {
   }
 
   if (op.type === 'update_distance_price') {
-    const result = await updateDistancePrice({
+    const result = await updateDistancePrice(mutationContext, {
       distanceId: op.distanceId,
       priceCents: resolvePriceCents(op.data),
     });
@@ -226,7 +233,7 @@ export async function executeApplyOp(params: {
       };
     }
 
-    const result = await createPricingTier({
+    const result = await createPricingTier(mutationContext, {
       distanceId: op.distanceId,
       label: op.data.label ?? null,
       startsAt,
@@ -253,8 +260,7 @@ export async function executeApplyOp(params: {
   }
 
   if (op.type === 'create_faq_item') {
-    const result = await createFaqItem({
-      editionId: input.editionId,
+    const result = await createFaqItem(mutationContext, {
       question: op.data.question,
       answer: op.data.answerMarkdown,
     });
@@ -277,8 +283,7 @@ export async function executeApplyOp(params: {
   }
 
   if (op.type === 'create_waiver') {
-    const result = await createWaiver({
-      editionId: input.editionId,
+    const result = await createWaiver(mutationContext, {
       title: op.data.title,
       body: op.data.bodyMarkdown,
       signatureType: op.data.signatureType ?? 'checkbox',
@@ -302,8 +307,7 @@ export async function executeApplyOp(params: {
   }
 
   if (op.type === 'create_question') {
-    const result = await createQuestion({
-      editionId: input.editionId,
+    const result = await createQuestion(mutationContext, {
       distanceId: op.data.distanceId ?? null,
       type: op.data.type,
       prompt: op.data.prompt,
@@ -333,6 +337,7 @@ export async function executeApplyOp(params: {
 
   if (op.type === 'create_add_on') {
     const bundle = await createAddOnBundle({
+      tx: params.tx,
       editionId: input.editionId,
       organizationId: input.organizationId,
       actorUserId: input.actorUserId,
@@ -353,12 +358,12 @@ export async function executeApplyOp(params: {
         optionMaxQtyPerOrder: op.data.optionMaxQtyPerOrder,
       },
       aiWizardApplyMeta: {
+        proposalId: input.proposalId,
         proposalFingerprint: input.proposalFingerprint,
-        syntheticReplayKey: buildSyntheticReplayKey({
-          actorUserId: input.actorUserId,
-          editionId: input.editionId,
-          proposalFingerprint: input.proposalFingerprint,
-        }),
+        idempotencyKey: input.idempotencyKey,
+        replayKey: input.replayKey,
+        replayKeyKind: input.replayKeyKind,
+        syntheticReplayKey: input.syntheticReplayKey,
         opIndex,
         opType: op.type,
       },
@@ -387,7 +392,7 @@ export async function executeApplyOp(params: {
 
   if (op.type === 'append_website_section_markdown') {
     const locale = op.data.locale ?? input.locale ?? 'es';
-    const contentResult = await getWebsiteContent({ editionId: input.editionId, locale });
+    const contentResult = await getWebsiteContent(mutationContext, { locale });
 
     if (!contentResult.ok) {
       const failure = mapActionFailure(contentResult.code);
@@ -431,8 +436,7 @@ export async function executeApplyOp(params: {
       };
     }
 
-    const updateResult = await updateWebsiteContent({
-      editionId: input.editionId,
+    const updateResult = await updateWebsiteContent(mutationContext, {
       locale,
       blocks,
     });
@@ -479,8 +483,7 @@ export async function executeApplyOp(params: {
       );
     }
 
-    const result = await updateEventPolicyConfig({
-      editionId: input.editionId,
+    const result = await updateEventPolicyConfig(mutationContext, {
       refundsAllowed: nextPolicy.refundsAllowed,
       refundPolicyText: nextPolicy.refundPolicyText,
       refundDeadline: nextPolicy.refundDeadline,
@@ -568,8 +571,7 @@ export async function executeApplyOp(params: {
         : {}),
     };
 
-    const result = await updateEventPolicyConfig({
-      editionId: input.editionId,
+    const result = await updateEventPolicyConfig(mutationContext, {
       refundsAllowed: nextPolicy.refundsAllowed,
       refundPolicyText: nextPolicy.refundPolicyText,
       refundDeadline: nextPolicy.refundDeadline,

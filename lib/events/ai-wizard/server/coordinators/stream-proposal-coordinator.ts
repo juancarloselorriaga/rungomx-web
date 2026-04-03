@@ -65,7 +65,7 @@ function buildEarlyProseLead(
   ) {
     return {
       body: isEnglish
-        ? `I’m starting from the confirmed details for ${eventName}${place ? ` in ${place}` : ''}${distanceSummary ? `, with ${distanceSummary}` : ''}. I’ll turn that into participant-facing copy first and leave any unconfirmed logistics out of the draft.`
+        ? `I’m starting from the confirmed details for ${eventName}${place ? ` in ${place}` : ''}${distanceSummary ? `, with ${distanceSummary}` : ''}. I’ll turn that into clear race-page copy first and leave any unconfirmed logistics out of the draft.`
         : `Voy a arrancar con los detalles confirmados de ${eventName}${place ? ` en ${place}` : ''}${distanceSummary ? `, con ${distanceSummary}` : ''}. Primero los convertiré en texto para participantes y dejaré fuera cualquier logística que siga sin confirmarse.`,
     };
   }
@@ -81,7 +81,7 @@ function buildEarlyProseLead(
   if (stepId === 'review') {
     return {
       body: isEnglish
-        ? `I’m reviewing the confirmed setup for ${eventName} and will lead with the most useful publish-facing improvement first. I’ll point out what still needs confirmation instead of padding the recommendation with assumptions.`
+        ? `I’m reviewing the confirmed setup for ${eventName} and will lead with the most useful improvement before publishing. I’ll point out what still needs confirmation instead of padding the recommendation with assumptions.`
         : `Estoy revisando la configuración confirmada de ${eventName} y voy a empezar por la mejora más útil de cara a publicación. Señalaré lo que todavía requiera confirmación en vez de rellenar la recomendación con supuestos.`,
     };
   }
@@ -301,7 +301,7 @@ export async function streamProposalCoordinator(args: {
         }),
         proposeFaqPatch: tool({
           description:
-            'Create the first reviewable patch for FAQ content only. Keep it narrow and participant-facing.',
+            'Create the first reviewable patch for FAQ content only. Keep it narrow and runner-facing.',
           inputSchema: fastPathFaqProposalSchema,
           execute: async (proposal) => {
             const finalizedProposal = finalizeProposalForUi(
@@ -365,8 +365,7 @@ export async function streamProposalCoordinator(args: {
           },
         }),
         proposePolicyPatch: tool({
-          description:
-            'Create the first reviewable patch for one participant-facing policy block only.',
+          description: 'Create the first reviewable patch for one public policy block only.',
           inputSchema: fastPathPolicyProposalSchema,
           execute: async (proposal) => {
             const finalizedProposal = finalizeProposalForUi(

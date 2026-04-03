@@ -5,6 +5,8 @@ import type {
   EventAiWizardPatch,
 } from '@/lib/events/ai-wizard/schemas';
 
+import type { ApplyTx } from './db-client';
+
 export type EventAiWizardApplyPatch = EventAiWizardPatch;
 
 export type EventAiWizardApplyCore = Pick<
@@ -36,9 +38,28 @@ export type EventAiWizardAppliedOpResult = {
   auditLogId?: string;
 };
 
+export type EventAiWizardReplayMetadata = {
+  proposalId?: string;
+  proposalFingerprint: string;
+  idempotencyKey?: string;
+  replayKey: string;
+  replayKeyKind: 'explicit' | 'synthetic';
+  syntheticReplayKey: string;
+};
+
+export type EventAiWizardDuplicateApplySuccess = {
+  ok: true;
+  outcome: 'duplicate';
+  duplicate: true;
+  applied: [];
+  proposalFingerprint: string;
+  proposalId?: string;
+};
+
 export type EventAiWizardApplyFailureCode =
   | 'INVALID_PATCH'
   | 'INVALID_DISTANCE'
+  | 'IDEMPOTENCY_KEY_REUSED'
   | 'READ_ONLY'
   | 'RETRY_LATER';
 
@@ -51,6 +72,7 @@ export type EventAiWizardApplyFailure = {
   details?: Record<string, unknown>;
   applied: EventAiWizardAppliedOpResult[];
   proposalFingerprint: string;
+  proposalId?: string;
 };
 
 export type EventAiWizardApplySuccess = {
@@ -58,9 +80,13 @@ export type EventAiWizardApplySuccess = {
   outcome: 'applied';
   applied: EventAiWizardAppliedOpResult[];
   proposalFingerprint: string;
+  proposalId?: string;
 };
 
-export type EventAiWizardApplyEngineResult = EventAiWizardApplySuccess | EventAiWizardApplyFailure;
+export type EventAiWizardApplyEngineResult =
+  | EventAiWizardApplySuccess
+  | EventAiWizardDuplicateApplySuccess
+  | EventAiWizardApplyFailure;
 
 export type EventAiWizardApplyEngineInput = {
   editionId: string;
@@ -71,7 +97,12 @@ export type EventAiWizardApplyEngineInput = {
   patch: EventAiWizardApplyPatch;
   locationChoice?: EventAiWizardApplyLocationChoice;
   core: EventAiWizardApplyCore;
+  proposalId?: string;
   proposalFingerprint: string;
+  idempotencyKey?: string;
+  replayKey: string;
+  replayKeyKind: 'explicit' | 'synthetic';
+  syntheticReplayKey: string;
   requestContext: {
     ipAddress?: string;
     userAgent?: string;
@@ -94,6 +125,10 @@ export type EventAiWizardOpExecutionFailure = {
 export type EventAiWizardOpExecutionResult =
   | EventAiWizardOpExecutionSuccess
   | EventAiWizardOpExecutionFailure;
+
+export type EventAiWizardApplyOperationContext = {
+  tx: ApplyTx;
+};
 
 export type EventAiWizardPreflightFailure = {
   code: 'INVALID_PATCH' | 'INVALID_DISTANCE';

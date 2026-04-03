@@ -3,6 +3,21 @@ const mockPreflightPatch = jest.fn();
 const mockInitializePolicyState = jest.fn();
 const mockExecuteApplyOp = jest.fn();
 const mockRecordApplyOpAudit = jest.fn();
+const mockRecordApplySuccessAudit = jest.fn();
+const mockClaimApplyReplay = jest.fn();
+const mockDbTransaction = jest.fn();
+const mockEventEditionsFindFirst = jest.fn();
+
+jest.mock('@/db', () => ({
+  db: {
+    transaction: (...args: unknown[]) => mockDbTransaction(...args),
+    query: {
+      eventEditions: {
+        findFirst: (...args: unknown[]) => mockEventEditionsFindFirst(...args),
+      },
+    },
+  },
+}));
 
 jest.mock('@/lib/events/ai-wizard/server/apply/preflight', () => ({
   validateReferencedDistanceIds: (...args: unknown[]) => mockValidateReferencedDistanceIds(...args),
@@ -16,9 +31,22 @@ jest.mock('@/lib/events/ai-wizard/server/apply/execute-op', () => ({
 
 jest.mock('@/lib/events/ai-wizard/server/apply/audit', () => ({
   recordApplyOpAudit: (...args: unknown[]) => mockRecordApplyOpAudit(...args),
+  recordApplySuccessAudit: (...args: unknown[]) => mockRecordApplySuccessAudit(...args),
+}));
+
+jest.mock('@/lib/events/ai-wizard/server/apply/replay-store', () => ({
+  claimApplyReplay: (...args: unknown[]) => mockClaimApplyReplay(...args),
 }));
 
 import { applyAiWizardPatch } from '@/lib/events/ai-wizard/server/apply/apply-engine';
+
+const transactionClient = {
+  query: {
+    eventEditions: {
+      findFirst: jest.fn(),
+    },
+  },
+};
 
 const baseInput = {
   editionId: '11111111-1111-4111-8111-111111111111',
@@ -84,7 +112,12 @@ const baseInput = {
       { domain: 'policy', contentMarkdown: 'No hay devoluciones' },
     ],
   },
+  proposalId: undefined,
   proposalFingerprint: 'fingerprint-1',
+  idempotencyKey: undefined,
+  replayKey: 'replay-key-1',
+  replayKeyKind: 'synthetic',
+  syntheticReplayKey: 'replay-key-1',
   requestContext: {},
 } as const;
 
@@ -97,11 +130,24 @@ describe('applyAiWizardPatch', () => {
     mockInitializePolicyState.mockReset();
     mockExecuteApplyOp.mockReset();
     mockRecordApplyOpAudit.mockReset();
+    mockRecordApplySuccessAudit.mockReset();
+    mockClaimApplyReplay.mockReset();
+    mockDbTransaction.mockReset();
+    mockEventEditionsFindFirst.mockReset();
 
     mockValidateReferencedDistanceIds.mockResolvedValue(null);
     mockPreflightPatch.mockResolvedValue(null);
     mockInitializePolicyState.mockReturnValue({ refundsAllowed: false });
     mockRecordApplyOpAudit.mockResolvedValue({ ok: true, auditLogId: 'audit-1' });
+    mockRecordApplySuccessAudit.mockResolvedValue({ ok: true, auditLogId: 'apply-audit-1' });
+    mockClaimApplyReplay.mockResolvedValue({ status: 'claimed' });
+    mockDbTransaction.mockImplementation(async (callback: (tx: typeof transactionClient) => unknown) =>
+      callback(transactionClient),
+    );
+    mockEventEditionsFindFirst.mockResolvedValue({
+      slug: 'trail-2026',
+      series: { slug: 'series-2026' },
+    });
   });
 
   afterAll(() => {
@@ -123,6 +169,7 @@ describe('applyAiWizardPatch', () => {
       retryable: false,
       details: { distanceId: 'distance-missing' },
       applied: [],
+      proposalId: undefined,
       proposalFingerprint: 'fingerprint-1',
     });
     expect(mockExecuteApplyOp).not.toHaveBeenCalled();
@@ -165,6 +212,7 @@ describe('applyAiWizardPatch', () => {
           auditLogId: 'audit-1',
         },
       ],
+      proposalId: undefined,
       proposalFingerprint: 'fingerprint-1',
     });
     expect(mockExecuteApplyOp).toHaveBeenCalledTimes(2);
@@ -208,8 +256,15 @@ describe('applyAiWizardPatch', () => {
           result: { id: 'faq-1' },
         },
       ],
+      proposalId: undefined,
       proposalFingerprint: 'fingerprint-1',
     });
+    expect(mockRecordApplySuccessAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ replayKey: 'replay-key-1' }),
+        applied: [expect.objectContaining({ opIndex: 0, type: 'create_faq_item' })],
+      }),
+    );
   });
 
   it('skips the generic apply audit journal for create_add_on ops', async () => {
@@ -273,8 +328,90 @@ describe('applyAiWizardPatch', () => {
           },
         },
       ],
+      proposalId: undefined,
       proposalFingerprint: 'fingerprint-1',
     });
     expect(mockRecordApplyOpAudit).not.toHaveBeenCalled();
+    expect(mockRecordApplySuccessAudit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        applied: [expect.objectContaining({ type: 'create_add_on' })],
+      }),
+    );
+  });
+
+  it('returns duplicate success without executing ops when the replay key is already claimed', async () => {
+    mockClaimApplyReplay.mockResolvedValueOnce({ status: 'duplicate' });
+
+    const result = await applyAiWizardPatch(baseInput as never);
+
+    expect(result).toEqual({
+      ok: true,
+      outcome: 'duplicate',
+      duplicate: true,
+      applied: [],
+      proposalId: undefined,
+      proposalFingerprint: 'fingerprint-1',
+    });
+    expect(mockExecuteApplyOp).not.toHaveBeenCalled();
+    expect(mockRecordApplyOpAudit).not.toHaveBeenCalled();
+    expect(mockRecordApplySuccessAudit).not.toHaveBeenCalled();
+  });
+
+  it('does not short-circuit a retry after partial failure when no replay duplicate is detected', async () => {
+    mockExecuteApplyOp
+      .mockResolvedValueOnce({
+        ok: true,
+        appliedOp: {
+          opIndex: 0,
+          type: 'create_faq_item',
+          status: 'applied',
+          result: { id: 'faq-1' },
+        },
+        policyState: { refundsAllowed: false },
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        code: 'RETRY_LATER',
+        retryable: true,
+        details: { opIndex: 1, operation: 'append_policy_markdown' },
+      });
+
+    const result = await applyAiWizardPatch(baseInput as never);
+
+    expect(result.ok).toBe(false);
+    expect(mockClaimApplyReplay).toHaveBeenCalledWith(
+      expect.objectContaining({ input: expect.objectContaining({ replayKey: 'replay-key-1' }) }),
+    );
+    expect(mockRecordApplySuccessAudit).not.toHaveBeenCalled();
+  });
+
+  it('rejects explicit idempotency key reuse when the stored fingerprint belongs to a different patch', async () => {
+    mockClaimApplyReplay.mockResolvedValueOnce({
+      status: 'conflict',
+      existingProposalFingerprint: 'fingerprint-existing',
+      existingProposalId: 'proposal-existing',
+    });
+
+    const result = await applyAiWizardPatch({
+      ...baseInput,
+      idempotencyKey: 'idem-123',
+      replayKeyKind: 'explicit',
+    } as never);
+
+    expect(result).toEqual({
+      ok: false,
+      outcome: 'rejected',
+      code: 'IDEMPOTENCY_KEY_REUSED',
+      retryable: false,
+      details: {
+        reason: 'IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_PATCH',
+        existingProposalFingerprint: 'fingerprint-existing',
+        existingProposalId: 'proposal-existing',
+      },
+      applied: [],
+      proposalId: undefined,
+      proposalFingerprint: 'fingerprint-1',
+    });
+    expect(mockExecuteApplyOp).not.toHaveBeenCalled();
   });
 });

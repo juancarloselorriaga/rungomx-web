@@ -1,8 +1,10 @@
-import { db } from '@/db';
 import { addOnOptions, addOns } from '@/db/schema';
 import { createAuditLog } from '@/lib/audit';
 
+import type { ApplyTx } from '../db-client';
+
 export async function createAddOnBundle(params: {
+  tx: ApplyTx;
   editionId: string;
   organizationId: string;
   actorUserId: string;
@@ -23,7 +25,11 @@ export async function createAddOnBundle(params: {
     optionMaxQtyPerOrder?: number;
   };
   aiWizardApplyMeta?: {
+    proposalId?: string;
     proposalFingerprint: string;
+    idempotencyKey?: string;
+    replayKey: string;
+    replayKeyKind: 'explicit' | 'synthetic';
     syntheticReplayKey: string;
     opIndex: number;
     opType: 'create_add_on';
@@ -59,9 +65,9 @@ export async function createAddOnBundle(params: {
     sortOrder: 0,
   };
 
-  const bundle = await db
-    .transaction(async (tx) => {
-      const [newAddOn] = await tx.insert(addOns).values(addOnPayload).returning();
+  const bundle = await (async () => {
+    try {
+      const [newAddOn] = await params.tx.insert(addOns).values(addOnPayload).returning();
       const addOnAudit = await createAuditLog(
         {
           organizationId: params.organizationId,
@@ -78,13 +84,13 @@ export async function createAddOnBundle(params: {
           },
           request: params.requestContext,
         },
-        tx,
+        params.tx,
       );
       if (!addOnAudit.ok) {
         throw new Error('ADD_ON_AUDIT_FAILED');
       }
 
-      const [newOption] = await tx
+      const [newOption] = await params.tx
         .insert(addOnOptions)
         .values({
           addOnId: newAddOn.id,
@@ -108,15 +114,17 @@ export async function createAddOnBundle(params: {
           },
           request: params.requestContext,
         },
-        tx,
+        params.tx,
       );
       if (!optionAudit.ok) {
         throw new Error('ADD_ON_OPTION_AUDIT_FAILED');
       }
 
       return { addOn: newAddOn, option: newOption };
-    })
-    .catch(() => null);
+    } catch {
+      return null;
+    }
+  })();
 
   if (!bundle) {
     return { ok: false };
