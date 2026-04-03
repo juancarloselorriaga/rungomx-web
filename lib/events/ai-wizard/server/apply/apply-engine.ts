@@ -151,7 +151,28 @@ export async function applyAiWizardPatch(
       let policyState = initializePolicyState(input.event);
 
       for (let opIndex = 0; opIndex < input.patch.ops.length; opIndex += 1) {
-        const opResult = await executeApplyOp({ input, opIndex, policyState, tx });
+        let opResult;
+
+        try {
+          opResult = await executeApplyOp({ input, opIndex, policyState, tx });
+        } catch (error) {
+          throw new ApplyRollbackError({
+            ok: false,
+            outcome: 'rejected',
+            code: 'RETRY_LATER',
+            retryable: true,
+            failedOpIndex: opIndex,
+            details: {
+              opIndex,
+              operation: input.patch.ops[opIndex]?.type,
+              reason: 'UNEXPECTED_APPLY_ERROR',
+              message: error instanceof Error ? error.message : 'Unknown error',
+            },
+            applied,
+            proposalFingerprint: input.proposalFingerprint,
+            proposalId: input.proposalId,
+          });
+        }
 
         if (!opResult.ok) {
           throw new ApplyRollbackError({

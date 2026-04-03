@@ -393,6 +393,79 @@ describe('applyAiWizardPatch', () => {
     expect(mockSafeRevalidateTag).not.toHaveBeenCalled();
   });
 
+  it('returns a retryable rejection when an unexpected op error occurs after earlier applied ops', async () => {
+    mockExecuteApplyOp
+      .mockResolvedValueOnce({
+        ok: true,
+        appliedOp: { opIndex: 0, type: 'create_faq_item', status: 'applied', result: { id: 'faq-1' } },
+        policyState: {
+          refundsAllowed: false,
+          refundPolicyText: null,
+          refundDeadline: null,
+          transfersAllowed: false,
+          transferPolicyText: null,
+          transferDeadline: null,
+          deferralsAllowed: false,
+          deferralPolicyText: null,
+          deferralDeadline: null,
+        },
+      })
+      .mockRejectedValueOnce(new Error('boom'));
+
+    const result = await applyAiWizardPatch({
+      ...baseInput,
+      patch: {
+        ...baseInput.patch,
+        ops: [
+          baseInput.patch.ops[0],
+          {
+            type: 'create_waiver',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: { title: 'Waiver', bodyMarkdown: 'Body' },
+          },
+        ],
+      },
+      core: {
+        ...baseInput.core,
+        ops: [
+          baseInput.core.ops[0],
+          {
+            type: 'create_waiver',
+            editionId: '11111111-1111-4111-8111-111111111111',
+            data: { title: 'Waiver', bodyMarkdown: 'Body' },
+          },
+        ],
+      },
+    } as never);
+
+    expect(result).toEqual({
+      ok: false,
+      outcome: 'rejected',
+      code: 'RETRY_LATER',
+      retryable: true,
+      failedOpIndex: 1,
+      details: {
+        opIndex: 1,
+        operation: 'create_waiver',
+        reason: 'UNEXPECTED_APPLY_ERROR',
+        message: 'boom',
+      },
+      applied: [
+        {
+          opIndex: 0,
+          type: 'create_faq_item',
+          status: 'applied',
+          result: { id: 'faq-1' },
+          auditLogId: 'audit-1',
+        },
+      ],
+      proposalFingerprint: 'fingerprint-1',
+      proposalId: undefined,
+    });
+    expect(mockRecordApplySuccessAudit).not.toHaveBeenCalled();
+    expect(mockSafeRevalidateTag).not.toHaveBeenCalled();
+  });
+
   it('rejects explicit idempotency key reuse when the stored fingerprint belongs to a different patch', async () => {
     mockClaimApplyReplay.mockResolvedValueOnce({
       status: 'conflict',
