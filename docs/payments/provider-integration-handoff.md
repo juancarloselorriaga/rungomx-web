@@ -277,6 +277,10 @@ Note: `AGENTS.md` lists `app/api/**` as a stable public boundary. Trimming these
 
 ## 6. Verified gaps and dead ends (the things that bite)
 
+> Concrete defects found during review (atomicity gaps, a cross-outcome dispute
+> settlement hazard, dead-end statuses) are tracked separately with evidence,
+> confidence levels, and repro/fix guidance in `docs/payments/known-issues.md`.
+
 ### 6.1 Money can never leave the system in-product
 
 `transitionPayoutLifecycle` (`lib/payments/payouts/lifecycle.ts:395`) is the **only** emitter of `payout.processing/paused/resumed/completed/failed/adjusted` — and it has **zero callers outside its own tests**. Consequence: an organizer can request a payout (funds move `available → processing` in the wallet projection), and no product surface, worker, or admin tool can ever complete, fail, or adjust it. The `processing` bucket is a one-way door. The lifecycle module itself is well-tested (execution modes `in_process`/`queued_worker` are anticipated) — what's missing is the **driver** (worker/cron/admin action) and the **operational UI**, plus the actual SPEI/bank transfer via provider.
