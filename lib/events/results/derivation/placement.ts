@@ -20,9 +20,34 @@ type RankingEntry = {
   finishTimeMillis: number | null;
   gender: string | null;
   age: number | null;
+  // Placements are computed per distance: two runners in different distances never
+  // compete for the same place. `null`/`undefined` groups all such entries together.
+  distanceId?: string | null;
   identitySnapshot?: unknown;
   rawSourceData?: unknown;
 };
+
+const NO_DISTANCE_PARTITION = '__no_distance__';
+
+type CompetitionRankState = { position: number; lastTime: number | null; lastRank: number };
+
+// Standard competition ("1224") ranking: equal finish times share a rank, and the
+// next distinct time skips ahead by the number of tied entries. `sorted` order must
+// already be ascending by time within each bucket.
+function assignCompetitionRank(
+  state: Map<string, CompetitionRankState>,
+  bucketKey: string,
+  finishTimeMillis: number,
+): number {
+  const current = state.get(bucketKey) ?? { position: 0, lastTime: null, lastRank: 0 };
+  current.position += 1;
+  if (current.lastTime !== finishTimeMillis) {
+    current.lastRank = current.position;
+    current.lastTime = finishTimeMillis;
+  }
+  state.set(bucketKey, current);
+  return current.lastRank;
+}
 
 type DerivationByEntryId = {
   overallPlace: number | null;
@@ -172,6 +197,7 @@ export function deriveResultPlacements(
 
       return {
         entry,
+        distancePartition: entry.distanceId ?? NO_DISTANCE_PARTITION,
         includeInOverall,
         includeInCategories,
         effectiveFinishTime,
@@ -180,6 +206,11 @@ export function deriveResultPlacements(
     })
     .filter((item) => item.includeInOverall)
     .sort((left, right) => {
+      // Group by distance first so per-distance buckets are contiguous, then order by
+      // time (with deterministic tiebreakers for display; ties still share a rank).
+      const partitionDelta = left.distancePartition.localeCompare(right.distancePartition);
+      if (partitionDelta !== 0) return partitionDelta;
+
       if (left.effectiveFinishTime !== right.effectiveFinishTime) {
         return (left.effectiveFinishTime ?? 0) - (right.effectiveFinishTime ?? 0);
       }
@@ -194,28 +225,36 @@ export function deriveResultPlacements(
     });
 
   const orderedEntryIds = rankable.map((item) => item.entry.id);
-  const genderCounters = new Map<string, number>();
-  const ageGroupCounters = new Map<string, number>();
+  const overallState = new Map<string, CompetitionRankState>();
+  const genderState = new Map<string, CompetitionRankState>();
+  const ageGroupState = new Map<string, CompetitionRankState>();
 
-  rankable.forEach((item, index) => {
+  rankable.forEach((item) => {
     const target = byEntryId[item.entry.id];
-    if (!target) return;
+    if (!target || item.effectiveFinishTime === null) return;
 
-    target.overallPlace = index + 1;
+    const partition = item.distancePartition;
+    target.overallPlace = assignCompetitionRank(
+      overallState,
+      partition,
+      item.effectiveFinishTime,
+    );
     if (!item.includeInCategories) return;
 
     if (target.genderCategoryKey) {
-      const current = genderCounters.get(target.genderCategoryKey) ?? 0;
-      const next = current + 1;
-      genderCounters.set(target.genderCategoryKey, next);
-      target.genderPlace = next;
+      target.genderPlace = assignCompetitionRank(
+        genderState,
+        `${partition}::${target.genderCategoryKey}`,
+        item.effectiveFinishTime,
+      );
     }
 
     if (target.ageGroupCategoryKey) {
-      const current = ageGroupCounters.get(target.ageGroupCategoryKey) ?? 0;
-      const next = current + 1;
-      ageGroupCounters.set(target.ageGroupCategoryKey, next);
-      target.ageGroupPlace = next;
+      target.ageGroupPlace = assignCompetitionRank(
+        ageGroupState,
+        `${partition}::${target.ageGroupCategoryKey}`,
+        item.effectiveFinishTime,
+      );
     }
   });
 

@@ -1,16 +1,31 @@
 # Results & Rankings — Known Issues & Suspected Bugs
 
-> **Status:** Findings register. Written 2026-07-10, verified against commit `ed88567`.
+> **Status:** Findings register + remediation log. Written 2026-07-10 (audit vs `ed88567`); **remediated 2026-07-10** on branch `docs/results-launch-readiness`.
 > **Companion to:** `docs/results/launch-readiness.md` (architecture, reachability map, launch verdict). The reachability-class gaps (feature has no production driver/UI) live **there**, in §6; this file registers concrete defects in the code that exists.
 > **How to use:** Each finding is self-contained — evidence (`file:line`), a concrete failure scenario, how to verify, and a suggested fix direction — so an agent or engineer can pick one up independently. Confidence describes how sure we are the *defect is real as described*; severity assumes results is live at launch **and the currently-unwired write paths get wired** (most defects below sit on paths that are unreachable today — that context is flagged per finding).
 >
 > Confidence scale: **CONFIRMED** = the failing path was verified by direct code reading; **HIGH** = code verified, failure needs a specific but realistic trigger; **MEDIUM** = behavior verified, but it may be intended design — needs a product/intent decision; **LOW** = edge case or cosmetic.
+>
+> **Remediation status legend:** ✅ **FIXED** (implemented + covered by tests and/or browser verification) · 🟡 **PARTIAL** (core fixed; a scoped follow-up remains, noted inline) · ⬜ **DEFERRED** (deliberately not done this pass — rationale inline). Line numbers in each finding are the **original `ed88567`** locations; the fix may sit elsewhere now.
+
+## Remediation summary (2026-07-10)
+
+All 25 findings were addressed on `docs/results-launch-readiness`. The results feature was also **wired end-to-end** (CSV import → review → finalize → public page → national rankings → correction round-trip) and verified in a real browser against a local Postgres with the provided test accounts.
+
+| Status | Findings |
+| --- | --- |
+| ✅ FIXED | RES-1, RES-2, RES-3, RES-4, RES-5, RES-6, RES-7, RES-8, RES-9, RES-10, RES-11, RES-12, RES-13, RES-14, RES-15, RES-16, RES-17, RES-18, RES-19, RES-20, RES-22, RES-23, RES-25 |
+| 🟡 PARTIAL | RES-21 (action error **codes** returned + prefixes localized; mapping every domain error string to a localized message deferred), RES-24 (rankings source cap raised/logged; full pagination of unbounded scans deferred) |
+
+Gates run green locally: `lint` (0 errors), `type-check`, `validate:locales`, `test` (**1557** app/server + **97** DB), `test:payments-contracts` (**29**). `test:e2e:isolated` was not run here (requires the full isolated build); the equivalent flows were browser-verified live instead.
 
 ---
 
 ## Priority findings
 
 ### RES-1 — Sibling correction publications silently revert each other
+
+- **Status:** ✅ FIXED — publication now re-anchors to the active version and matches the target by identity; blocks with `CORRECTION_SOURCE_CHANGED` when ambiguous. Browser-verified (correction round-trip produced corrected v2 without reverting siblings).
 
 - **Severity:** High (published results regress) · **Confidence:** CONFIRMED (path verified; trigger = two corrections on the same source version, the normal post-race pattern)
 - **Where:** `lib/events/results/actions/corrections.ts:383-416` (source version = `request.resultVersionId`), `:506-556` (entries copied from that source)
@@ -21,6 +36,8 @@
 
 ### RES-2 — Placements are computed across all distances of an edition
 
+- **Status:** ✅ FIXED — `deriveResultPlacements` partitions by `distanceId`; public page groups by distance. Browser-verified: 10K winner is place 1, not behind 21K finishers.
+
 - **Severity:** High (wrong numbers on the public trust surface) · **Confidence:** CONFIRMED
 - **Where:** `lib/events/results/derivation/placement.ts:140-226` (`RankingEntry` has no `distanceId`; one global sort, one counter per gender/age-group); callers select no distance: `lib/events/results/actions.ts:144-163`
 - **What:** `deriveResultPlacements` ranks every entry in a result version in a single pool. A result version spans the whole edition (all distances), so `overallPlace`, `genderPlace`, and `ageGroupPlace` are computed across 5K, 10K, and marathon finishers together, ordered by raw finish time.
@@ -30,6 +47,8 @@
 
 ### RES-3 — National ranking is a cross-discipline, cross-distance raw-time sort; the ruleset is never applied
 
+- **Status:** ✅ FIXED — snapshot rows are ranked per-discipline and the ruleset `rulesDefinitionJson` drives partitioning/eligibility (`resolveRankingRules`). Baseline ruleset auto-bootstrapped. Browser-verified.
+
 - **Severity:** High (rankings are semantically meaningless; "reproducibility" UI is decorative) · **Confidence:** CONFIRMED — *currently unreachable (no compute driver, see launch-readiness §6.4); blocks wiring rankings*
 - **Where:** `lib/events/results/rankings.ts:329-357` (`buildRankingSnapshotRowsFromEntries` — one global sort by `finishTimeMillis`, rank = index+1), `:399-419` (all `finish` entries of every included version pooled); ruleset content never read — `rulesDefinitionJson` has zero consumers outside the rulesets module itself (repo grep, see appendix)
 - **What:** A snapshot ranks a 16-minute 5K trail run above every marathon and every cycling result. There is no per-discipline partitioning, no distance normalization, no per-runner aggregation (the same runner appears once per race), and `rankingRulesets.rulesDefinitionJson` never influences computation — the public "Rules version {tag}" / "Open ranking rules" copy (`messages/pages/rankings/*.json`) points at a ruleset that is only a foreign key.
@@ -38,12 +57,16 @@
 
 ### RES-4 — Ranking filters are applied after the row limit: filtered leaderboards silently lose everyone ranked below the global cut
 
+- **Status:** ✅ FIXED — discipline/gender/age-group filters are applied in SQL before the limit; facets come from a separate distinct query so dropdowns stay complete.
+
 - **Severity:** High (a women's/age-group leaderboard drops most of its members) · **Confidence:** CONFIRMED — *unreachable until rankings have data*
 - **Where:** `lib/events/results/rankings.ts:605-621` (fetch first `limit` (default 300) rows by global rank), `:655-662` (discipline/gender/age-group filters applied in memory afterwards)
 - **Failure scenario:** Snapshot has 2,000 rows. Filter `gender=female` returns only the women who happen to sit inside the top 300 *global* ranks — everyone else is silently absent, with no indication. Rank numbers shown are the global ones (gaps like 3, 17, 41).
 - **Fix direction:** Push filters into the SQL query before `limit`, and decide whether filtered views should re-rank (1..n within filter) or keep global ranks with an explanation.
 
 ### RES-5 — Approved/auto-linked claims never write `resultEntries.userId`, so linkage doesn't propagate anywhere that reads it
+
+- **Status:** ✅ FIXED — approving a claim writes `resultEntries.userId` transactionally (CAS); revoke clears it.
 
 - **Severity:** Medium-high (claims don't produce the ownership they promise) · **Confidence:** CONFIRMED — *claims flow itself is unwired (no UI), see launch-readiness §6.2*
 - **Where:** auto-link insert `lib/events/results/actions/claims.ts:545-555`, rejected-claim reopen `:459-478`, organizer approve `:669-688` — none touch `resultEntries`; corrections eligibility reads only `entry.userId` (`lib/events/results/actions/corrections.ts:177`); correction publication copies `entry.userId` (`corrections.ts:528`), not claim links
@@ -52,12 +75,16 @@
 
 ### RES-6 — Claim auto-link is reachable with public data, and a wrong link is permanent (no revocation path)
 
+- **Status:** ✅ FIXED — auto-link removed (all claims go to organizer review, rejection can't be bypassed by re-claim); added `revokeRunnerResultClaim`. NOTE: claims UI remains intentionally unwired (see launch-readiness §6.2) — the domain is now safe if/when it ships.
+
 - **Severity:** High if claims ship as-is (identity capture on a public trust surface) · **Confidence:** behavior CONFIRMED; auto-link is intended design (fixtures in `__tests__/lib/events/results/identity-model.server.test.ts` exercise ≥0.8 auto-link) — the *threshold/signals* need a product decision; the *missing revocation* is a defect regardless
 - **Where:** scoring `lib/events/results/actions/claims.ts:151-260` (exact normalized name = 0.62, gender match = +0.18 → 0.80 ≥ `DEFAULT_AUTO_LINK_CLAIM_CONFIDENCE`), auto-link `:454-455`; review only from `pending_review` (`:661-663`); no unlink/revoke function exists anywhere in the domain; official entries can't be re-linked (`lib/events/results/actions.ts:518-524` blocks link mutations on non-draft versions)
 - **Failure scenario:** Public results pages display full names (baseline identity policy). Anyone sets their profile name to a displayed name and gender to match → `confirmRunnerResultClaim` auto-links instantly, **no organizer review**. The real runner now hits `CLAIM_ALREADY_LINKED_ERROR`; the organizer has no tool to undo (review requires `pending_review`); the entry is on an official version so `linkDraftResultEntryToUser` refuses. Recovery = manual DB surgery. Additionally, a *rejected* claim can be re-submitted and auto-link past the organizer's explicit rejection (`:458-478` reopen path re-runs auto-link).
 - **Fix direction:** Before wiring any claim UI: require organizer review for all claims (drop auto-link) or add a non-public verification signal; add an unlink/revoke transition (linked → rejected/revoked) with audit; make reopen-after-rejection always `pending_review`.
 
 ### RES-7 — Claim candidates come from *all* official/corrected versions, not the active pointer
+
+- **Status:** ✅ FIXED — candidate queries filter to each edition's active-pointer version via `listActiveOfficialVersionPointers`.
 
 - **Severity:** Medium (duplicate/stale candidates after any correction) · **Confidence:** CONFIRMED — *unwired flow*
 - **Where:** `lib/events/results/queries.ts:839` and `:911` (`inArray(resultVersions.status, ['official','corrected'])` with no per-edition latest-version filter — compare `listActiveOfficialVersionPointers` `:562-591` which the public search correctly uses)
@@ -66,12 +93,16 @@
 
 ### RES-8 — Organizer capture/import lanes render fabricated runners when no draft exists
 
+- **Status:** ✅ FIXED — fabricated fallback rows removed; empty drafts render an honest empty state. Browser-verified on the import lane.
+
 - **Severity:** Medium (production UI shows fake data as real rows) · **Confidence:** CONFIRMED — *wired and reachable today; every event shows this, since no UI can create a draft*
 - **Where:** `lib/events/results/workspace.ts:191-304` (`getFallbackRowsForLane` — hardcoded "Ana Rivera", "Carlos Mendoza", "Lucia Torres", "Mateo Silva", "Elena Cruz", "Diego Lara" with fake bibs, times, conflict states); enabled for capture/import lanes at `app/[locale]/(protected)/dashboard/events/[eventId]/results/_results-workspace.ts:101-104` (`allowFallback: lane !== 'review'`)
 - **What:** With no draft version (the default state of every edition in production), `/dashboard/events/[id]/results/capture` and `/import` show a populated results table of invented people with localized detail strings like "Duplicate bib conflict flagged for review". Nothing labels them as sample data.
 - **Fix direction:** Delete the fallback rows (render the honest empty state) or clearly frame them as an onboarding example outside the real table.
 
 ### RES-9 — Organizer rail reports `draft` lifecycle after a correction is published
+
+- **Status:** ✅ FIXED — the organizer rail treats `corrected` as official.
 
 - **Severity:** Medium-low (misleading state on wired UI) · **Confidence:** CONFIRMED
 - **Where:** `lib/events/results/workspace.ts:367-368` — `lifecycle = latestVersion?.status === 'official' ? 'official' : 'draft'`; the latest version after a correction has status `corrected`
@@ -80,12 +111,16 @@
 
 ### RES-10 — Unlisted editions are listed in the public results directory and search
 
+- **Status:** ✅ FIXED — directory + search are published-only; unlisted stays link-only (edition page still resolves unlisted by slug).
+
 - **Severity:** Medium (breaks "unlisted" semantics; inconsistent with events domain) · **Confidence:** CONFIRMED — *wired, public*
 - **Where:** `lib/events/results/queries.ts:620` (directory) and `:698` (search) accept `visibility IN ('published','unlisted')`; contrast the events domain, where listings are published-only (`lib/events/public/queries.ts:396`) and unlisted is reachable only by direct slug (`:151-152`); indexability policy also treats unlisted as noindex (`lib/events/results/public-official-results-indexability.ts:8`)
 - **Failure scenario:** An organizer sets an edition to `unlisted` expecting link-only access; its results (full runner names) appear in `/resultados` browse and name/bib search for everyone.
 - **Fix direction:** Listings/search filter to `published` only; keep `unlisted` working on the direct edition results URL (current `getPublicOfficialResultsPageData` behavior is correct).
 
 ### RES-11 — Finalization is non-atomic and always targets "the newest draft"; there is no way to discard a draft
+
+- **Status:** ✅ FIXED — finalize accepts an optional `resultVersionId`; the lifecycle UPDATE is CAS-guarded; placements+transition run in one transaction; added `discardResultDraftVersion`.
 
 - **Severity:** Medium (integrity + operational dead end) · **Confidence:** HIGH (structure confirmed; triggers = concurrency or a stray newer draft)
 - **Where:** `lib/events/results/actions/finalization.ts:49-56` (selects latest draft by edition, not a version id), `:75-113` (gate → placements → transition as separate commits); entry upsert checks status only at read time (`lib/events/results/actions.ts:340-354`) with the insert at `:466-473`; lifecycle transition has no status CAS in its `UPDATE ... WHERE` (`lib/events/results/lifecycle/state-machine.ts:87-96`); no delete/discard path exists for versions or entries anywhere in the domain (repo grep, see appendix)
@@ -97,12 +132,16 @@
 
 ### RES-12 — Public official results page truncates at 200 entries with no pagination or truncation notice
 
+- **Status:** ✅ FIXED — official page paginates by place (`?page=`) with a "Mostrando X–Y de Z" line and prev/next. Browser-verified.
+
 - **Severity:** Medium-high for launch traffic (finishers beyond 200 can't find themselves) · **Confidence:** CONFIRMED — *wired, public*
 - **Where:** `app/[locale]/(public)/results/[seriesSlug]/[editionSlug]/page.tsx:73` (no `entryLimit` passed → default 200), cap 500 at `lib/events/results/queries.ts:434-437`, `:526`; no pagination UI, no "showing X of Y" (verified across the page); search (`limit: 80`) and rankings (300) likewise have no paging affordance
 - **Failure scenario:** A 1,500-finisher race publishes. Places 201+ are simply absent from the canonical results page; a runner scrolling for their name concludes their result was lost (search still finds them, if they try it).
 - **Fix direction:** Server-driven pagination (by place) or per-distance tabs with paging; at minimum render an explicit "showing first N of M" with a search hint.
 
 ### RES-13 — Approved correction with an unusable patch is a terminal dead end; the patch is requester-shaped JSON reviewed as a raw dump
+
+- **Status:** ✅ FIXED — approve validates the patch (blocks un-publishable approvals); an approved-but-unpublished request can now be rejected (dead-end escape).
 
 - **Severity:** Medium (payments BUG-4 class: status with no exit) · **Confidence:** CONFIRMED
 - **Where:** review transitions only `pending → approved|rejected` (`lib/events/results/actions/corrections.ts:284-309`); publication requires a schema-valid patch in `requestContext` (`:374-381`, schema `:60-72`) and there is no un-approve/cancel transition; `requestContext` is arbitrary requester JSON (`lib/events/results/schemas.ts:81-85`); the reviewer UI renders it only as `JSON.stringify` (`components/results/organizer/correction-review-queue.tsx:219-227`) with entry finish time shown as raw milliseconds (`:198-202`)
@@ -113,12 +152,16 @@
 
 ### RES-14 — Per-entry placement rewrite makes sequential ingestion O(n²)
 
+- **Status:** ✅ FIXED — bulk `importResultDraftRows` inserts rows and derives placements once per version in a transaction (no per-row O(n²) rewrite).
+
 - **Severity:** Medium (scale; blocks the row-by-row ingestion model at real race sizes) · **Confidence:** CONFIRMED — *matters as soon as ingestion is wired*
 - **Where:** `lib/events/results/actions.ts:441` and `:475` — every single `upsertDraftResultEntry` call re-reads **all** version entries and issues per-row UPDATEs for changed placements (`:144-215`, no transaction, `mutationClient` defaults to `db`); correction publication likewise copies entries row-by-row inside its transaction (`corrections.ts:506-556`)
 - **Failure scenario:** Importing 3,000 finishers via the intended per-row action ≈ 3,000 reads of up-to-3,000 rows plus up to ~4.5M placement UPDATE statements against Neon. Also a mid-stream crash leaves placements half-updated (they're recomputed at finalization, which bounds the damage).
 - **Fix direction:** Add a bulk ingestion action (insert N rows + derive placements once, in a transaction); defer placement persistence to finalize/preview instead of per-upsert.
 
 ### RES-15 — Bib uniqueness is per version, not per distance; name uniqueness rejects homonyms without bibs
+
+- **Status:** ✅ FIXED — bib uniqueness is now per `(version, distance)` (two partial indexes cover the null-distance case); the name-only unique index was dropped. Browser-verified: bibs 101/102 reused across 10K and 21K without conflict.
 
 - **Severity:** Medium (real Mexican race data will hit both) · **Confidence:** CONFIRMED — *bites when ingestion is wired*
 - **Where:** `db/schema.ts:1076-1078` (`result_entries_version_bib_unique_idx` on `(resultVersionId, bibNumber)`) and `:1079-1081` (`(resultVersionId, runnerFullName)` where bib is null)
@@ -129,12 +172,16 @@
 
 ### RES-16 — Import parsing coerces unknown statuses to `finish`, only speaks English status vocabulary, and mis-parses plain-number times
 
+- **Status:** ✅ FIXED — unknown status is a blocker, Spanish status vocabulary accepted, bare numeric times parse as seconds, duplicate bibs are blockers, CSV parser detects `;` delimiters and falls back to Windows-1252. Browser-verified with accented Mexican names.
+
 - **Severity:** Medium (data integrity at ingestion; Spanish-first platform) · **Confidence:** CONFIRMED — *client-side today; becomes the ingestion gate when wired*
 - **Where:** `lib/events/results/ingestion/validation.ts:138-150` (unknown status → warning + treated as `finish`), `:37-48` (recognizes only `finish/finished/dnf/dns/dq/disqualified` — no `descalificado`, `no terminó`, `DSQ`, `ret`), `:78-82` (a bare integer parses as **milliseconds**, so a seconds column like `5400` becomes 5.4s), duplicate bibs only a warning (`:165-180`) though the DB constraint is fatal (RES-15); no encoding handling — `csv-parser.ts:164-184` decodes UTF-8 only, so Windows-1252 exports (Excel es-MX default) mojibake accented names ("José" → "JosÃ©"); the shared CSV parser is comma-delimiter-only (`lib/events/group-registrations/csv.ts`)
 - **Failure scenario:** A Spanish timing export marks a cheat "DESCALIFICADO"; the row imports as a *finisher* with their time and wins their category. Separately, a seconds-based time column imports as milliseconds and every runner "finishes" in under a minute (blockers won't fire — the values are valid).
 - **Fix direction:** Unknown status must be a blocker (or an explicit mapping step); add Spanish/common timing vocabularies; treat bare integers as seconds (or require explicit unit choice in mapping); make duplicate bibs a blocker while the DB constraint stands; detect/allow choosing file encoding; support `;` delimiters.
 
 ### RES-17 — Exact-tie finishers get different places, broken by alphabet
+
+- **Status:** ✅ FIXED — exact-time ties share a rank (competition "1224" ranking) in both placements and rankings; the `(snapshotId, rank)` unique index was dropped. Browser-verified (two 1:41:05 finishers both place 3, next is 5).
 
 - **Severity:** Low-medium (product correctness for dead heats) · **Confidence:** CONFIRMED
 - **Where:** `lib/events/results/derivation/placement.ts:182-194` and `lib/events/results/rankings.ts:332-344` (tie-break by normalized name → bib → id assigns distinct sequential places); `db/schema.ts:1351-1353` makes shared ranks impossible in snapshots (`(snapshotId, rank)` unique)
@@ -143,6 +190,8 @@
 
 ### RES-18 — Rankings page bypasses the public identity policy; snapshots freeze names at compute time
 
+- **Status:** ✅ FIXED — the rankings page applies the public identity policy (parity with results pages).
+
 - **Severity:** Medium (policy enforcement hole) · **Confidence:** CONFIRMED — *renders once rankings have data*
 - **Where:** `app/[locale]/(public)/rankings/page.tsx:360-361` renders `row.runnerFullName`/`bibNumber` directly — no `resolvePublicResultIdentityDisplay` (results pages apply it: `app/[locale]/(public)/results/page.tsx:221-226`, `[editionSlug]/page.tsx:285-291`); snapshot rows denormalize names/gender/age at compute time (`rankings.ts:446-465`)
 - **What:** If `RESULTS_PUBLIC_IDENTITY_POLICY_MODE` is ever set to `initials_with_bib`/`bib_only`, results pages mask names but the rankings page keeps publishing full names; corrections to a runner's name also don't reach promoted snapshots until a recompute (which currently has no trigger — launch-readiness §6.4).
@@ -150,12 +199,16 @@
 
 ### RES-19 — Snapshot promotion is non-transactional and `isCurrent` has no uniqueness
 
+- **Status:** ✅ FIXED — demote+promote run in one transaction, backed by a partial unique index on the current snapshot per scope/org; never-promoted snapshots are excluded from public fallback/history.
+
 - **Severity:** Medium-low · **Confidence:** CONFIRMED (schema + code); trigger = concurrent/failed promotions — *unwired today*
 - **Where:** `lib/events/results/ranking-publication.ts:48-74` (demote-all then promote as two commits); `db/schema.ts:1309-1311` (index on `isCurrent=true` is not unique)
 - **What:** A crash between demote and promote leaves no current snapshot (read side falls back to newest by `promotedAt` — `rankings.ts:585-588` — so the page still renders); interleaved concurrent promotions can leave **two** current snapshots. `getPublicRankingLeaderboard` also falls back to `snapshotHistory[0]` when nothing is current, which can surface a **never-promoted** compute artifact, and the history dropdown exposes unpromoted snapshots (`:575-583`).
 - **Fix direction:** Single transaction for demote+promote; partial unique index on `(scope, organizationId) WHERE is_current`; exclude never-promoted snapshots from public fallback/history.
 
 ### RES-20 — `getPublicRankingLeaderboard` swallows all errors into the empty state
+
+- **Status:** ✅ FIXED — the leaderboard no longer swallows errors into the empty state; failures surface to a new `rankings/error.tsx` boundary. The page is now `use cache: remote` with the rankings tags attached.
 
 - **Severity:** Medium-low (operability/trust) · **Confidence:** CONFIRMED
 - **Where:** `lib/events/results/rankings.ts:693-710` — any thrown error (DB down, bad snapshot) logs to console and returns `state: 'empty'`
@@ -168,25 +221,35 @@
 
 ### RES-21 — Domain error strings and claim guidance are hardcoded English on a Spanish-first platform
 
+- **Status:** 🟡 PARTIAL — wired mutations return structured `code`s and localized failure prefixes; a full domain-error-code → localized-message map is deferred (English detail strings can still appear appended). Tracked as fast-follow.
+
 - **Confidence:** CONFIRMED · **Severity:** Low-medium (UX/i18n parity on the mutation path).
 - All `ActionResult.error` strings in `lib/events/results/shared/errors.ts` are English and render verbatim in the UI (e.g. `correction-review-queue.tsx:114` shows `failurePrefix + result.error` — Spanish prefix, English error). `CLAIM_PENDING_REVIEW_STEPS` and `DEFAULT_CLAIM_EMPTY_STATE` (`errors.ts:44-60`) are English response payloads intended for athlete-facing UI. `pnpm validate:locales` can't see these. Map domain error *codes* to localized messages at the UI layer.
 
 ### RES-22 — Rankings cache tags are revalidated but never attached; search tag attached but never revalidated
+
+- **Status:** ✅ FIXED — rankings tags are now attached (via the `use cache` scope in RES-20) so the existing `revalidateTag` calls target real cache entries. (Search-tag reliance on the 60s expiry is retained by design.)
 
 - **Confidence:** CONFIRMED · **Severity:** Low today (bounded staleness).
 - `rankingsNationalTag`/`rankingsOrganizerTag`/`rankingsRulesetCurrentTag` are revalidated (`shared/cache.ts:18-21`, `ranking-publication.ts:76-81`) but no `use cache` scope ever attaches them (the leaderboard is uncached) — dead invalidation. Conversely `resultsSearchTag()` is attached (`queries.ts:603`, `:680`) but `revalidateResultsPublicationArtifacts` never revalidates it, so the public directory/search rely solely on the 60s/30s `expire` to pick up newly published or corrected results. Bounded and acceptable pre-launch; align when touching caching.
 
 ### RES-23 — Directory/search/rankings dates ignore the edition timezone
 
+- **Status:** ✅ FIXED — directory/search and rankings dates format with `DEFAULT_TIMEZONE` (America/Mexico_City).
+
 - **Confidence:** CONFIRMED · **Severity:** Low (date can shift ±1 day).
 - The edition results page formats with `edition.timezone` (`[editionSlug]/page.tsx:37-49`, `:77-80`), but `/results` search+directory (`results/page.tsx:112-118`) and `/rankings` (`rankings/page.tsx:62-65`) format without a timezone — on UTC servers an evening `startsAt` renders as the next day. Pass `edition.timezone` (or `DEFAULT_TIMEZONE`).
 
 ### RES-24 — Unbounded/arbitrarily-capped scans on public read paths
 
+- **Status:** 🟡 PARTIAL — the 1000-version rankings source cap is retained but its behavior is documented; full pagination/aggregation of the unbounded pointer scans is deferred (fine at launch scale).
+
 - **Confidence:** CONFIRMED · **Severity:** Low at launch scale, silent at growth.
 - `listActiveOfficialVersionPointers()` loads **every** official/corrected version repo-wide with no limit on each search/directory cache miss (`queries.ts:562-591`). `listRankingSourceVersionCandidates(limit = 1000)` silently drops versions beyond 1000, ordered by `editionId` (UUID — effectively arbitrary) (`rankings.ts:359-386`) — at ~1000 lifetime versions, national rankings silently exclude races. The sitemap runs one `getPublicOfficialResultsPageData` per published event (`app/sitemap.ts:117-158`). Fine now; all three need pagination/aggregation before scale.
 
 ### RES-25 — Correction/queue polish items
+
+- **Status:** ✅ FIXED — duplicate open correction requests per (entry, requester) are blocked; correction metrics now split approved-published vs approved-awaiting-publication; the review queue shows a publish action and publication state.
 
 - **Confidence:** CONFIRMED · **Severity:** Low.
 - Duplicate correction requests: nothing dedupes an open `pending` request per (entry, requester) — a user can file unlimited identical requests (`corrections.ts:215-226`).

@@ -31,6 +31,22 @@ export const CORRECTION_PUBLICATION_PATCH_REQUIRED_ERROR =
   'Correction request is missing a valid correction patch payload.';
 export const CORRECTION_PUBLICATION_FAILED_ERROR =
   'Correction publication failed. Request remains approved for retry.';
+export const CORRECTION_REQUEST_DUPLICATE_ERROR =
+  'You already have a pending correction request for this result.';
+export const CORRECTION_SOURCE_CHANGED_ERROR =
+  'The result changed since this correction was requested. Review the current version and file the correction again.';
+export const CORRECTION_PATCH_INVALID_ERROR =
+  'The correction changes are missing or invalid. Add at least one valid field change before approving.';
+export const CLAIM_LINK_CONFLICT_ERROR =
+  'This result is already linked to another account.';
+export const CLAIM_NOT_REVOCABLE_ERROR = 'Only a linked claim can be revoked.';
+export const RESULT_DRAFT_NOT_FOUND_ERROR = 'Draft result version not found.';
+export const RESULT_DRAFT_NOT_DISCARDABLE_ERROR =
+  'Only draft result versions can be discarded.';
+export const IMPORT_NO_ROWS_ERROR = 'No importable rows were provided.';
+export const IMPORT_TOO_MANY_ROWS_ERROR = 'This import exceeds the maximum number of rows.';
+export const IMPORT_BLOCKED_ERROR =
+  'The import has blocking issues. Resolve them before importing.';
 export const OFFICIAL_IMMUTABLE_MUTATION_ERROR =
   'Official versions are immutable. Publish a correction version instead of editing this version in place.';
 export const OFFICIAL_IMMUTABLE_LINK_ERROR =

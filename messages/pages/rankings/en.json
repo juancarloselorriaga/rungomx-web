@@ -77,5 +77,10 @@
   },
   "ageGroup": {
     "option": "{ageGroup}"
+  },
+  "error": {
+    "title": "We couldn’t load the rankings",
+    "description": "Something went wrong loading the leaderboard. This is a temporary problem, not an empty ranking — please try again.",
+    "retry": "Try again"
   }
 }

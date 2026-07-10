@@ -37,6 +37,8 @@ export function getAllowedResultVersionLifecycleTransitions(
   return ALLOWED_TRANSITIONS[status];
 }
 
+type ResultLifecycleClient = Pick<typeof db, 'query' | 'update'>;
+
 export async function transitionResultVersionLifecycle(params: {
   resultVersionId: string;
   toStatus: Extract<ResultVersionStatus, 'official' | 'corrected'>;
@@ -44,8 +46,10 @@ export async function transitionResultVersionLifecycle(params: {
   finalizedAt?: Date;
   transitionReason?: string;
   provenancePatch?: Record<string, unknown>;
+  client?: ResultLifecycleClient;
 }): Promise<ActionResult<ResultVersionRecord>> {
-  const version = await db.query.resultVersions.findFirst({
+  const client = params.client ?? db;
+  const version = await client.query.resultVersions.findFirst({
     where: and(
       eq(resultVersions.id, params.resultVersionId),
       isNull(resultVersions.deletedAt),
@@ -68,6 +72,7 @@ export async function transitionResultVersionLifecycle(params: {
     };
   }
 
+  const fromStatus = version.status;
   const now = params.finalizedAt ?? new Date();
   const provenancePatch = isRecord(params.provenancePatch)
     ? params.provenancePatch
@@ -76,7 +81,7 @@ export async function transitionResultVersionLifecycle(params: {
     ...(version.provenanceJson ?? {}),
     ...provenancePatch,
     lifecycle: {
-      from: version.status,
+      from: fromStatus,
       to: params.toStatus,
       finalizedByUserId: params.finalizedByUserId,
       finalizedAt: now.toISOString(),
@@ -84,7 +89,9 @@ export async function transitionResultVersionLifecycle(params: {
     },
   };
 
-  const [updated] = await db
+  // Compare-and-set on the source status so a concurrent finalize/correction can't
+  // double-transition the same version (RES-11).
+  const [updated] = await client
     .update(resultVersions)
     .set({
       status: params.toStatus,
@@ -92,8 +99,22 @@ export async function transitionResultVersionLifecycle(params: {
       finalizedAt: now,
       provenanceJson: nextProvenance,
     })
-    .where(eq(resultVersions.id, version.id))
+    .where(
+      and(
+        eq(resultVersions.id, version.id),
+        eq(resultVersions.status, fromStatus),
+        isNull(resultVersions.deletedAt),
+      ),
+    )
     .returning();
+
+  if (!updated) {
+    return {
+      ok: false,
+      code: 'INVALID_TRANSITION',
+      error: `Invalid lifecycle transition: ${fromStatus} -> ${params.toStatus}`,
+    };
+  }
 
   return {
     ok: true,

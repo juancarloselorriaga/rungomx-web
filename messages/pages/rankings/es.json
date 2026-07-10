@@ -77,5 +77,10 @@
   },
   "ageGroup": {
     "option": "{ageGroup}"
+  },
+  "error": {
+    "title": "No pudimos cargar las clasificaciones",
+    "description": "Ocurrió un problema al cargar la tabla. Es un problema temporal, no una clasificación vacía; inténtalo de nuevo.",
+    "retry": "Reintentar"
   }
 }

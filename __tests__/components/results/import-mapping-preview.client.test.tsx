@@ -1,4 +1,12 @@
 import { ImportMappingPreview } from '@/components/results/organizer/import-mapping-preview';
+
+jest.mock('@/i18n/navigation', () => ({
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+}));
+
+jest.mock('@/lib/events/results/actions', () => ({
+  importResultDraftRows: jest.fn(async () => ({ ok: true, data: { importedRowCount: 0 } })),
+}));
 import {
   buildResultImportHeaderSignature,
   createEmptyResultImportFieldMapping,
@@ -76,10 +84,21 @@ const labels = {
     ageGroupPlace: 'Age-group place',
     distanceLabel: 'Distance label',
   },
+  import: {
+    sectionTitle: 'Import to draft',
+    sectionDescription: 'Import mapped rows.',
+    distanceLabel: 'Distance',
+    distanceAllOption: 'No specific distance',
+    submitAction: 'Import to draft',
+    submitPending: 'Importing',
+    blockedByIssues: 'Resolve blockers first.',
+    successMessage: 'Imported.',
+    failurePrefix: 'Import failed:',
+  },
 } as const;
 
 function renderComponent() {
-  return render(<ImportMappingPreview storageKey={storageKey} labels={labels} />);
+  return render(<ImportMappingPreview storageKey={storageKey} eventId="00000000-0000-0000-0000-000000000000" distances={[]} labels={labels} />);
 }
 
 describe('ImportMappingPreview', () => {

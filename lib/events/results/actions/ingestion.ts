@@ -2,9 +2,16 @@ import { and, eq, isNull } from 'drizzle-orm';
 
 import type { AuthenticatedContext } from '@/lib/auth/guards';
 import { db } from '@/db';
-import { eventEditions, resultIngestionSessions, resultVersions } from '@/db/schema';
+import {
+  eventEditions,
+  resultEntries,
+  resultIngestionSessions,
+  resultVersions,
+} from '@/db/schema';
 import {
   AUDIT_LOG_FAILURE_PREFIX,
+  RESULT_DRAFT_NOT_DISCARDABLE_ERROR,
+  RESULT_DRAFT_NOT_FOUND_ERROR,
   RESULT_INGESTION_SESSIONS_VERSION_UNIQUE_IDX,
   isUniqueConstraintViolation,
 } from '@/lib/events/results/shared/errors';
@@ -12,8 +19,10 @@ import { createResultsIngestionInitializeAudit, throwIfAuditLogFailed } from '@/
 import { toResultVersionRecord } from '@/lib/events/results/shared/mappers';
 import type {
   CreateResultDraftVersionInput,
+  DiscardResultDraftVersionInput,
   InitializeResultIngestionSessionInput,
 } from '@/lib/events/results/schemas';
+import { revalidateResultsPublicationArtifacts } from '@/lib/events/results/shared/cache';
 import type {
   ResultIngestionSessionInitResponse,
   ResultIngestionSessionRecord,
@@ -287,4 +296,63 @@ export async function initializeResultIngestionSessionWorkflow(params: {
     error: 'Could not allocate a draft version number. Please retry.',
     code: 'CONFLICT',
   };
+}
+
+export async function discardResultDraftVersionWorkflow(params: {
+  authContext: AuthenticatedContext;
+  input: DiscardResultDraftVersionInput;
+  assertCanWriteResultsForEdition: AssertCanWriteResultsForEdition;
+}): Promise<ActionResult<{ resultVersionId: string }>> {
+  const version = await db.query.resultVersions.findFirst({
+    where: and(
+      eq(resultVersions.id, params.input.resultVersionId),
+      isNull(resultVersions.deletedAt),
+    ),
+    columns: { id: true, editionId: true, status: true },
+  });
+
+  if (!version) {
+    return { ok: false, error: RESULT_DRAFT_NOT_FOUND_ERROR, code: 'NOT_FOUND' };
+  }
+
+  const canWrite = await params.assertCanWriteResultsForEdition(
+    params.authContext.user.id,
+    version.editionId,
+    params.authContext.permissions.canManageEvents,
+  );
+  if (!canWrite) {
+    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  }
+
+  // Only unpublished drafts can be discarded — official/corrected versions are immutable.
+  if (version.status !== 'draft') {
+    return { ok: false, error: RESULT_DRAFT_NOT_DISCARDABLE_ERROR, code: 'INVALID_STATE' };
+  }
+
+  const discardedAt = new Date();
+  await db.transaction(async (tx) => {
+    await tx
+      .update(resultEntries)
+      .set({ deletedAt: discardedAt })
+      .where(
+        and(eq(resultEntries.resultVersionId, version.id), isNull(resultEntries.deletedAt)),
+      );
+    await tx
+      .update(resultIngestionSessions)
+      .set({ deletedAt: discardedAt })
+      .where(
+        and(
+          eq(resultIngestionSessions.resultVersionId, version.id),
+          isNull(resultIngestionSessions.deletedAt),
+        ),
+      );
+    await tx
+      .update(resultVersions)
+      .set({ deletedAt: discardedAt })
+      .where(and(eq(resultVersions.id, version.id), eq(resultVersions.status, 'draft')));
+  });
+
+  await revalidateResultsPublicationArtifacts({ editionId: version.editionId });
+
+  return { ok: true, data: { resultVersionId: version.id } };
 }

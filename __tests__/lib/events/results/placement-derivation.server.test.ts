@@ -58,9 +58,11 @@ describe('deriveResultPlacements', () => {
       genderCategoryKey: 'female',
       ageGroupCategoryKey: '35-44',
     });
+    // entry-a and entry-d share 1000ms, so competition ("1224") ranking gives them the
+    // same overall rank (2) and the same female-category rank (1) — RES-17.
     expect(derived.byEntryId['entry-a']).toMatchObject({
-      overallPlace: 3,
-      genderPlace: 2,
+      overallPlace: 2,
+      genderPlace: 1,
       ageGroupPlace: 2,
       genderCategoryKey: 'female',
       ageGroupCategoryKey: '25-34',

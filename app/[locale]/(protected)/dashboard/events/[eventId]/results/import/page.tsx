@@ -1,5 +1,6 @@
 import { ImportMappingPreview } from '@/components/results/organizer/import-mapping-preview';
 import { OrganizerResultsLane } from '@/components/results/organizer/organizer-results-lane';
+import { listEditionDistanceOptions } from '@/lib/events/results/queries';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
 import type { Metadata } from 'next';
@@ -25,7 +26,10 @@ export default async function ResultsImportPage({ params }: ResultsImportPagePro
   await configPageLocale(params, { pathname: '/dashboard/events/[eventId]/results/import' });
   const t = await getTranslations('pages.dashboardEvents.resultsWorkspace');
   const importEyebrow = t('lanes.import.eyebrow' as never);
-  const pageData = await getResultsWorkspacePageData(eventId, locale, 'import');
+  const [pageData, distanceOptions] = await Promise.all([
+    getResultsWorkspacePageData(eventId, locale, 'import'),
+    listEditionDistanceOptions(eventId),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -124,7 +128,20 @@ export default async function ResultsImportPage({ params }: ResultsImportPagePro
             ageGroupPlace: t('importMapping.canonicalFields.ageGroupPlace'),
             distanceLabel: t('importMapping.canonicalFields.distanceLabel'),
           },
+          import: {
+            sectionTitle: t('importMapping.import.sectionTitle'),
+            sectionDescription: t('importMapping.import.sectionDescription'),
+            distanceLabel: t('importMapping.import.distanceLabel'),
+            distanceAllOption: t('importMapping.import.distanceAllOption'),
+            submitAction: t('importMapping.import.submitAction'),
+            submitPending: t('importMapping.import.submitPending'),
+            blockedByIssues: t('importMapping.import.blockedByIssues'),
+            successMessage: t('importMapping.import.successMessage'),
+            failurePrefix: t('importMapping.import.failurePrefix'),
+          },
         }}
+        eventId={eventId}
+        distances={distanceOptions}
       />
 
       <OrganizerResultsLane

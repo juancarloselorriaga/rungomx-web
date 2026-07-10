@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, or } from 'drizzle-orm';
 
 import type { AuthenticatedContext } from '@/lib/auth/guards';
 import { db } from '@/db';
@@ -8,6 +8,7 @@ import {
   CLAIM_LINKED_MESSAGE,
   CLAIM_NOT_ELIGIBLE_ERROR,
   CLAIM_NOT_REVIEWABLE_ERROR,
+  CLAIM_NOT_REVOCABLE_ERROR,
   CLAIM_PENDING_REVIEW_MESSAGE,
   CLAIM_PENDING_REVIEW_STEPS,
   DEFAULT_CLAIM_EMPTY_STATE,
@@ -22,6 +23,7 @@ import type {
   ConfirmRunnerResultClaimInput,
   GetRunnerResultClaimCandidatesInput,
   ReviewRunnerResultClaimInput,
+  RevokeRunnerResultClaimInput,
 } from '@/lib/events/results/schemas';
 import type {
   ResultClaimCandidate,
@@ -34,8 +36,6 @@ import type { ActionResult } from '@/lib/events/shared';
 const CLAIM_CANDIDATE_QUERY_MULTIPLIER = 4;
 const CLAIM_CANDIDATE_QUERY_LIMIT_MAX = 80;
 const DEFAULT_SAFE_CLAIM_CONFIDENCE = 0.65;
-const DEFAULT_AUTO_LINK_CLAIM_CONFIDENCE = 0.8;
-const CLAIM_REVIEW_REASON_LOW_CONFIDENCE = 'low_confidence_match';
 
 type AssertCanWriteResultsForEdition = (
   userId: string,
@@ -451,8 +451,10 @@ export async function confirmRunnerResultClaimWorkflow(params: {
     dateOfBirth: params.authContext.profile?.dateOfBirth ?? null,
   });
 
-  const shouldAutoLink = scoredCandidate.confidenceScore >= DEFAULT_AUTO_LINK_CLAIM_CONFIDENCE;
-  const status = shouldAutoLink ? 'linked' : 'pending_review';
+  // RES-6: never auto-link. Every claim goes to organizer review, and no ownership is
+  // assigned until an organizer approves it. Confidence is still stored to help the
+  // organizer triage the queue, but it never grants a link on its own.
+  const status = 'pending_review' as const;
   const confidenceBasisPoints = toConfidenceBasisPoints(scoredCandidate.confidenceScore);
 
   if (existingClaim?.status === 'rejected') {
@@ -460,12 +462,12 @@ export async function confirmRunnerResultClaimWorkflow(params: {
       .update(resultEntryClaims)
       .set({
         requestedByUserId: params.authContext.user.id,
-        linkedUserId: shouldAutoLink ? params.authContext.user.id : null,
+        linkedUserId: null,
         reviewedByUserId: null,
         reviewedAt: null,
         status,
         confidenceBasisPoints,
-        reviewReason: shouldAutoLink ? null : CLAIM_REVIEW_REASON_LOW_CONFIDENCE,
+        reviewReason: null,
         reviewContext: {},
       })
       .where(
@@ -547,10 +549,10 @@ export async function confirmRunnerResultClaimWorkflow(params: {
       .values({
         resultEntryId: params.input.entryId,
         requestedByUserId: params.authContext.user.id,
-        linkedUserId: shouldAutoLink ? params.authContext.user.id : null,
+        linkedUserId: null,
         status,
         confidenceBasisPoints,
-        reviewReason: shouldAutoLink ? null : CLAIM_REVIEW_REASON_LOW_CONFIDENCE,
+        reviewReason: null,
       })
       .returning();
 
@@ -666,27 +668,61 @@ export async function reviewRunnerResultClaimWorkflow(params: {
   const now = new Date();
   const reviewContext = buildClaimReviewContext(params.input);
 
-  const [reviewedClaim] = await db
-    .update(resultEntryClaims)
-    .set({
-      status: nextStatus,
-      linkedUserId: nextStatus === 'linked' ? claim.requestedByUserId : null,
-      reviewedByUserId: params.authContext.user.id,
-      reviewedAt: now,
-      reviewReason:
-        params.input.reviewReason ??
-        (params.input.decision === 'reject' ? 'organizer_rejected' : null),
-      reviewContext,
-    })
-    .where(
-      and(
-        eq(resultEntryClaims.id, claim.id),
-        eq(resultEntryClaims.status, 'pending_review'),
-        isNull(resultEntryClaims.deletedAt),
-      ),
-    )
-    .returning();
+  // RES-5: approving a claim must propagate ownership to the result entry itself, so
+  // downstream consumers (correction eligibility, candidate exclusion, profile history)
+  // actually see the link. Do the claim transition and the entry write atomically, with a
+  // CAS on the entry's current owner so we never steal an entry already linked elsewhere.
+  const reviewResult = await db.transaction(async (tx) => {
+    if (nextStatus === 'linked') {
+      const [ownedEntry] = await tx
+        .update(resultEntries)
+        .set({ userId: claim.requestedByUserId })
+        .where(
+          and(
+            eq(resultEntries.id, claim.resultEntryId),
+            isNull(resultEntries.deletedAt),
+            or(
+              isNull(resultEntries.userId),
+              eq(resultEntries.userId, claim.requestedByUserId),
+            ),
+          ),
+        )
+        .returning({ id: resultEntries.id });
 
+      if (!ownedEntry) {
+        return { conflict: true as const };
+      }
+    }
+
+    const [updatedClaim] = await tx
+      .update(resultEntryClaims)
+      .set({
+        status: nextStatus,
+        linkedUserId: nextStatus === 'linked' ? claim.requestedByUserId : null,
+        reviewedByUserId: params.authContext.user.id,
+        reviewedAt: now,
+        reviewReason:
+          params.input.reviewReason ??
+          (params.input.decision === 'reject' ? 'organizer_rejected' : null),
+        reviewContext,
+      })
+      .where(
+        and(
+          eq(resultEntryClaims.id, claim.id),
+          eq(resultEntryClaims.status, 'pending_review'),
+          isNull(resultEntryClaims.deletedAt),
+        ),
+      )
+      .returning();
+
+    return { conflict: false as const, updatedClaim };
+  });
+
+  if (reviewResult.conflict) {
+    return { ok: false, error: CLAIM_ALREADY_LINKED_ERROR, code: 'CONFLICT' };
+  }
+
+  const reviewedClaim = reviewResult.updatedClaim;
   if (!reviewedClaim) {
     return { ok: false, error: CLAIM_NOT_REVIEWABLE_ERROR, code: 'INVALID_STATE' };
   }
@@ -702,6 +738,107 @@ export async function reviewRunnerResultClaimWorkflow(params: {
       reviewedAt: reviewedClaim.reviewedAt,
       reviewReason: reviewedClaim.reviewReason,
       reviewContext: reviewedClaim.reviewContext ?? {},
+    },
+  };
+}
+
+export async function revokeRunnerResultClaimWorkflow(params: {
+  authContext: AuthenticatedContext;
+  input: RevokeRunnerResultClaimInput;
+  assertCanWriteResultsForEdition: AssertCanWriteResultsForEdition;
+}): Promise<ActionResult<ResultClaimReviewResponse>> {
+  const claim = await db.query.resultEntryClaims.findFirst({
+    where: and(eq(resultEntryClaims.id, params.input.claimId), isNull(resultEntryClaims.deletedAt)),
+  });
+  if (!claim) {
+    return { ok: false, error: 'Claim not found', code: 'NOT_FOUND' };
+  }
+
+  const entry = await db.query.resultEntries.findFirst({
+    where: and(eq(resultEntries.id, claim.resultEntryId), isNull(resultEntries.deletedAt)),
+    columns: { id: true, resultVersionId: true, userId: true },
+  });
+  if (!entry) {
+    return { ok: false, error: CLAIM_NOT_REVOCABLE_ERROR, code: 'INVALID_STATE' };
+  }
+
+  const version = await db.query.resultVersions.findFirst({
+    where: and(eq(resultVersions.id, entry.resultVersionId), isNull(resultVersions.deletedAt)),
+    columns: { editionId: true },
+  });
+  if (!version) {
+    return { ok: false, error: CLAIM_NOT_REVOCABLE_ERROR, code: 'INVALID_STATE' };
+  }
+
+  const canWrite = await params.assertCanWriteResultsForEdition(
+    params.authContext.user.id,
+    version.editionId,
+    params.authContext.permissions.canManageEvents,
+  );
+  if (!canWrite) {
+    return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
+  }
+
+  // RES-6: a wrong link must be undoable. Revoking a linked claim marks it rejected and
+  // releases the entry's ownership so the entry can be claimed correctly afterwards.
+  if (claim.status !== 'linked') {
+    return { ok: false, error: CLAIM_NOT_REVOCABLE_ERROR, code: 'INVALID_STATE' };
+  }
+
+  const now = new Date();
+  const reviewResult = await db.transaction(async (tx) => {
+    const [revokedClaim] = await tx
+      .update(resultEntryClaims)
+      .set({
+        status: 'rejected',
+        linkedUserId: null,
+        reviewedByUserId: params.authContext.user.id,
+        reviewedAt: now,
+        reviewReason: params.input.reviewReason ?? 'organizer_revoked',
+      })
+      .where(
+        and(
+          eq(resultEntryClaims.id, claim.id),
+          eq(resultEntryClaims.status, 'linked'),
+          isNull(resultEntryClaims.deletedAt),
+        ),
+      )
+      .returning();
+
+    if (!revokedClaim) return { updatedClaim: undefined };
+
+    if (claim.linkedUserId) {
+      await tx
+        .update(resultEntries)
+        .set({ userId: null })
+        .where(
+          and(
+            eq(resultEntries.id, claim.resultEntryId),
+            eq(resultEntries.userId, claim.linkedUserId),
+            isNull(resultEntries.deletedAt),
+          ),
+        );
+    }
+
+    return { updatedClaim: revokedClaim };
+  });
+
+  const revokedClaim = reviewResult.updatedClaim;
+  if (!revokedClaim) {
+    return { ok: false, error: CLAIM_NOT_REVOCABLE_ERROR, code: 'INVALID_STATE' };
+  }
+
+  return {
+    ok: true,
+    data: {
+      claimId: revokedClaim.id,
+      entryId: revokedClaim.resultEntryId,
+      resultVersionId: entry.resultVersionId,
+      status: revokedClaim.status,
+      reviewedByUserId: revokedClaim.reviewedByUserId,
+      reviewedAt: revokedClaim.reviewedAt,
+      reviewReason: revokedClaim.reviewReason,
+      reviewContext: revokedClaim.reviewContext ?? {},
     },
   };
 }

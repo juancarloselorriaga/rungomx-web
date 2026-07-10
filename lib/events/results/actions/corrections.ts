@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 
 import type { AuthenticatedContext } from '@/lib/auth/guards';
@@ -12,11 +12,14 @@ import {
 } from '@/db/schema';
 import {
   AUDIT_LOG_FAILURE_PREFIX,
+  CORRECTION_PATCH_INVALID_ERROR,
   CORRECTION_PUBLICATION_FAILED_ERROR,
   CORRECTION_PUBLICATION_PATCH_REQUIRED_ERROR,
   CORRECTION_REQUEST_ALREADY_PUBLISHED_ERROR,
+  CORRECTION_REQUEST_DUPLICATE_ERROR,
   CORRECTION_REQUEST_NOT_PUBLISHABLE_ERROR,
   CORRECTION_REQUEST_NOT_REVIEWABLE_ERROR,
+  CORRECTION_SOURCE_CHANGED_ERROR,
   RESULT_CORRECTION_FORBIDDEN_ERROR,
   RESULT_CORRECTION_INVALID_STATE_ERROR,
   RESULT_CORRECTION_REVIEW_FORBIDDEN_ERROR,
@@ -30,6 +33,7 @@ import {
   throwIfAuditLogFailed,
 } from '@/lib/events/results/shared/audit';
 import { revalidateResultsPublicationArtifacts } from '@/lib/events/results/shared/cache';
+import { recomputeNationalRankingsOnPublish } from '@/lib/events/results/ranking-publication';
 import { toResultVersionRecord } from '@/lib/events/results/shared/mappers';
 import type {
   PublishApprovedCorrectionVersionInput,
@@ -212,6 +216,24 @@ export async function requestRunnerResultCorrectionWorkflow(params: {
     };
   }
 
+  // Prevent a single actor from stacking multiple open requests on the same entry.
+  const existingPending = await db.query.resultCorrectionRequests.findFirst({
+    where: and(
+      eq(resultCorrectionRequests.resultEntryId, entry.id),
+      eq(resultCorrectionRequests.requestedByUserId, params.authContext.user.id),
+      eq(resultCorrectionRequests.status, 'pending'),
+      isNull(resultCorrectionRequests.deletedAt),
+    ),
+    columns: { id: true },
+  });
+  if (existingPending) {
+    return {
+      ok: false,
+      error: CORRECTION_REQUEST_DUPLICATE_ERROR,
+      code: 'CONFLICT',
+    };
+  }
+
   const [createdRequest] = await db
     .insert(resultCorrectionRequests)
     .values({
@@ -281,8 +303,27 @@ export async function reviewResultCorrectionRequestWorkflow(params: {
     return { ok: false, error: RESULT_CORRECTION_REVIEW_FORBIDDEN_ERROR, code: 'FORBIDDEN' };
   }
 
-  if (request.status !== 'pending') {
+  // Approving requires a still-pending request; rejecting is also allowed from an
+  // already-approved-but-unpublished request so operators can retire a request whose
+  // patch can never publish (instead of it being stuck "approved" forever).
+  const alreadyPublished = getPublishedCorrectionResultVersionId(
+    isRecord(request.requestContext) ? request.requestContext : {},
+  );
+  const reviewableFromStatuses: (typeof request.status)[] =
+    params.input.decision === 'approve' ? ['pending'] : ['pending', 'approved'];
+  if (!reviewableFromStatuses.includes(request.status) || alreadyPublished) {
     return { ok: false, error: CORRECTION_REQUEST_NOT_REVIEWABLE_ERROR, code: 'INVALID_STATE' };
+  }
+
+  // A request can only be approved if it carries a valid, applicable patch — otherwise
+  // publication would be permanently impossible (a dead-end "approved" status).
+  if (params.input.decision === 'approve') {
+    const patch = readCorrectionPublicationPatch(
+      isRecord(request.requestContext) ? request.requestContext : {},
+    );
+    if (!patch) {
+      return { ok: false, error: CORRECTION_PATCH_INVALID_ERROR, code: 'VALIDATION_ERROR' };
+    }
   }
 
   const reviewedAt = new Date();
@@ -299,7 +340,7 @@ export async function reviewResultCorrectionRequestWorkflow(params: {
     .where(
       and(
         eq(resultCorrectionRequests.id, request.id),
-        eq(resultCorrectionRequests.status, 'pending'),
+        inArray(resultCorrectionRequests.status, reviewableFromStatuses),
         isNull(resultCorrectionRequests.deletedAt),
       ),
     )
@@ -380,10 +421,13 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
     };
   }
 
-  const sourceVersion = await db.query.resultVersions.findFirst({
+  // The version the request was filed against (immutable; used only to read the
+  // target entry's original identity for re-anchoring).
+  const requestedVersion = await db.query.resultVersions.findFirst({
     where: and(eq(resultVersions.id, request.resultVersionId), isNull(resultVersions.deletedAt)),
+    columns: { id: true, editionId: true, status: true },
   });
-  if (!sourceVersion) {
+  if (!requestedVersion) {
     return {
       ok: false,
       error: CORRECTION_REQUEST_NOT_PUBLISHABLE_ERROR,
@@ -391,7 +435,11 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
     };
   }
 
-  if (sourceVersion.status !== 'official' && sourceVersion.status !== 'corrected') {
+  const requestedEntry = await db.query.resultEntries.findFirst({
+    where: and(eq(resultEntries.id, request.resultEntryId), isNull(resultEntries.deletedAt)),
+    columns: { id: true, distanceId: true, bibNumber: true, runnerFullName: true },
+  });
+  if (!requestedEntry) {
     return {
       ok: false,
       error: CORRECTION_REQUEST_NOT_PUBLISHABLE_ERROR,
@@ -401,14 +449,36 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
 
   const canWrite = await params.assertCanWriteResultsForEdition(
     params.authContext.user.id,
-    sourceVersion.editionId,
+    requestedVersion.editionId,
     params.authContext.permissions.canManageEvents,
   );
   if (!canWrite) {
     return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
   }
 
-  const editionOrganizationId = await resolveEditionOrganizationId(sourceVersion.editionId);
+  const editionOrganizationId = await resolveEditionOrganizationId(requestedVersion.editionId);
+
+  // RES-1: publish from the CURRENTLY ACTIVE version, not the version the request was
+  // filed against. Otherwise a sibling correction that published first would be silently
+  // reverted. The active version already contains any prior corrections' entry copies.
+  const sourceVersion = await db.query.resultVersions.findFirst({
+    where: and(
+      eq(resultVersions.editionId, requestedVersion.editionId),
+      inArray(resultVersions.status, ['official', 'corrected']),
+      isNull(resultVersions.deletedAt),
+    ),
+    orderBy: (table, { desc: descOrder }) => [
+      descOrder(table.versionNumber),
+      descOrder(table.createdAt),
+    ],
+  });
+  if (!sourceVersion) {
+    return {
+      ok: false,
+      error: CORRECTION_REQUEST_NOT_PUBLISHABLE_ERROR,
+      code: 'INVALID_STATE',
+    };
+  }
 
   const sourceEntries = await db.query.resultEntries.findMany({
     where: and(eq(resultEntries.resultVersionId, sourceVersion.id), isNull(resultEntries.deletedAt)),
@@ -423,14 +493,33 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
     };
   }
 
-  const sourceEntry = sourceEntries.find((entry) => entry.id === request.resultEntryId);
+  // Re-anchor the correction target into the active version. If the request was filed
+  // against the active version, match by id directly; otherwise match by stable identity
+  // (distance + bib, or distance + name when bib is absent). Ambiguous or missing matches
+  // mean the target changed under a sibling correction — block and ask for a re-file
+  // rather than guessing.
+  const sourceEntry =
+    sourceVersion.id === requestedVersion.id
+      ? sourceEntries.find((entry) => entry.id === requestedEntry.id)
+      : (() => {
+          const matches = sourceEntries.filter((entry) =>
+            requestedEntry.bibNumber
+              ? entry.distanceId === requestedEntry.distanceId &&
+                entry.bibNumber === requestedEntry.bibNumber
+              : entry.distanceId === requestedEntry.distanceId &&
+                entry.bibNumber === null &&
+                entry.runnerFullName === requestedEntry.runnerFullName,
+          );
+          return matches.length === 1 ? matches[0] : undefined;
+        })();
   if (!sourceEntry) {
     return {
       ok: false,
-      error: CORRECTION_REQUEST_NOT_PUBLISHABLE_ERROR,
-      code: 'INVALID_STATE',
+      error: CORRECTION_SOURCE_CHANGED_ERROR,
+      code: 'CONFLICT',
     };
   }
+  const targetEntryId = sourceEntry.id;
 
   if (correctionPatch.distanceId !== undefined && correctionPatch.distanceId !== null) {
     const existingDistance = await db.query.eventDistances.findFirst({
@@ -504,7 +593,7 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
         .returning();
 
       for (const entry of sourceEntries) {
-        const isCorrectionTarget = entry.id === request.resultEntryId;
+        const isCorrectionTarget = entry.id === targetEntryId;
         const entryStatus = isCorrectionTarget ? targetStatus : entry.status;
         const entryFinishTimeMillis = isCorrectionTarget
           ? targetFinishTimeMillis
@@ -657,6 +746,15 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
       editionId: sourceVersion.editionId,
       organizationId: edition?.series?.organizationId,
     });
+
+    // Refresh the public national leaderboard from the corrected data. Non-blocking (§6.4).
+    try {
+      await recomputeNationalRankingsOnPublish({
+        triggerResultVersionId: publication.correctedVersion.id,
+      });
+    } catch (error) {
+      console.error('[publishApprovedCorrectionVersion] ranking recompute failed', error);
+    }
 
     return {
       ok: true,

@@ -8,6 +8,7 @@ import { HowItWorksBox } from '@/components/results/primitives/how-it-works-box'
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Link } from '@/i18n/navigation';
+import { DEFAULT_TIMEZONE } from '@/i18n/routing';
 import {
   listPublicOfficialResultsDirectory,
   listRecentPublicCorrectionSummaries,
@@ -109,12 +110,15 @@ export default async function ResultsPage({ params, searchParams }: ResultsPageP
     }
   };
 
+  // Platform is MX-only; format discovery/search dates in the platform timezone (RES-23).
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'short',
     timeStyle: 'short',
+    timeZone: DEFAULT_TIMEZONE,
   });
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
+    timeZone: DEFAULT_TIMEZONE,
   });
 
   return (

@@ -1235,7 +1235,7 @@ describe('results identity model actions', () => {
     });
   });
 
-  it('confirms a safe runner claim by creating a linked claim record', async () => {
+  it('creates a high-confidence runner claim as pending review without auto-linking (RES-6)', async () => {
     mockAuthContext = makeRunnerAuthContext();
     mockResultEntriesFindFirst.mockResolvedValueOnce({
       id: RESULT_ENTRY_ID,
@@ -1253,8 +1253,8 @@ describe('results identity model actions', () => {
     );
     mockInsertReturningQueue.push([
       makeResultEntryClaimRow({
-        status: 'linked',
-        linkedUserId: RUNNER_ID,
+        status: 'pending_review',
+        linkedUserId: null,
         requestedByUserId: RUNNER_ID,
         confidenceBasisPoints: 930,
         reviewReason: null,
@@ -1268,12 +1268,12 @@ describe('results identity model actions', () => {
       throw new Error('Expected runner claim confirmation to succeed');
     }
 
+    // No auto-link: even a strong match goes to organizer review and assigns no ownership.
     expect(result.data).toMatchObject({
       claimId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       entryId: RESULT_ENTRY_ID,
       resultVersionId: RESULT_VERSION_ID,
-      outcome: 'linked',
-      nextSteps: null,
+      outcome: 'pending_review',
     });
     expect(mockFindUnclaimedResultClaimCandidateByEntryId).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1286,8 +1286,8 @@ describe('results identity model actions', () => {
     expect(mockInsertCalls[0]?.values).toMatchObject({
       resultEntryId: RESULT_ENTRY_ID,
       requestedByUserId: RUNNER_ID,
-      linkedUserId: RUNNER_ID,
-      status: 'linked',
+      linkedUserId: null,
+      status: 'pending_review',
     });
   });
 
@@ -1410,6 +1410,9 @@ describe('results identity model actions', () => {
       resultVersionId: RESULT_VERSION_ID,
     });
     mockResultVersionsFindFirst.mockResolvedValueOnce({ editionId: EDITION_ID });
+    // Approval now runs in a transaction: first the entry-ownership CAS write (RES-5),
+    // then the claim transition. Queue the entry write result, then the claim row.
+    mockUpdateReturningQueue.push([{ id: RESULT_ENTRY_ID }]);
     mockUpdateReturningQueue.push([
       makeResultEntryClaimRow({
         status: 'linked',
@@ -1443,7 +1446,9 @@ describe('results identity model actions', () => {
       reviewContext: { note: 'Verified bib and finish time' },
     });
     expect(result.data.reviewedAt).toEqual(reviewedAt);
-    expect(mockUpdateSetCalls[0]).toMatchObject({
+    // First update writes entry ownership; second is the claim transition (RES-5).
+    expect(mockUpdateSetCalls[0]).toMatchObject({ userId: RUNNER_ID });
+    expect(mockUpdateSetCalls[1]).toMatchObject({
       status: 'linked',
       linkedUserId: RUNNER_ID,
       reviewedByUserId: ORGANIZER_ID,
@@ -1575,9 +1580,9 @@ describe('results identity model actions', () => {
     );
     mockUpdateReturningQueue.push([
       makeResultEntryClaimRow({
-        status: 'linked',
+        status: 'pending_review',
         requestedByUserId: RUNNER_ID,
-        linkedUserId: RUNNER_ID,
+        linkedUserId: null,
         reviewedByUserId: null,
         reviewedAt: null,
         reviewReason: null,
@@ -1592,17 +1597,19 @@ describe('results identity model actions', () => {
       throw new Error('Expected rejected claim re-attempt to succeed');
     }
 
+    // Re-opening a rejected claim goes back to organizer review, never straight to linked,
+    // so a prior rejection can't be bypassed by re-claiming (RES-6).
     expect(result.data).toMatchObject({
       claimId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       entryId: RESULT_ENTRY_ID,
       resultVersionId: RESULT_VERSION_ID,
-      outcome: 'linked',
+      outcome: 'pending_review',
     });
     expect(mockInsertCalls).toHaveLength(0);
     expect(mockUpdateSetCalls[0]).toMatchObject({
       requestedByUserId: RUNNER_ID,
-      linkedUserId: RUNNER_ID,
-      status: 'linked',
+      linkedUserId: null,
+      status: 'pending_review',
       reviewedByUserId: null,
       reviewedAt: null,
       reviewReason: null,
@@ -1844,6 +1851,8 @@ describe('results identity model actions', () => {
       makeResultCorrectionRequestRow({
         status: 'pending',
         resultVersionId: RESULT_VERSION_ID,
+        // Approval now requires a valid patch so the request can actually publish (RES-13).
+        requestContext: { correctionPatch: { finishTimeMillis: 3_540_000 } },
       }),
     );
     mockResultVersionsFindFirst.mockResolvedValueOnce({ editionId: EDITION_ID });
@@ -1853,6 +1862,7 @@ describe('results identity model actions', () => {
         reviewedByUserId: ORGANIZER_ID,
         reviewedAt,
         reviewDecisionNote: 'Verified registration evidence',
+        requestContext: { correctionPatch: { finishTimeMillis: 3_540_000 } },
       }),
     ]);
 
@@ -1888,11 +1898,14 @@ describe('results identity model actions', () => {
     );
   });
 
-  it('blocks organizer correction review when request is already decided', async () => {
+  it('blocks organizer correction review when request is already in a terminal state', async () => {
     mockAuthContext = makeAuthContext();
+    // A rejected request is terminal: it can't be approved or re-rejected. (An *approved*
+    // but unpublished request can still be rejected — that's the RES-13 dead-end escape,
+    // covered separately.)
     mockResultCorrectionRequestsFindFirst.mockResolvedValueOnce(
       makeResultCorrectionRequestRow({
-        status: 'approved',
+        status: 'rejected',
         reviewedByUserId: ORGANIZER_ID,
       }),
     );
@@ -2015,9 +2028,23 @@ describe('results identity model actions', () => {
         },
       }),
     );
+    // Publication re-anchors to the active version (RES-1): it loads the requested version
+    // and entry (for identity), then the active source version, then (in-tx) the latest
+    // version for numbering.
     mockResultVersionsFindFirst
+      .mockResolvedValueOnce({
+        id: RESULT_VERSION_ID,
+        editionId: EDITION_ID,
+        status: 'official',
+      })
       .mockResolvedValueOnce(sourceVersion)
       .mockResolvedValueOnce({ id: sourceVersion.id, versionNumber: sourceVersion.versionNumber });
+    mockResultEntriesFindFirst.mockResolvedValueOnce({
+      id: RESULT_ENTRY_ID,
+      distanceId: sourceEntry.distanceId,
+      bibNumber: sourceEntry.bibNumber,
+      runnerFullName: sourceEntry.runnerFullName,
+    });
     mockResultEntriesFindMany
       .mockResolvedValueOnce([sourceEntry])
       .mockResolvedValueOnce([]);
@@ -2112,6 +2139,7 @@ describe('results identity model actions', () => {
       }),
     );
     mockResultVersionsFindFirst
+      .mockResolvedValueOnce({ id: RESULT_VERSION_ID, editionId: EDITION_ID, status: 'official' })
       .mockResolvedValueOnce(
         makeResultVersionRow({
           id: RESULT_VERSION_ID,
@@ -2120,6 +2148,12 @@ describe('results identity model actions', () => {
         }),
       )
       .mockResolvedValueOnce({ id: RESULT_VERSION_ID, versionNumber: 3 });
+    mockResultEntriesFindFirst.mockResolvedValueOnce({
+      id: RESULT_ENTRY_ID,
+      distanceId: DISTANCE_ID,
+      bibNumber: '42',
+      runnerFullName: 'Pat Runner',
+    });
     mockResultEntriesFindMany.mockResolvedValueOnce([makeResultEntryRow()]);
     mockInsertReturningQueue.push({
       throw: { code: '23505', constraint: 'result_versions_edition_version_idx' },

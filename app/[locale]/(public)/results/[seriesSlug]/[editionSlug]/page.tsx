@@ -17,7 +17,15 @@ import { notFound } from 'next/navigation';
 
 type PublicOfficialResultsPageProps = LocalePageProps & {
   params: Promise<{ locale: string; seriesSlug: string; editionSlug: string }>;
+  searchParams?: Promise<{ page?: string }>;
 };
+
+const PUBLIC_OFFICIAL_RESULTS_PAGE_SIZE = 200;
+
+function parsePageParam(value: string | undefined): number {
+  const parsed = value ? Number.parseInt(value, 10) : 1;
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
+}
 
 function formatFinishTime(milliseconds: number | null): string {
   if (milliseconds === null || milliseconds < 0) return '-';
@@ -63,14 +71,22 @@ export async function generateMetadata({ params }: PublicOfficialResultsPageProp
   );
 }
 
-export default async function PublicOfficialResultsPage({ params }: PublicOfficialResultsPageProps) {
+export default async function PublicOfficialResultsPage({
+  params,
+  searchParams,
+}: PublicOfficialResultsPageProps) {
   const { locale, seriesSlug, editionSlug } = await params;
+  const resolvedSearchParams = await searchParams;
   await configPageLocale(params, { pathname: '/results/[seriesSlug]/[editionSlug]' });
   const t = await getTranslations('pages.results.official');
   const tResults = await getTranslations('pages.results');
   const identityPolicy = getPublicResultIdentityPolicy();
 
-  const pageData = await getPublicOfficialResultsPageData(seriesSlug, editionSlug);
+  const requestedPage = parsePageParam(resolvedSearchParams?.page);
+  const pageData = await getPublicOfficialResultsPageData(seriesSlug, editionSlug, {
+    entryLimit: PUBLIC_OFFICIAL_RESULTS_PAGE_SIZE,
+    entryOffset: (requestedPage - 1) * PUBLIC_OFFICIAL_RESULTS_PAGE_SIZE,
+  });
   if (pageData.state === 'not_found') notFound();
 
   const startsAtLabel = pageData.edition.startsAt
@@ -315,6 +331,57 @@ export default async function PublicOfficialResultsPage({ params }: PublicOffici
             </table>
           </div>
         )}
+
+        {pageData.entries.length > 0
+          ? (() => {
+              const rangeStart = pageData.entryOffset + 1;
+              const rangeEnd = pageData.entryOffset + pageData.entries.length;
+              const hasPrev = requestedPage > 1;
+              const hasNext = rangeEnd < pageData.totalEntryCount;
+              const editionParams = {
+                seriesSlug: pageData.edition.seriesSlug,
+                editionSlug: pageData.edition.editionSlug,
+              } as const;
+
+              return (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
+                  <p>
+                    {t('table.pagination.showing', {
+                      from: rangeStart,
+                      to: rangeEnd,
+                      total: pageData.totalEntryCount,
+                    })}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {hasPrev ? (
+                      <Link
+                        href={{
+                          pathname: '/results/[seriesSlug]/[editionSlug]',
+                          params: editionParams,
+                          query: requestedPage - 1 > 1 ? { page: String(requestedPage - 1) } : {},
+                        }}
+                        className="inline-flex min-h-9 items-center rounded-md border border-border/70 px-3 font-medium text-foreground transition-colors hover:bg-muted"
+                      >
+                        {t('table.pagination.previous')}
+                      </Link>
+                    ) : null}
+                    {hasNext ? (
+                      <Link
+                        href={{
+                          pathname: '/results/[seriesSlug]/[editionSlug]',
+                          params: editionParams,
+                          query: { page: String(requestedPage + 1) },
+                        }}
+                        className="inline-flex min-h-9 items-center rounded-md border border-border/70 px-3 font-medium text-foreground transition-colors hover:bg-muted"
+                      >
+                        {t('table.pagination.next')}
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })()
+          : null}
       </Section>
     </div>
   );
