@@ -10,6 +10,7 @@ import {
 } from '@/lib/events/results/shared/errors';
 import { createResultsFinalizationAudit } from '@/lib/events/results/shared/audit';
 import { revalidateResultsPublicationArtifacts } from '@/lib/events/results/shared/cache';
+import { recomputeNationalRankingsOnPublish } from '@/lib/events/results/ranking-publication';
 import { transitionResultVersionLifecycle } from '@/lib/events/results/lifecycle/state-machine';
 import type { FinalizeResultVersionAttestationInput } from '@/lib/events/results/schemas';
 import type {
@@ -28,7 +29,12 @@ type BuildDraftFinalizationGateSummary = (
   resultVersionId: string,
 ) => Promise<ResultVersionFinalizationGateSummary>;
 
-type DeriveAndPersistDraftPlacements = (resultVersionId: string) => Promise<unknown>;
+type ResultMutationClient = Pick<typeof db, 'query' | 'update'>;
+
+type DeriveAndPersistDraftPlacements = (
+  resultVersionId: string,
+  client?: ResultMutationClient,
+) => Promise<unknown>;
 
 export async function finalizeResultVersionAttestationWorkflow(params: {
   authContext: AuthenticatedContext;
@@ -51,8 +57,12 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
       eq(resultVersions.editionId, editionId),
       eq(resultVersions.status, 'draft'),
       isNull(resultVersions.deletedAt),
+      // Finalize a specific draft when the caller names one, otherwise the newest draft.
+      ...(params.input.resultVersionId
+        ? [eq(resultVersions.id, params.input.resultVersionId)]
+        : []),
     ),
-    orderBy: (rv, { desc }) => [desc(rv.versionNumber), desc(rv.createdAt)],
+    orderBy: (rv, { desc: descOrder }) => [descOrder(rv.versionNumber), descOrder(rv.createdAt)],
   });
 
   if (!draftVersion) {
@@ -88,24 +98,29 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
     };
   }
 
-  await params.deriveAndPersistDraftPlacements(draftVersion.id);
-
   const finalizedAt = new Date();
-  const lifecycleTransition = await transitionResultVersionLifecycle({
-    resultVersionId: draftVersion.id,
-    toStatus: 'official',
-    finalizedByUserId: params.authContext.user.id,
-    finalizedAt,
-    transitionReason: 'attestation',
-    provenancePatch: {
-      attestation: {
-        confirmed: true,
-        attestedByUserId: params.authContext.user.id,
-        attestedAt: finalizedAt.toISOString(),
-        sourceLane: draftVersion.source,
-        note: attestationNote ?? null,
+
+  // Derive placements and flip draft → official atomically so a crash can never leave an
+  // official version with stale/unwritten placements (RES-11).
+  const lifecycleTransition = await db.transaction(async (tx) => {
+    await params.deriveAndPersistDraftPlacements(draftVersion.id, tx);
+    return transitionResultVersionLifecycle({
+      resultVersionId: draftVersion.id,
+      toStatus: 'official',
+      finalizedByUserId: params.authContext.user.id,
+      finalizedAt,
+      transitionReason: 'attestation',
+      provenancePatch: {
+        attestation: {
+          confirmed: true,
+          attestedByUserId: params.authContext.user.id,
+          attestedAt: finalizedAt.toISOString(),
+          sourceLane: draftVersion.source,
+          note: attestationNote ?? null,
+        },
       },
-    },
+      client: tx,
+    });
   });
 
   if (!lifecycleTransition.ok) {
@@ -151,6 +166,16 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
     editionId: draftVersion.editionId,
     organizationId: edition?.series?.organizationId,
   });
+
+  // Refresh the public national leaderboard from the newly official data. Non-blocking:
+  // a ranking failure must not fail the finalization the organizer just confirmed (§6.4).
+  try {
+    await recomputeNationalRankingsOnPublish({
+      triggerResultVersionId: lifecycleTransition.data.id,
+    });
+  } catch (error) {
+    console.error('[finalizeResultVersionAttestation] ranking recompute failed', error);
+  }
 
   return {
     ok: true,

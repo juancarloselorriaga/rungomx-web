@@ -3,10 +3,23 @@
 import { Badge } from '@/components/common/badge';
 import { Button } from '@/components/ui/button';
 import { InsetSurface, Surface } from '@/components/ui/surface';
-import { reviewResultCorrectionRequest } from '@/lib/events/results/actions';
+import {
+  publishApprovedCorrectionVersion,
+  reviewResultCorrectionRequest,
+} from '@/lib/events/results/actions';
 import type { OrganizerCorrectionRequestQueueItem } from '@/lib/events/results/types';
 import { useRouter } from '@/i18n/navigation';
 import { useMemo, useState, useTransition } from 'react';
+
+function isCorrectionRequestPublished(
+  requestContext: OrganizerCorrectionRequestQueueItem['requestContext'],
+): boolean {
+  if (typeof requestContext !== 'object' || requestContext === null) return false;
+  const publication = (requestContext as Record<string, unknown>).publication;
+  if (typeof publication !== 'object' || publication === null) return false;
+  const id = (publication as Record<string, unknown>).publishedResultVersionId;
+  return typeof id === 'string' && id.length > 0;
+}
 
 type CorrectionReviewQueueProps = {
   requests: Array<
@@ -48,6 +61,11 @@ type CorrectionReviewQueueProps = {
       noContext: string;
       noReviewNote: string;
       noValue: string;
+      publishAction: string;
+      publishPending: string;
+      publishSuccessMessage: string;
+      publishedLabel: string;
+      awaitingPublicationLabel: string;
     };
   };
 };
@@ -100,6 +118,36 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
           [requestId]: {
             tone: 'success',
             message: labels.review.successMessage,
+          },
+        }));
+        router.refresh();
+        setActiveRequestId(null);
+        return;
+      }
+
+      setFeedbackByRequestId((current) => ({
+        ...current,
+        [requestId]: {
+          tone: 'error',
+          message: `${labels.review.failurePrefix} ${result.error}`,
+        },
+      }));
+      setActiveRequestId(null);
+    });
+  };
+
+  const handlePublish = (requestId: string) => {
+    setActiveRequestId(requestId);
+
+    startTransition(async () => {
+      const result = await publishApprovedCorrectionVersion({ requestId });
+
+      if (result.ok) {
+        setFeedbackByRequestId((current) => ({
+          ...current,
+          [requestId]: {
+            tone: 'success',
+            message: labels.review.publishSuccessMessage,
           },
         }));
         router.refresh();
@@ -271,6 +319,33 @@ export function CorrectionReviewQueue({ requests, labels }: CorrectionReviewQueu
                       {isSubmittingRow ? labels.review.pendingAction : labels.review.rejectAction}
                     </Button>
                   </div>
+                ) : null}
+
+                {request.status === 'approved' ? (
+                  isCorrectionRequestPublished(request.requestContext) ? (
+                    <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                      {labels.review.publishedLabel}
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={
+                          isPending && activeRequestId === request.requestId
+                        }
+                        onClick={() => handlePublish(request.requestId)}
+                        data-testid="results-correction-publish"
+                      >
+                        {isPending && activeRequestId === request.requestId
+                          ? labels.review.publishPending
+                          : labels.review.publishAction}
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        {labels.review.awaitingPublicationLabel}
+                      </span>
+                    </div>
+                  )
                 ) : null}
 
                 {feedback ? (

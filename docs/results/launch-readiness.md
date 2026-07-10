@@ -1,6 +1,43 @@
 # Results & Rankings — Launch-Readiness Audit & State Map
 
-> **Status:** Awareness / launch-verdict document. Written 2026-07-10, verified against commit `ed88567`.
+> ## ⚠️ Update 2026-07-10 — remediated & wired
+> This document was the **pre-implementation** audit (verdict: *not launch-ready*). On branch
+> `docs/results-launch-readiness` the findings were fixed **and the feature was wired
+> end-to-end**, changing the verdict. Read this section first; the original audit below is
+> retained for context and traceability.
+>
+> **What changed:**
+> - **Ingestion now exists (§6.1 closed).** A bulk `importResultDraftRows` server action
+>   creates/append-into a single draft version per edition (all distances in one version),
+>   validates rows server-side, and derives placements once per version. The import lane is
+>   wired to it with a distance selector; the review lane finalizes; a draft-discard action
+>   exists.
+> - **Corrections wired end-to-end (§6.3 closed).** Organizer intake form + review + a
+>   **publish** action; publication re-anchors to the active version (RES-1).
+> - **Rankings have a driver (§6.4 closed).** Finalization and correction publication trigger
+>   a national recompute+promote against an auto-bootstrapped baseline ruleset; computation is
+>   per-discipline and ruleset-driven (RES-3).
+> - **All 25 defects (RES-1..25)** addressed — 23 fixed, 2 partial. See
+>   `docs/results/known-issues.md` for per-finding status.
+> - **Verified live in a browser** (local Postgres, the provided test accounts): organizer
+>   imports two distances (bibs reused, accented names), finalizes, the public page shows
+>   per-distance places with a shared-rank tie and the corrected version, national rankings
+>   render per-discipline, and a non-organizer is redirected away from the dashboard.
+>
+> **Revised verdict:** the coherent slice — **import → review → finalize → public results →
+> national rankings → correction round-trip** — is implemented, tested, and browser-verified.
+> **Claims remain intentionally unwired** (domain hardened per RES-5/6/7; ship behind no UI
+> until a product decision — see §6.2). Remaining pre-launch items are the two PARTIALs
+> (RES-21 localized error messages, RES-24 scan pagination) and running `test:e2e:isolated`
+> in CI.
+>
+> **Design decision recorded (§7.1):** a result *version* is **per edition** (holds all
+> distances), not per distance — the import appends distances into one draft so the
+> single-active-version model surfaces every distance publicly.
+
+---
+
+> **Status (original audit):** Awareness / launch-verdict document. Written 2026-07-10, verified against commit `ed88567`.
 > **Audience:** Whoever decides what ships at launch, and the engineer(s) who wire the missing drivers. Read this before touching anything under `lib/events/results/`, and re-verify the reachability claims against the code at that time (grep commands in the appendix).
 > **Companion:** `docs/results/known-issues.md` — the defect register (evidence, confidence, repro, fix directions). This document owns architecture, reachability, and dispositions; that one owns the bugs.
 > **Context:** The platform is greenfield and has not launched. Unlike payments (deliberately dormant until a provider exists), **results is a core launch feature and the platform's public face** — the standard here is "trustworthy on day one".

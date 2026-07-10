@@ -382,6 +382,10 @@ export type PublicOfficialResultsPageData =
       edition: PublicOfficialResultsEdition;
       activeVersion: PublicOfficialResultsVersion;
       entries: PublicOfficialResultsEntryItem[];
+      // Pagination metadata so the page can show "X–Y of Z" and prev/next (RES-12).
+      totalEntryCount: number;
+      entryOffset: number;
+      entryLimit: number;
     };
 
 export type PublicOfficialResultsDirectoryItem = {
@@ -532,6 +536,10 @@ export type CorrectionLifecycleStatusCounts = {
   pending: number;
   approved: number;
   rejected: number;
+  // Of the `approved` requests, how many have actually been published as a corrected
+  // version vs. are still awaiting publication (RES-25).
+  approvedPublished: number;
+  approvedAwaitingPublication: number;
 };
 
 export type CorrectionLifecyclePendingAgingBuckets = {

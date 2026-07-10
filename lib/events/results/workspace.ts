@@ -188,120 +188,6 @@ function readUnsyncedCount(
   return fallback;
 }
 
-function getFallbackRowsForLane(
-  lane: OrganizerResultsLane,
-  t?: TranslationFn,
-): OrganizerResultsRow[] {
-  const now = new Date();
-  const fallbackDetails = {
-    default: t
-      ? t('fallbackRows.defaultDetails')
-      : 'Draft result row available in organizer workflow.',
-    captureSavedLocally: t
-      ? t('fallbackRows.capture.savedLocally')
-      : 'Saved locally from mobile capture session.',
-    captureOfflineCheckpoint: t
-      ? t('fallbackRows.capture.offlineCheckpoint')
-      : 'Status confirmed during offline checkpoint.',
-    importParsed: t
-      ? t('fallbackRows.import.parsed')
-      : 'Parsed from latest CSV draft import.',
-    importDuplicateBib: t
-      ? t('fallbackRows.import.duplicateBib')
-      : 'Duplicate bib conflict flagged for review.',
-    reviewReady: t
-      ? t('fallbackRows.review.ready')
-      : 'Draft row ready for final organizer review.',
-    reviewPendingConflict: t
-      ? t('fallbackRows.review.pendingConflict')
-      : 'Pending conflict resolution before final review.',
-  };
-
-  if (lane === 'capture') {
-    return [
-      {
-        id: 'capture-101',
-        bibNumber: '101',
-        runnerName: 'Ana Rivera',
-        sourceLane: 'manual_offline',
-        resultStatus: 'finish',
-        validationState: 'blocker',
-        syncStatus: 'pending_sync',
-        finishTimeMillis: 23 * 60 * 1000 + 42 * 1000,
-        updatedAt: now,
-        details: fallbackDetails.captureSavedLocally,
-      },
-      {
-        id: 'capture-118',
-        bibNumber: '118',
-        runnerName: 'Carlos Mendoza',
-        sourceLane: 'manual_offline',
-        resultStatus: 'dnf',
-        validationState: 'blocker',
-        syncStatus: 'pending_sync',
-        finishTimeMillis: null,
-        updatedAt: now,
-        details: fallbackDetails.captureOfflineCheckpoint,
-      },
-    ];
-  }
-
-  if (lane === 'import') {
-    return [
-      {
-        id: 'import-202',
-        bibNumber: '202',
-        runnerName: 'Lucia Torres',
-        sourceLane: 'csv_excel',
-        resultStatus: 'finish',
-        validationState: 'clear',
-        syncStatus: 'synced',
-        finishTimeMillis: 45 * 60 * 1000 + 5 * 1000,
-        updatedAt: now,
-        details: fallbackDetails.importParsed,
-      },
-      {
-        id: 'import-227',
-        bibNumber: '227',
-        runnerName: 'Mateo Silva',
-        sourceLane: 'csv_excel',
-        resultStatus: 'dq',
-        validationState: 'blocker',
-        syncStatus: 'conflict',
-        finishTimeMillis: null,
-        updatedAt: now,
-        details: fallbackDetails.importDuplicateBib,
-      },
-    ];
-  }
-
-  return [
-    {
-      id: 'review-309',
-      bibNumber: '309',
-      runnerName: 'Elena Cruz',
-      sourceLane: 'csv_excel',
-      resultStatus: 'finish',
-      validationState: 'clear',
-      syncStatus: 'synced',
-      finishTimeMillis: 37 * 60 * 1000 + 19 * 1000,
-      updatedAt: now,
-      details: fallbackDetails.reviewReady,
-    },
-    {
-      id: 'review-311',
-      bibNumber: '311',
-      runnerName: 'Diego Lara',
-      sourceLane: 'manual_offline',
-      resultStatus: 'dns',
-      validationState: 'blocker',
-      syncStatus: 'conflict',
-      finishTimeMillis: null,
-      updatedAt: now,
-      details: fallbackDetails.reviewPendingConflict,
-    },
-  ];
-}
 
 type OrganizerResultVersionVisibilityRow = Pick<
   typeof resultVersions.$inferSelect,
@@ -365,7 +251,9 @@ export async function getOrganizerResultsRailState(
     .limit(1);
 
   const lifecycle: ResultsLifecycleState =
-    latestVersion?.status === 'official' ? 'official' : 'draft';
+    latestVersion?.status === 'official' || latestVersion?.status === 'corrected'
+      ? 'official'
+      : 'draft';
 
   const unsyncedCount = readUnsyncedCount(
     latestSession?.provenanceJson ?? null,
@@ -417,11 +305,9 @@ export async function listOrganizerResultsRows(
   lane: OrganizerResultsLane,
   limit = 30,
   options: {
-    allowFallback?: boolean;
     t?: TranslationFn;
   } = {},
 ): Promise<OrganizerResultsRow[]> {
-  const allowFallback = options.allowFallback ?? true;
   const detailsFallback = options.t
     ? options.t('fallbackRows.defaultDetails')
     : 'Draft result row available in organizer workflow.';
@@ -440,8 +326,9 @@ export async function listOrganizerResultsRows(
     .orderBy(desc(resultVersions.versionNumber), desc(resultVersions.createdAt))
     .limit(1);
 
+  // No fabricated sample rows: an empty draft renders an honest empty state (RES-8).
   if (!latestDraftVersion) {
-    return allowFallback ? getFallbackRowsForLane(lane, options.t) : [];
+    return [];
   }
 
   const rows = await db
@@ -465,7 +352,7 @@ export async function listOrganizerResultsRows(
     .limit(Math.max(limit, 1));
 
   if (rows.length === 0) {
-    return allowFallback ? getFallbackRowsForLane(lane, options.t) : [];
+    return [];
   }
 
   const fallbackSyncStatus = DEFAULT_SYNC_STATUS_BY_LANE[lane];

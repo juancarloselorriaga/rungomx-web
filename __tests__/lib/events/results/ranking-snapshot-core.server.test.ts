@@ -4,6 +4,7 @@ type SelectChain = {
 };
 
 const mockResultVersionsFindMany = jest.fn();
+const mockRankingRulesetsFindFirst = jest.fn();
 const mockSelect = jest.fn();
 const mockInsert = jest.fn();
 const mockInsertCalls: Array<{ table: unknown; values: unknown }> = [];
@@ -26,6 +27,9 @@ jest.mock('@/db', () => ({
     query: {
       resultVersions: {
         findMany: (...args: unknown[]) => mockResultVersionsFindMany(...args),
+      },
+      rankingRulesets: {
+        findFirst: (...args: unknown[]) => mockRankingRulesetsFindFirst(...args),
       },
     },
     select: (...args: unknown[]) => mockSelect(...args),
@@ -84,10 +88,20 @@ function makeSnapshotRankRow(overrides?: Partial<typeof rankingSnapshotRows.$inf
 describe('ranking snapshot computation core', () => {
   beforeEach(() => {
     mockResultVersionsFindMany.mockReset();
+    mockRankingRulesetsFindFirst.mockReset();
     mockSelect.mockReset();
     mockInsert.mockReset();
     mockInsertCalls.length = 0;
     mockInsertReturningQueue.length = 0;
+
+    // Default ruleset: baseline national policy (partition by discipline, finish only).
+    mockRankingRulesetsFindFirst.mockResolvedValue({
+      rulesDefinitionJson: {
+        version: 'rankings-v1',
+        partitionBy: ['discipline'],
+        eligibleStatuses: ['finish'],
+      },
+    });
 
     mockInsert.mockImplementation((table: unknown) => ({
       values: (values: unknown) => ({
@@ -147,6 +161,7 @@ describe('ranking snapshot computation core', () => {
           discipline: 'trail_running',
           gender: 'female',
           age: 29,
+          status: 'finish',
           finishTimeMillis: 3_600_000,
         },
       ]),
@@ -234,6 +249,7 @@ describe('ranking snapshot computation core', () => {
           discipline: 'trail_running',
           gender: 'female',
           age: 29,
+          status: 'finish',
           finishTimeMillis: 3_600_000,
         },
       ]),

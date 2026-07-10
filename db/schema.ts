@@ -1073,12 +1073,16 @@ export const resultEntries = pgTable(
       .on(table.resultVersionId, table.bibNumber)
       .where(sql`${table.bibNumber} is not null`),
     index('result_entries_version_name_idx').on(table.resultVersionId, table.runnerFullName),
-    uniqueIndex('result_entries_version_bib_unique_idx')
+    // Bibs are unique within a distance, not across the whole edition version:
+    // multi-distance events legitimately reuse bib ranges per distance. Two partial
+    // indexes so NULL distanceId still enforces uniqueness (NULLs are excluded from
+    // each index's key columns rather than relying on NULLS NOT DISTINCT).
+    uniqueIndex('result_entries_version_distance_bib_unique_idx')
+      .on(table.resultVersionId, table.distanceId, table.bibNumber)
+      .where(sql`${table.bibNumber} is not null AND ${table.distanceId} is not null`),
+    uniqueIndex('result_entries_version_nodistance_bib_unique_idx')
       .on(table.resultVersionId, table.bibNumber)
-      .where(sql`${table.bibNumber} is not null`),
-    uniqueIndex('result_entries_version_name_no_bib_unique_idx')
-      .on(table.resultVersionId, table.runnerFullName)
-      .where(sql`${table.bibNumber} is null`),
+      .where(sql`${table.bibNumber} is not null AND ${table.distanceId} is null`),
     check('result_entries_age_non_negative_chk', sql`${table.age} is null OR ${table.age} >= 0`),
     check(
       'result_entries_finish_time_positive_chk',
@@ -1309,6 +1313,18 @@ export const rankingSnapshots = pgTable(
     index('ranking_snapshots_current_idx')
       .on(table.scope, table.organizationId, table.isCurrent)
       .where(sql`${table.isCurrent} = true`),
+    // At most one current snapshot per scope/org. Split into two partial indexes so the
+    // national case (organizationId is null) is still constrained to a single current row.
+    uniqueIndex('ranking_snapshots_current_national_unique_idx')
+      .on(table.scope)
+      .where(
+        sql`${table.isCurrent} = true AND ${table.organizationId} is null AND ${table.deletedAt} is null`,
+      ),
+    uniqueIndex('ranking_snapshots_current_organizer_unique_idx')
+      .on(table.organizationId)
+      .where(
+        sql`${table.isCurrent} = true AND ${table.organizationId} is not null AND ${table.deletedAt} is null`,
+      ),
     index('ranking_snapshots_trigger_version_idx')
       .on(table.triggerResultVersionId)
       .where(sql`${table.triggerResultVersionId} is not null`),
@@ -1348,9 +1364,9 @@ export const rankingSnapshotRows = pgTable(
     deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'date' }),
   },
   (table) => [
-    uniqueIndex('ranking_snapshot_rows_snapshot_rank_unique_idx')
-      .on(table.snapshotId, table.rank)
-      .where(sql`${table.deletedAt} is null`),
+    // Ranks are assigned within a partition (e.g. per discipline) and exact-time ties share a
+    // rank, so (snapshotId, rank) is intentionally NOT unique.
+    index('ranking_snapshot_rows_snapshot_rank_idx').on(table.snapshotId, table.rank),
     index('ranking_snapshot_rows_snapshot_idx').on(table.snapshotId),
     index('ranking_snapshot_rows_result_version_idx')
       .on(table.resultVersionId)

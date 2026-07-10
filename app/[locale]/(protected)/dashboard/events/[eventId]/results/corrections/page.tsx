@@ -1,9 +1,11 @@
 import { CorrectionAuditTrail } from '@/components/results/organizer/correction-audit-trail';
 import { CorrectionLifecycleMetricsPanel } from '@/components/results/organizer/correction-lifecycle-metrics';
+import { CorrectionRequestForm } from '@/components/results/organizer/correction-request-form';
 import { CorrectionReviewQueue } from '@/components/results/organizer/correction-review-queue';
 import { OrganizerResultsLane } from '@/components/results/organizer/organizer-results-lane';
 import {
   getCorrectionLifecycleMetrics,
+  listActiveOfficialResultEntriesForEdition,
   listCorrectionAuditTrailForEdition,
   listOrganizerCorrectionRequestsForEdition,
 } from '@/lib/events/results/queries';
@@ -55,17 +57,19 @@ export default async function ResultsCorrectionsPage({
   const requestedFrom = parseDateBoundary(dateFrom, 'start');
   const requestedTo = parseDateBoundary(dateTo, 'end');
 
-  const [pageData, correctionRequests, auditTrail, metrics] = await Promise.all([
-    getResultsWorkspacePageData(eventId, locale, 'review'),
-    listOrganizerCorrectionRequestsForEdition(eventId, 60),
-    listCorrectionAuditTrailForEdition(eventId, 80),
-    getCorrectionLifecycleMetrics({
-      editionId: eventId,
-      organizationId: organizationId || undefined,
-      requestedFrom,
-      requestedTo,
-    }),
-  ]);
+  const [pageData, correctionRequests, auditTrail, metrics, correctionEntries] =
+    await Promise.all([
+      getResultsWorkspacePageData(eventId, locale, 'review'),
+      listOrganizerCorrectionRequestsForEdition(eventId, 60),
+      listCorrectionAuditTrailForEdition(eventId, 80),
+      getCorrectionLifecycleMetrics({
+        editionId: eventId,
+        organizationId: organizationId || undefined,
+        requestedFrom,
+        requestedTo,
+      }),
+      listActiveOfficialResultEntriesForEdition(eventId),
+    ]);
 
   const formatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'short',
@@ -138,6 +142,52 @@ export default async function ResultsCorrectionsPage({
             noContext: t('corrections.review.noContext'),
             noReviewNote: t('corrections.review.noReviewNote'),
             noValue: t('corrections.review.noValue'),
+            publishAction: t('corrections.review.publishAction'),
+            publishPending: t('corrections.review.publishPending'),
+            publishSuccessMessage: t('corrections.review.publishSuccessMessage'),
+            publishedLabel: t('corrections.review.publishedLabel'),
+            awaitingPublicationLabel: t('corrections.review.awaitingPublicationLabel'),
+          },
+        }}
+      />
+
+      <CorrectionRequestForm
+        entries={correctionEntries.map((entry) => ({
+          entryId: entry.entryId,
+          runnerFullName: entry.runnerFullName,
+          bibNumber: entry.bibNumber,
+          distanceLabel: entry.distanceLabel,
+          status: entry.status,
+          finishTimeMillis: entry.finishTimeMillis,
+          gender: entry.gender,
+          age: entry.age,
+        }))}
+        labels={{
+          title: t('corrections.request.title'),
+          description: t('corrections.request.description'),
+          entryLabel: t('corrections.request.entryLabel'),
+          entryPlaceholder: t('corrections.request.entryPlaceholder'),
+          emptyEntries: t('corrections.request.emptyEntries'),
+          runnerLabel: t('corrections.request.runnerLabel'),
+          bibLabel: t('corrections.request.bibLabel'),
+          genderLabel: t('corrections.request.genderLabel'),
+          ageLabel: t('corrections.request.ageLabel'),
+          statusLabel: t('corrections.request.statusLabel'),
+          finishTimeLabel: t('corrections.request.finishTimeLabel'),
+          finishTimeHint: t('corrections.request.finishTimeHint'),
+          reasonLabel: t('corrections.request.reasonLabel'),
+          reasonPlaceholder: t('corrections.request.reasonPlaceholder'),
+          submitAction: t('corrections.request.submitAction'),
+          submitPending: t('corrections.request.submitPending'),
+          successMessage: t('corrections.request.successMessage'),
+          failurePrefix: t('corrections.request.failurePrefix'),
+          noChangesMessage: t('corrections.request.noChangesMessage'),
+          reasonRequiredMessage: t('corrections.request.reasonRequiredMessage'),
+          statusOptions: {
+            finish: t('corrections.request.statusOptions.finish'),
+            dnf: t('corrections.request.statusOptions.dnf'),
+            dns: t('corrections.request.statusOptions.dns'),
+            dq: t('corrections.request.statusOptions.dq'),
           },
         }}
       />

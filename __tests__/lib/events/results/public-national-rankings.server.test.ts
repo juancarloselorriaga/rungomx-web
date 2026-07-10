@@ -1,5 +1,35 @@
 const mockRankingSnapshotsFindMany = jest.fn();
-const mockRankingSnapshotRowsFindMany = jest.fn();
+const mockSelectDistinct = jest.fn();
+const mockSelect = jest.fn();
+
+// Facet query: db.selectDistinct({...}).from(...).where(...) resolves to rows.
+function createFacetChain(rows: unknown[]) {
+  const chain = { from: jest.fn(), where: jest.fn() };
+  chain.from.mockReturnValue(chain);
+  chain.where.mockResolvedValue(rows);
+  return chain;
+}
+
+// Display query: db.select({...}).from(...).where(...).orderBy(...).limit(n) resolves to rows.
+function createDisplayChain(rows: unknown[]) {
+  const chain = {
+    from: jest.fn(),
+    where: jest.fn(),
+    orderBy: jest.fn(),
+    limit: jest.fn(),
+  };
+  chain.from.mockReturnValue(chain);
+  chain.where.mockReturnValue(chain);
+  chain.orderBy.mockReturnValue(chain);
+  chain.limit.mockResolvedValue(rows);
+  return chain;
+}
+
+// Queue the two row-stage queries (facets then display) for one leaderboard read.
+function queueRankingRows(facetRows: unknown[], displayRows: unknown[]) {
+  mockSelectDistinct.mockReturnValueOnce(createFacetChain(facetRows));
+  mockSelect.mockReturnValueOnce(createDisplayChain(displayRows));
+}
 
 jest.mock('@/db', () => ({
   db: {
@@ -7,10 +37,9 @@ jest.mock('@/db', () => ({
       rankingSnapshots: {
         findMany: (...args: unknown[]) => mockRankingSnapshotsFindMany(...args),
       },
-      rankingSnapshotRows: {
-        findMany: (...args: unknown[]) => mockRankingSnapshotRowsFindMany(...args),
-      },
     },
+    selectDistinct: (...args: unknown[]) => mockSelectDistinct(...args),
+    select: (...args: unknown[]) => mockSelect(...args),
   },
 }));
 
@@ -53,7 +82,8 @@ function buildNationalSnapshot(params: {
 describe('public national rankings leaderboard query', () => {
   beforeEach(() => {
     mockRankingSnapshotsFindMany.mockReset();
-    mockRankingSnapshotRowsFindMany.mockReset();
+    mockSelectDistinct.mockReset();
+    mockSelect.mockReset();
   });
 
   it('returns empty state when no promoted national snapshot exists', async () => {
@@ -92,35 +122,26 @@ describe('public national rankings leaderboard query', () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([currentSnapshot, historicalSnapshot]);
 
-    mockRankingSnapshotRowsFindMany.mockResolvedValueOnce([
-      {
-        rank: 1,
-        runnerFullName: 'Ana Runner',
-        bibNumber: '101',
-        discipline: 'trail_running',
-        gender: 'female',
-        age: 31,
-        finishTimeMillis: 3_600_000,
-      },
-      {
-        rank: 2,
-        runnerFullName: 'Ben Runner',
-        bibNumber: '77',
-        discipline: 'cycling',
-        gender: 'male',
-        age: 41,
-        finishTimeMillis: 3_700_000,
-      },
-      {
-        rank: 3,
-        runnerFullName: 'Cora Runner',
-        bibNumber: '88',
-        discipline: 'trail_running',
-        gender: 'female',
-        age: 42,
-        finishTimeMillis: 3_800_000,
-      },
-    ]);
+    // Facets come from the whole snapshot (distinct discipline/gender/age); the display
+    // query is filtered in SQL, so the mock returns the already-filtered single row.
+    queueRankingRows(
+      [
+        { discipline: 'trail_running', gender: 'female', age: 31 },
+        { discipline: 'cycling', gender: 'male', age: 41 },
+        { discipline: 'trail_running', gender: 'female', age: 42 },
+      ],
+      [
+        {
+          rank: 1,
+          runnerFullName: 'Ana Runner',
+          bibNumber: '101',
+          discipline: 'trail_running',
+          gender: 'female',
+          age: 31,
+          finishTimeMillis: 3_600_000,
+        },
+      ],
+    );
 
     const result = await getPublicNationalRankingLeaderboard({
       discipline: 'trail_running',
@@ -174,17 +195,20 @@ describe('public national rankings leaderboard query', () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([currentSnapshot, historicalSnapshot]);
 
-    mockRankingSnapshotRowsFindMany.mockResolvedValueOnce([
-      {
-        rank: 1,
-        runnerFullName: 'Historical Runner',
-        bibNumber: '55',
-        discipline: 'cycling',
-        gender: 'male',
-        age: 38,
-        finishTimeMillis: 3_450_000,
-      },
-    ]);
+    queueRankingRows(
+      [{ discipline: 'cycling', gender: 'male', age: 38 }],
+      [
+        {
+          rank: 1,
+          runnerFullName: 'Historical Runner',
+          bibNumber: '55',
+          discipline: 'cycling',
+          gender: 'male',
+          age: 38,
+          finishTimeMillis: 3_450_000,
+        },
+      ],
+    );
 
     const result = await getPublicRankingLeaderboard({
       scope: 'national',
@@ -226,17 +250,20 @@ describe('public national rankings leaderboard query', () => {
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([currentSnapshot, historicalSnapshot]);
 
-    mockRankingSnapshotRowsFindMany.mockResolvedValueOnce([
-      {
-        rank: 1,
-        runnerFullName: 'Fallback Runner',
-        bibNumber: '99',
-        discipline: 'trail_running',
-        gender: 'female',
-        age: 29,
-        finishTimeMillis: 3_400_000,
-      },
-    ]);
+    queueRankingRows(
+      [{ discipline: 'trail_running', gender: 'female', age: 29 }],
+      [
+        {
+          rank: 1,
+          runnerFullName: 'Fallback Runner',
+          bibNumber: '99',
+          discipline: 'trail_running',
+          gender: 'female',
+          age: 29,
+          finishTimeMillis: 3_400_000,
+        },
+      ],
+    );
 
     const result = await getPublicRankingLeaderboard({
       scope: 'national',
@@ -282,17 +309,20 @@ describe('public national rankings leaderboard query', () => {
         },
       ]);
 
-    mockRankingSnapshotRowsFindMany.mockResolvedValueOnce([
-      {
-        rank: 1,
-        runnerFullName: 'Ana Runner',
-        bibNumber: '101',
-        discipline: 'trail_running',
-        gender: 'female',
-        age: 31,
-        finishTimeMillis: 3_600_000,
-      },
-    ]);
+    queueRankingRows(
+      [{ discipline: 'trail_running', gender: 'female', age: 31 }],
+      [
+        {
+          rank: 1,
+          runnerFullName: 'Ana Runner',
+          bibNumber: '101',
+          discipline: 'trail_running',
+          gender: 'female',
+          age: 31,
+          finishTimeMillis: 3_600_000,
+        },
+      ],
+    );
 
     const result = await getPublicRankingLeaderboard({
       scope: 'organizer',

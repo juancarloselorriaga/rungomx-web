@@ -34,15 +34,66 @@ export type ResultImportValidationResult = {
   canPreview: boolean;
 };
 
+// Accepts English and Spanish result-status vocabulary (RES-16). An empty cell defaults
+// to `finish`; genuinely unrecognized values return null and are treated as a blocker.
+const FINISH_STATUS_TOKENS = new Set([
+  '',
+  'finish',
+  'finished',
+  'finisher',
+  'ok',
+  'fin',
+  'finalizado',
+  'terminado',
+  'completado',
+  'meta',
+]);
+const DNF_STATUS_TOKENS = new Set([
+  'dnf',
+  'did not finish',
+  'no termino',
+  'no terminó',
+  'abandono',
+  'abandonó',
+  'ret',
+  'retirado',
+]);
+const DNS_STATUS_TOKENS = new Set([
+  'dns',
+  'did not start',
+  'no inicio',
+  'no inició',
+  'no salio',
+  'no salió',
+  'ausente',
+]);
+const DQ_STATUS_TOKENS = new Set([
+  'dq',
+  'dsq',
+  'disqualified',
+  'descalificado',
+  'descalificada',
+]);
+
 export function normalizeResultStatus(value: string): ParsedResultStatus | null {
-  const normalized = value.trim().toLowerCase();
-  if (normalized === '' || normalized === 'finish' || normalized === 'finished') {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+
+  if (FINISH_STATUS_TOKENS.has(value.trim().toLowerCase()) || FINISH_STATUS_TOKENS.has(normalized)) {
     return 'finish';
   }
-
-  if (normalized === 'dnf') return 'dnf';
-  if (normalized === 'dns') return 'dns';
-  if (normalized === 'dq' || normalized === 'disqualified') return 'dq';
+  if (DNF_STATUS_TOKENS.has(value.trim().toLowerCase()) || DNF_STATUS_TOKENS.has(normalized)) {
+    return 'dnf';
+  }
+  if (DNS_STATUS_TOKENS.has(value.trim().toLowerCase()) || DNS_STATUS_TOKENS.has(normalized)) {
+    return 'dns';
+  }
+  if (DQ_STATUS_TOKENS.has(value.trim().toLowerCase()) || DQ_STATUS_TOKENS.has(normalized)) {
+    return 'dq';
+  }
 
   return null;
 }
@@ -75,10 +126,13 @@ export function parseResultFinishTimeToMillis(value: string): number | null {
     }
   }
 
-  if (/^\d+$/.test(trimmed)) {
-    const raw = Number.parseInt(trimmed, 10);
-    if (!Number.isFinite(raw) || raw <= 0) return null;
-    return raw;
+  // A bare number is human-entered seconds (e.g. "5400" = 1h30m), not milliseconds.
+  // Timing exports mapped to the "finish time" column are seconds or clock strings; a raw
+  // millisecond column is not a realistic human input here (RES-16).
+  if (/^\d+(?:\.\d+)?$/.test(trimmed)) {
+    const seconds = Number.parseFloat(trimmed);
+    if (!Number.isFinite(seconds) || seconds <= 0) return null;
+    return Math.round(seconds * 1000);
   }
 
   return null;
@@ -99,6 +153,61 @@ function addIssue(
   issue: ResultImportValidationIssue,
 ) {
   issues.push(issue);
+}
+
+export type BuiltResultImportRow = {
+  runnerFullName: string;
+  bibNumber: string | null;
+  gender: string | null;
+  age: number | null;
+  status: ParsedResultStatus;
+  finishTimeMillis: number | null;
+};
+
+// Build canonical import rows (all mapped fields, not just the preview columns) from a
+// parsed file + mapping, so the import action receives fully-formed rows. Rows without a
+// runner name are skipped. Unknown statuses fall back to `finish` here; the server-side
+// import validation still blocks them, and the preview surfaces them as blockers.
+export function buildResultImportRows(params: {
+  headers: readonly string[];
+  rows: readonly string[][];
+  mapping: ResultImportFieldMapping;
+}): BuiltResultImportRow[] {
+  const runnerNameIndex = getColumnIndex(params.headers, params.mapping.runnerFullName);
+  const bibIndex = getColumnIndex(params.headers, params.mapping.bibNumber);
+  const finishTimeIndex = getColumnIndex(params.headers, params.mapping.finishTimeMillis);
+  const statusIndex = getColumnIndex(params.headers, params.mapping.status);
+  const genderIndex = getColumnIndex(params.headers, params.mapping.gender);
+  const ageIndex = getColumnIndex(params.headers, params.mapping.age);
+
+  const built: BuiltResultImportRow[] = [];
+
+  for (const row of params.rows) {
+    const runnerFullName = getCellValue(row, runnerNameIndex);
+    if (!runnerFullName) continue;
+
+    const bibNumber = getCellValue(row, bibIndex) || null;
+    const genderValue = getCellValue(row, genderIndex) || null;
+    const ageText = getCellValue(row, ageIndex);
+    const parsedAge = ageText ? Number.parseInt(ageText, 10) : NaN;
+    const age = Number.isFinite(parsedAge) && parsedAge >= 0 && parsedAge <= 120 ? parsedAge : null;
+
+    const status = normalizeResultStatus(getCellValue(row, statusIndex)) ?? 'finish';
+    const finishTimeText = getCellValue(row, finishTimeIndex);
+    const finishTimeMillis =
+      finishTimeText.length > 0 ? parseResultFinishTimeToMillis(finishTimeText) : null;
+
+    built.push({
+      runnerFullName,
+      bibNumber,
+      gender: genderValue,
+      age,
+      status,
+      finishTimeMillis: status === 'finish' ? finishTimeMillis : null,
+    });
+  }
+
+  return built;
 }
 
 export function validateResultImportRows(params: {
@@ -137,13 +246,14 @@ export function validateResultImportRows(params: {
 
     const parsedStatus = normalizeResultStatus(statusText);
     if (parsedStatus === null) {
-      addIssue(warnings, {
-        severity: 'warning',
+      addIssue(blockers, {
+        severity: 'blocker',
         rowNumber,
         fieldKey: 'status',
         sourceColumn: params.mapping.status,
         message: `Unknown status "${statusText || '(empty)'}".`,
-        fixGuidance: 'Use finish, DNF, DNS, or DQ for deterministic status handling.',
+        fixGuidance:
+          'Map this row to finish, DNF, DNS, or DQ (Spanish equivalents are accepted) before importing.',
       });
     }
 
@@ -165,14 +275,15 @@ export function validateResultImportRows(params: {
     if (bibNumber) {
       if (seenBibs.has(bibNumber)) {
         const originalRowNumber = seenBibs.get(bibNumber) ?? rowNumber;
-        addIssue(warnings, {
-          severity: 'warning',
+        // Duplicate bibs collide with the DB unique index, so treat them as blockers
+        // rather than warnings (RES-15/16).
+        addIssue(blockers, {
+          severity: 'blocker',
           rowNumber,
           fieldKey: 'bibNumber',
           sourceColumn: params.mapping.bibNumber,
           message: `Duplicate bib "${bibNumber}" also appears on row ${originalRowNumber}.`,
-          fixGuidance:
-            'Confirm the duplicate is intentional or fix bib values before finalization.',
+          fixGuidance: 'Give each runner in this distance a unique bib before importing.',
         });
       } else {
         seenBibs.set(bibNumber, rowNumber);

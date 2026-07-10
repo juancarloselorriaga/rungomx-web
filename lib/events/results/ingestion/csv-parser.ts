@@ -122,8 +122,34 @@ function toSampleRows(params: {
   });
 }
 
+// Excel (es-MX) commonly exports semicolon-delimited CSV. Detect the delimiter from the
+// header line and normalize to commas before handing off to the shared comma parser,
+// while leaving quoted fields untouched (RES-16).
+function normalizeCsvDelimiter(text: string): string {
+  const firstLine = text.split(/\r?\n/, 1)[0] ?? '';
+  let inQuotes = false;
+  let commaCount = 0;
+  let semicolonCount = 0;
+  for (const char of firstLine) {
+    if (char === '"') inQuotes = !inQuotes;
+    else if (!inQuotes && char === ',') commaCount += 1;
+    else if (!inQuotes && char === ';') semicolonCount += 1;
+  }
+
+  if (semicolonCount <= commaCount) return text;
+
+  let result = '';
+  let quoted = false;
+  for (const char of text) {
+    if (char === '"') quoted = !quoted;
+    if (char === ';' && !quoted) result += ',';
+    else result += char;
+  }
+  return result;
+}
+
 function parseCsvRows(text: string): { headers: string[]; rows: string[][] } {
-  const parsed = parseCsv(text);
+  const parsed = parseCsv(normalizeCsvDelimiter(text));
   const headers = parsed.headers.map((header) => header.trim());
   const rows = parsed.rows.map((row) => row.map((value) => value.trim()));
   return { headers, rows };
@@ -161,14 +187,33 @@ async function parseSpreadsheetRows(
   };
 }
 
-async function readFileText(file: File): Promise<string> {
-  if (typeof file.text === 'function') {
-    return file.text();
+// Excel on Windows frequently exports CSV as Windows-1252 rather than UTF-8, which mojibakes
+// accented Mexican names ("José" → "JosÃ©"). Decode via the byte buffer with a UTF-8 attempt
+// first and a Windows-1252 fallback when the UTF-8 decode produces replacement characters
+// (RES-16).
+function decodeCsvBuffer(buffer: ArrayBuffer): string {
+  if (typeof TextDecoder === 'undefined') {
+    return String.fromCharCode(...new Uint8Array(buffer));
   }
 
-  if (typeof file.arrayBuffer === 'function' && typeof TextDecoder !== 'undefined') {
+  const utf8 = new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+  if (!utf8.includes('�')) return utf8;
+
+  try {
+    return new TextDecoder('windows-1252', { fatal: false }).decode(buffer);
+  } catch {
+    return utf8;
+  }
+}
+
+async function readFileText(file: File): Promise<string> {
+  if (typeof file.arrayBuffer === 'function') {
     const buffer = await file.arrayBuffer();
-    return new TextDecoder().decode(buffer);
+    return decodeCsvBuffer(buffer);
+  }
+
+  if (typeof file.text === 'function') {
+    return file.text();
   }
 
   if (typeof FileReader !== 'undefined') {

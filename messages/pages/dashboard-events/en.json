@@ -517,7 +517,12 @@
         "noDecisionYet": "Pending review",
         "noContext": "No additional request context provided.",
         "noReviewNote": "No decision note provided.",
-        "noValue": "N/A"
+        "noValue": "N/A",
+        "publishAction": "Publish correction",
+        "publishPending": "Publishing…",
+        "publishSuccessMessage": "Correction published as a new corrected version.",
+        "publishedLabel": "Published as a corrected version",
+        "awaitingPublicationLabel": "Approved — not yet published"
       },
       "audit": {
         "title": "Correction audit trail",
@@ -580,6 +585,34 @@
         "fallback": {
           "notAvailable": "N/A",
           "notSet": "Not set"
+        }
+      },
+      "request": {
+        "title": "Request a correction",
+        "description": "Create a correction request for a published result. Approved requests are published as a new corrected version.",
+        "entryLabel": "Result to correct",
+        "entryPlaceholder": "Select a result…",
+        "emptyEntries": "No official results are available to correct yet.",
+        "runnerLabel": "Runner name",
+        "bibLabel": "Bib number",
+        "genderLabel": "Gender",
+        "ageLabel": "Age",
+        "statusLabel": "Result status",
+        "finishTimeLabel": "Finish time",
+        "finishTimeHint": "Use HH:MM:SS, MM:SS, or seconds.",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Explain what should change and why.",
+        "submitAction": "Submit correction request",
+        "submitPending": "Submitting…",
+        "successMessage": "Correction request submitted for review.",
+        "failurePrefix": "Could not submit the request:",
+        "noChangesMessage": "Change at least one field before submitting.",
+        "reasonRequiredMessage": "A reason is required.",
+        "statusOptions": {
+          "finish": "Finish",
+          "dnf": "DNF",
+          "dns": "DNS",
+          "dq": "DQ"
         }
       }
     },
@@ -868,6 +901,17 @@
         "genderPlace": "Gender place",
         "ageGroupPlace": "Age-group place",
         "distanceLabel": "Distance label"
+      },
+      "import": {
+        "sectionTitle": "Import to draft",
+        "sectionDescription": "Choose the distance these results belong to, then import the mapped rows into a new draft version.",
+        "distanceLabel": "Distance",
+        "distanceAllOption": "No specific distance",
+        "submitAction": "Import to draft",
+        "submitPending": "Importing…",
+        "blockedByIssues": "Resolve the blocking issues above before importing.",
+        "successMessage": "Results imported into a new draft. Review and publish when ready.",
+        "failurePrefix": "Import failed:"
       }
     }
   },

@@ -101,6 +101,8 @@ describe('correction lifecycle metrics query', () => {
       pending: 1,
       approved: 1,
       rejected: 1,
+      approvedPublished: 0,
+      approvedAwaitingPublication: 1,
     });
     expect(result.medianResolutionMillis).toBe(5_400_000);
     expect(result.medianResolutionHours).toBe(1.5);
@@ -145,6 +147,8 @@ describe('correction lifecycle metrics query', () => {
       pending: 0,
       approved: 0,
       rejected: 0,
+      approvedPublished: 0,
+      approvedAwaitingPublication: 0,
     });
     expect(result.medianResolutionMillis).toBeNull();
     expect(result.medianResolutionHours).toBeNull();

@@ -19,12 +19,17 @@ import {
   type ResultImportMappingTemplate,
 } from '@/lib/events/results/ingestion/mapping-templates';
 import {
+  buildResultImportRows,
   validateResultImportRows,
   type ResultImportValidationIssue,
 } from '@/lib/events/results/ingestion/validation';
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { importResultDraftRows } from '@/lib/events/results/actions';
+import { useRouter } from '@/i18n/navigation';
+import { useMemo, useState, useTransition, type ChangeEvent } from 'react';
 
 const MAX_STORED_TEMPLATES = 25;
+
+export type ImportDistanceOption = { id: string; label: string };
 
 type ImportMappingPreviewLabels = {
   title: string;
@@ -77,10 +82,23 @@ type ImportMappingPreviewLabels = {
   };
   parseErrors: Record<ResultImportParseErrorCode, string>;
   canonicalFieldLabels: Record<ResultImportCanonicalFieldKey, string>;
+  import: {
+    sectionTitle: string;
+    sectionDescription: string;
+    distanceLabel: string;
+    distanceAllOption: string;
+    submitAction: string;
+    submitPending: string;
+    blockedByIssues: string;
+    successMessage: string;
+    failurePrefix: string;
+  };
 };
 
 type ImportMappingPreviewProps = {
   storageKey: string;
+  eventId: string;
+  distances: ImportDistanceOption[];
   labels: ImportMappingPreviewLabels;
 };
 
@@ -144,7 +162,14 @@ function getIssueToneClass(issue: ResultImportValidationIssue): string {
   return 'border-amber-300/50 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20';
 }
 
-export function ImportMappingPreview({ storageKey, labels }: ImportMappingPreviewProps) {
+export function ImportMappingPreview({
+  storageKey,
+  eventId,
+  distances,
+  labels,
+}: ImportMappingPreviewProps) {
+  const router = useRouter();
+  const [isImporting, startImport] = useTransition();
   const [parsedImport, setParsedImport] = useState<ParsedResultImportFile | null>(null);
   const [mapping, setMapping] = useState<ResultImportFieldMapping>(
     createEmptyResultImportFieldMapping(),
@@ -154,6 +179,7 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
   );
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [templateName, setTemplateName] = useState('');
+  const [selectedDistanceId, setSelectedDistanceId] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
@@ -262,6 +288,52 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
     setTemplateName(template.name);
     setFeedbackMessage(labels.templateSavedMessage);
     persistTemplates(storageKey, nextTemplates);
+  };
+
+  const canImport = Boolean(
+    parsedImport &&
+      validationResult &&
+      validationResult.canPreview &&
+      isResultImportMappingComplete(mapping),
+  );
+
+  const onImport = () => {
+    if (!parsedImport || !canImport) {
+      setErrorMessage(labels.import.blockedByIssues);
+      setFeedbackMessage(null);
+      return;
+    }
+
+    const rows = buildResultImportRows({
+      headers: parsedImport.headers,
+      rows: parsedImport.rows,
+      mapping,
+    });
+
+    startImport(async () => {
+      const result = await importResultDraftRows({
+        editionId: eventId,
+        sourceLane: 'csv_excel',
+        distanceId: selectedDistanceId || null,
+        sourceReference: parsedImport.fileName,
+        sourceFileChecksum: parsedImport.headerSignature,
+        rows,
+      });
+
+      if (result.ok) {
+        setErrorMessage(null);
+        setFeedbackMessage(labels.import.successMessage);
+        router.push({
+          pathname: '/dashboard/events/[eventId]/results/review',
+          params: { eventId },
+        });
+        router.refresh();
+        return;
+      }
+
+      setFeedbackMessage(null);
+      setErrorMessage(`${labels.import.failurePrefix} ${result.error}`);
+    });
   };
 
   return (
@@ -568,6 +640,52 @@ export function ImportMappingPreview({ storageKey, labels }: ImportMappingPrevie
                 </table>
               </div>
             )}
+          </InsetSurface>
+
+          <InsetSurface as="section" className="space-y-3 bg-muted/25 p-3">
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-foreground">
+                {labels.import.sectionTitle}
+              </h4>
+              <p className="text-xs text-muted-foreground">{labels.import.sectionDescription}</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+              <label className="space-y-1">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {labels.import.distanceLabel}
+                </span>
+                <select
+                  value={selectedDistanceId}
+                  onChange={(event) => setSelectedDistanceId(event.target.value)}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground"
+                  aria-label={labels.import.distanceLabel}
+                >
+                  <option value="">{labels.import.distanceAllOption}</option>
+                  {distances.map((distance) => (
+                    <option key={distance.id} value={distance.id}>
+                      {distance.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <Button
+                type="button"
+                onClick={onImport}
+                disabled={!canImport || isImporting}
+                className="sm:self-end"
+                data-testid="results-import-submit"
+              >
+                {isImporting ? labels.import.submitPending : labels.import.submitAction}
+              </Button>
+            </div>
+
+            {validationResult && !validationResult.canPreview ? (
+              <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {labels.import.blockedByIssues}
+              </p>
+            ) : null}
           </InsetSurface>
 
           <InsetSurface as="section" className="space-y-2 bg-muted/25 p-3">

@@ -2,6 +2,11 @@ import { Badge, Hero, Section, TextBlock } from '@/components/common';
 import { publicSelectClassName } from '@/components/common/public-form-styles';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+import { DEFAULT_TIMEZONE } from '@/i18n/routing';
+import {
+  getPublicResultIdentityPolicy,
+  resolvePublicResultIdentityDisplay,
+} from '@/lib/events/results/public-identity-policy';
 import { getPublicRankingLeaderboard } from '@/lib/events/results/rankings';
 import { LocalePageProps } from '@/types/next';
 import { configPageLocale } from '@/utils/config-page-locale';
@@ -59,9 +64,12 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
   const { locale } = await params;
   await configPageLocale(params, { pathname: '/rankings' });
   const t = await getTranslations('pages.rankings');
+  const identityPolicy = getPublicResultIdentityPolicy();
   const dateTimeFormatter = new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
+    // Platform is MX-only; format snapshot timestamps in the platform timezone (RES-23).
+    timeZone: DEFAULT_TIMEZONE,
   });
 
   const filters = await searchParams;
@@ -351,14 +359,20 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                 </tr>
               </thead>
               <tbody>
-                {leaderboard.rows.map((row) => (
+                {leaderboard.rows.map((row) => {
+                  // RES-18: rankings must honor the same public identity policy as results pages.
+                  const identity = resolvePublicResultIdentityDisplay(
+                    { runnerFullName: row.runnerFullName, bibNumber: row.bibNumber },
+                    identityPolicy,
+                  );
+                  return (
                   <tr
                     key={`${row.rank}-${row.runnerFullName}-${row.bibNumber ?? 'nobib'}`}
                     className="border-b border-border/60 last:border-b-0"
                   >
                     <td className="px-4 py-3 text-foreground">{row.rank}</td>
-                    <td className="px-4 py-3 text-foreground">{row.runnerFullName}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{row.bibNumber ?? '-'}</td>
+                    <td className="px-4 py-3 text-foreground">{identity.runnerLabel}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{identity.bibLabel ?? '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {(() => {
                         const disciplineLabelKey = resolveDisciplineLabelKey(row.discipline);
@@ -379,7 +393,8 @@ export default async function RankingsPage({ params, searchParams }: RankingsPag
                       {formatFinishTime(row.finishTimeMillis)}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

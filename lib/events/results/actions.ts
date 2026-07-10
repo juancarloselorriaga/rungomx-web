@@ -13,36 +13,48 @@ import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import {
   confirmRunnerResultClaimSchema,
   createResultDraftVersionSchema,
+  discardResultDraftVersionSchema,
   finalizeResultVersionAttestationSchema,
   getRunnerResultClaimCandidatesSchema,
+  importResultDraftRowsSchema,
   initializeResultIngestionSessionSchema,
   linkDraftResultEntryToUserSchema,
   publishApprovedCorrectionVersionSchema,
   reviewResultCorrectionRequestSchema,
   reviewRunnerResultClaimSchema,
+  revokeRunnerResultClaimSchema,
   requestRunnerResultCorrectionSchema,
   upsertDraftResultEntrySchema,
   type ConfirmRunnerResultClaimInput,
   type CreateResultDraftVersionInput,
+  type DiscardResultDraftVersionInput,
   type FinalizeResultVersionAttestationInput,
   type GetRunnerResultClaimCandidatesInput,
+  type ImportResultDraftRowsInput,
   type InitializeResultIngestionSessionInput,
   type LinkDraftResultEntryToUserInput,
   type PublishApprovedCorrectionVersionInput,
   type RequestRunnerResultCorrectionInput,
   type ReviewResultCorrectionRequestInput,
   type ReviewRunnerResultClaimInput,
+  type RevokeRunnerResultClaimInput,
   type UpsertDraftResultEntryInput,
 } from '@/lib/events/results/schemas';
 import {
   createResultDraftVersionWorkflow,
+  discardResultDraftVersionWorkflow,
   initializeResultIngestionSessionWorkflow,
 } from '@/lib/events/results/actions/ingestion';
+import {
+  importResultDraftRowsWorkflow,
+  type ResultImportResponse,
+} from '@/lib/events/results/actions/import';
 import { finalizeResultVersionAttestationWorkflow } from '@/lib/events/results/actions/finalization';
 import {
   confirmRunnerResultClaimWorkflow,
   getRunnerResultClaimCandidatesWorkflow,
   reviewRunnerResultClaimWorkflow,
+  revokeRunnerResultClaimWorkflow,
 } from '@/lib/events/results/actions/claims';
 import {
   publishApprovedCorrectionVersionWorkflow,
@@ -148,6 +160,7 @@ async function deriveAndPersistDraftPlacements(
     ),
     columns: {
       id: true,
+      distanceId: true,
       runnerFullName: true,
       bibNumber: true,
       status: true,
@@ -167,6 +180,7 @@ async function deriveAndPersistDraftPlacements(
   const derived = deriveResultPlacements(
     rows.map((row) => ({
       id: row.id,
+      distanceId: row.distanceId,
       runnerFullName: row.runnerFullName,
       bibNumber: row.bibNumber,
       status: row.status,
@@ -284,6 +298,44 @@ export const initializeResultIngestionSession = withAuthenticatedUser<
       sourceFileChecksum,
     },
     retryLimit: RESULT_VERSION_CREATE_RETRY_LIMIT,
+    assertCanWriteResultsForEdition,
+  });
+});
+
+export const importResultDraftRows = withAuthenticatedUser<ActionResult<ResultImportResponse>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: ImportResultDraftRowsInput) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = importResultDraftRowsSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  return importResultDraftRowsWorkflow({
+    authContext,
+    input: validated.data,
+    assertCanWriteResultsForEdition,
+  });
+});
+
+export const discardResultDraftVersion = withAuthenticatedUser<
+  ActionResult<{ resultVersionId: string }>
+>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input: DiscardResultDraftVersionInput) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = discardResultDraftVersionSchema.safeParse(input);
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  return discardResultDraftVersionWorkflow({
+    authContext,
+    input: validated.data,
     assertCanWriteResultsForEdition,
   });
 });
@@ -708,6 +760,24 @@ export const reviewRunnerResultClaim = withAuthenticatedUser<ActionResult<Result
   }
 
   return reviewRunnerResultClaimWorkflow({
+    authContext,
+    input: validated.data,
+    assertCanWriteResultsForEdition,
+  });
+});
+
+export const revokeRunnerResultClaim = withAuthenticatedUser<ActionResult<ResultClaimReviewResponse>>({
+  unauthenticated: () => ({ ok: false, error: 'Authentication required', code: 'UNAUTHENTICATED' }),
+})(async (authContext, input?: RevokeRunnerResultClaimInput) => {
+  const accessError = checkEventsAccess(authContext);
+  if (accessError) return { ok: false, ...accessError };
+
+  const validated = revokeRunnerResultClaimSchema.safeParse(input ?? {});
+  if (!validated.success) {
+    return { ok: false, error: validated.error.issues[0].message, code: 'VALIDATION_ERROR' };
+  }
+
+  return revokeRunnerResultClaimWorkflow({
     authContext,
     input: validated.data,
     assertCanWriteResultsForEdition,

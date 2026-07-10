@@ -66,6 +66,22 @@ import type {
 } from '@/lib/events/results/types';
 import { safeCacheLife, safeCacheTag } from '@/lib/next-cache';
 
+export type EditionDistanceOption = { id: string; label: string };
+
+// Distances for an edition, used to scope a results import to a single distance so
+// per-distance placements and bib uniqueness are meaningful (RES-2/RES-15).
+export async function listEditionDistanceOptions(
+  editionId: string,
+): Promise<EditionDistanceOption[]> {
+  const rows = await db
+    .select({ id: eventDistances.id, label: eventDistances.label })
+    .from(eventDistances)
+    .where(and(eq(eventDistances.editionId, editionId), isNull(eventDistances.deletedAt)))
+    .orderBy(asc(eventDistances.sortOrder), asc(eventDistances.label));
+
+  return rows.map((row) => ({ id: row.id, label: row.label }));
+}
+
 export async function getDraftResultVersionById(
   resultVersionId: string,
 ): Promise<ResultVersionRecord | null> {
@@ -426,7 +442,7 @@ type PublicOfficialEntryRow = {
 export async function getPublicOfficialResultsPageData(
   seriesSlug: string,
   editionSlug: string,
-  options: { entryLimit?: number } = {},
+  options: { entryLimit?: number; entryOffset?: number } = {},
 ): Promise<PublicOfficialResultsPageData> {
   'use cache: remote';
   safeCacheLife({ expire: 60 });
@@ -435,6 +451,7 @@ export async function getPublicOfficialResultsPageData(
     Math.max(options.entryLimit ?? 200, 1),
     PUBLIC_OFFICIAL_RESULTS_ENTRY_LIMIT_MAX,
   );
+  const safeOffset = Math.max(options.entryOffset ?? 0, 0);
 
   const editionRows = await db
     .select({
@@ -493,6 +510,18 @@ export async function getPublicOfficialResultsPageData(
     };
   }
 
+  const entryFilter = and(
+    eq(resultEntries.resultVersionId, activeVersion.id),
+    isNull(resultEntries.deletedAt),
+    or(isNull(resultEntries.distanceId), isNull(eventDistances.deletedAt)),
+  );
+
+  const [{ total } = { total: 0 }] = await db
+    .select({ total: sql<number>`cast(count(*) as int)` })
+    .from(resultEntries)
+    .leftJoin(eventDistances, eq(resultEntries.distanceId, eventDistances.id))
+    .where(entryFilter);
+
   const entryRows = await db
     .select({
       entryId: resultEntries.id,
@@ -508,14 +537,11 @@ export async function getPublicOfficialResultsPageData(
     })
     .from(resultEntries)
     .leftJoin(eventDistances, eq(resultEntries.distanceId, eventDistances.id))
-    .where(
-      and(
-        eq(resultEntries.resultVersionId, activeVersion.id),
-        isNull(resultEntries.deletedAt),
-        or(isNull(resultEntries.distanceId), isNull(eventDistances.deletedAt)),
-      ),
-    )
+    .where(entryFilter)
+    // Group by distance first (placements are per-distance now — RES-2), then by place.
     .orderBy(
+      sql`${eventDistances.label} is null`,
+      asc(eventDistances.label),
       sql`${resultEntries.overallPlace} is null`,
       asc(resultEntries.overallPlace),
       sql`${resultEntries.finishTimeMillis} is null`,
@@ -523,7 +549,8 @@ export async function getPublicOfficialResultsPageData(
       asc(resultEntries.runnerFullName),
       asc(resultEntries.id),
     )
-    .limit(safeLimit);
+    .limit(safeLimit)
+    .offset(safeOffset);
 
   const entries = entryRows as PublicOfficialEntryRow[];
 
@@ -537,6 +564,9 @@ export async function getPublicOfficialResultsPageData(
       finalizedAt: activeVersion.finalizedAt,
       updatedAt: activeVersion.updatedAt,
     },
+    totalEntryCount: total,
+    entryOffset: safeOffset,
+    entryLimit: safeLimit,
     entries: entries.map((entry) => ({
       id: entry.entryId,
       runnerFullName: entry.runnerFullName,
@@ -559,7 +589,7 @@ type ActiveOfficialVersionPointer = {
   versionNumber: number;
 };
 
-async function listActiveOfficialVersionPointers(): Promise<ActiveOfficialVersionPointer[]> {
+export async function listActiveOfficialVersionPointers(): Promise<ActiveOfficialVersionPointer[]> {
   const candidates = await db.query.resultVersions.findMany({
     where: and(
       inArray(resultVersions.status, RANKING_ELIGIBILITY_STATUSES),
@@ -617,7 +647,9 @@ export async function listPublicOfficialResultsDirectory(
 
   const predicates = [
     inArray(eventEditions.id, activeEditionIds),
-    or(eq(eventEditions.visibility, 'published'), eq(eventEditions.visibility, 'unlisted')),
+    // Directory browse lists published editions only; unlisted editions stay link-only,
+    // matching the events domain (RES-10).
+    eq(eventEditions.visibility, 'published'),
     isNull(eventEditions.deletedAt),
     isNull(eventSeries.deletedAt),
   ];
@@ -695,7 +727,8 @@ export async function searchPublicOfficialResultEntries(
 
   const predicates = [
     inArray(resultEntries.resultVersionId, activeVersionIds),
-    or(eq(eventEditions.visibility, 'published'), eq(eventEditions.visibility, 'unlisted')),
+    // Public name/bib search covers published editions only (RES-10).
+    eq(eventEditions.visibility, 'published'),
     isNull(resultEntries.deletedAt),
     isNull(resultVersions.deletedAt),
     isNull(eventEditions.deletedAt),
@@ -785,6 +818,12 @@ export async function findUnclaimedResultClaimCandidates(
 
   if (searchTerms.length === 0) return [];
 
+  // RES-7: only surface entries from each edition's ACTIVE version. Superseded versions
+  // must not offer duplicate/stale claim candidates.
+  const activePointers = await listActiveOfficialVersionPointers();
+  if (activePointers.length === 0) return [];
+  const activeVersionIds = activePointers.map((pointer) => pointer.resultVersionId);
+
   const identityPredicate = or(
     ...searchTerms.map((term) => ilike(resultEntries.runnerFullName, `%${term}%`)),
   );
@@ -837,6 +876,7 @@ export async function findUnclaimedResultClaimCandidates(
         isNull(resultEntryClaims.id),
         isNull(resultEntries.userId),
         inArray(resultVersions.status, CLAIM_CANDIDATE_QUERY_STATUSES),
+        inArray(resultEntries.resultVersionId, activeVersionIds),
         identityPredicate,
       ),
     )
@@ -855,6 +895,11 @@ export async function findUnclaimedResultClaimCandidateByEntryId(
 ): Promise<UnclaimedResultClaimCandidateRow | null> {
   const searchTerms = buildClaimNameSearchTerms(input.runnerName, input.runnerNameTokens);
   if (searchTerms.length === 0) return null;
+
+  // RES-7: confirm against the edition's ACTIVE version only.
+  const activePointers = await listActiveOfficialVersionPointers();
+  if (activePointers.length === 0) return null;
+  const activeVersionIds = activePointers.map((pointer) => pointer.resultVersionId);
 
   const identityPredicate = or(
     ...searchTerms.map((term) => ilike(resultEntries.runnerFullName, `%${term}%`)),
@@ -909,12 +954,86 @@ export async function findUnclaimedResultClaimCandidateByEntryId(
         isNull(resultEntryClaims.id),
         isNull(resultEntries.userId),
         inArray(resultVersions.status, CLAIM_CANDIDATE_QUERY_STATUSES),
+        inArray(resultEntries.resultVersionId, activeVersionIds),
         identityPredicate,
       ),
     )
     .limit(1);
 
   return candidate ?? null;
+}
+
+export type ActiveOfficialResultEntryOption = {
+  entryId: string;
+  resultVersionId: string;
+  runnerFullName: string;
+  bibNumber: string | null;
+  distanceId: string | null;
+  distanceLabel: string | null;
+  status: ResultEntryStatus;
+  finishTimeMillis: number | null;
+  gender: string | null;
+  age: number | null;
+};
+
+// Entries of an edition's ACTIVE official/corrected version — the correct target set for a
+// new organizer correction request (never a draft or a superseded version).
+export async function listActiveOfficialResultEntriesForEdition(
+  editionId: string,
+  limit = 500,
+): Promise<ActiveOfficialResultEntryOption[]> {
+  const activeVersion = await db.query.resultVersions.findFirst({
+    where: and(
+      eq(resultVersions.editionId, editionId),
+      inArray(resultVersions.status, RANKING_ELIGIBILITY_STATUSES),
+      isNull(resultVersions.deletedAt),
+    ),
+    columns: { id: true },
+    orderBy: [desc(resultVersions.versionNumber), desc(resultVersions.createdAt)],
+  });
+
+  if (!activeVersion) return [];
+
+  const rows = await db
+    .select({
+      entryId: resultEntries.id,
+      resultVersionId: resultEntries.resultVersionId,
+      runnerFullName: resultEntries.runnerFullName,
+      bibNumber: resultEntries.bibNumber,
+      distanceId: resultEntries.distanceId,
+      distanceLabel: eventDistances.label,
+      status: resultEntries.status,
+      finishTimeMillis: resultEntries.finishTimeMillis,
+      gender: resultEntries.gender,
+      age: resultEntries.age,
+    })
+    .from(resultEntries)
+    .leftJoin(eventDistances, eq(resultEntries.distanceId, eventDistances.id))
+    .where(
+      and(
+        eq(resultEntries.resultVersionId, activeVersion.id),
+        isNull(resultEntries.deletedAt),
+      ),
+    )
+    .orderBy(
+      sql`${resultEntries.overallPlace} is null`,
+      asc(resultEntries.overallPlace),
+      asc(resultEntries.runnerFullName),
+    )
+    .limit(Math.min(Math.max(limit, 1), 1000));
+
+  return rows.map((row) => ({
+    entryId: row.entryId,
+    resultVersionId: row.resultVersionId,
+    runnerFullName: row.runnerFullName,
+    bibNumber: row.bibNumber,
+    distanceId: row.distanceId,
+    distanceLabel: row.distanceLabel,
+    status: row.status,
+    finishTimeMillis: row.finishTimeMillis,
+    gender: row.gender,
+    age: row.age,
+  }));
 }
 
 export async function listPendingResultClaimReviewsForEdition(
@@ -1625,6 +1744,7 @@ export async function getCorrectionLifecycleMetrics(
       requestId: resultCorrectionRequests.id,
       status: resultCorrectionRequests.status,
       reason: resultCorrectionRequests.reason,
+      requestContext: resultCorrectionRequests.requestContext,
       requestedByUserId: resultCorrectionRequests.requestedByUserId,
       reviewedByUserId: resultCorrectionRequests.reviewedByUserId,
       requestedAt: resultCorrectionRequests.requestedAt,
@@ -1647,6 +1767,8 @@ export async function getCorrectionLifecycleMetrics(
     pending: 0,
     approved: 0,
     rejected: 0,
+    approvedPublished: 0,
+    approvedAwaitingPublication: 0,
   };
 
   const resolutionDurations: number[] = [];
@@ -1666,6 +1788,14 @@ export async function getCorrectionLifecycleMetrics(
     if (status === 'pending') statusCounts.pending += 1;
     if (status === 'approved') statusCounts.approved += 1;
     if (status === 'rejected') statusCounts.rejected += 1;
+
+    if (status === 'approved') {
+      const published = toPublishedContext(
+        isRecord(row.requestContext) ? row.requestContext.publication : null,
+      );
+      if (published) statusCounts.approvedPublished += 1;
+      else statusCounts.approvedAwaitingPublication += 1;
+    }
 
     const requestedAtMillis = row.requestedAt.getTime();
     const reviewedAtMillis = row.reviewedAt?.getTime() ?? null;

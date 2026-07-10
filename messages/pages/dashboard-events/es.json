@@ -517,7 +517,12 @@
         "noDecisionYet": "Pendiente de revisión",
         "noContext": "No hay contexto adicional.",
         "noReviewNote": "No hay nota de decisión.",
-        "noValue": "N/D"
+        "noValue": "N/D",
+        "publishAction": "Publicar corrección",
+        "publishPending": "Publicando…",
+        "publishSuccessMessage": "Corrección publicada como una nueva versión corregida.",
+        "publishedLabel": "Publicada como versión corregida",
+        "awaitingPublicationLabel": "Aprobada — aún sin publicar"
       },
       "audit": {
         "title": "Bitácora de auditoría de correcciones",
@@ -580,6 +585,34 @@
         "fallback": {
           "notAvailable": "N/D",
           "notSet": "Sin definir"
+        }
+      },
+      "request": {
+        "title": "Solicitar una corrección",
+        "description": "Crea una solicitud de corrección para un resultado publicado. Las solicitudes aprobadas se publican como una nueva versión corregida.",
+        "entryLabel": "Resultado a corregir",
+        "entryPlaceholder": "Selecciona un resultado…",
+        "emptyEntries": "Aún no hay resultados oficiales disponibles para corregir.",
+        "runnerLabel": "Nombre del corredor",
+        "bibLabel": "Número de dorsal",
+        "genderLabel": "Género",
+        "ageLabel": "Edad",
+        "statusLabel": "Estado del resultado",
+        "finishTimeLabel": "Tiempo de meta",
+        "finishTimeHint": "Usa HH:MM:SS, MM:SS o segundos.",
+        "reasonLabel": "Motivo",
+        "reasonPlaceholder": "Explica qué debe cambiar y por qué.",
+        "submitAction": "Enviar solicitud de corrección",
+        "submitPending": "Enviando…",
+        "successMessage": "Solicitud de corrección enviada para revisión.",
+        "failurePrefix": "No se pudo enviar la solicitud:",
+        "noChangesMessage": "Cambia al menos un campo antes de enviar.",
+        "reasonRequiredMessage": "Se requiere un motivo.",
+        "statusOptions": {
+          "finish": "Meta",
+          "dnf": "DNF",
+          "dns": "DNS",
+          "dq": "DQ"
         }
       }
     },
@@ -868,6 +901,17 @@
         "genderPlace": "Lugar por género",
         "ageGroupPlace": "Lugar por grupo de edad",
         "distanceLabel": "Etiqueta de distancia"
+      },
+      "import": {
+        "sectionTitle": "Importar al borrador",
+        "sectionDescription": "Elige la distancia a la que pertenecen estos resultados y luego importa las filas mapeadas a una nueva versión en borrador.",
+        "distanceLabel": "Distancia",
+        "distanceAllOption": "Sin distancia específica",
+        "submitAction": "Importar al borrador",
+        "submitPending": "Importando…",
+        "blockedByIssues": "Resuelve los problemas bloqueantes de arriba antes de importar.",
+        "successMessage": "Resultados importados a un nuevo borrador. Revisa y publica cuando esté listo.",
+        "failurePrefix": "Falló la importación:"
       }
     }
   },

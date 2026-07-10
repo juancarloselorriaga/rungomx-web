@@ -99,7 +99,6 @@ export async function getResultsWorkspacePageData(
   const [railState, rows, versionVisibility] = await Promise.all([
     getOrganizerResultsRailState(eventId, lane),
     listOrganizerResultsRows(eventId, lane, 30, {
-      allowFallback: lane !== 'review',
       t: tUnsafe,
     }),
     getOrganizerResultVersionVisibility(eventId, 8),

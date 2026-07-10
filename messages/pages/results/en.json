@@ -137,6 +137,11 @@
         "distance": "Distance",
         "status": "Status",
         "finishTime": "Finish time"
+      },
+      "pagination": {
+        "showing": "Showing {from}–{to} of {total}",
+        "previous": "Previous",
+        "next": "Next"
       }
     },
     "nonOfficial": {

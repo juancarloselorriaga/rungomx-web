@@ -5,6 +5,7 @@ type SelectChain = {
   where: jest.Mock;
   orderBy: jest.Mock;
   limit: jest.Mock;
+  offset: jest.Mock;
   then: Promise<unknown[]>['then'];
   catch: Promise<unknown[]>['catch'];
   finally: Promise<unknown[]>['finally'];
@@ -21,6 +22,7 @@ function createSelectChain(rows: unknown[]): SelectChain {
     where: jest.fn(),
     orderBy: jest.fn(),
     limit: jest.fn(),
+    offset: jest.fn(),
     then: Promise.resolve(rows).then.bind(Promise.resolve(rows)),
     catch: Promise.resolve(rows).catch.bind(Promise.resolve(rows)),
     finally: Promise.resolve(rows).finally.bind(Promise.resolve(rows)),
@@ -31,9 +33,16 @@ function createSelectChain(rows: unknown[]): SelectChain {
   chain.leftJoin.mockReturnValue(chain);
   chain.where.mockReturnValue(chain);
   chain.orderBy.mockReturnValue(chain);
-  chain.limit.mockResolvedValue(rows);
+  chain.limit.mockReturnValue(chain);
+  chain.offset.mockResolvedValue(rows);
 
   return chain;
+}
+
+// The paginated entry query ends in .limit().offset(); the count query is awaited directly
+// (thenable). This chain returns the row-count shape [{ total }].
+function createCountChain(total: number): SelectChain {
+  return createSelectChain([{ total }]);
 }
 
 jest.mock('@/db', () => ({
@@ -124,8 +133,10 @@ describe('public official results page query', () => {
 
     mockSelect
       .mockReturnValueOnce(createSelectChain([BASE_EDITION]))
+      .mockReturnValueOnce(createCountChain(officialEntries.length))
       .mockReturnValueOnce(createSelectChain(officialEntries))
       .mockReturnValueOnce(createSelectChain([BASE_EDITION]))
+      .mockReturnValueOnce(createCountChain(correctedEntries.length))
       .mockReturnValueOnce(createSelectChain(correctedEntries));
 
     mockResultVersionsFindFirst

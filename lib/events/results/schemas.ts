@@ -24,8 +24,35 @@ export const initializeResultIngestionSessionSchema = z.object({
 
 export const finalizeResultVersionAttestationSchema = z.object({
   editionId: z.string().uuid(),
+  // When provided, finalize this specific draft version instead of "the newest draft".
+  // Prevents accidentally publishing an unrelated newer draft (RES-11).
+  resultVersionId: z.string().uuid().optional(),
   attestationConfirmed: z.boolean().optional().default(false),
   attestationNote: z.string().trim().min(1).max(500).optional(),
+});
+
+export const discardResultDraftVersionSchema = z.object({
+  resultVersionId: z.string().uuid(),
+});
+
+const importResultRowSchema = z.object({
+  runnerFullName: z.string().trim().min(1).max(255),
+  bibNumber: z.string().trim().min(1).max(50).optional().nullable(),
+  gender: z.string().trim().min(1).max(20).optional().nullable(),
+  age: z.number().int().min(0).max(120).optional().nullable(),
+  status: z.enum(RESULT_ENTRY_STATUSES).default('finish'),
+  finishTimeMillis: z.number().int().positive().optional().nullable(),
+});
+
+export const RESULT_IMPORT_MAX_ROWS = 20000;
+
+export const importResultDraftRowsSchema = z.object({
+  editionId: z.string().uuid(),
+  sourceLane: z.enum(RESULT_INGESTION_SOURCE_LANES),
+  distanceId: z.string().uuid().optional().nullable(),
+  sourceReference: z.string().trim().min(1).max(255).optional(),
+  sourceFileChecksum: z.string().trim().min(1).max(128).optional(),
+  rows: z.array(importResultRowSchema).min(1).max(RESULT_IMPORT_MAX_ROWS),
 });
 
 export const upsertDraftResultEntrySchema = z.object({
@@ -78,6 +105,11 @@ export const reviewRunnerResultClaimSchema = z
     },
   );
 
+export const revokeRunnerResultClaimSchema = z.object({
+  claimId: z.string().uuid(),
+  reviewReason: z.string().trim().min(1).max(120).optional(),
+});
+
 export const requestRunnerResultCorrectionSchema = z.object({
   entryId: z.string().uuid(),
   reason: z.string().trim().min(1).max(500),
@@ -113,6 +145,9 @@ export type InitializeResultIngestionSessionInput = z.input<
 export type FinalizeResultVersionAttestationInput = z.input<
   typeof finalizeResultVersionAttestationSchema
 >;
+export type DiscardResultDraftVersionInput = z.input<typeof discardResultDraftVersionSchema>;
+export type ImportResultDraftRowsInput = z.input<typeof importResultDraftRowsSchema>;
+export type ImportResultRowInput = z.input<typeof importResultRowSchema>;
 export type UpsertDraftResultEntryInput = z.input<typeof upsertDraftResultEntrySchema>;
 export type LinkDraftResultEntryToUserInput = z.input<typeof linkDraftResultEntryToUserSchema>;
 export type GetRunnerResultClaimCandidatesInput = z.input<
@@ -120,6 +155,7 @@ export type GetRunnerResultClaimCandidatesInput = z.input<
 >;
 export type ConfirmRunnerResultClaimInput = z.input<typeof confirmRunnerResultClaimSchema>;
 export type ReviewRunnerResultClaimInput = z.input<typeof reviewRunnerResultClaimSchema>;
+export type RevokeRunnerResultClaimInput = z.input<typeof revokeRunnerResultClaimSchema>;
 export type RequestRunnerResultCorrectionInput = z.input<
   typeof requestRunnerResultCorrectionSchema
 >;

@@ -14,16 +14,24 @@ jest.mock('@/lib/events/results/rankings', () => ({
     mockComputeNationalRankingSnapshot(...args),
 }));
 
-jest.mock('@/db', () => ({
-  db: {
+jest.mock('@/db', () => {
+  const client = {
     query: {
       rankingSnapshots: {
         findFirst: (...args: unknown[]) => mockRankingSnapshotsFindFirst(...args),
       },
     },
     update: (...args: unknown[]) => mockUpdate(...args),
-  },
-}));
+  };
+  return {
+    db: {
+      ...client,
+      // Promotion now runs inside a transaction (RES-19); run the callback with the same
+      // mock client so demote+promote use the mocked update chain.
+      transaction: async (callback: (tx: typeof client) => unknown) => callback(client),
+    },
+  };
+});
 
 import { rankingSnapshots } from '@/db/schema';
 import {
