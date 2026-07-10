@@ -2,6 +2,7 @@
 
 > Implementation state, reachability map, and provider-integration handoff:
 > see `docs/payments/provider-integration-handoff.md`.
+> Known issues and suspected bugs register: `docs/payments/known-issues.md`.
 
 ## Scope Guardrails
 
