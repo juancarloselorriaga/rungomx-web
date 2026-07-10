@@ -1,5 +1,8 @@
 # Payments Brownfield Foundation
 
+> Implementation state, reachability map, and provider-integration handoff:
+> see `docs/payments/provider-integration-handoff.md`.
+
 ## Scope Guardrails
 
 - This payments track extends the existing `rungomx-web` brownfield codebase.
