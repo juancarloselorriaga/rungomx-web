@@ -329,6 +329,9 @@ Validate each against the chosen provider **before** building on the correspondi
 
 ## 8. Provider integration playbook (ordered)
 
+> A concrete provider pick and MVP slicing for Mexico (Stripe, MoR-first with a
+> Connect graduation path) is proposed in `docs/payments/mvp-provider-recommendation.md`.
+
 0. **Choose the provider** (candidates for MX: Stripe MX, Conekta, Mercado Pago, Openpay). Evaluation must cover: MXN + MSI installments, OXXO/SPEI methods, marketplace/split-payment or custody support, payout API to CLABE, dispute/chargeback API + webhooks, fee reporting timing, sandbox quality.
 1. **Decide the money model** (§7.1). Everything below assumes platform custody (what the code models).
 2. **Create the provider port**: `lib/payments/providers/<name>/` translating provider objects/webhooks → canonical events. Persist external IDs (payment intent/charge/refund/dispute/payout ids) — either as new columns (e.g. on `registrations` / a new `payment_attempts` table) or minimally in event `metadata`; prefer a queryable column for reconciliation.
