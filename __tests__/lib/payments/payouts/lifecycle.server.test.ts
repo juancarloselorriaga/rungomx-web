@@ -1,6 +1,5 @@
 const mockFindFirstPayoutRequest = jest.fn();
 const mockFindFirstPayoutQuote = jest.fn();
-const mockFindFirstPayoutQueuedIntent = jest.fn();
 const mockUpdate = jest.fn();
 const mockUpdateSet = jest.fn();
 const mockUpdateWhere = jest.fn();
@@ -19,9 +18,6 @@ jest.mock('@/db', () => ({
       },
       payoutQuotes: {
         findFirst: (...args: unknown[]) => mockFindFirstPayoutQuote(...args),
-      },
-      payoutQueuedIntents: {
-        findFirst: (...args: unknown[]) => mockFindFirstPayoutQueuedIntent(...args),
       },
     },
     update: (...args: unknown[]) => mockUpdate(...args),
@@ -51,7 +47,6 @@ describe('payout lifecycle transitions', () => {
 
     mockFindFirstPayoutRequest.mockReset();
     mockFindFirstPayoutQuote.mockReset();
-    mockFindFirstPayoutQueuedIntent.mockReset();
     mockUpdate.mockReset();
     mockUpdateSet.mockReset();
     mockUpdateWhere.mockReset();
@@ -63,7 +58,6 @@ describe('payout lifecycle transitions', () => {
     // Represents "no queued intent" for this organizer; the completed/failed
     // terminal-transition tests below exercise the queued-activation hook and
     // need this to resolve so it doesn't hit a real DB call.
-    mockFindFirstPayoutQueuedIntent.mockResolvedValue(null);
     mockLoadActiveQueuedIntentByOrganizer.mockResolvedValue(null);
 
     mockFindFirstPayoutRequest.mockResolvedValue({
