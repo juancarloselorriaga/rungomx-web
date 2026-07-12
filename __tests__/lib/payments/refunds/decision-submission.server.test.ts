@@ -17,6 +17,7 @@ jest.mock('@/db', () => ({
 
 import {
   RefundDecisionSubmissionError,
+  submitAdminRefundDecision,
   submitOrganizerRefundDecision,
 } from '@/lib/payments/refunds/decision-submission';
 
@@ -196,5 +197,154 @@ describe('organizer refund decision submission', () => {
 
     expect(caught).toBeInstanceOf(RefundDecisionSubmissionError);
     expect((caught as RefundDecisionSubmissionError).code).toBe('REFUND_REQUEST_NOT_PENDING');
+  });
+});
+
+describe('admin refund decision submission', () => {
+  const now = new Date('2026-02-23T21:00:00.000Z');
+
+  beforeEach(() => {
+    mockUpdate.mockReset();
+    mockSet.mockReset();
+    mockWhere.mockReset();
+    mockReturning.mockReset();
+    mockFindFirstRefundRequest.mockReset();
+
+    mockUpdate.mockImplementation(() => ({
+      set: (...setArgs: unknown[]) => {
+        mockSet(...setArgs);
+        return {
+          where: (...whereArgs: unknown[]) => {
+            mockWhere(...whereArgs);
+            return {
+              returning: (...returningArgs: unknown[]) => mockReturning(...returningArgs),
+            };
+          },
+        };
+      },
+    }));
+
+    mockFindFirstRefundRequest.mockResolvedValue(null);
+  });
+
+  it('persists approve decision for an escalated request', async () => {
+    mockReturning.mockResolvedValueOnce([
+      {
+        refundRequestId: 'refund-request-1',
+        registrationId: 'registration-1',
+        organizerId: 'organization-1',
+        attendeeUserId: 'attendee-1',
+        status: 'approved',
+        decisionReason: 'Approved after admin review',
+        decisionAt: now,
+        decidedByUserId: 'admin-user-1',
+        requestedAt: new Date('2026-02-23T19:00:00.000Z'),
+      },
+    ]);
+
+    const result = await submitAdminRefundDecision({
+      refundRequestId: 'refund-request-1',
+      organizerId: 'organization-1',
+      decidedByUserId: 'admin-user-1',
+      decision: 'approve',
+      decisionReason: 'Approved after admin review',
+      now,
+    });
+
+    expect(result).toMatchObject({
+      refundRequestId: 'refund-request-1',
+      registrationId: 'registration-1',
+      organizerId: 'organization-1',
+      attendeeUserId: 'attendee-1',
+      decision: 'approve',
+      status: 'approved',
+      decisionReason: 'Approved after admin review',
+      decidedByUserId: 'admin-user-1',
+    });
+    expect(result.decisionAt.toISOString()).toBe('2026-02-23T21:00:00.000Z');
+
+    expect(mockUpdate).toHaveBeenCalledTimes(1);
+    expect(mockSet).toHaveBeenCalledTimes(1);
+
+    const updatePayload = mockSet.mock.calls[0]![0] as Record<string, unknown>;
+    expect(updatePayload.status).toBe('approved');
+    expect(updatePayload.decisionReason).toBe('Approved after admin review');
+    expect(updatePayload.decisionAt).toBe(now);
+    expect(updatePayload.decidedByUserId).toBe('admin-user-1');
+  });
+
+  it('persists deny decision for an escalated request', async () => {
+    mockReturning.mockResolvedValueOnce([
+      {
+        refundRequestId: 'refund-request-2',
+        registrationId: 'registration-2',
+        organizerId: 'organization-1',
+        attendeeUserId: 'attendee-2',
+        status: 'denied',
+        decisionReason: 'Denied per policy terms',
+        decisionAt: now,
+        decidedByUserId: 'admin-user-2',
+        requestedAt: new Date('2026-02-23T20:00:00.000Z'),
+      },
+    ]);
+
+    await expect(
+      submitAdminRefundDecision({
+        refundRequestId: 'refund-request-2',
+        organizerId: 'organization-1',
+        decidedByUserId: 'admin-user-2',
+        decision: 'deny',
+        decisionReason: 'Denied per policy terms',
+        now,
+      }),
+    ).resolves.toMatchObject({
+      decision: 'deny',
+      status: 'denied',
+    });
+
+    const updatePayload = mockSet.mock.calls[0]![0] as Record<string, unknown>;
+    expect(updatePayload.status).toBe('denied');
+  });
+
+  it('returns not-in-review when the request is no longer awaiting admin decision', async () => {
+    mockReturning.mockResolvedValueOnce([]);
+    mockFindFirstRefundRequest.mockResolvedValueOnce({
+      status: 'approved',
+    });
+
+    let caught: unknown;
+    try {
+      await submitAdminRefundDecision({
+        refundRequestId: 'refund-request-1',
+        organizerId: 'organization-1',
+        decidedByUserId: 'admin-user-1',
+        decision: 'deny',
+        decisionReason: 'Denied',
+        now,
+      });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(RefundDecisionSubmissionError);
+    expect((caught as RefundDecisionSubmissionError).code).toBe('REFUND_REQUEST_NOT_IN_REVIEW');
+  });
+
+  it('returns not-found when the refund request is missing for the organizer scope', async () => {
+    mockReturning.mockResolvedValueOnce([]);
+    mockFindFirstRefundRequest.mockResolvedValueOnce(null);
+
+    await expect(
+      submitAdminRefundDecision({
+        refundRequestId: 'missing-request',
+        organizerId: 'organization-1',
+        decidedByUserId: 'admin-user-1',
+        decision: 'approve',
+        decisionReason: 'Approved',
+        now,
+      }),
+    ).rejects.toMatchObject({
+      code: 'REFUND_REQUEST_NOT_FOUND',
+    });
   });
 });

@@ -17,6 +17,7 @@ export const refundDecisionErrorCodes = [
   'REFUND_DECISION_REASON_TOO_LONG',
   'REFUND_REQUEST_NOT_FOUND',
   'REFUND_REQUEST_NOT_PENDING',
+  'REFUND_REQUEST_NOT_IN_REVIEW',
 ] as const;
 
 export type RefundDecisionErrorCode = (typeof refundDecisionErrorCodes)[number];
@@ -59,6 +60,11 @@ function toDecisionError(
       return new RefundDecisionSubmissionError(
         code,
         `Refund request cannot be decided because it is already ${currentStatus ?? 'processed'}.`,
+      );
+    case 'REFUND_REQUEST_NOT_IN_REVIEW':
+      return new RefundDecisionSubmissionError(
+        code,
+        `Refund request cannot be decided because it is not awaiting admin review (currently ${currentStatus ?? 'processed'}).`,
       );
     default:
       return new RefundDecisionSubmissionError(code, 'Unable to submit refund decision.');
@@ -157,4 +163,98 @@ export async function submitOrganizerRefundDecision(params: {
   }
 
   throw toDecisionError('REFUND_REQUEST_NOT_PENDING', existingRequest.status);
+}
+
+export type SubmittedAdminRefundDecision = {
+  refundRequestId: string;
+  registrationId: string;
+  organizerId: string;
+  attendeeUserId: string;
+  decision: OrganizerRefundDecision;
+  status: 'approved' | 'denied';
+  decisionReason: string;
+  decisionAt: Date;
+  decidedByUserId: string;
+  requestedAt: Date;
+};
+
+export async function submitAdminRefundDecision(params: {
+  refundRequestId: string;
+  organizerId: string;
+  decidedByUserId: string;
+  decision: OrganizerRefundDecision;
+  decisionReason: string;
+  now?: Date;
+}): Promise<SubmittedAdminRefundDecision> {
+  const now = params.now ?? new Date();
+  const decisionReason = normalizeDecisionReason(params.decisionReason);
+
+  if (!decisionReason) {
+    throw toDecisionError('REFUND_DECISION_REASON_REQUIRED');
+  }
+  if (decisionReason.length > REFUND_DECISION_REASON_MAX_LENGTH) {
+    throw toDecisionError('REFUND_DECISION_REASON_TOO_LONG');
+  }
+
+  const nextStatus = refundDecisionStatusByAction[params.decision];
+
+  const [updatedDecision] = await db
+    .update(refundRequests)
+    .set({
+      status: nextStatus,
+      decisionAt: now,
+      decidedByUserId: params.decidedByUserId,
+      decisionReason,
+    })
+    .where(
+      and(
+        eq(refundRequests.id, params.refundRequestId),
+        eq(refundRequests.organizerId, params.organizerId),
+        eq(refundRequests.status, 'escalated_admin_review'),
+        isNull(refundRequests.deletedAt),
+      ),
+    )
+    .returning({
+      refundRequestId: refundRequests.id,
+      registrationId: refundRequests.registrationId,
+      organizerId: refundRequests.organizerId,
+      attendeeUserId: refundRequests.attendeeUserId,
+      status: refundRequests.status,
+      decisionReason: refundRequests.decisionReason,
+      decisionAt: refundRequests.decisionAt,
+      decidedByUserId: refundRequests.decidedByUserId,
+      requestedAt: refundRequests.requestedAt,
+    });
+
+  if (updatedDecision?.decisionAt && updatedDecision.decidedByUserId && updatedDecision.decisionReason) {
+    return {
+      refundRequestId: updatedDecision.refundRequestId,
+      registrationId: updatedDecision.registrationId,
+      organizerId: updatedDecision.organizerId,
+      attendeeUserId: updatedDecision.attendeeUserId,
+      decision: params.decision,
+      status: updatedDecision.status as 'approved' | 'denied',
+      decisionReason: updatedDecision.decisionReason,
+      decisionAt: updatedDecision.decisionAt,
+      decidedByUserId: updatedDecision.decidedByUserId,
+      requestedAt: updatedDecision.requestedAt,
+    };
+  }
+
+  const existingRequest = await db.query.refundRequests.findFirst({
+    where: and(
+      eq(refundRequests.id, params.refundRequestId),
+      eq(refundRequests.organizerId, params.organizerId),
+      isNull(refundRequests.deletedAt),
+    ),
+    columns: {
+      status: true,
+    },
+  });
+
+  if (!existingRequest) {
+    throw toDecisionError('REFUND_REQUEST_NOT_FOUND');
+  }
+
+  throw toDecisionError('REFUND_REQUEST_NOT_IN_REVIEW', existingRequest.status);
 }
