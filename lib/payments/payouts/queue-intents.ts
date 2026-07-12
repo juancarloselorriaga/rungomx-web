@@ -272,7 +272,7 @@ async function loadQueuedIntentByIdempotency(params: {
   });
 }
 
-async function loadActiveQueuedIntentByOrganizer(params: { organizerId: string }) {
+export async function loadActiveQueuedIntentByOrganizer(params: { organizerId: string }) {
   return db.query.payoutQueuedIntents.findFirst({
     where: and(
       eq(payoutQueuedIntents.organizerId, params.organizerId),

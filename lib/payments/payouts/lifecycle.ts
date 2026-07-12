@@ -10,6 +10,10 @@ import {
   assertFinancialProcessorRuntime,
   type FinancialProcessorRuntime,
 } from '@/lib/payments/core/replay';
+import {
+  activateQueuedPayoutIntent,
+  loadActiveQueuedIntentByOrganizer,
+} from '@/lib/payments/payouts/queue-intents';
 
 const DEFAULT_PAYOUT_CURRENCY = 'MXN';
 const PAYOUT_LIFECYCLE_TRACE_PREFIX = 'payout-lifecycle:';
@@ -618,6 +622,32 @@ export async function transitionPayoutLifecycle(params: {
     idempotencyKey: traceId,
     events,
   });
+
+  if (transitionRule.toStatus === 'completed' || transitionRule.toStatus === 'failed') {
+    try {
+      const activeQueuedIntent = await loadActiveQueuedIntentByOrganizer({
+        organizerId: payoutRequest.organizerId,
+      });
+
+      if (activeQueuedIntent) {
+        await activateQueuedPayoutIntent({
+          payoutQueuedIntentId: activeQueuedIntent.id,
+          activatedByUserId: params.actorUserId,
+          now,
+        });
+      }
+    } catch (error) {
+      // Best-effort: queued-intent activation is a side effect of the terminal
+      // payout transition, not a precondition for it. The transition itself
+      // has already been persisted and ingressed above, so a failure here must
+      // not roll back or fail the caller's transition result.
+      console.error('[payout-lifecycle] Failed to activate queued payout intent', {
+        organizerId: payoutRequest.organizerId,
+        payoutRequestId: payoutRequest.id,
+        error,
+      });
+    }
+  }
 
   return {
     payoutRequestId: payoutRequest.id,
