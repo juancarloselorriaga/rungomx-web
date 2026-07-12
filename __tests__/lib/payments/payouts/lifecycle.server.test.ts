@@ -1,10 +1,13 @@
 const mockFindFirstPayoutRequest = jest.fn();
 const mockFindFirstPayoutQuote = jest.fn();
+const mockFindFirstPayoutQueuedIntent = jest.fn();
 const mockUpdate = jest.fn();
 const mockUpdateSet = jest.fn();
 const mockUpdateWhere = jest.fn();
 const mockUpdateReturning = jest.fn();
 const mockIngestMoneyMutationFromWorker = jest.fn();
+const mockLoadActiveQueuedIntentByOrganizer = jest.fn();
+const mockActivateQueuedPayoutIntent = jest.fn();
 
 const updateReturningQueue: Array<unknown[]> = [];
 
@@ -17,6 +20,9 @@ jest.mock('@/db', () => ({
       payoutQuotes: {
         findFirst: (...args: unknown[]) => mockFindFirstPayoutQuote(...args),
       },
+      payoutQueuedIntents: {
+        findFirst: (...args: unknown[]) => mockFindFirstPayoutQueuedIntent(...args),
+      },
     },
     update: (...args: unknown[]) => mockUpdate(...args),
   },
@@ -24,6 +30,15 @@ jest.mock('@/db', () => ({
 
 jest.mock('@/lib/payments/core/mutation-ingress-paths', () => ({
   ingestMoneyMutationFromWorker: (...args: unknown[]) => mockIngestMoneyMutationFromWorker(...args),
+}));
+
+// Module-level mock so the completed/failed-transition tests exercise the
+// queued-activation hook without depending on the real queue-intents
+// implementation (which is covered separately by the .db.test.ts suite).
+jest.mock('@/lib/payments/payouts/queue-intents', () => ({
+  loadActiveQueuedIntentByOrganizer: (...args: unknown[]) =>
+    mockLoadActiveQueuedIntentByOrganizer(...args),
+  activateQueuedPayoutIntent: (...args: unknown[]) => mockActivateQueuedPayoutIntent(...args),
 }));
 
 import { transitionPayoutLifecycle } from '@/lib/payments/payouts/lifecycle';
@@ -36,11 +51,20 @@ describe('payout lifecycle transitions', () => {
 
     mockFindFirstPayoutRequest.mockReset();
     mockFindFirstPayoutQuote.mockReset();
+    mockFindFirstPayoutQueuedIntent.mockReset();
     mockUpdate.mockReset();
     mockUpdateSet.mockReset();
     mockUpdateWhere.mockReset();
     mockUpdateReturning.mockReset();
     mockIngestMoneyMutationFromWorker.mockReset();
+    mockLoadActiveQueuedIntentByOrganizer.mockReset();
+    mockActivateQueuedPayoutIntent.mockReset();
+
+    // Represents "no queued intent" for this organizer; the completed/failed
+    // terminal-transition tests below exercise the queued-activation hook and
+    // need this to resolve so it doesn't hit a real DB call.
+    mockFindFirstPayoutQueuedIntent.mockResolvedValue(null);
+    mockLoadActiveQueuedIntentByOrganizer.mockResolvedValue(null);
 
     mockFindFirstPayoutRequest.mockResolvedValue({
       id: 'payout-request-id',
@@ -295,6 +319,46 @@ describe('payout lifecycle transitions', () => {
     expect(ingressCall.events[0].eventName).toBe('payout.completed');
     expect(ingressCall.events[0].payload.settledAmount.amountMinor).toBe(6100);
     expect(ingressCall.events[0].payload).not.toHaveProperty('reasonCode');
+  });
+
+  it('completes the terminal transition even when queued-intent activation fails', async () => {
+    mockFindFirstPayoutRequest.mockResolvedValueOnce({
+      id: 'payout-request-id',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      payoutQuoteId: 'payout-quote-id',
+      status: 'processing',
+      traceId: 'payout-request:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      lifecycleContextJson: {
+        currentRequestedAmountMinor: 6100,
+      },
+    });
+    updateReturningQueue.push([
+      {
+        id: 'payout-request-id',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        payoutQuoteId: 'payout-quote-id',
+        status: 'completed',
+      },
+    ]);
+
+    mockLoadActiveQueuedIntentByOrganizer.mockResolvedValueOnce({
+      id: 'queued-intent-id',
+      status: 'queued',
+    });
+    mockActivateQueuedPayoutIntent.mockRejectedValueOnce(new Error('activation boom'));
+
+    await expect(
+      transitionPayoutLifecycle({
+        payoutRequestId: 'payout-request-id',
+        actorUserId: '22222222-2222-4222-8222-222222222222',
+        action: 'complete',
+        now,
+      }),
+    ).resolves.toMatchObject({
+      status: 'completed',
+    });
+
+    expect(mockActivateQueuedPayoutIntent).toHaveBeenCalledTimes(1);
   });
 
   it('emits payout.failed payload branch with failedAmount and reasonCode', async () => {
