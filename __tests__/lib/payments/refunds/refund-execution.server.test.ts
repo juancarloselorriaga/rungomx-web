@@ -44,6 +44,7 @@ jest.mock('@/lib/email', () => ({
 
 import {
   executeRefundRequest,
+  isGoodwillRequest,
   RefundExecutionError,
 } from '@/lib/payments/refunds/refund-execution';
 
@@ -667,5 +668,23 @@ describe('refund execution domain service', () => {
     } finally {
       consoleErrorSpy.mockRestore();
     }
+  });
+
+  // Drift guard: the refund execute route test hand-mirrors isGoodwillRequest
+  // (it can't import this module directly there — see the comment in
+  // __tests__/app/api/payments/refunds/[refundRequestId]/execute/route.server.test.ts).
+  // Exercise the REAL predicate here, where the module loads unmocked, so the
+  // mirror can't silently drift from reality.
+  it('keeps the real isGoodwillRequest predicate in sync with the route test mirror', () => {
+    expect(isGoodwillRequest({ reasonCode: 'goodwill_manual', eligibilitySnapshotJson: {} })).toBe(
+      true,
+    );
+    expect(
+      isGoodwillRequest({
+        reasonCode: 'goodwill_manual',
+        eligibilitySnapshotJson: { source: 'goodwill' },
+      }),
+    ).toBe(true);
+    expect(isGoodwillRequest({ reasonCode: 'medical', eligibilitySnapshotJson: {} })).toBe(false);
   });
 });
