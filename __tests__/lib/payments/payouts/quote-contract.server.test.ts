@@ -7,6 +7,7 @@ const mockOnConflictDoNothing = jest.fn();
 const mockReturning = jest.fn();
 const mockGetOrganizerWalletBucketSnapshot = jest.fn();
 const mockIngestMoneyMutationFromApi = jest.fn();
+const mockIngestMoneyMutationFromApiInTransaction = jest.fn();
 
 const insertReturningQueue: Array<unknown[]> = [];
 
@@ -24,6 +25,24 @@ jest.mock('@/db', () => ({
       },
     },
     insert: (...args: unknown[]) => mockInsert(...args),
+    // The create path now runs inside db.transaction(); delegate the tx
+    // stub's insert/query to the SAME mocks used at the module level so
+    // insert-order and call-count assertions still hold.
+    transaction: (callback: (tx: unknown) => unknown) =>
+      callback({
+        query: {
+          payoutQuotes: {
+            findFirst: (...args: unknown[]) => mockFindFirstPayoutQuote(...args),
+          },
+          payoutRequests: {
+            findFirst: (...args: unknown[]) => mockFindFirstPayoutRequest(...args),
+          },
+          payoutContracts: {
+            findFirst: (...args: unknown[]) => mockFindFirstPayoutContract(...args),
+          },
+        },
+        insert: (...args: unknown[]) => mockInsert(...args),
+      }),
   },
 }));
 
@@ -34,6 +53,8 @@ jest.mock('@/lib/payments/wallet/snapshot', () => ({
 
 jest.mock('@/lib/payments/core/mutation-ingress-paths', () => ({
   ingestMoneyMutationFromApi: (...args: unknown[]) => mockIngestMoneyMutationFromApi(...args),
+  ingestMoneyMutationFromApiInTransaction: (...args: unknown[]) =>
+    mockIngestMoneyMutationFromApiInTransaction(...args),
 }));
 
 import {
@@ -64,6 +85,7 @@ describe('payout quote + contract creation', () => {
     mockReturning.mockReset();
     mockGetOrganizerWalletBucketSnapshot.mockReset();
     mockIngestMoneyMutationFromApi.mockReset();
+    mockIngestMoneyMutationFromApiInTransaction.mockReset();
 
     mockFindFirstPayoutQuote.mockResolvedValue(null);
     mockFindFirstPayoutRequest.mockResolvedValue(null);
@@ -87,6 +109,11 @@ describe('payout quote + contract creation', () => {
     });
 
     mockIngestMoneyMutationFromApi.mockResolvedValue({
+      traceId: 'payout-request:99999999-9999-4999-8999-999999999999',
+      persistedEvents: [],
+      deduplicated: false,
+    });
+    mockIngestMoneyMutationFromApiInTransaction.mockResolvedValue({
       traceId: 'payout-request:99999999-9999-4999-8999-999999999999',
       persistedEvents: [],
       deduplicated: false,
@@ -152,8 +179,12 @@ describe('payout quote + contract creation', () => {
     );
     expect(result.quoteFingerprint).toMatch(/^[0-9a-f]{64}$/);
 
-    expect(mockIngestMoneyMutationFromApi).toHaveBeenCalledTimes(1);
-    const ingressCall = mockIngestMoneyMutationFromApi.mock.calls[0]![0] as {
+    // The create path runs inside db.transaction() and appends the
+    // payout.requested event via the in-tx ingress entrypoint, not the
+    // non-tx one; the non-tx mock is reserved for the idempotent-replay path.
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+    expect(mockIngestMoneyMutationFromApiInTransaction).toHaveBeenCalledTimes(1);
+    const ingressCall = mockIngestMoneyMutationFromApiInTransaction.mock.calls[0]![1] as {
       organizerId: string;
       idempotencyKey: string;
       events: Array<{
@@ -459,7 +490,10 @@ describe('payout quote + contract creation', () => {
     expect(insertedTables).not.toContain(moneyTraces);
     expect(insertedTables).not.toContain(moneyCommandIngestions);
 
-    expect(mockIngestMoneyMutationFromApi).toHaveBeenCalledTimes(1);
+    // The create path appends payout.requested via the in-tx ingress
+    // entrypoint (it runs inside db.transaction()), not the non-tx one.
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+    expect(mockIngestMoneyMutationFromApiInTransaction).toHaveBeenCalledTimes(1);
   });
 
   it('throws invalid amount error for non-positive requested values', async () => {

@@ -5,7 +5,11 @@ import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db';
 import { payoutContracts, payoutQuotes, payoutRequests } from '@/db/schema';
 import { type CanonicalMoneyEventV1 } from '@/lib/payments/core/contracts/events';
-import { ingestMoneyMutationFromApi } from '@/lib/payments/core/mutation-ingress-paths';
+import { type MoneyMutationIngressTransaction } from '@/lib/payments/core/mutation-ingress';
+import {
+  ingestMoneyMutationFromApi,
+  ingestMoneyMutationFromApiInTransaction,
+} from '@/lib/payments/core/mutation-ingress-paths';
 import { getOrganizerWalletBucketSnapshot } from '@/lib/payments/wallet/snapshot';
 
 const DEFAULT_PAYOUT_CURRENCY = 'MXN';
@@ -291,22 +295,28 @@ function buildPayoutRequestedEvent(params: {
   };
 }
 
-async function appendPayoutRequestedEvent(params: {
-  organizerId: string;
-  payoutRequestId: string;
-  payoutQuoteId: string;
-  requestedAmountMinor: number;
-  quoteFingerprint: string;
-  traceId: string;
-  occurredAt: Date;
-}): Promise<{ traceId: string; deduplicated: boolean }> {
+async function appendPayoutRequestedEvent(
+  params: {
+    organizerId: string;
+    payoutRequestId: string;
+    payoutQuoteId: string;
+    requestedAmountMinor: number;
+    quoteFingerprint: string;
+    traceId: string;
+    occurredAt: Date;
+  },
+  tx?: MoneyMutationIngressTransaction,
+): Promise<{ traceId: string; deduplicated: boolean }> {
   const payoutRequestedEvent = buildPayoutRequestedEvent(params);
-  const ingressResult = await ingestMoneyMutationFromApi({
+  const ingressInput = {
     traceId: params.traceId,
     organizerId: params.organizerId,
     idempotencyKey: params.traceId,
     events: [payoutRequestedEvent],
-  });
+  };
+  const ingressResult = tx
+    ? await ingestMoneyMutationFromApiInTransaction(tx, ingressInput)
+    : await ingestMoneyMutationFromApi(ingressInput);
 
   return {
     traceId: ingressResult.traceId,
@@ -531,133 +541,145 @@ export async function createPayoutQuoteAndContract(params: {
     lockedAt: now.toISOString(),
   } satisfies Record<string, unknown>;
 
-  const [insertedQuote] = await db
-    .insert(payoutQuotes)
-    .values({
-      id: payoutQuoteId,
+  // Quote insert, request insert, contract insert, and the payout.requested
+  // ingress append must commit or roll back together. Without this, a
+  // mid-sequence failure (e.g. ingress) strands an active payout_requests row
+  // that blocks all future organizer payouts via the partial unique index,
+  // while the wallet never moved funds.
+  return db.transaction(async (tx) => {
+    const [insertedQuote] = await tx
+      .insert(payoutQuotes)
+      .values({
+        id: payoutQuoteId,
+        organizerId: params.organizerId,
+        idempotencyKey: normalizedIdempotencyKey,
+        quoteFingerprint,
+        currency: DEFAULT_PAYOUT_CURRENCY,
+        includedAmountMinor,
+        deductionAmountMinor,
+        maxWithdrawableAmountMinor,
+        requestedAmountMinor,
+        eligibilitySnapshotJson: eligibilitySnapshot,
+        componentBreakdownJson: componentBreakdown,
+        createdByUserId: params.requestedByUserId,
+        requestedAt: now,
+      })
+      .onConflictDoNothing({
+        target: [payoutQuotes.organizerId, payoutQuotes.idempotencyKey],
+        where: sql`${payoutQuotes.deletedAt} is null`,
+      })
+      .returning({
+        id: payoutQuotes.id,
+      });
+
+    if (!insertedQuote) {
+      const conflictBundle = await loadExistingQuoteBundle({
+        organizerId: params.organizerId,
+        idempotencyKey: normalizedIdempotencyKey,
+      });
+      if (conflictBundle) {
+        return toResultFromExistingBundle(conflictBundle);
+      }
+      throw toError('PAYOUT_QUOTE_INSERT_FAILED');
+    }
+
+    let insertedRequestRows: Array<{ id: string; traceId: string }> = [];
+
+    try {
+      insertedRequestRows = await tx
+        .insert(payoutRequests)
+        .values({
+          id: payoutRequestId,
+          organizerId: params.organizerId,
+          payoutQuoteId,
+          status: 'requested',
+          traceId,
+          requestedByUserId: params.requestedByUserId,
+          requestedAt: now,
+          lifecycleContextJson: {
+            origin: 'quote_generation',
+            contractVersion: PAYOUT_CONTRACT_POLICY_VERSION,
+          },
+        })
+        .returning({
+          id: payoutRequests.id,
+          traceId: payoutRequests.traceId,
+        });
+    } catch (error) {
+      if (isUniqueConstraintViolation(error, PAYOUT_REQUESTS_ACTIVE_ORGANIZER_UNIQUE_IDX)) {
+        // The tx connection is aborted after a unique violation, so this
+        // diagnostic lookup must use the module-level db, not tx.
+        const conflictedActiveRequest = await loadActivePayoutRequest({
+          organizerId: params.organizerId,
+        });
+
+        throw toActiveConflictError({
+          policy: activeConflictPolicy,
+          payoutRequestId: conflictedActiveRequest?.id ?? null,
+          status: conflictedActiveRequest?.status ?? null,
+        });
+      }
+
+      throw error;
+    }
+
+    const [insertedRequest] = insertedRequestRows;
+
+    if (!insertedRequest) {
+      throw toError('PAYOUT_REQUEST_INSERT_FAILED');
+    }
+
+    const [insertedContract] = await tx
+      .insert(payoutContracts)
+      .values({
+        id: payoutContractId,
+        organizerId: params.organizerId,
+        payoutQuoteId,
+        payoutRequestId: insertedRequest.id,
+        policyVersion: PAYOUT_CONTRACT_POLICY_VERSION,
+        immutableFingerprint: quoteFingerprint,
+        baselineSnapshotJson: baselineSnapshot,
+      })
+      .returning({
+        id: payoutContracts.id,
+        baselineSnapshotJson: payoutContracts.baselineSnapshotJson,
+      });
+
+    if (!insertedContract) {
+      throw toError('PAYOUT_CONTRACT_INSERT_FAILED');
+    }
+
+    const ingressResult = await appendPayoutRequestedEvent(
+      {
+        organizerId: params.organizerId,
+        payoutRequestId: insertedRequest.id,
+        payoutQuoteId,
+        requestedAmountMinor,
+        quoteFingerprint,
+        traceId,
+        occurredAt: now,
+      },
+      tx,
+    );
+
+    return {
+      payoutQuoteId,
+      payoutRequestId: insertedRequest.id,
+      payoutContractId: insertedContract.id,
       organizerId: params.organizerId,
-      idempotencyKey: normalizedIdempotencyKey,
       quoteFingerprint,
       currency: DEFAULT_PAYOUT_CURRENCY,
       includedAmountMinor,
       deductionAmountMinor,
       maxWithdrawableAmountMinor,
       requestedAmountMinor,
-      eligibilitySnapshotJson: eligibilitySnapshot,
-      componentBreakdownJson: componentBreakdown,
-      createdByUserId: params.requestedByUserId,
+      traceId: ingressResult.traceId,
       requestedAt: now,
-    })
-    .onConflictDoNothing({
-      target: [payoutQuotes.organizerId, payoutQuotes.idempotencyKey],
-      where: sql`${payoutQuotes.deletedAt} is null`,
-    })
-    .returning({
-      id: payoutQuotes.id,
-    });
-
-  if (!insertedQuote) {
-    const conflictBundle = await loadExistingQuoteBundle({
-      organizerId: params.organizerId,
-      idempotencyKey: normalizedIdempotencyKey,
-    });
-    if (conflictBundle) {
-      return toResultFromExistingBundle(conflictBundle);
-    }
-    throw toError('PAYOUT_QUOTE_INSERT_FAILED');
-  }
-
-  let insertedRequestRows: Array<{ id: string; traceId: string }> = [];
-
-  try {
-    insertedRequestRows = await db
-      .insert(payoutRequests)
-      .values({
-        id: payoutRequestId,
-        organizerId: params.organizerId,
-        payoutQuoteId,
-        status: 'requested',
-        traceId,
-        requestedByUserId: params.requestedByUserId,
-        requestedAt: now,
-        lifecycleContextJson: {
-          origin: 'quote_generation',
-          contractVersion: PAYOUT_CONTRACT_POLICY_VERSION,
-        },
-      })
-      .returning({
-        id: payoutRequests.id,
-        traceId: payoutRequests.traceId,
-      });
-  } catch (error) {
-    if (isUniqueConstraintViolation(error, PAYOUT_REQUESTS_ACTIVE_ORGANIZER_UNIQUE_IDX)) {
-      const conflictedActiveRequest = await loadActivePayoutRequest({
-        organizerId: params.organizerId,
-      });
-
-      throw toActiveConflictError({
-        policy: activeConflictPolicy,
-        payoutRequestId: conflictedActiveRequest?.id ?? null,
-        status: conflictedActiveRequest?.status ?? null,
-      });
-    }
-
-    throw error;
-  }
-
-  const [insertedRequest] = insertedRequestRows;
-
-  if (!insertedRequest) {
-    throw toError('PAYOUT_REQUEST_INSERT_FAILED');
-  }
-
-  const [insertedContract] = await db
-    .insert(payoutContracts)
-    .values({
-      id: payoutContractId,
-      organizerId: params.organizerId,
-      payoutQuoteId,
-      payoutRequestId: insertedRequest.id,
-      policyVersion: PAYOUT_CONTRACT_POLICY_VERSION,
-      immutableFingerprint: quoteFingerprint,
-      baselineSnapshotJson: baselineSnapshot,
-    })
-    .returning({
-      id: payoutContracts.id,
-      baselineSnapshotJson: payoutContracts.baselineSnapshotJson,
-    });
-
-  if (!insertedContract) {
-    throw toError('PAYOUT_CONTRACT_INSERT_FAILED');
-  }
-
-  const ingressResult = await appendPayoutRequestedEvent({
-    organizerId: params.organizerId,
-    payoutRequestId: insertedRequest.id,
-    payoutQuoteId,
-    requestedAmountMinor,
-    quoteFingerprint,
-    traceId,
-    occurredAt: now,
+      idempotencyReused: false,
+      ingressDeduplicated: ingressResult.deduplicated,
+      eligibilitySnapshot,
+      componentBreakdown,
+      contractBaseline: normalizeJsonRecord(insertedContract.baselineSnapshotJson),
+    };
   });
-
-  return {
-    payoutQuoteId,
-    payoutRequestId: insertedRequest.id,
-    payoutContractId: insertedContract.id,
-    organizerId: params.organizerId,
-    quoteFingerprint,
-    currency: DEFAULT_PAYOUT_CURRENCY,
-    includedAmountMinor,
-    deductionAmountMinor,
-    maxWithdrawableAmountMinor,
-    requestedAmountMinor,
-    traceId: ingressResult.traceId,
-    requestedAt: now,
-    idempotencyReused: false,
-    ingressDeduplicated: ingressResult.deduplicated,
-    eligibilitySnapshot,
-    componentBreakdown,
-    contractBaseline: normalizeJsonRecord(insertedContract.baselineSnapshotJson),
-  };
 }
