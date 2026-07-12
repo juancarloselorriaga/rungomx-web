@@ -5,7 +5,7 @@ import {
   findActivePaymentsOrganization,
   parsePaymentsJsonBody,
   requireAuthenticatedPaymentsContext,
-  requireOrganizerWriteAccess,
+  requireInternalStaffAccess,
   withNoStore,
 } from '@/app/api/payments/_shared';
 import {
@@ -48,7 +48,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { organizationId, registrationId, reasonNote } = parseResult.data;
 
-  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  const accessResult = await requireInternalStaffAccess(authContext);
   if (!accessResult.ok) {
     return accessResult.response;
   }

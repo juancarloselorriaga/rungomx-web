@@ -151,10 +151,50 @@ describe('POST /api/payments/refunds/goodwill', () => {
     expect(mockInitiateGoodwillRefundRequest).not.toHaveBeenCalled();
   });
 
+  it('returns 403 when an organizer with full org permissions is not internal staff', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: false },
+    });
+    mockGetOrgMembership.mockResolvedValue({
+      organizationId: '11111111-1111-4111-8111-111111111111',
+      role: 'owner',
+    });
+    mockInitiateGoodwillRefundRequest.mockResolvedValue({
+      refundRequestId: 'goodwill-request-1',
+      registrationId: '22222222-2222-4222-8222-222222222222',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      attendeeUserId: 'attendee-1',
+      status: 'escalated_admin_review',
+      reasonCode: 'goodwill_manual',
+      reasonNote: 'Manual goodwill',
+      requestedByUserId: 'organizer-user-1',
+      requestedAt: new Date('2026-02-23T22:00:00.000Z'),
+      escalatedAt: new Date('2026-02-23T22:00:00.000Z'),
+      eligibilitySnapshot: { source: 'goodwill', version: 'refund-goodwill-initiation-v1' },
+      financialSnapshot: { version: 'refund-goodwill-financial-v1' },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/goodwill', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          registrationId: '22222222-2222-4222-8222-222222222222',
+          reasonNote: 'Manual goodwill',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Permission denied' });
+    expect(mockInitiateGoodwillRefundRequest).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when organization does not exist', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockFindOrganization.mockResolvedValueOnce(null);
 
@@ -177,7 +217,7 @@ describe('POST /api/payments/refunds/goodwill', () => {
   it('maps goodwill target-not-found to 404', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockInitiateGoodwillRefundRequest.mockRejectedValue(
       new RefundEscalationGoodwillError(
@@ -209,7 +249,7 @@ describe('POST /api/payments/refunds/goodwill', () => {
   it('maps goodwill conflict errors to 409', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockInitiateGoodwillRefundRequest.mockRejectedValue(
       new RefundEscalationGoodwillError(
@@ -240,7 +280,7 @@ describe('POST /api/payments/refunds/goodwill', () => {
   it('maps goodwill attendee-missing errors to 409', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockInitiateGoodwillRefundRequest.mockRejectedValue(
       new RefundEscalationGoodwillError(
@@ -271,7 +311,7 @@ describe('POST /api/payments/refunds/goodwill', () => {
   it('maps non-conflict goodwill domain errors to 400', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockInitiateGoodwillRefundRequest.mockRejectedValue(
       new RefundEscalationGoodwillError(
@@ -302,7 +342,7 @@ describe('POST /api/payments/refunds/goodwill', () => {
   it('returns 500 for unexpected errors', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockInitiateGoodwillRefundRequest.mockRejectedValue(new Error('Unexpected failure'));
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -335,11 +375,7 @@ describe('POST /api/payments/refunds/goodwill', () => {
   it('returns 201 with goodwill queue payload when request succeeds', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: false },
-    });
-    mockGetOrgMembership.mockResolvedValue({
-      organizationId: '11111111-1111-4111-8111-111111111111',
-      role: 'owner',
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockInitiateGoodwillRefundRequest.mockResolvedValue({
       refundRequestId: 'goodwill-request-1',
