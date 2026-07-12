@@ -7,6 +7,7 @@ import { disputeCases, registrations } from '@/db/schema';
 import { type CanonicalMoneyEventV1 } from '@/lib/payments/core/contracts/events';
 import {
   ingestMoneyMutationFromApi,
+  ingestMoneyMutationFromApiInTransaction,
   ingestMoneyMutationFromWorker,
 } from '@/lib/payments/core/mutation-ingress-paths';
 import {
@@ -740,13 +741,6 @@ export async function openDisputeCase(params: {
     },
   };
 
-  const ingressResult = await ingestMoneyMutationFromApi({
-    traceId,
-    organizerId: params.organizerId,
-    idempotencyKey: traceId,
-    events: [disputeOpenedEvent],
-  });
-
   const metadata: DisputeCaseMetadata = {
     createdBy: {
       userId: params.openedByUserId,
@@ -768,46 +762,61 @@ export async function openDisputeCase(params: {
     },
   };
 
-  const [createdDisputeCase] = await db
-    .insert(disputeCases)
-    .values({
-      id: disputeCaseId,
+  // The dispute.opened freeze (money ingress) and the dispute_cases insert
+  // must commit or roll back together. Without this, an insert failure after
+  // ingress (e.g. an FK violation on openedByUserId) strands a committed
+  // freeze against a wallet with no corresponding dispute case.
+  const { createdDisputeCase, ingressResult } = await db.transaction(async (tx) => {
+    const ingressResult = await ingestMoneyMutationFromApiInTransaction(tx, {
+      traceId,
       organizerId: params.organizerId,
-      registrationId,
-      orderId,
-      attendeeUserId,
-      openedByUserId: params.openedByUserId,
-      latestTransitionByUserId: params.openedByUserId,
-      status: 'opened',
-      reasonCode,
-      reasonNote,
-      amountAtRiskMinor,
-      currency,
-      evidenceDeadlineAt,
-      openedAt: now,
-      lastTransitionAt: now,
-      metadataJson: metadata,
-    })
-    .returning({
-      id: disputeCases.id,
-      organizerId: disputeCases.organizerId,
-      registrationId: disputeCases.registrationId,
-      orderId: disputeCases.orderId,
-      attendeeUserId: disputeCases.attendeeUserId,
-      status: disputeCases.status,
-      reasonCode: disputeCases.reasonCode,
-      reasonNote: disputeCases.reasonNote,
-      amountAtRiskMinor: disputeCases.amountAtRiskMinor,
-      currency: disputeCases.currency,
-      evidenceDeadlineAt: disputeCases.evidenceDeadlineAt,
-      openedAt: disputeCases.openedAt,
-      lastTransitionAt: disputeCases.lastTransitionAt,
-      metadataJson: disputeCases.metadataJson,
+      idempotencyKey: traceId,
+      events: [disputeOpenedEvent],
     });
 
-  if (!createdDisputeCase) {
-    throw toError('DISPUTE_INTAKE_INSERT_FAILED');
-  }
+    const [createdDisputeCase] = await tx
+      .insert(disputeCases)
+      .values({
+        id: disputeCaseId,
+        organizerId: params.organizerId,
+        registrationId,
+        orderId,
+        attendeeUserId,
+        openedByUserId: params.openedByUserId,
+        latestTransitionByUserId: params.openedByUserId,
+        status: 'opened',
+        reasonCode,
+        reasonNote,
+        amountAtRiskMinor,
+        currency,
+        evidenceDeadlineAt,
+        openedAt: now,
+        lastTransitionAt: now,
+        metadataJson: metadata,
+      })
+      .returning({
+        id: disputeCases.id,
+        organizerId: disputeCases.organizerId,
+        registrationId: disputeCases.registrationId,
+        orderId: disputeCases.orderId,
+        attendeeUserId: disputeCases.attendeeUserId,
+        status: disputeCases.status,
+        reasonCode: disputeCases.reasonCode,
+        reasonNote: disputeCases.reasonNote,
+        amountAtRiskMinor: disputeCases.amountAtRiskMinor,
+        currency: disputeCases.currency,
+        evidenceDeadlineAt: disputeCases.evidenceDeadlineAt,
+        openedAt: disputeCases.openedAt,
+        lastTransitionAt: disputeCases.lastTransitionAt,
+        metadataJson: disputeCases.metadataJson,
+      });
+
+    if (!createdDisputeCase) {
+      throw toError('DISPUTE_INTAKE_INSERT_FAILED');
+    }
+
+    return { createdDisputeCase, ingressResult };
+  });
 
   return {
     disputeCaseId: createdDisputeCase.id,
