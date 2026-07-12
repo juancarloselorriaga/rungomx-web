@@ -60,7 +60,8 @@
       "available": "Available",
       "processing": "Processing",
       "frozen": "Reserved",
-      "debt": "Debt"
+      "debt": "Debt",
+      "maxWithdrawableLabel": "Available to withdraw"
     },
     "queue": {
       "title": "Follow-up and next steps",

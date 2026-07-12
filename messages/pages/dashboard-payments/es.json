@@ -60,7 +60,8 @@
       "available": "Disponible",
       "processing": "En proceso",
       "frozen": "Reservado",
-      "debt": "Deuda"
+      "debt": "Deuda",
+      "maxWithdrawableLabel": "Disponible para retirar"
     },
     "queue": {
       "title": "Seguimiento y próximos pasos",
