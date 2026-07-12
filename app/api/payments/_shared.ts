@@ -102,6 +102,19 @@ export async function requireOrganizerWriteAccess(
   return { ok: true };
 }
 
+export async function requireInternalStaffAccess(
+  authContext: AuthenticatedContext,
+): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
+  if (!authContext.permissions.canAccessAdminArea || !authContext.permissions.canViewStaffTools) {
+    return {
+      ok: false,
+      response: paymentsPermissionDeniedResponse(),
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function requireOrganizerReadAccess(
   authContext: AuthenticatedContext,
   organizationId: string,
