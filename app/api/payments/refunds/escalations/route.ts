@@ -5,7 +5,7 @@ import {
   findActivePaymentsOrganization,
   parsePaymentsJsonBody,
   requireAuthenticatedPaymentsContext,
-  requireOrganizerWriteAccess,
+  requireInternalStaffAccess,
   withNoStore,
 } from '@/app/api/payments/_shared';
 import { escalateExpiredRefundRequests } from '@/lib/payments/refunds/escalation-and-goodwill';
@@ -45,7 +45,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   const { organizationId, requestedBefore, limit } = parseResult.data;
 
-  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  const accessResult = await requireInternalStaffAccess(authContext);
   if (!accessResult.ok) {
     return accessResult.response;
   }

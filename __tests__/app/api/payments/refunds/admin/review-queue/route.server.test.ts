@@ -111,10 +111,46 @@ describe('GET /api/payments/refunds/admin/review-queue', () => {
     expect(await response.json()).toEqual({ error: 'Permission denied' });
   });
 
+  it('returns 403 when an organizer with full org permissions is not internal staff', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: false },
+    });
+    mockGetOrgMembership.mockResolvedValue({
+      organizationId: '11111111-1111-4111-8111-111111111111',
+      role: 'owner',
+    });
+    mockListRefundAdminReviewQueue.mockResolvedValue([
+      {
+        refundRequestId: 'r1',
+        registrationId: 'registration-1',
+        organizerId: '11111111-1111-4111-8111-111111111111',
+        attendeeUserId: 'attendee-1',
+        requestedByUserId: 'admin-1',
+        status: 'escalated_admin_review',
+        reasonCode: 'goodwill_manual',
+        reasonNote: 'Manual goodwill',
+        requestedAt: new Date('2026-02-23T22:00:00.000Z'),
+        escalatedAt: new Date('2026-02-23T22:05:00.000Z'),
+        queueSource: 'goodwill',
+      },
+    ]);
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/payments/refunds/admin/review-queue?organizationId=11111111-1111-4111-8111-111111111111',
+      ),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Permission denied' });
+    expect(mockListRefundAdminReviewQueue).not.toHaveBeenCalled();
+  });
+
   it('returns 500 when admin review queue retrieval throws an unexpected error', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
     mockListRefundAdminReviewQueue.mockRejectedValue(new Error('Unexpected failure'));
@@ -132,11 +168,7 @@ describe('GET /api/payments/refunds/admin/review-queue', () => {
   it('returns queue entries with deterministic metadata', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: false },
-    });
-    mockGetOrgMembership.mockResolvedValue({
-      organizationId: '11111111-1111-4111-8111-111111111111',
-      role: 'owner',
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockListRefundAdminReviewQueue.mockResolvedValue([
       {
