@@ -9,6 +9,7 @@ const mockWhere = jest.fn();
 const mockUpdateReturning = jest.fn();
 
 const mockIngestMoneyMutationFromApi = jest.fn();
+const mockIngestMoneyMutationFromApiInTransaction = jest.fn();
 const mockIngestMoneyMutationFromWorker = jest.fn();
 
 jest.mock('@/db', () => ({
@@ -23,11 +24,21 @@ jest.mock('@/db', () => ({
     },
     insert: (...args: unknown[]) => mockInsert(...args),
     update: (...args: unknown[]) => mockUpdate(...args),
+    // The intake path now runs inside db.transaction(); delegate the tx
+    // stub's insert/update to the SAME mocks used at the module level so
+    // insert-order and call-count assertions still hold.
+    transaction: (callback: (tx: unknown) => unknown) =>
+      callback({
+        insert: (...args: unknown[]) => mockInsert(...args),
+        update: (...args: unknown[]) => mockUpdate(...args),
+      }),
   },
 }));
 
 jest.mock('@/lib/payments/core/mutation-ingress-paths', () => ({
   ingestMoneyMutationFromApi: (...args: unknown[]) => mockIngestMoneyMutationFromApi(...args),
+  ingestMoneyMutationFromApiInTransaction: (...args: unknown[]) =>
+    mockIngestMoneyMutationFromApiInTransaction(...args),
   ingestMoneyMutationFromWorker: (...args: unknown[]) =>
     mockIngestMoneyMutationFromWorker(...args),
 }));
@@ -54,6 +65,7 @@ describe('dispute lifecycle domain service', () => {
     mockWhere.mockReset();
     mockUpdateReturning.mockReset();
     mockIngestMoneyMutationFromApi.mockReset();
+    mockIngestMoneyMutationFromApiInTransaction.mockReset();
     mockIngestMoneyMutationFromWorker.mockReset();
 
     mockInsert.mockImplementation(() => ({
@@ -91,7 +103,7 @@ describe('dispute lifecycle domain service', () => {
         },
       },
     });
-    mockIngestMoneyMutationFromApi.mockResolvedValue({
+    mockIngestMoneyMutationFromApiInTransaction.mockResolvedValue({
       traceId: 'dispute-intake:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       deduplicated: false,
       persistedEvents: [],
@@ -140,14 +152,18 @@ describe('dispute lifecycle domain service', () => {
     });
     expect(result.traceId).toMatch(/^dispute-intake:/);
 
-    expect(mockIngestMoneyMutationFromApi).toHaveBeenCalledTimes(1);
-    expect(mockIngestMoneyMutationFromApi.mock.calls[0]![0]).toMatchObject({
+    // The intake path runs inside db.transaction() and appends the
+    // dispute.opened event via the in-tx ingress entrypoint, not the non-tx
+    // one.
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+    expect(mockIngestMoneyMutationFromApiInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockIngestMoneyMutationFromApiInTransaction.mock.calls[0]![1]).toMatchObject({
       organizerId: '11111111-1111-4111-8111-111111111111',
       traceId: result.traceId,
       idempotencyKey: result.traceId,
     });
 
-    const ingressEvent = mockIngestMoneyMutationFromApi.mock.calls[0]![0].events[0];
+    const ingressEvent = mockIngestMoneyMutationFromApiInTransaction.mock.calls[0]![1].events[0];
     expect(ingressEvent.eventName).toBe('dispute.opened');
     expect(ingressEvent.payload.registrationId).toBe('33333333-3333-4333-8333-333333333333');
     expect(ingressEvent.payload.orderId).toBeUndefined();
