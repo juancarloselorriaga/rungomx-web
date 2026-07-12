@@ -1,17 +1,15 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import { refresh, revalidateTag } from 'next/cache';
-import { headers } from 'next/headers';
 import { z } from 'zod';
 
 import type { AppLocale } from '@/i18n/routing';
-import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { db } from '@/db';
-import { discountRedemptions, eventEditions, registrations } from '@/db/schema';
+import { discountRedemptions, eventEditions } from '@/db/schema';
 import { eventEditionDetailTag, eventEditionRegistrationsTag } from '@/lib/events/cache-tags';
+import { confirmRegistrationPaymentCaptureInTransaction } from '@/lib/events/payments/confirm-capture';
 import { sendRegistrationCompletionEmail } from '@/lib/events/registration-email';
 import { isExpiredHold } from '@/lib/events/registration-holds';
 import {
@@ -19,7 +17,6 @@ import {
   RegistrationOwnershipError,
 } from '@/lib/events/registrations/ownership';
 import { revalidatePublicEventByEditionId, type ActionResult } from '@/lib/events/shared/action-helpers';
-import { ingestMoneyMutationFromServerActionInTransaction } from '@/lib/payments/core/mutation-ingress-paths';
 import { revalidateAdminPaymentCaptureVolumeCaches } from '@/lib/payments/volume/payment-capture-volume-rollups';
 
 const demoPayRegistrationSchema = z.object({
@@ -46,8 +43,6 @@ function isDemoPaymentsEnabled(): boolean {
   return true;
 }
 
-const DEMO_CAPTURE_CURRENCY = 'MXN';
-
 function toNonNegativeMinor(value: number | null | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
   return Math.max(Math.trunc(value), 0);
@@ -55,42 +50,6 @@ function toNonNegativeMinor(value: number | null | undefined): number {
 
 function buildDemoCaptureTraceId(registrationId: string): string {
   return `payment-capture:${registrationId}`.slice(0, 128);
-}
-
-function buildPaymentCapturedEvent(params: {
-  registrationId: string;
-  organizerId: string;
-  occurredAt: Date;
-  grossAmountMinor: number;
-  feeAmountMinor: number;
-  netAmountMinor: number;
-  idempotencyKey: string;
-  traceId: string;
-}) {
-  const occurredAtIso = params.occurredAt.toISOString();
-
-  return {
-    eventId: randomUUID(),
-    traceId: params.traceId,
-    occurredAt: occurredAtIso,
-    recordedAt: occurredAtIso,
-    eventName: 'payment.captured' as const,
-    version: 1 as const,
-    entityType: 'registration' as const,
-    entityId: params.registrationId,
-    source: 'api' as const,
-    idempotencyKey: params.idempotencyKey,
-    metadata: {
-      simulationMode: 'demo_pay',
-    },
-    payload: {
-      organizerId: params.organizerId,
-      registrationId: params.registrationId,
-      grossAmount: { amountMinor: params.grossAmountMinor, currency: DEMO_CAPTURE_CURRENCY },
-      feeAmount: { amountMinor: params.feeAmountMinor, currency: DEMO_CAPTURE_CURRENCY },
-      netAmount: { amountMinor: params.netAmountMinor, currency: DEMO_CAPTURE_CURRENCY },
-    },
-  };
 }
 
 /**
@@ -188,59 +147,20 @@ export const demoPayRegistration = withAuthenticatedUser<ActionResult<DemoPayReg
     const netAmountMinor = Math.max(grossAmountMinor - feeAmountMinor, 0);
     const traceId = buildDemoCaptureTraceId(registration.id);
 
-    const [updatedRegistration] = await tx
-      .update(registrations)
-      .set({ status: 'confirmed', expiresAt: null })
-      .where(
-        and(
-          eq(registrations.id, registration.id),
-          eq(registrations.status, 'payment_pending'),
-          isNull(registrations.deletedAt),
-        ),
-      )
-      .returning({ id: registrations.id, status: registrations.status });
-
-    if (!updatedRegistration) {
-      throw new Error('INVALID_STATE_TRANSITION');
-    }
-
-    await ingestMoneyMutationFromServerActionInTransaction(tx, {
-      traceId,
+    return confirmRegistrationPaymentCaptureInTransaction(tx, {
+      registrationId: registration.id,
       organizerId: organizationId,
+      grossAmountMinor,
+      feeAmountMinor,
+      netAmountMinor,
+      source: 'api',
       idempotencyKey: traceId,
-      events: [
-        buildPaymentCapturedEvent({
-          registrationId: registration.id,
-          organizerId: organizationId,
-          occurredAt: now,
-          grossAmountMinor,
-          feeAmountMinor,
-          netAmountMinor,
-          idempotencyKey: traceId,
-          traceId,
-        }),
-      ],
+      traceId,
+      occurredAt: now,
+      auditAction: 'registration.demo_pay',
+      actorUserId: authContext.user.id,
+      metadata: { simulationMode: 'demo_pay' },
     });
-
-    try {
-      const requestContext = await getRequestContext(await headers());
-      await createAuditLog(
-        {
-          organizationId,
-          actorUserId: authContext.user.id,
-          action: 'registration.demo_pay',
-          entityType: 'registration',
-          entityId: registration.id,
-          after: { mode: 'demo', fromStatus: 'payment_pending', toStatus: 'confirmed' },
-          request: requestContext,
-        },
-        tx,
-      );
-    } catch (error) {
-      console.warn('[demo-payments] Failed to write audit log:', error);
-    }
-
-    return updatedRegistration;
   });
 
   revalidateTag(eventEditionDetailTag(registration.editionId), { expire: 0 });
