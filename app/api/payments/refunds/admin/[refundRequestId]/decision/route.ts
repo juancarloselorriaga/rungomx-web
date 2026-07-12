@@ -1,0 +1,169 @@
+import { and, eq, isNull } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
+import { db } from '@/db';
+import { organizations } from '@/db/schema';
+import {
+  requireAuthenticatedPaymentsContext,
+  requireInternalStaffAccess,
+  withNoStore,
+} from '@/app/api/payments/_shared';
+import {
+  organizerRefundDecisionValues,
+  RefundDecisionSubmissionError,
+  submitAdminRefundDecision,
+} from '@/lib/payments/refunds/decision-submission';
+
+const paramsSchema = z.object({
+  refundRequestId: z.string().uuid(),
+});
+
+const decisionSchema = z.object({
+  organizationId: z.string().uuid(),
+  decision: z.enum(organizerRefundDecisionValues),
+  decisionReason: z.string().trim().min(1).max(2000),
+});
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ refundRequestId: string }> },
+): Promise<NextResponse> {
+  const authResult = await requireAuthenticatedPaymentsContext();
+
+  if (!authResult.ok) {
+    return authResult.response;
+  }
+
+  const authContext = authResult.context;
+
+  const parsedParams = paramsSchema.safeParse(await params);
+  if (!parsedParams.success) {
+    return withNoStore(
+      NextResponse.json(
+        {
+          error: 'Invalid refund request ID',
+          details: parsedParams.error.issues,
+        },
+        { status: 400 },
+      ),
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return withNoStore(
+      NextResponse.json(
+        {
+          error: 'Invalid JSON body',
+        },
+        { status: 400 },
+      ),
+    );
+  }
+
+  const parseResult = decisionSchema.safeParse(payload);
+  if (!parseResult.success) {
+    return withNoStore(
+      NextResponse.json(
+        {
+          error: 'Invalid refund decision payload',
+          details: parseResult.error.issues,
+        },
+        { status: 400 },
+      ),
+    );
+  }
+
+  const { organizationId, decision, decisionReason } = parseResult.data;
+
+  const accessResult = await requireInternalStaffAccess(authContext);
+  if (!accessResult.ok) {
+    return accessResult.response;
+  }
+
+  const organization = await db.query.organizations.findFirst({
+    where: and(eq(organizations.id, organizationId), isNull(organizations.deletedAt)),
+    columns: { id: true },
+  });
+
+  if (!organization) {
+    return withNoStore(NextResponse.json({ error: 'Organization not found' }, { status: 404 }));
+  }
+
+  try {
+    const submitted = await submitAdminRefundDecision({
+      refundRequestId: parsedParams.data.refundRequestId,
+      organizerId: organizationId,
+      decidedByUserId: authContext.user.id,
+      decision,
+      decisionReason,
+    });
+
+    return withNoStore(
+      NextResponse.json({
+        data: {
+          refundRequestId: submitted.refundRequestId,
+          registrationId: submitted.registrationId,
+          organizerId: submitted.organizerId,
+          attendeeUserId: submitted.attendeeUserId,
+          decision: submitted.decision,
+          status: submitted.status,
+          decisionReason: submitted.decisionReason,
+          decisionAt: submitted.decisionAt.toISOString(),
+          decidedByUserId: submitted.decidedByUserId,
+          requestedAt: submitted.requestedAt.toISOString(),
+        },
+      }),
+    );
+  } catch (error) {
+    if (error instanceof RefundDecisionSubmissionError) {
+      if (error.code === 'REFUND_REQUEST_NOT_FOUND') {
+        return withNoStore(
+          NextResponse.json(
+            {
+              error: 'Refund request not found',
+              code: error.code,
+            },
+            { status: 404 },
+          ),
+        );
+      }
+
+      if (error.code === 'REFUND_REQUEST_NOT_IN_REVIEW') {
+        return withNoStore(
+          NextResponse.json(
+            {
+              error: 'Refund request cannot be decided',
+              code: error.code,
+              reason: error.message,
+            },
+            { status: 409 },
+          ),
+        );
+      }
+
+      return withNoStore(
+        NextResponse.json(
+          {
+            error: 'Invalid refund decision',
+            code: error.code,
+            reason: error.message,
+          },
+          { status: 400 },
+        ),
+      );
+    }
+
+    console.error('[payments-refunds] Failed to submit admin refund decision', {
+      refundRequestId: parsedParams.data.refundRequestId,
+      organizationId,
+      actorUserId: authContext.user.id,
+      error,
+    });
+
+    return withNoStore(NextResponse.json({ error: 'Server error' }, { status: 500 }));
+  }
+}
