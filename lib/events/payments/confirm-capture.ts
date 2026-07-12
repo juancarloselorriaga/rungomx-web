@@ -148,6 +148,14 @@ export async function confirmRegistrationPaymentCaptureInTransaction(
     } catch (error) {
       console.warn('[payments] Failed to write audit log for payment capture confirmation:', error);
     }
+  } else {
+    // The audit schema requires a non-null actorUserId (db/schema.ts:
+    // auditLogs.actorUserId is NOT NULL with a FK to users.id), so we can't
+    // write an audit row here. Warn so a missing actor is observable instead
+    // of silently dropping the audit trail for this capture.
+    console.warn('[payments-capture] audit skipped: no actorUserId', {
+      registrationId: params.registrationId,
+    });
   }
 
   return updatedRegistration;

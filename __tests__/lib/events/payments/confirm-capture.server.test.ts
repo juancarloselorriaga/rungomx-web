@@ -130,4 +130,28 @@ describe('confirmRegistrationPaymentCapture', () => {
     expect(mockIngestMoneyMutationFromServerActionInTransaction).not.toHaveBeenCalled();
     expect(mockCreateAuditLog).not.toHaveBeenCalled();
   });
+
+  it('skips the audit write but warns observably when no actorUserId is provided', async () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { tx } = buildTransactionMocks();
+    mockTransaction.mockImplementation(async (callback: (input: unknown) => Promise<unknown>) =>
+      callback(tx),
+    );
+
+    try {
+      const result = await confirmRegistrationPaymentCapture(
+        defaultParams({ actorUserId: undefined }),
+      );
+
+      expect(result).toEqual({ id: registrationId, status: 'confirmed' });
+      expect(mockCreateAuditLog).not.toHaveBeenCalled();
+      expect(mockGetRequestContext).not.toHaveBeenCalled();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[payments-capture] audit skipped: no actorUserId',
+        { registrationId },
+      );
+    } finally {
+      consoleWarnSpy.mockRestore();
+    }
+  });
 });
