@@ -5,15 +5,21 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db';
 import { disputeCases, registrations } from '@/db/schema';
 import { type CanonicalMoneyEventV1 } from '@/lib/payments/core/contracts/events';
+import { type MoneyMutationIngressTransaction } from '@/lib/payments/core/mutation-ingress';
 import {
-  ingestMoneyMutationFromApi,
   ingestMoneyMutationFromApiInTransaction,
-  ingestMoneyMutationFromWorker,
+  ingestMoneyMutationFromWorkerInTransaction,
 } from '@/lib/payments/core/mutation-ingress-paths';
 import {
   assertFinancialProcessorRuntime,
   type FinancialProcessorRuntime,
 } from '@/lib/payments/core/replay';
+
+// Lower-level helpers below accept this typed db-or-tx client so the
+// dispute_cases CAS update can participate in a caller-owned transaction for
+// settlement outcomes, while non-outcome transitions keep writing directly
+// through the bare `db` client (mirrors lib/payments/core/mutation-ingress.ts).
+type DisputeCaseDbClient = typeof db | MoneyMutationIngressTransaction;
 
 const DISPUTE_INTAKE_TRACE_PREFIX = 'dispute-intake:';
 const DISPUTE_SETTLEMENT_TRACE_PREFIX = 'dispute-settlement:';
@@ -472,23 +478,17 @@ function buildDisputeSettlementEvents(params: {
   };
 }
 
-async function settleDisputeOutcome(params: {
-  disputeCaseId: string;
-  organizerId: string;
-  registrationId: string | null;
-  orderId: string | null;
+// Shared by the pre-transaction hoist in transitionDisputeCase and by
+// settleDisputeOutcome itself, so the amount/mode/runtime guards have a
+// single definition even though they must run once before a settlement
+// transaction opens (to reject without ever touching the database) and are
+// re-checked defensively inside settleDisputeOutcome.
+function assertDisputeSettlementGuards(params: {
   amountAtRiskMinor: number;
-  currency: string;
-  runtime: FinancialProcessorRuntime;
-  executionMode: DisputeSettlementExecutionMode;
-  toStatus: DisputeLifecycleStatus;
   nodeEnv: string;
-  now: Date;
-}): Promise<DisputeOutcomeSettlement | null> {
-  if (!isDisputeOutcomeStatus(params.toStatus)) {
-    return null;
-  }
-
+  executionMode: DisputeSettlementExecutionMode;
+  runtime: FinancialProcessorRuntime;
+}): number {
   const amountAtRiskMinor = normalizePositiveMinor(params.amountAtRiskMinor);
   if (amountAtRiskMinor == null) {
     throw toError('DISPUTE_SETTLEMENT_AMOUNT_INVALID');
@@ -506,6 +506,36 @@ async function settleDisputeOutcome(params: {
     const detail = error instanceof Error ? error.message : undefined;
     throw toError('DISPUTE_SETTLEMENT_RUNTIME_BLOCKED', detail);
   }
+
+  return amountAtRiskMinor;
+}
+
+async function settleDisputeOutcome(
+  tx: MoneyMutationIngressTransaction,
+  params: {
+    disputeCaseId: string;
+    organizerId: string;
+    registrationId: string | null;
+    orderId: string | null;
+    amountAtRiskMinor: number;
+    currency: string;
+    runtime: FinancialProcessorRuntime;
+    executionMode: DisputeSettlementExecutionMode;
+    toStatus: DisputeLifecycleStatus;
+    nodeEnv: string;
+    now: Date;
+  },
+): Promise<DisputeOutcomeSettlement | null> {
+  if (!isDisputeOutcomeStatus(params.toStatus)) {
+    return null;
+  }
+
+  const amountAtRiskMinor = assertDisputeSettlementGuards({
+    amountAtRiskMinor: params.amountAtRiskMinor,
+    nodeEnv: params.nodeEnv,
+    executionMode: params.executionMode,
+    runtime: params.runtime,
+  });
 
   const freezeLadder = resolveDisputeFreezeLadderDecision({
     toStatus: params.toStatus,
@@ -531,10 +561,13 @@ async function settleDisputeOutcome(params: {
     events: settlement.events,
   };
 
+  // Settlement postings must commit or roll back together with the CAS case
+  // update in transitionDisputeCase, so both ingress calls must run through
+  // the caller-owned transaction rather than opening their own.
   const ingressResult =
     params.runtime === 'worker'
-      ? await ingestMoneyMutationFromWorker(ingressInput)
-      : await ingestMoneyMutationFromApi(ingressInput);
+      ? await ingestMoneyMutationFromWorkerInTransaction(tx, ingressInput)
+      : await ingestMoneyMutationFromApiInTransaction(tx, ingressInput);
 
   return {
     traceId: settlement.traceId,
@@ -1104,82 +1137,118 @@ export async function transitionDisputeCase(params: {
   }
 
   const metadata = toDisputeMetadata(disputeCase.metadataJson);
-  const settlement = await settleDisputeOutcome({
-    disputeCaseId: disputeCase.id,
-    organizerId: disputeCase.organizerId,
-    registrationId: disputeCase.registrationId,
-    orderId: disputeCase.orderId,
-    amountAtRiskMinor: disputeCase.amountAtRiskMinor,
-    currency: disputeCase.currency,
-    runtime,
-    executionMode,
-    toStatus,
-    nodeEnv,
-    now,
-  });
-  const nextMetadata: DisputeCaseMetadata = {
-    ...metadata,
-    freezeLadder: settlement
-      ? {
-          profile: settlement.freezeLadder.profile,
-          currentStage: settlement.freezeLadder.stage,
-          amountAtRiskMinor: disputeCase.amountAtRiskMinor,
-          currency: disputeCase.currency,
-        }
-      : metadata.freezeLadder,
-    settlement: settlement
-      ? {
-          traceId: settlement.traceId,
-          settledAt: now.toISOString(),
-          executionMode: settlement.executionMode,
-          runtime: settlement.runtime,
-          outcomeStatus: toStatus as 'won' | 'lost',
-          composition: DISPUTE_SETTLEMENT_COMPOSITION,
-          postings: settlement.postings,
-        }
-      : metadata.settlement,
-    lastTransition: {
-      fromStatus,
-      toStatus,
-      actorUserId: params.actorUserId,
-      reasonCode,
-      reasonNote,
-      transitionedAt: now.toISOString(),
-    },
+  const closedAt = DISPUTE_TERMINAL_STATUSES.has(toStatus) ? now : null;
+  const isOutcomeTransition = isDisputeOutcomeStatus(toStatus);
+
+  // Settlement guards (amount/mode/runtime) must run and, if applicable,
+  // throw BEFORE a transaction opens: a blocked settlement must reject
+  // without ever touching the database, matching the pre-existing contract
+  // that these rejections never call db.update.
+  if (isOutcomeTransition) {
+    assertDisputeSettlementGuards({
+      amountAtRiskMinor: disputeCase.amountAtRiskMinor,
+      nodeEnv,
+      executionMode,
+      runtime,
+    });
+  }
+
+  const applyDisputeCaseTransitionUpdate = async (
+    client: DisputeCaseDbClient,
+    settlement: DisputeOutcomeSettlement | null,
+  ) => {
+    const nextMetadata: DisputeCaseMetadata = {
+      ...metadata,
+      freezeLadder: settlement
+        ? {
+            profile: settlement.freezeLadder.profile,
+            currentStage: settlement.freezeLadder.stage,
+            amountAtRiskMinor: disputeCase.amountAtRiskMinor,
+            currency: disputeCase.currency,
+          }
+        : metadata.freezeLadder,
+      settlement: settlement
+        ? {
+            traceId: settlement.traceId,
+            settledAt: now.toISOString(),
+            executionMode: settlement.executionMode,
+            runtime: settlement.runtime,
+            outcomeStatus: toStatus as 'won' | 'lost',
+            composition: DISPUTE_SETTLEMENT_COMPOSITION,
+            postings: settlement.postings,
+          }
+        : metadata.settlement,
+      lastTransition: {
+        fromStatus,
+        toStatus,
+        actorUserId: params.actorUserId,
+        reasonCode,
+        reasonNote,
+        transitionedAt: now.toISOString(),
+      },
+    };
+
+    const [updatedDisputeCase] = await client
+      .update(disputeCases)
+      .set({
+        status: toStatus,
+        lastTransitionAt: now,
+        latestTransitionByUserId: params.actorUserId,
+        closedAt,
+        metadataJson: nextMetadata,
+      })
+      .where(
+        and(
+          eq(disputeCases.id, params.disputeCaseId),
+          eq(disputeCases.organizerId, params.organizerId),
+          eq(disputeCases.status, fromStatus),
+          isNull(disputeCases.deletedAt),
+        ),
+      )
+      .returning({
+        id: disputeCases.id,
+        organizerId: disputeCases.organizerId,
+        status: disputeCases.status,
+        closedAt: disputeCases.closedAt,
+        lastTransitionAt: disputeCases.lastTransitionAt,
+        latestTransitionByUserId: disputeCases.latestTransitionByUserId,
+        metadataJson: disputeCases.metadataJson,
+      });
+
+    if (!updatedDisputeCase) {
+      throw toError('DISPUTE_TRANSITION_UPDATE_FAILED');
+    }
+
+    return { updatedDisputeCase, settlement };
   };
 
-  const closedAt = DISPUTE_TERMINAL_STATUSES.has(toStatus) ? now : null;
+  // Settlement outcomes (won/lost) post money events through ingress (freeze
+  // release + optional debt posting) and then run the guarded CAS case
+  // update. Those two writes must commit or roll back together: without
+  // this, a mid-sequence update failure (e.g. an FK violation on
+  // actorUserId) strands committed settlement postings against a case that
+  // never actually transitioned. Non-outcome transitions never call
+  // settlement ingress, so they keep writing through the bare db.update path
+  // with no transaction needed.
+  const { updatedDisputeCase, settlement } = isOutcomeTransition
+    ? await db.transaction(async (tx) => {
+        const settlementResult = await settleDisputeOutcome(tx, {
+          disputeCaseId: disputeCase.id,
+          organizerId: disputeCase.organizerId,
+          registrationId: disputeCase.registrationId,
+          orderId: disputeCase.orderId,
+          amountAtRiskMinor: disputeCase.amountAtRiskMinor,
+          currency: disputeCase.currency,
+          runtime,
+          executionMode,
+          toStatus,
+          nodeEnv,
+          now,
+        });
 
-  const [updatedDisputeCase] = await db
-    .update(disputeCases)
-    .set({
-      status: toStatus,
-      lastTransitionAt: now,
-      latestTransitionByUserId: params.actorUserId,
-      closedAt,
-      metadataJson: nextMetadata,
-    })
-    .where(
-      and(
-        eq(disputeCases.id, params.disputeCaseId),
-        eq(disputeCases.organizerId, params.organizerId),
-        eq(disputeCases.status, fromStatus),
-        isNull(disputeCases.deletedAt),
-      ),
-    )
-    .returning({
-      id: disputeCases.id,
-      organizerId: disputeCases.organizerId,
-      status: disputeCases.status,
-      closedAt: disputeCases.closedAt,
-      lastTransitionAt: disputeCases.lastTransitionAt,
-      latestTransitionByUserId: disputeCases.latestTransitionByUserId,
-      metadataJson: disputeCases.metadataJson,
-    });
-
-  if (!updatedDisputeCase) {
-    throw toError('DISPUTE_TRANSITION_UPDATE_FAILED');
-  }
+        return applyDisputeCaseTransitionUpdate(tx, settlementResult);
+      })
+    : await applyDisputeCaseTransitionUpdate(db, null);
 
   return {
     disputeCaseId: updatedDisputeCase.id,
