@@ -153,7 +153,7 @@ export const demoPayRegistration = withAuthenticatedUser<ActionResult<DemoPayReg
       grossAmountMinor,
       feeAmountMinor,
       netAmountMinor,
-      source: 'api',
+      source: 'server_action',
       idempotencyKey: traceId,
       traceId,
       occurredAt: now,
