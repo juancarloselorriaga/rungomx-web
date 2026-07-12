@@ -685,6 +685,12 @@ describe('refund execution domain service', () => {
         eligibilitySnapshotJson: { source: 'goodwill' },
       }),
     ).toBe(true);
+    expect(
+      isGoodwillRequest({
+        reasonCode: 'medical',
+        eligibilitySnapshotJson: { source: 'goodwill' },
+      }),
+    ).toBe(true);
     expect(isGoodwillRequest({ reasonCode: 'medical', eligibilitySnapshotJson: {} })).toBe(false);
   });
 });
