@@ -1,4 +1,5 @@
 import type { ProfileStatus } from '@/lib/profiles/types';
+import { hasStaffToolsAccess } from './roles';
 import { type AuthContext, getAuthContext } from './server';
 import type { Session } from './types';
 
@@ -72,10 +73,20 @@ export async function requireAdminUser(): Promise<AuthenticatedContext> {
   return context;
 }
 
+/**
+ * Single-source predicate for "internal staff tools" access. Canonical
+ * implementation lives in `./roles` (beside `PermissionSet`) so that
+ * `app/api/payments/_shared.ts`'s `requireInternalStaffAccess` can import it
+ * directly instead of depending on this guards module (which several route
+ * tests mock wholesale). Re-exported here, beside `requireStaffUser`, for
+ * discoverability.
+ */
+export { hasStaffToolsAccess };
+
 export async function requireStaffUser(): Promise<AuthenticatedContext> {
   const context = await requireAuthenticatedUser();
 
-  if (!context.permissions.canAccessAdminArea || !context.permissions.canViewStaffTools) {
+  if (!hasStaffToolsAccess(context.permissions)) {
     throw new ForbiddenError('Staff access required');
   }
 

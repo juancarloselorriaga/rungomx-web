@@ -257,6 +257,48 @@ describe('demoPayRegistration', () => {
     });
   });
 
+  it('floors both gross and net at zero when combined discounts exceed base plus fees', async () => {
+    const registration = buildRegistration({
+      totalCents: null,
+      basePriceCents: 1_000,
+      feesCents: 100,
+      taxCents: 0,
+      groupDiscountAmountCents: 800,
+    });
+    const { tx } = buildTransactionMocks({
+      discountRedemption: { discountAmountCents: 600 },
+    });
+
+    mockGetRegistrationForOwnerOrThrow.mockResolvedValue(registration);
+    mockTransaction.mockImplementation(async (callback: (input: unknown) => Promise<unknown>) =>
+      callback(tx),
+    );
+
+    const result = await demoPayRegistration({ registrationId: registration.id });
+
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        id: registration.id,
+        status: 'confirmed',
+      },
+    });
+
+    expect(mockIngestMoneyMutationFromServerActionInTransaction).toHaveBeenCalledTimes(1);
+    const [, ingressCommand] = mockIngestMoneyMutationFromServerActionInTransaction.mock.calls[0];
+    expect(ingressCommand.events[0]).toMatchObject({
+      payload: {
+        // basePriceCents(1_000) + feesCents(100) + taxCents(0) - discountAmountCents(600) -
+        // groupDiscountAmountCents(800) = -300, floored to 0 by the gross Math.max clamp.
+        grossAmount: { amountMinor: 0, currency: 'MXN' },
+        feeAmount: { amountMinor: 100, currency: 'MXN' },
+        // net = Math.max(gross - fee, 0) = Math.max(0 - 100, 0); the net clamp keeps this
+        // pinned at zero instead of going negative when discounts exceed gross.
+        netAmount: { amountMinor: 0, currency: 'MXN' },
+      },
+    });
+  });
+
   it('does not wait for the confirmation email before returning success', async () => {
     const registration = buildRegistration();
     const { tx } = buildTransactionMocks();

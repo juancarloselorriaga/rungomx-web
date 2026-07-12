@@ -25,6 +25,16 @@ export type PermissionSet = {
   canViewAthleteDashboard: boolean;
 };
 
+/**
+ * Single-source predicate for "internal staff tools" access. Shared by
+ * `requireStaffUser` (throw-based guard, `lib/auth/guards.ts`) and
+ * `requireInternalStaffAccess` (route-level, response-based guard in
+ * `app/api/payments/_shared.ts`) so the two boundaries can never drift apart.
+ */
+export function hasStaffToolsAccess(permissions: PermissionSet): boolean {
+  return permissions.canAccessAdminArea && permissions.canViewStaffTools;
+}
+
 type RoleDefinition = {
   id: CanonicalRole;
   category: RoleCategory;

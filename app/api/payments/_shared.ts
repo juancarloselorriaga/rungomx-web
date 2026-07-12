@@ -9,6 +9,7 @@ import {
   requireAuthenticatedUser,
   UnauthenticatedError,
 } from '@/lib/auth/guards';
+import { hasStaffToolsAccess } from '@/lib/auth/roles';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
 export function withNoStore(response: NextResponse): NextResponse {
@@ -105,7 +106,7 @@ export async function requireOrganizerWriteAccess(
 export async function requireInternalStaffAccess(
   authContext: AuthenticatedContext,
 ): Promise<{ ok: true } | { ok: false; response: NextResponse }> {
-  if (!authContext.permissions.canAccessAdminArea || !authContext.permissions.canViewStaffTools) {
+  if (!hasStaffToolsAccess(authContext.permissions)) {
     return {
       ok: false,
       response: paymentsPermissionDeniedResponse(),
