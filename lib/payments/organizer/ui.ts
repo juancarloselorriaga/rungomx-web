@@ -45,8 +45,6 @@ export type OrganizerWalletIssuesApiResponse = {
   };
 };
 
-export type OrganizerPayoutCtaMode = 'request' | 'queue';
-
 /**
  * Max amount an organizer could withdraw right now: available funds minus
  * outstanding debt, floored at zero. Mirrors the payout quote contract's
@@ -54,13 +52,4 @@ export type OrganizerPayoutCtaMode = 'request' | 'queue';
  */
 export function deriveMaxWithdrawableMinor(buckets: OrganizerWalletBuckets): number {
   return Math.max(buckets.availableMinor - buckets.debtMinor, 0);
-}
-
-export function resolveOrganizerPayoutCtaMode(
-  buckets: OrganizerWalletBuckets,
-): OrganizerPayoutCtaMode {
-  const hasActivePayoutLifecycle = buckets.processingMinor > 0;
-  const hasWithdrawableFunds = deriveMaxWithdrawableMinor(buckets) > 0;
-
-  return !hasActivePayoutLifecycle && hasWithdrawableFunds ? 'request' : 'queue';
 }
