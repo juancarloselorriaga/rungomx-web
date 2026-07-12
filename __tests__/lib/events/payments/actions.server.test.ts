@@ -93,6 +93,7 @@ function buildRegistration(overrides: Partial<Record<string, unknown>> = {}) {
 function buildTransactionMocks(params?: {
   organizationId?: string | null;
   updatedRegistration?: { id: string; status: string };
+  discountRedemption?: { discountAmountCents: number } | null;
 }) {
   const updateWhere = jest.fn().mockReturnValue({
     returning: jest
@@ -111,6 +112,11 @@ function buildTransactionMocks(params?: {
                 : params.organizationId,
           },
         }),
+      },
+      // Only consulted when a registration's totalCents is null (legacy fallback-gross
+      // path); pre-existing tests use a non-null totalCents and never reach this query.
+      discountRedemptions: {
+        findFirst: jest.fn().mockResolvedValue(params?.discountRedemption ?? null),
       },
     },
     update: jest.fn().mockReturnValue({
@@ -211,6 +217,44 @@ describe('demoPayRegistration', () => {
       locale: 'en',
     });
     expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('subtracts individual and group discounts from the fallback gross when totalCents is null', async () => {
+    const registration = buildRegistration({
+      totalCents: null,
+      basePriceCents: 10_000,
+      feesCents: 500,
+      taxCents: 0,
+      groupDiscountAmountCents: 1_000,
+    });
+    const { tx } = buildTransactionMocks({
+      discountRedemption: { discountAmountCents: 2_000 },
+    });
+
+    mockGetRegistrationForOwnerOrThrow.mockResolvedValue(registration);
+    mockTransaction.mockImplementation(async (callback: (input: unknown) => Promise<unknown>) =>
+      callback(tx),
+    );
+
+    const result = await demoPayRegistration({ registrationId: registration.id });
+
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        id: registration.id,
+        status: 'confirmed',
+      },
+    });
+
+    expect(mockIngestMoneyMutationFromServerActionInTransaction).toHaveBeenCalledTimes(1);
+    const [, ingressCommand] = mockIngestMoneyMutationFromServerActionInTransaction.mock.calls[0];
+    expect(ingressCommand.events[0]).toMatchObject({
+      payload: {
+        grossAmount: { amountMinor: 7_500, currency: 'MXN' },
+        feeAmount: { amountMinor: 500, currency: 'MXN' },
+        netAmount: { amountMinor: 7_000, currency: 'MXN' },
+      },
+    });
   });
 
   it('does not wait for the confirmation email before returning success', async () => {
