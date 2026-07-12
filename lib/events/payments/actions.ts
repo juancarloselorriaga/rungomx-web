@@ -10,7 +10,7 @@ import type { AppLocale } from '@/i18n/routing';
 import { createAuditLog, getRequestContext } from '@/lib/audit';
 import { withAuthenticatedUser } from '@/lib/auth/action-wrapper';
 import { db } from '@/db';
-import { eventEditions, registrations } from '@/db/schema';
+import { discountRedemptions, eventEditions, registrations } from '@/db/schema';
 import { eventEditionDetailTag, eventEditionRegistrationsTag } from '@/lib/events/cache-tags';
 import { sendRegistrationCompletionEmail } from '@/lib/events/registration-email';
 import { isExpiredHold } from '@/lib/events/registration-holds';
@@ -166,12 +166,24 @@ export const demoPayRegistration = withAuthenticatedUser<ActionResult<DemoPayReg
       throw new Error('ORGANIZATION_NOT_FOUND');
     }
 
-    const grossAmountMinor =
-      registration.totalCents == null
-        ? toNonNegativeMinor(registration.basePriceCents) +
+    let grossAmountMinor: number;
+    if (registration.totalCents == null) {
+      const discountRedemption = await tx.query.discountRedemptions.findFirst({
+        where: eq(discountRedemptions.registrationId, registration.id),
+        columns: { discountAmountCents: true },
+      });
+
+      grossAmountMinor = Math.max(
+        toNonNegativeMinor(registration.basePriceCents) +
           toNonNegativeMinor(registration.feesCents) +
-          toNonNegativeMinor(registration.taxCents)
-        : toNonNegativeMinor(registration.totalCents);
+          toNonNegativeMinor(registration.taxCents) -
+          toNonNegativeMinor(discountRedemption?.discountAmountCents) -
+          toNonNegativeMinor(registration.groupDiscountAmountCents),
+        0,
+      );
+    } else {
+      grossAmountMinor = toNonNegativeMinor(registration.totalCents);
+    }
     const feeAmountMinor = toNonNegativeMinor(registration.feesCents);
     const netAmountMinor = Math.max(grossAmountMinor - feeAmountMinor, 0);
     const traceId = buildDemoCaptureTraceId(registration.id);
