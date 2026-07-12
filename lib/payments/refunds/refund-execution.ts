@@ -169,14 +169,14 @@ function toNonNegativeMinor(value: unknown): number {
   return Math.max(Math.trunc(value), 0);
 }
 
-function toRecord(value: unknown): Record<string, unknown> {
+export function toRecord(value: unknown): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return {};
   }
   return value as Record<string, unknown>;
 }
 
-function isGoodwillRequest(input: {
+export function isGoodwillRequest(input: {
   reasonCode: string;
   eligibilitySnapshotJson: Record<string, unknown>;
 }): boolean {

@@ -3,6 +3,7 @@ const mockGetOrgMembership = jest.fn();
 const mockRequireOrgPermission = jest.fn();
 const mockExecuteRefundRequest = jest.fn();
 const mockFindOrganization = jest.fn();
+const mockFindRefundRequestForAuth = jest.fn();
 
 jest.mock('@/lib/auth/guards', () => {
   class MockUnauthenticatedError extends Error {}
@@ -34,9 +35,30 @@ jest.mock('@/lib/payments/refunds/refund-execution', () => {
     }
   }
 
+  // Hand-mirrored rather than jest.requireActual: the real module transitively
+  // imports lib/email, which pulls in next-intl/server ESM output that this
+  // jest project cannot transform. Keep this in sync with isGoodwillRequest /
+  // toRecord in lib/payments/refunds/refund-execution.ts.
+  function toRecord(value: unknown): Record<string, unknown> {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return {};
+    }
+    return value as Record<string, unknown>;
+  }
+
+  function isGoodwillRequest(input: {
+    reasonCode: string;
+    eligibilitySnapshotJson: Record<string, unknown>;
+  }): boolean {
+    if (input.reasonCode === 'goodwill_manual') return true;
+    return input.eligibilitySnapshotJson.source === 'goodwill';
+  }
+
   return {
     RefundExecutionError: MockRefundExecutionError,
     executeRefundRequest: (...args: unknown[]) => mockExecuteRefundRequest(...args),
+    toRecord,
+    isGoodwillRequest,
   };
 });
 
@@ -45,6 +67,9 @@ jest.mock('@/db', () => ({
     query: {
       organizations: {
         findFirst: (...args: unknown[]) => mockFindOrganization(...args),
+      },
+      refundRequests: {
+        findFirst: (...args: unknown[]) => mockFindRefundRequestForAuth(...args),
       },
     },
   },
@@ -66,11 +91,13 @@ describe('POST /api/payments/refunds/[refundRequestId]/execute', () => {
     mockRequireOrgPermission.mockReset();
     mockExecuteRefundRequest.mockReset();
     mockFindOrganization.mockReset();
+    mockFindRefundRequestForAuth.mockReset();
 
     mockRequireOrgPermission.mockImplementation(() => undefined);
     mockFindOrganization.mockResolvedValue({
       id: '11111111-1111-4111-8111-111111111111',
     });
+    mockFindRefundRequestForAuth.mockResolvedValue(null);
   });
 
   it('returns 401 when user is not authenticated', async () => {
@@ -188,6 +215,74 @@ describe('POST /api/payments/refunds/[refundRequestId]/execute', () => {
 
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'Permission denied' });
+  });
+
+  it('returns 403 when a non-staff organizer attempts to execute a goodwill-flagged request', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: false },
+    });
+    mockFindRefundRequestForAuth.mockResolvedValueOnce({
+      reasonCode: 'goodwill_manual',
+      eligibilitySnapshotJson: { source: 'goodwill' },
+    });
+    mockExecuteRefundRequest.mockResolvedValue({
+      refundRequestId: '22222222-2222-4222-8222-222222222222',
+      registrationId: '33333333-3333-4333-8333-333333333333',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      attendeeUserId: 'attendee-1',
+      status: 'executed',
+      reasonCode: 'goodwill_manual',
+      requestedAmountMinor: 500,
+      maxRefundableToAttendeeMinorPerRun: 1000,
+      effectiveMaxRefundableMinor: 1000,
+      alreadyRefundedMinor: 100,
+      remainingRefundableBeforeMinor: 900,
+      remainingRefundableAfterMinor: 400,
+      executedAt: new Date('2026-02-23T23:10:00.000Z'),
+      executedByUserId: 'organizer-user-1',
+      traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+      ingressDeduplicated: false,
+      runtime: 'web',
+      executionMode: 'in_process',
+      notifications: {
+        channels: ['in_app', 'email'],
+        policyWordingVersion: 'refund-execution-policy-v1',
+        policyWording:
+          'Refund execution is limited by remaining refundable capacity, and service fees are non-refundable.',
+        attendee: {
+          userIds: ['attendee-1'],
+          message: 'Attendee message',
+          traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+          inAppStatus: 'persisted',
+          emailStatus: 'sent',
+        },
+        organizer: {
+          userIds: ['organizer-user-1'],
+          message: 'Organizer message',
+          traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+          inAppStatus: 'persisted',
+          emailStatus: 'sent',
+        },
+      },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 500,
+          maxRefundableToAttendeeMinorPerRun: 1000,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Permission denied' });
+    expect(mockExecuteRefundRequest).not.toHaveBeenCalled();
+    expect(mockGetOrgMembership).not.toHaveBeenCalled();
   });
 
   it('returns 404 when organization is not found', async () => {
@@ -511,5 +606,105 @@ describe('POST /api/payments/refunds/[refundRequestId]/execute', () => {
       runtime: 'web',
       executionMode: 'in_process',
     });
+  });
+
+  it('returns 200 with execution payload when internal staff executes a goodwill-flagged request', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'staff-user-1' },
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
+    });
+    mockFindRefundRequestForAuth.mockResolvedValueOnce({
+      reasonCode: 'goodwill_manual',
+      eligibilitySnapshotJson: { source: 'goodwill' },
+    });
+    mockExecuteRefundRequest.mockResolvedValue({
+      refundRequestId: '22222222-2222-4222-8222-222222222222',
+      registrationId: '33333333-3333-4333-8333-333333333333',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      attendeeUserId: 'attendee-1',
+      status: 'executed',
+      reasonCode: 'goodwill_manual',
+      requestedAmountMinor: 500,
+      maxRefundableToAttendeeMinorPerRun: 1000,
+      effectiveMaxRefundableMinor: 1000,
+      alreadyRefundedMinor: 100,
+      remainingRefundableBeforeMinor: 900,
+      remainingRefundableAfterMinor: 400,
+      executedAt: new Date('2026-02-23T23:10:00.000Z'),
+      executedByUserId: 'staff-user-1',
+      traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+      ingressDeduplicated: false,
+      runtime: 'web',
+      executionMode: 'in_process',
+      notifications: {
+        channels: ['in_app', 'email'],
+        policyWordingVersion: 'refund-execution-policy-v1',
+        policyWording:
+          'Refund execution is limited by remaining refundable capacity, and service fees are non-refundable.',
+        attendee: {
+          userIds: ['attendee-1'],
+          message: 'Attendee message',
+          traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+          inAppStatus: 'persisted',
+          emailStatus: 'sent',
+        },
+        organizer: {
+          userIds: ['staff-user-1'],
+          message: 'Organizer message',
+          traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+          inAppStatus: 'persisted',
+          emailStatus: 'sent',
+        },
+      },
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/22222222-2222-4222-8222-222222222222/execute', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedAmountMinor: 500,
+          maxRefundableToAttendeeMinorPerRun: 1000,
+        }),
+      }),
+      createRouteContext('22222222-2222-4222-8222-222222222222'),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+
+    const body = await response.json();
+    expect(body.data).toMatchObject({
+      refundRequestId: '22222222-2222-4222-8222-222222222222',
+      registrationId: '33333333-3333-4333-8333-333333333333',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      attendeeUserId: 'attendee-1',
+      status: 'executed',
+      reasonCode: 'goodwill_manual',
+      requestedAmountMinor: 500,
+      maxRefundableToAttendeeMinorPerRun: 1000,
+      effectiveMaxRefundableMinor: 1000,
+      alreadyRefundedMinor: 100,
+      remainingRefundableBeforeMinor: 900,
+      remainingRefundableAfterMinor: 400,
+      executedAt: '2026-02-23T23:10:00.000Z',
+      traceId: 'refund-execution:22222222-2222-4222-8222-222222222222',
+      runtime: 'web',
+      executionMode: 'in_process',
+      notifications: {
+        channels: ['in_app', 'email'],
+      },
+    });
+
+    expect(mockExecuteRefundRequest).toHaveBeenCalledWith({
+      refundRequestId: '22222222-2222-4222-8222-222222222222',
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      executedByUserId: 'staff-user-1',
+      requestedAmountMinor: 500,
+      maxRefundableToAttendeeMinorPerRun: 1000,
+      runtime: 'web',
+      executionMode: 'in_process',
+    });
+    expect(mockGetOrgMembership).not.toHaveBeenCalled();
   });
 });
