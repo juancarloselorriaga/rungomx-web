@@ -33,12 +33,14 @@ describe('money mutation ingress path delegates', () => {
     await ingestMoneyMutationFromApi({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
     });
 
     expect(mockMoneyMutationIngress).toHaveBeenCalledWith({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
       source: 'api',
     });
@@ -48,12 +50,14 @@ describe('money mutation ingress path delegates', () => {
     await ingestMoneyMutationFromServerAction({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
     });
 
     expect(mockMoneyMutationIngress).toHaveBeenCalledWith({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
       source: 'server_action',
     });
@@ -65,12 +69,14 @@ describe('money mutation ingress path delegates', () => {
     await ingestMoneyMutationFromServerActionInTransaction(tx as never, {
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
     });
 
     expect(mockMoneyMutationIngressInTransaction).toHaveBeenCalledWith(tx, {
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
       source: 'server_action',
     });
@@ -80,12 +86,14 @@ describe('money mutation ingress path delegates', () => {
     await ingestMoneyMutationFromWorker({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
     });
 
     expect(mockMoneyMutationIngress).toHaveBeenCalledWith({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
       source: 'worker',
     });
@@ -95,12 +103,14 @@ describe('money mutation ingress path delegates', () => {
     await ingestMoneyMutationFromScheduler({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
     });
 
     expect(mockMoneyMutationIngress).toHaveBeenCalledWith({
       traceId: 'trace-1',
       organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
       events: [],
       source: 'scheduler',
     });

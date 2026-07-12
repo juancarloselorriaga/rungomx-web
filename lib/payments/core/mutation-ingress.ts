@@ -33,7 +33,7 @@ export type MoneyMutationIngressTransaction = DbTransaction;
 export type MoneyMutationIngressCommand = {
   traceId: string;
   organizerId?: string | null;
-  idempotencyKey?: string | null;
+  idempotencyKey: string;
   source: MoneyMutationIngressSource;
   events: unknown[];
 };
@@ -61,6 +61,10 @@ function normalizeCanonicalEvents(command: MoneyMutationIngressCommand): Canonic
 
   if (command.events.length === 0) {
     throw new Error('Money mutation ingress requires at least one canonical event.');
+  }
+
+  if (!command.idempotencyKey) {
+    throw new Error('Money mutation ingress requires an idempotencyKey.');
   }
 
   const parsedEvents = command.events.map((event) => parseCanonicalMoneyEventWithUpcasting(event));

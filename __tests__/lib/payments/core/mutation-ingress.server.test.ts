@@ -339,11 +339,25 @@ describe('money mutation ingress', () => {
     ).rejects.toThrow('Organizer-scoped idempotency requires organizerId.');
   });
 
+  it('rejects commands missing an idempotencyKey before opening a transaction', async () => {
+    await expect(
+      moneyMutationIngress({
+        traceId: 'trace-shared-1',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        source: 'api',
+        events: [paymentCapturedEvent],
+      } as unknown as Parameters<typeof moneyMutationIngress>[0]),
+    ).rejects.toThrow('Money mutation ingress requires an idempotencyKey.');
+
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
   it('rejects commands with empty event lists before opening a transaction', async () => {
     await expect(
       moneyMutationIngress({
         traceId: 'trace-empty',
         organizerId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'command-key-empty',
         source: 'api',
         events: [],
       }),
@@ -357,6 +371,7 @@ describe('money mutation ingress', () => {
       moneyMutationIngress({
         traceId: 'trace-invalid-source',
         organizerId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'command-key-invalid-source',
         source: 'unexpected_source' as never,
         events: [paymentCapturedEvent],
       }),
