@@ -1,6 +1,6 @@
 'use client';
 
-import type { OrganizerWalletBuckets } from '@/lib/payments/organizer/ui';
+import { deriveMaxWithdrawableMinor, type OrganizerWalletBuckets } from '@/lib/payments/organizer/ui';
 import { formatMoneyFromMinor } from '@/lib/utils/format-money';
 import { useTranslations } from 'next-intl';
 import {
@@ -34,10 +34,15 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
   const t = useTranslations('pages.dashboardPayments');
 
   const cards = [
-    { key: 'available', value: buckets.availableMinor },
-    { key: 'processing', value: buckets.processingMinor },
-    { key: 'frozen', value: buckets.frozenMinor },
-    { key: 'debt', value: buckets.debtMinor },
+    { id: 'available', labelKey: 'wallet.buckets.available', value: buckets.availableMinor },
+    { id: 'processing', labelKey: 'wallet.buckets.processing', value: buckets.processingMinor },
+    { id: 'frozen', labelKey: 'wallet.buckets.frozen', value: buckets.frozenMinor },
+    { id: 'debt', labelKey: 'wallet.buckets.debt', value: buckets.debtMinor },
+    {
+      id: 'maxWithdrawable',
+      labelKey: 'wallet.buckets.maxWithdrawableLabel',
+      value: deriveMaxWithdrawableMinor(buckets),
+    },
   ] as const;
 
   return (
@@ -54,10 +59,10 @@ export function OrganizerWalletSummary({ asOf, buckets, locale }: OrganizerWalle
         </PaymentsTimestamp>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
         {cards.map((card) => (
-          <PaymentsInsetPanel key={card.key} className="min-h-[5.75rem] space-y-2">
-            <PaymentsMetricLabel>{t(`wallet.buckets.${card.key}`)}</PaymentsMetricLabel>
+          <PaymentsInsetPanel key={card.id} className="min-h-[5.75rem] space-y-2">
+            <PaymentsMetricLabel>{t(card.labelKey)}</PaymentsMetricLabel>
             <PaymentsMetricValue className="break-normal text-[1rem] sm:text-[1.15rem] lg:text-[1.25rem] leading-tight tracking-[-0.01em]">
               {formatMoneyFromMinor(card.value, 'MXN', locale)}
             </PaymentsMetricValue>
