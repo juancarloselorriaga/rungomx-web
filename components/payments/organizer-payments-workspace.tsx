@@ -5,6 +5,7 @@ import type { AppHref } from '@/lib/payments/organizer/hrefs';
 import { getGlobalPayoutHistoryHref, getPayoutDetailHref } from '@/lib/payments/organizer/hrefs';
 import { emitOrganizerPaymentsTelemetry } from '@/lib/payments/organizer/telemetry';
 import {
+  deriveMaxWithdrawableMinor,
   type OrganizerWalletIssuesApiResponse,
   type OrganizerWalletSnapshotApiResponse,
 } from '@/lib/payments/organizer/ui';
@@ -183,7 +184,7 @@ export function OrganizerPaymentsWorkspace({
   const ctaState =
     data.wallet && (data.wallet.buckets.processingMinor > 0 || activePayoutId)
       ? 'active'
-      : data.wallet && data.wallet.buckets.availableMinor > 0
+      : data.wallet && deriveMaxWithdrawableMinor(data.wallet.buckets) > 0
         ? 'request'
         : 'idle';
   const currentPayoutHref = activePayoutId

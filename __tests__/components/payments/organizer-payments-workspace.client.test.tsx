@@ -116,6 +116,19 @@ const requestEligibleIssuesResponse = {
   },
 };
 
+const walletResponseDebtOffsetsAvailable = {
+  ...walletResponse,
+  data: {
+    ...walletResponse.data,
+    buckets: {
+      ...walletResponse.data.buckets,
+      availableMinor: 5_000,
+      processingMinor: 0,
+      debtMinor: 5_000,
+    },
+  },
+};
+
 const initialWorkspaceDataOrg1 = {
   wallet: walletResponse.data,
   issues: requestEligibleIssuesResponse.data,
@@ -181,6 +194,24 @@ describe('OrganizerPaymentsWorkspace', () => {
           organizationId: 'org-1',
         }),
       ]),
+    );
+  });
+
+  it('shows idle CTA (not request payout) when outstanding debt fully offsets available funds', async () => {
+    const fetchMock = global.fetch as jest.Mock;
+    fetchMock
+      .mockResolvedValueOnce(mockJsonResponse(walletResponseDebtOffsetsAvailable))
+      .mockResolvedValueOnce(mockJsonResponse(requestEligibleIssuesResponse));
+
+    render(<OrganizerPaymentsWorkspace locale="en" organizationId="org-1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText('wallet.buckets.available')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByTestId('payments-primary-cta')).not.toBeInTheDocument();
+    expect(screen.getByTestId('payments-history-link')).toHaveTextContent(
+      'actions.viewPayouts',
     );
   });
 
