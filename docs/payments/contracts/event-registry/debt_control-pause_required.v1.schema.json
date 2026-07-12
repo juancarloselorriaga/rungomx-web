@@ -43,6 +43,7 @@
       "type": "string",
       "enum": [
         "api",
+        "server_action",
         "worker",
         "scheduler",
         "admin"

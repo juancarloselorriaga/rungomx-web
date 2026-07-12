@@ -395,6 +395,15 @@ describe('payments event contracts registry', () => {
     }
   });
 
+  it('accepts server_action as a canonical event source', () => {
+    const event = {
+      ...canonicalEventFixtureByName['payment.captured'],
+      source: 'server_action',
+    };
+
+    expect(() => parseCanonicalMoneyEventWithUpcasting(event)).not.toThrow();
+  });
+
   it('builds deterministic contract artifact payloads', () => {
     const first = buildCanonicalMoneyEventSchemaArtifacts();
     const second = buildCanonicalMoneyEventSchemaArtifacts();

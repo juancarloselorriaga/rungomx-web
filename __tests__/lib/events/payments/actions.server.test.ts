@@ -195,7 +195,7 @@ describe('demoPayRegistration', () => {
       eventName: 'payment.captured',
       entityType: 'registration',
       entityId: registration.id,
-      source: 'api',
+      source: 'server_action',
       payload: {
         organizerId: '44444444-4444-4444-8444-444444444444',
         registrationId: registration.id,

@@ -52,7 +52,7 @@ export const canonicalMoneyEventEnvelopeV1Schema = z.object({
   version: z.literal(1),
   entityType: canonicalMoneyEntityTypeSchema,
   entityId: z.string().min(1).max(128),
-  source: z.enum(['api', 'worker', 'scheduler', 'admin']),
+  source: z.enum(['api', 'server_action', 'worker', 'scheduler', 'admin']),
   idempotencyKey: z.string().min(1).max(128).optional(),
   metadata: z.record(z.string(), z.unknown()).default({}),
 });
