@@ -9,10 +9,12 @@ jest.mock('@/lib/payments/core/mutation-ingress', () => ({
 
 import {
   ingestMoneyMutationFromApi,
+  ingestMoneyMutationFromApiInTransaction,
   ingestMoneyMutationFromScheduler,
   ingestMoneyMutationFromServerAction,
   ingestMoneyMutationFromServerActionInTransaction,
   ingestMoneyMutationFromWorker,
+  ingestMoneyMutationFromWorkerInTransaction,
 } from '@/lib/payments/core/mutation-ingress-paths';
 
 describe('money mutation ingress path delegates', () => {
@@ -79,6 +81,42 @@ describe('money mutation ingress path delegates', () => {
       idempotencyKey: 'idem-1',
       events: [],
       source: 'server_action',
+    });
+  });
+
+  it('delegates api path through moneyMutationIngressInTransaction', async () => {
+    expect(typeof ingestMoneyMutationFromApiInTransaction).toBe('function');
+    const tx = { insert: jest.fn() };
+    await ingestMoneyMutationFromApiInTransaction(tx as never, {
+      traceId: 'trace-1',
+      organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
+      events: [],
+    });
+    expect(mockMoneyMutationIngressInTransaction).toHaveBeenCalledWith(tx, {
+      traceId: 'trace-1',
+      organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
+      events: [],
+      source: 'api',
+    });
+  });
+
+  it('delegates worker path through moneyMutationIngressInTransaction', async () => {
+    expect(typeof ingestMoneyMutationFromWorkerInTransaction).toBe('function');
+    const tx = { insert: jest.fn() };
+    await ingestMoneyMutationFromWorkerInTransaction(tx as never, {
+      traceId: 'trace-1',
+      organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
+      events: [],
+    });
+    expect(mockMoneyMutationIngressInTransaction).toHaveBeenCalledWith(tx, {
+      traceId: 'trace-1',
+      organizerId: 'org-1',
+      idempotencyKey: 'idem-1',
+      events: [],
+      source: 'worker',
     });
   });
 

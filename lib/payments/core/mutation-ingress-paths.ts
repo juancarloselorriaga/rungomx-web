@@ -14,6 +14,16 @@ export function ingestMoneyMutationFromApi(input: MoneyMutationIngressPathInput)
   });
 }
 
+export function ingestMoneyMutationFromApiInTransaction(
+  tx: MoneyMutationIngressTransaction,
+  input: MoneyMutationIngressPathInput,
+) {
+  return moneyMutationIngressInTransaction(tx, {
+    ...input,
+    source: 'api',
+  });
+}
+
 export function ingestMoneyMutationFromServerAction(input: MoneyMutationIngressPathInput) {
   return moneyMutationIngress({
     ...input,
@@ -33,6 +43,16 @@ export function ingestMoneyMutationFromServerActionInTransaction(
 
 export function ingestMoneyMutationFromWorker(input: MoneyMutationIngressPathInput) {
   return moneyMutationIngress({
+    ...input,
+    source: 'worker',
+  });
+}
+
+export function ingestMoneyMutationFromWorkerInTransaction(
+  tx: MoneyMutationIngressTransaction,
+  input: MoneyMutationIngressPathInput,
+) {
+  return moneyMutationIngressInTransaction(tx, {
     ...input,
     source: 'worker',
   });
