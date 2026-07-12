@@ -1,5 +1,6 @@
 const mockGetOrganizerWalletBucketSnapshot = jest.fn();
 const mockIngestMoneyMutationFromApi = jest.fn();
+const mockIngestMoneyMutationFromApiInTransaction = jest.fn();
 
 jest.mock('@/lib/payments/wallet/snapshot', () => ({
   getOrganizerWalletBucketSnapshot: (...args: unknown[]) =>
@@ -8,6 +9,8 @@ jest.mock('@/lib/payments/wallet/snapshot', () => ({
 
 jest.mock('@/lib/payments/core/mutation-ingress-paths', () => ({
   ingestMoneyMutationFromApi: (...args: unknown[]) => mockIngestMoneyMutationFromApi(...args),
+  ingestMoneyMutationFromApiInTransaction: (...args: unknown[]) =>
+    mockIngestMoneyMutationFromApiInTransaction(...args),
 }));
 
 import { and, eq, isNull } from 'drizzle-orm';
@@ -44,11 +47,19 @@ describe('payout persistence idempotency with partial unique indexes (database)'
     await cleanDatabase(testDb);
     mockGetOrganizerWalletBucketSnapshot.mockReset();
     mockIngestMoneyMutationFromApi.mockReset();
+    mockIngestMoneyMutationFromApiInTransaction.mockReset();
     mockIngestMoneyMutationFromApi.mockImplementation(async (input: { traceId: string }) => ({
       traceId: input.traceId,
       persistedEvents: [],
       deduplicated: false,
     }));
+    mockIngestMoneyMutationFromApiInTransaction.mockImplementation(
+      async (_tx: unknown, input: { traceId: string }) => ({
+        traceId: input.traceId,
+        persistedEvents: [],
+        deduplicated: false,
+      }),
+    );
   });
 
   afterAll(async () => {
