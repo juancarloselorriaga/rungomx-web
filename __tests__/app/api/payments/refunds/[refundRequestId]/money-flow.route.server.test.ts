@@ -4,6 +4,7 @@ const mockRequireOrgPermission = jest.fn();
 const mockSubmitOrganizerRefundDecision = jest.fn();
 const mockExecuteRefundRequest = jest.fn();
 const mockFindOrganization = jest.fn();
+const mockFindRefundRequestForAuth = jest.fn();
 
 jest.mock('@/lib/auth/guards', () => {
   class MockUnauthenticatedError extends Error {}
@@ -56,6 +57,9 @@ jest.mock('@/db', () => ({
       organizations: {
         findFirst: (...args: unknown[]) => mockFindOrganization(...args),
       },
+      refundRequests: {
+        findFirst: (...args: unknown[]) => mockFindRefundRequestForAuth(...args),
+      },
     },
   },
 }));
@@ -82,6 +86,7 @@ describe('refund decision -> execution money-flow route scenario', () => {
     mockSubmitOrganizerRefundDecision.mockReset();
     mockExecuteRefundRequest.mockReset();
     mockFindOrganization.mockReset();
+    mockFindRefundRequestForAuth.mockReset();
 
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'organizer-user-1' },
@@ -93,6 +98,10 @@ describe('refund decision -> execution money-flow route scenario', () => {
     });
     mockRequireOrgPermission.mockImplementation(() => undefined);
     mockFindOrganization.mockResolvedValue({ id: ORGANIZATION_ID });
+    // This scenario exercises the organizer decision → execute path (not the
+    // goodwill-flagged path), so the execute route's goodwill pre-check
+    // should see no matching row here.
+    mockFindRefundRequestForAuth.mockResolvedValue(null);
   });
 
   it('approves a request and executes a partial refund amount through route boundaries', async () => {

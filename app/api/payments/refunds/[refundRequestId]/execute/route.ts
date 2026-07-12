@@ -3,11 +3,17 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { db } from '@/db';
-import { organizations } from '@/db/schema';
-import { requireAuthenticatedPaymentsContext, withNoStore } from '@/app/api/payments/_shared';
+import { organizations, refundRequests } from '@/db/schema';
+import {
+  requireAuthenticatedPaymentsContext,
+  requireInternalStaffAccess,
+  withNoStore,
+} from '@/app/api/payments/_shared';
 import {
   executeRefundRequest,
+  isGoodwillRequest,
   RefundExecutionError,
+  toRecord,
 } from '@/lib/payments/refunds/refund-execution';
 import { getOrgMembership, requireOrgPermission } from '@/lib/organizations/permissions';
 
@@ -69,7 +75,31 @@ export async function POST(
   const { organizationId, requestedAmountMinor, maxRefundableToAttendeeMinorPerRun } =
     parseResult.data;
 
-  if (!authContext.permissions.canManageEvents) {
+  const refundRequestForAuth = await db.query.refundRequests.findFirst({
+    where: and(
+      eq(refundRequests.id, parsedParams.data.refundRequestId),
+      eq(refundRequests.organizerId, organizationId),
+      isNull(refundRequests.deletedAt),
+    ),
+    columns: {
+      reasonCode: true,
+      eligibilitySnapshotJson: true,
+    },
+  });
+
+  const isGoodwill =
+    refundRequestForAuth != null &&
+    isGoodwillRequest({
+      reasonCode: refundRequestForAuth.reasonCode,
+      eligibilitySnapshotJson: toRecord(refundRequestForAuth.eligibilitySnapshotJson),
+    });
+
+  if (isGoodwill) {
+    const staffAccessResult = await requireInternalStaffAccess(authContext);
+    if (!staffAccessResult.ok) {
+      return staffAccessResult.response;
+    }
+  } else if (!authContext.permissions.canManageEvents) {
     const membership = await getOrgMembership(authContext.user.id, organizationId);
     try {
       requireOrgPermission(membership, 'canEditRegistrationSettings');
