@@ -5,7 +5,7 @@ import {
   findActivePaymentsOrganization,
   parsePaymentsQuery,
   requireAuthenticatedPaymentsContext,
-  requireOrganizerWriteAccess,
+  requireInternalStaffAccess,
   withNoStore,
 } from '@/app/api/payments/_shared';
 import { listRefundAdminReviewQueue } from '@/lib/payments/refunds/escalation-and-goodwill';
@@ -43,7 +43,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
   const { organizationId, limit } = parseResult.data;
 
-  const accessResult = await requireOrganizerWriteAccess(authContext, organizationId);
+  const accessResult = await requireInternalStaffAccess(authContext);
   if (!accessResult.ok) {
     return accessResult.response;
   }

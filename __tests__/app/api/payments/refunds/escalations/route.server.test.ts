@@ -124,10 +124,43 @@ describe('POST /api/payments/refunds/escalations', () => {
     expect(await response.json()).toEqual({ error: 'Permission denied' });
   });
 
+  it('returns 403 when an organizer with full org permissions is not internal staff', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'organizer-user-1' },
+      permissions: { canManageEvents: false },
+    });
+    mockGetOrgMembership.mockResolvedValue({
+      organizationId: '11111111-1111-4111-8111-111111111111',
+      role: 'owner',
+    });
+    mockEscalateExpiredRefundRequests.mockResolvedValue({
+      organizerId: '11111111-1111-4111-8111-111111111111',
+      actorUserId: 'organizer-user-1',
+      requestedBefore: new Date('2026-02-23T21:00:00.000Z'),
+      escalatedAt: new Date('2026-02-23T22:00:00.000Z'),
+      escalatedCount: 2,
+      refundRequestIds: ['r1', 'r2'],
+    });
+
+    const response = await POST(
+      new Request('http://localhost/api/payments/refunds/escalations', {
+        method: 'POST',
+        body: JSON.stringify({
+          organizationId: '11111111-1111-4111-8111-111111111111',
+          requestedBefore: '2026-02-23T21:00:00.000Z',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Permission denied' });
+    expect(mockEscalateExpiredRefundRequests).not.toHaveBeenCalled();
+  });
+
   it('returns 500 when escalation service throws an unexpected error', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: true },
+      permissions: { canManageEvents: true, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockFindOrganization.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' });
     mockEscalateExpiredRefundRequests.mockRejectedValue(new Error('Unexpected failure'));
@@ -149,11 +182,7 @@ describe('POST /api/payments/refunds/escalations', () => {
   it('returns escalation summary when request succeeds', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },
-      permissions: { canManageEvents: false },
-    });
-    mockGetOrgMembership.mockResolvedValue({
-      organizationId: '11111111-1111-4111-8111-111111111111',
-      role: 'owner',
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
     });
     mockEscalateExpiredRefundRequests.mockResolvedValue({
       organizerId: '11111111-1111-4111-8111-111111111111',
