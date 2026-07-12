@@ -11,6 +11,7 @@ const mockUpdateReturning = jest.fn();
 const mockIngestMoneyMutationFromApi = jest.fn();
 const mockIngestMoneyMutationFromApiInTransaction = jest.fn();
 const mockIngestMoneyMutationFromWorker = jest.fn();
+const mockIngestMoneyMutationFromWorkerInTransaction = jest.fn();
 
 jest.mock('@/db', () => ({
   db: {
@@ -24,9 +25,10 @@ jest.mock('@/db', () => ({
     },
     insert: (...args: unknown[]) => mockInsert(...args),
     update: (...args: unknown[]) => mockUpdate(...args),
-    // The intake path now runs inside db.transaction(); delegate the tx
-    // stub's insert/update to the SAME mocks used at the module level so
-    // insert-order and call-count assertions still hold.
+    // Both the intake path and the settlement/outcome transition path now
+    // run inside db.transaction(); delegate the tx stub's insert/update to
+    // the SAME mocks used at the module level so insert-order and
+    // call-count assertions still hold.
     transaction: (callback: (tx: unknown) => unknown) =>
       callback({
         insert: (...args: unknown[]) => mockInsert(...args),
@@ -41,6 +43,8 @@ jest.mock('@/lib/payments/core/mutation-ingress-paths', () => ({
     mockIngestMoneyMutationFromApiInTransaction(...args),
   ingestMoneyMutationFromWorker: (...args: unknown[]) =>
     mockIngestMoneyMutationFromWorker(...args),
+  ingestMoneyMutationFromWorkerInTransaction: (...args: unknown[]) =>
+    mockIngestMoneyMutationFromWorkerInTransaction(...args),
 }));
 
 import {
@@ -67,6 +71,7 @@ describe('dispute lifecycle domain service', () => {
     mockIngestMoneyMutationFromApi.mockReset();
     mockIngestMoneyMutationFromApiInTransaction.mockReset();
     mockIngestMoneyMutationFromWorker.mockReset();
+    mockIngestMoneyMutationFromWorkerInTransaction.mockReset();
 
     mockInsert.mockImplementation(() => ({
       values: (...valueArgs: unknown[]) => {
@@ -310,7 +315,7 @@ describe('dispute lifecycle domain service', () => {
         },
       },
     });
-    mockIngestMoneyMutationFromApi.mockResolvedValue({
+    mockIngestMoneyMutationFromApiInTransaction.mockResolvedValue({
       traceId: 'dispute-settlement:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       deduplicated: false,
       persistedEvents: [],
@@ -363,8 +368,11 @@ describe('dispute lifecycle domain service', () => {
       },
     ]);
 
-    expect(mockIngestMoneyMutationFromApi).toHaveBeenCalledTimes(1);
-    const ingressCall = mockIngestMoneyMutationFromApi.mock.calls[0]![0];
+    // The outcome/settlement path runs inside db.transaction() and posts via
+    // the in-tx ingress entrypoint, not the non-tx one.
+    expect(mockIngestMoneyMutationFromApi).not.toHaveBeenCalled();
+    expect(mockIngestMoneyMutationFromApiInTransaction).toHaveBeenCalledTimes(1);
+    const ingressCall = mockIngestMoneyMutationFromApiInTransaction.mock.calls[0]![1];
     expect(ingressCall.traceId).toBe('dispute-settlement:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
     expect(ingressCall.events).toHaveLength(1);
     expect(ingressCall.events[0].eventName).toBe('dispute.funds_released');
@@ -381,7 +389,7 @@ describe('dispute lifecycle domain service', () => {
       currency: 'MXN',
       metadataJson: {},
     });
-    mockIngestMoneyMutationFromWorker.mockResolvedValue({
+    mockIngestMoneyMutationFromWorkerInTransaction.mockResolvedValue({
       traceId: 'dispute-settlement:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
       deduplicated: false,
       persistedEvents: [],
@@ -433,8 +441,11 @@ describe('dispute lifecycle domain service', () => {
       },
     ]);
 
-    expect(mockIngestMoneyMutationFromWorker).toHaveBeenCalledTimes(1);
-    const ingressCall = mockIngestMoneyMutationFromWorker.mock.calls[0]![0];
+    // The outcome/settlement path runs inside db.transaction() and posts via
+    // the in-tx worker ingress entrypoint, not the non-tx one.
+    expect(mockIngestMoneyMutationFromWorker).not.toHaveBeenCalled();
+    expect(mockIngestMoneyMutationFromWorkerInTransaction).toHaveBeenCalledTimes(1);
+    const ingressCall = mockIngestMoneyMutationFromWorkerInTransaction.mock.calls[0]![1];
     expect(ingressCall.events).toHaveLength(2);
     expect(ingressCall.events[0].eventName).toBe('dispute.funds_released');
     expect(ingressCall.events[1].eventName).toBe('dispute.debt_posted');
