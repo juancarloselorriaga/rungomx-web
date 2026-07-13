@@ -1074,15 +1074,16 @@ export const resultEntries = pgTable(
       .where(sql`${table.bibNumber} is not null`),
     index('result_entries_version_name_idx').on(table.resultVersionId, table.runnerFullName),
     // Bibs are unique within a distance, not across the whole edition version:
-    // multi-distance events legitimately reuse bib ranges per distance. Two partial
-    // indexes so NULL distanceId still enforces uniqueness (NULLs are excluded from
-    // each index's key columns rather than relying on NULLS NOT DISTINCT).
+    // multi-distance events legitimately reuse bib ranges per distance. Only entries that
+    // HAVE a distance are constrained. Entries with a null distance are deliberately NOT
+    // uniqueness-constrained here: `distanceId` is `on delete set null`, so constraining
+    // the null-distance group would turn a distance deletion (which nulls its entries'
+    // distanceId) into a duplicate-key failure whenever two distances legitimately reused a
+    // bib. Duplicate bibs in a null-distance import are instead blocked at the app layer
+    // (import validation).
     uniqueIndex('result_entries_version_distance_bib_unique_idx')
       .on(table.resultVersionId, table.distanceId, table.bibNumber)
       .where(sql`${table.bibNumber} is not null AND ${table.distanceId} is not null`),
-    uniqueIndex('result_entries_version_nodistance_bib_unique_idx')
-      .on(table.resultVersionId, table.bibNumber)
-      .where(sql`${table.bibNumber} is not null AND ${table.distanceId} is null`),
     check('result_entries_age_non_negative_chk', sql`${table.age} is null OR ${table.age} >= 0`),
     check(
       'result_entries_finish_time_positive_chk',

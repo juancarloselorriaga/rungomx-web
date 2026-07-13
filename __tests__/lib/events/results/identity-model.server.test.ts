@@ -29,6 +29,8 @@ const mockUpdateSetCalls: Record<string, unknown>[] = [];
 const mockInsertCalls: InsertCall[] = [];
 const mockInsertReturningQueue: MutationReturningResult[] = [];
 const mockUpdateReturningQueue: MutationReturningResult[] = [];
+// Rows returned by lockResultVersion's SELECT ... FOR UPDATE (defaults to a draft version).
+const mockLockVersionQueue: unknown[] = [];
 const mockCreateAuditLog = jest.fn();
 const mockRevalidatePublicEventByEditionId = jest.fn();
 const mockRevalidateTag = jest.fn();
@@ -145,15 +147,39 @@ jest.mock('@/db', () => ({
       },
     });
 
+    // lockResultVersion(tx, id) issues select(...).from(...).where(...).for('update').
+    // Resolve to the queued locked-version row(s), defaulting to a still-draft version so
+    // finalize/discard proceed unless a test opts into a raced state.
+    const select = () => ({
+      from: () => ({
+        where: () => ({
+          for: async () => {
+            const next = mockLockVersionQueue.shift();
+            return next !== undefined
+              ? next
+              : [{ id: RESULT_VERSION_ID, editionId: EDITION_ID, status: 'draft', versionNumber: 1 }];
+          },
+        }),
+      }),
+    });
+
     return {
       query,
       insert,
       update,
-      transaction: async <T>(callback: (tx: { query: typeof query; insert: typeof insert; update: typeof update; rollback: () => never }) => Promise<T>) => {
+      select,
+      transaction: async <T>(callback: (tx: {
+        query: typeof query;
+        insert: typeof insert;
+        update: typeof update;
+        select: typeof select;
+        rollback: () => never;
+      }) => Promise<T>) => {
         const tx = {
           query,
           insert,
           update,
+          select,
           rollback: () => {
             throw new Error('Transaction rolled back');
           },
@@ -380,6 +406,7 @@ describe('results identity model actions', () => {
     mockInsertCalls.length = 0;
     mockInsertReturningQueue.length = 0;
     mockUpdateReturningQueue.length = 0;
+    mockLockVersionQueue.length = 0;
 
     mockCheckEventsAccess.mockReturnValue(null);
     mockCanUserAccessEvent.mockResolvedValue({ organizationId: 'org-1', role: 'editor' });
@@ -979,7 +1006,7 @@ describe('results identity model actions', () => {
     mockAuthContext = makeAuthContext();
     mockResultVersionsFindFirst.mockResolvedValueOnce(makeResultVersionRow());
     mockInsertReturningQueue.push({
-      throw: { code: '23505', constraint: 'result_entries_version_bib_unique_idx' },
+      throw: { code: '23505', constraint: 'result_entries_version_distance_bib_unique_idx' },
     });
 
     const result = await upsertDraftResultEntry({

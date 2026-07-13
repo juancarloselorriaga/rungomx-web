@@ -67,6 +67,7 @@ import {
   LINKED_USER_NOT_FOUND_ERROR,
   OFFICIAL_IMMUTABLE_LINK_ERROR,
   OFFICIAL_IMMUTABLE_MUTATION_ERROR,
+  RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS,
 } from '@/lib/events/results/shared/errors';
 import { deriveResultPlacements } from '@/lib/events/results/derivation/placement';
 import { toResultEntryRecord } from '@/lib/events/results/shared/mappers';
@@ -104,8 +105,9 @@ function toDraftSyncState(rawSourceData: unknown): ResultDraftSyncState {
 
 async function buildDraftFinalizationGateSummary(
   resultVersionId: string,
+  client: ResultMutationClient = db,
 ): Promise<ResultVersionFinalizationGateSummary> {
-  const rows = await db.query.resultEntries.findMany({
+  const rows = await client.query.resultEntries.findMany({
     where: and(
       eq(resultEntries.resultVersionId, resultVersionId),
       isNull(resultEntries.deletedAt),
@@ -531,10 +533,7 @@ export const upsertDraftResultEntry = withAuthenticatedUser<ActionResult<ResultE
     return { ok: true, data: toResultEntryRecord(nextRow) };
   } catch (error) {
     if (
-      isUniqueConstraintViolation(error, [
-        'result_entries_version_bib_unique_idx',
-        'result_entries_version_name_no_bib_unique_idx',
-      ])
+      isUniqueConstraintViolation(error, RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS)
     ) {
       return {
         ok: false,

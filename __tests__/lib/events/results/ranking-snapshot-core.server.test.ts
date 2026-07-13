@@ -1,8 +1,3 @@
-type SelectChain = {
-  from: jest.Mock;
-  where: jest.Mock;
-};
-
 const mockResultVersionsFindMany = jest.fn();
 const mockRankingRulesetsFindFirst = jest.fn();
 const mockSelect = jest.fn();
@@ -10,15 +5,18 @@ const mockInsert = jest.fn();
 const mockInsertCalls: Array<{ table: unknown; values: unknown }> = [];
 const mockInsertReturningQueue: unknown[][] = [];
 
-function createSelectChain(rows: unknown[]): SelectChain {
-  const chain = {
-    from: jest.fn(),
-    where: jest.fn(),
-  };
-
-  chain.from.mockReturnValue(chain);
-  chain.where.mockResolvedValue(rows);
-
+// Thenable select chain: every builder method returns the chain, and awaiting the chain
+// (after .where() for the entries query, or after .limit() for the joined candidates query)
+// resolves to `rows`.
+function createSelectChain(rows: unknown[]) {
+  const chain: Record<string, unknown> = {};
+  for (const method of ['from', 'innerJoin', 'leftJoin', 'where', 'orderBy', 'limit', 'offset', 'for']) {
+    chain[method] = jest.fn(() => chain);
+  }
+  chain.then = (resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) =>
+    Promise.resolve(rows).then(resolve, reject);
+  chain.catch = (reject: (reason: unknown) => unknown) => Promise.resolve(rows).catch(reject);
+  chain.finally = (onFinally: () => void) => Promise.resolve(rows).finally(onFinally);
   return chain;
 }
 
@@ -228,38 +226,42 @@ describe('ranking snapshot computation core', () => {
     expect(mockInsertCalls[1]?.table).toBe(rankingSnapshotRows);
   });
 
-  it('builds national snapshot using current version candidates from the database', async () => {
-    mockResultVersionsFindMany.mockResolvedValueOnce([
-      {
-        id: 'version-official',
-        editionId: 'edition-1',
-        status: 'official',
-        versionNumber: 1,
-        createdAt: new Date('2026-08-10T09:00:00.000Z'),
-      },
-    ]);
-
-    mockSelect.mockReturnValueOnce(
-      createSelectChain([
-        {
-          id: 'entry-1',
-          resultVersionId: 'version-official',
-          runnerFullName: 'Ana Runner',
-          bibNumber: '101',
-          discipline: 'trail_running',
-          gender: 'female',
-          age: 29,
-          status: 'finish',
-          finishTimeMillis: 3_600_000,
-        },
-      ]),
-    );
+  it('builds national snapshot from published-edition candidates in the database', async () => {
+    // First select: joined candidate versions (published editions only). Second select:
+    // eligible entries for the included versions.
+    mockSelect
+      .mockReturnValueOnce(
+        createSelectChain([
+          {
+            id: 'version-official',
+            editionId: 'edition-1',
+            status: 'official',
+            versionNumber: 1,
+            createdAt: new Date('2026-08-10T09:00:00.000Z'),
+          },
+        ]),
+      )
+      .mockReturnValueOnce(
+        createSelectChain([
+          {
+            id: 'entry-1',
+            resultVersionId: 'version-official',
+            runnerFullName: 'Ana Runner',
+            bibNumber: '101',
+            discipline: 'trail_running',
+            gender: 'female',
+            age: 29,
+            status: 'finish',
+            finishTimeMillis: 3_600_000,
+          },
+        ]),
+      );
 
     mockInsertReturningQueue.push([makeSnapshotRow()], [makeSnapshotRankRow()]);
 
     const result = await computeNationalRankingSnapshot({ rulesetId: 'ruleset-1' });
 
-    expect(mockResultVersionsFindMany).toHaveBeenCalledTimes(1);
+    expect(mockSelect).toHaveBeenCalledTimes(2);
     expect(result.includedSources).toEqual([
       expect.objectContaining({ resultVersionId: 'version-official' }),
     ]);

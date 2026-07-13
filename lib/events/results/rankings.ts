@@ -12,6 +12,8 @@ import {
 
 import { db } from '@/db';
 import {
+  eventEditions,
+  eventSeries,
   rankingRulesets,
   rankingSnapshotRows,
   rankingSnapshots,
@@ -465,22 +467,35 @@ function buildRankingSnapshotRowsFromEntries(
 export async function listRankingSourceVersionCandidates(
   limit = 1000,
 ): Promise<RankingSnapshotSourceCandidate[]> {
-  const rows = await db.query.resultVersions.findMany({
-    where: isNull(resultVersions.deletedAt),
-    columns: {
-      id: true,
-      editionId: true,
-      status: true,
-      versionNumber: true,
-      createdAt: true,
-    },
-    orderBy: [
+  // The national leaderboard is public, so only PUBLISHED, non-deleted editions (and
+  // series) may contribute — never draft/unlisted/archived editions, whose participant
+  // names must not surface publicly. (Version status is still filtered downstream in
+  // selectOfficialRankingSnapshotSources.)
+  const rows = await db
+    .select({
+      id: resultVersions.id,
+      editionId: resultVersions.editionId,
+      status: resultVersions.status,
+      versionNumber: resultVersions.versionNumber,
+      createdAt: resultVersions.createdAt,
+    })
+    .from(resultVersions)
+    .innerJoin(eventEditions, eq(resultVersions.editionId, eventEditions.id))
+    .innerJoin(eventSeries, eq(eventEditions.seriesId, eventSeries.id))
+    .where(
+      and(
+        isNull(resultVersions.deletedAt),
+        eq(eventEditions.visibility, 'published'),
+        isNull(eventEditions.deletedAt),
+        isNull(eventSeries.deletedAt),
+      ),
+    )
+    .orderBy(
       asc(resultVersions.editionId),
       asc(resultVersions.versionNumber),
       asc(resultVersions.createdAt),
-    ],
-    limit,
-  });
+    )
+    .limit(limit);
 
   return rows.map((row) => ({
     editionId: row.editionId,
