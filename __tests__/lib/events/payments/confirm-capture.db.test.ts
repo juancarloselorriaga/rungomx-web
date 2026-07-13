@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { and, eq } from 'drizzle-orm';
 
 import {
+  auditLogs,
   eventDistances,
   eventEditions,
   eventSeries,
@@ -214,6 +215,201 @@ describe('confirmRegistrationPaymentCapture persistence (database)', () => {
         .from(moneyTraces)
         .where(eq(moneyTraces.traceId, idempotencyKey));
       expect(trace?.createdBySource).toBe('server_action');
+    });
+  });
+
+  describe('P2b: idempotent redelivery reconciliation', () => {
+    it('reconciles a same-key redelivery of an already-confirmed registration instead of throwing INVALID_STATE_TRANSITION', async () => {
+      const { organizerId, buyerUserId, editionId, distanceId } = await seedOrganizerEditionFixture(
+        testDb,
+        'p2b-redelivery',
+      );
+      const registrationId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'payment_pending',
+      });
+      const idempotencyKey = `payment-capture:${registrationId}`;
+
+      const params = {
+        registrationId,
+        organizerId,
+        grossAmountMinor: 15_000,
+        feeAmountMinor: 750,
+        netAmountMinor: 14_250,
+        source: 'server_action' as const,
+        idempotencyKey,
+        occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+        auditAction: 'registration.demo_pay' as const,
+        actorUserId: buyerUserId,
+      };
+
+      const first = await confirmRegistrationPaymentCapture(params);
+      expect(first).toEqual({ id: registrationId, status: 'confirmed' });
+
+      await expect(confirmRegistrationPaymentCapture(params)).resolves.toEqual({
+        id: registrationId,
+        status: 'confirmed',
+      });
+
+      const capturedEvents = await testDb
+        .select({ id: moneyEvents.id })
+        .from(moneyEvents)
+        .where(
+          and(
+            eq(moneyEvents.idempotencyKey, idempotencyKey),
+            eq(moneyEvents.eventName, 'payment.captured'),
+          ),
+        );
+      expect(capturedEvents).toHaveLength(1);
+
+      const ingestions = await testDb
+        .select({ id: moneyCommandIngestions.id })
+        .from(moneyCommandIngestions)
+        .where(
+          and(
+            eq(moneyCommandIngestions.organizerId, organizerId),
+            eq(moneyCommandIngestions.idempotencyKey, idempotencyKey),
+          ),
+        );
+      expect(ingestions).toHaveLength(1);
+
+      const audits = await testDb
+        .select({ id: auditLogs.id })
+        .from(auditLogs)
+        .where(and(eq(auditLogs.entityType, 'registration'), eq(auditLogs.entityId, registrationId)));
+      expect(audits).toHaveLength(1);
+    });
+
+    it('still throws INVALID_STATE_TRANSITION when a confirmed registration is redelivered under a different idempotency key', async () => {
+      const { organizerId, buyerUserId, editionId, distanceId } = await seedOrganizerEditionFixture(
+        testDb,
+        'p2b-different-key',
+      );
+      const registrationId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'payment_pending',
+      });
+      const keyA = `payment-capture:${registrationId}:key-a`;
+      const keyB = `payment-capture:${registrationId}:key-b`;
+
+      const first = await confirmRegistrationPaymentCapture({
+        registrationId,
+        organizerId,
+        grossAmountMinor: 15_000,
+        feeAmountMinor: 750,
+        netAmountMinor: 14_250,
+        source: 'server_action',
+        idempotencyKey: keyA,
+        occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+        auditAction: 'registration.demo_pay',
+        actorUserId: buyerUserId,
+      });
+      expect(first).toEqual({ id: registrationId, status: 'confirmed' });
+
+      await expect(
+        confirmRegistrationPaymentCapture({
+          registrationId,
+          organizerId,
+          grossAmountMinor: 15_000,
+          feeAmountMinor: 750,
+          netAmountMinor: 14_250,
+          source: 'server_action',
+          idempotencyKey: keyB,
+          occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+          auditAction: 'registration.demo_pay',
+          actorUserId: buyerUserId,
+        }),
+      ).rejects.toThrow('INVALID_STATE_TRANSITION');
+    });
+
+    it('still throws INVALID_STATE_TRANSITION when a confirmed registration has no matching payment.captured event', async () => {
+      const { organizerId, buyerUserId, editionId, distanceId } = await seedOrganizerEditionFixture(
+        testDb,
+        'p2b-no-event',
+      );
+      const registrationId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'confirmed',
+      });
+      const idempotencyKey = `payment-capture:${registrationId}:fresh`;
+
+      await expect(
+        confirmRegistrationPaymentCapture({
+          registrationId,
+          organizerId,
+          grossAmountMinor: 15_000,
+          feeAmountMinor: 750,
+          netAmountMinor: 14_250,
+          source: 'server_action',
+          idempotencyKey,
+          occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+          auditAction: 'registration.demo_pay',
+          actorUserId: buyerUserId,
+        }),
+      ).rejects.toThrow('INVALID_STATE_TRANSITION');
+    });
+
+    it('still throws INVALID_STATE_TRANSITION for a cancelled registration even when a matching payment.captured event exists under the same key', async () => {
+      const { organizerId, buyerUserId, editionId, distanceId } = await seedOrganizerEditionFixture(
+        testDb,
+        'p2b-cancelled',
+      );
+      const registrationId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'cancelled',
+      });
+      const idempotencyKey = `payment-capture:${registrationId}:cancelled`;
+      const occurredAt = new Date('2026-04-01T12:00:00.000Z');
+
+      await testDb.insert(moneyTraces).values({
+        traceId: idempotencyKey,
+        organizerId,
+        rootEntityType: 'registration',
+        rootEntityId: registrationId,
+        createdBySource: 'server_action',
+      });
+
+      await testDb.insert(moneyEvents).values({
+        traceId: idempotencyKey,
+        organizerId,
+        eventName: 'payment.captured',
+        eventVersion: 1,
+        entityType: 'registration',
+        entityId: registrationId,
+        source: 'server_action',
+        idempotencyKey,
+        occurredAt,
+      });
+
+      await testDb.insert(moneyCommandIngestions).values({
+        organizerId,
+        idempotencyKey,
+        traceId: idempotencyKey,
+        status: 'completed',
+      });
+
+      await expect(
+        confirmRegistrationPaymentCapture({
+          registrationId,
+          organizerId,
+          grossAmountMinor: 15_000,
+          feeAmountMinor: 750,
+          netAmountMinor: 14_250,
+          source: 'server_action',
+          idempotencyKey,
+          occurredAt,
+          auditAction: 'registration.demo_pay',
+          actorUserId: buyerUserId,
+        }),
+      ).rejects.toThrow('INVALID_STATE_TRANSITION');
     });
   });
 });

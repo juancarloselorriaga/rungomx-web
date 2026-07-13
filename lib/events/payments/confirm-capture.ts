@@ -3,7 +3,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { headers } from 'next/headers';
 
 import { db } from '@/db';
-import { registrations } from '@/db/schema';
+import { moneyEvents, registrations } from '@/db/schema';
 import { createAuditLog, getRequestContext, type AuditAction } from '@/lib/audit';
 import {
   ingestMoneyMutationFromApiInTransaction,
@@ -109,6 +109,48 @@ export async function confirmRegistrationPaymentCaptureInTransaction(
     .returning({ id: registrations.id, status: registrations.status });
 
   if (!updatedRegistration) {
+    // Constraint: a provider/webhook redelivery of the same idempotency key
+    // must reconcile against an already-applied capture, not error forever.
+    // The CAS above naturally misses once the registration has moved off
+    // `payment_pending`, so a miss alone isn't proof of an invalid
+    // transition — it's also the expected shape of a retried delivery for a
+    // capture we already completed. Only treat it as reconciled (and return
+    // success without re-ingressing or re-auditing) when the registration is
+    // still confirmed, not soft-deleted, AND this exact idempotency key
+    // already produced the canonical payment.captured event for it. Every
+    // other CAS-miss shape (different key, no matching event, or a
+    // registration that moved to some other terminal status such as
+    // cancelled) is still a genuine invalid transition.
+    const [currentRegistration] = await tx
+      .select({
+        id: registrations.id,
+        status: registrations.status,
+        deletedAt: registrations.deletedAt,
+      })
+      .from(registrations)
+      .where(eq(registrations.id, params.registrationId));
+
+    const [existingCaptureEvent] = await tx
+      .select({ id: moneyEvents.id })
+      .from(moneyEvents)
+      .where(
+        and(
+          eq(moneyEvents.organizerId, params.organizerId),
+          eq(moneyEvents.idempotencyKey, params.idempotencyKey),
+          eq(moneyEvents.eventName, 'payment.captured'),
+          eq(moneyEvents.entityType, 'registration'),
+          eq(moneyEvents.entityId, params.registrationId),
+        ),
+      );
+
+    if (
+      currentRegistration?.status === 'confirmed' &&
+      currentRegistration.deletedAt === null &&
+      existingCaptureEvent
+    ) {
+      return { id: params.registrationId, status: 'confirmed' };
+    }
+
     throw new Error('INVALID_STATE_TRANSITION');
   }
 

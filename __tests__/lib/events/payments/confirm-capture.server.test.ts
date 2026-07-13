@@ -38,9 +38,23 @@ function buildTransactionMocks(
   returningRows: Array<{ id: string; status: string }> = [
     { id: registrationId, status: 'confirmed' },
   ],
+  // Only consulted on a CAS miss (P2b reconciliation): the core issues two
+  // sequential `tx.select(...).from(...).where(...)` calls (registration
+  // lookup, then payment.captured event lookup) and each entry here answers
+  // one call in order. Defaults to "nothing found" for both, so a CAS miss
+  // still surfaces INVALID_STATE_TRANSITION unless a test explicitly seeds a
+  // reconciling redelivery.
+  selectResults: unknown[][] = [],
 ) {
   const updateWhere = jest.fn().mockReturnValue({
     returning: jest.fn().mockResolvedValue(returningRows),
+  });
+
+  let selectCallCount = 0;
+  const selectWhere = jest.fn().mockImplementation(() => {
+    const result = selectResults[selectCallCount] ?? [];
+    selectCallCount += 1;
+    return Promise.resolve(result);
   });
 
   const tx = {
@@ -49,9 +63,14 @@ function buildTransactionMocks(
         where: updateWhere,
       }),
     }),
+    select: jest.fn().mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        where: selectWhere,
+      }),
+    }),
   };
 
-  return { tx, updateWhere };
+  return { tx, updateWhere, selectWhere };
 }
 
 function defaultParams(overrides: Partial<Parameters<typeof confirmRegistrationPaymentCapture>[0]> = {}) {
