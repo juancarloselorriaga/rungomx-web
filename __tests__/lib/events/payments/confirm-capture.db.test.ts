@@ -411,5 +411,102 @@ describe('confirmRegistrationPaymentCapture persistence (database)', () => {
         }),
       ).rejects.toThrow('INVALID_STATE_TRANSITION');
     });
+
+    it('still throws INVALID_STATE_TRANSITION when the same key matches a capture for a different registration', async () => {
+      const { organizerId, buyerUserId, editionId, distanceId } = await seedOrganizerEditionFixture(
+        testDb,
+        'p2b-cross-reg',
+      );
+      const registrationBId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'payment_pending',
+      });
+      const registrationAId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'confirmed',
+      });
+      const key = `payment-capture:cross-reg-${randomUUID().slice(0, 8)}`;
+
+      const capturedB = await confirmRegistrationPaymentCapture({
+        registrationId: registrationBId,
+        organizerId,
+        grossAmountMinor: 15_000,
+        feeAmountMinor: 750,
+        netAmountMinor: 14_250,
+        source: 'server_action',
+        idempotencyKey: key,
+        occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+        auditAction: 'registration.demo_pay',
+        actorUserId: buyerUserId,
+      });
+      expect(capturedB).toEqual({ id: registrationBId, status: 'confirmed' });
+
+      await expect(
+        confirmRegistrationPaymentCapture({
+          registrationId: registrationAId,
+          organizerId,
+          grossAmountMinor: 15_000,
+          feeAmountMinor: 750,
+          netAmountMinor: 14_250,
+          source: 'server_action',
+          idempotencyKey: key,
+          occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+          auditAction: 'registration.demo_pay',
+          actorUserId: buyerUserId,
+        }),
+      ).rejects.toThrow('INVALID_STATE_TRANSITION');
+    });
+
+    it('still throws INVALID_STATE_TRANSITION for a soft-deleted registration even when confirmed with a matching capture event', async () => {
+      const { organizerId, buyerUserId, editionId, distanceId } = await seedOrganizerEditionFixture(
+        testDb,
+        'p2b-soft-deleted',
+      );
+      const registrationId = await seedRegistration(testDb, {
+        editionId,
+        distanceId,
+        buyerUserId,
+        status: 'payment_pending',
+      });
+      const idempotencyKey = `payment-capture:${registrationId}:soft-deleted`;
+
+      const first = await confirmRegistrationPaymentCapture({
+        registrationId,
+        organizerId,
+        grossAmountMinor: 15_000,
+        feeAmountMinor: 750,
+        netAmountMinor: 14_250,
+        source: 'server_action',
+        idempotencyKey,
+        occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+        auditAction: 'registration.demo_pay',
+        actorUserId: buyerUserId,
+      });
+      expect(first).toEqual({ id: registrationId, status: 'confirmed' });
+
+      await testDb
+        .update(registrations)
+        .set({ deletedAt: new Date('2026-04-02T00:00:00.000Z') })
+        .where(eq(registrations.id, registrationId));
+
+      await expect(
+        confirmRegistrationPaymentCapture({
+          registrationId,
+          organizerId,
+          grossAmountMinor: 15_000,
+          feeAmountMinor: 750,
+          netAmountMinor: 14_250,
+          source: 'server_action',
+          idempotencyKey,
+          occurredAt: new Date('2026-04-01T12:00:00.000Z'),
+          auditAction: 'registration.demo_pay',
+          actorUserId: buyerUserId,
+        }),
+      ).rejects.toThrow('INVALID_STATE_TRANSITION');
+    });
   });
 });
