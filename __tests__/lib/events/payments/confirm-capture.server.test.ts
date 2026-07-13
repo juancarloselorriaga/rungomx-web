@@ -1,4 +1,5 @@
 const mockTransaction = jest.fn();
+const mockIngestMoneyMutationFromApiInTransaction = jest.fn();
 const mockIngestMoneyMutationFromServerActionInTransaction = jest.fn();
 const mockCreateAuditLog = jest.fn();
 const mockGetRequestContext = jest.fn();
@@ -11,6 +12,8 @@ jest.mock('@/db', () => ({
 }));
 
 jest.mock('@/lib/payments/core/mutation-ingress-paths', () => ({
+  ingestMoneyMutationFromApiInTransaction: (...args: unknown[]) =>
+    mockIngestMoneyMutationFromApiInTransaction(...args),
   ingestMoneyMutationFromServerActionInTransaction: (...args: unknown[]) =>
     mockIngestMoneyMutationFromServerActionInTransaction(...args),
 }));
@@ -70,6 +73,7 @@ function defaultParams(overrides: Partial<Parameters<typeof confirmRegistrationP
 describe('confirmRegistrationPaymentCapture', () => {
   beforeEach(() => {
     mockTransaction.mockReset();
+    mockIngestMoneyMutationFromApiInTransaction.mockReset();
     mockIngestMoneyMutationFromServerActionInTransaction.mockReset();
     mockCreateAuditLog.mockReset();
     mockGetRequestContext.mockReset();
@@ -78,6 +82,11 @@ describe('confirmRegistrationPaymentCapture', () => {
     mockCreateAuditLog.mockResolvedValue({ ok: true, auditLogId: 'audit-1' });
     mockGetRequestContext.mockResolvedValue({ ipAddress: '127.0.0.1', userAgent: 'jest' });
     mockHeaders.mockResolvedValue(new Headers());
+    mockIngestMoneyMutationFromApiInTransaction.mockResolvedValue({
+      traceId: `payment-capture:${registrationId}`,
+      persistedEvents: [],
+      deduplicated: false,
+    });
     mockIngestMoneyMutationFromServerActionInTransaction.mockResolvedValue({
       traceId: `payment-capture:${registrationId}`,
       persistedEvents: [],
@@ -91,13 +100,15 @@ describe('confirmRegistrationPaymentCapture', () => {
       callback(tx),
     );
 
+    // defaultParams() uses source: 'api', so this must route through the API
+    // ingress wrapper rather than the server-action one (P2a).
     const result = await confirmRegistrationPaymentCapture(defaultParams());
 
     expect(result).toEqual({ id: registrationId, status: 'confirmed' });
-    expect(mockIngestMoneyMutationFromServerActionInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockIngestMoneyMutationFromApiInTransaction).toHaveBeenCalledTimes(1);
+    expect(mockIngestMoneyMutationFromServerActionInTransaction).not.toHaveBeenCalled();
 
-    const [transactionArg, ingressCommand] =
-      mockIngestMoneyMutationFromServerActionInTransaction.mock.calls[0];
+    const [transactionArg, ingressCommand] = mockIngestMoneyMutationFromApiInTransaction.mock.calls[0];
     expect(transactionArg).toBe(tx);
     expect(ingressCommand.events).toHaveLength(1);
     expect(ingressCommand.events[0]).toMatchObject({
