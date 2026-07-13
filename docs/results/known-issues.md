@@ -19,6 +19,22 @@ All 25 findings were addressed on `docs/results-launch-readiness`. The results f
 
 Gates run green locally: `lint` (0 errors), `type-check`, `validate:locales`, `test` (**1557** app/server + **97** DB), `test:payments-contracts` (**29**). `test:e2e:isolated` was not run here (requires the full isolated build); the equivalent flows were browser-verified live instead.
 
+## PR review remediation (2026-07-10, round 2)
+
+Six review findings (four P1, two P2) plus one hazard surfaced by the DB suite were fixed:
+
+| # | Finding | Fix |
+| --- | --- | --- |
+| PR-P1-a | Recompute fed **all** editions into the public national rankings (draft/unlisted names could leak) | `listRankingSourceVersionCandidates` now joins editions/series and filters `visibility = 'published'` + non-deleted. Verified: a draft edition's finalized results are excluded from the leaderboard. |
+| PR-P1-b | Import (append) read draft status outside its transaction → could write onto a just-finalized official version | New `lockResultVersion` (`SELECT … FOR UPDATE`); the append path locks + re-checks `status = 'draft'` inside the transaction, else returns a retryable conflict. |
+| PR-P1-c | Discard deleted children before the guarded version update → a racing finalize could orphan official entries | Discard now locks + re-verifies the draft inside the transaction **before** deleting children. |
+| PR-P1-d | Finalization gate ran before the transaction → a concurrent import could slip a blocking row past it | Gate re-runs under the version lock inside the transaction, immediately before derive + transition. |
+| PR-P2-e | Manual upsert + correction handlers still matched the pre-rename bib index names → duplicate-bib conflicts mis-mapped | Index names centralized in `shared/errors.ts` (`RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS`) and used everywhere; tests updated. |
+| PR-P2-f | New import committed version+session in one tx, then rows/audit in another → a failure left an empty draft that skipped init audit | Version + session + rows + placements + audit now commit in a single transaction. |
+| PR-schema | Dropping a distance nulls its entries' `distanceId` (`on delete set null`); the new null-distance partial bib index then turned a legitimate cross-distance bib reuse into a duplicate-key failure (broke DB-test cleanup) | Removed the null-distance partial unique index; per-distance uniqueness is kept and null-distance duplicate bibs are blocked at the import-validation layer. |
+
+Re-verified: `lint`, `type-check`, `validate:locales`, `test` (1557 app/server + 97 DB), `test:payments-contracts` (29), plus a DB pipeline check asserting the published-vs-draft rankings boundary and the correction round-trip.
+
 ---
 
 ## Priority findings

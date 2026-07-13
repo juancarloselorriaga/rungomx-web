@@ -18,9 +18,16 @@ import { deriveResultPlacements } from '@/lib/events/results/derivation/placemen
 import {
   AUDIT_LOG_FAILURE_PREFIX,
   IMPORT_BLOCKED_ERROR,
+  RESULT_DRAFT_NO_LONGER_EDITABLE_ERROR,
+  RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS,
   isUniqueConstraintViolation,
 } from '@/lib/events/results/shared/errors';
+import { lockResultVersion, type ResultTransaction } from '@/lib/events/results/shared/version-lock';
 import { toResultVersionRecord } from '@/lib/events/results/shared/mappers';
+
+// Sentinel thrown inside the import transaction when the target draft is no longer an
+// editable draft under lock; caught to return a retryable conflict.
+class ImportDraftUnavailableError extends Error {}
 import type { ImportResultDraftRowsInput } from '@/lib/events/results/schemas';
 import type { ResultDiscipline, ResultVersionRecord } from '@/lib/events/results/types';
 import type { ActionResult } from '@/lib/events/shared';
@@ -145,88 +152,56 @@ export async function importResultDraftRowsWorkflow(params: {
   const discipline = resolveDiscipline(edition.series?.sportType);
   const organizationId = edition.series?.organizationId ?? null;
 
-  // An edition has at most ONE active official version, so all distances must accumulate in
-  // ONE draft. Append to the existing draft when present; only create a new version (with an
-  // ingestion session) when none exists yet. This keeps multi-distance editions on a single
-  // version so the public page and rankings surface every distance.
-  const importIntoVersion = async (versionId: string, isNewVersion: boolean, session?: {
-    id: string;
-    sourceReference: string | null;
-    sourceFileChecksum: string | null;
-    startedAt: Date;
-  }) => {
-    return db.transaction(async (tx) => {
-      await tx.insert(resultEntries).values(
-        rows.map((row) => ({
-          resultVersionId: versionId,
-          distanceId: distanceId ?? null,
-          discipline,
-          runnerFullName: row.runnerFullName,
-          bibNumber: row.bibNumber ?? null,
-          gender: row.gender ?? null,
-          age: row.age ?? null,
-          status: row.status ?? 'finish',
-          finishTimeMillis: row.finishTimeMillis ?? null,
-          overallPlace: null,
-          genderPlace: null,
-          ageGroupPlace: null,
-          identitySnapshot: {},
-          rawSourceData: { sourceLane },
-        })),
-      );
+  // Insert this batch's rows and re-derive placements over the WHOLE version (all distances)
+  // once (RES-2/RES-14). Runs inside a caller-provided transaction that already holds the
+  // version lock (append) or just created the version (new), so it never races finalization.
+  const writeRowsAndPlacements = async (tx: ResultTransaction, versionId: string) => {
+    await tx.insert(resultEntries).values(
+      rows.map((row) => ({
+        resultVersionId: versionId,
+        distanceId: distanceId ?? null,
+        discipline,
+        runnerFullName: row.runnerFullName,
+        bibNumber: row.bibNumber ?? null,
+        gender: row.gender ?? null,
+        age: row.age ?? null,
+        status: row.status ?? 'finish',
+        finishTimeMillis: row.finishTimeMillis ?? null,
+        overallPlace: null,
+        genderPlace: null,
+        ageGroupPlace: null,
+        identitySnapshot: {},
+        rawSourceData: { sourceLane },
+      })),
+    );
 
-      // Re-derive placements over the WHOLE version (all distances) once (RES-2/RES-14).
-      const versionRows = await tx.query.resultEntries.findMany({
-        where: and(eq(resultEntries.resultVersionId, versionId), isNull(resultEntries.deletedAt)),
-        columns: {
-          id: true, distanceId: true, runnerFullName: true, bibNumber: true, status: true,
-          finishTimeMillis: true, gender: true, age: true, identitySnapshot: true, rawSourceData: true,
-        },
-      });
-      const derived = deriveResultPlacements(versionRows.map((row) => ({ ...row })));
-      for (const row of versionRows) {
-        const placement = derived.byEntryId[row.id];
-        if (!placement) continue;
-        await tx
-          .update(resultEntries)
-          .set({
-            overallPlace: placement.overallPlace,
-            genderPlace: placement.genderPlace,
-            ageGroupPlace: placement.ageGroupPlace,
-          })
-          .where(eq(resultEntries.id, row.id));
-      }
-
-      if (isNewVersion && session) {
-        const audit = await createResultsIngestionInitializeAudit(
-          {
-            organizationId,
-            actorUserId: params.authContext.user.id,
-            entityId: session.id,
-            editionId,
-            resultVersionId: versionId,
-            sourceLane,
-            sourceReference: session.sourceReference,
-            sourceFileChecksum: session.sourceFileChecksum,
-            startedAtIso: session.startedAt.toISOString(),
-          },
-          tx,
-        );
-        throwIfAuditLogFailed(audit, 'results.ingestion.initialize');
-      }
+    const versionRows = await tx.query.resultEntries.findMany({
+      where: and(eq(resultEntries.resultVersionId, versionId), isNull(resultEntries.deletedAt)),
+      columns: {
+        id: true, distanceId: true, runnerFullName: true, bibNumber: true, status: true,
+        finishTimeMillis: true, gender: true, age: true, identitySnapshot: true, rawSourceData: true,
+      },
     });
+    const derived = deriveResultPlacements(versionRows.map((row) => ({ ...row })));
+    for (const row of versionRows) {
+      const placement = derived.byEntryId[row.id];
+      if (!placement) continue;
+      await tx
+        .update(resultEntries)
+        .set({
+          overallPlace: placement.overallPlace,
+          genderPlace: placement.genderPlace,
+          ageGroupPlace: placement.ageGroupPlace,
+        })
+        .where(eq(resultEntries.id, row.id));
+    }
   };
 
   const handleImportError = (error: unknown): ActionResult<ResultImportResponse> | null => {
     if (error instanceof Error && error.message.startsWith(AUDIT_LOG_FAILURE_PREFIX)) {
       return { ok: false, error: 'Failed to create audit log for results import', code: 'SERVER_ERROR' };
     }
-    if (
-      isUniqueConstraintViolation(error, [
-        'result_entries_version_distance_bib_unique_idx',
-        'result_entries_version_nodistance_bib_unique_idx',
-      ])
-    ) {
+    if (isUniqueConstraintViolation(error, RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS)) {
       return { ok: false, error: IMPORT_BLOCKED_ERROR, code: 'CONFLICT' };
     }
     return null;
@@ -242,24 +217,40 @@ export async function importResultDraftRowsWorkflow(params: {
     columns: { id: true },
   });
 
+  // Append path: an out-of-transaction "is there a draft?" read is only a hint. Inside the
+  // transaction we lock the version and re-check it is still a draft before writing, so a
+  // finalization that wins the race can never let this insert land on an official version
+  // (P1). A concurrency conflict surfaces as a retryable error.
   if (existingDraft) {
     try {
-      await importIntoVersion(existingDraft.id, false);
+      const versionId = await db.transaction(async (tx) => {
+        const locked = await lockResultVersion(tx, existingDraft.id);
+        if (!locked || locked.status !== 'draft') {
+          throw new ImportDraftUnavailableError();
+        }
+        await writeRowsAndPlacements(tx, existingDraft.id);
+        return existingDraft.id;
+      });
       const version = await db.query.resultVersions.findFirst({
-        where: eq(resultVersions.id, existingDraft.id),
+        where: eq(resultVersions.id, versionId),
       });
       return {
         ok: true,
         data: { resultVersion: toResultVersionRecord(version!), importedRowCount: rows.length },
       };
     } catch (error) {
+      if (error instanceof ImportDraftUnavailableError) {
+        return { ok: false, error: RESULT_DRAFT_NO_LONGER_EDITABLE_ERROR, code: 'CONFLICT' };
+      }
       const mapped = handleImportError(error);
       if (mapped) return mapped;
       throw error;
     }
   }
 
-  // No draft yet: create a new version + ingestion session, retrying on version-number races.
+  // New-draft path: create version + session + rows + placements + audit in ONE transaction
+  // so a failure can never leave an empty draft with a stale session (P2). Retry on the
+  // version-number race.
   for (let attempt = 0; attempt < RESULT_VERSION_CREATE_RETRY_LIMIT; attempt += 1) {
     const latestVersion = await db.query.resultVersions.findFirst({
       where: and(eq(resultVersions.editionId, editionId), isNull(resultVersions.deletedAt)),
@@ -267,10 +258,8 @@ export async function importResultDraftRowsWorkflow(params: {
       columns: { versionNumber: true },
     });
 
-    let versionId: string;
-    let session: { id: string; sourceReference: string | null; sourceFileChecksum: string | null; startedAt: Date };
     try {
-      const created = await db.transaction(async (tx) => {
+      const versionId = await db.transaction(async (tx) => {
         const [version] = await tx
           .insert(resultVersions)
           .values({
@@ -288,7 +277,7 @@ export async function importResultDraftRowsWorkflow(params: {
             },
           })
           .returning();
-        const [newSession] = await tx
+        const [session] = await tx
           .insert(resultIngestionSessions)
           .values({
             editionId,
@@ -300,23 +289,28 @@ export async function importResultDraftRowsWorkflow(params: {
             provenanceJson: { sourceLane, importedRowCount: rows.length },
           })
           .returning();
-        return { version, session: newSession };
-      });
-      versionId = created.version.id;
-      session = created.session;
-    } catch (error) {
-      const isVersionConflict = isUniqueConstraintViolation(error, [
-        'result_versions_edition_version_idx',
-      ]);
-      if (isVersionConflict && attempt < RESULT_VERSION_CREATE_RETRY_LIMIT - 1) continue;
-      if (isVersionConflict) {
-        return { ok: false, error: 'Could not allocate a draft version number. Please retry.', code: 'CONFLICT' };
-      }
-      throw error;
-    }
 
-    try {
-      await importIntoVersion(versionId, true, session);
+        await writeRowsAndPlacements(tx, version.id);
+
+        const audit = await createResultsIngestionInitializeAudit(
+          {
+            organizationId,
+            actorUserId: params.authContext.user.id,
+            entityId: session.id,
+            editionId,
+            resultVersionId: version.id,
+            sourceLane,
+            sourceReference: session.sourceReference,
+            sourceFileChecksum: session.sourceFileChecksum,
+            startedAtIso: session.startedAt.toISOString(),
+          },
+          tx,
+        );
+        throwIfAuditLogFailed(audit, 'results.ingestion.initialize');
+
+        return version.id;
+      });
+
       const version = await db.query.resultVersions.findFirst({
         where: eq(resultVersions.id, versionId),
       });
@@ -325,6 +319,13 @@ export async function importResultDraftRowsWorkflow(params: {
         data: { resultVersion: toResultVersionRecord(version!), importedRowCount: rows.length },
       };
     } catch (error) {
+      const isVersionConflict = isUniqueConstraintViolation(error, [
+        'result_versions_edition_version_idx',
+      ]);
+      if (isVersionConflict && attempt < RESULT_VERSION_CREATE_RETRY_LIMIT - 1) continue;
+      if (isVersionConflict) {
+        return { ok: false, error: 'Could not allocate a draft version number. Please retry.', code: 'CONFLICT' };
+      }
       const mapped = handleImportError(error);
       if (mapped) return mapped;
       throw error;

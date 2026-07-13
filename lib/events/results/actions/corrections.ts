@@ -20,6 +20,7 @@ import {
   CORRECTION_REQUEST_NOT_PUBLISHABLE_ERROR,
   CORRECTION_REQUEST_NOT_REVIEWABLE_ERROR,
   CORRECTION_SOURCE_CHANGED_ERROR,
+  RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS,
   RESULT_CORRECTION_FORBIDDEN_ERROR,
   RESULT_CORRECTION_INVALID_STATE_ERROR,
   RESULT_CORRECTION_REVIEW_FORBIDDEN_ERROR,
@@ -779,8 +780,7 @@ export async function publishApprovedCorrectionVersionWorkflow(params: {
     if (
       isUniqueConstraintViolation(error, [
         'result_versions_edition_version_idx',
-        'result_entries_version_bib_unique_idx',
-        'result_entries_version_name_no_bib_unique_idx',
+        ...RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS,
       ])
     ) {
       return {

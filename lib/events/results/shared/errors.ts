@@ -6,6 +6,14 @@ export const LINK_CONFLICT_ERROR =
 export const RESULT_ENTRY_CLAIMS_ENTRY_UNIQUE_IDX = 'result_entry_claims_entry_unique_idx';
 export const RESULT_INGESTION_SESSIONS_VERSION_UNIQUE_IDX =
   'result_ingestion_sessions_version_unique_idx';
+// Bib uniqueness is enforced per (version, distance) via a partial index (see db/schema.ts).
+// Centralized here so every duplicate-bib CONFLICT mapping stays in sync with the schema —
+// `isUniqueConstraintViolation` matches on exact index names.
+export const RESULT_ENTRIES_VERSION_DISTANCE_BIB_UNIQUE_IDX =
+  'result_entries_version_distance_bib_unique_idx';
+export const RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS = [
+  RESULT_ENTRIES_VERSION_DISTANCE_BIB_UNIQUE_IDX,
+] as const;
 export const AUDIT_LOG_FAILURE_PREFIX = 'AUDIT_LOG_FAILED:';
 export const CLAIM_ALREADY_LINKED_ERROR = 'This result is already linked to another account.';
 export const CLAIM_NOT_ELIGIBLE_ERROR = 'Selected result is not eligible for claiming.';
@@ -43,6 +51,8 @@ export const CLAIM_NOT_REVOCABLE_ERROR = 'Only a linked claim can be revoked.';
 export const RESULT_DRAFT_NOT_FOUND_ERROR = 'Draft result version not found.';
 export const RESULT_DRAFT_NOT_DISCARDABLE_ERROR =
   'Only draft result versions can be discarded.';
+export const RESULT_DRAFT_NO_LONGER_EDITABLE_ERROR =
+  'This draft was published or removed while you were working. Reload the results workspace and try again.';
 export const IMPORT_NO_ROWS_ERROR = 'No importable rows were provided.';
 export const IMPORT_TOO_MANY_ROWS_ERROR = 'This import exceeds the maximum number of rows.';
 export const IMPORT_BLOCKED_ERROR =

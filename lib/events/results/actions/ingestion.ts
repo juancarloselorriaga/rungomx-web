@@ -23,6 +23,7 @@ import type {
   InitializeResultIngestionSessionInput,
 } from '@/lib/events/results/schemas';
 import { revalidateResultsPublicationArtifacts } from '@/lib/events/results/shared/cache';
+import { lockResultVersion } from '@/lib/events/results/shared/version-lock';
 import type {
   ResultIngestionSessionInitResponse,
   ResultIngestionSessionRecord,
@@ -324,13 +325,16 @@ export async function discardResultDraftVersionWorkflow(params: {
     return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
   }
 
-  // Only unpublished drafts can be discarded — official/corrected versions are immutable.
-  if (version.status !== 'draft') {
-    return { ok: false, error: RESULT_DRAFT_NOT_DISCARDABLE_ERROR, code: 'INVALID_STATE' };
-  }
-
+  // The out-of-transaction status read is only a pre-check. Lock the version FOR UPDATE and
+  // re-verify it is still a draft INSIDE the transaction BEFORE deleting any children, so a
+  // finalization that wins the race can never cause us to delete official result entries
+  // (P1). Returns a distinct code so the caller can distinguish "not discardable now".
   const discardedAt = new Date();
-  await db.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
+    const locked = await lockResultVersion(tx, version.id);
+    if (!locked) return { ok: false as const, code: 'NOT_FOUND' as const };
+    if (locked.status !== 'draft') return { ok: false as const, code: 'INVALID_STATE' as const };
+
     await tx
       .update(resultEntries)
       .set({ deletedAt: discardedAt })
@@ -350,7 +354,16 @@ export async function discardResultDraftVersionWorkflow(params: {
       .update(resultVersions)
       .set({ deletedAt: discardedAt })
       .where(and(eq(resultVersions.id, version.id), eq(resultVersions.status, 'draft')));
+
+    return { ok: true as const };
   });
+
+  if (!outcome.ok) {
+    if (outcome.code === 'NOT_FOUND') {
+      return { ok: false, error: RESULT_DRAFT_NOT_FOUND_ERROR, code: 'NOT_FOUND' };
+    }
+    return { ok: false, error: RESULT_DRAFT_NOT_DISCARDABLE_ERROR, code: 'INVALID_STATE' };
+  }
 
   await revalidateResultsPublicationArtifacts({ editionId: version.editionId });
 

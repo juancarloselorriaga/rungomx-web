@@ -7,11 +7,13 @@ import {
   FINALIZATION_ATTESTATION_REQUIRED_ERROR,
   FINALIZATION_BLOCKED_ERROR,
   FINALIZATION_EMPTY_DRAFT_ERROR,
+  RESULT_DRAFT_NO_LONGER_EDITABLE_ERROR,
 } from '@/lib/events/results/shared/errors';
 import { createResultsFinalizationAudit } from '@/lib/events/results/shared/audit';
 import { revalidateResultsPublicationArtifacts } from '@/lib/events/results/shared/cache';
 import { recomputeNationalRankingsOnPublish } from '@/lib/events/results/ranking-publication';
 import { transitionResultVersionLifecycle } from '@/lib/events/results/lifecycle/state-machine';
+import { lockResultVersion } from '@/lib/events/results/shared/version-lock';
 import type { FinalizeResultVersionAttestationInput } from '@/lib/events/results/schemas';
 import type {
   ResultVersionFinalizationGateSummary,
@@ -25,16 +27,26 @@ type AssertCanWriteResultsForEdition = (
   canManageEvents: boolean,
 ) => Promise<boolean>;
 
+type ResultMutationClient = Pick<typeof db, 'query' | 'update'>;
+
 type BuildDraftFinalizationGateSummary = (
   resultVersionId: string,
+  client?: ResultMutationClient,
 ) => Promise<ResultVersionFinalizationGateSummary>;
-
-type ResultMutationClient = Pick<typeof db, 'query' | 'update'>;
 
 type DeriveAndPersistDraftPlacements = (
   resultVersionId: string,
   client?: ResultMutationClient,
 ) => Promise<unknown>;
+
+// Sentinel carrying the ActionResult to return when finalization must abort inside the
+// transaction (draft flipped/removed under lock, empty draft, or blocking rows added after
+// the pre-check). Thrown to roll back, caught immediately after the transaction.
+class FinalizeAbort extends Error {
+  constructor(public readonly result: ActionResult<ResultVersionFinalizationResponse>) {
+    super('finalize-abort');
+  }
+}
 
 export async function finalizeResultVersionAttestationWorkflow(params: {
   authContext: AuthenticatedContext;
@@ -82,49 +94,70 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
     return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
   }
 
-  const gate = await params.buildDraftFinalizationGateSummary(draftVersion.id);
-  if (gate.rowCount === 0) {
-    return {
-      ok: false,
-      error: FINALIZATION_EMPTY_DRAFT_ERROR,
-      code: 'VALIDATION_ERROR',
-    };
-  }
-  if (!gate.canProceed) {
-    return {
-      ok: false,
-      error: FINALIZATION_BLOCKED_ERROR,
-      code: 'VALIDATION_ERROR',
-    };
-  }
-
   const finalizedAt = new Date();
 
-  // Derive placements and flip draft → official atomically so a crash can never leave an
-  // official version with stale/unwritten placements (RES-11).
-  const lifecycleTransition = await db.transaction(async (tx) => {
-    await params.deriveAndPersistDraftPlacements(draftVersion.id, tx);
-    return transitionResultVersionLifecycle({
-      resultVersionId: draftVersion.id,
-      toStatus: 'official',
-      finalizedByUserId: params.authContext.user.id,
-      finalizedAt,
-      transitionReason: 'attestation',
-      provenancePatch: {
-        attestation: {
-          confirmed: true,
-          attestedByUserId: params.authContext.user.id,
-          attestedAt: finalizedAt.toISOString(),
-          sourceLane: draftVersion.source,
-          note: attestationNote ?? null,
-        },
-      },
-      client: tx,
-    });
-  });
+  // Everything that must be consistent runs under one lock in one transaction: lock the
+  // draft, re-check it is still a draft, re-run the gate against the locked rows (so a
+  // concurrent importer can't slip a blocking row past a pre-check), derive placements, and
+  // flip draft → official (RES-11, P1). The gate result is threaded back out for the audit.
+  let gate: ResultVersionFinalizationGateSummary;
+  let lifecycleData: ResultVersionFinalizationResponse['resultVersion'];
+  try {
+    const outcome = await db.transaction(async (tx) => {
+      const locked = await lockResultVersion(tx, draftVersion.id);
+      if (!locked || locked.status !== 'draft') {
+        throw new FinalizeAbort({
+          ok: false,
+          error: RESULT_DRAFT_NO_LONGER_EDITABLE_ERROR,
+          code: 'CONFLICT',
+        });
+      }
 
-  if (!lifecycleTransition.ok) {
-    return lifecycleTransition;
+      const gateSummary = await params.buildDraftFinalizationGateSummary(draftVersion.id, tx);
+      if (gateSummary.rowCount === 0) {
+        throw new FinalizeAbort({
+          ok: false,
+          error: FINALIZATION_EMPTY_DRAFT_ERROR,
+          code: 'VALIDATION_ERROR',
+        });
+      }
+      if (!gateSummary.canProceed) {
+        throw new FinalizeAbort({
+          ok: false,
+          error: FINALIZATION_BLOCKED_ERROR,
+          code: 'VALIDATION_ERROR',
+        });
+      }
+
+      await params.deriveAndPersistDraftPlacements(draftVersion.id, tx);
+      const transition = await transitionResultVersionLifecycle({
+        resultVersionId: draftVersion.id,
+        toStatus: 'official',
+        finalizedByUserId: params.authContext.user.id,
+        finalizedAt,
+        transitionReason: 'attestation',
+        provenancePatch: {
+          attestation: {
+            confirmed: true,
+            attestedByUserId: params.authContext.user.id,
+            attestedAt: finalizedAt.toISOString(),
+            sourceLane: draftVersion.source,
+            note: attestationNote ?? null,
+          },
+        },
+        client: tx as ResultMutationClient,
+      });
+      if (!transition.ok) {
+        throw new FinalizeAbort(transition);
+      }
+
+      return { gate: gateSummary, resultVersion: transition.data };
+    });
+    gate = outcome.gate;
+    lifecycleData = outcome.resultVersion;
+  } catch (error) {
+    if (error instanceof FinalizeAbort) return error.result;
+    throw error;
   }
 
   const edition = await db.query.eventEditions.findFirst({
@@ -142,14 +175,14 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
   const finalizationAudit = await createResultsFinalizationAudit({
     organizationId: edition?.series?.organizationId ?? null,
     actorUserId: params.authContext.user.id,
-    entityId: lifecycleTransition.data.id,
+    entityId: lifecycleData.id,
     editionId: draftVersion.editionId,
     previousStatus: draftVersion.status,
     previousVersionNumber: draftVersion.versionNumber,
-    nextStatus: lifecycleTransition.data.status,
-    nextVersionNumber: lifecycleTransition.data.versionNumber,
-    finalizedAtIso: lifecycleTransition.data.finalizedAt?.toISOString() ?? null,
-    finalizedByUserId: lifecycleTransition.data.finalizedByUserId,
+    nextStatus: lifecycleData.status,
+    nextVersionNumber: lifecycleData.versionNumber,
+    finalizedAtIso: lifecycleData.finalizedAt?.toISOString() ?? null,
+    finalizedByUserId: lifecycleData.finalizedByUserId,
     gate,
     attestationNote: attestationNote ?? null,
   });
@@ -171,7 +204,7 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
   // a ranking failure must not fail the finalization the organizer just confirmed (§6.4).
   try {
     await recomputeNationalRankingsOnPublish({
-      triggerResultVersionId: lifecycleTransition.data.id,
+      triggerResultVersionId: lifecycleData.id,
     });
   } catch (error) {
     console.error('[finalizeResultVersionAttestation] ranking recompute failed', error);
@@ -180,7 +213,7 @@ export async function finalizeResultVersionAttestationWorkflow(params: {
   return {
     ok: true,
     data: {
-      resultVersion: lifecycleTransition.data,
+      resultVersion: lifecycleData,
       gate,
     },
   };
