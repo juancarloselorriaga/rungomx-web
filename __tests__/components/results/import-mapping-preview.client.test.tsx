@@ -13,6 +13,14 @@ import {
 } from '@/lib/events/results/ingestion/mapping-templates';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
+// jsdom's File/Blob has no `arrayBuffer()`/`text()`, so CSV parsing always
+// falls back to FileReader, which resolves over two nested Node
+// `setImmediate` macrotask hops (see jsdom's FileReader-impl.js). Under a
+// CPU-saturated `pnpm test` run those hops can lag past the default 1000ms
+// findBy timeout, so this suite gets a generous ceiling (see the matching
+// `findByText(..., { timeout: ... })` calls below).
+jest.setTimeout(15_000);
+
 const storageKey = 'results.import.mapping.test';
 
 const labels = {
@@ -120,7 +128,11 @@ describe('ImportMappingPreview', () => {
       target: { files: [file] },
     });
 
-    expect(await screen.findByText('Parsed file summary')).toBeInTheDocument();
+    // Generous timeout: the FileReader macrotask hops above can lag past
+    // the default 1000ms wait under saturated jest workers.
+    expect(
+      await screen.findByText('Parsed file summary', {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: 'Name' })).toBeInTheDocument();
     expect(screen.getAllByText('Ana Rivera').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Luis Mena').length).toBeGreaterThan(0);
@@ -164,7 +176,9 @@ describe('ImportMappingPreview', () => {
       target: { files: [file] },
     });
 
-    await screen.findByText('Parsed file summary');
+    // Generous timeout: the FileReader macrotask hops above can lag past
+    // the default 1000ms wait under saturated jest workers.
+    await screen.findByText('Parsed file summary', {}, { timeout: 10_000 });
 
     fireEvent.change(screen.getByLabelText(labels.savedTemplatesLabel), {
       target: { value: 'template-1' },
@@ -213,7 +227,9 @@ describe('ImportMappingPreview', () => {
       target: { files: [file] },
     });
 
-    await screen.findByText('Parsed file summary');
+    // Generous timeout: the FileReader macrotask hops above can lag past
+    // the default 1000ms wait under saturated jest workers.
+    await screen.findByText('Parsed file summary', {}, { timeout: 10_000 });
 
     fireEvent.change(screen.getByLabelText(labels.savedTemplatesLabel), {
       target: { value: 'template-2' },
