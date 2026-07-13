@@ -102,6 +102,19 @@ describe('POST /api/payments/payouts/queued-intents/activations', () => {
     expect(mockSweepQueuedPayoutIntentActivations).not.toHaveBeenCalled();
   });
 
+  it('returns 403 when requester has admin area access but lacks staff tools access', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-area-user-1' },
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: false },
+    });
+
+    const response = await POST(buildRequest({}));
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'Permission denied' });
+    expect(mockSweepQueuedPayoutIntentActivations).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when organizationId is provided but the organization is inactive or missing', async () => {
     mockRequireAuthenticatedUser.mockResolvedValue({
       user: { id: 'admin-1' },

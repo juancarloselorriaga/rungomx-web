@@ -846,4 +846,16 @@ describe('sweepQueuedPayoutIntentActivations', () => {
 
     expect(mockFindManyPayoutQueuedIntents.mock.calls[0]![0]).toMatchObject({ limit: 200 });
   });
+
+  it('clamps a non-positive limit up to the minimum of 1', async () => {
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce([]);
+
+    await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      limit: 0,
+      now,
+    });
+
+    expect(mockFindManyPayoutQueuedIntents.mock.calls[0]![0]).toMatchObject({ limit: 1 });
+  });
 });
