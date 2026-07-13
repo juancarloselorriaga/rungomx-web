@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { payoutQueuedIntents, payoutRequests } from '@/db/schema';
@@ -69,6 +69,18 @@ export type ActivateQueuedPayoutIntentResult = {
   payoutQuoteId: string | null;
   payoutRequestId: string | null;
   activatedAt: Date | null;
+};
+
+export type SweepQueuedPayoutIntentActivationsResult = {
+  scannedCount: number;
+  activatedCount: number;
+  results: Array<{
+    payoutQueuedIntentId: string;
+    organizerId: string;
+    activated: boolean;
+    reasonCode: ActivateQueuedPayoutIntentResult['reasonCode'] | 'error';
+    payoutRequestId: string | null;
+  }>;
 };
 
 function toError(code: PayoutQueueIntentErrorCode, detail?: string): PayoutQueueIntentError {
@@ -706,5 +718,91 @@ export async function activateQueuedPayoutIntent(params: {
     payoutQuoteId: updatedIntent.activatedPayoutQuoteId,
     payoutRequestId: updatedIntent.activatedPayoutRequestId,
     activatedAt: updatedIntent.activatedAt,
+  };
+}
+
+/**
+ * Durable, independent retry trigger for queued payout intent activation.
+ *
+ * `activateQueuedPayoutIntent` is idempotent (deterministic activation
+ * idempotency key, CAS update with an already-activated short-circuit), but
+ * nothing previously re-invoked it outside the best-effort hook on a terminal
+ * payout transition. A transient failure in that hook — or a crash between
+ * payout creation and the intent CAS — could strand a queued intent with no
+ * remaining trigger. This scan is safe to call repeatedly (e.g. on a schedule
+ * or via the staff sweep route) because each intent activation attempt is
+ * isolated and idempotent.
+ */
+export async function sweepQueuedPayoutIntentActivations(params: {
+  activatedByUserId: string;
+  organizerId?: string;
+  limit?: number;
+  now?: Date;
+}): Promise<SweepQueuedPayoutIntentActivationsResult> {
+  const now = params.now ?? new Date();
+  const limit = Math.max(1, Math.min(params.limit ?? 50, 200));
+
+  const queuedIntents = await db.query.payoutQueuedIntents.findMany({
+    where: params.organizerId
+      ? and(
+          eq(payoutQueuedIntents.status, 'queued'),
+          isNull(payoutQueuedIntents.deletedAt),
+          eq(payoutQueuedIntents.organizerId, params.organizerId),
+        )
+      : and(eq(payoutQueuedIntents.status, 'queued'), isNull(payoutQueuedIntents.deletedAt)),
+    columns: {
+      id: true,
+      organizerId: true,
+    },
+    orderBy: [asc(payoutQueuedIntents.createdAt)],
+    limit,
+  });
+
+  const results: SweepQueuedPayoutIntentActivationsResult['results'] = [];
+  let activatedCount = 0;
+
+  for (const queuedIntent of queuedIntents) {
+    try {
+      const activation = await activateQueuedPayoutIntent({
+        payoutQueuedIntentId: queuedIntent.id,
+        activatedByUserId: params.activatedByUserId,
+        now,
+      });
+
+      if (activation.activated) {
+        activatedCount += 1;
+      }
+
+      results.push({
+        payoutQueuedIntentId: queuedIntent.id,
+        organizerId: queuedIntent.organizerId,
+        activated: activation.activated,
+        reasonCode: activation.reasonCode,
+        payoutRequestId: activation.payoutRequestId,
+      });
+    } catch (error) {
+      // Isolate one intent's failure from the rest of the scan: a single
+      // stuck or errored intent must not abort activation for every other
+      // queued intent in this batch.
+      console.error('[payout-queue] Failed to activate queued payout intent during sweep', {
+        payoutQueuedIntentId: queuedIntent.id,
+        organizerId: queuedIntent.organizerId,
+        error,
+      });
+
+      results.push({
+        payoutQueuedIntentId: queuedIntent.id,
+        organizerId: queuedIntent.organizerId,
+        activated: false,
+        reasonCode: 'error',
+        payoutRequestId: null,
+      });
+    }
+  }
+
+  return {
+    scannedCount: queuedIntents.length,
+    activatedCount,
+    results,
   };
 }
