@@ -433,6 +433,21 @@ describe('sweepQueuedPayoutIntentActivations (database)', () => {
 
     expect(organizerDPayoutRequests).toHaveLength(1);
     expect(organizerDPayoutRequests[0]?.status).toBe('requested');
+
+    // Pagination must terminate at the end of the set: a cursor positioned at
+    // the final row must yield an empty page and a null nextCursor instead of
+    // looping back to the head or resuming from a stale boundary.
+    const page3 = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: actorUserId,
+      limit: 3,
+      now: sweepNow,
+      cursor: { createdAt: intentD.createdAt, id: intentD.payoutQueuedIntentId },
+    });
+
+    expect(page3.scannedCount).toBe(0);
+    expect(page3.activatedCount).toBe(0);
+    expect(page3.results).toHaveLength(0);
+    expect(page3.nextCursor).toBeNull();
   });
 
   it('returns a null nextCursor when a sweep scans fewer intents than the requested limit', async () => {

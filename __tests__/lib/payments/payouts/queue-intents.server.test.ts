@@ -890,4 +890,24 @@ describe('sweepQueuedPayoutIntentActivations', () => {
     expect(result.scannedCount).toBe(2);
     expect(result.nextCursor).toEqual({ createdAt: lastRowCreatedAt, id: 'intent-b' });
   });
+
+  it('returns a nextCursor when a clamped over-limit request fills the maximum page of 200', async () => {
+    const baseCreatedAt = new Date('2026-02-25T00:00:00.000Z');
+    const fullPage = Array.from({ length: 200 }, (_, index) => ({
+      id: `intent-${index}`,
+      organizerId: 'org-1',
+      createdAt: new Date(baseCreatedAt.getTime() + index * 1_000),
+    }));
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce(fullPage);
+
+    const result = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      limit: 9_999,
+      now,
+    });
+
+    expect(mockFindManyPayoutQueuedIntents.mock.calls[0]![0]).toMatchObject({ limit: 200 });
+    expect(result.scannedCount).toBe(200);
+    expect(result.nextCursor).toEqual({ createdAt: fullPage[199]!.createdAt, id: 'intent-199' });
+  });
 });
