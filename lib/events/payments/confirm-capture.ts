@@ -5,7 +5,10 @@ import { headers } from 'next/headers';
 import { db } from '@/db';
 import { registrations } from '@/db/schema';
 import { createAuditLog, getRequestContext, type AuditAction } from '@/lib/audit';
-import { ingestMoneyMutationFromServerActionInTransaction } from '@/lib/payments/core/mutation-ingress-paths';
+import {
+  ingestMoneyMutationFromApiInTransaction,
+  ingestMoneyMutationFromServerActionInTransaction,
+} from '@/lib/payments/core/mutation-ingress-paths';
 
 type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -109,7 +112,15 @@ export async function confirmRegistrationPaymentCaptureInTransaction(
     throw new Error('INVALID_STATE_TRANSITION');
   }
 
-  await ingestMoneyMutationFromServerActionInTransaction(tx, {
+  // Route to the ingress wrapper that matches the caller's canonical source so
+  // `money_events.source` / `money_traces.created_by_source` reflect where the
+  // capture actually originated instead of always recording `server_action`.
+  const ingestMoneyMutationInTransaction =
+    params.source === 'api'
+      ? ingestMoneyMutationFromApiInTransaction
+      : ingestMoneyMutationFromServerActionInTransaction;
+
+  await ingestMoneyMutationInTransaction(tx, {
     traceId,
     organizerId: params.organizerId,
     idempotencyKey: params.idempotencyKey,
