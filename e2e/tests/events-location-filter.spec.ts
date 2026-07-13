@@ -25,6 +25,25 @@ import { eq } from 'drizzle-orm';
 // Coordinates for Saltillo (event location, ~85km from Monterrey)
 const SALTILLO_COORDS = { lat: '25.4267', lng: '-100.9931' };
 
+// Deterministic geocoder result for the picker. The location search is backed by a live
+// third-party geocoder (Mapbox), whose ranking is nondeterministic and proximity-biased:
+// with the picker's default map center (Mexico City) it can surface a CDMX point named
+// "Monterrey ..." above the actual city of Monterrey, Nuevo León — resolving the filter to
+// the wrong coordinates so the ~85km-away Saltillo event never appears. These tests exercise
+// the proximity *filter* (radius math + directory query), not geocoder accuracy, so we stub
+// the search endpoint to return Monterrey, Nuevo León deterministically.
+const MONTERREY_RESULT = {
+  lat: 25.6866,
+  lng: -100.3161,
+  formattedAddress: 'Monterrey, Nuevo León, Mexico',
+  name: 'Monterrey',
+  city: 'Monterrey',
+  region: 'Nuevo León',
+  country: 'Mexico',
+  countryCode: 'MX',
+  placeId: 'test-monterrey-nuevo-leon',
+};
+
 test.describe('Near Location Filter', () => {
   // Use a fixed name that's easy to identify
   const TEST_EVENT_NAME = 'Saltillo Location Test Event';
@@ -32,6 +51,12 @@ test.describe('Near Location Filter', () => {
   test.beforeAll(async () => {
     const db = getTestDb();
     const timestamp = Date.now();
+    // Keep the event comfortably in the future so the directory's default "upcoming only"
+    // filter (search/queries.ts: startsAt >= now when no date filter is applied) always
+    // includes it. The previous hardcoded 2026 date silently began excluding the event once
+    // that date passed, which is a second cause of these tests failing.
+    const futureStartsAt = new Date(timestamp + 90 * 24 * 60 * 60 * 1000);
+    const editionYear = String(futureStartsAt.getUTCFullYear());
 
     // Create test organization
     const orgId = randomUUID();
@@ -56,9 +81,9 @@ test.describe('Near Location Filter', () => {
     await db.insert(schema.eventEditions).values({
       id: editionId,
       seriesId: seriesId,
-      editionLabel: '2026',
+      editionLabel: editionYear,
       publicCode: `ST${timestamp.toString().slice(-6)}`,
-      slug: '2026',
+      slug: editionYear,
       visibility: 'published',
       city: 'Saltillo',
       state: 'Coahuila',
@@ -66,7 +91,7 @@ test.describe('Near Location Filter', () => {
       latitude: SALTILLO_COORDS.lat,
       longitude: SALTILLO_COORDS.lng,
       locationDisplay: 'Saltillo, Coahuila',
-      startsAt: new Date('2026-06-15T08:00:00Z'),
+      startsAt: futureStartsAt,
       timezone: 'America/Monterrey',
     });
 
@@ -95,6 +120,17 @@ test.describe('Near Location Filter', () => {
    * Helper to set up location filter
    */
   async function setupLocationFilter(page: import('@playwright/test').Page) {
+    // Make the location search deterministic: return Monterrey, Nuevo León regardless of the
+    // live geocoder's ranking (see MONTERREY_RESULT). Registered before navigation so the
+    // debounced search request is always intercepted.
+    await page.route('**/api/location/search**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ locations: [MONTERREY_RESULT] }),
+      });
+    });
+
     // Navigate to events directory
     await page.goto('/en/events');
 
