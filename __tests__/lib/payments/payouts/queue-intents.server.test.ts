@@ -1,4 +1,5 @@
 const mockFindFirstPayoutQueuedIntent = jest.fn();
+const mockFindManyPayoutQueuedIntents = jest.fn();
 const mockFindFirstPayoutRequest = jest.fn();
 const mockInsert = jest.fn();
 const mockInsertValues = jest.fn();
@@ -20,6 +21,7 @@ jest.mock('@/db', () => ({
     query: {
       payoutQueuedIntents: {
         findFirst: (...args: unknown[]) => mockFindFirstPayoutQueuedIntent(...args),
+        findMany: (...args: unknown[]) => mockFindManyPayoutQueuedIntents(...args),
       },
       payoutRequests: {
         findFirst: (...args: unknown[]) => mockFindFirstPayoutRequest(...args),
@@ -58,6 +60,7 @@ jest.mock('@/lib/payments/payouts/quote-contract', () => {
 import {
   activateQueuedPayoutIntent,
   createQueuedPayoutIntent,
+  sweepQueuedPayoutIntentActivations,
 } from '@/lib/payments/payouts/queue-intents';
 import { PayoutQuoteContractError } from '@/lib/payments/payouts/quote-contract';
 
@@ -69,6 +72,7 @@ describe('payout queued intents', () => {
     updateReturningQueue.length = 0;
 
     mockFindFirstPayoutQueuedIntent.mockReset();
+    mockFindManyPayoutQueuedIntents.mockReset();
     mockFindFirstPayoutRequest.mockReset();
     mockInsert.mockReset();
     mockInsertValues.mockReset();
@@ -83,6 +87,7 @@ describe('payout queued intents', () => {
     mockCreatePayoutQuoteAndContract.mockReset();
 
     mockFindFirstPayoutQueuedIntent.mockResolvedValue(null);
+    mockFindManyPayoutQueuedIntents.mockResolvedValue([]);
     mockFindFirstPayoutRequest.mockResolvedValue(null);
     mockGetOrganizerWalletBucketSnapshot.mockResolvedValue({
       organizerId: '11111111-1111-4111-8111-111111111111',
@@ -694,5 +699,151 @@ describe('payout queued intents', () => {
     expect(result.reasonCode).toBe('active_payout_in_progress');
     expect(result.status).toBe('queued');
     expect(mockUpdate).not.toHaveBeenCalled();
+  });
+});
+
+describe('sweepQueuedPayoutIntentActivations', () => {
+  const now = new Date('2026-02-25T20:00:00.000Z');
+
+  beforeEach(() => {
+    insertReturningQueue.length = 0;
+    updateReturningQueue.length = 0;
+
+    mockFindFirstPayoutQueuedIntent.mockReset();
+    mockFindManyPayoutQueuedIntents.mockReset();
+    mockFindFirstPayoutRequest.mockReset();
+    mockInsert.mockReset();
+    mockInsertValues.mockReset();
+    mockInsertOnConflictDoNothing.mockReset();
+    mockInsertReturning.mockReset();
+    mockUpdate.mockReset();
+    mockUpdateSet.mockReset();
+    mockUpdateWhere.mockReset();
+    mockUpdateReturning.mockReset();
+    mockGetOrganizerWalletBucketSnapshot.mockReset();
+    mockIngestMoneyMutationFromApi.mockReset();
+    mockCreatePayoutQuoteAndContract.mockReset();
+
+    mockUpdate.mockImplementation(() => ({
+      set: (...setArgs: unknown[]) => {
+        mockUpdateSet(...setArgs);
+        return {
+          where: (...whereArgs: unknown[]) => {
+            mockUpdateWhere(...whereArgs);
+            return {
+              returning: (...returningArgs: unknown[]) => {
+                mockUpdateReturning(...returningArgs);
+                return Promise.resolve(updateReturningQueue.shift() ?? []);
+              },
+            };
+          },
+        };
+      },
+    }));
+  });
+
+  it('continues activating remaining queued intents when one intent activation throws unexpectedly', async () => {
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce([
+      { id: 'intent-a', organizerId: 'org-1' },
+      { id: 'intent-b', organizerId: 'org-1' },
+    ]);
+
+    mockFindFirstPayoutQueuedIntent
+      .mockResolvedValueOnce({
+        id: 'intent-a',
+        organizerId: 'org-1',
+        status: 'queued',
+        requestedAmountMinor: 5000,
+        activatedAt: null,
+        activatedPayoutQuoteId: null,
+        activatedPayoutRequestId: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'intent-b',
+        organizerId: 'org-1',
+        status: 'queued',
+        requestedAmountMinor: 5000,
+        activatedAt: null,
+        activatedPayoutQuoteId: null,
+        activatedPayoutRequestId: null,
+      });
+
+    mockGetOrganizerWalletBucketSnapshot
+      .mockRejectedValueOnce(new Error('transient wallet snapshot failure'))
+      .mockResolvedValueOnce({
+        organizerId: 'org-1',
+        asOf: now,
+        buckets: {
+          availableMinor: 12000,
+          processingMinor: 0,
+          frozenMinor: 0,
+          debtMinor: 0,
+        },
+        debt: {
+          waterfallOrder: [],
+          categoryBalancesMinor: {},
+          repaymentAppliedMinor: 0,
+        },
+        queryDurationMs: 2,
+      });
+
+    mockCreatePayoutQuoteAndContract.mockResolvedValueOnce({
+      payoutQuoteId: 'quote-b',
+      payoutRequestId: 'request-b',
+    });
+
+    updateReturningQueue.push([
+      {
+        id: 'intent-b',
+        organizerId: 'org-1',
+        status: 'activated',
+        activatedAt: now,
+        activatedPayoutQuoteId: 'quote-b',
+        activatedPayoutRequestId: 'request-b',
+      },
+    ]);
+
+    const result = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      now,
+    });
+
+    expect(result.scannedCount).toBe(2);
+    expect(result.activatedCount).toBe(1);
+    expect(result.results[0]).toMatchObject({
+      payoutQueuedIntentId: 'intent-a',
+      activated: false,
+      reasonCode: 'error',
+    });
+    expect(result.results[1]).toMatchObject({
+      payoutQueuedIntentId: 'intent-b',
+      activated: true,
+      reasonCode: 'activated',
+      payoutRequestId: 'request-b',
+    });
+    expect(mockCreatePayoutQuoteAndContract).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults to scanning at most 50 queued intents when no limit is provided', async () => {
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce([]);
+
+    await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      now,
+    });
+
+    expect(mockFindManyPayoutQueuedIntents.mock.calls[0]![0]).toMatchObject({ limit: 50 });
+  });
+
+  it('clamps an out-of-range limit request down to the maximum of 200', async () => {
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce([]);
+
+    await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      limit: 9_999,
+      now,
+    });
+
+    expect(mockFindManyPayoutQueuedIntents.mock.calls[0]![0]).toMatchObject({ limit: 200 });
   });
 });
