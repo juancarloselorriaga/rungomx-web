@@ -207,7 +207,7 @@ describe('money mutation ingress', () => {
       organizerId: '22222222-2222-4222-8222-222222222222',
       idempotencyKey: 'command-key-1',
       source: 'api',
-      events: [paymentCapturedEvent, refundExecutedEvent],
+      events: [paymentCapturedEvent, { ...refundExecutedEvent, source: 'api' }],
     });
 
     expect(mockTransaction).toHaveBeenCalledTimes(1);
@@ -250,7 +250,7 @@ describe('money mutation ingress', () => {
       traceId: 'trace-shared-1',
       organizerId: '22222222-2222-4222-8222-222222222222',
       idempotencyKey: 'command-key-duplicate',
-      source: 'worker',
+      source: 'api',
       events: [paymentCapturedEvent],
     });
 
@@ -295,7 +295,7 @@ describe('money mutation ingress', () => {
       traceId: 'trace-new-1',
       organizerId: '22222222-2222-4222-8222-222222222222',
       idempotencyKey: 'command-key-duplicate',
-      source: 'worker',
+      source: 'api',
       events: [
         {
           ...paymentCapturedEvent,
@@ -315,7 +315,7 @@ describe('money mutation ingress', () => {
         traceId: 'trace-expected',
         organizerId: '22222222-2222-4222-8222-222222222222',
         idempotencyKey: 'command-key-mismatch',
-        source: 'worker',
+        source: 'api',
         events: [
           {
             ...paymentCapturedEvent,
@@ -326,6 +326,82 @@ describe('money mutation ingress', () => {
     ).rejects.toThrow('Canonical event trace mismatch: expected trace-expected, received trace-other');
 
     expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects a canonical event whose source disagrees with the command source', async () => {
+    await expect(
+      moneyMutationIngress({
+        traceId: 'trace-source-mismatch-1',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'command-key-source-mismatch',
+        source: 'api',
+        events: [
+          {
+            ...paymentCapturedEvent,
+            eventId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            traceId: 'trace-source-mismatch-1',
+            idempotencyKey: 'idem-source-mismatch-1',
+            source: 'server_action',
+          },
+        ],
+      }),
+    ).rejects.toThrow('Canonical event source mismatch: expected api, received server_action');
+
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('rejects a multi-event command when a non-root event has a mismatched source', async () => {
+    await expect(
+      moneyMutationIngress({
+        traceId: 'trace-source-mismatch-multi-1',
+        organizerId: '22222222-2222-4222-8222-222222222222',
+        idempotencyKey: 'command-key-source-mismatch-multi',
+        source: 'api',
+        events: [
+          {
+            ...paymentCapturedEvent,
+            eventId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            traceId: 'trace-source-mismatch-multi-1',
+            idempotencyKey: 'idem-source-mismatch-multi-1',
+            source: 'api',
+          },
+          {
+            ...refundExecutedEvent,
+            eventId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            traceId: 'trace-source-mismatch-multi-1',
+            idempotencyKey: 'idem-source-mismatch-multi-2',
+            source: 'worker',
+          },
+        ],
+      }),
+    ).rejects.toThrow('Canonical event source mismatch: expected api, received worker');
+
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('accepts a canonical event whose source matches the command source', async () => {
+    traceInsertReturningQueue.push([{ traceId: 'trace-source-match-1' }]);
+    commandInsertReturningQueue.push([{ traceId: 'trace-source-match-1' }]);
+
+    const result = await moneyMutationIngress({
+      traceId: 'trace-source-match-1',
+      organizerId: '22222222-2222-4222-8222-222222222222',
+      idempotencyKey: 'command-key-source-match',
+      source: 'api',
+      events: [
+        {
+          ...paymentCapturedEvent,
+          eventId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          traceId: 'trace-source-match-1',
+          idempotencyKey: 'idem-source-match-1',
+          source: 'api',
+        },
+      ],
+    });
+
+    expect(result.deduplicated).toBe(false);
+    expect(result.persistedEvents).toHaveLength(1);
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
   });
 
   it('rejects organizer-scoped idempotency usage without organizer id', async () => {

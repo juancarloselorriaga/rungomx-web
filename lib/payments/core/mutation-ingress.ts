@@ -74,6 +74,14 @@ function normalizeCanonicalEvents(command: MoneyMutationIngressCommand): Canonic
         `Canonical event trace mismatch: expected ${command.traceId}, received ${parsedEvent.traceId}`,
       );
     }
+
+    // The command source is ground truth for how the mutation entered the system;
+    // a disagreeing envelope must be rejected outright, not silently overridden.
+    if (parsedEvent.source !== command.source) {
+      throw new Error(
+        `Canonical event source mismatch: expected ${command.source}, received ${parsedEvent.source}`,
+      );
+    }
   }
 
   return parsedEvents;
