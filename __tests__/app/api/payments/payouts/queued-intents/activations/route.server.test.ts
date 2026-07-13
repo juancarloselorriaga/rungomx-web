@@ -223,4 +223,101 @@ describe('POST /api/payments/payouts/queued-intents/activations', () => {
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({ error: 'Server error' });
   });
+
+  it('returns 400 when cursor.createdAt is not a valid ISO datetime string', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-1' },
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
+    });
+    // Stub the sweep so a pre-fix (schema doesn't know `cursor` yet) pass-through
+    // resolves to a clean 200 instead of a masking 500 from an unstubbed mock.
+    mockSweepQueuedPayoutIntentActivations.mockResolvedValue({
+      scannedCount: 0,
+      activatedCount: 0,
+      results: [],
+    });
+
+    const response = await POST(
+      buildRequest({
+        cursor: { createdAt: 'not-a-date', id: '11111111-1111-4111-8111-111111111111' },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mockSweepQueuedPayoutIntentActivations).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when cursor.id is not a valid uuid', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-1' },
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
+    });
+    mockSweepQueuedPayoutIntentActivations.mockResolvedValue({
+      scannedCount: 0,
+      activatedCount: 0,
+      results: [],
+    });
+
+    const response = await POST(
+      buildRequest({
+        cursor: { createdAt: '2026-04-01T09:02:00.000Z', id: 'not-a-uuid' },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(mockSweepQueuedPayoutIntentActivations).not.toHaveBeenCalled();
+  });
+
+  it('forwards a valid cursor to the sweep with createdAt converted to a Date', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-1' },
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
+    });
+    mockSweepQueuedPayoutIntentActivations.mockResolvedValue({
+      scannedCount: 0,
+      activatedCount: 0,
+      results: [],
+      nextCursor: null,
+    });
+
+    const cursorId = '11111111-1111-4111-8111-111111111111';
+    const cursorCreatedAtIso = '2026-04-01T09:02:00.000Z';
+
+    const response = await POST(
+      buildRequest({
+        cursor: { createdAt: cursorCreatedAtIso, id: cursorId },
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockSweepQueuedPayoutIntentActivations).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cursor: { createdAt: new Date(cursorCreatedAtIso), id: cursorId },
+      }),
+    );
+  });
+
+  it('serializes nextCursor as an ISO string in the response body when the sweep returns one', async () => {
+    mockRequireAuthenticatedUser.mockResolvedValue({
+      user: { id: 'admin-1' },
+      permissions: { canManageEvents: false, canAccessAdminArea: true, canViewStaffTools: true },
+    });
+    const nextCursorId = '22222222-2222-4222-8222-222222222222';
+    const nextCursorCreatedAt = new Date('2026-04-01T09:02:00.000Z');
+    mockSweepQueuedPayoutIntentActivations.mockResolvedValue({
+      scannedCount: 0,
+      activatedCount: 0,
+      results: [],
+      nextCursor: { createdAt: nextCursorCreatedAt, id: nextCursorId },
+    });
+
+    const response = await POST(buildRequest({}));
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.data.nextCursor).toEqual({
+      createdAt: nextCursorCreatedAt.toISOString(),
+      id: nextCursorId,
+    });
+  });
 });

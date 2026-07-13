@@ -858,4 +858,36 @@ describe('sweepQueuedPayoutIntentActivations', () => {
 
     expect(mockFindManyPayoutQueuedIntents.mock.calls[0]![0]).toMatchObject({ limit: 1 });
   });
+
+  it('returns a null nextCursor when the scanned page is shorter than the requested limit', async () => {
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce([
+      { id: 'intent-a', organizerId: 'org-1', createdAt: now },
+    ]);
+
+    const result = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      limit: 5,
+      now,
+    });
+
+    expect(result.scannedCount).toBe(1);
+    expect(result.nextCursor).toBeNull();
+  });
+
+  it('returns the last scanned row as nextCursor when the page is exactly full', async () => {
+    const lastRowCreatedAt = new Date('2026-02-25T19:59:00.000Z');
+    mockFindManyPayoutQueuedIntents.mockResolvedValueOnce([
+      { id: 'intent-a', organizerId: 'org-1', createdAt: new Date('2026-02-25T19:58:00.000Z') },
+      { id: 'intent-b', organizerId: 'org-1', createdAt: lastRowCreatedAt },
+    ]);
+
+    const result = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: '22222222-2222-4222-8222-222222222222',
+      limit: 2,
+      now,
+    });
+
+    expect(result.scannedCount).toBe(2);
+    expect(result.nextCursor).toEqual({ createdAt: lastRowCreatedAt, id: 'intent-b' });
+  });
 });

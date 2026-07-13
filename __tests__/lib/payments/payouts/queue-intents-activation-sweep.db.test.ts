@@ -321,4 +321,191 @@ describe('sweepQueuedPayoutIntentActivations (database)', () => {
     expect(intentARow?.status).toBe('activated');
     expect(intentBRow?.status).toBe('queued');
   });
+
+  it('resumes a global sweep via nextCursor so an eligible intent queued after more than the page limit of ineligible intents is no longer starved', async () => {
+    const { organizerId: organizerAId, actorUserId } = await seedOrganizerAndUser(testDb);
+    const { organizerId: organizerBId } = await seedOrganizerAndUser(testDb);
+    const { organizerId: organizerCId } = await seedOrganizerAndUser(testDb);
+    const { organizerId: organizerDId } = await seedOrganizerAndUser(testDb);
+
+    const intentA = await createQueuedPayoutIntent({
+      organizerId: organizerAId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'starvation-intent-a',
+      now: new Date('2026-04-01T09:00:00.000Z'),
+    });
+    const intentB = await createQueuedPayoutIntent({
+      organizerId: organizerBId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'starvation-intent-b',
+      now: new Date('2026-04-01T09:01:00.000Z'),
+    });
+    const intentC = await createQueuedPayoutIntent({
+      organizerId: organizerCId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'starvation-intent-c',
+      now: new Date('2026-04-01T09:02:00.000Z'),
+    });
+    const intentD = await createQueuedPayoutIntent({
+      organizerId: organizerDId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'starvation-intent-d-eligible',
+      now: new Date('2026-04-01T09:03:00.000Z'),
+    });
+
+    // A/B/C never get funded, so they stay permanently still_ineligible and
+    // would otherwise occupy the head of the sweep page forever.
+    await seedCapturedFunds(organizerDId, 20_000);
+
+    const sweepNow = new Date('2026-04-01T09:05:00.000Z');
+
+    const page1 = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: actorUserId,
+      limit: 3,
+      now: sweepNow,
+    });
+
+    expect(page1.scannedCount).toBe(3);
+    expect(page1.activatedCount).toBe(0);
+    expect(page1.results.map((result) => result.payoutQueuedIntentId)).toEqual([
+      intentA.payoutQueuedIntentId,
+      intentB.payoutQueuedIntentId,
+      intentC.payoutQueuedIntentId,
+    ]);
+    for (const result of page1.results) {
+      expect(result.reasonCode).toBe('still_ineligible');
+    }
+    // Deliberately toEqual (not `.not.toBeNull()`): an undefined nextCursor
+    // would incorrectly satisfy a not-null check and hide the starvation bug.
+    expect(page1.nextCursor).toEqual({
+      createdAt: intentC.createdAt,
+      id: intentC.payoutQueuedIntentId,
+    });
+
+    const [intentDRowBeforePage2] = await testDb
+      .select({ status: payoutQueuedIntents.status })
+      .from(payoutQueuedIntents)
+      .where(eq(payoutQueuedIntents.id, intentD.payoutQueuedIntentId));
+
+    expect(intentDRowBeforePage2?.status).toBe('queued');
+
+    const page2 = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: actorUserId,
+      limit: 3,
+      now: sweepNow,
+      cursor: page1.nextCursor!,
+    });
+
+    expect(page2.scannedCount).toBe(1);
+    expect(page2.activatedCount).toBe(1);
+    expect(page2.results[0]).toMatchObject({
+      payoutQueuedIntentId: intentD.payoutQueuedIntentId,
+      organizerId: organizerDId,
+      activated: true,
+      reasonCode: 'activated',
+    });
+    expect(page2.results[0]!.payoutRequestId).toBeTruthy();
+
+    const [intentDRow] = await testDb
+      .select({
+        status: payoutQueuedIntents.status,
+        activatedAt: payoutQueuedIntents.activatedAt,
+        activatedPayoutRequestId: payoutQueuedIntents.activatedPayoutRequestId,
+      })
+      .from(payoutQueuedIntents)
+      .where(eq(payoutQueuedIntents.id, intentD.payoutQueuedIntentId));
+
+    expect(intentDRow?.status).toBe('activated');
+    expect(intentDRow?.activatedAt).not.toBeNull();
+    expect(intentDRow?.activatedPayoutRequestId).not.toBeNull();
+
+    const organizerDPayoutRequests = await testDb
+      .select({
+        id: payoutRequests.id,
+        status: payoutRequests.status,
+      })
+      .from(payoutRequests)
+      .where(and(eq(payoutRequests.organizerId, organizerDId), isNull(payoutRequests.deletedAt)));
+
+    expect(organizerDPayoutRequests).toHaveLength(1);
+    expect(organizerDPayoutRequests[0]?.status).toBe('requested');
+  });
+
+  it('returns a null nextCursor when a sweep scans fewer intents than the requested limit', async () => {
+    const { organizerId, actorUserId } = await seedOrganizerAndUser(testDb);
+    const now = new Date('2026-04-01T09:00:00.000Z');
+
+    const queuedIntent = await createQueuedPayoutIntent({
+      organizerId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'short-page-intent',
+      now,
+    });
+
+    expect(queuedIntent.status).toBe('queued');
+
+    const sweepResult = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: actorUserId,
+      limit: 3,
+      now,
+    });
+
+    expect(sweepResult.scannedCount).toBe(1);
+    expect(sweepResult.nextCursor).toBeNull();
+  });
+
+  it('breaks ties on id when two queued intents share the same createdAt so the composite keyset cursor does not skip or repeat rows', async () => {
+    const { organizerId: organizerXId, actorUserId } = await seedOrganizerAndUser(testDb);
+    const { organizerId: organizerYId } = await seedOrganizerAndUser(testDb);
+    const now = new Date('2026-04-01T09:00:00.000Z');
+
+    const intentX = await createQueuedPayoutIntent({
+      organizerId: organizerXId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'tie-intent-x',
+      now,
+    });
+    const intentY = await createQueuedPayoutIntent({
+      organizerId: organizerYId,
+      createdByUserId: actorUserId,
+      requestedAmountMinor: 5_000,
+      idempotencyKey: 'tie-intent-y',
+      now,
+    });
+
+    const page1 = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: actorUserId,
+      limit: 1,
+      now,
+    });
+
+    expect(page1.scannedCount).toBe(1);
+    const firstId = page1.results[0]!.payoutQueuedIntentId;
+    expect([intentX.payoutQueuedIntentId, intentY.payoutQueuedIntentId]).toContain(firstId);
+    expect(page1.nextCursor).toEqual({ createdAt: now, id: firstId });
+
+    // Do not assume uuid ordering: derive the expected second id as whichever
+    // of X/Y was not returned first.
+    const expectedSecondId =
+      firstId === intentX.payoutQueuedIntentId
+        ? intentY.payoutQueuedIntentId
+        : intentX.payoutQueuedIntentId;
+
+    const page2 = await sweepQueuedPayoutIntentActivations({
+      activatedByUserId: actorUserId,
+      limit: 1,
+      now,
+      cursor: page1.nextCursor!,
+    });
+
+    expect(page2.scannedCount).toBe(1);
+    expect(page2.results[0]!.payoutQueuedIntentId).toBe(expectedSecondId);
+    expect(page2.nextCursor).toEqual({ createdAt: now, id: expectedSecondId });
+  });
 });

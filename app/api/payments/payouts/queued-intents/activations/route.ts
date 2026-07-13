@@ -13,6 +13,12 @@ import { sweepQueuedPayoutIntentActivations } from '@/lib/payments/payouts/queue
 const sweepActivationsSchema = z.object({
   organizationId: z.string().uuid().optional(),
   limit: z.number().int().min(1).max(200).optional(),
+  cursor: z
+    .object({
+      createdAt: z.string().datetime(),
+      id: z.string().uuid(),
+    })
+    .optional(),
 });
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -42,7 +48,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  const { organizationId, limit } = parseResult.data;
+  const { organizationId, limit, cursor } = parseResult.data;
 
   const accessResult = await requireInternalStaffAccess(authContext);
   if (!accessResult.ok) {
@@ -64,6 +70,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       activatedByUserId: authContext.user.id,
       organizerId: organizationId,
       limit,
+      cursor: cursor ? { createdAt: new Date(cursor.createdAt), id: cursor.id } : undefined,
     });
 
     return withNoStore(
@@ -73,6 +80,11 @@ export async function POST(request: Request): Promise<NextResponse> {
           scannedCount: result.scannedCount,
           activatedCount: result.activatedCount,
           results: result.results,
+          // Always write the key: JSON.stringify would omit it if the value
+          // were undefined instead of an explicit null.
+          nextCursor: result.nextCursor
+            ? { createdAt: result.nextCursor.createdAt.toISOString(), id: result.nextCursor.id }
+            : null,
         },
       }),
     );

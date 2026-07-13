@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { payoutQueuedIntents, payoutRequests } from '@/db/schema';
@@ -81,6 +81,7 @@ export type SweepQueuedPayoutIntentActivationsResult = {
     reasonCode: ActivateQueuedPayoutIntentResult['reasonCode'] | 'error';
     payoutRequestId: string | null;
   }>;
+  nextCursor: { createdAt: Date; id: string } | null;
 };
 
 function toError(code: PayoutQueueIntentErrorCode, detail?: string): PayoutQueueIntentError {
@@ -742,23 +743,45 @@ export async function sweepQueuedPayoutIntentActivations(params: {
   organizerId?: string;
   limit?: number;
   now?: Date;
+  cursor?: { createdAt: Date; id: string };
 }): Promise<SweepQueuedPayoutIntentActivationsResult> {
   const now = params.now ?? new Date();
   const limit = Math.max(1, Math.min(params.limit ?? 50, 200));
 
+  const statusAndOrganizerWhere = params.organizerId
+    ? and(
+        eq(payoutQueuedIntents.status, 'queued'),
+        isNull(payoutQueuedIntents.deletedAt),
+        eq(payoutQueuedIntents.organizerId, params.organizerId),
+      )
+    : and(eq(payoutQueuedIntents.status, 'queued'), isNull(payoutQueuedIntents.deletedAt));
+
+  // Keyset (createdAt, id) pagination: without the cursor, a global sweep
+  // orders oldest-first and always re-scans the same head page, so intents
+  // that stay still_ineligible forever (e.g. never funded) permanently starve
+  // eligible intents queued after the page boundary. The equality leg on the
+  // id tiebreaker is required because createdAt alone is not unique.
+  const where = params.cursor
+    ? and(
+        statusAndOrganizerWhere,
+        or(
+          gt(payoutQueuedIntents.createdAt, params.cursor.createdAt),
+          and(
+            eq(payoutQueuedIntents.createdAt, params.cursor.createdAt),
+            gt(payoutQueuedIntents.id, params.cursor.id),
+          ),
+        ),
+      )
+    : statusAndOrganizerWhere;
+
   const queuedIntents = await db.query.payoutQueuedIntents.findMany({
-    where: params.organizerId
-      ? and(
-          eq(payoutQueuedIntents.status, 'queued'),
-          isNull(payoutQueuedIntents.deletedAt),
-          eq(payoutQueuedIntents.organizerId, params.organizerId),
-        )
-      : and(eq(payoutQueuedIntents.status, 'queued'), isNull(payoutQueuedIntents.deletedAt)),
+    where,
     columns: {
       id: true,
       organizerId: true,
+      createdAt: true,
     },
-    orderBy: [asc(payoutQueuedIntents.createdAt)],
+    orderBy: [asc(payoutQueuedIntents.createdAt), asc(payoutQueuedIntents.id)],
     limit,
   });
 
@@ -804,9 +827,19 @@ export async function sweepQueuedPayoutIntentActivations(params: {
     }
   }
 
+  // Only advance the cursor when the page was full: a short page means the
+  // scan reached the end of the eligible set, so the next sweep should start
+  // over rather than resume from a stale boundary.
+  const lastScannedIntent = queuedIntents[queuedIntents.length - 1];
+  const nextCursor =
+    queuedIntents.length === limit && lastScannedIntent
+      ? { createdAt: lastScannedIntent.createdAt, id: lastScannedIntent.id }
+      : null;
+
   return {
     scannedCount: queuedIntents.length,
     activatedCount,
     results,
+    nextCursor,
   };
 }
