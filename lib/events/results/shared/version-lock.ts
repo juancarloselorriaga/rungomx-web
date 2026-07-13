@@ -18,11 +18,11 @@ export type LockedResultVersion = {
  * Acquire a row-level lock on a result version inside a transaction (`SELECT ... FOR
  * UPDATE`) and return its current row, or `null` if it is missing or soft-deleted.
  *
- * Every mutator that depends on a version still being an editable `draft` (import,
- * finalize, discard) must lock+re-check under this lock inside its own transaction. That
- * serializes those mutators against each other and against finalization, closing the
- * time-of-check/time-of-use races where a draft could flip to `official` between an
- * out-of-transaction status read and the write.
+ * Every mutator that depends on a version still being an editable `draft` (import, entry
+ * upsert, identity link, finalize, discard) must lock+re-check under this lock inside its own
+ * transaction. That serializes those mutators against each other and against finalization,
+ * closing the time-of-check/time-of-use races where a draft could flip to `official` between
+ * an out-of-transaction status read and the write.
  */
 export async function lockResultVersion(
   tx: ResultTransaction,

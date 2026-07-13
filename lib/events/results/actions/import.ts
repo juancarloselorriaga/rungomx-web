@@ -22,12 +22,18 @@ import {
   RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS,
   isUniqueConstraintViolation,
 } from '@/lib/events/results/shared/errors';
+import { findConflictingNullDistanceBib } from '@/lib/events/results/shared/bib-uniqueness';
 import { lockResultVersion, type ResultTransaction } from '@/lib/events/results/shared/version-lock';
 import { toResultVersionRecord } from '@/lib/events/results/shared/mappers';
 
 // Sentinel thrown inside the import transaction when the target draft is no longer an
 // editable draft under lock; caught to return a retryable conflict.
 class ImportDraftUnavailableError extends Error {}
+
+// Sentinel thrown inside the import transaction when a distance-less bib in this batch
+// duplicates one already stored on the version. Distanced bibs are caught by the partial
+// unique index; distance-less bibs need this in-app check under the version lock (P2).
+class DuplicateNullDistanceBibError extends Error {}
 import type { ImportResultDraftRowsInput } from '@/lib/events/results/schemas';
 import type { ResultDiscipline, ResultVersionRecord } from '@/lib/events/results/types';
 import type { ActionResult } from '@/lib/events/shared';
@@ -156,6 +162,20 @@ export async function importResultDraftRowsWorkflow(params: {
   // once (RES-2/RES-14). Runs inside a caller-provided transaction that already holds the
   // version lock (append) or just created the version (new), so it never races finalization.
   const writeRowsAndPlacements = async (tx: ResultTransaction, versionId: string) => {
+    // Every row in one import shares the selected distance. When that distance is null the
+    // partial unique index does not apply, so reject any bib already stored distance-less on
+    // this version — closing the cross-import duplicate gap the batch-only check misses (P2).
+    // Safe under the version lock held by both callers (append + freshly-created new draft).
+    if (!distanceId) {
+      const conflicting = await findConflictingNullDistanceBib(tx, {
+        resultVersionId: versionId,
+        bibNumbers: rows.map((row) => row.bibNumber ?? ''),
+      });
+      if (conflicting) {
+        throw new DuplicateNullDistanceBibError();
+      }
+    }
+
     await tx.insert(resultEntries).values(
       rows.map((row) => ({
         resultVersionId: versionId,
@@ -201,7 +221,10 @@ export async function importResultDraftRowsWorkflow(params: {
     if (error instanceof Error && error.message.startsWith(AUDIT_LOG_FAILURE_PREFIX)) {
       return { ok: false, error: 'Failed to create audit log for results import', code: 'SERVER_ERROR' };
     }
-    if (isUniqueConstraintViolation(error, RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS)) {
+    if (
+      error instanceof DuplicateNullDistanceBibError ||
+      isUniqueConstraintViolation(error, RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS)
+    ) {
       return { ok: false, error: IMPORT_BLOCKED_ERROR, code: 'CONFLICT' };
     }
     return null;

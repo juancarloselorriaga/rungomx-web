@@ -29,11 +29,24 @@ Six review findings (four P1, two P2) plus one hazard surfaced by the DB suite w
 | PR-P1-b | Import (append) read draft status outside its transaction → could write onto a just-finalized official version | New `lockResultVersion` (`SELECT … FOR UPDATE`); the append path locks + re-checks `status = 'draft'` inside the transaction, else returns a retryable conflict. |
 | PR-P1-c | Discard deleted children before the guarded version update → a racing finalize could orphan official entries | Discard now locks + re-verifies the draft inside the transaction **before** deleting children. |
 | PR-P1-d | Finalization gate ran before the transaction → a concurrent import could slip a blocking row past it | Gate re-runs under the version lock inside the transaction, immediately before derive + transition. |
-| PR-P2-e | Manual upsert + correction handlers still matched the pre-rename bib index names → duplicate-bib conflicts mis-mapped | Index names centralized in `shared/errors.ts` (`RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS`) and used everywhere; tests updated. |
+| PR-P2-e | Manual upsert + correction handlers still matched the pre-rename bib index names → duplicate-bib conflicts mis-mapped | Index names centralized in `shared/errors.ts` (`RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS`). **Incomplete — the entry-update branch was missed; completed in round 3.** |
 | PR-P2-f | New import committed version+session in one tx, then rows/audit in another → a failure left an empty draft that skipped init audit | Version + session + rows + placements + audit now commit in a single transaction. |
-| PR-schema | Dropping a distance nulls its entries' `distanceId` (`on delete set null`); the new null-distance partial bib index then turned a legitimate cross-distance bib reuse into a duplicate-key failure (broke DB-test cleanup) | Removed the null-distance partial unique index; per-distance uniqueness is kept and null-distance duplicate bibs are blocked at the import-validation layer. |
+| PR-schema | Dropping a distance nulls its entries' `distanceId` (`on delete set null`); the new null-distance partial bib index then turned a legitimate cross-distance bib reuse into a duplicate-key failure (broke DB-test cleanup) | Removed the null-distance partial unique index; per-distance uniqueness is kept. **Null-distance duplicates were only blocked within a single import batch — the cross-mutation gap was closed in round 3.** |
 
 Re-verified: `lint`, `type-check`, `validate:locales`, `test` (1557 app/server + 97 DB), `test:payments-contracts` (29), plus a DB pipeline check asserting the published-vs-draft rankings boundary and the correction round-trip.
+
+## PR review remediation (2026-07-13, round 3)
+
+A follow-up review confirmed four of the six threads but re-opened two. Both are now fully addressed:
+
+| # | Finding (re-opened) | Fix |
+| --- | --- | --- |
+| PR-P1-g | `upsertDraftResultEntry` still read draft status **outside** any transaction and never took `lockResultVersion`, so a finalize winning the race could let an entry write land on a now-official version (same TOCTOU class as the round-2 P1s). | The entry read + write + placement derivation now run inside `db.transaction` under `lockResultVersion`, re-checking `status = 'draft'` in-tx. `linkDraftResultEntryToUser` had the identical race and was brought under the same lock. |
+| PR-P2-h | The **entry-update** branch of `upsertDraftResultEntry` still matched the removed index names, and after dropping null-distance uniqueness a duplicate bib could slip across separate imports or manual upserts (validation only covered the current batch). | The update branch now uses `RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS`. New shared guard `findConflictingNullDistanceBib` rejects a distance-less bib that duplicates one already stored on the version — enforced under the version lock in both the upsert (both branches) and import write paths, so duplicates can't slip across separate mutations. |
+
+Re-verified: `lint`, `type-check`, `validate:locales`, `test` (**1566** app/server + **97** DB), `test:payments-contracts` (**29**). New unit coverage: in-lock draft re-check for upsert **and** link (P1), duplicate-bib mapping on the update path (P2), the distance-less bib guard (P2), and direct tests for `findConflictingNullDistanceBib`. DB-level proof against a schema-matched Postgres: same-distance same-bib is rejected by `result_entries_version_distance_bib_unique_idx`, cross-distance reuse is allowed, and a null-distance duplicate is accepted by the DB — confirming the app-level guard is what closes that gap.
+
+> Note on the test database: the DB the `test:db` lane uses (`.env.test`) was synced to the committed schema via `drizzle-kit push` before this verification (all tables empty; only index definitions changed). An unrelated leftover container held an older schema and is not what the tests connect to.
 
 ---
 
@@ -177,7 +190,7 @@ Re-verified: `lint`, `type-check`, `validate:locales`, `test` (1557 app/server +
 
 ### RES-15 — Bib uniqueness is per version, not per distance; name uniqueness rejects homonyms without bibs
 
-- **Status:** ✅ FIXED — bib uniqueness is now per `(version, distance)` (two partial indexes cover the null-distance case); the name-only unique index was dropped. Browser-verified: bibs 101/102 reused across 10K and 21K without conflict.
+- **Status:** ✅ FIXED — bib uniqueness is now per `(version, distance)` via one partial unique index (`result_entries_version_distance_bib_unique_idx`); the name-only unique index was dropped. Distance-less bibs (not covered by the index — see PR-schema/PR-P2-h) are guarded in-app by `findConflictingNullDistanceBib` under the version lock. Browser-verified: bibs 101/102 reused across 10K and 21K without conflict.
 
 - **Severity:** Medium (real Mexican race data will hit both) · **Confidence:** CONFIRMED — *bites when ingestion is wired*
 - **Where:** `db/schema.ts:1076-1078` (`result_entries_version_bib_unique_idx` on `(resultVersionId, bibNumber)`) and `:1079-1081` (`(resultVersionId, runnerFullName)` where bib is null)
