@@ -10,10 +10,7 @@ import {
   assertFinancialProcessorRuntime,
   type FinancialProcessorRuntime,
 } from '@/lib/payments/core/replay';
-import {
-  activateQueuedPayoutIntent,
-  loadActiveQueuedIntentByOrganizer,
-} from '@/lib/payments/payouts/queue-intents';
+import { sweepQueuedPayoutIntentActivations } from '@/lib/payments/payouts/queue-intents';
 
 const DEFAULT_PAYOUT_CURRENCY = 'MXN';
 const PAYOUT_LIFECYCLE_TRACE_PREFIX = 'payout-lifecycle:';
@@ -625,23 +622,20 @@ export async function transitionPayoutLifecycle(params: {
 
   if (transitionRule.toStatus === 'completed' || transitionRule.toStatus === 'failed') {
     try {
-      const activeQueuedIntent = await loadActiveQueuedIntentByOrganizer({
+      await sweepQueuedPayoutIntentActivations({
+        activatedByUserId: params.actorUserId,
         organizerId: payoutRequest.organizerId,
+        now,
       });
-
-      if (activeQueuedIntent) {
-        await activateQueuedPayoutIntent({
-          payoutQueuedIntentId: activeQueuedIntent.id,
-          activatedByUserId: params.actorUserId,
-          now,
-        });
-      }
     } catch (error) {
       // Best-effort: queued-intent activation is a side effect of the terminal
       // payout transition, not a precondition for it. The transition itself
       // has already been persisted and ingressed above, so a failure here must
-      // not roll back or fail the caller's transition result.
-      console.error('[payout-lifecycle] Failed to activate queued payout intent', {
+      // not roll back or fail the caller's transition result. The sweep is
+      // independently retryable (e.g. via the staff activation-sweep route),
+      // so a failure to even start the scan here does not permanently strand
+      // queued intents.
+      console.error('[payout-lifecycle] Failed to sweep queued payout intent activations', {
         organizerId: payoutRequest.organizerId,
         payoutRequestId: payoutRequest.id,
         error,

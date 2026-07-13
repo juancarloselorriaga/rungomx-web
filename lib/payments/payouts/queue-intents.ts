@@ -284,7 +284,11 @@ async function loadQueuedIntentByIdempotency(params: {
   });
 }
 
-export async function loadActiveQueuedIntentByOrganizer(params: { organizerId: string }) {
+// Internal only: the terminal-payout-transition hook in lifecycle.ts used to
+// call this directly, but now goes through sweepQueuedPayoutIntentActivations
+// (which scans by status instead of loading a single organizer's active
+// intent), so this no longer has an external importer.
+async function loadActiveQueuedIntentByOrganizer(params: { organizerId: string }) {
   return db.query.payoutQueuedIntents.findFirst({
     where: and(
       eq(payoutQueuedIntents.organizerId, params.organizerId),
