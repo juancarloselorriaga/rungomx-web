@@ -9,6 +9,14 @@ jest.mock('@/lib/events/results/actions', () => ({
 }));
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
+// jsdom's File/Blob has no `arrayBuffer()`/`text()`, so CSV parsing always
+// falls back to FileReader, which resolves over two nested Node
+// `setImmediate` macrotask hops (see jsdom's FileReader-impl.js). Under a
+// CPU-saturated `pnpm test` run those hops can lag past the default 1000ms
+// findBy timeout, so this suite gets a generous ceiling (see the matching
+// `findByText(..., { timeout: ... })` calls below).
+jest.setTimeout(15_000);
+
 const storageKey = 'results.import.mapping.validation.test';
 
 const labels = {
@@ -118,7 +126,11 @@ describe('ImportMappingPreview validation and derived preview', () => {
       target: { files: [file] },
     });
 
-    expect(await screen.findByText(labels.validationTitle)).toBeInTheDocument();
+    // Generous timeout: the FileReader macrotask hops above can lag past
+    // the default 1000ms wait under saturated jest workers.
+    expect(
+      await screen.findByText(labels.validationTitle, {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
     expect(screen.getByText('Runner name is missing.')).toBeInTheDocument();
     expect(
       screen.getByText('Finish time "not-a-time" is invalid for a finish status row.'),
@@ -146,7 +158,11 @@ describe('ImportMappingPreview validation and derived preview', () => {
       target: { files: [file] },
     });
 
-    expect(await screen.findByText(labels.derivedPreviewTitle)).toBeInTheDocument();
+    // Generous timeout: the FileReader macrotask hops above can lag past
+    // the default 1000ms wait under saturated jest workers.
+    expect(
+      await screen.findByText(labels.derivedPreviewTitle, {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(labels.derivedPreviewBlocked)).not.toBeInTheDocument();
 
     const derivedHeading = screen.getByText(labels.derivedPreviewTitle);
