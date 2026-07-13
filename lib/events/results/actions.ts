@@ -69,6 +69,8 @@ import {
   OFFICIAL_IMMUTABLE_MUTATION_ERROR,
   RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS,
 } from '@/lib/events/results/shared/errors';
+import { findConflictingNullDistanceBib } from '@/lib/events/results/shared/bib-uniqueness';
+import { lockResultVersion } from '@/lib/events/results/shared/version-lock';
 import { deriveResultPlacements } from '@/lib/events/results/derivation/placement';
 import { toResultEntryRecord } from '@/lib/events/results/shared/mappers';
 import type {
@@ -399,6 +401,9 @@ export const upsertDraftResultEntry = withAuthenticatedUser<ActionResult<ResultE
     return { ok: false, error: 'Result version not found', code: 'NOT_FOUND' };
   }
 
+  // Fast-fail hint only: the authoritative draft check runs again under the version lock
+  // inside the transaction below. This out-of-transaction read just avoids the permission and
+  // reference lookups for a version that is already clearly non-draft.
   if (version.status !== 'draft') {
     return {
       ok: false,
@@ -461,85 +466,101 @@ export const upsertDraftResultEntry = withAuthenticatedUser<ActionResult<ResultE
     rawSourceData,
   };
 
-  if (entryId) {
-    const existingEntry = await db.query.resultEntries.findFirst({
-      where: and(
-        eq(resultEntries.id, entryId),
-        eq(resultEntries.resultVersionId, resultVersionId),
-        isNull(resultEntries.deletedAt),
-      ),
-      columns: { id: true, userId: true },
-    });
+  // A distance-less bib is not covered by the partial unique index, so it is guarded in-app
+  // under the version lock below (P2). Distanced bibs are still enforced by the DB index and
+  // surface as a unique-violation in the catch.
+  const trimmedBib = bibNumber?.trim() || null;
 
-    if (!existingEntry) {
-      return { ok: false, error: 'Result entry not found for draft version', code: 'NOT_FOUND' };
-    }
-
-    if (existingEntry.userId && userId && existingEntry.userId !== userId) {
-      return { ok: false, error: LINK_CONFLICT_ERROR, code: 'CONFLICT' };
-    }
-
-    const entryValues = {
-      ...baseEntryValues,
-      // Preserve existing verified link unless explicitly matching the same user.
-      userId: existingEntry.userId ?? userId ?? null,
-    };
-
-    try {
-      const [updatedEntry] = await db
-        .update(resultEntries)
-        .set(entryValues)
-        .where(and(eq(resultEntries.id, entryId), eq(resultEntries.resultVersionId, resultVersionId)))
-        .returning();
-
-      const derivedPlacements = await deriveAndPersistDraftPlacements(resultVersionId);
-      const derivedPlacement = derivedPlacements[updatedEntry.id];
-      const nextRow = derivedPlacement
-        ? { ...updatedEntry, ...derivedPlacement }
-        : updatedEntry;
-
-      return { ok: true, data: toResultEntryRecord(nextRow) };
-    } catch (error) {
-      if (
-        isUniqueConstraintViolation(error, [
-          'result_entries_version_bib_unique_idx',
-          'result_entries_version_name_no_bib_unique_idx',
-        ])
-      ) {
-        return {
-          ok: false,
-          error: 'A draft entry with the same identity already exists in this version',
-          code: 'CONFLICT',
-        };
-      }
-      throw error;
-    }
-  }
+  const duplicateEntryConflict = {
+    ok: false,
+    error: 'A draft entry with the same identity already exists in this version',
+    code: 'CONFLICT',
+  } as const;
 
   try {
-    const [createdEntry] = await db
-      .insert(resultEntries)
-      .values({
-        resultVersionId,
-        ...baseEntryValues,
-        userId: userId ?? null,
-      })
-      .returning();
+    // Lock the version and re-check it is still an editable draft INSIDE the transaction, then
+    // write and derive placements under that lock. This closes the time-of-check/time-of-use
+    // race where finalization could flip the version to `official` between the out-of-
+    // transaction status read above and the write (P1).
+    return await db.transaction(async (tx): Promise<ActionResult<ResultEntryRecord>> => {
+      const locked = await lockResultVersion(tx, resultVersionId);
+      if (!locked) {
+        return { ok: false, error: 'Result version not found', code: 'NOT_FOUND' };
+      }
+      if (locked.status !== 'draft') {
+        return { ok: false, error: OFFICIAL_IMMUTABLE_MUTATION_ERROR, code: 'INVALID_STATE' };
+      }
 
-    const derivedPlacements = await deriveAndPersistDraftPlacements(resultVersionId);
-    const derivedPlacement = derivedPlacements[createdEntry.id];
-    const nextRow = derivedPlacement ? { ...createdEntry, ...derivedPlacement } : createdEntry;
+      if (entryId) {
+        const existingEntry = await tx.query.resultEntries.findFirst({
+          where: and(
+            eq(resultEntries.id, entryId),
+            eq(resultEntries.resultVersionId, resultVersionId),
+            isNull(resultEntries.deletedAt),
+          ),
+          columns: { id: true, userId: true },
+        });
 
-    return { ok: true, data: toResultEntryRecord(nextRow) };
+        if (!existingEntry) {
+          return { ok: false, error: 'Result entry not found for draft version', code: 'NOT_FOUND' };
+        }
+
+        if (existingEntry.userId && userId && existingEntry.userId !== userId) {
+          return { ok: false, error: LINK_CONFLICT_ERROR, code: 'CONFLICT' };
+        }
+
+        if (
+          trimmedBib &&
+          !distanceId &&
+          (await findConflictingNullDistanceBib(tx, {
+            resultVersionId,
+            bibNumbers: [trimmedBib],
+            excludeEntryId: entryId,
+          }))
+        ) {
+          return duplicateEntryConflict;
+        }
+
+        const [updatedEntry] = await tx
+          .update(resultEntries)
+          .set({
+            ...baseEntryValues,
+            // Preserve existing verified link unless explicitly matching the same user.
+            userId: existingEntry.userId ?? userId ?? null,
+          })
+          .where(and(eq(resultEntries.id, entryId), eq(resultEntries.resultVersionId, resultVersionId)))
+          .returning();
+
+        const derivedPlacements = await deriveAndPersistDraftPlacements(resultVersionId, tx);
+        const derivedPlacement = derivedPlacements[updatedEntry.id];
+        const nextRow = derivedPlacement ? { ...updatedEntry, ...derivedPlacement } : updatedEntry;
+        return { ok: true, data: toResultEntryRecord(nextRow) };
+      }
+
+      if (
+        trimmedBib &&
+        !distanceId &&
+        (await findConflictingNullDistanceBib(tx, {
+          resultVersionId,
+          bibNumbers: [trimmedBib],
+        }))
+      ) {
+        return duplicateEntryConflict;
+      }
+
+      const [createdEntry] = await tx
+        .insert(resultEntries)
+        .values({ resultVersionId, ...baseEntryValues, userId: userId ?? null })
+        .returning();
+
+      const derivedPlacements = await deriveAndPersistDraftPlacements(resultVersionId, tx);
+      const derivedPlacement = derivedPlacements[createdEntry.id];
+      const nextRow = derivedPlacement ? { ...createdEntry, ...derivedPlacement } : createdEntry;
+      return { ok: true, data: toResultEntryRecord(nextRow) };
+    });
   } catch (error) {
-    if (
-      isUniqueConstraintViolation(error, RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS)
-    ) {
-      return {
-        ok: false,
-        error: 'A draft entry with the same identity already exists in this version',
-        code: 'CONFLICT',
-      };
+    if (isUniqueConstraintViolation(error, RESULT_ENTRY_BIB_UNIQUE_CONSTRAINTS)) {
+      return duplicateEntryConflict;
     }
     throw error;
   }
@@ -566,6 +587,8 @@ export const linkDraftResultEntryToUser = withAuthenticatedUser<ActionResult<Res
     return { ok: false, error: 'Result version not found', code: 'NOT_FOUND' };
   }
 
+  // Fast-fail hint only: re-checked authoritatively under the version lock inside the
+  // transaction below.
   if (version.status !== 'draft') {
     return {
       ok: false,
@@ -583,25 +606,16 @@ export const linkDraftResultEntryToUser = withAuthenticatedUser<ActionResult<Res
     return { ok: false, error: 'Permission denied', code: 'FORBIDDEN' };
   }
 
-  const existingEntry = await db.query.resultEntries.findFirst({
-    where: and(
-      eq(resultEntries.id, entryId),
-      eq(resultEntries.resultVersionId, resultVersionId),
-      isNull(resultEntries.deletedAt),
-    ),
-    columns: { id: true, userId: true },
-  });
+  // Lock the version and re-check it is still a draft INSIDE the transaction before linking, so
+  // an identity link can never land on a version finalization just flipped to `official` (P1).
+  // The CAS on `userId` in the update predicate still guards concurrent links to the same entry.
+  return await db.transaction(async (tx): Promise<ActionResult<ResultEntryRecord>> => {
+    const locked = await lockResultVersion(tx, resultVersionId);
+    if (!locked || locked.status !== 'draft') {
+      return { ok: false, error: OFFICIAL_IMMUTABLE_LINK_ERROR, code: 'INVALID_STATE' };
+    }
 
-  if (!existingEntry) {
-    return { ok: false, error: 'Result entry not found for draft version', code: 'NOT_FOUND' };
-  }
-
-  if (existingEntry.userId && existingEntry.userId !== targetUserId) {
-    return { ok: false, error: LINK_CONFLICT_ERROR, code: 'CONFLICT' };
-  }
-
-  if (existingEntry.userId === targetUserId) {
-    const currentEntry = await db.query.resultEntries.findFirst({
+    const existingEntry = await tx.query.resultEntries.findFirst({
       where: and(
         eq(resultEntries.id, entryId),
         eq(resultEntries.resultVersionId, resultVersionId),
@@ -609,52 +623,60 @@ export const linkDraftResultEntryToUser = withAuthenticatedUser<ActionResult<Res
       ),
     });
 
-    if (!currentEntry) {
+    if (!existingEntry) {
       return { ok: false, error: 'Result entry not found for draft version', code: 'NOT_FOUND' };
     }
 
-    return { ok: true, data: toResultEntryRecord(currentEntry) };
-  }
-
-  const existingUser = await db.query.users.findFirst({
-    where: and(eq(users.id, targetUserId), isNull(users.deletedAt)),
-    columns: { id: true },
-  });
-  if (!existingUser) {
-    return { ok: false, error: LINKED_USER_NOT_FOUND_ERROR, code: 'VALIDATION_ERROR' };
-  }
-
-  const [linkedEntry] = await db
-    .update(resultEntries)
-    .set({ userId: targetUserId })
-    .where(
-      and(
-        eq(resultEntries.id, entryId),
-        eq(resultEntries.resultVersionId, resultVersionId),
-        isNull(resultEntries.deletedAt),
-        or(isNull(resultEntries.userId), eq(resultEntries.userId, targetUserId)),
-      ),
-    )
-    .returning();
-
-  if (!linkedEntry) {
-    const refreshedEntry = await db.query.resultEntries.findFirst({
-      where: and(
-        eq(resultEntries.id, entryId),
-        eq(resultEntries.resultVersionId, resultVersionId),
-        isNull(resultEntries.deletedAt),
-      ),
-      columns: { userId: true },
-    });
-
-    if (refreshedEntry?.userId && refreshedEntry.userId !== targetUserId) {
+    if (existingEntry.userId && existingEntry.userId !== targetUserId) {
       return { ok: false, error: LINK_CONFLICT_ERROR, code: 'CONFLICT' };
     }
 
-    return { ok: false, error: 'Result entry not found for draft version', code: 'NOT_FOUND' };
-  }
+    if (existingEntry.userId === targetUserId) {
+      return { ok: true, data: toResultEntryRecord(existingEntry) };
+    }
 
-  return { ok: true, data: toResultEntryRecord(linkedEntry) };
+    const existingUser = await tx.query.users.findFirst({
+      where: and(eq(users.id, targetUserId), isNull(users.deletedAt)),
+      columns: { id: true },
+    });
+    if (!existingUser) {
+      return { ok: false, error: LINKED_USER_NOT_FOUND_ERROR, code: 'VALIDATION_ERROR' };
+    }
+
+    const [linkedEntry] = await tx
+      .update(resultEntries)
+      .set({ userId: targetUserId })
+      .where(
+        and(
+          eq(resultEntries.id, entryId),
+          eq(resultEntries.resultVersionId, resultVersionId),
+          isNull(resultEntries.deletedAt),
+          or(isNull(resultEntries.userId), eq(resultEntries.userId, targetUserId)),
+        ),
+      )
+      .returning();
+
+    if (!linkedEntry) {
+      // The CAS predicate failed: a claim-approval path (which does not take the version lock)
+      // may have assigned a different owner. Disambiguate a conflict from a vanished entry.
+      const refreshedEntry = await tx.query.resultEntries.findFirst({
+        where: and(
+          eq(resultEntries.id, entryId),
+          eq(resultEntries.resultVersionId, resultVersionId),
+          isNull(resultEntries.deletedAt),
+        ),
+        columns: { userId: true },
+      });
+
+      if (refreshedEntry?.userId && refreshedEntry.userId !== targetUserId) {
+        return { ok: false, error: LINK_CONFLICT_ERROR, code: 'CONFLICT' };
+      }
+
+      return { ok: false, error: 'Result entry not found for draft version', code: 'NOT_FOUND' };
+    }
+
+    return { ok: true, data: toResultEntryRecord(linkedEntry) };
+  });
 });
 
 export const getRunnerResultClaimCandidates = withAuthenticatedUser<

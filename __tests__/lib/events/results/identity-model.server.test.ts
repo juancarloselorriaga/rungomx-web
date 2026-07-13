@@ -1133,6 +1133,130 @@ describe('results identity model actions', () => {
     });
   });
 
+  it('rejects an entry upsert when the version flips to official under the lock (P1)', async () => {
+    mockAuthContext = makeAuthContext();
+    // The out-of-transaction fast-fail read still sees a draft...
+    mockResultVersionsFindFirst.mockResolvedValueOnce(makeResultVersionRow({ status: 'draft' }));
+    // ...but the FOR UPDATE lock returns an official version: finalization won the race.
+    mockLockVersionQueue.push([
+      { id: RESULT_VERSION_ID, editionId: EDITION_ID, status: 'official', versionNumber: 1 },
+    ]);
+
+    const result = await upsertDraftResultEntry({
+      resultVersionId: RESULT_VERSION_ID,
+      distanceId: DISTANCE_ID,
+      discipline: 'trail_running',
+      runnerFullName: 'Raced Runner',
+      bibNumber: '7',
+      status: 'finish',
+      finishTimeMillis: 3_600_000,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'Official versions are immutable. Publish a correction version instead of editing this version in place.',
+      code: 'INVALID_STATE',
+    });
+    // Nothing was written after the lock caught the raced state.
+    expect(mockInsertCalls).toHaveLength(0);
+    expect(mockUpdateSetCalls).toHaveLength(0);
+  });
+
+  it('maps a duplicate-bib violation on the entry update path to a conflict (P2)', async () => {
+    mockAuthContext = makeAuthContext();
+    mockResultVersionsFindFirst.mockResolvedValueOnce(makeResultVersionRow({ status: 'draft' }));
+    mockResultEntriesFindFirst.mockResolvedValueOnce(
+      makeResultEntryRow({ id: RESULT_ENTRY_ID, userId: null }),
+    );
+    mockUpdateReturningQueue.push({
+      throw: { code: '23505', constraint: 'result_entries_version_distance_bib_unique_idx' },
+    });
+
+    const result = await upsertDraftResultEntry({
+      entryId: RESULT_ENTRY_ID,
+      resultVersionId: RESULT_VERSION_ID,
+      distanceId: DISTANCE_ID,
+      discipline: 'trail_running',
+      runnerFullName: 'Duplicate On Update',
+      bibNumber: '42',
+      status: 'finish',
+      finishTimeMillis: 3_600_000,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'A draft entry with the same identity already exists in this version',
+      code: 'CONFLICT',
+    });
+  });
+
+  it('rejects a distance-less bib that duplicates an existing entry on the version (P2)', async () => {
+    mockAuthContext = makeAuthContext();
+    mockResultVersionsFindFirst.mockResolvedValueOnce(makeResultVersionRow({ status: 'draft' }));
+    // findConflictingNullDistanceBib finds a stored distance-less entry with the same bib.
+    mockResultEntriesFindMany.mockResolvedValueOnce([{ bibNumber: '77' }]);
+
+    const result = await upsertDraftResultEntry({
+      resultVersionId: RESULT_VERSION_ID,
+      discipline: 'trail_running',
+      runnerFullName: 'No Distance Duplicate',
+      bibNumber: '77',
+      status: 'finish',
+      finishTimeMillis: 3_600_000,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'A draft entry with the same identity already exists in this version',
+      code: 'CONFLICT',
+    });
+    expect(mockInsertCalls).toHaveLength(0);
+  });
+
+  it('allows a distance-less bib when no stored entry collides (P2)', async () => {
+    mockAuthContext = makeAuthContext();
+    mockResultVersionsFindFirst.mockResolvedValueOnce(makeResultVersionRow({ status: 'draft' }));
+    mockResultEntriesFindMany
+      .mockResolvedValueOnce([]) // guard: no distance-less collision
+      .mockResolvedValueOnce([]); // placement derivation: nothing to rank
+    mockInsertReturningQueue.push([makeResultEntryRow({ distanceId: null, bibNumber: '88' })]);
+
+    const result = await upsertDraftResultEntry({
+      resultVersionId: RESULT_VERSION_ID,
+      discipline: 'trail_running',
+      runnerFullName: 'No Distance OK',
+      bibNumber: '88',
+      status: 'finish',
+      finishTimeMillis: 3_600_000,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(mockInsertCalls).toHaveLength(1);
+  });
+
+  it('rejects an identity link when the version flips to official under the lock (P1)', async () => {
+    mockAuthContext = makeAuthContext();
+    mockResultVersionsFindFirst.mockResolvedValueOnce(makeResultVersionRow({ status: 'draft' }));
+    mockLockVersionQueue.push([
+      { id: RESULT_VERSION_ID, editionId: EDITION_ID, status: 'official', versionNumber: 1 },
+    ]);
+
+    const result = await linkDraftResultEntryToUser({
+      resultVersionId: RESULT_VERSION_ID,
+      entryId: RESULT_ENTRY_ID,
+      userId: LINKED_USER_ID,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error:
+        'Official versions are immutable. Use the correction-version workflow to adjust linked identities.',
+      code: 'INVALID_STATE',
+    });
+    expect(mockUpdateSetCalls).toHaveLength(0);
+  });
+
   it('returns ranked safe claim candidates with event and timing/category context', async () => {
     mockAuthContext = makeRunnerAuthContext();
     mockFindUnclaimedResultClaimCandidates.mockResolvedValueOnce([

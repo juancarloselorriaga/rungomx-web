@@ -1079,8 +1079,9 @@ export const resultEntries = pgTable(
     // uniqueness-constrained here: `distanceId` is `on delete set null`, so constraining
     // the null-distance group would turn a distance deletion (which nulls its entries'
     // distanceId) into a duplicate-key failure whenever two distances legitimately reused a
-    // bib. Duplicate bibs in a null-distance import are instead blocked at the app layer
-    // (import validation).
+    // bib. Duplicate bibs among null-distance entries are instead blocked at the app layer
+    // by `findConflictingNullDistanceBib`, enforced under the version lock in every write
+    // path (import + entry upsert) so a duplicate cannot slip across separate mutations.
     uniqueIndex('result_entries_version_distance_bib_unique_idx')
       .on(table.resultVersionId, table.distanceId, table.bibNumber)
       .where(sql`${table.bibNumber} is not null AND ${table.distanceId} is not null`),
